@@ -30,13 +30,58 @@ Classification contract (``classify_result``):
   baseline failures are improvements inside the subset rule, while a
   partial result must not hide unexecuted tests.
 
+Release aggregation (``evaluate_release``, T30): a *release record* is a
+small JSON object deposited per required gate in the release evidence
+directory (``--evidence DIR``). It binds the gate outcome to verifiable
+identity — a manually typed ``status: pass`` without the bound evidence
+file and hash satisfies nothing. The required gate set is generated from
+the approved toolchain matrix (``docs/development/toolchain-matrix.json``),
+never from whichever files happen to exist, so a missing macOS or GUI or
+offline row is a *missing* gate, not an unnoticed absence.
+
+Release record schema — every field is binding:
+
+* ``gate``/``platform``/``machine``/``profile`` — nonempty identity
+  dimensions; platform aliases normalise to the ``platform.system()``
+  spelling (``macOS`` → ``Darwin``) without ever collapsing architectures
+  (``arm64`` and ``aarch64`` stay distinct rows);
+* ``toolchain``/``mode`` — bound only when the matched gate row declares
+  them (compile lanes bind ``toolchain``; offline lanes bind ``mode`` =
+  ``full``|``slim``);
+* ``source_commit`` — full 40-hex SHA of the reviewed source tree; a
+  different SHA is stale evidence unless ``requirements`` carries an
+  explicit ``equivalent_commits`` fingerprint pair that the record
+  reproduces under ``commit_equivalence`` (the documentation-only-amend
+  escape hatch — never a silent newer-SHA acceptance);
+* ``status`` — ``pass`` | ``fail`` | ``baseline_unchanged``. The last is
+  valid only on the required row flagged ``baseline_unchanged``, on
+  Darwin, profile ``full``, with ``approved is true`` and raw exit 1 —
+  the T27 classifier rule, reused verbatim;
+* ``command`` (string or argv list), ``returncode`` (raw int),
+  ``counts.executed`` (nonnegative int — zero executed tests fails the
+  record), ``artifact`` (object with a nonempty ``identity``/``path``/
+  ``build``/``name``, optional ``sha256``);
+* ``evidence`` — the underlying evidence file name (or
+  ``{"path", "sha256"}`` object) plus ``evidence_sha256`` (64-hex) when it
+  is a bare string; with ``--evidence DIR`` the file must exist and hash
+  to the declared value;
+* ``negative_control`` — required on rows flagged ``negative_control``
+  (sanitizer lanes): ``{"detected": true, "returncode": <nonzero int>}``
+  proving the build actually catches an injected fault; an invalid
+  negative control fails the record.
+
 CLI:
     python tools/portability_qualification.py --profile quick|native|full \
         --build PATH --output PATH [--baseline PATH] [--timeout SECONDS] \
         [-- EXTRA_PYTEST_ARGS...]
 
-Exit status is 0 for pass and baseline_unchanged, 1 for fail, 2 for usage
-errors. The JSON result file is the authoritative record.
+    python tools/portability_qualification.py --release --evidence DIR \
+        --output PATH [--matrix PATH] [--source-commit SHA]
+
+Exit status is 0 for pass (release: all required gates satisfied),
+baseline_unchanged is a non-green per-record outcome, 1 for fail/blocked,
+2 for usage errors. The JSON result/report file is the authoritative
+record.
 """
 from __future__ import annotations
 
@@ -1097,18 +1142,958 @@ def _load_result_document(path: Path) -> dict:
     return document
 
 
+# ---------------------------------------------------------------------------
+# Release aggregation (T30)
+# ---------------------------------------------------------------------------
+
+RELEASE_SCHEMA_VERSION = 1
+RELEASE_DIMENSIONS = (
+    "gate",
+    "platform",
+    "machine",
+    "profile",
+    "toolchain",
+    "mode",
+)
+_RELEASE_STATUSES = (_STATUS_PASS, _STATUS_FAIL, _STATUS_BASELINE)
+_COMMIT_RE = re.compile(r"\A[0-9a-f]{40}\Z")
+_SHA256_RE = re.compile(r"\A[0-9a-f]{64}\Z")
+
+# Operating-system spelling aliases fold to the platform.system() name;
+# unknown names pass through verbatim (they simply match nothing).
+_SYSTEM_ALIASES = {
+    "linux": "Linux",
+    "gnu/linux": "Linux",
+    "darwin": "Darwin",
+    "macos": "Darwin",
+    "mac os x": "Darwin",
+    "osx": "Darwin",
+}
+# Architectures are never collapsed: arm64 (Darwin) and aarch64 (Linux)
+# are deliberately different rows — only unambiguous spelling aliases fold.
+_MACHINE_ALIASES = {"amd64": "x86_64", "x64": "x86_64"}
+
+
+def _normalize_system(value: object) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = " ".join(value.strip().split())
+    return _SYSTEM_ALIASES.get(text.lower(), text)
+
+
+def _normalize_machine(value: object) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip().lower()
+    return _MACHINE_ALIASES.get(text, text)
+
+
+def _release_key(row: dict) -> tuple:
+    return tuple(row.get(name) for name in RELEASE_DIMENSIONS)
+
+
+def _missing_gates(records: list[dict], requirements: dict) -> list[dict]:
+    dimensions = ("gate", "platform", "machine", "profile", "toolchain", "mode")
+    def key(row):
+        return tuple(row.get(name) for name in dimensions)
+    present = {key(record) for record in records}
+    return [dict(required) for required in requirements["required"]
+            if key(required) not in present]
+
+
+def _normalized_release_row(row: dict) -> dict:
+    """Copy a required/optional row with platform/machine canonicalized."""
+    normalized = dict(row)
+    normalized["platform"] = _normalize_system(row.get("platform"))
+    normalized["machine"] = _normalize_machine(row.get("machine"))
+    return normalized
+
+
+def _requirement_row_problems(row: object, where: str) -> list[str]:
+    """One required/optional gate row: gate and platform are the mandatory
+    identity (the platform dimension is what keeps Linux and macOS rows
+    from ever collapsing together); other dimensions may be absent but
+    must be nonempty strings when present."""
+    problems: list[str] = []
+    if not isinstance(row, dict):
+        return [f"{where} is not an object"]
+    if not isinstance(row.get("gate"), str) or not row["gate"]:
+        problems.append(f"{where}.gate must be a nonempty string")
+    if _normalize_system(row.get("platform")) is None:
+        problems.append(f"{where}.platform must be a nonempty string")
+    for name in ("machine", "profile", "toolchain", "mode"):
+        value = row.get(name)
+        if value is not None and (not isinstance(value, str) or not value):
+            problems.append(
+                f"{where}.{name} must be a nonempty string when present"
+            )
+    for flag in ("baseline_unchanged", "negative_control"):
+        if flag in row and not isinstance(row[flag], bool):
+            problems.append(f"{where}.{flag} must be a boolean when present")
+    return problems
+
+
+def _validate_release_requirements(requirements: object) -> list[str]:
+    problems: list[str] = []
+    if not isinstance(requirements, dict):
+        return ["release requirements are not an object"]
+    commit = requirements.get("source_commit")
+    if not isinstance(commit, str) or _COMMIT_RE.fullmatch(commit) is None:
+        problems.append(
+            "requirements.source_commit must be the reviewed source "
+            "commit (full 40-hex SHA)"
+        )
+    equivalents = requirements.get("equivalent_commits")
+    if equivalents is not None:
+        if not isinstance(equivalents, dict):
+            problems.append(
+                "requirements.equivalent_commits must be an object"
+            )
+        else:
+            for sha, entry in equivalents.items():
+                if not isinstance(sha, str) or _COMMIT_RE.fullmatch(
+                    sha
+                ) is None:
+                    problems.append(
+                        f"equivalent_commits key {sha!r} is not a full "
+                        "40-hex commit"
+                    )
+                if not (
+                    isinstance(entry, dict)
+                    and isinstance(entry.get("source_fingerprint"), str)
+                    and entry["source_fingerprint"]
+                    and isinstance(entry.get("build_fingerprint"), str)
+                    and entry["build_fingerprint"]
+                ):
+                    problems.append(
+                        f"equivalent_commits[{sha!r}] must record explicit "
+                        "source_fingerprint and build_fingerprint strings"
+                    )
+    keys: dict[tuple, str] = {}
+    for section in ("required", "optional"):
+        rows = requirements.get(section)
+        if rows is None and section == "optional":
+            continue
+        if not isinstance(rows, list) or (section == "required" and not rows):
+            problems.append(
+                f"requirements.{section} must be a nonempty list of gate rows"
+                if section == "required"
+                else f"requirements.{section} must be a list of gate rows"
+            )
+            continue
+        for index, row in enumerate(rows):
+            problems.extend(
+                _requirement_row_problems(row, f"{section}[{index}]")
+            )
+            if not isinstance(row, dict):
+                continue
+            key = _release_key(_normalized_release_row(row))
+            if key in keys:
+                shown = dict(zip(RELEASE_DIMENSIONS, key))
+                problems.append(
+                    f"ambiguous duplicate required-gate key between "
+                    f"{keys[key]} and {section}[{index}]: {shown}"
+                )
+            else:
+                keys[key] = f"{section}[{index}]"
+    return problems
+
+
+def _record_evidence(record: dict) -> tuple[object, object]:
+    """(evidence path, declared sha256) from a release record."""
+    evidence = record.get("evidence")
+    if isinstance(evidence, dict):
+        return evidence.get("path"), evidence.get("sha256")
+    return evidence, record.get("evidence_sha256")
+
+
+def _validate_release_record(record: object) -> list[str]:
+    """Structural binding validation for one release record.
+
+    A manually typed status without the bound evidence file/hash, command,
+    raw exit, counts or artifact identity is not evidence — it is invalid.
+    """
+    problems: list[str] = []
+    if not isinstance(record, dict):
+        return ["release record is not an object"]
+    if not isinstance(record.get("gate"), str) or not record["gate"]:
+        problems.append("record.gate must be a nonempty string")
+    if _normalize_system(record.get("platform")) is None:
+        problems.append("record.platform must be a nonempty string")
+    if _normalize_machine(record.get("machine")) is None:
+        problems.append("record.machine must be a nonempty string")
+    if not isinstance(record.get("profile"), str) or not record["profile"]:
+        problems.append("record.profile must be a nonempty string")
+    for name in ("toolchain", "mode"):
+        value = record.get(name)
+        if value is not None and (not isinstance(value, str) or not value):
+            problems.append(
+                f"record.{name} must be a nonempty string when present"
+            )
+    commit = record.get("source_commit")
+    if not isinstance(commit, str) or _COMMIT_RE.fullmatch(commit) is None:
+        problems.append("record.source_commit must be a full 40-hex commit")
+    if record.get("status") not in _RELEASE_STATUSES:
+        problems.append(
+            f"record.status must be one of {_RELEASE_STATUSES}"
+        )
+    command = record.get("command")
+    if isinstance(command, str):
+        if not command.strip():
+            problems.append("record.command must be a nonempty string")
+    elif isinstance(command, list):
+        if not command or any(
+            not isinstance(token, str) or not token for token in command
+        ):
+            problems.append(
+                "record.command argv must be a nonempty list of "
+                "nonempty strings"
+            )
+    else:
+        problems.append("record.command must be a string or an argv list")
+    returncode = record.get("returncode")
+    if not isinstance(returncode, int) or isinstance(returncode, bool):
+        problems.append("record.returncode must be an integer")
+    counts = record.get("counts")
+    if not isinstance(counts, dict):
+        problems.append("record.counts must be an object")
+    else:
+        if not _is_nonnegative_int(counts.get("executed")):
+            problems.append(
+                "record.counts.executed must be a nonnegative integer"
+            )
+        for key, value in counts.items():
+            if key != "executed" and not _is_nonnegative_int(value):
+                problems.append(
+                    f"record.counts.{key} must be a nonnegative integer"
+                )
+    artifact = record.get("artifact")
+    if not isinstance(artifact, dict):
+        problems.append(
+            "record.artifact must be an object identifying the tested "
+            "artifact"
+        )
+    else:
+        identified = any(
+            isinstance(artifact.get(name), str) and artifact[name]
+            for name in ("identity", "path", "build", "name")
+        )
+        if not identified:
+            problems.append(
+                "record.artifact must carry a nonempty identity, path, "
+                "build or name"
+            )
+        artifact_sha = artifact.get("sha256")
+        if artifact_sha is not None and not (
+            isinstance(artifact_sha, str)
+            and _SHA256_RE.fullmatch(artifact_sha)
+        ):
+            problems.append("record.artifact.sha256 must be 64 hex digits")
+    evidence_path, evidence_sha = _record_evidence(record)
+    if not isinstance(evidence_path, str) or not evidence_path:
+        problems.append(
+            "record.evidence must name the underlying evidence file"
+        )
+    if not isinstance(evidence_sha, str) or _SHA256_RE.fullmatch(
+        evidence_sha
+    ) is None:
+        problems.append(
+            "record evidence sha256 must be 64 lowercase hex digits"
+        )
+    if "approved" in record and not isinstance(record["approved"], bool):
+        problems.append("record.approved must be a boolean when present")
+    return problems
+
+
+def _commit_accepted(record: dict, requirements: dict) -> bool:
+    """The reviewed commit, or an explicitly fingerprint-equivalent one.
+
+    Documentation-only amended commits are accepted only when the
+    requirements record an ``equivalent_commits`` entry for the recorded
+    SHA *and* the record reproduces its exact source/build fingerprint
+    pair under ``commit_equivalence`` — never silent acceptance of a
+    newer SHA.
+    """
+    commit = record["source_commit"]
+    if commit == requirements["source_commit"]:
+        return True
+    equivalents = requirements.get("equivalent_commits") or {}
+    entry = equivalents.get(commit)
+    return isinstance(entry, dict) and (
+        record.get("commit_equivalence") == entry
+    )
+
+
+def _evaluate_release_record(
+    record: dict,
+    row: dict | None,
+    requirements: dict,
+    evidence_dir: Path | None,
+) -> dict:
+    """Verdict for one structurally checked record.
+
+    ``invalid`` means the record cannot be trusted as evidence (bad
+    binding, stale commit, unverifiable file, contradictory fields);
+    ``failed`` means the record is well-formed evidence of a failing or
+    empty gate; ``satisfied`` means it discharges the matched row.
+    """
+    invalid = _validate_release_record(record)
+    if invalid:
+        return {"verdict": "invalid", "reasons": invalid}
+    failed: list[str] = []
+    if not _commit_accepted(record, requirements):
+        invalid.append(
+            f"stale or foreign source_commit {record['source_commit']!r}; "
+            f"the release commit is {requirements['source_commit']!r} and "
+            "no fingerprint equivalence is recorded for it"
+        )
+    if record["counts"]["executed"] == 0:
+        failed.append(
+            "the record executed zero tests — an empty gate cannot "
+            "evidence capability"
+        )
+    status = record["status"]
+    if status == _STATUS_FAIL:
+        failed.append("the gate evidence records a failure")
+    elif status == _STATUS_PASS and record["returncode"] != 0:
+        invalid.append(
+            f"status 'pass' contradicts the raw exit "
+            f"{record['returncode']}"
+        )
+    elif status == _STATUS_BASELINE:
+        if record["platform"] != _BASELINE_SYSTEM:
+            invalid.append(
+                "baseline_unchanged is defined only for the approved macOS "
+                f"full baseline, not platform {record['platform']!r}; "
+                "required gates on this platform are pass-only"
+            )
+        elif record["profile"] != _BASELINE_PROFILE:
+            invalid.append(
+                "baseline_unchanged requires the full profile, not "
+                f"{record['profile']!r}"
+            )
+        elif record.get("approved") is not True:
+            invalid.append(
+                "baseline_unchanged requires an independently approved "
+                "baseline (approved is true)"
+            )
+        elif row is None or row.get("baseline_unchanged") is not True:
+            invalid.append(
+                "the matched required gate is not the designated approved "
+                "macOS full baseline row"
+            )
+        elif record["returncode"] != 1:
+            invalid.append(
+                "baseline_unchanged carries the failure-completed raw "
+                f"exit 1, not {record['returncode']}"
+            )
+    if row is not None and row.get("negative_control") is True:
+        control = record.get("negative_control")
+        control_rc = (
+            control.get("returncode") if isinstance(control, dict) else None
+        )
+        if not (
+            isinstance(control, dict)
+            and control.get("detected") is True
+            and isinstance(control_rc, int)
+            and not isinstance(control_rc, bool)
+            and control_rc != 0
+        ):
+            failed.append(
+                "invalid sanitizer negative control: the sanitizer build "
+                "must prove it detects an injected fault "
+                "(negative_control.detected is true with a nonzero "
+                "control exit)"
+            )
+    if evidence_dir is not None:
+        evidence_path, evidence_sha = _record_evidence(record)
+        candidate = Path(evidence_path)
+        if not candidate.is_absolute():
+            candidate = Path(evidence_dir) / candidate
+        resolved = candidate.resolve()
+        if not resolved.is_file():
+            invalid.append(
+                f"the underlying evidence file is missing: "
+                f"{evidence_path!r}"
+            )
+        elif _sha256(resolved) != evidence_sha:
+            invalid.append(
+                f"the underlying evidence file for {evidence_path!r} "
+                "does not hash to the record's declared sha256"
+            )
+    verdict = "invalid" if invalid else "failed" if failed else "satisfied"
+    return {"verdict": verdict, "reasons": [*invalid, *failed]}
+
+
+def _record_ref(record: dict, index: int) -> dict:
+    evidence_path, evidence_sha = _record_evidence(record)
+    return {
+        "index": index,
+        "file": record.get("_file"),
+        "gate": record.get("gate"),
+        "platform": record.get("platform"),
+        "machine": record.get("machine"),
+        "profile": record.get("profile"),
+        "toolchain": record.get("toolchain"),
+        "mode": record.get("mode"),
+        "evidence": evidence_path if isinstance(evidence_path, str) else None,
+        "evidence_sha256": (
+            evidence_sha if isinstance(evidence_sha, str) else None
+        ),
+    }
+
+
+def _release_statement(report: dict) -> str:
+    if report["status"] == "pass":
+        notes = []
+        if any(
+            entry["status"] == _STATUS_BASELINE
+            for entry in report["satisfied"]
+        ):
+            notes.append(
+                "the approved macOS full baseline remains explicitly "
+                "baseline_unchanged (non-green, raw evidence retained)"
+            )
+        optional_unmet = len(report["optional"]["missing"]) + len(
+            report["optional"]["failed"]
+        )
+        if optional_unmet:
+            notes.append(
+                f"{optional_unmet} optional additional-architecture "
+                "gate(s) are unsatisfied — those architectures are not "
+                "advertised as supported"
+            )
+        tail = (" " + " ".join(notes)) if notes else ""
+        return (
+            f"RELEASE PASS: all {report['required_total']} required gate(s) "
+            f"carry satisfied evidence on commit "
+            f"{report['source_commit']}.{tail}"
+        )
+    return (
+        f"RELEASE BLOCKED: {len(report['missing'])} required gate(s) "
+        f"missing, {len(report['failed'])} required gate(s) failed or "
+        f"invalid, {len(report['problems'])} evidence problem(s)."
+    )
+
+
+def evaluate_release(
+    records: list[dict],
+    requirements: dict,
+    evidence_dir: Path | None = None,
+) -> dict:
+    """Aggregate per-gate release records into a pass|blocked verdict.
+
+    The required set is a comparison target, not a directory listing:
+    ``_missing_gates`` computes uncovered required rows, and every present
+    record is validated for source-commit, platform/architecture, count,
+    baseline and negative-control evidence. ``evidence_dir`` (when given)
+    additionally pins each record's underlying evidence file to its
+    declared SHA-256.
+    """
+    report: dict = {
+        "schema_version": RELEASE_SCHEMA_VERSION,
+        "status": "blocked",
+        "source_commit": (
+            requirements.get("source_commit")
+            if isinstance(requirements, dict)
+            else None
+        ),
+        "required_total": 0,
+        "satisfied": [],
+        "missing": [],
+        "failed": [],
+        "optional": {"satisfied": [], "missing": [], "failed": []},
+        "extra": [],
+        "records": [],
+        "problems": [],
+        "statement": "",
+    }
+    problems = _validate_release_requirements(requirements)
+    if not isinstance(records, list):
+        problems.append("release records must be a list")
+        records = []
+    if isinstance(requirements, dict) and (
+        requirements.get("matrix") is not None
+    ):
+        report["matrix"] = requirements["matrix"]
+    if problems:
+        report["problems"] = problems
+        report["statement"] = _release_statement(report)
+        return report
+
+    required_rows = [
+        _normalized_release_row(row) for row in requirements["required"]
+    ]
+    optional_rows = [
+        _normalized_release_row(row)
+        for row in requirements.get("optional") or []
+    ]
+    required_by_key = {_release_key(row): row for row in required_rows}
+    optional_by_key = {_release_key(row): row for row in optional_rows}
+    report["required_total"] = len(required_rows)
+
+    # Normalise records for keying (platform names fold, architectures do
+    # not); non-dict entries can never carry a key.
+    normalized: list[object] = []
+    key_to_indices: dict[tuple, list[int]] = {}
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            normalized.append(record)
+            continue
+        copy = dict(record)
+        copy["platform"] = _normalize_system(record.get("platform"))
+        copy["machine"] = _normalize_machine(record.get("machine"))
+        normalized.append(copy)
+        key_to_indices.setdefault(_release_key(copy), []).append(index)
+    duplicate_keys = {
+        key for key, indices in key_to_indices.items() if len(indices) > 1
+    }
+    record_dicts = [r for r in normalized if isinstance(r, dict)]
+
+    # Evaluate every present record, including extras that match no row.
+    evaluations: list[dict] = []
+    for index, record in enumerate(normalized):
+        if not isinstance(record, dict):
+            evaluations.append(
+                {
+                    "index": index,
+                    "file": None,
+                    "key": None,
+                    "row": None,
+                    "evidence": None,
+                    "verdict": "invalid",
+                    "reasons": ["release record is not an object"],
+                }
+            )
+            problems.append(f"release record[{index}] is not an object")
+            continue
+        key = _release_key(record)
+        row = required_by_key.get(key)
+        if row is None:
+            row = optional_by_key.get(key)
+        outcome = _evaluate_release_record(
+            record, row, requirements, evidence_dir
+        )
+        if key in duplicate_keys:
+            outcome = {
+                "verdict": "invalid",
+                "reasons": [
+                    "ambiguous duplicate release evidence for gate key "
+                    f"{dict(zip(RELEASE_DIMENSIONS, key))} — the gate "
+                    "cannot be satisfied by conflicting records",
+                    *outcome["reasons"],
+                ],
+            }
+        evaluations.append(
+            {
+                "index": index,
+                "file": record.get("_file"),
+                "key": dict(zip(RELEASE_DIMENSIONS, key)),
+                "row": (
+                    "required"
+                    if key in required_by_key
+                    else "optional"
+                    if key in optional_by_key
+                    else "extra"
+                ),
+                "evidence": _record_evidence(record)[0]
+                if isinstance(_record_evidence(record)[0], str)
+                else None,
+                **outcome,
+            }
+        )
+
+    # Bucket the required and optional rows: a required row with no
+    # record carrying its key is *missing*; a row whose record is invalid
+    # or failed is *failed* — never silently absent.
+    for section, rows in (
+        ("required", required_rows),
+        ("optional", optional_rows),
+    ):
+        missing = _missing_gates(record_dicts, {"required": rows})
+        missing_keys = {_release_key(row) for row in missing}
+        if section == "required":
+            sink_missing = report["missing"]
+            sink_failed = report["failed"]
+            sink_satisfied = report["satisfied"]
+        else:
+            sink_missing = report["optional"]["missing"]
+            sink_failed = report["optional"]["failed"]
+            sink_satisfied = report["optional"]["satisfied"]
+        sink_missing.extend(missing)
+        for row in rows:
+            key = _release_key(row)
+            if key in missing_keys:
+                continue
+            bound = [
+                evaluations[index] for index in key_to_indices.get(key, [])
+            ]
+            if len(bound) == 1 and bound[0]["verdict"] == "satisfied":
+                record = normalized[bound[0]["index"]]
+                evidence_path, evidence_sha = _record_evidence(record)
+                sink_satisfied.append(
+                    {
+                        "required": row,
+                        "record": _record_ref(record, bound[0]["index"]),
+                        "status": record["status"],
+                        "green": record["status"] == _STATUS_PASS,
+                        "evidence": {
+                            "path": evidence_path,
+                            "sha256": evidence_sha,
+                        },
+                    }
+                )
+            else:
+                sink_failed.append(
+                    {
+                        "required": row,
+                        "records": [entry for entry in bound],
+                        "reasons": [
+                            reason
+                            for entry in bound
+                            for reason in entry["reasons"]
+                        ]
+                        or ["the record matching this gate is invalid"],
+                    }
+                )
+
+    for index, record in enumerate(normalized):
+        if not isinstance(record, dict):
+            continue
+        key = _release_key(record)
+        if key in required_by_key or key in optional_by_key:
+            continue
+        evaluation = evaluations[index]
+        report["extra"].append(
+            {"record": _record_ref(record, index), **{
+                k: evaluation[k] for k in ("verdict", "reasons")
+            }}
+        )
+        if evaluation["verdict"] == "invalid":
+            problems.append(
+                f"release record[{index}]"
+                + (
+                    f" ({record['_file']})"
+                    if record.get("_file")
+                    else ""
+                )
+                + " matches no required or optional gate and is invalid: "
+                + "; ".join(evaluation["reasons"])
+            )
+
+    report["records"] = evaluations
+    report["problems"] = problems
+    if not report["missing"] and not report["failed"] and not problems:
+        report["status"] = "pass"
+    report["statement"] = _release_statement(report)
+    return report
+
+
+# ---------------------------------------------------------------------------
+# Required-gate generation from the approved toolchain matrix
+# ---------------------------------------------------------------------------
+
+# Evidence capabilities discharged inside a suite-profile lane record; they
+# are release content of the lane's own qualified run, not separate files.
+_SUITE_COVERS = (
+    "ctest-targets-and-nonzero-exact-native-oracles",
+    "engine-private-abi-controls",
+    "selected-loader-and-provenance",
+    "source-membership-odr-analysis-hardening",
+    "no-display-execution",
+    "async-batch-lifecycle",
+    "opt-in-final-recording",
+    "legacy-foreign-recording-inspection",
+    "same-environment-checked-replay-and-foreign-mismatch",
+)
+
+
+def _lane_release_profile(name: str, lane: dict) -> str:
+    """The profile dimension a lane's release record must bind."""
+    profile = lane.get("profile")
+    if isinstance(profile, str) and profile:
+        return profile
+    driver = str(lane.get("driver") or "")
+    if "offline" in name or "offline_bundle" in driver:
+        return "offline"
+    if "coverage" in name or "coverage" in driver:
+        return "coverage"
+    raise ValueError(
+        f"matrix lane {name!r} declares neither a profile nor a "
+        "recognised coverage/offline driver"
+    )
+
+
+def _lane_release_modes(name: str, lane: dict) -> tuple[str | None, ...]:
+    """Offline lanes rehearse both install modes; every other gate has no
+    mode dimension (``mode`` stays unbound, never a wildcard)."""
+    driver = str(lane.get("driver") or "")
+    if "offline" in name or "offline_bundle" in driver:
+        return ("full", "slim")
+    return (None,)
+
+
+def _lane_covers(name: str, profile: str, lane: dict) -> list[str]:
+    covers: list[str] = []
+    if profile in ("native", "full"):
+        covers.extend(_SUITE_COVERS)
+    if profile == "full":
+        covers.append("full-profile-suite-including-slow-episodes")
+    if "SANITIZE" in str(lane.get("cmake") or "") or "RTSAN" in str(
+        lane.get("cmake") or ""
+    ):
+        covers.append("sanitizer-lane-with-negative-control")
+    if profile == "coverage":
+        covers.append("llvm-source-based-coverage")
+    if "manual-gui" in name:
+        covers.append("real-viewer-desktop-acceptance")
+    if profile == "offline":
+        covers.append("offline-source-install")
+    if name == "macos-full":
+        covers.append("recovered-macos-full-baseline")
+    return covers
+
+
+def required_release_rows(matrix: dict) -> dict:
+    """Generate the required/optional release gate rows from the approved
+    toolchain matrix.
+
+    Every lane becomes a row per declared machine; the first (release)
+    machine is required, additional declared machines are *optional*
+    advertising gates. Offline lanes expand into ``mode`` full+slim.
+    Two capability rows per platform are appended: numerical qualification
+    (per-platform provider evidence) and the documentation rehearsal.
+    """
+    lanes = matrix.get("lanes") if isinstance(matrix, dict) else None
+    if not isinstance(lanes, dict) or not lanes:
+        raise ValueError("the toolchain matrix declares no lanes")
+    required: list[dict] = []
+    optional: list[dict] = []
+    anchors: dict[str, dict] = {}
+    for name, lane in lanes.items():
+        if not isinstance(lane, dict):
+            raise ValueError(f"matrix lane {name!r} is not an object")
+        system = _normalize_system(lane.get("system"))
+        if system is None:
+            raise ValueError(f"matrix lane {name!r} declares no system")
+        machines = [
+            machine
+            for machine in (
+                _normalize_machine(value)
+                for value in lane.get("machines") or []
+            )
+            if machine
+        ]
+        if not machines:
+            raise ValueError(f"matrix lane {name!r} declares no machines")
+        profile = _lane_release_profile(name, lane)
+        toolchain = lane.get("compiler")
+        if toolchain is not None and not (
+            isinstance(toolchain, str) and toolchain
+        ):
+            raise ValueError(
+                f"matrix lane {name!r} declares an empty compiler"
+            )
+        cmake_flags = str(lane.get("cmake") or "")
+        negative_control = "SANITIZE" in cmake_flags or "RTSAN" in cmake_flags
+        covers = _lane_covers(name, profile, lane)
+        for index, machine in enumerate(machines):
+            for mode in _lane_release_modes(name, lane):
+                row: dict = {
+                    "gate": name,
+                    "platform": system,
+                    "machine": machine,
+                    "profile": profile,
+                    "toolchain": toolchain,
+                    "mode": mode,
+                    "lane": name,
+                    "runner": lane.get("runner"),
+                    "config": lane.get("config"),
+                    "python_minor": lane.get("python_minor"),
+                    "trusted": lane.get("trusted") is True,
+                    "covers": covers,
+                }
+                if lane.get("note"):
+                    row["note"] = lane["note"]
+                if negative_control:
+                    row["negative_control"] = True
+                if name == "macos-full":
+                    # The only row allowed to stay baseline_unchanged —
+                    # the approved recovered macOS full baseline (T27).
+                    row["baseline_unchanged"] = True
+                (required if index == 0 else optional).append(row)
+        if lane.get("profile") == "full" and system not in anchors:
+            anchors[system] = {
+                "machine": machines[0],
+                "toolchain": toolchain,
+            }
+    for system in ("Linux", "Darwin"):
+        anchor = anchors.get(system)
+        if anchor is None:
+            raise ValueError(
+                f"the toolchain matrix declares no full-profile lane for "
+                f"{system}"
+            )
+        required.append(
+            {
+                "gate": "numerical-qualification",
+                "platform": system,
+                "machine": anchor["machine"],
+                "profile": "native",
+                "toolchain": anchor["toolchain"],
+                "mode": None,
+                "lane": None,
+                "covers": [
+                    "numerical profile qualification "
+                    "(tools/numeric_portability_probe.py + "
+                    "docs/development/numerical-profiles.md provider "
+                    "identity)"
+                ],
+            }
+        )
+        required.append(
+            {
+                "gate": "docs-rehearsal",
+                "platform": system,
+                "machine": anchor["machine"],
+                "profile": "quick",
+                "toolchain": None,
+                "mode": None,
+                "lane": None,
+                "covers": [
+                    "current documentation rehearsal — install, support "
+                    "and troubleshooting docs followed verbatim on the "
+                    "qualified host"
+                ],
+            }
+        )
+    return {"required": required, "optional": optional}
+
+
+def release_requirements(
+    matrix: dict,
+    source_commit: str | None,
+    matrix_identity: dict | None = None,
+) -> dict:
+    """The requirements object consumed by evaluate_release."""
+    rows = required_release_rows(matrix)
+    requirements: dict = {
+        "schema_version": RELEASE_SCHEMA_VERSION,
+        "source_commit": source_commit,
+        "equivalent_commits": {},
+        "required": rows["required"],
+        "optional": rows["optional"],
+    }
+    if matrix_identity is not None:
+        requirements["matrix"] = matrix_identity
+    return requirements
+
+
+def _load_release_records(
+    evidence_dir: Path,
+) -> tuple[list[dict], list[str], list[str]]:
+    """Load release records from the evidence directory.
+
+    Only ``*.json`` objects carrying a ``gate`` key are release records;
+    other files (suite result documents, the report itself, logs) are
+    listed as ignored. A file that cannot be parsed is a problem, not a
+    silently skipped gate.
+    """
+    records: list[dict] = []
+    ignored: list[str] = []
+    problems: list[str] = []
+    for path in sorted(Path(evidence_dir).glob("*.json")):
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            problems.append(
+                f"cannot parse release record {path.name}: {error}"
+            )
+            continue
+        if isinstance(document, dict) and "gate" in document:
+            document["_file"] = path.name
+            records.append(document)
+        else:
+            ignored.append(path.name)
+    return records, ignored, problems
+
+
+def _release_main(args: argparse.Namespace) -> int:
+    output = Path(args.output).resolve()
+    evidence_dir = Path(args.evidence)
+    pre_problems: list[str] = []
+    if evidence_dir.is_dir():
+        records, ignored, load_problems = _load_release_records(evidence_dir)
+        pre_problems.extend(load_problems)
+    else:
+        records, ignored = [], []
+        pre_problems.append(
+            f"release evidence directory does not exist: {evidence_dir}"
+        )
+    matrix_path = Path(args.matrix)
+    matrix_identity: dict = {"path": str(matrix_path)}
+    matrix: dict | None = None
+    try:
+        matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
+        matrix_identity["sha256"] = _sha256(matrix_path)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        pre_problems.append(
+            f"cannot load the toolchain matrix {matrix_path}: {error}"
+        )
+    source_commit = args.source_commit or _git_evidence(_REPO_ROOT)["commit"]
+    requirements: dict = {
+        "schema_version": RELEASE_SCHEMA_VERSION,
+        "source_commit": source_commit,
+        "required": [],
+    }
+    if matrix is not None and isinstance(matrix, dict):
+        try:
+            requirements = release_requirements(
+                matrix, source_commit, matrix_identity
+            )
+        except ValueError as error:
+            pre_problems.append(
+                f"cannot generate the required gate set: {error}"
+            )
+    elif matrix is not None:
+        pre_problems.append("the toolchain matrix is not an object")
+    report = evaluate_release(
+        records,
+        requirements,
+        evidence_dir=evidence_dir if evidence_dir.is_dir() else None,
+    )
+    report["problems"] = [*pre_problems, *report["problems"]]
+    report["evidence_dir"] = str(evidence_dir)
+    report["ignored_evidence_files"] = ignored
+    if pre_problems:
+        report["status"] = "blocked"
+    report["statement"] = _release_statement(report)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    _write_result(output, report)
+    print(report["statement"])
+    return 0 if report["status"] == "pass" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Run a test profile through tools/run_tests.sh and classify the "
-            "result against an optional independently approved baseline."
+            "result against an optional independently approved baseline — "
+            "or, with --release, aggregate a directory of per-gate release "
+            "records into a pass|blocked release report."
         )
     )
-    parser.add_argument("--profile", required=True, choices=PROFILES)
+    parser.add_argument(
+        "--release",
+        action="store_true",
+        help="release aggregation mode: evaluate --evidence DIR records "
+        "against the required gate set generated from --matrix",
+    )
+    parser.add_argument("--profile", choices=PROFILES, default=None)
     parser.add_argument(
         "--build",
-        required=True,
         type=Path,
+        default=None,
         help="selected native build directory (required for every profile; "
         "native/full export it as NATIVE_TEST_BUILD_PATH)",
     )
@@ -1116,7 +2101,8 @@ def main(argv: list[str] | None = None) -> int:
         "--output",
         required=True,
         type=Path,
-        help="write the schema-1 result JSON here",
+        help="write the schema-1 result JSON (or the release report JSON "
+        "under --release) here",
     )
     parser.add_argument(
         "--baseline",
@@ -1132,11 +2118,51 @@ def main(argv: list[str] | None = None) -> int:
         help="kill the runner after this many seconds (default: no timeout)",
     )
     parser.add_argument(
+        "--evidence",
+        type=Path,
+        default=None,
+        help="release mode: directory containing per-gate release record "
+        "JSON files plus their bound evidence artifacts",
+    )
+    parser.add_argument(
+        "--matrix",
+        type=Path,
+        default=_REPO_ROOT / "docs" / "development" / "toolchain-matrix.json",
+        help="release mode: approved toolchain matrix JSON the required "
+        "gate set is generated from (default: the checked-in matrix)",
+    )
+    parser.add_argument(
+        "--source-commit",
+        default=None,
+        help="release mode: the reviewed source commit (full 40-hex SHA); "
+        "defaults to this checkout's git HEAD",
+    )
+    parser.add_argument(
         "pytest_args",
         nargs="*",
         help="extra pytest arguments forwarded through tools/run_tests.sh",
     )
     args = parser.parse_args(argv)
+
+    if args.release:
+        for option, value in (
+            ("--profile", args.profile),
+            ("--build", args.build),
+            ("--baseline", args.baseline),
+            ("--timeout", args.timeout),
+        ):
+            if value is not None:
+                parser.error(f"{option} is invalid with --release")
+        if args.pytest_args:
+            parser.error("extra pytest arguments are invalid with --release")
+        if args.evidence is None:
+            parser.error("--release requires --evidence DIR")
+        return _release_main(args)
+
+    if args.profile is None:
+        parser.error("--profile is required (or use --release)")
+    if args.build is None:
+        parser.error("--build is required (or use --release)")
 
     baseline: dict | None = None
     baseline_error: str | None = None

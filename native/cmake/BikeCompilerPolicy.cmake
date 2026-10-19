@@ -87,29 +87,9 @@ include(CheckCXXSourceCompiles)
 include(CheckLinkerFlag)
 include(CMakePushCheckState)
 
-# --------------------------------------------------------------------------
-# JSON emit helpers (shared with the native_check_context.json writer)
-# --------------------------------------------------------------------------
-
-function(_native_json_quote output value)
-  string(REPLACE "\\" "\\\\" _escaped "${value}")
-  string(REPLACE "\"" "\\\"" _escaped "${_escaped}")
-  string(REPLACE "\n" "\\n" _escaped "${_escaped}")
-  string(REPLACE "\r" "\\r" _escaped "${_escaped}")
-  set(${output} "\"${_escaped}\"" PARENT_SCOPE)
-endfunction()
-
-function(_native_json_array output)
-  set(_json "[")
-  set(_separator "")
-  foreach(_value IN LISTS ARGN)
-    _native_json_quote(_quoted "${_value}")
-    string(APPEND _json "${_separator}${_quoted}")
-    set(_separator ",")
-  endforeach()
-  string(APPEND _json "]")
-  set(${output} "${_json}" PARENT_SCOPE)
-endfunction()
+# JSON emit helpers (_native_json_quote, _native_json_array) are shared with
+# the identity module, so they live in their own include-guarded file.
+include("${CMAKE_CURRENT_LIST_DIR}/BikeJson.cmake")
 
 # --------------------------------------------------------------------------
 # Dispatch identity — real compiler/stdlib/arch probes; only the OS/arch

@@ -234,6 +234,7 @@ add_library(bike_native_contract_core OBJECT src/stepper.cpp
   src/runtime/research_metrics.cpp src/runtime/recording.cpp
   src/runtime/research.cpp src/runtime/research_io.cpp
   src/runtime/encode.cpp src/runtime/provenance.cpp
+  src/runtime/provider_images.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
   src/writers/resistance.cpp src/writers/rider_forces.cpp
   src/writers/tire_common.cpp src/writers/tire.cpp
@@ -646,89 +647,42 @@ _native_json_quote(_research_effective_flags_json "${_research_effective_flags}"
 _native_json_quote(_identity_compiler_id_json "${CMAKE_CXX_COMPILER_ID}")
 _native_json_quote(_identity_compiler_version_json "${CMAKE_CXX_COMPILER_VERSION}")
 
-# Compile-time numerical provider policy — the qualified selection baked into
-# the binary. The extension's runtime_identity() returns this record together
-# with the provider images actually loaded (dl_iterate_phdr/_dyld inspection
-# in provenance.cpp); Python-side provenance cross-checks the two before any
-# native execution, so a substituted or drifted provider is a named failure
-# rather than silent bitwise drift. Each field has one source: the provider
-# image is the real path BikeNumerics.cmake bound; role, identity_kind and
-# sha256 are committed facts read from the record at the same index; build_id
-# is machine-specific and comes from the live probe document.
-set(_identity_required_images "")
+# Compile-time numerical provider identity — the qualified selection baked into
+# the binary. The extension's runtime_identity() returns the policy declared
+# here together with the provider images actually loaded (provider_images.cpp
+# inspection, read in provenance.cpp); Python-side provenance cross-checks the
+# two before any native execution, so a substituted or drifted provider is a
+# named failure rather than silent bitwise drift. The declarations come from
+# BikeProviderIdentity.cmake, which the Python-free root graph also uses. This
+# graph's build_id is machine-specific and comes from the live probe document;
+# the root graph derives it from its configure-time probe instead.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeProviderIdentity.cmake")
+set(_identity_build_ids "")
 list(LENGTH _native_numerics_provider_paths _identity_library_count)
-if(_identity_library_count LESS 1)
-  message(FATAL_ERROR
-    "numerics provider identity is missing: BikeNumerics bound no provider")
-endif()
-string(JSON _identity_record_count ERROR_VARIABLE _identity_json_error
-  LENGTH "${_numerics_record_json}"
-  records "${_native_numerics_record_key}" numerics library_paths)
-if(_identity_json_error OR NOT _identity_record_count EQUAL _identity_library_count)
-  message(FATAL_ERROR
-    "numerics record ${_native_numerics_record_key} lists "
-    "${_identity_record_count} providers, BikeNumerics bound "
-    "${_identity_library_count}")
-endif()
-math(EXPR _identity_library_last "${_identity_library_count} - 1")
-set(_identity_libraries_json "")
-foreach(_index RANGE ${_identity_library_last})
-  list(GET _native_numerics_provider_paths ${_index} _identity_path)
-  _native_json_quote(_identity_path_json "${_identity_path}")
-  list(APPEND _identity_required_images "${_identity_path}")
-  foreach(_field role identity_kind)
-    string(JSON _identity_member ERROR_VARIABLE _identity_json_error
-      GET "${_numerics_record_json}" records "${_native_numerics_record_key}"
-      numerics library_paths ${_index} ${_field})
-    if(_identity_json_error OR "${_identity_member}" MATCHES "-NOTFOUND$")
-      message(FATAL_ERROR
-        "committed numerics record provider ${_index} is missing '${_field}'")
-    endif()
-    _native_json_quote(_identity_${_field}_json "${_identity_member}")
-  endforeach()
-  string(JSON _identity_member_type TYPE "${_numerics_record_json}"
-    records "${_native_numerics_record_key}"
-    numerics library_paths ${_index} sha256)
-  if(_identity_member_type STREQUAL "STRING")
-    string(JSON _identity_member GET "${_numerics_record_json}"
-      records "${_native_numerics_record_key}"
-      numerics library_paths ${_index} sha256)
-    _native_json_quote(_identity_sha256_json "${_identity_member}")
-  else()
-    set(_identity_sha256_json "null")
-  endif()
-  string(JSON _identity_member_type TYPE "${_native_dependencies_json}"
-    numerics library_paths ${_index} build_id)
-  if(_identity_member_type STREQUAL "STRING")
-    string(JSON _identity_member GET "${_native_dependencies_json}"
+if(_identity_library_count GREATER 0)
+  math(EXPR _identity_library_last "${_identity_library_count} - 1")
+  foreach(_index RANGE ${_identity_library_last})
+    string(JSON _identity_build_type TYPE "${_native_dependencies_json}"
       numerics library_paths ${_index} build_id)
-    _native_json_quote(_identity_build_id_json "${_identity_member}")
-  else()
-    set(_identity_build_id_json "null")
-  endif()
-  if(_index GREATER 0)
-    string(APPEND _identity_libraries_json ",")
-  endif()
-  string(APPEND _identity_libraries_json
-    "{\"path\":${_identity_path_json},\"role\":${_identity_role_json},\"identity_kind\":${_identity_identity_kind_json},\"sha256\":${_identity_sha256_json},\"build_id\":${_identity_build_id_json}}")
-endforeach()
-if(BIKE_NUMERICS_BACKEND_RESOLVED STREQUAL "ACCELERATE")
-  # The umbrella image carries the LC_UUID used for apple-system identity.
-  list(APPEND _identity_required_images
-    "/System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate")
+    set(_identity_build_id "")
+    if(_identity_build_type STREQUAL "STRING")
+      string(JSON _identity_build_id GET "${_native_dependencies_json}"
+        numerics library_paths ${_index} build_id)
+    endif()
+    list(APPEND _identity_build_ids "${_identity_build_id}")
+  endforeach()
 endif()
-if(NOT _identity_required_images)
-  message(FATAL_ERROR "no required provider images were recorded")
-endif()
-# Newline-separated C literal: provider image names are probe-qualified loader
-# paths, which never contain newlines, quotes or backslashes.
-string(JOIN "\\n" _identity_images_literal ${_identity_required_images})
-_native_json_quote(_identity_backend_json "${BIKE_NUMERICS_BACKEND_RESOLVED}")
-set(_identity_policy_json
-  "{\"backend\":${_identity_backend_json},\"blas_integer_bits\":${_native_numerics_blas_bits},\"lapack_integer_bits\":${_native_numerics_lapack_bits},\"libraries\":[${_identity_libraries_json}]}")
+bike_provider_identity_declarations(_identity_declarations
+  RECORD_VAR _numerics_record_json
+  RECORD_KEY "${_native_numerics_record_key}"
+  BACKEND "${BIKE_NUMERICS_BACKEND_RESOLVED}"
+  BLAS_BITS "${_native_numerics_blas_bits}"
+  LAPACK_BITS "${_native_numerics_lapack_bits}"
+  PROVIDER_PATHS_VAR _native_numerics_provider_paths
+  BUILD_IDS_VAR _identity_build_ids)
 
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/research_identity/$<CONFIG>/research_build_identity.hpp"
-  CONTENT "// Generated by CMake for this configuration; do not edit.\n#pragma once\nnamespace runtime::build_identity {\ninline constexpr const char native_source_sha256[] = \"${_research_identity_sha256}\";\ninline constexpr const char context_json[] = R\"identity({\"build_type\":\"$<IF:$<BOOL:$<CONFIG>>,$<CONFIG>,default>\",\"compiler_id\":${_identity_compiler_id_json},\"compiler_version\":${_identity_compiler_version_json},\"numerical_flags\":${_research_effective_flags_json}})identity\";\ninline constexpr const char numerics_provider_policy_json[] = R\"identity(${_identity_policy_json})identity\";\ninline constexpr const char required_provider_images[] = \"${_identity_images_literal}\";\n}\n"
+  CONTENT "// Generated by CMake for this configuration; do not edit.\n#pragma once\nnamespace runtime::build_identity {\ninline constexpr const char native_source_sha256[] = \"${_research_identity_sha256}\";\ninline constexpr const char context_json[] = R\"identity({\"build_type\":\"$<IF:$<BOOL:$<CONFIG>>,$<CONFIG>,default>\",\"compiler_id\":${_identity_compiler_id_json},\"compiler_version\":${_identity_compiler_version_json},\"numerical_flags\":${_research_effective_flags_json}})identity\";\n${_identity_declarations}}\n"
   TARGET bike_native)
 
 # Emit the source and environment contract from the configured build graph.

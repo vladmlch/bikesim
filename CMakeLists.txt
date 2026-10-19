@@ -171,6 +171,7 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/runtime/research_io.cpp"
   "${_bike_native_dir}/src/runtime/encode.cpp"
   "${_bike_native_dir}/src/runtime/provenance.cpp"
+  "${_bike_native_dir}/src/runtime/provider_images.cpp"
   "${_bike_native_dir}/src/writers/suspension.cpp"
   "${_bike_native_dir}/src/writers/brake.cpp"
   "${_bike_native_dir}/src/writers/resistance.cpp"

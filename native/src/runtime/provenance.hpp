@@ -6,7 +6,8 @@
 // directly without a Python round-trip.
 #pragma once
 
-#include <optional>
+#include "provider_images.hpp"
+
 #include <string>
 #include <vector>
 
@@ -23,14 +24,6 @@ struct RuntimeIdentity {
 // Throws std::runtime_error when the loaded MuJoCo library cannot be
 // identified — the same failure the module binding surfaced.
 [[nodiscard]] RuntimeIdentity runtime_identity();
-
-// One loaded numerics-provider image the qualified build requires.
-// macho_uuid is the LC_UUID on Mach-O hosts; ELF hosts identify an image by
-// its canonical path alone and report no uuid.
-struct ProviderImage {
-    std::string path;
-    std::optional<std::string> macho_uuid;
-};
 
 // The qualified provider policy the build was configured with (JSON text,
 // compile-time constant).

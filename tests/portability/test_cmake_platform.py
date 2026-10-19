@@ -355,3 +355,70 @@ def test_macos_explicit_link_incompatible_sdk_is_fatal(tmp_path: Path) -> None:
     output = result.stdout + result.stderr
     assert "incompatible with compiler" in output
     assert str(bad_sdk) in output
+
+
+# --------------------------------------------------------------------------
+# Cross-compilation refusal: one rule, two includers. BikePlatform.cmake (the
+# legacy graph) and the root's BikeHostTarget.cmake call call the same
+# function, so both must refuse a foreign CMAKE_SYSTEM_NAME on any host.
+# --------------------------------------------------------------------------
+
+HOST_TARGET_MODULE = REPO_ROOT / "native" / "cmake" / "BikeHostTarget.cmake"
+FOREIGN_SYSTEM = "Windows"
+
+
+def _write_host_dispatch_probe(source: Path, includer: str) -> None:
+    """A scratch project that reaches the host dispatch through ``includer``:
+    ``BikePlatform`` (legacy, before project()) or ``BikeHostTarget`` (the root
+    shape: after project(), through the shared function)."""
+    source.mkdir(parents=True)
+    if includer == "BikePlatform":
+        # The legacy gate runs before project(), as native/CMakeLists.txt does.
+        text = (
+            "cmake_minimum_required(VERSION 3.27)\n"
+            f'include("{PLATFORM_MODULE}")\n'
+            "project(host_dispatch_probe NONE)\n"
+        )
+    else:
+        # The root's shape: the shared function runs after project().
+        text = (
+            "cmake_minimum_required(VERSION 3.27)\n"
+            "project(host_dispatch_probe NONE)\n"
+            f'include("{HOST_TARGET_MODULE}")\n'
+            "bike_host_target_system(BIKE_TARGET_SYSTEM)\n"
+            'message(STATUS "HOST_DISPATCH=${BIKE_TARGET_SYSTEM}")\n'
+        )
+    (source / "CMakeLists.txt").write_text(text)
+
+
+@pytest.mark.parametrize("includer", ["BikePlatform", "BikeHostTarget"])
+def test_cross_compiling_configure_is_refused(tmp_path: Path, includer: str) -> None:
+    """A toolchain that targets another system is refused with the shared
+    message, before any dispatch value is set. The BikePlatform case is the
+    legacy graph's gate; the BikeHostTarget case is the root's."""
+    source = tmp_path / "probe"
+    _write_host_dispatch_probe(source, includer)
+
+    result = _configure(
+        source, tmp_path / "build", f"-DCMAKE_SYSTEM_NAME={FOREIGN_SYSTEM}"
+    )
+
+    assert result.returncode != 0
+    output = result.stdout + result.stderr
+    assert "Cross-compilation is not supported" in output
+    assert "HOST_DISPATCH=" not in output
+
+
+def test_host_dispatch_names_the_configured_host(tmp_path: Path) -> None:
+    """The positive control: without a foreign system the shared function
+    passes and reports the host it selected, so the refusal above is the only
+    thing that changed."""
+    import platform as host_platform
+
+    source = tmp_path / "probe"
+    _write_host_dispatch_probe(source, "BikeHostTarget")
+
+    result = _configure(source, tmp_path / "build")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert f"HOST_DISPATCH={host_platform.system()}" in result.stdout

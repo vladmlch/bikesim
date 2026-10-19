@@ -62,9 +62,13 @@ endif()
 # no Python). BikeNumerics.cmake projects the BIKE_NUMPY_* compile definitions
 # that numeric_numpy.hpp requires at directory scope, so this must precede the
 # first target. BikePlatform.cmake is not included: its Apple SDK probe would
-# run a second SDK resolution beside bike_resolve_macos_sdk() above, so the
-# host dispatch value it would set is set here instead.
-set(BIKE_TARGET_SYSTEM "${CMAKE_HOST_SYSTEM_NAME}")
+# run a second SDK resolution beside bike_resolve_macos_sdk() above. The host
+# dispatch and its cross-compilation refusal come from BikeHostTarget.cmake,
+# the same function BikePlatform.cmake uses. It runs after project(), where
+# CMAKE_SYSTEM_NAME is the target system CMake actually configured, including
+# a toolchain-file cross setting that is not visible before project().
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeHostTarget.cmake")
+bike_host_target_system(BIKE_TARGET_SYSTEM)
 set(BIKE_NUMERICS_SOURCE RECORD_ONLY)
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeNumerics.cmake")
 

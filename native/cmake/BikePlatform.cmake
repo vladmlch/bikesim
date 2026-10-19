@@ -4,11 +4,8 @@
 # by BikeAppleSDK.cmake. Linux needs no SDK and must never invoke Apple
 # tooling (xcrun/xcode-select); never set CMAKE_OSX_SYSROOT on Linux and never
 # substitute a fake SDK path for it.
-if(DEFINED CMAKE_SYSTEM_NAME AND
-   NOT CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME)
-  message(FATAL_ERROR "Cross-compilation is not supported by this native-build workflow")
-endif()
-set(BIKE_TARGET_SYSTEM "${CMAKE_HOST_SYSTEM_NAME}")
+include("${CMAKE_CURRENT_LIST_DIR}/BikeHostTarget.cmake")
+bike_host_target_system(BIKE_TARGET_SYSTEM)
 if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
   include("${CMAKE_CURRENT_LIST_DIR}/BikeAppleSDK.cmake")
 elseif(BIKE_TARGET_SYSTEM STREQUAL "Linux")

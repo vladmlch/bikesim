@@ -24,22 +24,22 @@ double GradeProfile::elevation(double x) const {
     for(std::size_t i=1;i<knots.size();++i) h[i]=h[i-1]+(knots[i][0]-knots[i-1][0])*(knots[i-1][1]+knots[i][1])*.5;
     if(x<0.) return knots.front()[1]*x;
     if(x>knots.back()[0]) return h.back()+knots.back()[1]*(x-knots.back()[0]);
-    const auto right=std::upper_bound(knots.begin(),knots.end(),x,[](double v,const Point& p){return v<p[0];});
-    const auto index=std::min(static_cast<std::size_t>(right-knots.begin()-1),knots.size()-2);
+    const auto right=std::ranges::upper_bound(knots,x,{},[](const Point& p){return p[0];});
+    const auto index=std::ranges::min(static_cast<std::size_t>(right-knots.begin()-1),knots.size()-2);
     const double dx=x-knots[index][0];
     const double change=(knots[index+1][1]-knots[index][1])/(knots[index+1][0]-knots[index][0]);
     const double value=h[index]+knots[index][1]*dx+.5*change*dx*dx;
     detail::finite(value,"grade elevation"); return value;
 }
 std::vector<double> GradeProfile::slope(std::span<const double> x) const {
-    std::vector<double> out;out.reserve(x.size());for(double v:x)out.push_back(slope(v));return out;
+    std::vector<double> out;out.reserve(x.size());for(double const v:x)out.push_back(slope(v));return out;
 }
 std::vector<double> GradeProfile::elevation(std::span<const double> x) const {
-    std::vector<double> out;out.reserve(x.size());for(double v:x)out.push_back(elevation(v));return out;
+    std::vector<double> out;out.reserve(x.size());for(double const v:x)out.push_back(elevation(v));return out;
 }
 SurfaceMap TrackSpec::surface_map() const { return SurfaceMap(get_surface(surface),surface_sections); }
 std::vector<Obstacle> TrackSpec::sorted_obstacles() const {
-    auto out=obstacles;std::stable_sort(out.begin(),out.end(),[](const auto& a,const auto& b){return a.start_m()<b.start_m();});return out;
+    auto out=obstacles;std::ranges::stable_sort(out,[](const auto& a,const auto& b){return a.start_m()<b.start_m();});return out;
 }
 double TrackSpec::datum_shift_m() const {
     numeric::PythonSum total;for(const auto& o:obstacles)total.add(o.datum_shift_m());
@@ -59,7 +59,7 @@ void TrackSpec::validate() const {
     for(std::size_t i=1;i<ordered.size();++i)if(ordered[i].start_m()<ordered[i-1].end_m())throw std::invalid_argument("track '"+name+"': obstacles may not overlap");
 }
 std::vector<double> build_profile(const TrackSpec& track,std::span<const double> x) {
-    track.validate();for(double v:x)detail::finite(v,"build_profile.x");
+    track.validate();for(double const v:x)detail::finite(v,"build_profile.x");
     std::vector<double> z(x.size(),0.);double datum=0.;
     for(const auto& o:track.sorted_obstacles()) {
         for(std::size_t i=0;i<x.size();++i)if(x[i]>=o.start_m())z[i]=datum;
@@ -72,7 +72,8 @@ std::vector<double> build_profile(const TrackSpec& track,std::span<const double>
         for(std::size_t i=0;i<x.size();++i)if(x[i]>=o.end_m())z[i]=datum;
     }
     if(track.grade_profile)for(std::size_t i=0;i<x.size();++i)z[i]+=track.grade_profile->elevation(std::clamp(x[i],0.,track.length_m));
-    for(double v:z)detail::finite(v,"build_profile.z");return z;
+    for(double const v:z)detail::finite(v,"build_profile.z");
+    return z;
 }
 std::vector<Point> profile(const TrackSpec& track,double resolution) {
     detail::positive(resolution,"profile.resolution_m");
@@ -90,15 +91,17 @@ ProfileQuery::ProfileQuery(std::vector<Point> vertices,double significant,double
 }()) {}
 ProfileContact ProfileQuery::contact(Point center,double radius,std::optional<int> previous) const {return query_.contact(center,radius,previous);}
 ProfileContact validated_profile_contact(Point point,Point normal,double delta,int segment,bool multi){
-    for(double v:point)detail::finite(v,"contact point");for(double v:normal)detail::finite(v,"contact normal");detail::finite(delta,"penetration");
+    for(double const v:point)detail::finite(v,"contact point");
+    for(double const v:normal)detail::finite(v,"contact normal");
+    detail::finite(delta,"penetration");
     if(std::abs(biketyre::py_hypot(normal[0],normal[1])-1.)>1e-10)throw std::invalid_argument("contact normal must be a unit vector");
-    return {point,normal,delta,segment,multi};
+    return {.point=point,.normal=normal,.delta=delta,.segment_id=segment,.multi_support=multi};
 }
 ProfileContact closest_profile_contact(std::vector<Point> vertices,Point center,double radius,std::optional<int> previous){return ProfileQuery(std::move(vertices)).contact(center,radius,previous);}
 ProfileContact closest_profile_contact(Point center,double radius,std::vector<Point> vertices,std::optional<int> previous){return ProfileQuery(std::move(vertices)).contact(center,radius,previous);}
 SignedProfile::SignedProfile(std::vector<Point> vertices):vertices_(std::move(vertices)),query_(vertices_){}
 double SignedProfile::height(double x) const {return query_.height(x);}
-std::vector<double> SignedProfile::height(std::span<const double>x)const{std::vector<double>out;out.reserve(x.size());for(double v:x)out.push_back(height(v));return out;}
+std::vector<double> SignedProfile::height(std::span<const double>x)const{std::vector<double>out;out.reserve(x.size());for(double const v:x)out.push_back(height(v));return out;}
 ProfileDistance SignedProfile::query(std::span<const Point> points)const{
     ProfileDistance out;out.distance.reserve(points.size());out.normal.reserve(points.size());out.point.reserve(points.size());out.segment.reserve(points.size());out.nonsmooth.reserve(points.size());
     // Batch validation precedes queries, matching the source array boundary.

@@ -20,7 +20,7 @@ std::uint64_t integer(std::span<const std::byte> data,std::size_t offset,std::si
     std::uint64_t value=0;for(std::size_t i=0;i<length;++i)value|=static_cast<std::uint64_t>(std::to_integer<unsigned int>(data[offset+i]))<<(8*i);return value;
 }
 std::uint32_t crc32(std::span<const std::byte> data){
-    std::uint32_t crc=0xffffffffU;for(std::byte byte:data){crc^=std::to_integer<std::uint32_t>(byte);for(int k=0;k<8;++k)crc=(crc>>1U)^(0xedb88320U&(0U-(crc&1U)));}return ~crc;
+    std::uint32_t crc=0xffffffffU;for(std::byte const byte:data){crc^=std::to_integer<std::uint32_t>(byte);for(int k=0;k<8;++k)crc=(crc>>1U)^(0xedb88320U&(0U-(crc&1U)));}return ~crc;
 }
 class Bits {
 public:
@@ -34,7 +34,7 @@ struct Huffman {
     std::array<unsigned int,16> counts{},first{},base{};
     std::vector<unsigned int> symbols;
     explicit Huffman(std::span<const unsigned int> lengths){
-        for(unsigned int length:lengths){if(length>15)bad("oversized Huffman code");if(length!=0)++counts[length];}
+        for(unsigned int const length:lengths){if(length>15)bad("oversized Huffman code");if(length!=0)++counts[length];}
         int slots=1;unsigned int code=0,index=0;
         for(unsigned int len=1;len<=15;++len){slots=slots*2-static_cast<int>(counts[len]);if(slots<0)bad("oversubscribed Huffman tree");code=(code+counts[len-1])*2;first[len]=code;base[len]=index;index+=counts[len];}
         symbols.resize(index);auto next=base;for(std::size_t i=0;i<lengths.size();++i)if(lengths[i]!=0)symbols[next[lengths[i]]++]=static_cast<unsigned int>(i);
@@ -47,7 +47,7 @@ std::vector<std::byte> inflate(std::span<const std::byte> input,std::size_t expe
     static constexpr std::array<unsigned int,30> distances={1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577};
     static constexpr std::array<unsigned int,30> distance_extra={0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13};
     Bits bits(input);std::vector<std::byte> out;out.reserve(expected);bool final=false;
-    auto push=[&](unsigned int value){if(out.size()>=expected)bad("DEFLATE output exceeds declared size");out.push_back(static_cast<std::byte>(value));};
+    auto const push=[&](unsigned int value){if(out.size()>=expected)bad("DEFLATE output exceeds declared size");out.push_back(static_cast<std::byte>(value));};
     while(!final){
         final=bits.get(1)!=0;const unsigned int type=bits.get(2);
         if(type==0){bits.align();const auto len=bits.get(16),inverse=bits.get(16);if((len^0xffffU)!=inverse)bad("bad uncompressed block length");for(unsigned int i=0;i<len;++i)push(bits.get(8));continue;}
@@ -70,7 +70,11 @@ std::vector<std::byte> inflate(std::span<const std::byte> input,std::size_t expe
             const auto split=std::next(all.begin(),static_cast<std::ptrdiff_t>(nl));
             literal_lengths.assign(all.begin(),split);distance_lengths.assign(split,all.end());
         }
+        // assign() copies the elements: literal_lengths/distance_lengths own
+        // their data and nothing references `all` past the else-block.
+        // cppcheck-suppress invalidLifetime
         if(literal_lengths[256]==0)bad("missing end-of-block code");
+        // cppcheck-suppress invalidLifetime
         const Huffman literal(literal_lengths),distance(distance_lengths);
         for(;;){const unsigned int symbol=literal.read(bits);if(symbol<256){push(symbol);continue;}if(symbol==256)break;
             if(symbol<257||symbol>285)bad("reserved DEFLATE length symbol");
@@ -86,7 +90,7 @@ std::vector<std::byte> inflate(std::span<const std::byte> input,std::size_t expe
 std::string member_name(std::span<const std::byte> data){
     if(data.empty()||data.size()>512)bad("invalid member name");
     std::string name;name.reserve(data.size());
-    for(std::byte byte:data){const auto c=std::to_integer<unsigned char>(byte);if(c<32||c>=127||c=='/'||c=='\\'||c==':')bad("unsafe member path");name.push_back(static_cast<char>(c));}
+    for(std::byte const byte:data){const auto c=std::to_integer<unsigned char>(byte);if(c<32||c>=127||c=='/'||c=='\\'||c==':')bad("unsafe member path");name.push_back(static_cast<char>(c));}
     if(name.front()=='.'||name.find("..")!=std::string::npos||!name.ends_with(".npy"))bad("member must be a simple .npy filename");
     return name;
 }
@@ -121,7 +125,7 @@ NpzArchive parse_npz(std::span<const std::byte> input){
         const std::string name=member_name(input.subspan(pos+46,name_length));if(!names.insert(name).second)bad("duplicate archive member");
         if(expanded==0xffffffffU||compressed==0xffffffffU||local==0xffffffffU){
             bool found=false;std::size_t at=pos+46+name_length,limit=at+extra_length;
-            while(at+4<=limit){const auto tag=integer(input,at,2);const auto size=static_cast<std::size_t>(integer(input,at+2,2));at+=4;if(size>limit-at)bad("truncated extra field");if(tag==1){found=true;std::size_t z=at;auto get=[&](){if(z+8>at+size)bad("truncated ZIP64 extra");const auto result=integer(input,z,8);z+=8;return result;};if(expanded==0xffffffffU)expanded=get();if(compressed==0xffffffffU)compressed=get();if(local==0xffffffffU)local=get();break;}at+=size;}if(!found)bad("missing ZIP64 member sizes");
+            while(at+4<=limit){const auto tag=integer(input,at,2);const auto size=static_cast<std::size_t>(integer(input,at+2,2));at+=4;if(size>limit-at)bad("truncated extra field");if(tag==1){found=true;std::size_t z=at;auto const get=[&](){if(z+8>at+size)bad("truncated ZIP64 extra");const auto result=integer(input,z,8);z+=8;return result;};if(expanded==0xffffffffU)expanded=get();if(compressed==0xffffffffU)compressed=get();if(local==0xffffffffU)local=get();break;}at+=size;}if(!found)bad("missing ZIP64 member sizes");
         }
         if(expanded>kMaxNumpyBytes-total||compressed>kMaxNumpyBytes||expanded>std::max<std::uint64_t>(1024,compressed*10000U)||local>central_offset||central_offset-local<30)bad("member exceeds resource bounds");
         const std::size_t lp=static_cast<std::size_t>(local);

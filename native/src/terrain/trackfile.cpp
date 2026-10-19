@@ -3,6 +3,7 @@
 #include "configuration/load.hpp"
 #include "configuration/wire_decode.hpp"
 #include "platform/files.hpp"
+#include <algorithm>
 #include <toml++/toml.hpp>
 #include <algorithm>
 #include <cerrno>
@@ -11,6 +12,7 @@
 #include <system_error>
 #include <type_traits>
 #include <unistd.h>
+#include <format>
 
 namespace bike::terrain {
 TrackFileError::~TrackFileError() = default;
@@ -27,8 +29,8 @@ Value ordered_table(const toml::table& table) {
     std::vector<Entry> entries;
     entries.reserve(table.size());
     for (const auto& [key,node] : table)
-        entries.push_back({std::string(key.str()),&node,key.source().begin});
-    std::stable_sort(entries.begin(),entries.end(),[](const Entry& a,const Entry& b) {
+        entries.push_back({.key=std::string(key.str()),.node=&node,.position=key.source().begin});
+    std::ranges::stable_sort(entries,[](const Entry& a,const Entry& b) {
         if (a.position.line != b.position.line) return a.position.line < b.position.line;
         return a.position.column < b.position.column;
     });
@@ -52,9 +54,9 @@ Value ordered_node(const toml::node& node) {
     case toml::node_type::integer: return detail::integer(node.as_integer()->get());
     case toml::node_type::floating_point: return detail::number(node.as_floating_point()->get());
     case toml::node_type::boolean: return {node.as_boolean()->get()};
-    case toml::node_type::date: return {bike::io::Tagged{"toml.date",{}}};
-    case toml::node_type::time: return {bike::io::Tagged{"toml.time",{}}};
-    case toml::node_type::date_time: return {bike::io::Tagged{"toml.date_time",{}}};
+    case toml::node_type::date: return {bike::io::Tagged{.kind="toml.date",.fields={}}};
+    case toml::node_type::time: return {bike::io::Tagged{.kind="toml.time",.fields={}}};
+    case toml::node_type::date_time: return {bike::io::Tagged{.kind="toml.date_time",.fields={}}};
     case toml::node_type::none: break;
     }
     return {};
@@ -75,12 +77,14 @@ std::size_t quoted_end(std::string_view text,std::size_t start){
         if(text[i]==quote){
             if(!triple)return i+1;
             std::size_t end=i;while(end<text.size()&&text[end]==quote)++end;
-            if(end-i>=3)return end;i=end;
+            if(end-i>=3)return end;
+            i=end;
         }else ++i;
     }return text.size(); // The real TOML parser reports an unterminated literal.
 }
 std::optional<std::string> integer_seed_token(std::string_view token){
-    if(token.empty())return std::nullopt;bool negative=false,sign=false;
+    if(token.empty())return std::nullopt;
+    bool negative=false,sign=false;
     if(token.front()=='+'||token.front()=='-'){sign=true;negative=token.front()=='-';token.remove_prefix(1);}
     if(token.empty())return std::nullopt;
     unsigned int radix=10;
@@ -89,15 +93,17 @@ std::optional<std::string> integer_seed_token(std::string_view token){
         if(radix!=10){if(sign)return std::nullopt;token.remove_prefix(2);}
     }
     std::string digits;bool previous_digit=false;
-    for(char c:token){
+    for(char const c:token){
         if(c=='_'){if(!previous_digit)return std::nullopt;previous_digit=false;continue;}
         const unsigned int d=c>='0'&&c<='9'?static_cast<unsigned int>(c-'0'):c>='a'&&c<='f'?static_cast<unsigned int>(c-'a')+10U:c>='A'&&c<='F'?static_cast<unsigned int>(c-'A')+10U:radix;
-        if(d>=radix)return std::nullopt;digits.push_back(c);previous_digit=true;
+        if(d>=radix)return std::nullopt;
+        digits.push_back(c);
+        previous_digit=true;
     }
     if(!previous_digit||digits.empty()||(radix==10&&digits.size()>1&&digits.front()=='0'))return std::nullopt;
     std::string decimal="0";
     if(radix==10)decimal=digits;
-    else for(char c:digits){
+    else for(char const c:digits){
         unsigned int carry=c>='0'&&c<='9'?static_cast<unsigned int>(c-'0'):c>='a'&&c<='f'?static_cast<unsigned int>(c-'a')+10U:static_cast<unsigned int>(c-'A')+10U;
         for(std::size_t i=decimal.size();i>0;--i){const unsigned int digit=static_cast<unsigned int>(decimal[i-1]-'0')*radix+carry;decimal[i-1]=static_cast<char>('0'+digit%10U);carry=digit/10U;}
         while(carry!=0){decimal.insert(decimal.begin(),static_cast<char>('0'+carry%10U));carry/=10U;}
@@ -110,7 +116,8 @@ std::string read_track_text(const std::filesystem::path& path){
     for(;;){
         const auto n=::read(handle.get(),buffer.data(),buffer.size());
         if(n<0){if(errno==EINTR)continue;throw std::system_error(errno,std::generic_category(),"read track");}
-        if(n==0)break;const auto count=static_cast<std::size_t>(n);
+        if(n==0)break;
+        const auto count=static_cast<std::size_t>(n);
         if(count>bike::io::kMaxJsonBytes-out.size())throw TrackFileError("track document exceeds the 512 MiB input limit");
         const auto chunk=std::span(buffer).first(count);out.append(chunk.begin(),chunk.end());
     }handle.close();return out;
@@ -132,7 +139,8 @@ std::string scalar_string(const Value& value,bool nested=false){
 double float_value(const Value& value,std::string_view path){
     if(const auto* s=std::get_if<std::string>(&value.data)){
         bool okay=false;const double result=bike::io::detail::float_from_lexeme(*s,okay);
-        if(!okay||!std::isfinite(result))throw TrackFileError(std::string(path)+": expected finite number");return result;
+        if(!okay||!std::isfinite(result))throw TrackFileError(std::string(path)+": expected finite number");
+        return result;
     }
     if(const auto* b=std::get_if<bool>(&value.data))return *b?1.:0.;
     return bike::io::as_double(value,path);
@@ -153,17 +161,25 @@ Obstacle resolve(const Value& entry,std::size_t index){
     const auto& type=bike::io::as_string(*v,where);
     if(type=="pothole"){
         const auto* edge=detail::member(entry,"edge");const auto key=edge?bike::io::as_string(*edge,where):"sharp";
-        if(key=="sharp")return {Pothole{}};if(key=="sloped")return {SlopedPothole{}};if(key=="bowl")return {BowlPothole{}};
+        if(key=="sharp")return {.shape=Pothole{}};
+        if(key=="sloped")return {.shape=SlopedPothole{}};
+        if(key=="bowl")return {.shape=BowlPothole{}};
         throw TrackFileError(where+": unknown pothole edge '"+key+"'; allowed: ['sharp', 'sloped', 'bowl']");
     }
     if(type=="bump"){
         const auto* shape=detail::member(entry,"shape");const auto key=shape?bike::io::as_string(*shape,where):"cosine";
-        if(key=="cosine")return {Bump{}};if(key=="trapezoid")return {TrapezoidBump{}};
+        if(key=="cosine")return {.shape=Bump{}};
+        if(key=="trapezoid")return {.shape=TrapezoidBump{}};
         throw TrackFileError(where+": unknown bump shape '"+key+"'; allowed: ['cosine', 'trapezoid']");
     }
-    if(type=="square_edge")return {SquareEdge{}};if(type=="washboard")return {Washboard{}};if(type=="g_out")return {GOut{}};
-    if(type=="drop")return {Drop{}};if(type=="kicker")return {Kicker{}};if(type=="roots")return {Roots{}};
-    if(type=="rock_garden")return {RockGarden{}};if(type=="roughness")return {RoadRoughness{}};
+    if(type=="square_edge")return {.shape=SquareEdge{}};
+    if(type=="washboard")return {.shape=Washboard{}};
+    if(type=="g_out")return {.shape=GOut{}};
+    if(type=="drop")return {.shape=Drop{}};
+    if(type=="kicker")return {.shape=Kicker{}};
+    if(type=="roots")return {.shape=Roots{}};
+    if(type=="rock_garden")return {.shape=RockGarden{}};
+    if(type=="roughness")return {.shape=RoadRoughness{}};
     throw TrackFileError(where+": unknown type '"+type+"'");
 }
 std::string_view length_field(const Obstacle& obstacle){
@@ -213,7 +229,8 @@ Value obstacle_fields(const Obstacle& obstacle,bool identity){
 }
 Value track_value(const TrackSpec& track,bool identity){
     track.validate();Value::Object out{{"name",Value{track.name}},{"length_m",detail::number(track.length_m)}};
-    if(!track.description.empty())out.emplace_back("description",Value{track.description});out.emplace_back("surface",Value{track.surface});
+    if(!track.description.empty())out.emplace_back("description",Value{track.description});
+    out.emplace_back("surface",Value{track.surface});
     if(track.grade_profile){Value::Array knots;for(const auto& p:track.grade_profile->knots)knots.push_back(Value{Value::Array{detail::number(p[0]),detail::number(p[1])}});out.emplace_back("grade_profile",Value{Value::Object{{"knots",Value{std::move(knots)}}}});}
     if(!track.surface_sections.empty()){
         const auto mapping=track.surface_map();
@@ -224,11 +241,12 @@ Value track_value(const TrackSpec& track,bool identity){
     if(identity)out.emplace_back("native_track_identity_schema",detail::integer(1));
     return {std::move(out)};
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 std::string toml_value(const Value& v){
     if(const auto* b=std::get_if<bool>(&v.data))return *b?"true":"false";
     if(const auto* n=std::get_if<bike::io::Number>(&v.data))return n->lexeme;
     if(const auto* s=std::get_if<std::string>(&v.data)){
-        std::string out="\"";for(char c:*s){if(c=='\\'||c=='"')out.push_back('\\');out.push_back(c);}return out+'"';
+        std::string out="\"";for(char const c:*s){if(c=='\\'||c=='"')out.push_back('\\');out.push_back(c);}return out+'"';
     }
     if(const auto* a=std::get_if<Value::Array>(&v.data)){std::string out="[";for(std::size_t i=0;i<a->size();++i){if(i!=0)out+=", ";out+=toml_value((*a)[i]);}return out+"]";}
     if(const auto* o=std::get_if<Value::Object>(&v.data)){std::string out="{ ";for(std::size_t i=0;i<o->size();++i){if(i!=0)out+=", ";out+=(*o)[i].first+" = "+toml_value((*o)[i].second);}return out+" }";}
@@ -240,23 +258,26 @@ Value parse_track_toml(std::string_view text,std::string_view origin){
     struct SeedToken{std::string marker,value;};std::vector<SeedToken> seeds;std::string rewritten;rewritten.reserve(text.size());std::size_t copied=0;
     for(std::size_t i=0;i<text.size();){
         if(text[i]=='#'){const auto next=text.find('\n',i);i=next==std::string_view::npos?text.size():next+1;continue;}
-        std::string key;std::size_t key_end=i;
+        std::string key;
         if(text[i]=='\''||text[i]=='"'){
-            key_end=quoted_end(text,i);const bool triple=i+2<text.size()&&text[i+1]==text[i]&&text[i+2]==text[i];
-            std::size_t equals=key_end;while(equals<text.size()&&(text[equals]==' '||text[equals]=='\t'))++equals;
+            const std::size_t end=quoted_end(text,i);const bool triple=i+2<text.size()&&text[i+1]==text[i]&&text[i+2]==text[i];
+            std::size_t equals=end;while(equals<text.size()&&(text[equals]==' '||text[equals]=='\t'))++equals;
             if(!triple&&equals<text.size()&&text[equals]=='='){
-                const auto decoded=bike::configuration::detail::parse_toml("key = "+std::string(text.substr(i,key_end-i)),origin);
+                const auto decoded=bike::configuration::detail::parse_toml("key = "+std::string(text.substr(i,end-i)),origin);
                 key=bike::io::as_string(detail::required(decoded,"key"),"track key");
             }
-        }else if(key_character(text[i])){key_end=i+1;while(key_end<text.size()&&key_character(text[key_end]))++key_end;key=std::string(text.substr(i,key_end-i));}
+            i=end;
+        }else if(key_character(text[i])){std::size_t end=i+1;while(end<text.size()&&key_character(text[end]))++end;key=std::string(text.substr(i,end-i));i=end;}
         else{++i;continue;}
-        i=key_end;if(key!="seed")continue;
+        if(key!="seed")continue;
         std::size_t value=i;while(value<text.size()&&(text[value]==' '||text[value]=='\t'))++value;
-        if(value==text.size()||text[value]!='=')continue;++value;while(value<text.size()&&(text[value]==' '||text[value]=='\t'))++value;
+        if(value==text.size()||text[value]!='=')continue;
+        ++value;
+        while(value<text.size()&&(text[value]==' '||text[value]=='\t'))++value;
         std::size_t end=value;while(end<text.size()&&text[end]!=' '&&text[end]!='\t'&&text[end]!='\r'&&text[end]!='\n'&&text[end]!=','&&text[end]!=']'&&text[end]!='}'&&text[end]!='#')++end;
         const auto integer=integer_seed_token(text.substr(value,end-value));if(!integer)continue;
         const auto marker=std::to_string(std::numeric_limits<std::int64_t>::min()+1+static_cast<std::int64_t>(seeds.size()));
-        rewritten.append(text.substr(copied,value-copied));rewritten+=marker;copied=end;i=end;seeds.push_back({marker,*integer});
+        rewritten.append(text.substr(copied,value-copied));rewritten+=marker;copied=end;i=end;seeds.push_back({.marker=marker,.value=*integer});
     }
     rewritten.append(text.substr(copied));auto tree=ordered_toml(rewritten,origin);
     // Every integer-valued seed was replaced, so original source integer
@@ -267,7 +288,10 @@ Value parse_track_toml(std::string_view text,std::string_view origin){
         Value* current=pending.back();pending.pop_back();
         if(auto* object=std::get_if<Value::Object>(&current->data))for(auto& [key,child]:*object){
             if(key=="seed")if(auto* n=std::get_if<bike::io::Number>(&child.data))for(std::size_t j=0;j<seeds.size();++j)if(n->lexeme==seeds[j].marker){
-                if(restored[j])throw TrackFileError("duplicate internal seed marker");n->lexeme=seeds[j].value;restored[j]=true;break;
+                if(restored[j])throw TrackFileError("duplicate internal seed marker");
+                n->lexeme=seeds[j].value;
+                restored[j]=true;
+                break;
             }
             pending.push_back(&child);
         }else if(auto* array=std::get_if<Value::Array>(&current->data))for(auto& child:*array)pending.push_back(&child);
@@ -282,31 +306,33 @@ Obstacle obstacle_from_dict(const Value& entry,std::size_t index){
         if(key=="type"||(type=="pothole"&&key=="edge")||(type=="bump"&&key=="shape"))continue;
         std::string target=key;Value value=original;
         if(key=="length_m"&&!length_field(result).empty())target=std::string(length_field(result));
-        else if(key.ends_with("_mm")){target=key.substr(0,key.size()-3)+"_m";value=scaled(original);}
-        if(std::ranges::find(seen,target)!=seen.end())throw TrackFileError(where+": '"+target+"' given twice (metres and millimetres?)");
+        else if(key.ends_with("_mm")){target=std::format("{}_m",key.substr(0,key.size()-3));value=scaled(original);}
+        if(std::ranges::find(seen,target)!=seen.end())throw TrackFileError(std::format("{}: '{}' given twice (metres and millimetres?)",where,target));
         seen.push_back(target);bool known=false;
         std::visit([&](auto& s){
-#define READ(name) if constexpr(requires{s.name;}){if(target==#name){detail::read_field(s.name,value,where+"."+target);known=true;}}
+#define READ(name) if constexpr(requires{s.name;}){if(target==#name){detail::read_field(s.name,value,std::format("{}.{}",where,target));known=true;}}
             READ(start_m) READ(height_m) READ(ledge_length_m) READ(depth_m) READ(hole_length_m)
             READ(amplitude_m) READ(wavelength_m) READ(n_waves) READ(dip_length_m) READ(ramp_m)
             READ(gap_m) READ(landing_angle_deg) READ(landing_m) READ(n_bumps) READ(width_m)
             READ(section_length_m) READ(jitter) READ(correlation_length_m) READ(bump_length_m)
             READ(plateau_m) READ(edge_m)
 #undef READ
-            if constexpr(requires{s.seed;})if(target=="seed"){s.seed=seed_of(value,where+".seed");known=true;}
+            if constexpr(requires{s.seed;})if(target=="seed"){s.seed=seed_of(value,std::format("{}.seed",where));known=true;}
         },result.shape);
-        if(!known)throw TrackFileError(where+": unknown key '"+key+"'");
+        if(!known)throw TrackFileError(std::format("{}: unknown key '{}'",where,key));
         if(target=="start_m")has_start=true;
         if(target!="seed"&&target!="n_bumps"&&target!="n_waves")if(const auto* n=std::get_if<bike::io::Number>(&value.data);n&&bike::io::is_integer_lexeme(n->lexeme))result.integer_scalar_fields.push_back(target);
     }
-    if(!has_start)throw TrackFileError(where+": missing 'start_m'");return result;
+    if(!has_start)throw TrackFileError(where+": missing 'start_m'");
+    return result;
 }
 RoadGeneratorSpec generator_from_dict(const Value& entry){
     RoadGeneratorSpec out;std::vector<std::string> seen;
     for(const auto& [key,raw]:bike::io::as_object(entry,"generator")){
         const std::string target=key.ends_with("_mm")?key.substr(0,key.size()-3)+"_m":key;
         const Value v=key.ends_with("_mm")?scaled(raw):raw;
-        if(std::ranges::find(seen,target)!=seen.end())throw TrackFileError("generator: '"+target+"' given twice (metres and millimetres?)");seen.push_back(target);
+        if(std::ranges::find(seen,target)!=seen.end())throw TrackFileError("generator: '"+target+"' given twice (metres and millimetres?)");
+        seen.push_back(target);
         bool found=false;
 #define SCALAR(name) if(target==#name){detail::read_field(out.name,v,"generator."+target);found=true;}
         SCALAR(runup_m) SCALAR(runout_m) SCALAR(min_gap_m) SCALAR(potholes_per_100m) SCALAR(pothole_edge_m)
@@ -319,7 +345,8 @@ RoadGeneratorSpec generator_from_dict(const Value& entry){
         if(target=="pothole_edge"||target=="bump_shape"){
             auto& weights=target=="pothole_edge"?out.pothole_edge:out.bump_shape;weights.clear();
             if(const auto* text=std::get_if<std::string>(&v.data))weights.emplace_back(*text,1.);
-            else for(const auto& [shape,value]:bike::io::as_object(v,target))weights.emplace_back(shape,bike::io::as_double(value,target));found=true;
+            else for(const auto& [shape,value]:bike::io::as_object(v,target))weights.emplace_back(shape,bike::io::as_double(value,target));
+            found=true;
         }
         if(!found)throw TrackFileError("generator: unknown key '"+key+"'");
     }
@@ -328,8 +355,8 @@ RoadGeneratorSpec generator_from_dict(const Value& entry){
 std::vector<Obstacle> carve_roughness(std::vector<Obstacle> obstacles){
     std::vector<Obstacle> defects,roughness;for(const auto& o:obstacles)(std::holds_alternative<RoadRoughness>(o.shape)?roughness:defects).push_back(o);
     const auto order=[](const auto&a,const auto&b){return a.start_m()<b.start_m();};
-    if(roughness.empty()||defects.empty()){std::stable_sort(obstacles.begin(),obstacles.end(),order);return obstacles;}
-    std::stable_sort(defects.begin(),defects.end(),order);std::vector<Obstacle> carved;
+    if(roughness.empty()||defects.empty()){std::ranges::stable_sort(obstacles,order);return obstacles;}
+    std::ranges::stable_sort(defects,order);std::vector<Obstacle> carved;
     const auto integer_field=[](const Obstacle& o,std::string_view name){return std::ranges::find(o.integer_scalar_fields,name)!=o.integer_scalar_fields.end();};
     const auto integer_end=[&](const Obstacle& o){
         if(!integer_field(o,"start_m"))return false;
@@ -342,23 +369,23 @@ std::vector<Obstacle> carve_roughness(std::vector<Obstacle> obstacles){
         },o.shape);
     };
     struct Piece{double a,b;std::string seed;bool integer_a,integer_b;};
-    for(const auto& base:roughness){const auto& seg=std::get<RoadRoughness>(base.shape);std::vector<Piece> pieces{{base.start_m(),base.end_m(),seg.seed,integer_field(base,"start_m"),integer_end(base)}};
+    for(const auto& base:roughness){const auto& seg=std::get<RoadRoughness>(base.shape);std::vector<Piece> pieces{{.a=base.start_m(),.b=base.end_m(),.seed=seg.seed,.integer_a=integer_field(base,"start_m"),.integer_b=integer_end(base)}};
         for(const auto& d:defects){std::vector<Piece> next;for(const auto& p:pieces){
             if(d.end_m()<=p.a||d.start_m()>=p.b){next.push_back(p);continue;}
-            if(d.start_m()>p.a)next.push_back({p.a,d.start_m(),p.seed,p.integer_a,integer_field(d,"start_m")});
-            if(d.end_m()<p.b)next.push_back({d.end_m(),p.b,detail::seed_plus(p.seed,1000003),integer_end(d),p.integer_b});
+            if(d.start_m()>p.a)next.push_back({.a=p.a,.b=d.start_m(),.seed=p.seed,.integer_a=p.integer_a,.integer_b=integer_field(d,"start_m")});
+            if(d.end_m()<p.b)next.push_back({.a=d.end_m(),.b=p.b,.seed=detail::seed_plus(p.seed,1000003),.integer_a=integer_end(d),.integer_b=p.integer_b});
         }pieces=std::move(next);}
         for(const auto& p:pieces)if(p.b-p.a>=.5){
             double length=rounded(p.b-p.a,6);bool integer_length=p.integer_a&&p.integer_b;
             while(p.a+length>p.b){length=rounded(length-1e-6,6);integer_length=false;}
-            Obstacle part{RoadRoughness{p.a,length,seg.amplitude_m,seg.correlation_length_m,p.seed}};
-            if(p.integer_a)part.integer_scalar_fields.push_back("start_m");
-            if(integer_length)part.integer_scalar_fields.push_back("section_length_m");
+            Obstacle part{.shape=RoadRoughness{.start_m=p.a,.section_length_m=length,.amplitude_m=seg.amplitude_m,.correlation_length_m=seg.correlation_length_m,.seed=p.seed}};
+            if(p.integer_a)part.integer_scalar_fields.emplace_back("start_m");
+            if(integer_length)part.integer_scalar_fields.emplace_back("section_length_m");
             for(auto name:{"amplitude_m","correlation_length_m"})if(integer_field(base,name))part.integer_scalar_fields.emplace_back(name);
             carved.push_back(std::move(part));
         }
     }
-    defects.insert(defects.end(),carved.begin(),carved.end());std::stable_sort(defects.begin(),defects.end(),order);return defects;
+    defects.insert(defects.end(),carved.begin(),carved.end());std::ranges::stable_sort(defects,order);return defects;
 }
 TrackSpec track_from_dict(const Value& data,std::optional<std::string> seed,std::optional<double> length){
     const auto* name=detail::member(data,"name");if(!name||!std::holds_alternative<std::string>(name->data)||bike::io::as_string(*name,"name").empty())throw TrackFileError("track file needs a non-empty 'name'");
@@ -376,7 +403,8 @@ TrackSpec track_from_dict(const Value& data,std::optional<std::string> seed,std:
             const auto found=std::ranges::find_if(fields,[](const auto& entry){return entry.first=="seed";});
             if(found==fields.end())fields.emplace_back("seed",value);else found->second=value;
         }
-        auto spec=generator_from_dict(resolved);std::vector<Interval> reserved;for(const auto& o:hand)reserved.emplace_back(o.start_m(),o.end_m());
+        auto const spec=generator_from_dict(resolved);std::vector<Interval> reserved;reserved.reserve(hand.size());
+for(const auto& o:hand)reserved.emplace_back(o.start_m(),o.end_m());
         try{auto generated=generate_road(spec,size,reserved);hand.insert(hand.end(),generated.begin(),generated.end());}catch(const std::invalid_argument& e){throw TrackFileError("generator: "+std::string(e.what()));}}
     TrackSpec track;track.name=bike::io::as_string(*name,"name");track.length_m=size;track.obstacles=std::move(hand);
     if(const auto* d=detail::member(data,"description"))track.description=scalar_string(*d);
@@ -388,7 +416,7 @@ TrackSpec track_from_dict(const Value& data,std::optional<std::string> seed,std:
     }
     if(const auto* values=detail::member(data,"surface_sections"))for(const auto& entry:bike::io::as_array(*values,"surface_sections")){
         if(bike::io::as_object(entry,"surface section").size()!=3)throw TrackFileError("surface section needs start_m, end_m and surface");
-        SurfaceSection s{bike::io::as_double(detail::required(entry,"start_m"),"surface.start_m"),bike::io::as_double(detail::required(entry,"end_m"),"surface.end_m"),bike::io::as_string(detail::required(entry,"surface"),"surface.surface")};s.validate();track.surface_sections.push_back(std::move(s));
+        SurfaceSection s{.start_m=bike::io::as_double(detail::required(entry,"start_m"),"surface.start_m"),.end_m=bike::io::as_double(detail::required(entry,"end_m"),"surface.end_m"),.surface=bike::io::as_string(detail::required(entry,"surface"),"surface.surface")};s.validate();track.surface_sections.push_back(std::move(s));
     }
     try{track.validate();}catch(const std::invalid_argument& e){throw TrackFileError(e.what());}return track;
 }

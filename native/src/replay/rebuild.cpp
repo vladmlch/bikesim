@@ -8,9 +8,12 @@
 #include "../runtime/provenance.hpp"
 #include "../terrain/trackfile.hpp"
 #include "../rider/allocation.hpp"
+#include <algorithm>
 #include <cstdlib>
 #include <cerrno>
+#include <memory>
 #include <system_error>
+#include <unistd.h>
 
 namespace bike::replay {
 namespace {
@@ -84,7 +87,7 @@ FixedAssets::FixedAssets(const ReplayInput& input) {
 }
 FixedAssets::~FixedAssets() { std::error_code ignored; std::filesystem::remove_all(path_, ignored); }
 
-research::ResearchRequest request_from_input(const ReplayInput& input, const FixedAssets& assets) {
+std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput& input, const FixedAssets& assets) {
     const auto& saved = input.summary;
     const auto& resolved = field(saved, "resolved_config"), experiment = field(field(saved, "research"), "config");
     auto physics = field(resolved, "physics"); auto articulated = field(physics, "articulated");
@@ -100,7 +103,8 @@ research::ResearchRequest request_from_input(const ReplayInput& input, const Fix
     // Fresh deterministic setup: neither a recorded external cache pathname
     // nor a user's current equilibrium cache may replace the replay recipe.
     set(physics, "equilibrium_cache_enabled", Value{false});
-    research::ResearchRequest request;
+    auto owner = std::make_unique<research::ResearchRequest>();
+    auto& request = *owner;
     request.capture_mode = runtime::ResearchCaptureMode::verify;
     request.setup.model.physics = configuration::detail::construct_config(physics);
     request.setup.model.bike = bike_specs(field(resolved, "geometry_and_suspension"));
@@ -140,13 +144,13 @@ research::ResearchRequest request_from_input(const ReplayInput& input, const Fix
     if (const auto* bias = find(sensors, "acceleration_bias_mps2")) {
         const auto vector = double_vector(*bias, "acceleration bias");
         if (vector.size() != 3) throw recording::RecordingError("acceleration bias must have width 3");
-        std::copy(vector.begin(), vector.end(), s.delivery.acceleration_bias.begin());
+        std::ranges::copy(vector, s.delivery.acceleration_bias.begin());
     }
     const auto program = maybe(research_data, "rider_program");
     if (!io::is_null(program) && (!find(research_data, "rider_command_recording") || string(field(research_data, "rider_command_recording")) != "program_inputs"))
         throw IncompatibleExecution("native replay requires the recorded rider program input contract");
     request.programs = research::programs_from_documents(program, maybe(research_data, "demand_program"));
-    request.experiment.validate(); request.sensors.validate(); return request;
+    request.experiment.validate(); request.sensors.validate(); return owner;
 }
 
 void verify_configuration(const ReplayInput& input, const research::PreparedEnvironment& prepared) {

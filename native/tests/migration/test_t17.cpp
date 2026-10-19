@@ -23,6 +23,10 @@ struct Directory {
         ("bike-t17-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     Directory() {bt::require(std::filesystem::create_directory(path),"exclusive temporary export directory");}
     ~Directory() {std::error_code ignored;std::filesystem::remove_all(path,ignored);}
+    Directory(const Directory&) = delete;
+    Directory& operator=(const Directory&) = delete;
+    Directory(Directory&&) = delete;
+    Directory& operator=(Directory&&) = delete;
 };
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
@@ -75,7 +79,7 @@ void mode_and_rider_cases() {
     bt::invalid([&]{(void)mdl::generate_mjcf(request);});
 }
 void exports_and_schema() {
-    Directory directory;const auto cwd=std::filesystem::current_path();
+    Directory const directory;const auto cwd=std::filesystem::current_path();
     mdl::export_playground_models(directory.path/"models");
     constexpr std::array files{"bike_playground_stand.xml","bike_model.xml","bike_playground.xml","bike_ride.xml"};
     for(const char* name:files) {
@@ -86,7 +90,7 @@ void exports_and_schema() {
     }
     bt::require(std::filesystem::current_path()==cwd,"exports preserve process cwd");
     mdl::BuildRequest request;
-    mdl::ExportOptions options{directory.path/"selected.xml",directory.path/"selected.json",true,false};
+    mdl::ExportOptions options{.xml_file=directory.path/"selected.xml",.json_file=directory.path/"selected.json",.xml_only=true,.json_only=false};
     mdl::export_model(request,options);
     bt::require(std::filesystem::is_regular_file(options.xml_file) && !std::filesystem::exists(options.json_file),"XML-only export selection");
     options.xml_only=false;options.json_only=true;options.xml_file=directory.path/"never.xml";

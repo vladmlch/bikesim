@@ -40,10 +40,10 @@ void jacobian(const mjModel& model, const mjData& data, int body,
         const double* point;
         double* jp;
         double* jr;
-    } call{&model, &data, body, point.data(), jp, jr};
+    } call{.model=&model, .data=&data, .body=body, .point=point.data(), .jp=jp, .jr=jr};
     engine::ErrorBuffer error;
     if (!engine::invoke([](void* raw) noexcept {
-            auto& c = *static_cast<Call*>(raw);
+            auto const& c = *static_cast<Call*>(raw);
             mj_jac(c.model, c.data, c.jp, c.jr, c.point, c.body);
         }, &call, error)) engine::throw_failure(error);
 }
@@ -98,8 +98,8 @@ PointJacobian point_jacobian(const mjModel& model, const mjData& data,
                              int body, const WorldVector& point) {
     finite(point, "invalid shape or non-finite world point");
     physical_body(model, body, "point Jacobian requires a physical body");
-    PointJacobian out{std::vector<double>(jacobian_size(model)),
-                      std::vector<double>(jacobian_size(model))};
+    PointJacobian out{.translation=std::vector<double>(jacobian_size(model)),
+                      .rotation=std::vector<double>(jacobian_size(model))};
     jacobian(model, data, body, point, out.translation.data(), out.rotation.data());
     return out;
 }
@@ -125,7 +125,7 @@ void relative_point_jacobian(const mjModel& model, const mjData& data,
         throw std::invalid_argument("relative Jacobian outputs must have shape (3,nv)");
     // Aliasing would silently turn J_a-J_b into zero. Reject overlapping
     // buffers before either destination changes (pointer total order is defined).
-    const std::less<const double*> before;
+    const std::less<> before;
     if (!jacobian_a.empty() &&
         before(jacobian_a.data(), std::to_address(jacobian_b.end())) &&
         before(jacobian_b.data(), std::to_address(jacobian_a.end())))
@@ -161,10 +161,10 @@ std::vector<double> map_wrench(const mjModel& model, mjData& data, int body,
     struct Call {
         const mjModel* model; mjData* data; int body;
         const double* point; const double* force; const double* torque; double* out;
-    } call{&model, &data, body, point.data(), force.data(), moment.data(), out.data()};
+    } call{.model=&model, .data=&data, .body=body, .point=point.data(), .force=force.data(), .torque=moment.data(), .out=out.data()};
     engine::ErrorBuffer error;
     if (!engine::invoke([](void* raw) noexcept {
-            auto& c = *static_cast<Call*>(raw);
+            auto const& c = *static_cast<Call*>(raw);
             mj_applyFT(c.model, c.data, c.force, c.torque, c.point, c.body, c.out);
         }, &call, error)) engine::throw_failure(error);
     return out;

@@ -16,9 +16,9 @@ namespace bike::initialization::detail {
     const auto utf8=io::canonical_json(value);
     constexpr std::string_view hex="0123456789abcdef";
     std::string out;out.reserve(utf8.size());
-    auto unit=[&](std::uint32_t code) {
+    auto const unit=[&](std::uint32_t code) {
         out+="\\u";
-        for(int shift:{12,8,4,0})out.push_back(hex[(code>>static_cast<unsigned int>(shift))&15U]);
+        for(int const shift:{12,8,4,0})out.push_back(hex[(code>>static_cast<unsigned int>(shift))&15U]);
     };
     for(std::size_t i=0;i<utf8.size();) {
         const auto first=static_cast<unsigned char>(utf8[i++]);

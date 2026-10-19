@@ -26,7 +26,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "command": "bike-playground",
@@ -53,7 +53,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "command": "bike-export",
@@ -80,7 +80,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "command": "bike-ride",
@@ -107,7 +107,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "command": "bike-settle",
@@ -134,7 +134,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "command": "bike-research",
@@ -161,7 +161,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "command": "bike-batch",
@@ -184,7 +184,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "command": "bike-replay",
@@ -211,7 +211,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "command": "bike-recording",
@@ -230,7 +230,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "planned"
+      "status": "review"
     }
   ],
   "status": "planned; parser/default details must be captured in T01"

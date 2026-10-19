@@ -1,12 +1,14 @@
 #pragma once
 #include <memory>
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace bike::viewer {
 struct WindowEvent {
-    enum class Kind { key, mouse, scroll } kind = Kind::key;
+    // NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+    enum class Kind : std::uint8_t { key, mouse, scroll } kind = Kind::key;
     int key = 0, action = 0;
     double dx = 0., dy = 0.;
     int modifiers = 0;
@@ -17,6 +19,8 @@ public:
     ~GlfwContext();
     GlfwContext(const GlfwContext&) = delete;
     GlfwContext& operator=(const GlfwContext&) = delete;
+    GlfwContext(GlfwContext&&) = delete;
+    GlfwContext& operator=(GlfwContext&&) = delete;
     [[nodiscard]] std::vector<WindowEvent> poll();
     [[nodiscard]] bool open() const;
     [[nodiscard]] std::pair<int, int> framebuffer_size() const;

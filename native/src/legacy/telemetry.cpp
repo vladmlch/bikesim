@@ -10,7 +10,7 @@
 namespace bike::legacy {
 SimModelHandles SimModelHandles::from_model(const mjModel& m){
     const auto joint=[&](const char* name){return mj_name2id(&m,mjOBJ_JOINT,name);};const auto site=[&](const char* name){return mj_name2id(&m,mjOBJ_SITE,name);};
-    return {joint("main_pivot"),joint("shock_stroke"),joint("fork_travel"),site("site_P3_ss"),site("site_P3_rocker"),site("site_BB"),site("site_PFA"),site("site_PRA")};
+    return {.main_pivot=joint("main_pivot"),.shock=joint("shock_stroke"),.fork=joint("fork_travel"),.p3_ss=site("site_P3_ss"),.p3_rocker=site("site_P3_rocker"),.bb=site("site_BB"),.pfa=site("site_PFA"),.pra=site("site_PRA")};
 }
 TelemetryProvider::TelemetryProvider(const geometry::BikeSpecs& specs,const kinematics::HorstLinkageSolver& solver,const model::ForkAirSpring& air,const model::BikeSuspensionSystem& suspension)
     :specs_(specs),solver_(solver),air_(air),suspension_(suspension){}
@@ -18,8 +18,8 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 io::Value TelemetryProvider::compute(const mjModel& m,const mjData& d,double target,bool rider,const SimModelHandles& h,std::string_view camera)const {
     using namespace runtime::setupvalue;
-    for(int id:{h.main_pivot,h.shock,h.fork})if(id>=m.njnt)throw std::invalid_argument("telemetry joint outside model");
-    for(int id:{h.p3_ss,h.p3_rocker,h.bb,h.pfa,h.pra})if(id>=m.nsite)throw std::invalid_argument("telemetry site outside model");
+    for(int const id:{h.main_pivot,h.shock,h.fork})if(id>=m.njnt)throw std::invalid_argument("telemetry joint outside model");
+    for(int const id:{h.p3_ss,h.p3_rocker,h.bb,h.pfa,h.pra})if(id>=m.nsite)throw std::invalid_argument("telemetry site outside model");
     const auto qa=std::views::counted(m.jnt_qposadr,m.njnt),va=std::views::counted(m.jnt_dofadr,m.njnt);
     const auto q=std::views::counted(d.qpos,m.nq),v=std::views::counted(d.qvel,m.nv);
     const auto joint_q=[&](int id){return id>=0?q[static_cast<std::size_t>(qa[static_cast<std::size_t>(id)])]:0.;};
@@ -29,12 +29,12 @@ io::Value TelemetryProvider::compute(const mjModel& m,const mjData& d,double tar
     else if(h.shock>=0){shock=std::clamp(joint_q(h.shock)*1000.,0.,specs_.shock_stroke);const auto state=solver_.solve_state_from_shock_stroke(shock);rear=state.wheel_travel;leverage=state.leverage_ratio;}
     else {const auto state=solver_.solve_state_from_wheel_travel(target);rear=target;shock=state.shock_stroke;leverage=state.leverage_ratio;}
     const double fork=std::max(0.,joint_q(h.fork)*1000.),vf=joint_v(h.fork),vs=joint_v(h.shock);
-    SuspensionController controller(specs_,air_,suspension_);const auto ff=controller.compute_fork_force(fork,vf),sf=controller.compute_shock_force(shock,vs);
-    const auto site=[&](int id){std::array<double,3> result{};if(id>=0)std::ranges::copy(std::views::counted(d.site_xpos,3*m.nsite).subspan(static_cast<std::size_t>(3*id),3),result.begin());return result;};
+    SuspensionController const controller(specs_,air_,suspension_);const auto ff=controller.compute_fork_force(fork,vf),sf=controller.compute_shock_force(shock,vs);
+    const auto site=[&](int id){std::array<double,3> result{};if(id>=0)std::ranges::copy(std::views::counted(d.site_xpos,3*m.nsite).subspan(3U*static_cast<std::size_t>(id),3),result.begin());return result;};
     double residual=0.;if(h.p3_ss>=0&&h.p3_rocker>=0){const auto a=site(h.p3_ss),b=site(h.p3_rocker);const std::array delta{a[0]-b[0],a[1]-b[1],a[2]-b[2]};residual=geometry::detail::np_norm3(delta)*1000.;}
     const int frame=mj_name2id(&m,mjOBJ_BODY,"frame"),root=std::max(0,frame);numeric::PythonSum mass;
-    for(double x:std::views::counted(m.body_mass,m.nbody).subspan(static_cast<std::size_t>(root)))mass.add(x);
-    const auto com=std::views::counted(d.subtree_com,3*m.nbody).subspan(static_cast<std::size_t>(3*root),3);
+    for(double const x:std::views::counted(m.body_mass,m.nbody).subspan(static_cast<std::size_t>(root)))mass.add(x);
+    const auto com=std::views::counted(d.subtree_com,3*m.nbody).subspan(3U*static_cast<std::size_t>(root),3);
     const auto bb=site(h.bb);
     const double front_x=h.pfa>=0?site(h.pfa)[0]:.833,rear_x=h.pra>=0?site(h.pra)[0]:-.448,base=std::max(.5,front_x-rear_x);
     const double front_pct=std::clamp((com[0]-rear_x)/base*100.,0.,100.),rear_pct=100.-front_pct,weight=mass.total()*9.81;

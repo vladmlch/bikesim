@@ -44,6 +44,10 @@ read_research_bootstrap(const std::filesystem::path &directory);
 // (handles -> records) half.
 [[nodiscard]] std::unique_ptr<NativeResearchRuntime>
 make_research(ResearchBootstrap bootstrap);
+// ResearchBootstrap is several KB; the heap-owning overload keeps the
+// by-value argument temporary out of strict caller frames.
+[[nodiscard]] std::unique_ptr<NativeResearchRuntime>
+make_research(std::unique_ptr<ResearchBootstrap> bootstrap);
 
 // Document-level decoders, exposed like resolve_bootstrap_document() so a
 // fixture-level fault document composes against known-good peers at the

@@ -119,12 +119,16 @@ NATIVE_TEST_BUILD_PATH="$PWD/native/build" uv run python -m pytest tests/referen
 
 The `native` and `full` profiles share the full verification preflight:
 configure, build, every CMake sweep, the standalone header/diagnostic/context
-controls, CTest, and an exact selected-extension import before pytest. Each
-configured sweep is also a standalone CMake target. CMake writes
+controls, CTest, an exact selected-extension import, and the `contracts`
+kind before pytest. Each configured sweep is also a standalone CMake target.
+The profiles first configure and build the produced check orchestrator into
+`build/native-release` (`bike-native-checks`, `bike-python-audit`) when its
+cache is absent, then always rebuild it incrementally so checks never run on
+a stale binary. CMake writes
 `<selected-build>/native_sources.json` from the first-party sources attached to
 configured targets and `<selected-build>/native_check_context.json` with the
 compiler, SDK, Python, dependency paths, target compile contexts, and tool overrides.
-`tools/native_checks.py` checks those manifests against
+The produced `bike-native-checks` orchestrator checks those manifests against
 `compile_commands.json` before starting any analyzer. It rejects an empty,
 missing, duplicate, unexpected, or malformed first-party selection and missing
 include/library dependencies. The output reports both unique source and
@@ -148,17 +152,26 @@ uv run cmake --build native/build --target check_odr         # g++ -flto -Wodr m
 uv run cmake --build native/build --target check_scripts     # shellcheck over tools/*.sh
 ```
 
-The controller can also be invoked directly, for example
-`uv run python tools/native_checks.py --kind tidy --build native/build`.
-The same configured source manifest is used by each standalone target and by
-the native profile; wrappers do not glob `native/src` or hide process status.
+The produced orchestrator can also be invoked directly — the check
+targets and the preflight resolve it via `$BIKE_NATIVE_CHECKS`, the
+selected build's `bin/`, or the produced standalone build
+`build/native-release/bin/bike-native-checks`:
+
+```bash
+build/native-release/bin/bike-native-checks --kind tidy --build native/build
+```
+
+The legacy Python controller `tools/native_checks.py` remains in the
+tree with the same `--kind` CLI. The same configured source manifest is
+used by each standalone target and by the native profile; wrappers do not
+glob `native/src` or hide process status.
 
 V2 adds three focused controls:
 
 ```bash
-uv run python tools/native_checks.py --kind headers --build native/build
-uv run python tools/native_checks.py --kind diagnostic-controls --build native/build
-uv run python tools/native_checks.py --kind context --build native/build
+build/native-release/bin/bike-native-checks --kind headers --build native/build
+build/native-release/bin/bike-native-checks --kind diagnostic-controls --build native/build
+build/native-release/bin/bike-native-checks --kind context --build native/build
 ```
 
 The `headers` control compiles each first-party header by itself with its
@@ -170,15 +183,20 @@ verifies that libc++ hardening configuration rejects a missing mode macro.
 container sizes, active bounds assertions, and timings for FAST and EXTENSIVE
 libc++ modes in Debug, Release, and the empty build type.
 
-V4 adds `check_native_contracts` to native/full preflight. It checks the CMake
+V4 adds the `contracts` kind to native/full preflight (run by the
+produced orchestrator after the selected-extension import; the
+`check_native_contracts` CMake target remains for direct reruns). It
+checks the CMake
 source manifest against the compilation database, strict ISO C++23 and the
 configured hardening mode, the `.clang-tidy` Move/header policy, selected-loader
 use by direct native tests, and the contract source's manifest and CTest
 registration. It asks the contract executable to list and run each registered
 case. These are structural and focused behavioral checks; they do not claim to
-prove exception safety for every native operation. Engine-call wrapper checks
-and benchmark membership remain marked pending until their planned declarations
-and `native_bench` target exist.
+prove exception safety for every native operation. The engine-call wrapper
+rules now run actively (pinned wrappers manifested, fatal-capable calls
+confined to `engine_call.cpp`), and benchmark sources under
+`tools/proto_native_bench` must be manifested while the `native_bench`
+target exists.
 
 After the selected extension has been loaded and recorded, the target can be
 rerun directly for a regular build:

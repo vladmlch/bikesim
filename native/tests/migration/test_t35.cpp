@@ -13,7 +13,7 @@ namespace {
 using namespace bike::research;
 template<class F> void policy_failure(F&& call, std::string_view fragment) {
     bool rejected = false;
-    try { call(); }
+    try { std::forward<F>(call)(); }
     catch (const PolicyFailure& error) { rejected = std::string(error.what()).find(fragment) != std::string::npos; }
     bt::require(rejected, std::string("expected controlled policy failure: ") + std::string(fragment));
 }
@@ -68,8 +68,8 @@ void destroy_stub(void*) {}
 void abi_contract() {
     static_assert(std::is_standard_layout_v<BikeObservationV1> && std::is_standard_layout_v<BikeControlV1>);
     static_assert(BIKE_SENSOR_VALUE_COUNT == 9);
-    BikePolicyV1 good{BIKE_POLICY_ABI_VERSION, sizeof(BikePolicyV1), 0, create_stub, reset_stub, act_stub, destroy_stub,
-        BIKE_SENSOR_SCHEMA_VERSION};
+    BikePolicyV1 const good{.abi_version=BIKE_POLICY_ABI_VERSION, .struct_size=sizeof(BikePolicyV1), .required_capabilities=0, .create=create_stub, .reset=reset_stub, .act=act_stub, .destroy=destroy_stub,
+        .sensor_schema_version=BIKE_SENSOR_SCHEMA_VERSION};
     validate_policy_abi(&good);
     policy_failure([] { validate_policy_abi(nullptr); }, "null ABI");
     auto invalid = good; invalid.abi_version = 999;
@@ -89,7 +89,7 @@ void abi_contract() {
     policy_failure([&] { (void)policy_control_from_abi(output); }, "invalid control");
     output.present_mask = 0;
     bt::require(!policy_control_from_abi(output).motor_torque_nm, "absent optional payload is not read");
-    output.present_mask = 1U << 31;
+    output.present_mask = 1U << 31U;
     policy_failure([&] { (void)policy_control_from_abi(output); }, "presence mask");
     output.present_mask = 0; output.rider_enabled = 2;
     policy_failure([&] { (void)policy_control_from_abi(output); }, "nonboolean");
@@ -101,7 +101,7 @@ void abi_contract() {
 void dynamic_boundary(const std::filesystem::path& library, const std::filesystem::path& no_api) {
     const std::string reference = "plugin:" + library.string();
     const auto load = [&](std::string_view scenario) {
-        return load_policy(reference, bike::io::parse_json("{\"case\":\"" + std::string(scenario) + "\"}"));
+        return load_policy(reference, bike::io::parse_json(R"({"case":")" + std::string(scenario) + "\"}"));
     };
     policy_failure([&] { (void)load_policy("plugin:" + no_api.string()); }, "missing bike_policy_v1");
     policy_failure([&] { (void)load_policy("plugin:" + (library.parent_path() / "absent-policy.so").string()); }, "cannot load");

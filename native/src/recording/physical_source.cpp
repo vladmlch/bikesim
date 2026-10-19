@@ -16,6 +16,10 @@ bool optimized(const FieldSpec& f) {
 class NativePhysicalSource final : public PhysicalSource {
 public:
     ~NativePhysicalSource() override;
+    NativePhysicalSource(const NativePhysicalSource&) = delete;
+    NativePhysicalSource& operator=(const NativePhysicalSource&) = delete;
+    NativePhysicalSource(NativePhysicalSource&&) = delete;
+    NativePhysicalSource& operator=(NativePhysicalSource&&) = delete;
     NativePhysicalSource(std::shared_ptr<const runtime::OwnedNativeEpisode> episode, Catalog catalog, bool ordinary)
         : episode_(std::move(episode)), catalog_(std::move(catalog)), ordinary_(ordinary) {
         if (!episode_) throw std::invalid_argument("missing owned physical episode");
@@ -52,8 +56,8 @@ public:
             }
             for (std::size_t i = 0; i < specs.size(); ++i) {
                 const auto& spec = specs[i];
-                if (plans[i]) {
-                    auto batch = runtime::encode_table_native(*episode_, *plans[i], static_cast<std::int64_t>(first), static_cast<std::int64_t>(count));
+                if (auto& plan = plans[i]) {
+                    auto batch = runtime::encode_table_native(*episode_, plan.value(), static_cast<std::int64_t>(first), static_cast<std::int64_t>(count));
                     validate_pieces(batch, spec); piece_fragments(spec.name, std::move(batch), maximum, sink); continue;
                 }
                 // Reviewed slow source adapter for a future catalog dtype the

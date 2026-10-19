@@ -1,4 +1,5 @@
 #include "plan.hpp"
+#include <cstdint>
 #include "integer_detail.hpp"
 #include "../io/json.hpp"
 #include "../terrain/trackfile.hpp"
@@ -8,8 +9,10 @@
 
 namespace bike::batch {
 namespace {
-enum class Container { document, array, table };
-enum class Position { key, value, after_value };
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+enum class Container : std::uint8_t { document, array, table };
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+enum class Position : std::uint8_t { key, value, after_value };
 struct Frame { Container container; Position position; };
 struct Replacement { std::size_t first, last; std::string decimal; };
 bool horizontal(char c) { return c == ' ' || c == '\t'; }
@@ -40,7 +43,7 @@ std::size_t header_end(std::string_view text, std::size_t start) {
 }
 std::vector<Replacement> integer_values(std::string_view text) {
     std::vector<Replacement> values;
-    std::vector<Frame> stack{{Container::document,Position::key}};
+    std::vector<Frame> stack{{.container=Container::document,.position=Position::key}};
     for (std::size_t i = 0; i < text.size();) {
         const char c = text[i];
         if (c == '#') { const auto end = text.find('\n',i); i = end == std::string_view::npos ? text.size() : end; continue; }
@@ -75,11 +78,11 @@ std::vector<Replacement> integer_values(std::string_view text) {
             ++i; continue;
         }
         if (stack.back().position == Position::value) {
-            if (c == '[') { stack.push_back({Container::array,Position::value}); ++i; continue; }
-            if (c == '{') { stack.push_back({Container::table,Position::key}); ++i; continue; }
+            if (c == '[') { stack.push_back({.container=Container::array,.position=Position::value}); ++i; continue; }
+            if (c == '{') { stack.push_back({.container=Container::table,.position=Position::key}); ++i; continue; }
             std::size_t end = i;
             while (end < text.size() && !delimiter(text[end])) ++end;
-            if (const auto decimal = integer_detail::toml_token(text.substr(i,end-i))) values.push_back({i,end,*decimal});
+            if (const auto decimal = integer_detail::toml_token(text.substr(i,end-i))) values.push_back({.first=i,.last=end,.decimal=*decimal});
             stack.back().position = Position::after_value;
             // A mismatched closer at value position is not an atom. Leave
             // its syntax for the parser, while ensuring scanner progress.
@@ -94,7 +97,7 @@ std::optional<std::size_t> marker_index(std::string_view text, std::string_view 
     text.remove_prefix(prefix.size());
     if (text.empty()) return {};
     std::size_t index = 0; const auto end = std::to_address(text.cend());
-    const auto parsed = std::from_chars(text.data(),end,index);
+    const auto parsed = std::from_chars(text.data(),end,index); // NOLINT(bugprone-suspicious-stringview-data-usage) std::from_chars parses the (data, data+size) pointer range, not a C string
     if (parsed.ec != std::errc{} || parsed.ptr != end || index >= count || std::to_string(index) != text) return {};
     return index;
 }
@@ -122,7 +125,7 @@ bool restore(io::Value& tree, std::string_view prefix, const std::vector<Replace
     if (collision) return false;
     for (auto* value : marked) {
         const auto index = marker_index(std::get<std::string>(value->data),prefix,replacements.size());
-        value->data = io::Number{replacements[*index].decimal};
+        value->data = io::Number{replacements[index.value()].decimal}; // NOLINT(bugprone-unchecked-optional-access) collision being false means marker_index engaged above
     }
     return true;
 }

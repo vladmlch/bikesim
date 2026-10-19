@@ -101,14 +101,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -168,14 +174,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -225,14 +237,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T51 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -292,14 +310,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -359,14 +383,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -426,14 +456,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -468,14 +504,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T46 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -535,14 +577,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -602,14 +650,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -669,14 +723,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -736,14 +796,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -803,14 +869,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -1114,14 +1186,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "218716a025248a93a33b70ade23c2409e8ad268cac145c8cf799141d5dacb891",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T17 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1156,14 +1234,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "3da577e6e0ea3c8f6fb1fa36271e7cff8d939cc30f5488c45b3ddec362bb7033",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T16 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1198,14 +1282,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "850d0c5eacb229c38582b8ac664c0257db6d9abae5052815929922ded22b3042",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T16 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1240,14 +1330,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "d78e0aeeaf11b97b3b03c797c324e32ff0166243aafab85f8f36ade181026253",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T16 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1280,14 +1376,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "6c3d1c67544c6b6f324d0a49d39ccc9bf7a8b6e38d67ea28d0532fcf8e75e549",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T17 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1320,14 +1422,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "c0b9c04b0fcb8c924758d0c0899736494d496af45ee4566152035980ceb53f3f",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T17 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1362,14 +1470,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "086a9bdb5d89c6fbd21abc8092cb9bc69442d3740dbbc9abbba5d6ddf12ca851",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T16 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1402,14 +1516,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "08208e926714f53699fcdec54692083e25f1c4a02dac4179505062ea2b6912a1",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T17 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1442,14 +1562,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "3c0d569c32661a5cc7731def5ca6ee63d66787dedac2f55ea4d5a719d0d5e745",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T17 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1482,14 +1608,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "cab0bfc6d99cfd0758d043f15c878383314e836352ca62a3b830bcf8e4ab74e4",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T17 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1524,14 +1656,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "389397a7271212f93ecd5d5e2cdf47c0dd6e84a4fec0b9bc24013f615265a3b2",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T16 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1566,14 +1704,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "556eaa7203edfc01eee224beff85deb4d5eb31633b9268274d145c72fb76ce09",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T16 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1608,14 +1752,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "5078f19233cd71633a09de03b40144279fbe3c2545b9a62c6b4aab0e3ceaad87",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T16 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1648,14 +1798,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "cfca61907062738fcf095e49b388b272f0350fdd4837acdfd4471fe240ed8836",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T17 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1688,14 +1844,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "2f4cda571eef041ef4426ca9b89685c458a56f221d4c64ae954f27af47b2cec1",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T17 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1728,14 +1890,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "5f8e6c2cc528a93820249169b7956993a24e87009f8f97eda38bd62ca859761d",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T17 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1770,14 +1938,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "21e462e9df9a4b737fccda2da23169af6d58bd821b1de0c53409f04b23730c21",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T16 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1812,14 +1986,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "eb8293ce8b9bb100d764679a3397dbe745a599af9dc4f596a18eb25d81e5dd71",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T16 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1892,14 +2072,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "7a95aec72a1a14dd68acded0a0490ac7e591b205f719107651586d0393132706",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T24 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -1929,14 +2115,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "6aac7edf1792f5c704228c0b5f683fa2e2a17d6d61c138eb65aea9f6530aa793",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T18 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -2007,14 +2199,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T45 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -2060,7 +2258,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "9706223d92c3e02cd36460e9e67a0ca13a5cf8273623915985b5a661e3a64da4",
       "evidence": [
@@ -2068,7 +2266,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T34 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -2182,14 +2386,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "a5f26fc28cc56b5e5848389fbf07cd09bb3e579965e96ff0021228887158839a",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T25 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -2276,7 +2486,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "fe20bf07de07b77bcffc722903a773cdb93b8128066cf92b746c98c471b18338",
       "evidence": [
@@ -2285,9 +2495,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -2315,7 +2536,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "28b805302bc32187fcf7dcb052cebfbce782d46fdfdf9a12d2d6b14b68f36dbf",
       "evidence": [
@@ -2324,9 +2545,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -2358,7 +2590,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "f68f98cd3e8e84c4a717a167b43fe62a7d11b6bb623c9f1d797c5d69b491dae1",
       "evidence": [
@@ -2366,7 +2598,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T27 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -2512,7 +2750,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "445bb3ac6bc013a30b73e53f087c5c715343fc683b49521cb8d1e8e3cc237a80",
       "evidence": [
@@ -2521,9 +2759,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -2580,7 +2829,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "3f9e4255d1599c4ceb0c71a5a5bbfea11466ba28060d4deb7b0e56e75a421451",
       "evidence": [
@@ -2589,9 +2838,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -2619,7 +2879,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "43a7a635d7d7b0488392272746d88080b33620c657ef8dffec46082fda01d511",
       "evidence": [
@@ -2628,9 +2888,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -2657,7 +2928,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "b9b9977918caff986be956569d380621b78f2cd1f7ddeff95074391761cefdfb",
       "evidence": [
@@ -2666,9 +2937,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -2695,7 +2977,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "f6c0d44c05e880d84a2d736fc6977a2d712270b32191d5775b1150fecc014c89",
       "evidence": [
@@ -2704,9 +2986,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -2733,7 +3026,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "adb15436c65b3d42e332c1288cca7eedbfabeeb1e2abd918c34effe5c28ae6eb",
       "evidence": [
@@ -2742,9 +3035,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -2885,7 +3189,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "64211ed280119a82445b25ffb69993af2e7052594f40df025d3b13c20ef5aefe",
       "evidence": [
@@ -2894,9 +3198,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -2926,7 +3241,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "5d19c8fbebf9c782540e19a5865327a7917c14da1140cff732f9549fc33f4b2e",
       "evidence": [
@@ -2935,9 +3250,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -2965,7 +3291,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "3aed4fd92ee3e34f1ca9aa3db7fa6c42033108fd21f4a3cdf2a0541973bca090",
       "evidence": [
@@ -2974,9 +3300,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -3110,7 +3447,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "f80b46ce05964bf8e1eb0a23cac35d45adbfdd5c3a3a4a387578c17305955210",
       "evidence": [
@@ -3119,9 +3456,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -3144,7 +3492,7 @@
       "native/src/numerics/brent.cpp",
       "native/src/numerics/density_fit.hpp",
       "native/src/numerics/density_fit.cpp",
-      "native/src/rider/allocation_json.cpp"
+      "native/src/research/allocation_json.cpp"
     ],
     "verification_ids": [
       "migration_T28",
@@ -3158,7 +3506,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "951c8a3c420cb2d86be5723b62a1d90d52b2c45b9d51b7c759be4f91a893e180",
       "evidence": [
@@ -3166,7 +3514,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T28 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -3338,7 +3692,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "ef5fb6c6768ecc5ffc86878c256fd3afbe5cabbc202339aaa3252993b94adf6d",
       "evidence": [
@@ -3347,9 +3701,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -3376,7 +3741,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "c2e50650544f6e1b6bee59f8ca772a170f943b30eca2dcf5611df63f8c6f3efe",
       "evidence": [
@@ -3385,9 +3750,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -3448,7 +3824,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "4e0504120e744458201639966e0dd22cad7e3544505cac9983fdbb948437d3d8",
       "evidence": [
@@ -3457,9 +3833,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -3549,7 +3936,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "920a832ecd36448b81ed74a8397e4ffe2d6555f056fc68bb75f9c5d2ab98bc11",
       "evidence": [
@@ -3557,7 +3944,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T27 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -3624,7 +4017,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "742a18772f5ea4cec002ddd08c64feb0c60686d40a3186823e2fa54ae25efe75",
       "evidence": [
@@ -3632,7 +4025,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T31 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -3673,14 +4072,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T43 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -3721,14 +4126,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T43 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -3779,14 +4190,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T40 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -3837,14 +4254,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T40 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -3888,14 +4311,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T38 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -3939,14 +4368,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T38 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -3985,14 +4420,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T39 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4046,14 +4487,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T42 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4132,14 +4579,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T40 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4178,14 +4631,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T39 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4226,14 +4685,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T43 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4279,14 +4744,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T44 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4328,14 +4799,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T45 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4386,14 +4863,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T40 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4437,14 +4920,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T38 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4483,14 +4972,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T41 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4550,14 +5045,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4617,14 +5118,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T47 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4678,14 +5185,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4716,7 +5229,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "7e5eb1e5b57d06f485f933bae27c846f385ecbf4cf94ee975e633b8302100ac7",
       "evidence": [
@@ -4724,7 +5237,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T33 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4759,14 +5278,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "781e1dc8f1136d4f016f08efb0db7a6ebd3a34231a92f93fc837c06bef233e57",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T23 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -4819,14 +5344,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4880,14 +5411,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4933,14 +5470,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T44 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -4971,7 +5514,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "6b7e09e05dadd99c72063d961beecc0ce5c59e0897f29d165da930b060d4eda4",
       "evidence": [
@@ -4979,7 +5522,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T33 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5050,7 +5599,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "48488026505e3a60153e4c417b893f96027fe7ea364f57ba640f0a87010ded19",
       "evidence": [
@@ -5058,7 +5607,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T34 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5099,7 +5654,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "d5f534491c5983c57737830d66809a674a19bbd49f3aa547487fa225414d4a03",
       "evidence": [
@@ -5107,7 +5662,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T34 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5148,7 +5709,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "36e66abc5418ed7d4fd79030288ce35645fd5f6d53ffea1c9d6a4240facdb4a6",
       "evidence": [
@@ -5156,7 +5717,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T34 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5197,7 +5764,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "ad5a66158c12b3a88535e4b4e44a761bf978398715d5a67ac6dce55112283b30",
       "evidence": [
@@ -5205,7 +5772,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T34 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5246,7 +5819,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "7526b2fff8c31633756825ddba460f207a19b285e7ad7e0cad03ecccb182702f",
       "evidence": [
@@ -5254,7 +5827,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T34 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5288,7 +5867,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "1fce39824a37c3a15c222ec23f6f04c049d5c2fb093264054cd79d089aa4e529",
       "evidence": [
@@ -5296,7 +5875,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T37 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5337,7 +5922,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "30ecd27ab31763807bc300c8c1f9750b54a5446cc13441caae84f1a0bad77f5a",
       "evidence": [
@@ -5345,7 +5930,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T34 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5391,14 +5982,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T44 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5432,7 +6029,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "32798d13a41a0e744bc5e5eb6e711b09f0783967e802ca4feaaaa13a2007a9fe",
       "evidence": [
@@ -5440,7 +6037,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T35 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5471,7 +6074,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "2eb50dfa7b8af59ac119687d5eaa5c0795726b4cd31cafc003d47afa9556d957",
       "evidence": [
@@ -5479,7 +6082,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T36 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5513,7 +6122,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "5ac75a08c06f5e8cf574ab4b47be5a5a629f875c9293086dfc93cef24e69bd49",
       "evidence": [
@@ -5521,7 +6130,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T37 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5552,7 +6167,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "83169e268ed40d3e2f5c615935a0d074bc61e58652f1579c75ba24aff7f1319a",
       "evidence": [
@@ -5560,7 +6175,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T36 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5606,14 +6227,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T44 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5659,14 +6286,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T44 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5720,14 +6353,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5768,7 +6407,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "b18b5ec10f113ce03a8253c50758a5d340a79f164db9c13b6dfe6f46fe7e0d1b",
       "evidence": [
@@ -5776,7 +6415,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T34 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5817,7 +6462,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "2bc6d51262adf4f27f5822964a45dcd6045bd0ba43237754710a3f3ff68e398f",
       "evidence": [
@@ -5825,7 +6470,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T34 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5918,7 +6569,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "8ff6635ca9b1413dd8a29efdff1492cc0c8c49fe4d2264dbc9de1db1c90b049d",
       "evidence": [
@@ -5926,7 +6577,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T34 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -5960,7 +6617,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "6daf86b6cba61776e3eb40ed5de9da0b09b01624a7a2d914c12666762f044e3c",
       "evidence": [
@@ -5968,7 +6625,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T37 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -6022,14 +6685,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -6068,7 +6737,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "4f1441e2ee8aa44290cd33463499d14b4858ddcb5e08fb5da36635f8f8cb622e",
       "evidence": [
@@ -6076,7 +6745,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T31 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -6105,7 +6780,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "af0b71d2f552b3e641feb03da7b63b308df3e698bea717b6b023d875fa99d4bb",
       "evidence": [
@@ -6114,9 +6789,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6168,14 +6854,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T42 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -6205,7 +6897,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "40daa31bebecb92682d10a0cd541a5a250a4686eb9c3c4eba185ba6ed4f8aeb2",
       "evidence": [
@@ -6214,9 +6906,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6243,7 +6946,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "b06a240b2aaa0a4a6d1822becfa55d3a17918b34f12d136674c733a83a6d94ce",
       "evidence": [
@@ -6252,9 +6955,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6281,7 +6995,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "6e46509ae0ab6c470b1daf400f6244ac85a323c963187e6b256cd93a07a8f62e",
       "evidence": [
@@ -6290,9 +7004,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6344,14 +7069,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -6382,7 +7113,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "f137dddb1604f41680fc5a51cedded30b8d5859c971b0a2ca2883c3bf6bac44c",
       "evidence": [
@@ -6391,9 +7122,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6420,7 +7162,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "24fffd176ee79ca5d3bf2a743e1697cdaeeff82676941fa88e82d4e251b69bad",
       "evidence": [
@@ -6429,9 +7171,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6460,7 +7213,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "af88c04cbb4879dd222323fb22a1427b5d95256f086e8571104a2d7f7f055197",
       "evidence": [
@@ -6469,9 +7222,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6502,7 +7266,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "224c5fd840977f4f8c768eb39a972b00eb13eedc0587b3047e65b055ed717001",
       "evidence": [
@@ -6511,9 +7275,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6554,7 +7329,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "e21185d4ab906956501a06dcfb93aeda8e47bf5ad20af9cd49c7e6e68d7d2e7a",
       "evidence": [
@@ -6562,9 +7337,19 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T30 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3"
+      ]
     }
   },
   {
@@ -6591,7 +7376,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "c8f0923ee0108983c483366f21ce7aa58df2d7f5d6a9b575274537f269baf634",
       "evidence": [
@@ -6600,9 +7385,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6629,7 +7425,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "a1c836d3d01dd2923fe162547c033073ddcf66c687fae7141b8f91f26875d1a8",
       "evidence": [
@@ -6638,9 +7434,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6668,7 +7475,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "cd1df804e5a64237fd094a57e731f79ceac70b7132549f0c0b922ec2cf9d8e38",
       "evidence": [
@@ -6677,9 +7484,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6706,7 +7524,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "86c8800edfecb6a97b0e2900b045d4055a7da369046133e6413a8368088f8bc0",
       "evidence": [
@@ -6715,9 +7533,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6749,7 +7578,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "7a4472a1559ddff79d3c48bb6ac0aae37e98c48572f61f05ed1715378bcf1c71",
       "evidence": [
@@ -6757,7 +7586,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T27 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -6788,7 +7623,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "626d94dc99d6698c15c821339f632f623acd3b71e25fbb46ce5b72e515373a96",
       "evidence": [
@@ -6797,9 +7632,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -6832,7 +7678,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "6e4f5fe0b7eece58b38d69c75c78e83147521e5a4cbde65da7de860eee5f67dd",
       "evidence": [
@@ -6840,9 +7686,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T32 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -6887,14 +7742,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "dbeb9e24c93a3720f7e4df3543f30b43a3483b8ded04a69980e63b1d94e128fd",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T24 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -6928,14 +7789,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "dfec4c0575eeee6b73463698d581d96a688aef73911d0a599ddae0bc41bbae8f",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T23 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -6964,7 +7831,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "614b01995b96851cc2e9f0ca753f24f3256600200d31e3fc077b95fb9d532590",
       "evidence": [
@@ -6973,9 +7840,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -7012,7 +7890,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "8cd2734d57e6b5a5d08253b9a57eb2c8026db837e4266ecaab10e83c7d15ddcc",
       "evidence": [
@@ -7020,7 +7898,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T31 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -7049,7 +7933,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "8bd27a22fc592fb79d293b95e56f7173dfed12cb181a8f4ca20bdbd1ee235f00",
       "evidence": [
@@ -7058,9 +7942,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -7112,14 +8007,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -7148,7 +8049,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "64b4edb7f97b505163c32bdc8faeb200d4bfc01b45a040185c1df4bf8aca6088",
       "evidence": [
@@ -7157,9 +8058,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -7204,14 +8116,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "611851a0a9addc237231462850ce125c58b0df1e36285af74de835920b530e86",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T24 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -7264,14 +8182,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -7300,7 +8224,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "7c0fe3e39695fb2788d2760e65d98f2f4df47c67d694e8d833fa2eb2027ddb97",
       "evidence": [
@@ -7309,9 +8233,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -7344,7 +8279,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "0a3a00b3b01a1b0678ce7888a062f86da8339d7b1017182c0b642c627eb72d1b",
       "evidence": [
@@ -7352,9 +8287,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T32 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -7387,7 +8331,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "601a4afe685622c72cce12df4bd85294b8305aa8070be3ac1399087ed6e382e1",
       "evidence": [
@@ -7395,9 +8339,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T32 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -7449,14 +8402,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -7519,7 +8478,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "6003e394156ba480086b689e4d1034d915e55171dd33e261f34a39a136c15360",
       "evidence": [
@@ -7527,9 +8486,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T32 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -7561,7 +8529,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "3f16ea41c9018688e20497530ac9e07363474982ea43774a503604414f5fd3ff",
       "evidence": [
@@ -7569,7 +8537,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T37 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -7599,7 +8573,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "b5d8ddf337431dbda8bd38d550dd115412d5cd991e994ca3c655a5789ea9221f",
       "evidence": [
@@ -7608,9 +8582,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -7665,7 +8650,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "9c4eb3c8390769789e8aac404d3c23a75ed0e98403d9ce6c2852fe844a950a5e",
       "evidence": [
@@ -7674,9 +8659,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -7708,7 +8704,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "d7e15698766876d2f27bdaa0296e25d2d057ee837ccd827f3bbc1eb72956766d",
       "evidence": [
@@ -7717,9 +8713,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -7747,7 +8754,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "39d36a444c4e5080b90b12e642178112b1a65cae972affe5088c9abd8f23dda3",
       "evidence": [
@@ -7756,9 +8763,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -7791,14 +8809,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "6232e5abfda865309141f312c459ddd99c25fe49a4cd11decb5c21d1a84abebe",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T22 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -7851,14 +8875,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -7889,14 +8919,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "f395a5270bf2cb22738609e510599cbf14176005993a31b35c845bdf6161465e",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T18 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -7925,7 +8961,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "32999da0d6ec3b2ae6f6f2eeb227cf9bf5e88b07ac1e1994d370d31498ad3633",
       "evidence": [
@@ -7934,9 +8970,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -7985,14 +9032,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T40 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -8021,7 +9074,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "97b1775da2928fec04e940727c898d01ea8c8a1f94e5520110d179f1321e4817",
       "evidence": [
@@ -8030,9 +9083,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -8063,7 +9127,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "3185a78dcdd3cb09a2258900c72c4af017fe47d2c9577d31c8d56cb9b0f1e55f",
       "evidence": [
@@ -8072,9 +9136,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -8131,7 +9206,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "a2942ad63d9ec63bae764d64ee1819fa05a911f76d91ff29ccad07884b5823ac",
       "evidence": [
@@ -8139,7 +9214,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T36 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -8186,14 +9267,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T48 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -8247,14 +9334,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -8283,7 +9376,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "39a295a1a171bb67e8fda550aa302e976f8bd3b1fee9ace050f1fb2424fef09b",
       "evidence": [
@@ -8292,9 +9385,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -8339,14 +9443,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T48 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -8397,14 +9507,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T40 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -8433,7 +9549,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "456d347ae3d0b0de538c289d454823c8d1e369cda0820c8f4461f774f0e5d864",
       "evidence": [
@@ -8442,9 +9558,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -8481,7 +9608,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "04083744dd7467ce15e7b30acca4099ceb8b5cc9c4d29b07172f96fc30396d4e",
       "evidence": [
@@ -8489,7 +9616,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T31 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -8535,7 +9668,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "a4a9141e7ad40007e3c48c2cf904eb26d3c67bb533f58dd9657aa74609c7d89d",
       "evidence": [
@@ -8543,9 +9676,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T29 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -8589,7 +9731,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "6b4eef2741eca765f1456b0d265c7d4fc5c7dc6de40cc9735b20efa67965da8d",
       "evidence": [
@@ -8597,9 +9739,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T29 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -8628,7 +9779,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "bbf839a47fe3445d1d89c1fdc67971c94ce0f9f447352bfc062f47cac2e260cd",
       "evidence": [
@@ -8637,9 +9788,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -8683,7 +9845,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "9c07916f912a12639b7bb344666eec368a13a0c00d1e85f6f24c1cce2689279f",
       "evidence": [
@@ -8691,9 +9853,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T29 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -8737,7 +9908,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "4108551126f088c99ca9cccef7ec09c2f4e74eca4d9276c554aa158d4f815d69",
       "evidence": [
@@ -8745,9 +9916,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T29 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -8774,7 +9954,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "93e9d2bc908318c0f3cf1500d88883856c634f3b65ac64e276fdb9b75e3fede4",
       "evidence": [
@@ -8783,9 +9963,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -8813,7 +10004,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "1ef0f5973d6e31fd374542ae529c18e69f3727bc71e514fe8b5815255435d303",
       "evidence": [
@@ -8822,9 +10013,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -8852,7 +10054,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "0aa8f875fb2c6d4e483c4042f1f82881a526dbab7e143e718829394ad66a6751",
       "evidence": [
@@ -8861,9 +10063,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -8907,7 +10120,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "8cab1ee6ffe959a0cb5b61783cfe628de1d1df58c93205f7b7397c7661a99ed0",
       "evidence": [
@@ -8915,9 +10128,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T29 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -8944,7 +10166,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "eba5937a6df1df3c679636c80e6e69842717dad086c06f73387eb4167b39d911",
       "evidence": [
@@ -8953,9 +10175,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -8996,7 +10229,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "96052eb772231e0a1e3547ac032633a8d1a357cfba7a4564229c98a88586fa84",
       "evidence": [
@@ -9004,9 +10237,19 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T30 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3"
+      ]
     }
   },
   {
@@ -9033,7 +10276,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "e6cdfbbb71e59d3e3dca6838718cef3d62c7b3d40d7cdaa315f623dd46b8b33e",
       "evidence": [
@@ -9042,9 +10285,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9077,14 +10331,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "43ebce58c58579d3532ee0dcea1c44821b9bc80bb029406ec3fc1f46f99b5643",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T23 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -9137,14 +10397,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -9173,7 +10439,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "8583ff516227c8e004828d5afe20b55d3664709d2b316598b866482680244476",
       "evidence": [
@@ -9182,9 +10448,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9225,7 +10502,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "8e058b01110bf2016badf91e3c034cf28f8161898566f051fa8ced80d812dabb",
       "evidence": [
@@ -9233,9 +10510,19 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T30 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3"
+      ]
     }
   },
   {
@@ -9277,14 +10564,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T38 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -9316,7 +10609,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "527d15e56658d06d6d58ef652b6d726952160cf652d4d0ee452ea8ca1a754ab5",
       "evidence": [
@@ -9325,9 +10618,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9364,7 +10668,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "2aef637403a6e5fcce0e2dde24c01614b2d8352684bb316d129d0b7c8bfd3258",
       "evidence": [
@@ -9372,7 +10676,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T31 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -9401,7 +10711,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "78c7b75252ba8b0c1b68f503c4549e3694427a566388cd599e0517be0f58380f",
       "evidence": [
@@ -9410,9 +10720,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9439,7 +10760,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "729feddc9fafe43ae22cecb1393ad4f28a138f2cd620ef7e691776e118041f34",
       "evidence": [
@@ -9448,9 +10769,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9477,7 +10809,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "03b9ccc9c0c848f8508514a1de846015996df75308504cd55833a78073460462",
       "evidence": [
@@ -9486,9 +10818,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9515,7 +10858,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "4cd81aef2921d58a21ba15dc6e936f318fc4293e28762e73601abc69a5ccce37",
       "evidence": [
@@ -9524,9 +10867,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9554,7 +10908,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "dbed7fed25e2e2649b059d1e6163149b9d809a4026ddeda7d406d7c67b0ce495",
       "evidence": [
@@ -9563,9 +10917,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9592,7 +10957,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "056859a1ab718909377ba853eae27d593653cb529a487bafdc77165ca1c8e755",
       "evidence": [
@@ -9601,9 +10966,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9630,7 +11006,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "a3acd93ebda5cbaa40d5754dc2b3a9e12724104b4ee5c8762e6e7e96992307c3",
       "evidence": [
@@ -9639,9 +11015,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9693,14 +11080,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T49 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -9730,7 +11123,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "b63fd072af5b4d84400130e9dced24d41fd2e29dddee284adbde7ef18b8f6a75",
       "evidence": [
@@ -9739,9 +11132,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9782,7 +11186,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "f977d080d3e9177a7bc35ff7280d63a91b3e74853400122fcb87f5c55e0bd0a5",
       "evidence": [
@@ -9790,9 +11194,19 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T30 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3"
+      ]
     }
   },
   {
@@ -9819,7 +11233,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "source_mapped_unqualified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "d3fbea7cb20ca65f095f506f93249c786fbc213597d29a18afa572050969c9c6",
       "evidence": [
@@ -9828,9 +11242,20 @@
         "migration/physics-research-static-audit.json",
         "migration/kernel-reuse-map.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T26 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     }
   },
   {
@@ -9863,7 +11288,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "6a35fa27828c5a9c7f1012feb9e8ed88585cbc2bd46d70ed77f83cd16476de1e",
       "evidence": [
@@ -9871,9 +11296,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T32 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -9910,7 +11344,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "2fe9cea87bd501753fd68390aab4bc1bc158ac87a5ab2a9980c28e1158646873",
       "evidence": [
@@ -9918,7 +11352,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T31 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -9957,7 +11397,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "bf98f9aaf298364e959b0bc156b9e96c2c80d925eaffb336a61849ba568230c1",
       "evidence": [
@@ -9965,7 +11405,13 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T31 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -10000,7 +11446,7 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested_findings_open",
       "date": "2026-10-17",
       "source_text_sha256": "80479ac32b2554cddb28f5ec6892502aab911af24c0aad4cb196c3703d6fc7df",
       "evidence": [
@@ -10008,9 +11454,18 @@
         "migration/physics-research-review.md",
         "migration/physics-research-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T32 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
-      "deletion_authorized": false
+      "deletion_authorized": false,
+      "findings_open": [
+        "F5"
+      ]
     }
   },
   {
@@ -10046,14 +11501,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "2dafa4dab1b8f1d7abfe708d2e573707afacaf3de553c2e8c9158b72bc2afc0a",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T21 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10090,14 +11551,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "dca398ed14d2d9f297a6d6051c72f4a5069360451554888ee462c0709841cdcf",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T21 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10133,14 +11600,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "9ea84ff7f513338d94e708d54b8c87073a2bfef885237fbed911dbf1533a44d7",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T20 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10176,14 +11649,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "efbfa9f8052c181c4a7dab5c248ac8986b273b69ee05061644e3cd572db1f8f4",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T20 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10220,14 +11699,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "955a01cd4f264b1906a26d5ae00bafadf76cfa6939cad4e3c553b78ff18419ec",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T21 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10263,14 +11748,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "893ca24da86f0e7ff6b7f6a977dcac60a5d0b427c275f386102eac6c1ea5813b",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T20 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10306,14 +11797,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "60d2a484ce61179761a8005e8b554c537680c08e02416db1a290543bb67eea56",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T20 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10350,14 +11847,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "ae5dd644720fa067176757cf9bfe0f48daba113db63f4aa6b7bd7e7ec71d0427",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T21 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10394,14 +11897,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "a4d8892549651ce0231417707f746046176fc8a861c295f0fd0b2a6fd2e8a40c",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T21 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10438,14 +11947,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "90e3760e7287b3f4be33d3374c4f09365b2744e74c25a81af7f143edccb302d0",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T21 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10481,14 +11996,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "1015578b50a44d5ffb9275137b1fa2511436d4b74c043074e476fb9ae95b05c4",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T20 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10524,14 +12045,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "93aaa5b13bad9259befbabd62339db246002854d866fbfe1fc6a7510d245460e",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T20 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10568,14 +12095,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "f38bdde6a24796dc2cc99a530cc6a3d94b28f384301ddf3277f9d49db603e930",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T21 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10611,14 +12144,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "644b9f01035724deb2fb572f85fa3b166207394d39b8df77387cc9c89122ce3c",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T20 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10654,14 +12193,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "68f85718b3c5497b0c9785890bc51e832c7c77e5dc59b6c05735b7b8f228db22",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T20 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10698,14 +12243,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "1bb2d19eca9bec92b4b3cda98643e64cd9c775867006c1f5fef61891ebf7c261",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T21 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -10741,14 +12292,20 @@
     "tracked": true,
     "presence": "tracked",
     "implementation": {
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "date": "2026-10-17",
       "source_text_sha256": "1ff166278360c385647f8c28db67386ef6e643b38c9092b6eea38949fa858c97",
       "evidence": [
         "migration/native-startup-implementation.json",
         "migration/native-startup-review.md"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T20 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "deletion_authorized": false
     }
   },
@@ -11606,14 +13163,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T50 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -11660,14 +13223,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T50 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -11714,14 +13283,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T50 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -11768,14 +13343,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T50 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -11822,14 +13403,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T50 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -11876,14 +13463,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T50 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -11930,14 +13523,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T50 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -11984,14 +13583,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T50 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -12038,14 +13643,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T50 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }
@@ -16304,14 +17915,20 @@
     ],
     "implementation": {
       "date": "2026-10-17",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "wave": "recording_application",
       "evidence": [
         "migration/recording-application-implementation.json",
         "migration/recording-application-review.md",
         "migration/recording-application-static-audit.json"
       ],
-      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "execution": {
+        "date": "2026-10-19",
+        "build": "passed",
+        "ctest": "migration_T51 passed",
+        "static_sweeps": "passed",
+        "note": "task-level evidence; per-source oracle and runtime qualification gates open"
+      },
       "package_complete": false,
       "deletion_authorized": false
     }

@@ -26,7 +26,7 @@ void schemas(){
     bt::invalid([]{(void)t::track_from_dict(toml("name='bad'\nlength_m=30\n"),std::string("1"));});
     const auto zone=t::track_from_dict(toml("name='zones'\nlength_m=10\ngrade_profile={knots=[[0.0,0.0],[10.0,0.1]]}\nsurface_sections=[{start_m=2,end_m=3,surface='wet'}]\n"));
     bt::require(t::dump_track(t::track_from_dict(toml(t::dump_track(zone))))==t::dump_track(zone),"grade and material zones retained");
-    const auto big=t::obstacle_from_dict(io::parse_json("{\"type\":\"roots\",\"start_m\":1.0,\"seed\":184467440737095516170}"));
+    const auto big=t::obstacle_from_dict(io::parse_json(R"({"type":"roots","start_m":1.0,"seed":184467440737095516170})"));
     bt::require(std::get<t::Roots>(big.shape).seed=="184467440737095516170","seed exceeds uint64 without precision loss");
     const auto climb=t::climb_steps();bt::invalid([&]{(void)t::dump_track(climb);});
     bt::require(io::canonical_json(t::identity_value(climb)).find("SteppedClimb")!=std::string::npos,"full native identity includes source nonserializable preset");
@@ -34,7 +34,7 @@ void schemas(){
     bt::require(described.description=="{'z': ['text', True], 'a': 2}","source mapping order and Python description coercion");
 }
 void carving_and_placement(){
-    const auto pieces=t::carve_roughness({{t::RoadRoughness{1.0,8.0,0.01,0.2,"99999999999999999999999"}},{t::SquareEdge{4.0,0.1,1.}}});
+    const auto pieces=t::carve_roughness({{.shape=t::RoadRoughness{.start_m=1.0,.section_length_m=8.0,.amplitude_m=0.01,.correlation_length_m=0.2,.seed="99999999999999999999999"}},{.shape=t::SquareEdge{.start_m=4.0,.height_m=0.1,.ledge_length_m=1.}}});
     bt::require(pieces.size()==3,"roughness is split around hand placed defect");
     const auto& left=std::get<t::RoadRoughness>(pieces[0].shape);const auto& right=std::get<t::RoadRoughness>(pieces[2].shape);
     bt::require(left.start_m==1.&&left.section_length_m==3.&&right.start_m==5.&&right.section_length_m==4.0,"split geometry preserves exact neighbors");

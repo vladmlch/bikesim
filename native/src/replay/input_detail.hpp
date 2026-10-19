@@ -11,14 +11,15 @@ using namespace recording::detail;
 inline std::string asset_text(const ReplayInput& input, const std::string& name) {
     const auto it = input.assets.find(name);
     if (it == input.assets.end()) throw recording::RecordingError("missing replay asset: " + name);
-    return std::string(reinterpret_cast<const char*>(it->second.data()), it->second.size());
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) byte-to-char aliasing is the designed idiom for raw file bytes
+    return {reinterpret_cast<const char*>(it->second.data()), it->second.size()};
 }
 inline std::set<std::string> keys(const Value& value) {
     std::set<std::string> out;
     for (const auto& [name, ignored] : io::as_object(value, "replay")) { (void)ignored; out.insert(name); }
     return out;
 }
-inline void exact_keys(const Value& value, std::set<std::string> expected, std::string_view path) {
+inline void exact_keys(const Value& value, const std::set<std::string>& expected, std::string_view path) {
     if (keys(value) != expected) throw recording::RecordingError(std::string(path) + ": unexpected fields");
 }
 inline void digest(const Value& value, std::string_view label) {

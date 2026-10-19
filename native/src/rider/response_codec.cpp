@@ -11,10 +11,10 @@
 namespace bike::rider {
 namespace {
 using io::Value;
-Value real(double x){if(!std::isfinite(x))throw std::invalid_argument("allocation diagnostics must be finite");std::array<char,32>b{};auto r=std::to_chars(b.data(),std::to_address(b.end()),x);if(r.ec!=std::errc())throw std::runtime_error("allocation float encode");std::string s(b.data(),r.ptr);if(s.find_first_of(".eE")==std::string::npos)s+=".0";return Value{io::Number{std::move(s)}};}
-Value values(std::span<const double> v){Value::Array a;for(double x:v)a.push_back(real(x));return Value{std::move(a)};}
+Value real(double x){if(!std::isfinite(x))throw std::invalid_argument("allocation diagnostics must be finite");std::array<char,32>b{};auto const r=std::to_chars(b.data(),std::to_address(b.end()),x);if(r.ec!=std::errc())throw std::runtime_error("allocation float encode");std::string s(b.data(),r.ptr);if(s.find_first_of(".eE")==std::string::npos)s+=".0";return Value{io::Number{std::move(s)}};}
+Value values(std::span<const double> v){Value::Array a;for(double const x:v)a.push_back(real(x));return Value{std::move(a)};}
 Value optional(std::optional<double> v){return v?real(*v):Value{};}
-Value residual_value(double v){return std::isinf(v)&&v>0.?Value{io::Tagged{"float64",{{"value","+inf"}}}}:real(v);}
+Value residual_value(double v){return std::isinf(v)&&v>0.?Value{io::Tagged{.kind="float64",.fields={{"value","+inf"}}}}:real(v);}
 const Value& member(const Value::Object& o,std::string_view key,std::string_view path){const auto*v=io::find_member(o,key);if(!v)throw std::invalid_argument(std::string(path)+"."+std::string(key)+": missing required key");return *v;}
 double number(const Value& v,std::string_view path){return io::as_double(v,path);}
 std::size_t count(const Value& v,std::string_view path){const auto n=io::as_int64(v,path);if(n<0||std::cmp_greater(n,std::numeric_limits<std::size_t>::max()))throw std::invalid_argument(std::string(path)+": invalid count");return static_cast<std::size_t>(n);}
@@ -78,7 +78,8 @@ Value encode_support_diagnostics(const LegacySupportDiagnostics& s) {
         if(f.geometry){const auto&g=*f.geometry;geometry={{"requested_compression_m",real(g.requested_compression_m)},{"applied_compression_m",real(g.applied_compression_m)},{"requested_shear_m",real(g.requested_shear_m)},{"applied_shear_m",real(g.applied_shear_m)},{"saturated",Value{g.saturated}}};for(const auto&name:g.limiting_reasons)reasons.push_back(Value{name});}
         else geometry.emplace_back("saturated",Value{false});
         geometry.emplace_back("limiting_reasons",Value{std::move(reasons)});
-        if(f.weld)geometry.emplace_back("weld",Value{true});if(f.recovery)geometry.emplace_back("recovery",Value{true});
+        if(f.weld)geometry.emplace_back("weld",Value{true});
+        if(f.recovery)geometry.emplace_back("recovery",Value{true});
         feet.emplace_back(side,Value{Value::Object{{"actual_sole_position_m",values(f.actual)},{"target_sole_position_m",values(f.target)},{"ik_saturated",Value{f.ik_saturated}},{"recovery_stage",Value{f.recovery_stage}},{"goal_geometry",Value{std::move(geometry)}}}});
     }
     Value::Object posture{{"torso_lean_rad",real(s.posture.torso_lean_rad)},{"pelvis_pitch_rad",real(s.posture.pelvis_pitch_rad)},{"pelvis_offset_m",s.posture.pelvis_offset_m?values(*s.posture.pelvis_offset_m):Value{}},{"use_saddle",Value{s.posture.use_saddle}}};
@@ -103,7 +104,8 @@ LegacySupportDiagnostics decode_support_diagnostics(const Value& value,std::stri
         const auto&g=io::as_object(member(f,"goal_geometry",path),path);const bool saturated=boolean(member(g,"saturated",path),path);const auto&reasons=io::as_array(member(g,"limiting_reasons",path),path);
         if(io::find_member(g,"requested_compression_m")){::rider::SoleGoalDiagnostic geometry{};geometry.requested_compression_m=number(member(g,"requested_compression_m",path),path);geometry.applied_compression_m=number(member(g,"applied_compression_m",path),path);geometry.requested_shear_m=number(member(g,"requested_shear_m",path),path);geometry.applied_shear_m=number(member(g,"applied_shear_m",path),path);geometry.saturated=saturated;for(const auto&r:reasons)geometry.limiting_reasons.push_back(io::as_string(r,path));target.geometry=std::move(geometry);}
         else if(saturated||!reasons.empty())throw std::invalid_argument(std::string(path)+": unmodeled sole geometry diagnostics");
-        if(const auto*v=io::find_member(g,"weld"))target.weld=boolean(*v,path);if(const auto*v=io::find_member(g,"recovery"))target.recovery=boolean(*v,path);
+        if(const auto*v=io::find_member(g,"weld"))target.weld=boolean(*v,path);
+        if(const auto*v=io::find_member(g,"recovery"))target.recovery=boolean(*v,path);
         const std::set<std::string_view> geometry_keys{"requested_compression_m","applied_compression_m","requested_shear_m","applied_shear_m","saturated","limiting_reasons","weld","recovery"};for(const auto&[key,v]:g){(void)v;if(!geometry_keys.contains(key))throw std::invalid_argument(std::string(path)+": unknown sole geometry field");}
     }
     const auto&p=io::as_object(get("posture"),path);if(p.size()!=4)throw std::invalid_argument(std::string(path)+": posture keys");out.posture.torso_lean_rad=number(member(p,"torso_lean_rad",path),path);out.posture.pelvis_pitch_rad=number(member(p,"pelvis_pitch_rad",path),path);out.posture.use_saddle=boolean(member(p,"use_saddle",path),path);const auto&offset=member(p,"pelvis_offset_m",path);if(!io::is_null(offset)){const auto x=vector(offset,path);if(x.size()!=2)throw std::invalid_argument(std::string(path)+": pelvis offset width");out.posture.pelvis_offset_m=std::array<double,2>{x[0],x[1]};}

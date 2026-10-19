@@ -885,9 +885,9 @@
       },
       "files": [
         {
-          "bytes": 233,
+          "bytes": 290,
           "path": "requests/welded_flat.toml",
-          "sha256": "9d2a3b41363d5563bcdf95b6135f6959957b4ae86272a0d27c883730d3d444ac"
+          "sha256": "32143e14a69e96ee5d0c65f4398980deda2eb52e9c7aa9084270fdc330712c16"
         }
       ],
       "group": "config",
@@ -904,9 +904,9 @@
       },
       "files": [
         {
-          "bytes": 207,
+          "bytes": 240,
           "path": "requests/legacy_flat.toml",
-          "sha256": "587f10d7ccda08e08d4941e5c348a2e2f7377d9c289f4c04eb5434db05fce6c1"
+          "sha256": "f9c42f962e505f53ed8df3bebd982b86b202a8778a0f24b710f11f0133c0e36e"
         }
       ],
       "group": "config",
@@ -14836,12 +14836,36 @@
       "inputs": [
         {
           "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/requests/welded_flat.toml",
-          "sha256": "9d2a3b41363d5563bcdf95b6135f6959957b4ae86272a0d27c883730d3d444ac"
+          "sha256": "32143e14a69e96ee5d0c65f4398980deda2eb52e9c7aa9084270fdc330712c16"
         }
       ],
       "name": "bootstrap/native_start_welded",
       "notes": "startup outputs for the matching frozen-flat request",
       "produced_by": "ride pipeline for requests/welded_flat.toml",
+      "recipe": "RCP-01"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 23378,
+          "path": "initial_state/welded_flat.json",
+          "sha256": "b144ab3a96a34756e49a35a9a1e7d51dd11fbcd1bbb11066e05607350174c184"
+        }
+      ],
+      "group": "bootstrap",
+      "inputs": [
+        {
+          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/requests/welded_flat.toml",
+          "sha256": "32143e14a69e96ee5d0c65f4398980deda2eb52e9c7aa9084270fdc330712c16"
+        }
+      ],
+      "name": "initial_state/welded_flat.json",
+      "notes": "t=0 state transferred by requests/welded_flat.toml",
+      "produced_by": "PhysicalInitialState.capture on a welded-flat cache-hit build",
       "recipe": "RCP-01"
     },
     {
@@ -14880,7 +14904,7 @@
       "inputs": [
         {
           "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/requests/legacy_flat.toml",
-          "sha256": "587f10d7ccda08e08d4941e5c348a2e2f7377d9c289f4c04eb5434db05fce6c1"
+          "sha256": "f9c42f962e505f53ed8df3bebd982b86b202a8778a0f24b710f11f0133c0e36e"
         }
       ],
       "name": "bootstrap/legacy_flat",

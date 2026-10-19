@@ -5,6 +5,7 @@
 namespace bike::replay {
 namespace {
 using namespace detail;
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 Value decoded(const Value& value, const recording::FieldSpec& spec) {
     if (io::is_null(value)) return value;
     if (spec.dtype == "struct") {
@@ -38,7 +39,7 @@ std::vector<Value> stream(const recording::Recording& reader, const recording::T
         std::vector<Object> rows;
         for (const auto& row : batch) {
             Object decoded_row;
-            auto take = [&](const recording::FieldSpec& item) {
+            auto const take = [&](const recording::FieldSpec& item) {
                 const auto* value = find(row, item.key); if (!value) throw recording::RecordingError("missing recorded stream field: " + item.key);
                 if (item.optional && !io::as_bool(field(row, item.key + "_present"), "recorded presence")) return;
                 decoded_row.emplace_back(item.key, decoded(*value, item));
@@ -108,7 +109,7 @@ ReplayInput database_input(const std::filesystem::path& path, std::optional<std:
     for (std::size_t i = 0; i < out.transitions.size(); ++i) {
         auto& row = std::get<Object>(out.transitions[i].data);
         if (count(pop(row, "request_id")) != static_cast<std::int64_t>(i) || count(pop(row, "previous_observation_id")) != static_cast<std::int64_t>(i) ||
-            count(pop(row, "observation_id")) != static_cast<std::int64_t>(i + 1) || i + 1 >= out.observations.size())
+            count(pop(row, "observation_id")) != static_cast<std::int64_t>(i) + 1 || i + 1 >= out.observations.size())
             throw recording::RecordingError("inconsistent transition observation/request references");
         set(row, "observation", out.observations[i + 1]);
     }

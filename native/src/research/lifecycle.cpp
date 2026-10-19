@@ -32,9 +32,11 @@ bool is_interrupt(const std::exception_ptr& error) {
 
 void FailureReport::add(std::string_view operation, std::exception_ptr failure) noexcept {
     if (!primary) primary = std::move(failure);
+    // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
     else { try { secondary.push_back(std::string(operation) + ": " + exception_text(failure)); } catch (...) {} }
 }
 void FailureReport::note(std::string_view message) noexcept {
+    // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
     try { secondary.emplace_back(message); } catch (...) {}
 }
 void FailureReport::rethrow_if_failed() const { if (primary) std::rethrow_exception(primary); }
@@ -76,10 +78,10 @@ ResearchRun::~ResearchRun() { if (session_) session_->set_reset_hooks({}, {}); }
 void ResearchRun::event(std::string kind, io::Value values) {
     if (!publication_) return;
     const auto status = environment_->status();
-    events_.push_back(OperatorEvent{static_cast<std::int64_t>(events_.size()),
-        runtime::sample_wire::integer(runtime::sample_wire::required(status, "step")),
-        runtime::sample_wire::number(runtime::sample_wire::required(status, "time_s")),
-        platform::monotonic_seconds(), std::move(kind), false, false, false, std::move(values), episode_id_});
+    events_.push_back(OperatorEvent{.event_id=static_cast<std::int64_t>(events_.size()),
+        .processed_step=runtime::sample_wire::integer(runtime::sample_wire::required(status, "step")),
+        .time_s=runtime::sample_wire::number(runtime::sample_wire::required(status, "time_s")),
+        .received_wall_s=platform::monotonic_seconds(), .kind=std::move(kind), .queued=false, .terminal=false, .applied=false, .values=std::move(values), .episode_id=episode_id_});
 }
 void ResearchRun::before_reset() {
     if (finalization_attempted_ && !draining_) throw std::runtime_error("cannot reset a finalized research launch");
@@ -125,14 +127,14 @@ void ResearchRun::reset(std::optional<std::string> seed) {
         SensorConfig sensors;
         sensors.delivery = config.sensors;
         sensors.sample_period_s = static_cast<double>(config.sensor_steps) * config.timestep_s;
-        sensors.noise = {config.noise_std[0], config.noise_std[1], config.noise_std[2], config.noise_std[3]};
+        sensors.noise = {.acceleration_std_mps2=config.noise_std[0], .gyro_std_rad_s=config.noise_std[1], .encoder_std_rad_s=config.noise_std[2], .torque_std_nm=config.noise_std[3]};
         tape = make_sensor_tape(sensors, chosen, 1 + config.max_steps / config.sensor_steps);
         state = startup_sensor_state(sensors, *tape, *config.raw_initial);
     } else if (chosen != config.seed_decimal) {
         throw std::invalid_argument("a captured bootstrap without raw startup sensors cannot be reseeded");
     }
     before_reset();
-    if (tape) environment_->reset(std::move(*tape), std::move(*state), chosen, std::move(metadata), std::move(assets));
+    if (tape) environment_->reset(std::move(*tape), std::move(*state), chosen, std::move(metadata), std::move(assets)); // NOLINT(bugprone-unchecked-optional-access) a captured state accompanies every tape
     else environment_->reset();
     new_episode();
 }
@@ -160,7 +162,7 @@ const EpisodeReceipt* ResearchRun::seal(std::string reason) {
         set(episode.run_metadata, "seal_reason", text(reason));
         auto summary = summarize(episode);
         set(summary, "seal_reason", text(reason));
-        prepared_ = EpisodeReceipt{episode_id_, std::move(reason), std::move(episode), std::move(summary)};
+        prepared_ = EpisodeReceipt{.episode_id=episode_id_, .seal_reason=std::move(reason), .episode=std::move(episode), .summary=std::move(summary)};
     }
     if (!prepared_events_) {
         std::vector<OperatorEvent> staged;
@@ -172,13 +174,13 @@ const EpisodeReceipt* ResearchRun::seal(std::string reason) {
         }
         const auto& final = prepared_->episode.final_snapshot;
         if (final.first_failure)
-            staged.push_back(OperatorEvent{0, final.step, final.time_s, platform::monotonic_seconds(),
-                "model_first_failure", false, false, false,
-                Value{Object{{"evidence", wire_value(final.first_failure->as_wire())}, {"classification", text("measured")}}}, episode_id_});
-        staged.push_back(OperatorEvent{0, final.step, final.time_s, platform::monotonic_seconds(),
-            "episode_ended", false, true, false,
-            Value{Object{{"reason", text(prepared_->seal_reason)}, {"episode_id", integer(episode_id_)}}}, episode_id_});
-        std::stable_sort(staged.begin(), staged.end(), [](const auto& first, const auto& second) {
+            staged.push_back(OperatorEvent{.event_id=0, .processed_step=final.step, .time_s=final.time_s, .received_wall_s=platform::monotonic_seconds(),
+                .kind="model_first_failure", .queued=false, .terminal=false, .applied=false,
+                .values=Value{Object{{"evidence", wire_value(final.first_failure->as_wire())}, {"classification", text("measured")}}}, .episode_id=episode_id_});
+        staged.push_back(OperatorEvent{.event_id=0, .processed_step=final.step, .time_s=final.time_s, .received_wall_s=platform::monotonic_seconds(),
+            .kind="episode_ended", .queued=false, .terminal=true, .applied=false,
+            .values=Value{Object{{"reason", text(prepared_->seal_reason)}, {"episode_id", integer(episode_id_)}}}, .episode_id=episode_id_});
+        std::ranges::stable_sort(staged, [](const auto& first, const auto& second) {
             return first.received_wall_s < second.received_wall_s;
         });
         prepared_events_ = std::move(staged);
@@ -203,7 +205,14 @@ std::optional<std::filesystem::path> ResearchRun::finish(std::exception_ptr prim
     const bool first = !finalization_attempted_;
     finalization_attempted_ = true;
     finalizing_ = true;
-    struct ScopeExit { bool& active; ~ScopeExit() { active = false; } } finalizing{finalizing_};
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
+    struct ScopeExit { bool& active; explicit ScopeExit(bool& flag) : active(flag) {} ~ScopeExit() { active = false; }
+        ScopeExit(const ScopeExit&) = delete;
+        ScopeExit& operator=(const ScopeExit&) = delete;
+        ScopeExit(ScopeExit&&) = delete;
+        ScopeExit& operator=(ScopeExit&&) = delete;
+    };
+    const ScopeExit finalizing{finalizing_};
     if (first) failures_.primary = std::move(primary);
     if (first && stop) {
         draining_ = true;
@@ -211,7 +220,7 @@ std::optional<std::filesystem::path> ResearchRun::finish(std::exception_ptr prim
         catch (...) { failures_.add("active control drain failed", std::current_exception()); }
         draining_ = false;
     }
-    platform::InterruptShield shield;
+    platform::InterruptShield const shield;
     if (!final_reason_) {
         const auto status = environment_->status();
         const auto& reason = runtime::sample_wire::required(status, "reason");
@@ -227,9 +236,10 @@ std::optional<std::filesystem::path> ResearchRun::finish(std::exception_ptr prim
                 Value{Object{{"error", text(exception_text(failures_.primary))}}});
             failure_event_recorded_ = true;
         }
-        (void)seal(*final_reason_);
+        (void)seal(*final_reason_); // NOLINT(bugprone-unchecked-optional-access) final_reason_ is assigned before publication begins
         if (shield.deferred()) {
             try { event("operator_stop_deferred", Value{Object{{"deferred_during", text("publication")}}}); }
+            // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
             catch (...) { /* Observability cannot break the shielded publish. */ }
         }
         if (publication_) path_ = publication_->publish(episodes_, events_);
@@ -256,6 +266,7 @@ PlaybackClock::PlaybackClock(double timestep) : timestep_s_(timestep) {
 void PlaybackClock::rebase(double now, std::int64_t step) {
     clock_input(now, step); wall_s_ = now; step_ = step; debt_s_ = 0.; initialized_ = true;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void PlaybackClock::set_scale(int scale, double now, std::int64_t step) {
     if (scale != 1 && scale != 2 && scale != 4 && scale != 8) throw std::invalid_argument("scale must be one of 1, 2, 4, 8");
     clock_input(now, step); scale_ = scale; rebase(now, step);

@@ -30,7 +30,7 @@ void Camera::update(mjvCamera& camera, double bike_x, double bike_z) {
         (*lookat_)[1] = target[1];
         (*lookat_)[2] += smoothing_ * (target[2] - (*lookat_)[2]);
     }
-    auto lookat = std::span(camera.lookat);
+    auto const lookat = std::span(camera.lookat);
     for (std::size_t i = 0; i < lookat.size(); ++i) lookat[i] = (*lookat_)[i];
 }
 } // namespace bike::viewer

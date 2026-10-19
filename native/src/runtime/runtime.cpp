@@ -503,8 +503,12 @@ void NativeRideRuntime::apply_bootstrap() {
             stepper_->rider_contacts().assign_state(std::move(contact_state),
                                                     std::move(probe));
         }
-        stepper_->set_tire_state(bootstrap_.tire.names,
-                                 bootstrap_.tire.row);
+        // A tire writer validates its full canonical column set, so restore
+        // whenever one exists; a document carrying tire state against a
+        // no-tire Stepper still reports the absent-writer error.
+        if (stepper_->has_tire() || !bootstrap_.tire.names.empty())
+            stepper_->set_tire_state(bootstrap_.tire.names,
+                                     bootstrap_.tire.row);
         // The runtime counters land last (the docstring's ordered restore
         // ends with them): step/generation, clocks, filters, contacts,
         // energy and the controller/intent state faces.
@@ -786,7 +790,7 @@ RenderFrame NativeRideRuntime::render_frame() const {
         .view = committed_presentation_.as_wire(),
         .model_status = accounting_->state().model_status.as_wire(),
         .first_failure = accounting_->state().monitor.first_failure};
-    return {std::move(state), committed_presentation_, model_image_.sha256};
+    return {.state=std::move(state), .presentation=committed_presentation_, .model_sha256=model_image_.sha256};
 }
 
 ModelImage NativeRideRuntime::model_image() const {

@@ -36,7 +36,7 @@ struct TireSpec {
 
 // tire.py _material(): the synthetic default behind TireParameters.material.
 inline TireSpec synthetic_tire_material() {
-    return TireSpec{130000., 800., 200000., "synthetic", {0., 2000.}};
+    return TireSpec{.radial_k_n_m=130000., .radial_c_ns_m=800., .pressure_pa_gauge=200000., .provenance="synthetic", .valid_load_range_n={0., 2000.}};
 }
 
 // ---- tire_curve.py TabulatedTireSpec ----------------------------------------
@@ -112,12 +112,14 @@ struct TyreSpecs {
 };
 
 // tyre.py module constants (Plan D5 stock tyres).
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const TyreSpecs kFrontTyre{
-    "Schwalbe Magic Mary 29x2.4", 372., 320., 57., 1.5, .011,
-    60., 6., .4435, .1194, .8589, .2484, .2, .0662, .01, 60., 28., .00586};
+    .name="Schwalbe Magic Mary 29x2.4", .outer_radius_mm=372., .rim_radius_mm=320., .section_height_mm=57., .pressure_bar=1.5, .crr_reference=.011,
+    .casing_width_mm=60., .compressed_casing_mm=6., .area_factor=.4435, .carcass_stiffness_n_mm2=.1194, .contact_length_factor=.8589, .rate_stiffening=.2484, .rate_relaxation_s=.2, .loss_factor=.0662, .hysteresis_rate_eps_mps=.01, .relaxation_length_mm=60., .rim_stiffness_n_mm2=28., .tread_loss_crr=.00586};
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const TyreSpecs kRearTyre{
-    "Schwalbe Hans Dampf 27.5x2.4", 352., 300., 55., 1.7, .0103,
-    60., 6., .4576, .1225, .8801, .2498, .2, .069, .01, 60., 28., .00481};
+    .name="Schwalbe Hans Dampf 27.5x2.4", .outer_radius_mm=352., .rim_radius_mm=300., .section_height_mm=55., .pressure_bar=1.7, .crr_reference=.0103,
+    .casing_width_mm=60., .compressed_casing_mm=6., .area_factor=.4576, .carcass_stiffness_n_mm2=.1225, .contact_length_factor=.8801, .rate_stiffening=.2498, .rate_relaxation_s=.2, .loss_factor=.069, .hysteresis_rate_eps_mps=.01, .relaxation_length_mm=60., .rim_stiffness_n_mm2=28., .tread_loss_crr=.00481};
 
 struct TierSpec {
     std::string name;
@@ -128,10 +130,10 @@ struct TierSpec {
 };
 
 // tyre.py TIERS, in dict insertion order ('fast', 'detailed').
-inline constexpr TierSpec kTireTiers[] = {
-    {"fast", 64, 75.0, 0.0005, false},
-    {"detailed", 256, 75.0, 0.00025, true},
-};
+inline constexpr auto kTireTiers = std::to_array<TierSpec>({
+    {.name="fast", .n_rays=64, .half_angle_deg=75.0, .timestep_s=0.0005, .discretised_brush=false},
+    {.name="detailed", .n_rays=256, .half_angle_deg=75.0, .timestep_s=0.00025, .discretised_brush=true},
+});
 [[nodiscard]] const TierSpec* find_tire_tier(std::string_view name);
 
 // ---- chain.py DrivetrainSpecs (the mid-drive gearing record) -----------------
@@ -169,11 +171,12 @@ struct MotorProfile {
 };
 
 // motor_profile.py PROFILES registry ({'bosch_cx_gen4': BOSCH_CX_GEN4}).
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const MotorProfile kBoschCxGen4{
-    "bosch_performance_line_cx_gen4", 85., 250., 600., .04,
-    {.6, 1.4, {1.4, 3.4}, 3.4}, 40., 120., 25. / 3.6, 2. / 3.6,
-    0.08726646259971647 /* radians(5) */,
-    "Bosch Performance Line CX Gen 4 (no ABS); recalled from memory "
+    .name="bosch_performance_line_cx_gen4", .peak_torque_nm=85., .rated_power_w=250., .peak_power_w=600., .torque_tau_s=.04,
+    .mode_gains={.eco=.6, .tour=1.4, .emtb={1.4, 3.4}, .turbo=3.4}, .emtb_full_gain_at_nm=40., .cadence_support_max_rpm=120., .cutoff_mps=25. / 3.6, .taper_width_mps=2. / 3.6,
+    .gate_min_crank_rad_s=0.08726646259971647 /* radians(5) */,
+    .provenance="Bosch Performance Line CX Gen 4 (no ABS); recalled from memory "
     "2026-10-04, unverified, no web lookup by user instruction"};
 [[nodiscard]] const MotorProfile* find_motor_profile(std::string_view name);
 
@@ -251,8 +254,8 @@ struct PedalingConfig {
 };
 
 // drivetrain.py CASSETTE_12S_TEETH.
-inline constexpr int kCassette12sTeeth[] = {10, 12, 14, 16, 18, 21,
-                                            24, 28, 33, 39, 45, 51};
+inline constexpr auto kCassette12sTeeth = std::to_array<int>({10, 12, 14, 16, 18, 21,
+                                            24, 28, 33, 39, 45, 51});
 
 struct ShiftingConfig {
     bool enabled = false;
@@ -409,8 +412,8 @@ struct ArticulatedConfig {
     double balance_grace_s = 3.;
 
     [[nodiscard]] AttachmentBudget attachment_budget() const {
-        return {pedal_min_normal_n, foot_mu, saddle_mu,
-                grip_pull_per_hand_n, link_max_gap_m};
+        return {.foot_min_normal_n=pedal_min_normal_n, .foot_mu=foot_mu, .saddle_mu=saddle_mu,
+                .grip_pull_n=grip_pull_per_hand_n, .max_gap_m=link_max_gap_m};
     }
     // ArticulatedConfig.passive_damping_nms_rad (resolved hinge damping).
     [[nodiscard]] double passive_damping_nms_rad() const {
@@ -442,99 +445,108 @@ namespace detail {
 // ---- leaf record schemas -----------------------------------------------------
 // TireSpec/TabulatedTireSpec never appear as dataclass fields (only inside
 // the material union), so no declared-default instance is needed.
-inline constexpr FieldDecl kTireSpecFields[] = {
+inline constexpr auto kTireSpecFields = std::to_array<FieldDecl>({
     REQ_REAL(TireSpec, radial_k_n_m),
     REQ_REAL(TireSpec, radial_c_ns_m),
     REQ_REAL(TireSpec, pressure_pa_gauge),
     REQ_STR(TireSpec, provenance),
-    {"valid_load_range_n", "tuple[float, float]", FieldKind::Real2Tuple,
-     offsetof(TireSpec, valid_load_range_n), true, "", nullptr, nullptr},
-};
+    {.name="valid_load_range_n", .type="tuple[float, float]", .kind=FieldKind::Real2Tuple,
+     .offset=offsetof(TireSpec, valid_load_range_n), .required=true, .factory="", .nested=nullptr, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kTireSpecSchema{
-    "bike_sim.physics.tire.TireSpec", kTireSpecFields, nullptr};
+    .path="bike_sim.physics.tire.TireSpec", .fields=kTireSpecFields, .declared_default=nullptr};
 
-inline constexpr FieldDecl kTabulatedTireSpecFields[] = {
-    {"deflection_m", "tuple[float, ...]", FieldKind::RealTuple,
-     offsetof(TabulatedTireSpec, deflection_m), true, "", nullptr, nullptr},
-    {"force_n", "tuple[float, ...]", FieldKind::RealTuple,
-     offsetof(TabulatedTireSpec, force_n), true, "", nullptr, nullptr},
+inline constexpr auto kTabulatedTireSpecFields = std::to_array<FieldDecl>({
+    {.name="deflection_m", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
+     .offset=offsetof(TabulatedTireSpec, deflection_m), .required=true, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="force_n", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
+     .offset=offsetof(TabulatedTireSpec, force_n), .required=true, .factory="", .nested=nullptr, .nested2=nullptr},
     REQ_REAL(TabulatedTireSpec, radial_c_ns_m),
     REQ_REAL(TabulatedTireSpec, pressure_pa_gauge),
     REQ_STR(TabulatedTireSpec, provenance),
-    {"valid_load_range_n", "tuple[float, float]", FieldKind::Real2Tuple,
-     offsetof(TabulatedTireSpec, valid_load_range_n), true, "", nullptr,
-     nullptr},
-};
+    {.name="valid_load_range_n", .type="tuple[float, float]", .kind=FieldKind::Real2Tuple,
+     .offset=offsetof(TabulatedTireSpec, valid_load_range_n), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kTabulatedTireSpecSchema{
-    "bike_sim.physics.tire_curve.TabulatedTireSpec", kTabulatedTireSpecFields,
-    nullptr};
+    .path="bike_sim.physics.tire_curve.TabulatedTireSpec", .fields=kTabulatedTireSpecFields,
+    .declared_default=nullptr};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const HingeDensity kDeclaredHingeDensity{};
-inline constexpr FieldDecl kHingeDensityFields[] = {
-    {"knots_m", "tuple[float, ...]", FieldKind::RealTuple,
-     offsetof(HingeDensity, knots_m), false, "", nullptr, nullptr},
-    {"stiffness_n_m", "tuple[float, ...]", FieldKind::RealTuple,
-     offsetof(HingeDensity, stiffness_n_m), false, "", nullptr, nullptr},
+inline constexpr auto kHingeDensityFields = std::to_array<FieldDecl>({
+    {.name="knots_m", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
+     .offset=offsetof(HingeDensity, knots_m), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="stiffness_n_m", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
+     .offset=offsetof(HingeDensity, stiffness_n_m), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
     REAL(HingeDensity, damping_ns_m),
     STR(HingeDensity, provenance),
-};
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kHingeDensitySchema{
-    "bike_sim.physics.distributed_tire.HingeDensity", kHingeDensityFields,
-    &kDeclaredHingeDensity};
+    .path="bike_sim.physics.distributed_tire.HingeDensity", .fields=kHingeDensityFields,
+    .declared_default=&kDeclaredHingeDensity};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const DistributedWheelMaterial kDeclaredDistributedWheelMaterial{};
-inline constexpr FieldDecl kDistributedWheelMaterialFields[] = {
-    {"density", "<class 'bike_sim.physics.distributed_tire.HingeDensity'>",
-     FieldKind::Dataclass, offsetof(DistributedWheelMaterial, density),
-     false, "HingeDensity", &kHingeDensitySchema, nullptr},
+inline constexpr auto kDistributedWheelMaterialFields = std::to_array<FieldDecl>({
+    {.name="density", .type="<class 'bike_sim.physics.distributed_tire.HingeDensity'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(DistributedWheelMaterial, density),
+     .required=false, .factory="HingeDensity", .nested=&kHingeDensitySchema, .nested2=nullptr},
     STR(DistributedWheelMaterial, fitting_dataset_id),
-    {"valid_load_range_n", "tuple[float, float]", FieldKind::Real2Tuple,
-     offsetof(DistributedWheelMaterial, valid_load_range_n), false, "",
-     nullptr, nullptr},
-    {"valid_deflection_range_m", "tuple[float, float]", FieldKind::Real2Tuple,
-     offsetof(DistributedWheelMaterial, valid_deflection_range_m), false, "",
-     nullptr, nullptr},
+    {.name="valid_load_range_n", .type="tuple[float, float]", .kind=FieldKind::Real2Tuple,
+     .offset=offsetof(DistributedWheelMaterial, valid_load_range_n), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="valid_deflection_range_m", .type="tuple[float, float]", .kind=FieldKind::Real2Tuple,
+     .offset=offsetof(DistributedWheelMaterial, valid_deflection_range_m), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
     STR(DistributedWheelMaterial, calibration_status),
-};
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kDistributedWheelMaterialSchema{
-    "bike_sim.physics.distributed_tire.DistributedWheelMaterial",
-    kDistributedWheelMaterialFields, &kDeclaredDistributedWheelMaterial};
+    .path="bike_sim.physics.distributed_tire.DistributedWheelMaterial",
+    .fields=kDistributedWheelMaterialFields, .declared_default=&kDeclaredDistributedWheelMaterial};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const DistributedTireConfig kDeclaredDistributedTireConfig{};
-inline constexpr FieldDecl kDistributedTireConfigFields[] = {
+inline constexpr auto kDistributedTireConfigFields = std::to_array<FieldDecl>({
     INT(DistributedTireConfig, station_count),
-    {"density", "<class 'bike_sim.physics.distributed_tire.HingeDensity'>",
-     FieldKind::Dataclass, offsetof(DistributedTireConfig, density), false,
-     "HingeDensity", &kHingeDensitySchema, nullptr},
+    {.name="density", .type="<class 'bike_sim.physics.distributed_tire.HingeDensity'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(DistributedTireConfig, density), .required=false,
+     .factory="HingeDensity", .nested=&kHingeDensitySchema, .nested2=nullptr},
     STR(DistributedTireConfig, fitting_dataset_id),
-    {"valid_load_range_n", "tuple[float, float]", FieldKind::Real2Tuple,
-     offsetof(DistributedTireConfig, valid_load_range_n), false, "", nullptr,
-     nullptr},
-    {"valid_deflection_range_m", "tuple[float, float]", FieldKind::Real2Tuple,
-     offsetof(DistributedTireConfig, valid_deflection_range_m), false, "",
-     nullptr, nullptr},
+    {.name="valid_load_range_n", .type="tuple[float, float]", .kind=FieldKind::Real2Tuple,
+     .offset=offsetof(DistributedTireConfig, valid_load_range_n), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="valid_deflection_range_m", .type="tuple[float, float]", .kind=FieldKind::Real2Tuple,
+     .offset=offsetof(DistributedTireConfig, valid_deflection_range_m), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
     STR(DistributedTireConfig, calibration_status),
-    {"front_material",
-     "bike_sim.physics.distributed_tire.DistributedWheelMaterial | None",
-     FieldKind::OptionalDataclass,
-     offsetof(DistributedTireConfig, front_material), false, "",
-     &kDistributedWheelMaterialSchema, nullptr,
-     &optional_record<DistributedWheelMaterial>, nullptr},
-    {"rear_material",
-     "bike_sim.physics.distributed_tire.DistributedWheelMaterial | None",
-     FieldKind::OptionalDataclass,
-     offsetof(DistributedTireConfig, rear_material), false, "",
-     &kDistributedWheelMaterialSchema, nullptr,
-     &optional_record<DistributedWheelMaterial>, nullptr},
-};
+    {.name="front_material",
+     .type="bike_sim.physics.distributed_tire.DistributedWheelMaterial | None",
+     .kind=FieldKind::OptionalDataclass,
+     .offset=offsetof(DistributedTireConfig, front_material), .required=false, .factory="",
+     .nested=&kDistributedWheelMaterialSchema, .nested2=nullptr,
+     .optional_get=&optional_record<DistributedWheelMaterial>, .variant_index=nullptr},
+    {.name="rear_material",
+     .type="bike_sim.physics.distributed_tire.DistributedWheelMaterial | None",
+     .kind=FieldKind::OptionalDataclass,
+     .offset=offsetof(DistributedTireConfig, rear_material), .required=false, .factory="",
+     .nested=&kDistributedWheelMaterialSchema, .nested2=nullptr,
+     .optional_get=&optional_record<DistributedWheelMaterial>, .variant_index=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kDistributedTireConfigSchema{
-    "bike_sim.physics.distributed_tire.DistributedTireConfig",
-    kDistributedTireConfigFields, &kDeclaredDistributedTireConfig};
+    .path="bike_sim.physics.distributed_tire.DistributedTireConfig",
+    .fields=kDistributedTireConfigFields, .declared_default=&kDeclaredDistributedTireConfig};
 
 // TyreSpecs: the first six members are required (sentinels here are never
 // encoded — `required` leaves emit `default: null`).
-inline const TyreSpecs kDeclaredTyreSpecs{"", 0., 0., 0., 0., 0.};
-inline constexpr FieldDecl kTyreSpecsFields[] = {
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
+inline const TyreSpecs kDeclaredTyreSpecs{.name="", .outer_radius_mm=0., .rim_radius_mm=0., .section_height_mm=0., .pressure_bar=0., .crr_reference=0.};
+inline constexpr auto kTyreSpecsFields = std::to_array<FieldDecl>({
     REQ_STR(TyreSpecs, name),
     REQ_REAL(TyreSpecs, outer_radius_mm),
     REQ_REAL(TyreSpecs, rim_radius_mm),
@@ -553,84 +565,93 @@ inline constexpr FieldDecl kTyreSpecsFields[] = {
     REAL(TyreSpecs, relaxation_length_mm),
     REAL(TyreSpecs, rim_stiffness_n_mm2),
     REAL(TyreSpecs, tread_loss_crr),
-};
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kTyreSpecsSchema{
-    "bike_sim.physics.tyre.TyreSpecs", kTyreSpecsFields, &kDeclaredTyreSpecs};
+    .path="bike_sim.physics.tyre.TyreSpecs", .fields=kTyreSpecsFields, .declared_default=&kDeclaredTyreSpecs};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const TireParameters kDeclaredTireParameters{};
-inline constexpr FieldDecl kTireParametersFields[] = {
-    {"material",
-     "bike_sim.physics.tire.TireSpec | "
+inline constexpr auto kTireParametersFields = std::to_array<FieldDecl>({
+    {.name="material",
+     .type="bike_sim.physics.tire.TireSpec | "
      "bike_sim.physics.tire_curve.TabulatedTireSpec",
-     FieldKind::UnionMaterial, offsetof(TireParameters, material), false,
-     "_material", &kTireSpecSchema, &kTabulatedTireSpecSchema, nullptr,
-     &variant_arm<TireSpec, TabulatedTireSpec>,
-     &variant_object<TireSpec, TabulatedTireSpec>},
+     .kind=FieldKind::UnionMaterial, .offset=offsetof(TireParameters, material), .required=false,
+     .factory="_material", .nested=&kTireSpecSchema, .nested2=&kTabulatedTireSpecSchema, .optional_get=nullptr,
+     .variant_index=&variant_arm<TireSpec, TabulatedTireSpec>,
+     .variant_object=&variant_object<TireSpec, TabulatedTireSpec>},
     REAL(TireParameters, tangent_k_n_m),
     REAL(TireParameters, mu),
     REAL(TireParameters, relaxation_length_m),
-};
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kTireParametersSchema{
-    "bike_sim.physics.physical_config.TireParameters", kTireParametersFields,
-    &kDeclaredTireParameters};
+    .path="bike_sim.physics.physical_config.TireParameters", .fields=kTireParametersFields,
+    .declared_default=&kDeclaredTireParameters};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const PneumaticTireConfig kDeclaredPneumaticTireConfig{};
-inline constexpr FieldDecl kPneumaticTireConfigFields[] = {
+inline constexpr auto kPneumaticTireConfigFields = std::to_array<FieldDecl>({
     STR(PneumaticTireConfig, tier),
     // field(default=FRONT_TYRE/REAR_TYRE): dataclass instance defaults.
-    {"front", "<class 'bike_sim.physics.tyre.TyreSpecs'>",
-     FieldKind::Dataclass, offsetof(PneumaticTireConfig, front), false, "",
-     &kTyreSpecsSchema, nullptr},
-    {"rear", "<class 'bike_sim.physics.tyre.TyreSpecs'>",
-     FieldKind::Dataclass, offsetof(PneumaticTireConfig, rear), false, "",
-     &kTyreSpecsSchema, nullptr},
-    {"surface", "str | None", FieldKind::OptionalText,
-     offsetof(PneumaticTireConfig, surface), false, "", nullptr, nullptr},
-};
+    {.name="front", .type="<class 'bike_sim.physics.tyre.TyreSpecs'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(PneumaticTireConfig, front), .required=false, .factory="",
+     .nested=&kTyreSpecsSchema, .nested2=nullptr},
+    {.name="rear", .type="<class 'bike_sim.physics.tyre.TyreSpecs'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(PneumaticTireConfig, rear), .required=false, .factory="",
+     .nested=&kTyreSpecsSchema, .nested2=nullptr},
+    {.name="surface", .type="str | None", .kind=FieldKind::OptionalText,
+     .offset=offsetof(PneumaticTireConfig, surface), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kPneumaticTireConfigSchema{
-    "bike_sim.physics.physical_config.PneumaticTireConfig",
-    kPneumaticTireConfigFields, &kDeclaredPneumaticTireConfig};
+    .path="bike_sim.physics.physical_config.PneumaticTireConfig",
+    .fields=kPneumaticTireConfigFields, .declared_default=&kDeclaredPneumaticTireConfig};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const TireBackendConfig kDeclaredTireBackendConfig{};
-inline constexpr FieldDecl kTireBackendConfigFields[] = {
+inline constexpr auto kTireBackendConfigFields = std::to_array<FieldDecl>({
     STR(TireBackendConfig, backend),
-    {"front", "<class 'bike_sim.physics.physical_config.TireParameters'>",
-     FieldKind::Dataclass, offsetof(TireBackendConfig, front), false,
-     "TireParameters", &kTireParametersSchema, nullptr},
-    {"rear", "<class 'bike_sim.physics.physical_config.TireParameters'>",
-     FieldKind::Dataclass, offsetof(TireBackendConfig, rear), false,
-     "TireParameters", &kTireParametersSchema, nullptr},
+    {.name="front", .type="<class 'bike_sim.physics.physical_config.TireParameters'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(TireBackendConfig, front), .required=false,
+     .factory="TireParameters", .nested=&kTireParametersSchema, .nested2=nullptr},
+    {.name="rear", .type="<class 'bike_sim.physics.physical_config.TireParameters'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(TireBackendConfig, rear), .required=false,
+     .factory="TireParameters", .nested=&kTireParametersSchema, .nested2=nullptr},
     REAL(TireBackendConfig, significant_delta_m),
     REAL(TireBackendConfig, significance_fraction),
     REAL(TireBackendConfig, distinct_normal_deg),
     STR(TireBackendConfig, surface_mode),
-    {"distributed",
-     "<class 'bike_sim.physics.distributed_tire.DistributedTireConfig'>",
-     FieldKind::Dataclass, offsetof(TireBackendConfig, distributed), false,
-     "DistributedTireConfig", &kDistributedTireConfigSchema, nullptr},
-    {"pneumatic",
-     "<class 'bike_sim.physics.physical_config.PneumaticTireConfig'>",
-     FieldKind::Dataclass, offsetof(TireBackendConfig, pneumatic), false,
-     "PneumaticTireConfig", &kPneumaticTireConfigSchema, nullptr},
-};
+    {.name="distributed",
+     .type="<class 'bike_sim.physics.distributed_tire.DistributedTireConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(TireBackendConfig, distributed), .required=false,
+     .factory="DistributedTireConfig", .nested=&kDistributedTireConfigSchema, .nested2=nullptr},
+    {.name="pneumatic",
+     .type="<class 'bike_sim.physics.physical_config.PneumaticTireConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(TireBackendConfig, pneumatic), .required=false,
+     .factory="PneumaticTireConfig", .nested=&kPneumaticTireConfigSchema, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kTireBackendConfigSchema{
-    "bike_sim.physics.physical_config.TireBackendConfig",
-    kTireBackendConfigFields, &kDeclaredTireBackendConfig};
+    .path="bike_sim.physics.physical_config.TireBackendConfig",
+    .fields=kTireBackendConfigFields, .declared_default=&kDeclaredTireBackendConfig};
 
 inline const DrivetrainSpecs kDeclaredDrivetrainSpecs{};
-inline constexpr FieldDecl kDrivetrainSpecsFields[] = {
+inline constexpr auto kDrivetrainSpecsFields = std::to_array<FieldDecl>({
     INT(DrivetrainSpecs, front_teeth),
     INT(DrivetrainSpecs, rear_teeth),
     REAL(DrivetrainSpecs, chain_pitch_m),
-};
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kDrivetrainSpecsSchema{
-    "bike_sim.physics.chain.DrivetrainSpecs", kDrivetrainSpecsFields,
-    &kDeclaredDrivetrainSpecs};
+    .path="bike_sim.physics.chain.DrivetrainSpecs", .fields=kDrivetrainSpecsFields,
+    .declared_default=&kDeclaredDrivetrainSpecs};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const AssistConfig kDeclaredAssistConfig{};
-inline constexpr FieldDecl kAssistConfigFields[] = {
-    {"profile", "str | None", FieldKind::OptionalText,
-     offsetof(AssistConfig, profile), false, "", nullptr, nullptr},
+inline constexpr auto kAssistConfigFields = std::to_array<FieldDecl>({
+    {.name="profile", .type="str | None", .kind=FieldKind::OptionalText,
+     .offset=offsetof(AssistConfig, profile), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
     STR(AssistConfig, mode),
     REAL(AssistConfig, gain),
     REAL(AssistConfig, max_torque),
@@ -641,28 +662,30 @@ inline constexpr FieldDecl kAssistConfigFields[] = {
     REAL(AssistConfig, gate_min_crank_rad_s),
     REAL(AssistConfig, cutoff_mps),
     REAL(AssistConfig, taper_width_mps),
-    {"torque_curve", "tuple[tuple[float, float], ...] | None",
-     FieldKind::OptionalPairTuple, offsetof(AssistConfig, torque_curve),
-     false, "", nullptr, nullptr},
-};
+    {.name="torque_curve", .type="tuple[tuple[float, float], ...] | None",
+     .kind=FieldKind::OptionalPairTuple, .offset=offsetof(AssistConfig, torque_curve),
+     .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kAssistConfigSchema{
-    "bike_sim.physics.physical_config.AssistConfig", kAssistConfigFields,
-    &kDeclaredAssistConfig};
+    .path="bike_sim.physics.physical_config.AssistConfig", .fields=kAssistConfigFields,
+    .declared_default=&kDeclaredAssistConfig};
 
 inline const BatteryConfig kDeclaredBatteryConfig{};
-inline constexpr FieldDecl kBatteryConfigFields[] = {
+inline constexpr auto kBatteryConfigFields = std::to_array<FieldDecl>({
     BOOL(BatteryConfig, enabled),
     REAL(BatteryConfig, energy_j),
     REAL(BatteryConfig, copper_w_per_nm2),
     REAL(BatteryConfig, speed_w_per_rad_s2),
     REAL(BatteryConfig, idle_w),
-};
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kBatteryConfigSchema{
-    "bike_sim.physics.physical_config.BatteryConfig", kBatteryConfigFields,
-    &kDeclaredBatteryConfig};
+    .path="bike_sim.physics.physical_config.BatteryConfig", .fields=kBatteryConfigFields,
+    .declared_default=&kDeclaredBatteryConfig};
 
 inline const PedalingConfig kDeclaredPedalingConfig{};
-inline constexpr FieldDecl kPedalingConfigFields[] = {
+inline constexpr auto kPedalingConfigFields = std::to_array<FieldDecl>({
     BOOL(PedalingConfig, enabled),
     REAL(PedalingConfig, coast_above_rpm),
     REAL(PedalingConfig, resume_below_rpm),
@@ -675,16 +698,18 @@ inline constexpr FieldDecl kPedalingConfigFields[] = {
     REAL(PedalingConfig, rollback_engage_mps),
     REAL(PedalingConfig, rollback_release_mps),
     REAL(PedalingConfig, rollback_demand),
-};
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kPedalingConfigSchema{
-    "bike_sim.physics.physical_config.PedalingConfig", kPedalingConfigFields,
-    &kDeclaredPedalingConfig};
+    .path="bike_sim.physics.physical_config.PedalingConfig", .fields=kPedalingConfigFields,
+    .declared_default=&kDeclaredPedalingConfig};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const ShiftingConfig kDeclaredShiftingConfig{};
-inline constexpr FieldDecl kShiftingConfigFields[] = {
+inline constexpr auto kShiftingConfigFields = std::to_array<FieldDecl>({
     BOOL(ShiftingConfig, enabled),
-    {"cassette", "tuple[int, ...]", FieldKind::IntegerTuple,
-     offsetof(ShiftingConfig, cassette), false, "", nullptr, nullptr},
+    {.name="cassette", .type="tuple[int, ...]", .kind=FieldKind::IntegerTuple,
+     .offset=offsetof(ShiftingConfig, cassette), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
     REAL(ShiftingConfig, target_cadence_min_rpm),
     REAL(ShiftingConfig, target_cadence_max_rpm),
     REAL(ShiftingConfig, shift_cooldown_s),
@@ -693,16 +718,18 @@ inline constexpr FieldDecl kShiftingConfigFields[] = {
     REAL(ShiftingConfig, cadence_smoothing_tau_s),
     REAL(ShiftingConfig, upshift_slip_limit_mps),
     STR(ShiftingConfig, upshift_slip_mode),
-};
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kShiftingConfigSchema{
-    "bike_sim.physics.physical_config.ShiftingConfig", kShiftingConfigFields,
-    &kDeclaredShiftingConfig};
+    .path="bike_sim.physics.physical_config.ShiftingConfig", .fields=kShiftingConfigFields,
+    .declared_default=&kDeclaredShiftingConfig};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const PhysicalDriveConfig kDeclaredPhysicalDriveConfig{};
-inline constexpr FieldDecl kPhysicalDriveConfigFields[] = {
-    {"gearing", "<class 'bike_sim.physics.chain.DrivetrainSpecs'>",
-     FieldKind::Dataclass, offsetof(PhysicalDriveConfig, gearing), false,
-     "DrivetrainSpecs", &kDrivetrainSpecsSchema, nullptr},
+inline constexpr auto kPhysicalDriveConfigFields = std::to_array<FieldDecl>({
+    {.name="gearing", .type="<class 'bike_sim.physics.chain.DrivetrainSpecs'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(PhysicalDriveConfig, gearing), .required=false,
+     .factory="DrivetrainSpecs", .nested=&kDrivetrainSpecsSchema, .nested2=nullptr},
     STR(PhysicalDriveConfig, transmission_model),
     REAL(PhysicalDriveConfig, human_torque_nm),
     REAL(PhysicalDriveConfig, torque_ripple),
@@ -715,42 +742,45 @@ inline constexpr FieldDecl kPhysicalDriveConfigFields[] = {
     REAL(PhysicalDriveConfig, brake_ceiling_nm),
     BOOL(PhysicalDriveConfig, motor_clutch),
     REAL(PhysicalDriveConfig, rotor_inertia_kgm2),
-    {"assist", "<class 'bike_sim.physics.physical_config.AssistConfig'>",
-     FieldKind::Dataclass, offsetof(PhysicalDriveConfig, assist), false,
-     "AssistConfig", &kAssistConfigSchema, nullptr},
-    {"battery", "<class 'bike_sim.physics.physical_config.BatteryConfig'>",
-     FieldKind::Dataclass, offsetof(PhysicalDriveConfig, battery), false,
-     "BatteryConfig", &kBatteryConfigSchema, nullptr},
-    {"pedaling",
-     "<class 'bike_sim.physics.physical_config.PedalingConfig'>",
-     FieldKind::Dataclass, offsetof(PhysicalDriveConfig, pedaling), false,
-     "PedalingConfig", &kPedalingConfigSchema, nullptr},
-    {"shifting",
-     "<class 'bike_sim.physics.physical_config.ShiftingConfig'>",
-     FieldKind::Dataclass, offsetof(PhysicalDriveConfig, shifting), false,
-     "ShiftingConfig", &kShiftingConfigSchema, nullptr},
-};
+    {.name="assist", .type="<class 'bike_sim.physics.physical_config.AssistConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(PhysicalDriveConfig, assist), .required=false,
+     .factory="AssistConfig", .nested=&kAssistConfigSchema, .nested2=nullptr},
+    {.name="battery", .type="<class 'bike_sim.physics.physical_config.BatteryConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(PhysicalDriveConfig, battery), .required=false,
+     .factory="BatteryConfig", .nested=&kBatteryConfigSchema, .nested2=nullptr},
+    {.name="pedaling",
+     .type="<class 'bike_sim.physics.physical_config.PedalingConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(PhysicalDriveConfig, pedaling), .required=false,
+     .factory="PedalingConfig", .nested=&kPedalingConfigSchema, .nested2=nullptr},
+    {.name="shifting",
+     .type="<class 'bike_sim.physics.physical_config.ShiftingConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(PhysicalDriveConfig, shifting), .required=false,
+     .factory="ShiftingConfig", .nested=&kShiftingConfigSchema, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kPhysicalDriveConfigSchema{
-    "bike_sim.physics.physical_config.PhysicalDriveConfig",
-    kPhysicalDriveConfigFields, &kDeclaredPhysicalDriveConfig};
+    .path="bike_sim.physics.physical_config.PhysicalDriveConfig",
+    .fields=kPhysicalDriveConfigFields, .declared_default=&kDeclaredPhysicalDriveConfig};
 
 inline const ResistanceConfig kDeclaredResistanceConfig{};
-inline constexpr FieldDecl kResistanceConfigFields[] = {
+inline constexpr auto kResistanceConfigFields = std::to_array<FieldDecl>({
     REAL(ResistanceConfig, crr),
     REAL(ResistanceConfig, rolling_taper_rad_s),
     REAL(ResistanceConfig, rho_kg_m3),
     REAL(ResistanceConfig, cda_m2),
-    {"wind_world_mps", "tuple[float, float, float]", FieldKind::Real3Tuple,
-     offsetof(ResistanceConfig, wind_world_mps), false, "", nullptr, nullptr},
-    {"point_body_m", "tuple[float, float, float]", FieldKind::Real3Tuple,
-     offsetof(ResistanceConfig, point_body_m), false, "", nullptr, nullptr},
-};
+    {.name="wind_world_mps", .type="tuple[float, float, float]", .kind=FieldKind::Real3Tuple,
+     .offset=offsetof(ResistanceConfig, wind_world_mps), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="point_body_m", .type="tuple[float, float, float]", .kind=FieldKind::Real3Tuple,
+     .offset=offsetof(ResistanceConfig, point_body_m), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kResistanceConfigSchema{
-    "bike_sim.physics.physical_config.ResistanceConfig",
-    kResistanceConfigFields, &kDeclaredResistanceConfig};
+    .path="bike_sim.physics.physical_config.ResistanceConfig",
+    .fields=kResistanceConfigFields, .declared_default=&kDeclaredResistanceConfig};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const ArticulatedConfig kDeclaredArticulatedConfig{};
-inline constexpr FieldDecl kArticulatedConfigFields[] = {
+inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
     REAL(ArticulatedConfig, pedal_support_fraction),
     REAL(ArticulatedConfig, bar_support_fraction),
     REAL(ArticulatedConfig, posture_sole_depth_m),
@@ -776,31 +806,31 @@ inline constexpr FieldDecl kArticulatedConfigFields[] = {
     REAL(ArticulatedConfig, grip_k_n_m),
     REAL(ArticulatedConfig, grip_c_ns_m),
     REAL(ArticulatedConfig, grip_release_distance_m),
-    {"grip_pair_force_limit_n", "float | None", FieldKind::OptionalReal,
-     offsetof(ArticulatedConfig, grip_pair_force_limit_n), false, "",
-     nullptr, nullptr},
+    {.name="grip_pair_force_limit_n", .type="float | None", .kind=FieldKind::OptionalReal,
+     .offset=offsetof(ArticulatedConfig, grip_pair_force_limit_n), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
     REAL(ArticulatedConfig, grip_capture_distance_m),
     REAL(ArticulatedConfig, grip_capture_speed_mps),
     REAL(ArticulatedConfig, arm_reach_fraction),
     REAL(ArticulatedConfig, joint_kp_nm_rad),
     REAL(ArticulatedConfig, joint_kd_nms_rad),
-    {"joint_passive_damping_nms_rad", "float | None", FieldKind::OptionalReal,
-     offsetof(ArticulatedConfig, joint_passive_damping_nms_rad), false, "",
-     nullptr, nullptr},
+    {.name="joint_passive_damping_nms_rad", .type="float | None", .kind=FieldKind::OptionalReal,
+     .offset=offsetof(ArticulatedConfig, joint_passive_damping_nms_rad), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
     BOOL(ArticulatedConfig, coupled_task_control),
     REAL(ArticulatedConfig, joint_limit_nm),
     REAL(ArticulatedConfig, joint_speed_limit_rad_s),
     REAL(ArticulatedConfig, joint_power_limit_w),
-    {"joint_envelope_path", "str | None", FieldKind::OptionalText,
-     offsetof(ArticulatedConfig, joint_envelope_path), false, "", nullptr,
-     nullptr},
+    {.name="joint_envelope_path", .type="str | None", .kind=FieldKind::OptionalText,
+     .offset=offsetof(ArticulatedConfig, joint_envelope_path), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
     REAL(ArticulatedConfig, joint_envelope_soft_margin_rad),
     REAL(ArticulatedConfig, joint_envelope_soft_k_nm_rad),
     REAL(ArticulatedConfig, activation_tau_s),
-    {"active_positive_power_limit_w", "float | None",
-     FieldKind::OptionalReal,
-     offsetof(ArticulatedConfig, active_positive_power_limit_w), false, "",
-     nullptr, nullptr},
+    {.name="active_positive_power_limit_w", .type="float | None",
+     .kind=FieldKind::OptionalReal,
+     .offset=offsetof(ArticulatedConfig, active_positive_power_limit_w), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
     REAL(ArticulatedConfig, foot_mu),
     REAL(ArticulatedConfig, saddle_mu),
     REAL(ArticulatedConfig, pedal_min_normal_n),
@@ -812,19 +842,20 @@ inline constexpr FieldDecl kArticulatedConfigFields[] = {
     REAL(ArticulatedConfig, return_foot_preload_n),
     REAL(ArticulatedConfig, link_max_gap_m),
     REAL(ArticulatedConfig, road_lookahead_m),
-    {"joint_strength_path", "str | None", FieldKind::OptionalText,
-     offsetof(ArticulatedConfig, joint_strength_path), false, "", nullptr,
-     nullptr},
+    {.name="joint_strength_path", .type="str | None", .kind=FieldKind::OptionalText,
+     .offset=offsetof(ArticulatedConfig, joint_strength_path), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
     STR(ArticulatedConfig, pedal_attachment),
     STR(ArticulatedConfig, saddle_attachment),
     STR(ArticulatedConfig, grip_attachment),
     REAL(ArticulatedConfig, balance_floor_kmh),
     REAL(ArticulatedConfig, balance_dwell_s),
     REAL(ArticulatedConfig, balance_grace_s),
-};
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kArticulatedConfigSchema{
-    "bike_sim.physics.physical_config.ArticulatedConfig",
-    kArticulatedConfigFields, &kDeclaredArticulatedConfig};
+    .path="bike_sim.physics.physical_config.ArticulatedConfig",
+    .fields=kArticulatedConfigFields, .declared_default=&kDeclaredArticulatedConfig};
 
 #undef REAL
 #undef REQ_REAL

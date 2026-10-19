@@ -4,6 +4,7 @@
 #include <limits>
 #include <ranges>
 #include <set>
+#include <utility>
 
 namespace bike::recording {
 namespace {
@@ -21,6 +22,7 @@ FieldSpec item_field(const FieldSpec& field) {
     else if (field.dtype.ends_with("[]")) out.dtype.resize(out.dtype.size() - 2);
     return out;
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 Piece make_piece(const FieldSpec& f) {
     Piece out;
     if (f.dtype == "double") out.kind = Piece::Kind::scalar_d;
@@ -47,6 +49,7 @@ std::int32_t offset(std::size_t n) {
     if (n > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max())) throw std::overflow_error("recording piece offset exceeds int32");
     return static_cast<std::int32_t>(n);
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void append_null(const FieldSpec& f, Piece& p) {
     p.valid.push_back(0);
     switch (p.kind) {
@@ -67,6 +70,7 @@ void append_null(const FieldSpec& f, Piece& p) {
     }
 }
 void append(const FieldSpec&, Piece&, const Value&, std::string_view);
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void append_struct(const FieldSpec& f, Piece& p, const Value& input, std::string_view path) {
     const auto& object = io::as_object(input, path);
     std::set<std::string> names;
@@ -83,6 +87,7 @@ void append_struct(const FieldSpec& f, Piece& p, const Value& input, std::string
         } else append(child, p.children.at(child.key), *v, std::string(path) + "." + child.key);
     }
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void append(const FieldSpec& f, Piece& p, const Value& input, std::string_view path) {
     if (io::is_null(input)) { append_null(f, p); return; }
     p.valid.push_back(1);
@@ -128,6 +133,7 @@ const FieldSpec* terminal(const TableSpec& spec, const std::vector<std::string>&
     for (const auto& f : spec.fields) if (f.path == path) return &f;
     return nullptr;
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void distribute(const TableSpec& spec, const std::vector<std::string>& prefix, const Value& payload, Object& out) {
     const auto* leaf = terminal(spec, prefix);
     if (io::is_null(payload) && !leaf) return;
@@ -164,6 +170,8 @@ Object project(const TableSpec& spec, const Object& row) {
             if (identity) { out.emplace_back(key, v); continue; }
             const auto it = std::ranges::find_if(spec.fields, [&](const auto& f) { return !f.path.empty() && f.path.front() == key; });
             if (it == spec.fields.end()) invalid(spec.name, "unknown source field " + key);
+            // invalid() is [[noreturn]] — reaching this line proves it != end().
+            // cppcheck-suppress derefInvalidIteratorRedundantCheck
             out.emplace_back(it->key, v);
         }
     }
@@ -188,7 +196,16 @@ std::size_t offsets(const Piece& p, std::size_t count, std::string_view path) {
     for (std::size_t i = 0; i < count; ++i) if (p.offsets[i] < 0 || p.offsets[i] > p.offsets[i+1] || (!valid_at(p, i) && p.offsets[i] != p.offsets[i+1])) invalid(path, "invalid list offsets or nonempty null slot");
     return static_cast<std::size_t>(p.offsets.back());
 }
-void validate_node(const FieldSpec& f, const Piece& p, std::size_t rows, std::string_view path) {
+// `active` carries ancestor-struct presence into leaf checks: a NULL struct
+// slot leaves every child at its default-valid Arrow/DuckDB placeholder, so
+// child payload (validity, list width, presence-vs-null consistency) is
+// padding and only the child's own _present flag is a semantic claim.
+bool row_active(std::span<const char> active, std::size_t row) {
+    return active.empty() || active[row] != 0;
+}
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
+void validate_node(const FieldSpec& f, const Piece& p, std::size_t rows, std::string_view path,
+                   std::span<const char> active = {}) {
     lane(p, rows, path);
     const auto kind = make_piece(f).kind;
     if (p.kind != kind) invalid(path, "piece kind differs from reviewed type");
@@ -199,7 +216,7 @@ void validate_node(const FieldSpec& f, const Piece& p, std::size_t rows, std::st
     if (kind == Piece::Kind::list_d || kind == Piece::Kind::list_i || kind == Piece::Kind::list_s) {
         const auto size = offsets(p, rows, path);
         if (size != (kind == Piece::Kind::list_d ? p.d.size() : kind == Piece::Kind::list_i ? p.i.size() : p.s.size())) invalid(path, "list extent differs");
-        if (f.shape) for (std::size_t row = 0; row < rows; ++row) if (valid_at(p, row) && (f.shape->empty() || p.offsets[row+1] - p.offsets[row] != f.shape->front())) invalid(path, "fixed list width differs");
+        if (f.shape) for (std::size_t row = 0; row < rows; ++row) if (row_active(active, row) && valid_at(p, row) && (f.shape->empty() || p.offsets[row+1] - p.offsets[row] != f.shape->front())) invalid(path, "fixed list width differs");
     }
     if (kind == Piece::Kind::map) {
         const auto size = offsets(p, rows, path);
@@ -215,28 +232,42 @@ void validate_node(const FieldSpec& f, const Piece& p, std::size_t rows, std::st
     if (kind == Piece::Kind::structure) {
         const bool sequence = f.dtype == "struct[]";
         const auto count = sequence ? offsets(p, rows, path) : rows;
+        // Non-sequence children share the parent's row axis: a row's children
+        // are semantically checked only when the parent's struct slot is
+        // valid. struct[]/map children index elements, which only exist under
+        // valid list slots, so they keep the unrestricted domain.
+        std::vector<char> inner;
+        if (!sequence) {
+            inner.reserve(count);
+            for (std::size_t row = 0; row < count; ++row)
+                inner.push_back(row_active(active, row) && valid_at(p, row) ? 1 : 0);
+        }
         std::size_t expected = 0;
         for (const auto& c : f.children) {
             ++expected;
-            auto it = p.children.find(c.key);
+            auto const it = p.children.find(c.key);
             if (it == p.children.end()) invalid(path, "missing structure child");
-            validate_node(c, it->second, count, std::string(path) + "." + c.key);
+            validate_node(c, it->second, count, std::string(path) + "." + c.key,
+                          sequence ? std::span<const char>{} : std::span<const char>(inner));
             const Piece* present = nullptr;
             if (c.optional) {
-                ++expected; auto mask = p.children.find(c.key + "_present"); if (mask == p.children.end()) invalid(path, "missing structure presence");
-                validate_node(boolean_field(c.key), mask->second, count, path); present = &mask->second;
+                ++expected; auto const mask = p.children.find(c.key + "_present"); if (mask == p.children.end()) invalid(path, "missing structure presence");
+                validate_node(boolean_field(c.key), mask->second, count, path,
+                              sequence ? std::span<const char>{} : std::span<const char>(inner));
+                present = &mask->second;
             }
             for (std::size_t row = 0; row < count; ++row) {
-                if (present && (!valid_at(*present, row) || (!present->b[row] && valid_at(it->second, row)))) invalid(path, "inconsistent nested presence");
-                if (!c.optional && (sequence || valid_at(p, row)) && !valid_at(it->second, row)) invalid(path, "missing required structure member");
-                if (!sequence && !valid_at(p,row) &&
-                    (valid_at(it->second,row) || (present && present->b[row])))
+                const bool active_row = sequence || inner[row] != 0;
+                if (present && (!valid_at(*present, row) || (active_row && !present->b[row] && valid_at(it->second, row)))) invalid(path, "inconsistent nested presence");
+                if (!c.optional && active_row && !valid_at(it->second, row)) invalid(path, "missing required structure member");
+                if (!sequence && !inner[row] && present && present->b[row])
                     invalid(path, "null structure contains a present member");
             }
         }
         if (p.children.size() != expected) invalid(path, "unknown structure children");
     }
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 std::size_t piece_rows(const Piece& p) {
     if (!p.valid.empty()) return p.valid.size();
     if (!p.offsets.empty()) return p.offsets.size() - 1;
@@ -244,8 +275,10 @@ std::size_t piece_rows(const Piece& p) {
         case Piece::Kind::scalar_d: return p.d.size(); case Piece::Kind::scalar_i: return p.i.size();
         case Piece::Kind::scalar_b: return p.b.size(); case Piece::Kind::scalar_s: return p.s.size();
         case Piece::Kind::structure: return p.children.empty() ? 0 : piece_rows(p.children.begin()->second);
-        default: return 0;
+        case Piece::Kind::list_d: case Piece::Kind::list_i: case Piece::Kind::list_s:
+        case Piece::Kind::map: return 0;
     }
+    return 0;
 }
 template<class T> std::vector<T> slice(const std::vector<T>& v, std::size_t first, std::size_t last) {
     if (first > last || last > v.size()) throw std::invalid_argument("recording piece slice outside lane");
@@ -258,8 +291,8 @@ runtime::EncodedTable encode_rows(const TableSpec& spec, std::span<const Object>
     runtime::EncodedTable out; out.rows = static_cast<std::int64_t>(rows.size());
     for (const auto& [name, dtype] : column_types(spec)) { (void)dtype; const auto* field = spec.field(name); out.columns.emplace(name, make_piece(field ? *field : boolean_field(name))); }
     const auto parents = parent_paths(spec);
-    for (std::size_t n = 0; n < rows.size(); ++n) {
-        const auto& row = rows[n]; const auto view = project(spec, row);
+    for (const auto & row : rows) {
+        const auto view = project(spec, row);
         for (const auto& parent : parents) {
             const auto* v = at_path(row, parent); const auto marker = "__" + value::join(parent);
             out.columns.at(marker + "_present").b.push_back(v ? 1 : 0);
@@ -272,6 +305,8 @@ runtime::EncodedTable encode_rows(const TableSpec& spec, std::span<const Object>
                 append(key, out.columns.at(key.key), value::integer(episode_id), key.key);
             } else {
                 if (!v || io::is_null(*v)) invalid(spec.name + "." + key.key, "required key");
+                // invalid() is [[noreturn]] — `v` is non-null on this path.
+                // cppcheck-suppress nullPointerRedundantCheck
                 append(key, out.columns.at(key.key), *v, key.key);
             }
         }
@@ -302,7 +337,7 @@ void validate_pieces(const runtime::EncodedTable& table, const TableSpec& spec) 
     if (table.rows == 0 && table.columns.empty()) return;
     std::set<std::string> expected;
     for (const auto& [name, dtype] : column_types(spec)) {
-        (void)dtype; expected.insert(name); auto found = table.columns.find(name);
+        (void)dtype; expected.insert(name); auto const found = table.columns.find(name);
         if (name == "episode_id" && found == table.columns.end()) continue;
         if (found == table.columns.end()) invalid(spec.name + "." + name, "missing declared column");
         const auto* field = spec.field(name);
@@ -310,12 +345,12 @@ void validate_pieces(const runtime::EncodedTable& table, const TableSpec& spec) 
     }
     for (const auto& [name, p] : table.columns) { (void)p; if (!expected.contains(name)) invalid(spec.name, "unreviewed column " + name); }
     const auto parents = parent_paths(spec);
-    auto flag = [&](const std::string& name,std::size_t row) {
+    auto const flag = [&](const std::string& name,std::size_t row) {
         const auto& piece = table.columns.at(name);
         if (!valid_at(piece,row)) invalid(spec.name + "." + name,"presence mask may not be null");
         return piece.b[row] != 0;
     };
-    for (std::size_t row = 0; row < static_cast<std::size_t>(table.rows); ++row) {
+    for (std::size_t row = 0; std::cmp_less(row ,table.rows); ++row) {
         for (const auto& parent : parents) {
             const auto marker = "__" + value::join(parent);
             const bool present = flag(marker+"_present",row), valid = flag(marker+"_valid",row);
@@ -351,6 +386,7 @@ void validate_pieces(const runtime::EncodedTable& table, const TableSpec& spec) 
         }
     }
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 runtime::Piece slice_piece(const Piece& p, std::size_t first, std::size_t last) {
     if (first > last || last > piece_rows(p)) throw std::invalid_argument("recording piece row slice outside bounds");
     Piece out; out.kind = p.kind;
@@ -370,14 +406,15 @@ runtime::Piece slice_piece(const Piece& p, std::size_t first, std::size_t last) 
             if (!p.items) throw std::invalid_argument("recording map has no items");
             out.s = slice(p.s, low, high); out.items = std::make_unique<Piece>(slice_piece(*p.items, low, high)); break;
         case Piece::Kind::structure:
-            for (const auto& [name, child] : p.children) out.children.emplace(name, slice_piece(child, low, high)); break;
+            for (const auto& [name, child] : p.children) out.children.emplace(name, slice_piece(child, low, high));
+            break;
     }
     // member_slots deliberately stays empty. Rebuilt map ownership never
     // retains pointers into the unsliced/source piece.
     return out;
 }
 runtime::EncodedTable slice_table(const runtime::EncodedTable& table, std::size_t first, std::size_t last) {
-    if (table.rows < 0 || first > last || last > static_cast<std::size_t>(table.rows)) throw std::invalid_argument("recording table slice outside bounds");
+    if (table.rows < 0 || first > last || std::cmp_greater(last ,table.rows)) throw std::invalid_argument("recording table slice outside bounds");
     runtime::EncodedTable out; out.rows = static_cast<std::int64_t>(last - first);
     for (const auto& [name, piece] : table.columns) out.columns.emplace(name, slice_piece(piece, first, last));
     return out;

@@ -11,6 +11,7 @@
 
 namespace bike::recording {
 namespace {
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void text_required(std::string_view value, std::string_view label) {
     if (value.empty()) throw std::invalid_argument("recording: " + std::string(label) + " must be nonempty");
 }
@@ -34,7 +35,7 @@ void RunMetadata::validate() const {
         !(started_utc.ends_with('Z') || started_utc.ends_with("+00:00"))) throw std::invalid_argument("started_utc must be an ISO UTC datetime");
     // The shared tagged codec checks calendar/range validity without consulting
     // a timezone database or normalizing an invalid user timestamp silently.
-    (void)io::recording_json(io::Value{io::Tagged{"datetime", {{"value", started_utc.ends_with('Z') ? started_utc.substr(0, started_utc.size()-1) + "+00:00" : started_utc}}}});
+    (void)io::recording_json(io::Value{io::Tagged{.kind="datetime", .fields={{"value", started_utc.ends_with('Z') ? started_utc.substr(0, started_utc.size()-1) + "+00:00" : started_utc}}}});
     text_required(backend, "backend"); text_required(mode, "mode"); object_required(values, "run metadata");
     if (!std::isfinite(wall_origin_s)) throw std::invalid_argument("wall_origin_s must be finite");
 }
@@ -52,11 +53,11 @@ RunMetadata make_run_metadata(std::string backend, std::string mode, io::Value v
     const auto time = std::chrono::system_clock::to_time_t(whole);
     std::tm utc{};
     if (!gmtime_r(&time, &utc)) throw std::runtime_error("recording UTC time unavailable");
-    char stamp[32]{};
-    if (std::strftime(stamp, sizeof(stamp), "%Y-%m-%dT%H:%M:%S", &utc) == 0) throw std::runtime_error("recording UTC format failed");
+    std::array<char,32> stamp{};
+    if (std::strftime(stamp.data(), stamp.size(), "%Y-%m-%dT%H:%M:%S", &utc) == 0) throw std::runtime_error("recording UTC format failed");
     auto sub = std::to_string(micros); sub.insert(0, 6 - sub.size(), '0');
-    RunMetadata out{std::move(uuid), std::string(stamp) + "." + sub + "+00:00", std::move(backend), std::move(mode), std::move(values),
-        std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count()};
+    RunMetadata out{.run_uuid=std::move(uuid), .started_utc=std::string(stamp.data()) + "." + sub + "+00:00", .backend=std::move(backend), .mode=std::move(mode), .values=std::move(values),
+        .wall_origin_s=std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count()};
     out.validate(); return out;
 }
 void InputEvent::validate() const {
@@ -97,7 +98,7 @@ void RunCapture::event(InputEvent event) {
     if (enabled_) events_.push_back(std::move(event));
     last_event_ = key;
 }
-void RunCapture::add_episode(std::shared_ptr<const EpisodeEvidence> evidence) {
+void RunCapture::add_episode(const std::shared_ptr<const EpisodeEvidence>& evidence) {
     if (!evidence) throw std::invalid_argument("null episode evidence");
     evidence->validate(); require_collecting("episode");
     if (!enabled_) return;
@@ -117,7 +118,7 @@ void RunCapture::add_episode(std::shared_ptr<const EpisodeEvidence> evidence) {
 EpisodeJournal::EpisodeJournal(RunCapture& capture, std::int64_t episode_id) : capture_(&capture), episode_id_(episode_id) { nonnegative(episode_id, "journal episode_id"); }
 InputEvent EpisodeJournal::emit(std::string kind, double received, std::int64_t processed, std::optional<std::int64_t> applied, io::Value values) {
     if (next_id_ == std::numeric_limits<std::int64_t>::max()) throw std::overflow_error("recording journal event identity exhausted");
-    InputEvent event{episode_id_, next_id_, std::move(kind), received, processed, applied, std::move(values)};
+    InputEvent event{.episode_id=episode_id_, .event_id=next_id_, .kind=std::move(kind), .received_wall_s=received, .processed_step=processed, .applied_step=applied, .values=std::move(values)};
     capture_->event(event); ++next_id_; return event;
 }
 void EpisodeJournal::emit_all(std::span<const InputEvent> events) {

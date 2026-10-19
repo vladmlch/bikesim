@@ -60,17 +60,17 @@ bool road_loaded(const TireSnapshot &snapshot) {
 }
 
 void contact_force(const mjModel* model,const mjData* data,int row,std::array<double,6>& result){
-    struct Call{const mjModel* model;const mjData* data;int row;double* result;} call{model,data,row,result.data()};
+    struct Call{const mjModel* model;const mjData* data;int row;double* result;} call{.model=model,.data=data,.row=row,.result=result.data()};
     engine::ErrorBuffer error;
-    if(!engine::invoke([](void* raw)noexcept{auto& c=*static_cast<Call*>(raw);mj_contactForce(c.model,c.data,c.row,c.result);},&call,error))
+    if(!engine::invoke([](void* raw)noexcept{auto const& c=*static_cast<Call*>(raw);mj_contactForce(c.model,c.data,c.row,c.result);},&call,error))
         engine::throw_failure(error);
 }
 
 void point_jacobian(const mjModel* model,const mjData* data,const Vec3& point,int body,std::span<double> output){
     model_access::require_id(body,model->nbody,"native contact body");
-    struct Call{const mjModel* model;const mjData* data;const double* point;int body;double* output;} call{model,data,point.data(),body,output.data()};
+    struct Call{const mjModel* model;const mjData* data;const double* point;int body;double* output;} call{.model=model,.data=data,.point=point.data(),.body=body,.output=output.data()};
     engine::ErrorBuffer error;
-    if(!engine::invoke([](void* raw)noexcept{auto& c=*static_cast<Call*>(raw);mj_jac(c.model,c.data,c.output,nullptr,c.point,c.body);},&call,error))
+    if(!engine::invoke([](void* raw)noexcept{auto const& c=*static_cast<Call*>(raw);mj_jac(c.model,c.data,c.output,nullptr,c.point,c.body);},&call,error))
         engine::throw_failure(error);
 }
 } // namespace
@@ -154,14 +154,14 @@ NativeContactResult RuntimeContactQuery::query(
         point_jacobian(model,data,point,geom_bodies[static_cast<std::size_t>(tracked)],jacobian);
         blas::dgemv(blas::Order::row_major, blas::Transpose::no, 3, width, 1.,
                     jacobian.data(), width, qvel.data(), 1, 0., velocity.data(), 1);
-        TirePatch patch{.point_m = point, .normal = normal,
+        const TirePatch patch{.point_m = point, .normal = normal,
             .normal_load_n = std::max(0., wrench[0]),
             .tangent_force_n = dot(force, tangent), .slip_mps = dot(velocity, tangent),
             .working_surface = (first_terrain ? contact.geom1 : contact.geom2) == terrain_id,
             .native_world_force_n = force, .couple_world_nm = couple};
         validation::derived(patch.slip_mps, "native contact slip");
         validation::derived(patch.tangent_force_n, "native contact tangent force");
-        out.snapshots[index].patches.push_back(std::move(patch));
+        out.snapshots[index].patches.push_back(patch);
     }
     for (auto &snapshot : out.snapshots) {
         snapshot.geometric_contact = !snapshot.patches.empty();

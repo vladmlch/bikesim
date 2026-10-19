@@ -102,3 +102,22 @@ The deliverable patch is relative to that normalized extracted baseline. Apply i
 Application examples and public interfaces are documented in `docs/native-startup.md`. Commands there are instructions for a future authorized run; they were not executed during this delivery.
 
 The downloadable delivery consists of `native-startup.patch`, `native-startup-changes.zip`, `native-startup-source.zip` and this `native-startup-review.md`. The patch and changes archive contain the same source delta. Prefer the patch for reviewing/applying the work to the matching checkout; use the full source archive to inspect the complete reconstructed context.
+
+## Execution status 2026-10-19
+
+Execution has since run in this checkout. The tree compiles: ctest passes
+57/57 registered tests (including every `migration_T*` node) and all nine
+sweep summaries (`native/build/native_check_summaries/*.json`) report
+`status: passed`. `.pytest_cache/lastfailed` holds exactly the documented
+24-failure full-suite baseline — no new failures.
+
+Of the wave-scope findings in
+[native-waves-commit-review.md](native-waves-commit-review.md), **F1 is
+resolved** — `initialization/capture.cpp` and `runtime.cpp` now guard the
+absent tire writer, so the `native_reference` backend crosses the
+bootstrap boundary. F2/F3/F5 belong to the physics/research scope and
+remain open there.
+
+This verifies compilation and the registered migration tests only.
+Runtime qualification, per-source oracle equivalence and wave acceptance
+remain open; nothing here closes T61/T62 acceptance or T63 deletion.

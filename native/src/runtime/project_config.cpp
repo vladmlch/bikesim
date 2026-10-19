@@ -43,7 +43,7 @@ cfg::RiderSpecs rider(const mdl::BuildRequest& request) {
 }
 
 std::vector<std::byte> immutable_model_image(const mjModel& model) {
-    struct SizeCall { const mjModel* model; mjtSize bytes = 0; } size{&model};
+    struct SizeCall { const mjModel* model{}; mjtSize bytes = 0; } size{.model=&model};
     engine::ErrorBuffer error;
     if (!engine::invoke([](void* raw) noexcept {
         auto& call = *static_cast<SizeCall*>(raw);
@@ -53,9 +53,9 @@ std::vector<std::byte> immutable_model_image(const mjModel& model) {
         throw std::invalid_argument("project_runtime: compiled model image exceeds 512 MiB");
     std::vector<std::byte> image(static_cast<std::size_t>(size.bytes));
     struct SaveCall { const mjModel* model; void* bytes; int size; }
-        save{&model, image.data(), static_cast<int>(size.bytes)};
+        save{.model=&model, .bytes=image.data(), .size=static_cast<int>(size.bytes)};
     if (!engine::invoke([](void* raw) noexcept {
-        auto& call = *static_cast<SaveCall*>(raw);
+        auto const& call = *static_cast<SaveCall*>(raw);
         mj_saveModel(call.model, nullptr, call.bytes, call.size);
     }, &save, error)) engine::throw_failure(error);
     return image;
@@ -83,7 +83,7 @@ void require_request_model(const mdl::BuildRequest& request, const mjModel& mode
     if (offset < 0 || std::cmp_greater(offset, expected->nhfielddata) ||
         samples.size() > static_cast<std::size_t>(expected->nhfielddata - offset))
         throw std::invalid_argument("project_runtime: generated road address is outside heightfield storage");
-    auto target = std::views::counted(expected->hfield_data, expected->nhfielddata)
+    auto const target = std::views::counted(expected->hfield_data, expected->nhfielddata)
         .subspan(static_cast<std::size_t>(offset), samples.size());
     for (std::size_t i = 0; i < samples.size(); ++i) {
         if (!std::isfinite(samples[i]) || samples[i] < 0. || samples[i] > 1.)
@@ -109,10 +109,10 @@ Value suspension(const mdl::BuildRequest& request,
                  const cfg::SimulationPhysicsConfig& physics_config,
                  const mjModel& model) {
     const auto& b = request.bike;
-    cfg::SuspensionInputs inputs{b.fork_hsc, b.fork_lsc, b.fork_rebound,
-        b.shock_hsc, b.shock_lsc, b.shock_rebound, b.shock_hbo, b.shock_lockout,
-        b.fork_travel, b.shock_stroke, b.fork_initial_psi, b.fork_air_tokens,
-        b.shock_stiffness};
+    cfg::SuspensionInputs const inputs{.fork_hsc=b.fork_hsc, .fork_lsc=b.fork_lsc, .fork_rebound=b.fork_rebound,
+        .shock_hsc=b.shock_hsc, .shock_lsc=b.shock_lsc, .shock_rebound=b.shock_rebound, .shock_hbo=b.shock_hbo, .shock_lockout=b.shock_lockout,
+        .fork_travel=b.fork_travel, .shock_stroke=b.shock_stroke, .fork_initial_psi=b.fork_initial_psi, .fork_air_tokens=b.fork_air_tokens,
+        .shock_stiffness=b.shock_stiffness};
     auto resolved = cfg::resolve_suspension(inputs);
     if (physics_config.physics_mode != "physical") {
         // RideSimulation._default_controller uses the default legacy damper
@@ -270,7 +270,8 @@ Value drive(const cfg::SimulationPhysicsConfig& physics_config, const Value& doc
     set(out, "assist", std::move(assist));
     set(out, "hub_stiffness_nm_rad", real(physics_config.drive.freehub_k_nm_rad));
     set(out, "hub_damping_nm_s", real(physics_config.drive.freehub_c_nms_rad));
-    set(out, "drive_mode", text(*physics_config.drive_mode));
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) physics schema requires drive_mode
+    set(out, "drive_mode", text(physics_config.drive_mode.value()));
     for (auto key : {"transmission_model", "motor_clutch", "human_torque_nm", "torque_ripple",
          "crank_phase_rad", "chain_k_n_m", "chain_c_ns_m", "bearing_c_nms_rad",
          "rotor_inertia_kgm2", "brake_ceiling_nm"}) set(out, key, field(input, key));
@@ -315,13 +316,13 @@ bio::Value project_articulated_pose(const mdl::ArticulatedPose& p) {
 
 bio::Value project_rider_controller(const cfg::SimulationPhysicsConfig& config,
                                     const mjModel& model) {
-    auto document = cfg::detail::plain_document(cfg::to_value(config));
+    auto const document = cfg::detail::plain_document(cfg::to_value(config));
     auto out = field(document, "articulated");
     set(out, "strength", Value{});
     set(out, "strength_coordinates", Value{Object{}});
     set(out, "envelopes", Value{Object{}});
     std::vector<std::string_view> joints;
-    for (auto name : cfg::kRiderJoints) {
+    for (auto const name : cfg::kRiderJoints) {
         const std::string owned(name);
         if (mj_name2id(&model, mjOBJ_JOINT, owned.c_str()) >= 0) joints.push_back(name);
     }
@@ -396,7 +397,7 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
             const double reach = std::sqrt(blas::cblas_ddot(3, upper.data(), 1, upper.data(), 1)) +
                                  std::sqrt(blas::cblas_ddot(3, lower.data(), 1, lower.data(), 1));
             Value contacts{Object{{"arm_reach_m", real(reach)}}};
-            auto fields = select(field(document, "articulated"), {
+            auto const fields = select(field(document, "articulated"), {
                 "saddle_patch_half_length_m", "pedal_patch_half_length_m", "support_pad_radius_m",
                 "support_k_n_m", "support_c_ns_m", "pedal_c_ns_m", "support_tangent_k_n_m",
                 "support_mu", "support_length_m", "grip_k_n_m", "grip_c_ns_m",
@@ -446,10 +447,11 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
         : Value{};
     const int com = mj_name2id(&model, mjOBJ_SITE, "site_CG");
     const auto physics_document = cfg::detail::plain_document(cfg::to_value(config));
-    Value envelope{Object{
+    Value const envelope{Object{
         {"runtime_schema", integer(kRuntimeSchema)}, {"timestep_s", real(model.opt.timestep)},
         {"control_period_s", real(config.control_period_s)}, {"control_period_steps", integer(period_steps)},
-        {"physics_mode", text(config.physics_mode)}, {"drive_mode", text(*config.drive_mode)},
+        {"physics_mode", text(config.physics_mode)}, { // NOLINTNEXTLINE(bugprone-unchecked-optional-access) physics schema requires drive_mode
+        "drive_mode", text(config.drive_mode.value())},
         {"strict", Value{options.strict}}, {"measurement_decimation", integer(options.measurement_decimation)},
         {"async_telemetry", Value{options.async_telemetry}},
         {"record_retention", text(options.record_retention == RetentionMode::off ? "off" :

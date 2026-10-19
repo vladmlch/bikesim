@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -21,7 +22,7 @@ namespace {
 [[noreturn]] void bad(std::string_view why){throw std::invalid_argument("NPY: "+std::string(why));}
 std::size_t decimal(std::string_view text){
     std::size_t value=0;const auto last=std::to_address(text.end());
-    const auto parsed=std::from_chars(text.data(),last,value);
+    const auto parsed=std::from_chars(text.data(),last,value); // NOLINT(bugprone-suspicious-stringview-data-usage) std::from_chars parses the (data, data+size) pointer range, not a C string
     if(text.empty()||parsed.ec!=std::errc{}||parsed.ptr!=last)bad("invalid unsigned dimension/item size");
     return value;
 }
@@ -35,13 +36,14 @@ Dtype dtype(std::string_view name){
     if(count>kMaxNumpyBytes/(kind=='U'?4U:1U))bad("dtype exceeds byte limit");
     const std::size_t width=count*(kind=='U'?4U:1U);
     if(name[0]=='|'&&width>1&&kind!='S')bad("multi-byte numeric dtype requires byte order");
-    return{kind,count,width,name[0]=='<'||(name[0]=='='&&std::endian::native==std::endian::little)||name[0]=='|'};
+    return{.kind=kind,.count=count,.width=width,.little=name[0]=='<'||(name[0]=='='&&std::endian::native==std::endian::little)||name[0]=='|'};
 }
 std::uint64_t bits(std::span<const std::byte> data,bool little){
     std::uint64_t value=0;
     for(std::size_t i=0;i<data.size();++i){const std::size_t at=little?data.size()-1-i:i;value=(value<<8U)|std::to_integer<unsigned int>(data[at]);}
     return value;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void append_bits(std::vector<std::byte>& bytes,std::uint64_t value,std::size_t count){
     for(std::size_t i=0;i<count;++i){bytes.push_back(static_cast<std::byte>(value&255U));value>>=8U;}
 }
@@ -77,7 +79,7 @@ public:
     bool take(char c){space();if(pos<source.size()&&source[pos]==c){++pos;return true;}return false;}
     void need(char c){if(!take(c))bad("malformed header literal");}
     std::string string(){space();if(pos==source.size()||(source[pos]!='\''&&source[pos]!='"'))bad("expected header string");const char quote=source[pos++];std::string result;while(pos<source.size()&&source[pos]!=quote){if(source[pos]=='\\'||static_cast<unsigned char>(source[pos])<32U)bad("escaped header strings are not supported");result.push_back(source[pos++]);}if(pos==source.size())bad("truncated header string");++pos;return result;}
-    bool boolean(){space();for(auto text:{std::string_view("True"),std::string_view("False")})if(source.substr(pos,text.size())==text){pos+=text.size();return text=="True";}bad("expected boolean literal");}
+    bool boolean(){space();for(auto const text:{std::string_view("True"),std::string_view("False")})if(source.substr(pos,text.size())==text){pos+=text.size();return text=="True";}bad("expected boolean literal");}
     std::vector<std::size_t> shape(){need('(');std::vector<std::size_t> out;if(take(')'))return out;for(;;){space();const std::size_t start=pos;while(pos<source.size()&&source[pos]>='0'&&source[pos]<='9')++pos;out.push_back(decimal(source.substr(start,pos-start)));if(out.size()>16)bad("too many array dimensions");if(take(')')){if(out.size()==1)bad("singleton shape requires a tuple comma");break;}need(',');if(take(')'))break;}return out;}
     NpyArray parse(){NpyArray out;need('{');bool has_dtype=false,has_order=false,has_shape=false;for(;;){const auto key=string();need(':');if(key=="descr"&&!has_dtype){out.dtype=string();has_dtype=true;}else if(key=="fortran_order"&&!has_order){out.fortran_order=boolean();has_order=true;}else if(key=="shape"&&!has_shape){out.shape=shape();has_shape=true;}else bad("unknown or duplicate header field");if(take('}'))break;need(',');if(take('}'))break;}space();if(pos!=source.size()||!has_dtype||!has_order||!has_shape)bad("incomplete header");return out;}
 private:std::string_view source;std::size_t pos=0;
@@ -86,7 +88,7 @@ private:std::string_view source;std::size_t pos=0;
 
 std::size_t NpyArray::elements() const{
     if(shape.size()>16)bad("too many array dimensions");
-    std::size_t count=1;for(std::size_t x:shape){if(x>kMaxNumpyBytes|| (x!=0&&count>kMaxNumpyBytes/x))bad("array dimensions exceed bound");count*=x;}return count;
+    std::size_t count=1;for(std::size_t const x:shape){if(x>kMaxNumpyBytes|| (x!=0&&count>kMaxNumpyBytes/x))bad("array dimensions exceed bound");count*=x;}return count;
 }
 std::size_t NpyArray::item_size() const{return io::dtype(dtype).width;}
 void NpyArray::validate() const{const auto width=item_size(),count=elements();if(width!=0&&count>kMaxNumpyBytes/width)bad("array exceeds byte bound");if(bytes.size()!=width*count)bad("payload length does not match shape and dtype");}
@@ -107,8 +109,11 @@ std::vector<std::int64_t> NpyArray::integers() const{
 std::vector<bool> NpyArray::booleans() const{validate();if(io::dtype(dtype).kind!='b')bad("boolean dtype required");std::vector<bool> out(elements());for(std::size_t i=0;i<out.size();++i){const auto value=bits(cell(*this,i),true);if(value>1)bad("invalid boolean representation");out[i]=value!=0;}return out;}
 std::vector<std::string> NpyArray::strings() const{
     validate();const auto type=io::dtype(dtype);if(type.kind!='U'&&type.kind!='S')bad("string dtype required");std::vector<std::string> out(elements());
-    for(std::size_t i=0;i<out.size();++i){const auto data=cell(*this,i);if(type.kind=='S'){for(std::byte b:data)out[i].push_back(static_cast<char>(std::to_integer<unsigned char>(b)));while(!out[i].empty()&&out[i].back()=='\0')out[i].pop_back();(void)codepoints(out[i]);}
-        else{std::vector<std::uint32_t> chars;for(std::size_t j=0;j<type.count;++j)chars.push_back(static_cast<std::uint32_t>(bits(data.subspan(j*4,4),type.little)));while(!chars.empty()&&chars.back()==0)chars.pop_back();for(auto c:chars)utf8(out[i],c);}}
+    for(std::size_t i=0;i<out.size();++i){const auto data=cell(*this,i);if(type.kind=='S'){for(std::byte const b:data)out[i].push_back(static_cast<char>(std::to_integer<unsigned char>(b)));while(!out[i].empty()&&out[i].back()=='\0')out[i].pop_back();(void)codepoints(out[i]);}
+        else{std::vector<std::uint32_t> chars;chars.reserve(type.count);
+            for(std::size_t j=0;j<type.count;++j)chars.push_back(static_cast<std::uint32_t>(bits(data.subspan(j*4,4),type.little)));
+            while(!chars.empty()&&chars.back()==0)chars.pop_back();
+            for(auto const c:chars)utf8(out[i],c);}}
     return out;
 }
 NpyArray parse_npy(std::span<const std::byte> data){
@@ -120,7 +125,7 @@ NpyArray parse_npy(std::span<const std::byte> data){
     const std::size_t prefix=major==1?10:12;if(data.size()<prefix)bad("truncated header");
     const auto length=static_cast<std::size_t>(bits(data.subspan(8,prefix-8),true));
     if(length>65536||length>data.size()-prefix)bad("truncated or oversized header");
-    std::string header;header.reserve(length);for(std::byte b:data.subspan(prefix,length))header.push_back(static_cast<char>(std::to_integer<unsigned char>(b)));
+    std::string header;header.reserve(length);for(std::byte const b:data.subspan(prefix,length))header.push_back(static_cast<char>(std::to_integer<unsigned char>(b)));
     if(header.empty()||header.back()!='\n')bad("header must end with newline");
     NpyArray array=Header(header).parse();const auto width=array.item_size(),count=array.elements();
     if(width!=0&&count>kMaxNumpyBytes/width)bad("array size exceeds bound");
@@ -129,7 +134,7 @@ NpyArray parse_npy(std::span<const std::byte> data){
 }
 std::vector<std::byte> encode_npy(const NpyArray& array){
     array.validate();std::string header="{'descr': '"+array.dtype+"', 'fortran_order': "+(array.fortran_order?"True":"False")+", 'shape': (";
-    for(std::size_t i=0;i<array.shape.size();++i){if(i!=0)header+=", ";header+=std::to_string(array.shape[i]);}if(array.shape.size()==1)header+=",";header+="), }";
+    for(std::size_t i=0;i<array.shape.size();++i){if(i!=0)header+=", ";header+=std::to_string(array.shape[i]);}if(array.shape.size()==1)header+=',';header+="), }";
     while((10+header.size()+1)%64!=0)header+=' ';
     header+='\n';if(header.size()>65535)bad("encoded header exceeds NPY1 bound");
     std::vector<std::byte> out{std::byte{0x93},std::byte{'N'},std::byte{'U'},std::byte{'M'},std::byte{'P'},std::byte{'Y'},std::byte{1},std::byte{0}};
@@ -137,13 +142,14 @@ std::vector<std::byte> encode_npy(const NpyArray& array){
 }
 std::vector<std::byte> read_numpy_bytes(const std::filesystem::path& file){
     const auto handle=platform::open_regular(file);struct stat info{};if(::fstat(handle.get(),&info)!=0)throw std::system_error(errno,std::generic_category(),"state fstat");
-    if(info.st_size<0||static_cast<std::uintmax_t>(info.st_size)>kMaxNumpyBytes)bad("file exceeds read bound");
+    if(info.st_size<0||std::cmp_greater(info.st_size,kMaxNumpyBytes))bad("file exceeds read bound");
     std::vector<std::byte> bytes(static_cast<std::size_t>(info.st_size));std::size_t at=0;
     while(at<bytes.size()){const auto got=::read(handle.get(),std::span{bytes}.subspan(at).data(),bytes.size()-at);if(got<0){if(errno==EINTR)continue;throw std::system_error(errno,std::generic_category(),"state read");}if(got==0)bad("file truncated while reading");at+=static_cast<std::size_t>(got);}
-    std::byte extra{};ssize_t count;do{count=::read(handle.get(),&extra,1);}while(count<0&&errno==EINTR);if(count<0)throw std::system_error(errno,std::generic_category(),"state read");if(count!=0)bad("file changed while reading");return bytes;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-do-while) mirrors the reference control flow
+    std::byte extra{};ssize_t count = 0;do{count=::read(handle.get(),&extra,1);}while(count<0&&errno==EINTR);if(count<0)throw std::system_error(errno,std::generic_category(),"state read");if(count!=0)bad("file changed while reading");return bytes;
 }
-NpyArray double_array(std::span<const double> values,std::vector<std::size_t> shape){NpyArray out{"<f8",std::move(shape),false,{}};out.bytes.reserve(values.size()*8);for(double value:values)append_bits(out.bytes,std::bit_cast<std::uint64_t>(value),8);out.validate();return out;}
-NpyArray integer_array(std::span<const std::int64_t> values,std::vector<std::size_t> shape){NpyArray out{"<i8",std::move(shape),false,{}};out.bytes.reserve(values.size()*8);for(auto value:values)append_bits(out.bytes,std::bit_cast<std::uint64_t>(value),8);out.validate();return out;}
-NpyArray bool_array(const std::vector<bool>& values,std::vector<std::size_t> shape){NpyArray out{"|b1",std::move(shape),false,{}};out.bytes.reserve(values.size());for(bool value:values)out.bytes.push_back(value?std::byte{1}:std::byte{0});out.validate();return out;}
-NpyArray string_array(std::span<const std::string> values,std::vector<std::size_t> shape){std::vector<std::vector<std::uint32_t>> chars;std::size_t width=1;for(const auto& value:values){chars.push_back(codepoints(value));width=std::max(width,chars.back().size());}NpyArray out{"<U"+std::to_string(width),std::move(shape),false,{}};for(const auto& value:chars)for(std::size_t i=0;i<width;++i)append_bits(out.bytes,i<value.size()?value[i]:0,4);out.validate();return out;}
+NpyArray double_array(std::span<const double> values,std::vector<std::size_t> shape){NpyArray out{.dtype="<f8",.shape=std::move(shape),.fortran_order=false,.bytes={}};out.bytes.reserve(values.size()*8);for(double const value:values)append_bits(out.bytes,std::bit_cast<std::uint64_t>(value),8);out.validate();return out;}
+NpyArray integer_array(std::span<const std::int64_t> values,std::vector<std::size_t> shape){NpyArray out{.dtype="<i8",.shape=std::move(shape),.fortran_order=false,.bytes={}};out.bytes.reserve(values.size()*8);for(auto const value:values)append_bits(out.bytes,std::bit_cast<std::uint64_t>(value),8);out.validate();return out;}
+NpyArray bool_array(const std::vector<bool>& values,std::vector<std::size_t> shape){NpyArray out{.dtype="|b1",.shape=std::move(shape),.fortran_order=false,.bytes={}};out.bytes.reserve(values.size());for(bool const value:values)out.bytes.push_back(value?std::byte{1}:std::byte{0});out.validate();return out;}
+NpyArray string_array(std::span<const std::string> values,std::vector<std::size_t> shape){std::vector<std::vector<std::uint32_t>> chars;std::size_t width=1;for(const auto& value:values){chars.push_back(codepoints(value));width=std::max(width,chars.back().size());}NpyArray out{.dtype="<U"+std::to_string(width),.shape=std::move(shape),.fortran_order=false,.bytes={}};for(const auto& value:chars)for(std::size_t i=0;i<width;++i)append_bits(out.bytes,i<value.size()?value[i]:0,4);out.validate();return out;}
 } // namespace bike::io

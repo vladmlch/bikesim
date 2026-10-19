@@ -1,11 +1,13 @@
 #pragma once
 #include "../runtime/runtime.hpp"
 #include <memory>
+#include <cstdint>
 #include <string>
 #include <vector>
 
 namespace bike::viewer {
-enum class CameraMode { side, chase };
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+enum class CameraMode : std::uint8_t { side, chase };
 class Camera {
 public:
     explicit Camera(double smoothing = .08);
@@ -29,6 +31,8 @@ public:
     ~RenderOwner();
     RenderOwner(const RenderOwner&) = delete;
     RenderOwner& operator=(const RenderOwner&) = delete;
+    RenderOwner(RenderOwner&&) = delete;
+    RenderOwner& operator=(RenderOwner&&) = delete;
     void apply(const runtime::RenderFrame&);
     void draw(int framebuffer_width, int framebuffer_height);
     void set_camera(CameraMode);

@@ -31,11 +31,13 @@ Action action_for_key(Mode mode, int key) {
 }
 unsigned speed_for_action(Action action, unsigned current) {
     constexpr std::array<unsigned, 4> scales{1, 2, 4, 8};
-    const auto it = std::find(scales.begin(), scales.end(), current);
-    if (it == scales.end()) throw std::invalid_argument("scale must be one of 1, 2, 4, 8");
+    std::size_t index = scales.size();
+    for (std::size_t i = 0; i < scales.size(); ++i)
+        if (scales[i] == current) { index = i; break; }
+    if (index == scales.size()) throw std::invalid_argument("scale must be one of 1, 2, 4, 8");
     if (action == Action::normal_speed) return 1;
-    if (action == Action::slower) return it == scales.begin() ? 1 : *(it - 1);
-    if (action == Action::faster) return it + 1 == scales.end() ? 8 : *(it + 1);
+    if (action == Action::slower) return index == 0 ? 1 : scales[index - 1];
+    if (action == Action::faster) return index + 1 == scales.size() ? 8 : scales[index + 1];
     return current;
 }
 void InputState::apply(Action action) {
@@ -56,7 +58,7 @@ void InputState::apply(Action action) {
 }
 double InputState::brake_demand() const noexcept { return braking ? brake_strength : 0.; }
 std::string help_text(Mode mode) {
-    std::string controls = "C/1/2 camera | T telemetry | G markers | Q/Escape close | F6/F7/F8 speed";
+    std::string const controls = "C/1/2 camera | T telemetry | G markers | Q/Escape close | F6/F7/F8 speed";
     if (mode == Mode::research) return "Space pause | B brakes | R close/reset | " + controls;
     if (mode == Mode::inspection) return "Space pause | R restart | Left/Right seek 1 s (Shift 0.1 s) | Up/Down speed x1.5 | " + controls;
     if (mode == Mode::checked_replay) return "Space pause | R restart | " + controls;

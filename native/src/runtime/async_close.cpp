@@ -12,7 +12,8 @@ AsyncCloseRunner::AsyncCloseRunner(AccountingConfig config, AccountingState stat
     // result. Growing episode history belongs exclusively to the main owner.
     config.async_telemetry = false;
     config.retention = RetentionMode::off;
-    evaluator_.reset(new PeriodAccounting(std::move(config), std::move(state),
+    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) boundary code holds a non-owning handle by design
+    evaluator_.reset(new PeriodAccounting(config, std::move(state),
                                          generation, std::move(effort)));
     worker_ = std::thread([this] { work(); });
 }
@@ -20,12 +21,12 @@ AsyncCloseRunner::~AsyncCloseRunner() { close(); }
 
 void AsyncCloseRunner::submit(std::shared_ptr<const std::vector<RawStep>> raws) {
     if (!raws || raws->empty()) throw std::invalid_argument("async close requires an owned nonempty period");
-    std::lock_guard lock(mutex_);
+    std::scoped_lock const lock(mutex_);
     if (stopping_ || finished_ || failure_)
         throw AsyncWorkerLost("async close worker is unavailable");
     if (sequence_ == std::numeric_limits<std::uint64_t>::max())
         throw std::overflow_error("async close sequence overflow");
-    Job job{sequence_, std::move(raws)};
+    Job job{.sequence=sequence_, .raws=std::move(raws)};
     pending_.push_back(job);
     try { jobs_.push_back(std::move(job)); }
     catch (...) { pending_.pop_back(); throw; }
@@ -56,7 +57,7 @@ std::shared_ptr<const AsyncCloseRunner::Result> AsyncCloseRunner::peek(bool bloc
 }
 
 void AsyncCloseRunner::acknowledge(std::uint64_t sequence) {
-    std::lock_guard lock(mutex_);
+    std::scoped_lock const lock(mutex_);
     if (pending_.empty() || results_.empty() ||
         pending_.front().sequence != sequence || results_.front()->sequence != sequence)
         throw std::invalid_argument("async close acknowledgement is not the ready prefix");
@@ -64,11 +65,11 @@ void AsyncCloseRunner::acknowledge(std::uint64_t sequence) {
     pending_.pop_front();
 }
 std::size_t AsyncCloseRunner::pending() const {
-    std::lock_guard lock(mutex_);
+    std::scoped_lock const lock(mutex_);
     return pending_.size();
 }
 std::size_t AsyncCloseRunner::pending_intervals() const {
-    std::lock_guard lock(mutex_);
+    std::scoped_lock const lock(mutex_);
     std::size_t count = 0;
     for (const auto& item : pending_) count += item.raws->size();
     return count;
@@ -76,7 +77,7 @@ std::size_t AsyncCloseRunner::pending_intervals() const {
 
 std::vector<std::shared_ptr<const std::vector<RawStep>>> AsyncCloseRunner::detach_pending() {
     close();
-    std::lock_guard lock(mutex_);
+    std::scoped_lock const lock(mutex_);
     std::vector<std::shared_ptr<const std::vector<RawStep>>> result;
     result.reserve(pending_.size());
     for (const auto& item : pending_) result.push_back(item.raws);
@@ -90,7 +91,7 @@ std::vector<std::shared_ptr<const std::vector<RawStep>>> AsyncCloseRunner::detac
 
 void AsyncCloseRunner::close() noexcept {
     {
-        std::lock_guard lock(mutex_);
+        std::scoped_lock const lock(mutex_);
         stopping_ = true;
         changed_.notify_all();
     }
@@ -115,26 +116,26 @@ void AsyncCloseRunner::work() noexcept {
                 try { evaluator_->flush_local(); }
                 catch (const InvalidReferenceRun& error) { strict_error = error.what(); }
                 auto result = std::make_shared<Result>(Result{
-                    job.sequence, evaluator_->take_publication()});
+                    .sequence=job.sequence, .publication=evaluator_->take_publication()});
                 result->publication.strict_error = std::move(strict_error);
                 {
-                    std::lock_guard lock(mutex_);
+                    std::scoped_lock const lock(mutex_);
                     results_.push_back(std::move(result));
                     changed_.notify_all();
                 }
             } catch (...) {
-                std::lock_guard lock(mutex_);
+                std::scoped_lock const lock(mutex_);
                 failure_ = std::current_exception();
                 changed_.notify_all();
                 break;
             }
         }
     } catch (...) {
-        std::lock_guard lock(mutex_);
+        std::scoped_lock const lock(mutex_);
         failure_ = std::current_exception();
         worker_lost_ = true;
     }
-    std::lock_guard lock(mutex_);
+    std::scoped_lock const lock(mutex_);
     finished_ = true;
     changed_.notify_all();
 }

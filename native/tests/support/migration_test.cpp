@@ -222,6 +222,7 @@ namespace {
     }
     bool manifest_bool(const Value &value, const std::string &path) {
         const auto *flag = std::get_if<bool>(&value.data);
+        // cppcheck-suppress nullPointerRedundantCheck
         if (flag == nullptr) manifest_error(path + ": expected boolean");
         // manifest_error is [[noreturn]] — flag is provably nonnull here.
         // cppcheck-suppress nullPointerRedundantCheck

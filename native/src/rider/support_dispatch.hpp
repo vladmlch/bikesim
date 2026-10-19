@@ -26,9 +26,9 @@ struct PedalingSupportTargets {std::array<std::array<double,3>,4> forces_on_bike
     const std::array<bool,4>& enabled,const std::array<std::array<double,3>,2>& pedal_forces,
     double pitch_moment=0.,const std::array<double,3>& balance={0.,0.,0.});
 struct SupportDispatch {
-    ::rider::PedalAttachment pedals;
-    ::rider::SaddleAttachment saddle;
-    ::rider::GripAttachment grips;
+    ::rider::PedalAttachment pedals{};
+    ::rider::SaddleAttachment saddle{};
+    ::rider::GripAttachment grips{};
     bool closed_form_spindle=false;
 };
 [[nodiscard]] SupportDispatch support_dispatch(const ::rider::RiderContactsConfig&);

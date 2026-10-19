@@ -13,9 +13,9 @@ void apply_initial_forces(SetupContext& context,bool advance) {
         context.physics.initial_front_brake,context.physics.initial_rear_brake,
         std::nullopt,runtime::RideControl{});
 }
-double acceleration_residual(SetupContext& context) {
+double acceleration_residual(SetupContext const& context) {
     double result=0.;
-    for(double a:context.stepper.qacc()) {
+    for(double const a:context.stepper.qacc()) {
         if(!std::isfinite(a))throw std::runtime_error("non-finite physical equilibrium acceleration");
         result=std::max(result,std::abs(a));
     }

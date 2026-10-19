@@ -39,14 +39,16 @@ std::pair<int,int> resolve_hinge(const mjModel& m,std::string_view name){
     const int id=model::required_id(m,mjOBJ_JOINT,name);
     topology::joint(&m,id,std::string(name).c_str(),mjJNT_HINGE,{0.,1.,0.});return resolve_scalar_joint(m,name);
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 int validate_actuator_target(const mjModel& m,std::string_view name,std::string_view joint_name){
     const int actuator=model::required_id(m,mjOBJ_ACTUATOR,name),joint=model::required_id(m,mjOBJ_JOINT,joint_name);
     topology::actuator(&m,actuator,std::string(name).c_str(),joint);return actuator;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 WheelSpin resolve_wheel_spin(const mjModel& m,std::string_view joint_name,std::string_view contact_geom){
     const auto address=resolve_hinge(m,joint_name);const auto geom=static_cast<std::size_t>(model::required_id(m,mjOBJ_GEOM,contact_geom));
     if(std::views::counted(m.geom_type,m.ngeom)[geom]!=mjGEOM_SPHERE)throw std::invalid_argument(std::string(contact_geom)+": wheel contact must be a sphere");
-    return {std::string(joint_name),address.second,std::views::counted(m.geom_size,3*m.ngeom)[3*geom]};
+    return {.name=std::string(joint_name),.dofadr=address.second,.radius_m=std::views::counted(m.geom_size,3*m.ngeom)[3*geom]};
 }
 double peak_shape(double depth) { return (1. - depth) + depth * (std::numbers::pi / 2.); }
 double ripple_shape(double phase, double depth) {
@@ -62,12 +64,12 @@ void DrivetrainSpecs::validate() const {
         if (shift_cooldown_s < 0. || shift_cut_duration_s < 0.)
             throw std::invalid_argument("legacy drivetrain shift timings must be nonnegative");
     }
-    for (double x : {target_cadence_min_rpm,target_cadence_max_rpm,shift_cooldown_s,
+    for (double const x : {target_cadence_min_rpm,target_cadence_max_rpm,shift_cooldown_s,
         shift_cut_duration_s,crank_phase_deg,crank_hold_stiffness_nm_rad,crank_hold_damping_nms_rad})
         finite(x, "legacy drivetrain setting");
     if (!std::isfinite(ripple_depth) || ripple_depth < 0. || ripple_depth > 1.)
         throw std::invalid_argument("legacy drivetrain ripple_depth must be in [0,1]");
-    for (double x : {rider_torque_ceiling_nm,rider_power_ceiling_w,assist_torque_ceiling_nm,
+    for (double const x : {rider_torque_ceiling_nm,rider_power_ceiling_w,assist_torque_ceiling_nm,
         assist_power_ceiling_w,assist_response_s,cutoff_speed_kmh,cutoff_taper_kmh})
         positive(x, "legacy drivetrain ceiling/time");
     if (rider_torque_ceiling_nm * peak_shape(ripple_depth) + assist_torque_ceiling_nm > 180.)
@@ -84,6 +86,7 @@ double DrivetrainSpecs::support_factor(std::string_view mode) const {
     if (found == assist_names.end()) throw std::invalid_argument("unknown legacy assist mode '" + std::string(mode) + "'");
     return factors[static_cast<std::size_t>(found - assist_names.begin())];
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 std::pair<double,std::string> limited_rider_torque(double demand, double rate, const DrivetrainSpecs& specs) {
     if (demand <= 0.) return {0., "none"};
     double torque = demand; std::string limit = "none";
@@ -99,12 +102,14 @@ double cutoff_factor(double speed, const DrivetrainSpecs& specs) {
     if (kmh >= specs.cutoff_speed_kmh) return 0.;
     return (specs.cutoff_speed_kmh - kmh) / specs.cutoff_taper_kmh;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double assist_target_torque(double rider, double support, double rate, const DrivetrainSpecs& specs) {
     if (rider <= 0. || support <= 0.) return 0.;
     double target = std::min(support * rider, specs.assist_torque_ceiling_nm);
     if (rate > 1e-3) target = std::min(target, specs.assist_power_ceiling_w / rate);
     return target;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double first_order_step(double current, double target, double dt, double tau) {
     if (tau <= 0.) return target;
     const double alpha = dt / (tau + dt);
@@ -158,16 +163,16 @@ double PedalDrivetrain::chain_residual(const mjData& data) const {
 }
 void PedalDrivetrain::engage(mjData& data) {
     if (engaged_) return;
-    auto v = std::views::counted(data.qvel, model_.nv);
+    auto const v = std::views::counted(data.qvel, model_.nv);
     v[crank_v_] = v[wheel_v_] / current_gear_ratio();
     redatum(data);
-    std::views::counted(data.eq_active, model_.neq)[equality_] = 1;
+    std::views::counted(data.eq_active, model_.neq)[equality_] = true;
     engaged_ = true;
 }
 void PedalDrivetrain::shift_to(mjData& data, int cog) {
     cog_ = cog; cooldown_ = specs_.shift_cooldown_s; cut_ = specs_.shift_cut_duration_s;
     std::views::counted(model_.eq_data, mjNEQDATA * model_.neq)[mjNEQDATA * equality_ + 1] = 1. / current_gear_ratio();
-    auto v = std::views::counted(data.qvel, model_.nv);
+    auto const v = std::views::counted(data.qvel, model_.nv);
     v[crank_v_] = v[wheel_v_] / current_gear_ratio(); redatum(data);
 }
 const CrankCommand& PedalDrivetrain::compute(mjData& data, double demand,
@@ -175,7 +180,7 @@ const CrankCommand& PedalDrivetrain::compute(mjData& data, double demand,
     finite(demand, "legacy wheel demand"); finite(speed, "legacy speed");
     const double dt = model_.opt.timestep;
     const auto q = std::views::counted(data.qpos, model_.nq);
-    auto v = std::views::counted(data.qvel, model_.nv);
+    auto const v = std::views::counted(data.qvel, model_.nv);
     finite(q[crank_q_], "legacy crank position"); finite(v[crank_v_], "legacy crank rate");
     cooldown_ = std::max(0., cooldown_ - dt); cut_ = std::max(0., cut_ - dt);
     const bool pedalling = demand > 0. && grounded;
@@ -184,10 +189,12 @@ const CrankCommand& PedalDrivetrain::compute(mjData& data, double demand,
     double rate = v[crank_v_], cadence = rate * rpm_per_radps;
     if (specs_.auto_shift && cooldown_ <= 0. && pedalling) {
         std::optional<int> chosen;
+        // NOLINTBEGIN(bugprone-branch-clone) mirrored shift-up/shift-down branches mirror the Python reference control flow
         for (int cog : specs_.cassette) {
             if (cadence < specs_.target_cadence_min_rpm && cog > cog_ && (!chosen || cog < *chosen)) chosen = cog;
             else if (cadence > specs_.target_cadence_max_rpm && cog < cog_ && (!chosen || cog > *chosen)) chosen = cog;
         }
+        // NOLINTEND(bugprone-branch-clone)
         if (chosen) { shift_to(data, *chosen); rate = v[crank_v_]; cadence = rate * rpm_per_radps; }
     }
     double rider_nm = 0., support = 0., total = 0., brake = 0., delivered_assist = 0.;
@@ -205,7 +212,7 @@ const CrankCommand& PedalDrivetrain::compute(mjData& data, double demand,
         total = delivered_assist + (legs_drive_ ? 0. : rider_nm);
     } else {
         if (engaged_) {
-            std::views::counted(data.eq_active, model_.neq)[equality_] = 0;
+            std::views::counted(data.eq_active, model_.neq)[equality_] = false;
             hold_phase_ = phase; engaged_ = false;
         }
         assist_nm_ = first_order_step(assist_nm_, 0., dt, specs_.assist_response_s);
@@ -215,21 +222,21 @@ const CrankCommand& PedalDrivetrain::compute(mjData& data, double demand,
         if (demand < 0.) brake = std::min(1., -demand / (2. * 200.));
     }
     traction_limited_ = traction_limited;
-    command_ = {std::clamp(total, -180., 180.), rider_nm, assist_nm_, phase, cadence,
-        rider_nm * rate, engaged_ ? delivered_assist * rate : 0., support,
-        !engaged_, nominal_support_factor() > 0. && taper < 1., std::move(limit), brake, cog_};
+    command_ = {.crank_torque_nm=std::clamp(total, -180., 180.), .rider_torque_nm=rider_nm, .assist_torque_nm=assist_nm_, .phase_rad=phase, .cadence_rpm=cadence,
+        .rider_power_w=rider_nm * rate, .motor_power_w=engaged_ ? delivered_assist * rate : 0., .support_factor=support,
+        .freewheel=!engaged_, .cutoff_active=nominal_support_factor() > 0. && taper < 1., .rider_limit=std::move(limit), .brake_demand=brake, .gear_teeth=cog_};
     return command_;
 }
 void PedalDrivetrain::write(mjData& data) const { std::views::counted(data.ctrl, model_.nu)[actuator_] = command_.crank_torque_nm; }
 void PedalDrivetrain::reset(mjData& data, bool initialize_pose) {
     cog_ = specs_.cog_teeth; cooldown_ = 0.; cut_ = 0.;
     std::views::counted(model_.eq_data, mjNEQDATA * model_.neq)[mjNEQDATA * equality_ + 1] = 1. / current_gear_ratio();
-    auto q = std::views::counted(data.qpos, model_.nq);
+    auto const q = std::views::counted(data.qpos, model_.nq);
     if (initialize_pose) { q[crank_q_] = start_phase_; std::views::counted(data.qvel, model_.nv)[crank_v_] = 0.; }
     std::views::counted(data.ctrl, model_.nu)[actuator_] = 0.;
     assist_nm_ = 0.; hold_phase_ = q[crank_q_]; engaged_ = true; traction_limited_ = false;
     if (initialize_pose) redatum(data);
-    std::views::counted(data.eq_active, model_.neq)[equality_] = 1;
+    std::views::counted(data.eq_active, model_.neq)[equality_] = true;
     command_ = {}; command_.phase_rad = hold_phase_; command_.support_factor = nominal_support_factor(); command_.gear_teeth = cog_;
 }
 
@@ -274,7 +281,9 @@ double opposing_torque(double magnitude, double omega, double taper) {
     const double result=-std::abs(magnitude)*scale*(omega>0.?1.:-1.);
     finite(result,"resistive torque");return result;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double rolling_torque(double support, double omega, double radius, double weight,
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
         double crr, double taper, double ceiling) {
     finite(support,"wheel support"); positive(radius,"wheel radius"); positive(weight,"system weight");
     positive(ceiling,"rolling load ceiling");
@@ -290,7 +299,7 @@ std::optional<CrashEvent> detect_crash(double time, double x, double pitch,
     if (std::abs(pitch) > limit_deg * (std::numbers::pi / 180.)) cause = "pitch_over";
     else if (contacts.handlebar_load_n > 1.) cause = "handlebar_contact";
     else return {};
-    return CrashEvent{std::move(cause),time,x,pitch};
+    return CrashEvent{.cause=std::move(cause),.time_s=time,.position_m=x,.pitch_rad=pitch};
 }
 PitchState pitch_step(PitchState state, bool enabled, double pitch, double rate,
         const TerrainContacts& contacts, double dt) {
@@ -305,6 +314,7 @@ void RunLimits::validate() const {
     positive(finish_x_m,"finish_x_m"); positive(max_wall_clock_s,"max_wall_clock_s");
     if (max_steps <= 0) throw std::invalid_argument("max_steps must be positive");
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 RunLimits RunLimits::for_track(double length, double start, double dt, double wall, double speed) {
     positive(dt,"timestep_s"); positive(speed,"min_speed_mps");
     const double distance = length - start;
@@ -312,8 +322,9 @@ RunLimits RunLimits::for_track(double length, double start, double dt, double wa
     const double count = 2. * distance / (speed * dt);
     if (!std::isfinite(count) || count >= static_cast<double>(std::numeric_limits<std::int64_t>::max()))
         throw std::invalid_argument("legacy step cap exceeds int64 range");
-    RunLimits result{length,static_cast<std::int64_t>(count),wall}; result.validate(); return result;
+    RunLimits result{.finish_x_m=length,.max_steps=static_cast<std::int64_t>(count),.max_wall_clock_s=wall}; result.validate(); return result;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 std::optional<std::string> termination_reason(const RunLimits& limits, double position,
         std::int64_t steps, double wall, const std::optional<CrashEvent>& crash) {
     limits.validate();

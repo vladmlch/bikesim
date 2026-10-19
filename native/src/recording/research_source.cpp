@@ -10,6 +10,10 @@ namespace {
 class NativeResearchSource final : public ResearchSource {
 public:
     ~NativeResearchSource() override;
+    NativeResearchSource(const NativeResearchSource&) = delete;
+    NativeResearchSource& operator=(const NativeResearchSource&) = delete;
+    NativeResearchSource(NativeResearchSource&&) = delete;
+    NativeResearchSource& operator=(NativeResearchSource&&) = delete;
     explicit NativeResearchSource(std::shared_ptr<const runtime::OwnedResearchEpisode> episode) : episode_(std::move(episode)) { if (!episode_) throw std::invalid_argument("missing research source owner"); }
     std::int64_t row_count(std::string_view name) const override {
         const auto count = episode_->row_count(name);
@@ -26,7 +30,7 @@ public:
                 const auto batch = episode_->batch(spec.name, static_cast<std::int64_t>(first), static_cast<std::int64_t>(size));
                 for (std::size_t i = 0; i < batch.size(); ++i) {
                     auto staged = research::wire_value(batch[i]); auto row = std::move(std::get<io::Value::Object>(staged.data));
-                    const auto identity = static_cast<std::int64_t>(first+i);
+                    const auto identity = static_cast<std::int64_t>(first) + static_cast<std::int64_t>(i);
                     if (spec.name == "transitions") {
                         std::erase_if(row, [](const auto& p) { return p.first == "observation"; });
                         value::set(row, "request_id", value::integer(identity));
@@ -49,7 +53,7 @@ std::shared_ptr<const ResearchSource> make_research_source(std::shared_ptr<const
 }
 std::shared_ptr<const EpisodeEvidence> make_research_evidence(std::int64_t id, runtime::OwnedResearchEpisode episode, Catalog catalog, io::Value summary) {
     if (episode.configuration.capture_mode != runtime::ResearchCaptureMode::full) throw std::invalid_argument("persistent research recording requires full capture");
-    auto owner = std::make_shared<const runtime::OwnedResearchEpisode>(std::move(episode));
+    auto const owner = std::make_shared<const runtime::OwnedResearchEpisode>(std::move(episode));
     auto physical_owner = std::shared_ptr<const runtime::OwnedNativeEpisode>(owner, &owner->physical);
     auto physical = make_physical_source(std::move(physical_owner), std::move(catalog), false);
     bool eligible = false;
@@ -60,10 +64,10 @@ std::shared_ptr<const EpisodeEvidence> make_research_evidence(std::int64_t id, r
         std::ranges::all_of(owner->initial_integration_state, [](double n) { return std::isfinite(n); }) &&
         std::ranges::all_of(owner->final_snapshot.integration_state, [](double n) { return std::isfinite(n); });
     std::vector<Asset> assets;
-    if (owner->configuration.assets) for (const auto& a : *owner->configuration.assets) assets.push_back(Asset{a.name, a.media_type, a.sha256, a.content});
-    auto out = std::make_shared<const EpisodeEvidence>(EpisodeEvidence{id, owner->physical.generation, std::move(physical), std::move(summary), std::move(assets),
-        ResearchEvidence{make_research_source(owner), owner->initial_integration_state, owner->final_snapshot.integration_state,
-            replay_contract_version, static_cast<std::int64_t>(owner->transitions.size()), eligible}});
+    if (owner->configuration.assets) for (const auto& a : *owner->configuration.assets) assets.push_back(Asset{.name=a.name, .media_type=a.media_type, .sha256=a.sha256, .content=a.content});
+    auto out = std::make_shared<const EpisodeEvidence>(EpisodeEvidence{.episode_id=id, .generation=owner->physical.generation, .physical=std::move(physical), .summary=std::move(summary), .assets=std::move(assets),
+        .research=ResearchEvidence{.history=make_research_source(owner), .initial_integration_state=owner->initial_integration_state, .final_integration_state=owner->final_snapshot.integration_state,
+            .replay_contract_version=replay_contract_version, .complete_control_steps=static_cast<std::int64_t>(owner->transitions.size()), .replay_eligible=eligible}});
     out->validate(); return out;
 }
 } // namespace bike::recording

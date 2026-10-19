@@ -12,7 +12,7 @@ namespace d=bike::numerics::dense;
 void indices(std::size_t joints,std::span<const std::size_t> ti,std::span<const std::size_t> ei,std::span<const double> scales) {
     if(ti.size()!=joints || ei.size()!=joints || !d::finite(scales))throw std::invalid_argument("activation allocation indices/scale shape");
     std::vector<bool> used(scales.size(),false);
-    for(auto list:{ti,ei})for(auto i:list) {
+    for(auto const list:{ti,ei})for(auto const i:list) {
         if(i>=scales.size() || used[i] || scales[i]<=0.)throw std::invalid_argument("activation allocation indices/scales");
         used[i]=true;
     }
@@ -47,7 +47,7 @@ Matrix ActivationLaw::derivative(std::span<const double> excitation) const {
     }
     if(power_limit_ && power>*power_limit_) {
         auto projection=d::identity(n);
-        for(auto i:producing)for(auto j:producing)
+        for(auto const i:producing)for(auto const j:producing)
             projection.values[i*n+j]=(*power_limit_/power)*(i==j?1.:0.)-*power_limit_/(power*power)*active[i]*speeds_[j];
         jac=d::multiply(projection,jac);
     }
@@ -55,14 +55,14 @@ Matrix ActivationLaw::derivative(std::span<const double> excitation) const {
 }
 ExtraConstraint ActivationLaw::constraint(std::vector<std::size_t> ti,std::vector<std::size_t> ei,std::vector<double> scales) const {
     indices(state_.size(),ti,ei,scales);
-    auto law=std::make_shared<const ActivationLaw>(*this);
-    return {[law,ti,ei,scales](std::span<const double> x) {
+    auto const law=std::make_shared<const ActivationLaw>(*this);
+    return {.evaluate=[law,ti,ei,scales](std::span<const double> x) {
         if(x.size()!=scales.size())throw std::invalid_argument("activation constraint point shape");
         std::vector<double> excitation(ei.size());for(std::size_t i=0;i<ei.size();++i)excitation[i]=x[ei[i]]*scales[ei[i]];
         auto delivered=law->delivered(excitation);
         for(std::size_t i=0;i<ti.size();++i)delivered[i]=x[ti[i]]*scales[ti[i]]-delivered[i];
         return delivered;
-    },[law,ti,ei,scales](std::span<const double> x) {
+    },.jacobian=[law,ti,ei,scales](std::span<const double> x) {
         if(x.size()!=scales.size())throw std::invalid_argument("activation Jacobian point shape");
         std::vector<double> excitation(ei.size());for(std::size_t i=0;i<ei.size();++i)excitation[i]=x[ei[i]]*scales[ei[i]];
         const auto derivative=law->derivative(excitation);auto out=d::zeros(ti.size(),x.size());
@@ -71,7 +71,7 @@ ExtraConstraint ActivationLaw::constraint(std::vector<std::size_t> ti,std::vecto
             for(std::size_t j=0;j<ei.size();++j)out.values[i*x.size()+ei[j]]=-derivative.values[i*ei.size()+j]*scales[ei[j]];
         }
         return out;
-    },{0.},{0.},std::nullopt};
+    },.lower={0.},.upper={0.},.linear=std::nullopt};
 }
 std::vector<double> ActivationLaw::project(std::span<const double> x,std::span<const std::size_t> ti,
     std::span<const std::size_t> ei,std::span<const double> scales) const {

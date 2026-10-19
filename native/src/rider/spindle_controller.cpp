@@ -671,7 +671,8 @@ spindle::Vec2 SpindleController::leg_targets(const mjData *data,
     named_set(sole_goal_diagnostics_, key,
               SoleGoalDiagnostics{.spindle = true,
                                   .saturated = false,
-                                  .limiting_reasons = {}});
+                                  .limiting_reasons = {},
+                                  .geometry = std::nullopt});
     // Python chains ik_reach_limited[side] = saturated_ik[side] = False.
     named_set(saturated_ik_, key, false);
     named_set(ik_reach_limited_, key, false);
@@ -1320,7 +1321,8 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                                .invalid_controller = false,
                                .crank_task_nm = total,
                                .crank_task_shortfall_nm = total - projected,
-                               .solution_excitation_nm = excitation};
+                               .solution_excitation_nm = excitation,
+                               .legacy = std::nullopt};
     const std::vector<double> delivered =
         finalize_effort(data, final, advance, dt, steady_state);
     joint_torques_nm_.clear();
@@ -1462,7 +1464,7 @@ void SpindleController::validate_state(const State &state) const {
         throw std::invalid_argument("spindle controller cannot restore legacy allocation state");
     if (!legacy_ && !state.pd_split.empty())
         throw std::invalid_argument("spindle controller carries no PD warm split");
-    for (double x : state.active_state)
+    for (double const x : state.active_state)
         if (!std::isfinite(x)) throw std::invalid_argument("rider activation state must be finite");
     for (const auto& [name, split] : state.pd_split) {
         (void)joint_index(name);
@@ -1470,10 +1472,11 @@ void SpindleController::validate_state(const State &state) const {
             throw std::invalid_argument("rider PD split must be finite");
     }
     if (state.allocation_memory && state.allocation_memory->solution)
-        for (double x : *state.allocation_memory->solution)
+        for (double const x : *state.allocation_memory->solution)
             if (!std::isfinite(x)) throw std::invalid_argument("rider_controller allocation warm start must be finite");
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved) fields are consumed selectively rather than by a whole-object move
 void SpindleController::commit_state(State &&state) noexcept {
     enabled_ = state.enabled;
     command_enabled_ = state.command_enabled;

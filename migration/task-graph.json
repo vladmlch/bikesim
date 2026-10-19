@@ -12,7 +12,7 @@
         "migration/baseline.md"
       ],
       "owned_sources": [],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T01",
@@ -29,7 +29,7 @@
         "tools/migration/capture_reference.py"
       ],
       "owned_sources": [],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T02",
@@ -47,7 +47,7 @@
         "native/tests/migration/test_t02.cpp"
       ],
       "owned_sources": [],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T03",
@@ -69,7 +69,7 @@
       "owned_sources": [
         "src/bike_sim/native/__init__.py"
       ],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T04",
@@ -89,7 +89,7 @@
         "native/tests/migration/test_t04.cpp"
       ],
       "owned_sources": [],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T05",
@@ -111,7 +111,7 @@
       "owned_sources": [
         "src/bike_sim/recording/json_codec.py"
       ],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T06",
@@ -133,7 +133,7 @@
         "native/tests/migration/test_t06.cpp"
       ],
       "owned_sources": [],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T07",
@@ -155,7 +155,7 @@
         "native/tests/migration/test_t07.cpp"
       ],
       "owned_sources": [],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T08",
@@ -177,7 +177,7 @@
         "native/tests/migration/test_t08.cpp"
       ],
       "owned_sources": [],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T09",
@@ -204,7 +204,7 @@
       "owned_sources": [
         "src/bike_sim/native/runtime.py"
       ],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T10",
@@ -223,7 +223,7 @@
         "native/tests/migration/test_t10.cpp"
       ],
       "owned_sources": [],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T11",
@@ -246,7 +246,7 @@
         "src/bike_sim/sim/ride/period_buffer.py",
         "src/bike_sim/sim/ride/physical_samples.py"
       ],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T12",
@@ -278,7 +278,7 @@
         "src/bike_sim/physics/rider_program.py",
         "src/bike_sim/physics/suspension_config.py"
       ],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T13",
@@ -299,7 +299,7 @@
         "src/bike_sim/physics/plant_profile.py",
         "src/bike_sim/physics/resolution.py"
       ],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T14",
@@ -331,7 +331,7 @@
         "src/bike_sim/kinematics/linkage_math.py",
         "src/bike_sim/kinematics/solver.py"
       ],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T15",
@@ -363,7 +363,7 @@
         "src/bike_sim/physics/tuning.py",
         "src/bike_sim/sim/ride/mass_properties.py"
       ],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T16",
@@ -399,7 +399,7 @@
         "src/bike_sim/mujoco/steering_fork.py",
         "src/bike_sim/mujoco/terrain.py"
       ],
-      "status": "planned",
+      "status": "review",
       "implementation": {
         "status": "implemented_unverified",
         "date": "2026-10-17",
@@ -442,7 +442,7 @@
         "src/bike_sim/mujoco/rider.py",
         "src/bike_sim/mujoco/sensors.py"
       ],
-      "status": "planned",
+      "status": "review",
       "implementation": {
         "status": "implemented_unverified",
         "date": "2026-10-17",
@@ -478,7 +478,7 @@
         "src/bike_sim/native/config.py",
         "src/bike_sim/sim/ride/physical_mapping.py"
       ],
-      "status": "planned",
+      "status": "review",
       "implementation": {
         "status": "implemented_unverified",
         "date": "2026-10-17",
@@ -512,7 +512,7 @@
         "src/bike_sim/sim/research/rider_random.py",
         "src/bike_sim/sim/research/sensor_noise.py"
       ],
-      "status": "planned"
+      "status": "verified"
     },
     {
       "id": "T20",
@@ -547,7 +547,7 @@
         "src/bike_sim/terrain/surface.py",
         "src/bike_sim/terrain/wheelpath.py"
       ],
-      "status": "planned",
+      "status": "review",
       "implementation": {
         "status": "implemented_unverified",
         "date": "2026-10-17",
@@ -594,7 +594,7 @@
         "src/bike_sim/terrain/research.py",
         "src/bike_sim/terrain/trackfile.py"
       ],
-      "status": "planned",
+      "status": "review",
       "implementation": {
         "status": "implemented_unverified",
         "date": "2026-10-17",
@@ -632,7 +632,7 @@
       "owned_sources": [
         "src/bike_sim/sim/ride/physical_equilibrium.py"
       ],
-      "status": "planned",
+      "status": "review",
       "implementation": {
         "status": "implemented_unverified",
         "date": "2026-10-17",
@@ -671,7 +671,7 @@
         "src/bike_sim/sim/ride/equilibrium_refine.py",
         "src/bike_sim/sim/ride/sag_fit.py"
       ],
-      "status": "planned",
+      "status": "review",
       "implementation": {
         "status": "implemented_unverified",
         "date": "2026-10-17",
@@ -723,7 +723,7 @@
         "src/bike_sim/sim/ride/equilibrium_cache.py",
         "src/bike_sim/sim/ride/initial_state.py"
       ],
-      "status": "planned",
+      "status": "review",
       "implementation": {
         "status": "implemented_unverified",
         "date": "2026-10-17",
@@ -772,7 +772,7 @@
       "owned_sources": [
         "src/bike_sim/native/setup.py"
       ],
-      "status": "planned",
+      "status": "review",
       "implementation": {
         "status": "implemented_unverified",
         "date": "2026-10-17",
@@ -859,7 +859,7 @@
         "src/bike_sim/sim/ride/virtual_rider.py",
         "src/bike_sim/sim/ride/wheel_kinematics.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T27",
@@ -882,7 +882,7 @@
         "src/bike_sim/physics/transmission_constraint.py",
         "src/bike_sim/sim/ride/drivetrain.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T28",
@@ -904,7 +904,7 @@
       "owned_sources": [
         "src/bike_sim/physics/rider_allocation.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T29",
@@ -929,7 +929,7 @@
         "src/bike_sim/sim/ride/rider_dynamics.py",
         "src/bike_sim/sim/ride/rider_response_allocation.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T30",
@@ -954,7 +954,7 @@
         "src/bike_sim/sim/ride/support_geometry.py",
         "src/bike_sim/sim/ride/weld_pedals.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T31",
@@ -983,7 +983,7 @@
         "src/bike_sim/sim/ride/wheels.py",
         "src/bike_sim/sim/ride_sim.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T32",
@@ -1010,7 +1010,7 @@
         "src/bike_sim/sim/ride/wheelie.py",
         "src/bike_sim/sim/telemetry.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T33",
@@ -1032,7 +1032,7 @@
         "src/bike_sim/sim/controllers.py",
         "src/bike_sim/sim/playground.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T34",
@@ -1063,7 +1063,7 @@
         "src/bike_sim/sim/research/rider_program.py",
         "src/bike_sim/sim/research/sensors.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T35",
@@ -1086,7 +1086,7 @@
       "owned_sources": [
         "src/bike_sim/sim/research/policies.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T36",
@@ -1106,7 +1106,7 @@
         "src/bike_sim/sim/research/recording_lifecycle.py",
         "src/bike_sim/sim/ride/physical_session.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T37",
@@ -1128,7 +1128,7 @@
         "src/bike_sim/sim/research/validity.py",
         "src/bike_sim/sim/ride/model_status.py"
       ],
-      "status": "planned"
+      "status": "review"
     },
     {
       "id": "T38",
@@ -1156,7 +1156,7 @@
         "src/bike_sim/recording/schema.py",
         "src/bike_sim/sim/ride/telemetry_v2.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/resources/recording/catalog-v1.json",
         "native/src/recording/catalog.hpp",
@@ -1194,7 +1194,7 @@
         "src/bike_sim/recording/encoding.py",
         "src/bike_sim/recording/native_encode.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/recording/encoding.hpp",
         "native/src/recording/encoding.cpp",
@@ -1244,7 +1244,7 @@
         "src/bike_sim/sim/ride/physical_recorder.py",
         "src/bike_sim/sim/ride/recorder.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/recording/contracts.hpp",
         "native/src/recording/capture.hpp",
@@ -1280,7 +1280,7 @@
       "owned_sources": [
         "src/bike_sim/recording/storage.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/recording/database.hpp",
         "native/src/recording/database.cpp",
@@ -1332,7 +1332,7 @@
         "src/bike_sim/recording/interrupt.py",
         "src/bike_sim/sim/ride/async_close.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/recording/publish.hpp",
         "native/src/recording/publish.cpp",
@@ -1370,7 +1370,7 @@
         "src/bike_sim/recording/analysis.py",
         "src/bike_sim/recording/reader.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/recording/reader.hpp",
         "native/src/recording/reader.cpp",
@@ -1416,7 +1416,7 @@
         "src/bike_sim/sim/research/replay.py",
         "src/bike_sim/sim/research/replay_session.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/replay/input.hpp",
         "native/src/replay/input.cpp",
@@ -1456,7 +1456,7 @@
         "src/bike_sim/native/recording.py",
         "src/bike_sim/recording/report.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/recording/report.hpp",
         "native/src/recording/report.cpp",
@@ -1489,7 +1489,7 @@
       "owned_sources": [
         "src/bike_sim/cli/recording.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/cli/recording.cpp",
         "native/src/cli/recording_main.cpp",
@@ -1551,7 +1551,7 @@
         "src/bike_sim/sim/__init__.py",
         "src/bike_sim/sim/backend.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/cli/arguments.hpp",
         "native/src/cli/arguments.cpp",
@@ -1599,7 +1599,7 @@
         "src/bike_sim/sim/ride/physical_view.py",
         "src/bike_sim/sim/ride/presentation.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/viewer/render_owner.hpp",
         "native/src/viewer/render_owner.cpp",
@@ -1661,7 +1661,7 @@
         "src/bike_sim/sim/ride/session.py",
         "src/bike_sim/sim/ride/viewer.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/viewer/input.hpp",
         "native/src/viewer/input.cpp",
@@ -1718,7 +1718,7 @@
         "src/bike_sim/viz/tables.py",
         "src/bike_sim/viz/theme.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/viz/plot.hpp",
         "native/src/viz/plot.cpp",
@@ -1768,7 +1768,7 @@
         "src/bike_sim/cli/batch.py",
         "tools/research_sweep.py"
       ],
-      "status": "planned",
+      "status": "review",
       "planned_targets": [
         "native/src/batch/plan.hpp",
         "native/src/batch/plan.cpp",
@@ -2249,7 +2249,7 @@
         "tools/native_config.py",
         "tools/native_schema.py"
       ],
-      "status": "planned"
+      "status": "in_progress"
     },
     {
       "id": "T57",

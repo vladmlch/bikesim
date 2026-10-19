@@ -32,6 +32,10 @@ std::string glfw_error(std::string_view operation) {
     return std::string(operation) + " (GLFW " + std::to_string(code) + "): " +
         (detail ? detail : "no display/context available");
 }
+#else
+// Runtime capability probe: always false in a non-GUI build, opaque to the
+// caller's never-returns analysis.
+[[gnu::noinline]] bool gui_linked() { return false; }
 #endif
 }
 struct GlfwContext::Impl {
@@ -103,7 +107,7 @@ GlfwContext::GlfwContext(const std::string& title, int width, int height, bool h
     });
 #else
     (void)hidden;
-    throw std::runtime_error("viewer unavailable: configure BIKE_BUILD_GUI=ON");
+    if (!gui_linked()) throw std::runtime_error("viewer unavailable: configure BIKE_BUILD_GUI=ON");
 #endif
 }
 GlfwContext::~GlfwContext() {
@@ -129,7 +133,7 @@ bool GlfwContext::open() const {
 }
 std::pair<int, int> GlfwContext::framebuffer_size() const {
     require_main_thread();
-    int width = 0, height = 0;
+    int width = 0, height = 0;  // NOLINT(misc-const-correctness) written through pointers by glfwGetFramebufferSize under BIKE_BUILD_GUI
 #if defined(BIKE_BUILD_GUI) && BIKE_BUILD_GUI
     glfwMakeContextCurrent(impl_->window);
     glfwGetFramebufferSize(impl_->window, &width, &height);

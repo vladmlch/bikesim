@@ -21,14 +21,14 @@
   ],
   "source_modules_in_scope": 64,
   "source_declarations_in_scope": 621,
-  "status": "implemented_unverified",
+  "status": "implemented_tested_review_open",
   "packages_closed": [],
   "user_constraint": "Do not compile or run anything in the project. Work is source editing, static inspection and file-only packaging.",
   "execution": {
-    "cmake_configure": "not_run",
-    "compiler_or_linker": "not_run",
-    "build": "not_run",
-    "tests": "not_run",
+    "cmake_configure": "passed 2026-10-19",
+    "compiler_or_linker": "passed 2026-10-19",
+    "build": "passed 2026-10-19",
+    "tests": "ctest passed 2026-10-19: migration_T38, migration_T39, migration_T40, migration_T41, migration_T42, migration_T43, migration_T44, migration_T45, migration_T46, migration_T47, migration_T48, migration_T49, migration_T50, migration_T51 (native/build suite 57/57)",
     "project_tools": "not_run",
     "project_python": "not_run",
     "simulation": "not_run",
@@ -36,7 +36,9 @@
     "checked_replay": "not_run",
     "viewer": "not_run",
     "native_plugins": "not_run",
-    "oracle_regeneration": "not_run"
+    "oracle_regeneration": "not_run",
+    "static_sweeps": "passed 2026-10-19 (contracts, diagnostic-controls, frontends, headers, odr, tidy, cppcheck, analyzer, context)",
+    "pytest_baseline": "24 known failures 2026-10-19; no new failures vs documented baseline"
   },
   "evidence": [
     "migration/recording-application-review.md",
@@ -101,7 +103,7 @@
     {
       "task": "T38",
       "title": "Port the full recording catalog and schema descriptors",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -154,7 +156,7 @@
     {
       "task": "T39",
       "title": "Port source encoding plans and ingest native column pieces",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -194,7 +196,7 @@
     {
       "task": "T40",
       "title": "Port RAM-only run/episode capture and retained evidence",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -264,7 +266,7 @@
     {
       "task": "T41",
       "title": "Write and validate DuckDB recordings natively",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -296,7 +298,7 @@
     {
       "task": "T42",
       "title": "Preserve exclusive final publication and retry semantics",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -350,7 +352,7 @@
     {
       "task": "T43",
       "title": "Port read-only recording validation and analyst operations",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -397,7 +399,7 @@
     {
       "task": "T44",
       "title": "Port checked replay and versioned legacy compatibility",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -456,7 +458,7 @@
     {
       "task": "T45",
       "title": "Port summary reports and explicit data exports",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -496,7 +498,7 @@
     {
       "task": "T46",
       "title": "Deliver the standalone bike-recording analyst command",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -524,7 +526,7 @@
     {
       "task": "T47",
       "title": "Replace all remaining Python CLI entrypoints with installed native commands",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -628,7 +630,7 @@
     {
       "task": "T48",
       "title": "Implement a native render owner with independent simulation state",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -671,7 +673,7 @@
     {
       "task": "T49",
       "title": "Port viewer controls, HUD, cameras and cooperative pacing",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -776,7 +778,7 @@
     {
       "task": "T50",
       "title": "Replace Matplotlib and Python Plotly construction with native artifact generation",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {
@@ -856,7 +858,7 @@
     {
       "task": "T51",
       "title": "Port batch jobs and research sweeps with deterministic process ownership",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         {

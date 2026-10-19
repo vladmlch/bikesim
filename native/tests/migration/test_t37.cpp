@@ -96,8 +96,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     status.observe(2, .002, valid_channels());
     bt::require(wire::boolean(status.numerically_valid), "first measured energy closes numerical quality");
     runtime::ReferenceMonitor monitor;
-    monitor.observe({0., expected}); monitor.observe({1., {"later"}});
-    bt::require(monitor.take_warning().has_value() && !monitor.take_warning() && monitor.first_failure->time_s == 0.,
+    monitor.observe({.time_s=0., .violations=expected}); monitor.observe({.time_s=1., .violations={"later"}});
+    bt::require(monitor.take_warning().has_value() && !monitor.take_warning() && monitor.first_failure.value().time_s == 0., // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
         "diagnostic reference monitor retains and reports its first rejection once");
     for (const bool numeric : {false, true})
         for (const bool model : {false, true}) {
@@ -132,7 +132,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     request->experiment.duration_s = .02;
     request->experiment.stop_on_model_violation = false;
     request->experiment.maximum_energy_residual_ratio = 1e12;
-    request->setup.model.physics->initial_speed_mps = 0.;
+    request->setup.model.physics.value().initial_speed_mps = 0.; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     auto seed = std::make_unique<PreparedEnvironment>(prepare_environment(std::move(*request)));
     PolicySession full(runtime::make_research(seed->bootstrap), load_policy("zero"));
     auto off_seed = std::make_unique<runtime::ResearchBootstrap>(seed->bootstrap);

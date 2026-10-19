@@ -24,6 +24,7 @@ struct StaticEquilibriumOptions {
 // All callbacks operate on this Stepper's model/data, never another pair.
 // This solver is not a replacement force assembly for PhysicalStep.
 struct StaticEquilibriumContext {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     Stepper& stepper;
     bool initializing = true;
     std::function<void()> suspension_forces{};

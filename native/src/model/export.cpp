@@ -32,11 +32,12 @@ V points(const geometry::FixedFramePoints& fixed,const kinematics::KinematicStat
     V::Object result;
     for(const auto& [name,point]:values) {
         V::Array coordinates;
-        for(double v:point) coordinates.push_back(r(v*scale,decimals));
+        for(double const v:point) coordinates.push_back(r(v*scale,decimals));
         result.emplace_back(name,V{std::move(coordinates)});
     }
     return V{std::move(result)};
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void pretty_value(const V& value,std::string& output,std::size_t depth) {
     if(const auto* object=std::get_if<V::Object>(&value.data)) {
         if(object->empty()) {output+="{}";return;}

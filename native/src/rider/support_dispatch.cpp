@@ -5,8 +5,8 @@
 namespace bike::rider {
 SupportDispatch support_dispatch(const ::rider::RiderContactsConfig& config) {
     ::rider::validate(config);
-    return {config.pedal_attachment,config.saddle_attachment,config.grip_attachment,
-        config.pedal_attachment==::rider::PedalAttachment::spindle};
+    return {.pedals=config.pedal_attachment,.saddle=config.saddle_attachment,.grips=config.grip_attachment,
+        .closed_form_spindle=config.pedal_attachment==::rider::PedalAttachment::spindle};
 }
 void validate_support_topology(const mjModel& model,const ::rider::RiderContactsConfig& config) {
     (void)support_dispatch(config);

@@ -17,4 +17,8 @@ struct RiderPosture {
     bool use_saddle = true;
 };
 
+// rider_posture.py RiderPosture.__post_init__ — the finiteness gates and
+// command-envelope bounds the oracle runs at every construction.
+void validate_posture(const RiderPosture& posture);
+
 } // namespace rider

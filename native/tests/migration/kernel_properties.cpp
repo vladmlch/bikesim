@@ -13,15 +13,15 @@
 
 void kernel_properties() {
     double previous_energy = 0.;
-    for (double extension : {0., .001, .01, .1}) {
+    for (double const extension : {0., .001, .01, .1}) {
         const auto response = drivetrain::chain_tension(extension, 0., 2000., 40.);
         bt::require(response.first >= 0. && response.second >= previous_energy,
             "unilateral chain cannot push and stored energy grows with extension");
         previous_energy = response.second;
     }
-    for (double request : {0., 1., 20., 100.}) {
-        for (double omega : {-3., 0., 7.}) {
-            for (double budget : {0., 1., 50., 1000.}) {
+    for (double const request : {0., 1., 20., 100.}) {
+        for (double const omega : {-3., 0., 7.}) {
+            for (double const budget : {0., 1., 50., 1000.}) {
                 const double torque = drivetrain::limit_torque_by_energy(request, omega, .3, .2, 1., budget);
                 bt::require(torque >= 0. && torque <= request,
                     "energy-limited motor torque stays within the requested interval");
@@ -33,7 +33,7 @@ void kernel_properties() {
             }
         }
     }
-    for (double slip : {-2., -.1, 0., .1, 2.}) {
+    for (double const slip : {-2., -.1, 0., .1, 2.}) {
         const auto brush = tirecommon::brush_step(0., slip, 2., 500., 10000., .8, .04, .001);
         bt::require(std::abs(brush.force) <= 400. + 1e-12 && brush.loss >= 0.,
             "shared tyre/contact brush respects friction and nonnegative dissipation");
@@ -50,7 +50,7 @@ void kernel_properties() {
     });
 
     // Independent dyadic table: slopes 4 and 8, prefix area 1/8.
-    const nativecfg::TireTable table{{0., .25, .5}, {0., 1., 3.}};
+    const nativecfg::TireTable table{.deflection_m={0., .25, .5}, .force_n={0., 1., 3.}};
     const contactlaw::TabulatedRadial radial(table);
     bt::require(radial.elastic_response(.25) == std::pair{1., .125},
         "table knot has exact force and integrated area");
@@ -63,8 +63,8 @@ void kernel_properties() {
     bt::require(radial.elastic_response(-1.) == std::pair{0., 0.},
         "negative penetration is outside contact, with zero elastic energy");
     bt::invalid([&] { (void)radial.elastic_response(std::nextafter(.5, 1.)); });
-    bt::invalid([&] { (void)contactlaw::TabulatedRadial({{0., .25, .25}, {0., 1., 2.}}); });
-    bt::invalid([&] { (void)contactlaw::TabulatedRadial({{0., .25, .5}, {0., 2., 1.}}); });
+    bt::invalid([&] { (void)contactlaw::TabulatedRadial({.deflection_m={0., .25, .25}, .force_n={0., 1., 2.}}); });
+    bt::invalid([&] { (void)contactlaw::TabulatedRadial({.deflection_m={0., .25, .5}, .force_n={0., 2., 1.}}); });
     nativecfg::TireMaterial material{.radial_c_ns_m = 2., .pressure_pa_gauge = 100000.,
         .provenance = "authored independent dyadic regression", .valid_load_range_n = {0., 3.},
         .table = table};

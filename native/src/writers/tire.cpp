@@ -143,7 +143,9 @@ namespace {
                 "invalid contact load, force or slip");
         return {
             .point_m = point, .normal = normal, .normal_load_n = load, .tangent_force_n = force, .slip_mps = slip,
-            .working_surface = true
+            .working_surface = true,
+            .native_world_force_n = std::nullopt,
+            .couple_world_nm = {}
         };
     }
 
@@ -697,11 +699,12 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         const nativecfg::TireMaterial &mat = s == 0 ? front_mat : rear_mat;
         const double rk = mat.radial_k_n_m;
         const double rc = mat.radial_c_ns_m;
-        const auto [normal, radial_energy] = radial_tables_[s]
-            ? radial_tables_[s]->normal_contact(contact.delta, delta_dot, rc)
+        const auto& radial_table = radial_tables_[s];
+        const auto [normal, radial_energy] = radial_table
+            ? radial_table->normal_contact(contact.delta, delta_dot, rc)
             : normal_contact(contact.delta, delta_dot, rk, rc);
-        const double elastic_force = radial_tables_[s]
-            ? radial_tables_[s]->elastic_response(contact.delta).first
+        const double elastic_force = radial_table
+            ? radial_table->elastic_response(contact.delta).first
             : rk * std::max(contact.delta, 0.0);
         double xi = state.xi;
         double release_loss = 0.0;
@@ -875,10 +878,11 @@ double TireWriter::stored_energy(const mjData *d) const {
         if (!std::isfinite(contact.delta))
             throw std::invalid_argument("tire deflection must be finite");
         const double penetration = std::max(0.0, contact.delta);
-        const auto table_response = radial_tables_[s]
-            ? radial_tables_[s]->elastic_response(contact.delta) : std::pair<double, double>{};
-        const double force = radial_tables_[s] ? table_response.first : mat.radial_k_n_m * penetration;
-        const double elastic = radial_tables_[s] ? table_response.second :
+        const auto& radial_table = radial_tables_[s];
+        const auto table_response = radial_table
+            ? radial_table->elastic_response(contact.delta) : std::pair<double, double>{};
+        const double force = radial_table ? table_response.first : mat.radial_k_n_m * penetration;
+        const double elastic = radial_table ? table_response.second :
             0.5 * mat.radial_k_n_m * pyfloat::pow(penetration, 2.0);
         validation::derived(force, "TireSpec.elastic_response");
         validation::derived(elastic, "TireSpec.elastic_response");

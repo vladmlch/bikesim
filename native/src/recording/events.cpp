@@ -28,8 +28,8 @@ std::vector<InputEvent> derived_events(const runtime::OwnedNativeEpisode& episod
     for (std::size_t first = 0; first < episode.samples.size(); first += std::min<std::size_t>(1024, episode.samples.size()-first)) {
         for (const auto& row : runtime::derived_event_rows_native(episode, plan, static_cast<std::int64_t>(first), 1024)) {
             if (out.size() >= static_cast<std::size_t>(std::numeric_limits<std::int64_t>::max()-first_id)) throw std::overflow_error("derived event identity overflow");
-            InputEvent event{id, first_id + static_cast<std::int64_t>(out.size()), "derived_transition", wall_s, row.interval_id, row.interval_id,
-                io::Value{io::Value::Object{{"classification", value::text("derived_transition")}, {"derived_kind", value::text(row.derived_kind)},
+            InputEvent event{.episode_id=id, .event_id=first_id + static_cast<std::int64_t>(out.size()), .kind="derived_transition", .received_wall_s=wall_s, .processed_step=row.interval_id, .applied_step=row.interval_id,
+                .values=io::Value{io::Value::Object{{"classification", value::text("derived_transition")}, {"derived_kind", value::text(row.derived_kind)},
                     {"derivation_rule", value::text("channel_value_change.v1")}, {"interval_id", value::integer(row.interval_id)}, {"changes", research::wire_value(runtime::Wire{row.changes})}}}};
             event.validate(); out.push_back(std::move(event));
         }

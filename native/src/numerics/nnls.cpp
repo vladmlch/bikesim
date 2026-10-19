@@ -14,7 +14,7 @@ NnlsResult nnls(const bike::rider::Matrix& a,std::span<const double> b,std::size
     const auto n=a.cols;
     if(maximum==0) maximum=3*n;
     const double tolerance=10.*static_cast<double>(std::max(a.rows,a.cols))*std::numeric_limits<double>::epsilon();
-    NnlsResult result{std::vector<double>(n,0.),d::norm(b),0};
+    NnlsResult result{.x=std::vector<double>(n,0.),.residual_norm=d::norm(b),.iterations=0};
     std::vector<bool> passive(n,false);
     const auto at=d::transpose(a);
     for(;;) {
@@ -31,19 +31,19 @@ NnlsResult nnls(const bike::rider::Matrix& a,std::span<const double> b,std::size
             auto restricted=d::zeros(a.rows,columns.size());
             for(std::size_t i=0;i<a.rows;++i) for(std::size_t j=0;j<columns.size();++j)
                 restricted.values[i*columns.size()+j]=a.values[i*n+columns[j]];
-            const auto solved=d::least_squares(restricted,{a.rows,1,std::vector<double>(b.begin(),b.end())}).solution.values;
+            const auto solved=d::least_squares(restricted,{.rows=a.rows,.cols=1,.values=std::vector<double>(b.begin(),b.end())}).solution.values;
             std::vector<double> z(n,0.);
             for(std::size_t j=0;j<columns.size();++j) z[columns[j]]=solved[j];
             bool positive=true;
-            for(auto j:columns) if(z[j]<=0.) positive=false;
+            for(auto const j:columns) if(z[j]<=0.) positive=false;
             if(positive) {result.x=std::move(z);break;}
             double alpha=1.;
-            for(auto j:columns) if(z[j]<=0.) {
+            for(auto const j:columns) if(z[j]<=0.) {
                 const double denom=result.x[j]-z[j];
                 alpha=std::min(alpha,denom>0.?result.x[j]/denom:0.);
             }
             for(std::size_t j=0;j<n;++j) result.x[j]+=alpha*(z[j]-result.x[j]);
-            for(auto j:columns) if(result.x[j]<=tolerance) {result.x[j]=0.;passive[j]=false;}
+            for(auto const j:columns) if(result.x[j]<=tolerance) {result.x[j]=0.;passive[j]=false;}
         }
     }
 }

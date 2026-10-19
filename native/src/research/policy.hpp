@@ -14,11 +14,20 @@ class PolicyFailure : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
     ~PolicyFailure() override;
+    PolicyFailure(const PolicyFailure&) = default;
+    PolicyFailure& operator=(const PolicyFailure&) = default;
+    PolicyFailure(PolicyFailure&&) = default;
+    PolicyFailure& operator=(PolicyFailure&&) = default;
 };
 
 class Policy {
 public:
     virtual ~Policy() = default;
+    Policy() = default;
+    Policy(const Policy&) = delete;
+    Policy& operator=(const Policy&) = delete;
+    Policy(Policy&&) = delete;
+    Policy& operator=(Policy&&) = delete;
     virtual void reset(std::string_view seed_decimal) = 0;
     [[nodiscard]] virtual runtime::RideControl act(const runtime::SensorObservation&, std::optional<double> demand_nm) = 0;
     [[nodiscard]] virtual io::Value metadata() const;
@@ -37,6 +46,10 @@ class TractionControlPolicy final : public Policy {
 public:
     explicit TractionControlPolicy(TractionControlConfig config = {}, std::unique_ptr<Policy> base = {});
     ~TractionControlPolicy() override;
+    TractionControlPolicy(const TractionControlPolicy&) = delete;
+    TractionControlPolicy& operator=(const TractionControlPolicy&) = delete;
+    TractionControlPolicy(TractionControlPolicy&&) = delete;
+    TractionControlPolicy& operator=(TractionControlPolicy&&) = delete;
     void reset(std::string_view seed_decimal) override;
     [[nodiscard]] runtime::RideControl act(const runtime::SensorObservation&, std::optional<double>) override;
     [[nodiscard]] io::Value metadata() const override;

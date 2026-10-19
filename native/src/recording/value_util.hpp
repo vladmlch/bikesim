@@ -12,7 +12,7 @@ using io::Value;
 inline Value integer(std::int64_t n) { return Value{io::Number{std::to_string(n)}}; }
 inline Value text(std::string_view s) { return Value{std::string(s)}; }
 inline Value real(double x) {
-    if (!std::isfinite(x)) return Value{io::Tagged{"float64", {{"value", std::isnan(x) ? "nan" : x < 0. ? "-inf" : "+inf"}}}};
+    if (!std::isfinite(x)) return Value{io::Tagged{.kind="float64", .fields={{"value", std::isnan(x) ? "nan" : x < 0. ? "-inf" : "+inf"}}}};
     std::array<char,64> bytes{};
     const auto out = std::to_chars(bytes.data(), std::to_address(bytes.end()), x);
     if (out.ec != std::errc{}) throw std::runtime_error("recording: could not format double");
@@ -28,7 +28,7 @@ inline Value strings(std::span<const std::string> input) {
 }
 inline Value doubles(std::span<const double> input) {
     Value::Array out; out.reserve(input.size());
-    for (double n : input) out.push_back(real(n));
+    for (double const n : input) out.push_back(real(n));
     return Value{std::move(out)};
 }
 inline const Value& require(const Value::Object& object, std::string_view key) {

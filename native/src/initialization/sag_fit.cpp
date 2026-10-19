@@ -19,7 +19,7 @@ std::array<double,2> fit_sag(const SagEvaluator& evaluate,
         if(initial[i]<lower[i]||initial[i]>upper[i])throw std::invalid_argument("initial sag parameters lie outside bounds");
         x[i]=std::log(initial[i]);lo[i]=std::log(lower[i]);hi[i]=std::log(upper[i]);
     }
-    auto residual=[&](std::span<const double> values){
+    auto const residual=[&](std::span<const double> values){
         const auto measured=evaluate(std::exp(values[0]),std::exp(values[1]));
         if(!std::isfinite(measured[0])||!std::isfinite(measured[1]))throw std::invalid_argument("invalid equilibrium output");
         return std::vector<double>{measured[0]-target[0],measured[1]-target[1]};

@@ -4,6 +4,7 @@
 #include "platform/files.hpp"
 #include <cstdlib>
 #include <limits>
+#include <unistd.h>
 
 namespace {
 void input_identity_contract() {
@@ -11,7 +12,16 @@ void input_identity_contract() {
     auto name=(fs::temp_directory_path()/"bike-t40-XXXXXX").string();
     std::vector<char> bytes(name.begin(),name.end());bytes.push_back('\0');
     if(!::mkdtemp(bytes.data()))throw std::runtime_error("test temporary directory unavailable");
-    struct Cleanup { fs::path path; ~Cleanup(){std::error_code error;fs::remove_all(path,error);} } cleanup{fs::path(bytes.data())};
+    struct Cleanup {
+        fs::path path;
+        explicit Cleanup(fs::path target):path(std::move(target)){}
+        ~Cleanup(){std::error_code error;fs::remove_all(path,error);}
+        Cleanup(const Cleanup&) = delete;
+        Cleanup& operator=(const Cleanup&) = delete;
+        Cleanup(Cleanup&&) = delete;
+        Cleanup& operator=(Cleanup&&) = delete;
+    };
+    const Cleanup cleanup{fs::path(bytes.data())};
     const auto file=cleanup.path/"profile.json";
     const auto original=rec::json_asset("rider_joint_envelope.json",io::Value{io::Value::Object{{"revision",rec::value::integer(1)}}});
     bike::platform::write_exclusive(file,original.content);
@@ -32,11 +42,13 @@ void input_identity_contract() {
 }
 }
 
+// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// cppcheck-suppress throwInEntryPoint
 int main(){return bt::run([]{
     namespace rec=bike::recording; namespace io=bike::io;
     auto metadata=recording_fixture::metadata();
     rec::RunCapture capture(metadata);
-    auto source=std::make_shared<rec::EpisodeEvidence>(*recording_fixture::evidence(2));
+    auto const source=std::make_shared<rec::EpisodeEvidence>(*recording_fixture::evidence(2));
     capture.add_episode(source); capture.add_episode(source);
     bt::require(capture.episodes().size()==1,"the same sealed owner is idempotent");
     const auto summary=io::recording_json(capture.episodes()[0]->summary);
@@ -58,10 +70,10 @@ int main(){return bt::run([]{
     bt::require(disabled->episodes().empty()&&disabled->events().empty(),"opt-out capture keeps no optional growing evidence");
     const auto before=disabled->metadata().run_uuid;
     bt::require(!before.empty()&&disabled->state()==rec::RunCapture::State::collecting,"capture only owns RAM before finalization");
-    rec::ForceSample force(0.,{1.},{2.},{{"chain",{3.}}});
+    rec::ForceSample const force(0.,{1.},{2.},{{"chain",{3.}}});
     bt::require(force.component_powers()==std::vector<std::pair<std::string,double>>{{"chain",6.}},"force sample uses the incoming velocity");
-    bt::invalid([]{rec::ForceSample bad(0.,{1.},{2.},{{"chain",{3.,4.}}});});
-    bt::invalid([]{rec::ForceSample bad(0.,{1.},{std::numeric_limits<double>::infinity()},{});});
+    bt::invalid([]{rec::ForceSample const bad(0.,{1.},{2.},{{"chain",{3.,4.}}});});
+    bt::invalid([]{rec::ForceSample const bad(0.,{1.},{std::numeric_limits<double>::infinity()},{});});
     metadata.run_uuid="bad"; bt::invalid([&]{metadata.validate();});
     input_identity_contract();
 });}

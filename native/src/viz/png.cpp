@@ -8,6 +8,7 @@
 #include <memory>
 #include <ranges>
 #include <stdexcept>
+#include <utility>
 #if defined(BIKE_HAS_CAIRO) && BIKE_HAS_CAIRO
 #include <cairo.h>
 #endif
@@ -19,12 +20,13 @@ namespace {
 // independent of a display or an unqualified system Cairo. The optional
 // pinned Cairo SDK provides antialiased font rendering using the same layout.
 // Stored DEFLATE blocks are standard PNG/zlib; no executable is launched.
-void u32(std::string& out,std::uint32_t value) {for(int shift=24;shift>=0;shift-=8)out.push_back(static_cast<char>((value>>shift)&255U));}
+void u32(std::string& out,std::uint32_t value) {for(std::uint32_t const shift:{24U,16U,8U,0U})out.push_back(static_cast<char>((value>>shift)&255U));}
 std::uint32_t crc32(std::string_view text) {
     std::uint32_t crc=0xffffffffU;
     for(const char raw:text){const auto byte=static_cast<unsigned char>(raw);crc^=byte;for(unsigned bit=0;bit<8;++bit)crc=(crc>>1U)^(0xedb88320U&(0U-(crc&1U)));}
     return ~crc;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void chunk(std::string& output,std::string_view type,std::string_view bytes) {
     if(bytes.size()>std::numeric_limits<std::uint32_t>::max())throw std::overflow_error("PNG chunk too large");
     u32(output,static_cast<std::uint32_t>(bytes.size()));std::string content(type);content+=bytes;output+=content;u32(output,crc32(content));
@@ -58,8 +60,9 @@ std::array<unsigned char,7> glyph(char raw) {
 struct Raster {
     unsigned width,height;std::vector<unsigned char> pixels;
     explicit Raster(unsigned w,unsigned h):width(w),height(h),pixels(static_cast<std::size_t>(w)*h*3U,0){}
-    void dot(int x,int y,const std::array<unsigned char,3>& color){if(x<0||y<0||x>=static_cast<int>(width)||y>=static_cast<int>(height))return;
+    void dot(int x,int y,const std::array<unsigned char,3>& color){if(x<0||y<0||std::cmp_greater_equal(x,width)||std::cmp_greater_equal(y,height))return;
         const auto offset=(static_cast<std::size_t>(y)*width+static_cast<unsigned>(x))*3U;for(std::size_t i=0;i<3;++i)pixels[offset+i]=color[i];}
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     void rectangle(int x,int y,int w,int h,const std::array<unsigned char,3>& color){const int right=std::min(x+w,static_cast<int>(width)),bottom=std::min(y+h,static_cast<int>(height));
         for(int row=std::max(0,y);row<bottom;++row)for(int col=std::max(0,x);col<right;++col)dot(col,row,color);}
     void line(detail::Point a,detail::Point b,const std::array<unsigned char,3>& color,double thickness,bool dashed){
@@ -70,9 +73,9 @@ struct Raster {
     }
     void text(detail::Point at,std::string_view text,double font_size,const std::array<unsigned char,3>& color){
         const int scale=std::max(1,static_cast<int>(std::lround(font_size/9.)));int x=static_cast<int>(std::lround(at.x)),y=static_cast<int>(std::lround(at.y))-7*scale;
-        for(std::size_t i=0;i<text.size();++i){const auto c=static_cast<unsigned char>(text[i]);if((c&0xc0U)==0x80U)continue;const auto pattern=glyph(c<128?static_cast<char>(c):'?');
-            for(int row=0;row<7;++row)for(int col=0;col<5;++col)if((pattern[static_cast<std::size_t>(row)]&(1U<<(4-col)))!=0)rectangle(x+col*scale,y+row*scale,scale,scale,color);
-            x+=6*scale;if(x>=static_cast<int>(width))break;
+        for(const char i : text){const auto c=static_cast<unsigned char>(i);if((c&0xc0U)==0x80U)continue;const auto pattern=glyph(c<128?static_cast<char>(c):'?');
+            for(int row=0;row<7;++row)for(int col=0;col<5;++col)if((pattern[static_cast<std::size_t>(row)]&(1U<<static_cast<unsigned>(4-col)))!=0)rectangle(x+col*scale,y+row*scale,scale,scale,color);
+            x+=6*scale;if(std::cmp_greater_equal(x,width))break;
         }
     }
 };
@@ -134,5 +137,5 @@ void write_png(const Report& report,const std::filesystem::path& path) {
     detail::write_text(path,native_png(drawing,report));
 #endif
 }
-void write_png(const Plot& plot,const std::filesystem::path& path,unsigned width,unsigned height) {write_png(Report{plot.title,{plot},1,width,height},path);}
+void write_png(const Plot& plot,const std::filesystem::path& path,unsigned width,unsigned height) {write_png(Report{.title=plot.title,.panels={plot},.columns=1,.width=width,.height=height},path);}
 } // namespace bike::viz

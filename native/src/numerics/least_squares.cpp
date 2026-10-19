@@ -36,6 +36,7 @@ Vector product(std::span<const double> a, std::span<const double> b) {
     for (std::size_t i = 0; i < a.size(); ++i) out[i] = a[i] * b[i];
     return out;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 Vector matvec(std::span<const double> a, std::size_t rows,
               std::size_t cols, std::span<const double> x) {
     Vector out(rows, 0.);
@@ -64,6 +65,7 @@ void interior(Vector& x, std::span<const double> lo,
     }
 }
 struct Evaluator {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const Residual& call;
     std::size_t width = 0;
     std::int64_t calls = 0;
@@ -131,6 +133,7 @@ Vector jacobian(Evaluator& fun, const Vector& x, const Vector& f,
 }
 
 struct ThinSvd { Vector singular, right, uf; };
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 ThinSvd svd(Vector a, std::size_t rows, std::size_t n,
             std::span<const double> f) {
     Vector v(n*n, 0.);
@@ -165,15 +168,16 @@ ThinSvd svd(Vector a, std::size_t rows, std::size_t n,
         for (std::size_t r=0; r<rows; ++r) s[col]=std::hypot(s[col],a[r*n+col]);
         if (s[col]>0.) for (std::size_t r=0; r<f.size(); ++r) uf[col]+=a[r*n+col]/s[col]*f[r];
     }
-    std::vector<std::size_t> order(n); std::iota(order.begin(),order.end(),0);
+    std::vector<std::size_t> order(n); std::ranges::iota(order,0);
     std::ranges::stable_sort(order,[&](std::size_t aidx,std::size_t bidx){return s[aidx]>s[bidx];});
-    ThinSvd out{Vector(n),Vector(n*n),Vector(n)};
+    ThinSvd out{.singular=Vector(n),.right=Vector(n*n),.uf=Vector(n)};
     for (std::size_t col=0; col<n; ++col) {
         out.singular[col]=s[order[col]]; out.uf[col]=uf[order[col]];
         for (std::size_t row=0; row<n; ++row) out.right[row*n+col]=v[row*n+order[col]];
     }
     return out;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 Vector trust_step(const ThinSvd& s, std::size_t m, double radius, double& alpha) {
     const std::size_t n=s.singular.size();
     const bool full=m>=n && s.singular.back()>eps*static_cast<double>(m)*s.singular.front();
@@ -183,7 +187,7 @@ Vector trust_step(const ThinSvd& s, std::size_t m, double radius, double& alpha)
         Vector p=matvec(s.right,n,n,coefficients);
         if (norm(p)<=radius) { alpha=0.; return p; }
     }
-    auto phi = [&](double a) {
+    auto const phi = [&](double a) {
         double sum=0., derivative=0.;
         for (std::size_t i=0;i<n;++i) {
             const double denom=s.singular[i]*s.singular[i]+a;
@@ -194,7 +198,7 @@ Vector trust_step(const ThinSvd& s, std::size_t m, double radius, double& alpha)
         return std::pair{length-radius,length>0. ? -derivative/length : -infinity};
     };
     double upper=norm(suf)/radius, lower=0.;
-    if (upper==0.) { alpha=0.; return Vector(n,0.); }
+    if (upper==0.) { alpha=0.; return Vector(n,0.); } // NOLINT(modernize-return-braced-init-list) braced form would bind initializer_list, changing semantics
     if (full) { const auto [value,derivative]=phi(0.); lower=-value/derivative; }
     if (!full && alpha==0.) alpha=std::max(.001*upper,std::sqrt(lower*upper));
     for (int iteration=0;iteration<10;++iteration) {
@@ -224,6 +228,7 @@ std::pair<double,std::vector<bool>> bound_stride(std::span<const double> x,
     for(std::size_t i=0;i<x.size();++i) hit[i]=strides[i]==stride;
     return {stride,std::move(hit)};
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double quadratic(std::span<const double> j,std::size_t m,std::span<const double> g,
                  std::span<const double> diag,std::span<const double> x) {
     const Vector jx=matvec(j,m,x.size(),x);
@@ -250,7 +255,9 @@ Step select(const Vector& x,const Vector& j,std::size_t m,const Vector& diag,
             std::span<const double> lo,std::span<const double> hi,double theta) {
     Vector p=product(p_hat,d);
     bool bounded=true;for(std::size_t i=0;i<x.size();++i)bounded=bounded&&x[i]+p[i]>=lo[i]&&x[i]+p[i]<=hi[i];
-    if(bounded)return {std::move(p),p_hat,-quadratic(j,m,g,diag,p_hat)};
+    if(bounded)return {.physical=std::move(p),.hat=p_hat,.predicted=-quadratic(j,m,g,diag,p_hat)};
+    // `p` is moved only inside the early return above; on this path it is live.
+    // cppcheck-suppress accessMoved
     const auto [stride,hits]=bound_stride(x,p,lo,hi);
     Vector r_hat=p_hat;
     for(std::size_t i=0;i<x.size();++i){if(hits[i])r_hat[i]*=-1.;p[i]*=stride;p_hat[i]*=stride;}
@@ -273,9 +280,9 @@ Step select(const Vector& x,const Vector& j,std::size_t m,const Vector& diag,
     const double ag_tr=radius/norm(ag_hat),ag_bound=bound_stride(x,ag,lo,hi).first;
     const auto [ag_stride,ag_value]=line_min(j,m,g,diag,ag_hat,Vector(x.size(),0.),0.,ag_bound<ag_tr ? theta*ag_bound:ag_tr);
     for(std::size_t i=0;i<x.size();++i){ag[i]*=ag_stride;ag_hat[i]*=ag_stride;}
-    if(pv<rv&&pv<ag_value)return{std::move(p),std::move(p_hat),-pv};
-    if(rv<pv&&rv<ag_value)return{std::move(r),std::move(r_hat),-rv};
-    return{std::move(ag),std::move(ag_hat),-ag_value};
+    if(pv<rv&&pv<ag_value)return{.physical=std::move(p),.hat=std::move(p_hat),.predicted=-pv};
+    if(rv<pv&&rv<ag_value)return{.physical=std::move(r),.hat=std::move(r_hat),.predicted=-rv};
+    return{.physical=std::move(ag),.hat=std::move(ag_hat),.predicted=-ag_value};
 }
 } // namespace
 
@@ -293,16 +300,16 @@ LeastSquaresResult bounded_least_squares(const Residual& residual,
         throw std::invalid_argument("least_squares: bounds or infeasible initial point");
     LeastSquaresResult out;
     Vector x(initial.begin(),initial.end());interior(x,lower,upper,1e-10);
-    Evaluator fun{residual};Vector f=fun(x);
+    Evaluator fun{.call=residual};Vector f=fun(x);
     if(!finite(f))throw std::invalid_argument("least_squares: residuals are not finite in the initial point");
     if(n>1048576/n||f.size()>1048576/n-n)throw std::invalid_argument("least_squares: augmented Jacobian exceeds bounded dense workspace");
     Vector j=jacobian(fun,x,f,lower,upper,o),g=gradient(j,f,n),scale(n,1.),inverse(n,1.);
     out.evaluations=1;out.jacobian_evaluations=1;
-    auto rescale=[&](bool first){if(!o.jacobian_scaling)return;for(std::size_t col=0;col<n;++col){double sum=0.;for(std::size_t row=0;row<f.size();++row)sum+=j[row*n+col]*j[row*n+col];double s=std::sqrt(sum);if(first&&s==0.)s=1.;if(!first)s=std::max(s,inverse[col]);inverse[col]=s;scale[col]=1./s;}};
+    auto const rescale=[&](bool first){if(!o.jacobian_scaling)return;for(std::size_t col=0;col<n;++col){double sum=0.;for(std::size_t row=0;row<f.size();++row)sum+=j[row*n+col]*j[row*n+col];double s=std::sqrt(sum);if(first&&s==0.)s=1.;if(!first)s=std::max(s,inverse[col]);inverse[col]=s;scale[col]=1./s;}};
     rescale(true);
     if(!finite(j)||!finite(g)||!finite(scale)||!finite(inverse))
         throw std::invalid_argument("least_squares: nonfinite Jacobian scaling or gradient");
-    auto scaling=[&](){std::pair<Vector,Vector> value{Vector(n,1.),Vector(n,0.)};for(std::size_t i=0;i<n;++i){if(g[i]<0.&&std::isfinite(upper[i])){value.first[i]=upper[i]-x[i];value.second[i]=-1.;}else if(g[i]>0.&&std::isfinite(lower[i])){value.first[i]=x[i]-lower[i];value.second[i]=1.;}}return value;};
+    auto const scaling=[&](){std::pair<Vector,Vector> value{Vector(n,1.),Vector(n,0.)};for(std::size_t i=0;i<n;++i){if(g[i]<0.&&std::isfinite(upper[i])){value.first[i]=upper[i]-x[i];value.second[i]=-1.;}else if(g[i]>0.&&std::isfinite(lower[i])){value.first[i]=x[i]-lower[i];value.second[i]=1.;}}return value;};
     auto [initial_v,initial_dv]=scaling();Vector rx(n);
     for(std::size_t i=0;i<n;++i){if(initial_dv[i]!=0.)initial_v[i]*=inverse[i];rx[i]=x[i]*inverse[i]/std::sqrt(initial_v[i]);}
     double radius=norm(rx);if(radius==0.)radius=1.;

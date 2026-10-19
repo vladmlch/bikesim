@@ -8,13 +8,14 @@
 #include <limits>
 #include <sys/stat.h>
 #include <system_error>
+#include <unistd.h>
 
 namespace bike::recording {
 namespace {
 std::filesystem::path staging_directory(const std::filesystem::path& root) {
     auto name = (root / ".run-recording-unsealed-XXXXXX").string(); std::vector<char> bytes(name.begin(), name.end()); bytes.push_back('\0');
     if (!::mkdtemp(bytes.data())) throw std::system_error(errno, std::generic_category(), "exclusive recording staging");
-    return std::filesystem::path(bytes.data());
+    return {bytes.data()};
 }
 void write_text(const std::filesystem::path& path, const std::string& text) { platform::write_exclusive(path, std::as_bytes(std::span(text.data(), text.size()))); }
 std::string name_base(const RunMetadata& metadata) {
@@ -26,16 +27,16 @@ std::string name_base(const RunMetadata& metadata) {
     return stamp + 'Z' + '-' + metadata.run_uuid;
 }
 void checked_link(const std::filesystem::path& source, const std::filesystem::path& destination) {
-    auto from = platform::open_regular(source); struct stat a{}, b{};
+    auto const from = platform::open_regular(source); struct stat a{}, b{};
     if (::fstat(from.get(), &a) != 0) throw std::system_error(errno, std::generic_category(), "fstat source payload");
     platform::link_new(source, destination);
-    auto to = platform::open_regular(destination);
+    auto const to = platform::open_regular(destination);
     if (::fstat(to.get(), &b) != 0) throw std::system_error(errno, std::generic_category(), "fstat destination payload");
     if (a.st_dev != b.st_dev || a.st_ino != b.st_ino) throw std::runtime_error("recording payload changed during exclusive publication");
 }
 } // namespace
 Publication publish(const RunCapture& capture, const std::filesystem::path& output_root, const FinalizeOptions& options) {
-    if (!capture.enabled()) return {{}, "disabled"};
+    if (!capture.enabled()) return {.directory={}, .report_status="disabled"};
     if (!options.maximum_batch_rows) throw std::invalid_argument("batch_rows must be positive");
     if (output_root.empty()) throw std::invalid_argument("recording output root must be nonempty");
     std::filesystem::create_directories(output_root);
@@ -86,7 +87,7 @@ Publication publish(const RunCapture& capture, const std::filesystem::path& outp
         // There are no fallible validation operations after the commit link.
         // The candidate is an exclusively written regular file in our 0700
         // staging directory and has already been synced.
-        auto marker = platform::open_regular(candidate);
+        auto const marker = platform::open_regular(candidate);
         (void)marker;
         platform::link_new(candidate, destination / manifest_name); // sole sealing marker, LAST
     } catch (const std::exception& error) {
@@ -101,7 +102,8 @@ Publication publish(const RunCapture& capture, const std::filesystem::path& outp
             std::error_code ignored; std::filesystem::remove(staging / name, ignored);
         }
         std::error_code ignored; std::filesystem::remove(staging, ignored);
+    // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
     } catch (const std::system_error&) { }
-    return {std::move(destination), std::move(report_status)};
+    return {.directory=std::move(destination), .report_status=std::move(report_status)};
 }
 } // namespace bike::recording

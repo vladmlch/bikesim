@@ -1,6 +1,7 @@
 // Brent's safeguarded interpolation/bisection with scipy.optimize.brentq
 // tolerance defaults. Every accepted bracket still encloses opposite signs.
 #include "brent.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -8,6 +9,7 @@
 
 namespace bike::numerics {
 BrentResult brentq(const std::function<double(double)>& f,double xa,double xb,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     double xtol,double rtol,std::size_t maximum) {
     if(!f || !std::isfinite(xa) || !std::isfinite(xb) || !std::isfinite(xtol) || xtol<=0. || !std::isfinite(rtol) || rtol<4.*std::numeric_limits<double>::epsilon())
         throw std::invalid_argument("brentq: finite bracket and positive tolerances required");
@@ -35,7 +37,7 @@ BrentResult brentq(const std::function<double(double)>& f,double xa,double xb,
         const double sbis=(xblk-xcur)/2.;
         if(fcur==0. || std::abs(sbis)<delta) {result.root=xcur;return result;}
         if(std::abs(spre)>delta && std::abs(fcur)<std::abs(fpre)) {
-            double trial;
+            double trial = std::numeric_limits<double>::quiet_NaN();
             if(xpre==xblk) trial=-fcur*(xcur-xpre)/(fcur-fpre);
             else {
                 const double dpre=(fpre-fcur)/(xpre-xcur),dblk=(fblk-fcur)/(xblk-xcur);

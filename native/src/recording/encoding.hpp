@@ -21,7 +21,7 @@ using BatchSink = std::function<void(std::string_view, runtime::EncodedTable&&)>
 void piece_fragments(std::string_view name, runtime::EncodedTable table,
                      std::size_t max_rows, const BatchSink& sink);
 class Connection;
-void append_pieces(Connection& connection, const TableSpec& spec,
+void append_pieces(Connection const& connection, const TableSpec& spec,
                    const runtime::EncodedTable& batch, std::int64_t episode_id,
                    const std::function<void(std::string_view)>& before_stage = {});
 } // namespace bike::recording

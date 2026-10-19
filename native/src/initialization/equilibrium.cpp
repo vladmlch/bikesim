@@ -25,8 +25,8 @@ std::int64_t timing_steps(double seconds,double dt,std::int64_t cycle){
     if(count>std::numeric_limits<std::int64_t>::max()/cycle)throw std::invalid_argument("equilibrium refinement period exceeds step count");
     return count*cycle;
 }
-std::vector<std::pair<std::string,double>> worst(SetupContext& context){
-    const auto q=context.stepper.qacc();std::vector<std::size_t> order(q.size());std::iota(order.begin(),order.end(),0);
+std::vector<std::pair<std::string,double>> worst(SetupContext const& context){
+    const auto q=context.stepper.qacc();std::vector<std::size_t> order(q.size());std::ranges::iota(order,0);
     std::ranges::stable_sort(order,[&](auto a,auto b){return std::abs(q[a])>std::abs(q[b]);});
     const auto* m=context.stepper.model();const auto joints=std::views::counted(m->dof_jntid,m->nv);
     std::vector<std::pair<std::string,double>> result;
@@ -71,9 +71,9 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
             apply_initial_forces(context,true);
             const std::vector<double> q(context.stepper.qpos().begin(),context.stepper.qpos().end()),v(context.stepper.qvel().begin(),context.stepper.qvel().end());
             context.stepper.step();settle_contacts(context,q,v);++steps;
-            for(auto state:{context.stepper.qpos(),context.stepper.qvel()})if(!std::ranges::all_of(state,[](double value){return std::isfinite(value);}))throw std::runtime_error("non-finite physical equilibrium state");
+            for(auto const state:{context.stepper.qpos(),context.stepper.qvel()})if(!std::ranges::all_of(state,[](double value){return std::isfinite(value);}))throw std::runtime_error("non-finite physical equilibrium state");
         }
-        auto* d=context.stepper.data();std::ranges::fill(std::views::counted(d->qvel,context.stepper.model()->nv),0.);context.stepper.note_posvel_stale();
+        auto const* d=context.stepper.data();std::ranges::fill(std::views::counted(d->qvel,context.stepper.model()->nv),0.);context.stepper.note_posvel_stale();
         apply_initial_forces(context,false);context.stepper.forward();residual=acceleration_residual(context);
         if(residual>options.tolerance&&(steps==first_refine||steps%refine_period==0))
             for(int attempt=0;attempt<8;++attempt){const double previous=residual;residual=refine_equilibrium(context,80,options.tolerance);if(residual<=options.tolerance||residual>=previous*(1.-1e-3))break;}

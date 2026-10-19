@@ -40,6 +40,11 @@ struct Asset {
 class PhysicalSource {
 public:
     virtual ~PhysicalSource();
+    PhysicalSource() = default;
+    PhysicalSource(const PhysicalSource&) = delete;
+    PhysicalSource& operator=(const PhysicalSource&) = delete;
+    PhysicalSource(PhysicalSource&&) = delete;
+    PhysicalSource& operator=(PhysicalSource&&) = delete;
     [[nodiscard]] virtual std::int64_t row_count() const = 0;
     [[nodiscard]] virtual const Catalog* catalog() const noexcept = 0;
     [[nodiscard]] virtual bool ordinary_commands() const noexcept { return false; }
@@ -48,6 +53,11 @@ public:
 class ResearchSource {
 public:
     virtual ~ResearchSource();
+    ResearchSource() = default;
+    ResearchSource(const ResearchSource&) = delete;
+    ResearchSource& operator=(const ResearchSource&) = delete;
+    ResearchSource(ResearchSource&&) = delete;
+    ResearchSource& operator=(ResearchSource&&) = delete;
     [[nodiscard]] virtual std::int64_t row_count(std::string_view stream) const = 0;
     virtual void tables(std::size_t maximum_rows, const BatchSink&) const = 0;
 };

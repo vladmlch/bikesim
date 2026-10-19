@@ -14,7 +14,8 @@ void TerrainGenSpec::validate()const{
     if(grade_peak<grade_max)throw std::invalid_argument("grade_peak must not be below grade_max");
     if(grade_peak_prob>1.)throw std::invalid_argument("grade_peak_prob must lie in [0, 1]");
     if(base_surfaces.empty()||section_surfaces.empty()||feature_types.empty())throw std::invalid_argument("surface/feature selections must be nonempty");
-    for(const auto& v:base_surfaces)(void)get_surface(v);for(const auto& v:section_surfaces)(void)get_surface(v);
+    for(const auto& v:base_surfaces)(void)get_surface(v);
+    for(const auto& v:section_surfaces)(void)get_surface(v);
     for(const auto& v:feature_types)if(v!="bump"&&v!="edge"&&v!="drop"&&v!="roots")throw std::invalid_argument("unknown terrain feature type: "+v);
     if(length_m[0]<lead_in_m+lead_out_m+2.*CLEARANCE_M)throw std::invalid_argument("shortest track must leave a usable body after lead-in/out");
 }
@@ -61,11 +62,11 @@ std::optional<Obstacle> feature(std::string_view kind,bike::random::NumpyRng& rn
     else{size=rounded(rng.uniform(s.roots_len_m[0],s.roots_len_m[1]),2);height=rounded(rng.uniform(s.bump_height_m[0],std::min(s.bump_height_m[1],.08)));}
     const auto placed=place(rng,std::max(size,.01),lo,hi,taken);if(!placed)return std::nullopt;const double start=placed->first;
     if(kind=="drop"&&grade.slope(start)<0.)return std::nullopt;
-    if(kind=="bump")return Obstacle{Bump{start,height,size}};
-    if(kind=="edge")return Obstacle{SquareEdge{start,height,size}};
-    if(kind=="drop")return Obstacle{Drop{start,height,0.}};
+    if(kind=="bump")return Obstacle{.shape=Bump{.start_m=start,.height_m=height,.bump_length_m=size}};
+    if(kind=="edge")return Obstacle{.shape=SquareEdge{.start_m=start,.height_m=height,.ledge_length_m=size}};
+    if(kind=="drop")return Obstacle{.shape=Drop{.start_m=start,.height_m=height,.ramp_m=0.}};
     const auto n=rng.integers(4,9);const auto seed=std::to_string(rng.integers(0,2147483648LL));
-    Roots roots;roots.start_m=start;roots.n_bumps=n;roots.height_m=height;roots.section_length_m=size;roots.seed=seed;return Obstacle{std::move(roots)};
+    Roots roots;roots.start_m=start;roots.n_bumps=n;roots.height_m=height;roots.section_length_m=size;roots.seed=seed;return Obstacle{.shape=std::move(roots)};
 }
 }
 TrackSpec generate_track(const TerrainGenSpec& s,std::string_view seed,std::optional<std::string> name){
@@ -78,7 +79,7 @@ TrackSpec generate_track(const TerrainGenSpec& s,std::string_view seed,std::opti
         const double amp=rounded(rng.uniform(s.roughness_amp_m[0],s.roughness_amp_m[1]));
         const double corr=rounded(rng.uniform(s.roughness_corr_m[0],s.roughness_corr_m[1]),3);
         const auto rough_seed=std::to_string(rng.integers(0,2147483648LL));const auto placed=place(rng,wanted,lo,hi,taken,true);
-        if(placed){const auto [start,size]=*placed;obstacles.push_back({RoadRoughness{start,size,amp,corr,rough_seed}});taken.emplace_back(start,start+size);}
+        if(placed){const auto [start,size]=*placed;obstacles.push_back({.shape=RoadRoughness{.start_m=start,.section_length_m=size,.amplitude_m=amp,.correlation_length_m=corr,.seed=rough_seed}});taken.emplace_back(start,start+size);}
     }
     const auto feature_count=detail::count_draw(rng,s.n_features);
     for(std::int64_t i=0;i<feature_count;++i){
@@ -90,28 +91,29 @@ TrackSpec generate_track(const TerrainGenSpec& s,std::string_view seed,std::opti
     for(std::int64_t i=0;i<section_count;++i){
         const double wanted=rounded(rng.uniform(s.section_len_m[0],s.section_len_m[1]),2);
         const auto material=s.section_surfaces.at(static_cast<std::size_t>(rng.integers(0,static_cast<std::int64_t>(s.section_surfaces.size()))));
-        const auto placed=place(rng,wanted,lo,hi,used,true);if(placed){const auto [start,size]=*placed;sections.push_back({start,rounded(start+size,2),material});used.emplace_back(start,start+size);}
+        const auto placed=place(rng,wanted,lo,hi,used,true);if(placed){const auto [start,size]=*placed;sections.push_back({.start_m=start,.end_m=rounded(start+size,2),.surface=material});used.emplace_back(start,start+size);}
     }
-    std::stable_sort(sections.begin(),sections.end(),[](const auto&a,const auto&b){return a.start_m<b.start_m;});
-    TrackSpec track{(name&&!name->empty())?*name:"generated_"+seed_text,length,std::move(obstacles),"Generated rough climb; seed="+seed_text+"; spec_sha256="+s.sha256(),surface,std::move(grade),std::move(sections)};
+    std::ranges::stable_sort(sections,[](const auto&a,const auto&b){return a.start_m<b.start_m;});
+    TrackSpec track{.name=(name&&!name->empty())?*name:"generated_"+seed_text,.length_m=length,.obstacles=std::move(obstacles),.description="Generated rough climb; seed="+seed_text+"; spec_sha256="+s.sha256(),.surface=surface,.grade_profile=std::move(grade),.surface_sections=std::move(sections)};
     track.validate();return track;
 }
 TrackSpec generate_track(const TerrainGenSpec& spec,std::uint64_t seed,std::optional<std::string> name){return generate_track(spec,std::to_string(seed),std::move(name));}
 TrackSpec generate(const bike::io::Value& spec,std::uint64_t seed){return generate_track(TerrainGenSpec::from_dict(spec),seed);}
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 TrackSpec build_research_track(std::string_view name,std::string_view seed){
     if(name!="flat"&&name!="uphill"&&name!="rough_uphill"&&name!="crest"&&name!="low_grip"&&name!="step_up")throw std::invalid_argument("unknown research scenario: "+std::string(name));
     const auto sd=detail::seed_plus(std::string(seed),0);
-    TrackSpec track{"research_"+std::string(name),35.,{},"Synthetic longitudinal torque-control challenge; seed="+sd,"asphalt",std::nullopt,{}};
+    TrackSpec track{.name="research_"+std::string(name),.length_m=35.,.obstacles={},.description="Synthetic longitudinal torque-control challenge; seed="+sd,.surface="asphalt",.grade_profile=std::nullopt,.surface_sections={}};
     if(name=="uphill"||name=="rough_uphill"||name=="low_grip"){
         const double grade=name=="low_grip"?.12:.22;track.grade_profile=GradeProfile{{{0.,0.},{4.,0.},{8.,grade},{24.,grade},{30.,0.},{35.,0.}}};
     }
     if(name=="rough_uphill"){
-        track.surface="hardpack";track.obstacles={{RoadRoughness{4.,4.,.015,.35,sd}},{Bump{8.5,.06,.7}},{RoadRoughness{10.,5.,.025,.45,detail::seed_plus(sd,1)}},{SquareEdge{16.,.04,.25}},{RoadRoughness{18.,11.,.018,.3,detail::seed_plus(sd,2)}}};
+        track.surface="hardpack";track.obstacles={{.shape=RoadRoughness{.start_m=4.,.section_length_m=4.,.amplitude_m=.015,.correlation_length_m=.35,.seed=sd}},{.shape=Bump{.start_m=8.5,.height_m=.06,.bump_length_m=.7}},{.shape=RoadRoughness{.start_m=10.,.section_length_m=5.,.amplitude_m=.025,.correlation_length_m=.45,.seed=detail::seed_plus(sd,1)}},{.shape=SquareEdge{.start_m=16.,.height_m=.04,.ledge_length_m=.25}},{.shape=RoadRoughness{.start_m=18.,.section_length_m=11.,.amplitude_m=.018,.correlation_length_m=.3,.seed=detail::seed_plus(sd,2)}}};
     }else if(name=="crest"){
-        track.grade_profile=GradeProfile{{{0.,0.},{4.,0.},{6.,.28},{8.,.28},{10.,0.},{12.,-.35},{16.,-.35},{20.,0.},{35.,0.}}};track.obstacles={{RoadRoughness{5.,3.,.008,.4,sd}}};
+        track.grade_profile=GradeProfile{{{0.,0.},{4.,0.},{6.,.28},{8.,.28},{10.,0.},{12.,-.35},{16.,-.35},{20.,0.},{35.,0.}}};track.obstacles={{.shape=RoadRoughness{.start_m=5.,.section_length_m=3.,.amplitude_m=.008,.correlation_length_m=.4,.seed=sd}}};
     }else if(name=="low_grip"){
-        track.surface_sections={{6.,10.,"wet"},{14.,21.,"loose"}};track.obstacles={{RoadRoughness{4.,23.,.008,.4,sd}}};
-    }else if(name=="step_up")track.obstacles={{SquareEdge{5.,.07,.5}},{Bump{9.,.10,1.}}};
+        track.surface_sections={{.start_m=6.,.end_m=10.,.surface="wet"},{.start_m=14.,.end_m=21.,.surface="loose"}};track.obstacles={{.shape=RoadRoughness{.start_m=4.,.section_length_m=23.,.amplitude_m=.008,.correlation_length_m=.4,.seed=sd}}};
+    }else if(name=="step_up")track.obstacles={{.shape=SquareEdge{.start_m=5.,.height_m=.07,.ledge_length_m=.5}},{.shape=Bump{.start_m=9.,.height_m=.10,.bump_length_m=1.}}};
     track.validate();return track;
 }
 } // namespace bike::terrain

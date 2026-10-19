@@ -9,6 +9,10 @@ class TrackFileError : public std::invalid_argument {
 public:
     using std::invalid_argument::invalid_argument;
     ~TrackFileError() override;
+    TrackFileError(const TrackFileError&) = default;
+    TrackFileError& operator=(const TrackFileError&) = default;
+    TrackFileError(TrackFileError&&) = default;
+    TrackFileError& operator=(TrackFileError&&) = default;
 };
 [[nodiscard]] Obstacle obstacle_from_dict(const bike::io::Value& entry,std::size_t index=0);
 [[nodiscard]] RoadGeneratorSpec generator_from_dict(const bike::io::Value& entry);

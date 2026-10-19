@@ -21,7 +21,7 @@ void material(const bike::configuration::HingeDensity& m) {
 }
 DensityResponse density_response(std::span<const double> delta,const bike::configuration::HingeDensity& m) {
     material(m);if(!dense::finite(delta))throw std::invalid_argument("contact penetration must be finite");
-    DensityResponse out{std::vector<double>(delta.size(),0.),std::vector<double>(delta.size(),0.)};
+    DensityResponse out{.force=std::vector<double>(delta.size(),0.),.energy=std::vector<double>(delta.size(),0.)};
     std::vector<double> force(m.knots_m.size()),energy(m.knots_m.size());
     for(std::size_t i=0;i<delta.size();++i) {
         for(std::size_t j=0;j<m.knots_m.size();++j) {
@@ -34,14 +34,14 @@ DensityResponse density_response(std::span<const double> delta,const bike::confi
 DensityResponse normal_station_response(std::span<const double> delta,std::span<const double> rate,
     std::span<const double> weights,const bike::configuration::HingeDensity& m) {
     std::size_t count=1;
-    for(auto v:{delta,rate,weights}) {
+    for(auto const v:{delta,rate,weights}) {
         if(!dense::finite(v))throw std::invalid_argument("invalid contact quadrature");
         if(v.size()!=1) {
             if(count!=1 && count!=v.size())throw std::invalid_argument("invalid contact quadrature");
             count=v.size();
         }
     }
-    for(double w:weights)if(w<0.)throw std::invalid_argument("invalid contact quadrature");
+    for(double const w:weights)if(w<0.)throw std::invalid_argument("invalid contact quadrature");
     std::vector<double> expanded(count);for(std::size_t i=0;i<count;++i)expanded[i]=delta[delta.size()==1?0:i];
     auto out=density_response(expanded,m);
     for(std::size_t i=0;i<count;++i) {
@@ -51,10 +51,11 @@ DensityResponse normal_station_response(std::span<const double> delta,std::span<
     return out;
 }
 DensityResponse flat_load(std::span<const double> deflection,double radius,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     const bike::configuration::HingeDensity& m,int count,double phase) {
     if(!std::isfinite(radius)||radius<=0. || !std::isfinite(phase) || !dense::finite(deflection))throw std::invalid_argument("tire radius/phase/deflection domain");
     material(m);const auto stations=biketyre::station_angles(count);
-    DensityResponse out{std::vector<double>(deflection.size(),0.),std::vector<double>(deflection.size(),0.)};
+    DensityResponse out{.force=std::vector<double>(deflection.size(),0.),.energy=std::vector<double>(deflection.size(),0.)};
     for(std::size_t i=0;i<deflection.size();++i) {
         std::vector<double> delta(static_cast<std::size_t>(count));
         // This is a lone sin call, with no same-angle cosine to fuse.
@@ -66,6 +67,7 @@ DensityResponse flat_load(std::span<const double> deflection,double radius,
     return out;
 }
 DensityFit fit_density(std::span<const double> deflections,std::span<const double> loads,double radius,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     std::string dataset,std::span<const double> knots,int count,double damping,double gate) {
     if(deflections.size()<3 || deflections.size()!=loads.size() || !dense::finite(deflections) || !dense::finite(loads))throw std::invalid_argument("fit needs ordered positive deflections and positive aggregate loads");
     for(std::size_t i=0;i<loads.size();++i)if(loads[i]<=0. || deflections[i]<=0. || (i && deflections[i]<=deflections[i-1]))throw std::invalid_argument("fit needs ordered positive deflections and positive aggregate loads");

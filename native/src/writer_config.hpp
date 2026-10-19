@@ -661,6 +661,7 @@ namespace nativecfg {
                     .pressure_pa_gauge = req_f64(m, "pressure_pa_gauge"),
                     .provenance = req_str(m, "provenance"),
                     .valid_load_range_n = req_vec2(m, "valid_load_range_n"),
+                    .table = std::nullopt,
                 };
                 if (m.contains("deflection_m")) p.material->table = TireTable{
                     .deflection_m = vector(req(m, "deflection_m"), m.child("deflection_m")),

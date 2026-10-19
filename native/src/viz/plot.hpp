@@ -1,5 +1,6 @@
 #pragma once
 #include "../geometry/specs.hpp"
+#include <cstdint>
 #include "../kinematics/solver.hpp"
 #include "../terrain/types.hpp"
 #include <filesystem>
@@ -10,7 +11,8 @@
 #include <vector>
 
 namespace bike::viz {
-enum class SeriesStyle { line, step, bars, points };
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+enum class SeriesStyle : std::uint8_t { line, step, bars, points };
 struct Series {
     std::string name;
     std::vector<double> x, y;
@@ -19,7 +21,8 @@ struct Series {
     bool secondary_y = false;
     bool dashed = false;
 };
-enum class MarkerKind { vertical, horizontal, band };
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+enum class MarkerKind : std::uint8_t { vertical, horizontal, band };
 struct Marker {
     MarkerKind kind = MarkerKind::vertical;
     double first = 0., second = 0.;

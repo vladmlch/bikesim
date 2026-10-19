@@ -70,6 +70,8 @@ public:
     ~TyreForceApplier();
     TyreForceApplier(const TyreForceApplier&) = delete;
     TyreForceApplier& operator=(const TyreForceApplier&) = delete;
+    TyreForceApplier(TyreForceApplier&&) = delete;
+    TyreForceApplier& operator=(TyreForceApplier&&) = delete;
     void apply(mjData&);
     void reset(mjData* = nullptr);
     void set_pressures(double front_bar, double rear_bar);

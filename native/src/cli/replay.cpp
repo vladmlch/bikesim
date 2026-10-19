@@ -7,6 +7,7 @@
 #include "../viewer/session.hpp"
 #include <algorithm>
 #include <cmath>
+#include <exception>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -62,7 +63,7 @@ int inspect(const Arguments& args, std::optional<std::int64_t> episode) {
     hooks.reset = [&] { time = 0.; rebase(); };
     hooks.key_event = [&](int key, int modifiers) {
         if (key == 262 || key == 263) {
-            const double delta = (modifiers & 1) != 0 ? .1 : 1.;
+            const double delta = (static_cast<unsigned>(modifiers) & 1U) != 0 ? .1 : 1.;
             time = std::clamp(time + (key == 262 ? delta : -delta), 0., playback.duration_s()); rebase(); return true;
         }
         if (key == 264 || key == 265) {
@@ -103,7 +104,7 @@ int replay_command(const Arguments& args) {
             options.mode = viewer::Mode::checked_replay; options.timestep_s = session.timestep_s();
             options.time_scale = static_cast<unsigned>(args.integer("time_scale", 1));
             const auto& bytes = session.model_image();
-            (void)viewer::run_replay(std::move(hooks), runtime::ModelImage{bytes, io::sha256(bytes)}, options, true);
+            (void)viewer::run_replay(std::move(hooks), runtime::ModelImage{.mjb=bytes, .sha256=io::sha256(bytes)}, options, true);
         } else {
             try { while (!session.done() && !interrupt.deferred()) (void)session.advance(.008); }
             catch (...) { failure = std::current_exception(); }

@@ -30,17 +30,19 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::invalid([] { (void)integer_steps(-1., .00125, "duration"); });
     bt::invalid([] { (void)integer_steps(1., 0., "period"); });
     ExperimentConfig asynchronous; asynchronous.async_telemetry = true;
-    bt::invalid([&] { asynchronous.validate(); });
+    // Async publication is wired (T42): validate() accepts the bool flag.
+    asynchronous.validate();
     ResearchRequest unavailable; unavailable.experiment.async_telemetry = true;
-    // There is deliberately no physics/model/track to construct. The async
-    // capability check must reject before touching a setup owner or cache.
+    // There is deliberately no physics/model/track to construct. The request
+    // must still reject for missing configuration before touching a setup
+    // owner or cache — not for the now-supported async flag.
     bool async_before_setup = false;
     try { (void)prepare_environment(unavailable); }
     catch (const std::invalid_argument& error) {
-        async_before_setup = std::string_view(error.what()).find("native asynchronous publication (T42)") != std::string_view::npos;
+        async_before_setup = std::string_view(error.what()).find("physical configuration") != std::string_view::npos;
     }
     bt::require(async_before_setup && !unavailable.setup.model.physics,
-        "unsupported asynchronous publication rejects before model creation");
+        "empty request rejects before model creation");
     bt::invalid([] { (void)integer_steps(std::numeric_limits<double>::infinity(), .00125, "period"); });
     const auto rider_document = bike::io::parse_json(R"({"reaction_delay_s":0.25,"keyframes":[
       {"time_s":0.0,"posture":{"torso_lean_rad":0.0,"pelvis_pitch_rad":0.0,"pelvis_offset_m":[0.0,0.0],"use_saddle":true},"human_torque_nm":10.0},
@@ -50,10 +52,10 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const auto before = programs.apply({}, 0.);
     const auto middle = programs.apply({}, .75);
     const auto knot = programs.apply({}, 1.25);
-    bt::require(before.human_torque_nm == 10. && before.posture->use_saddle, "delay holds first keyframe");
-    bt::require(middle.human_torque_nm == 20. && middle.posture->torso_lean_rad == .2,
+    bt::require(before.human_torque_nm == 10. && before.posture.value().use_saddle, "delay holds first keyframe"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    bt::require(middle.human_torque_nm == 20. && middle.posture.value().torso_lean_rad == .2, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
         "quintic midpoint realizes posture and effort together");
-    bt::require(middle.posture->use_saddle && !knot.posture->use_saddle, "discrete saddle request changes only at knot");
+    bt::require(middle.posture.value().use_saddle && !knot.posture.value().use_saddle, "discrete saddle request changes only at knot"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     bt::require(programs.demand_at(-1.) == 10. && programs.demand_at(.5) == 20. && programs.demand_at(2.) == 30.,
         "demand clamps time and retains final keyframe");
     const auto roundtrip = programs_from_documents(rider_program_value(programs), demand_program_value(programs));
@@ -87,7 +89,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const auto disabled = make_sensor_tape(config, seed, 8);
     bt::require(first.noise == disabled.noise, "disabled IMU still consumes its prescribed random draws");
     auto ideal = SensorConfig::ideal();
-    auto tape = make_sensor_tape(ideal, seed, 4);
+    auto const tape = make_sensor_tape(ideal, seed, 4);
     runtime::SensorObservation raw;
     raw.values = {1., 2., 3., 4., 5., 6., 7., 8., 9.};
     const auto startup = startup_sensor_state(ideal, tape, raw);
@@ -111,10 +113,10 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     a.experiment.seed_decimal = seed;
     b = a; c = a; c.rider_seed_decimal = "9";
     sample_rider(a); sample_rider(b); sample_rider(c);
-    bt::require(a.setup.model.rider->mass_kg == b.setup.model.rider->mass_kg &&
+    bt::require(a.setup.model.rider.value().mass_kg == b.setup.model.rider.value().mass_kg && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
         bike::io::canonical_json(rider_program_value(a.programs)) == bike::io::canonical_json(rider_program_value(b.programs)),
         "rider and effort program reproduce with the same seed");
-    bt::require(a.setup.model.rider->mass_kg != c.setup.model.rider->mass_kg, "independent rider seed changes the sampled rider");
+    bt::require(a.setup.model.rider.value().mass_kg != c.setup.model.rider.value().mass_kg, "independent rider seed changes the sampled rider"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     auto invalid = bike::random::RiderRandomSpec{}; invalid.mass_kg = {90., 80.};
     bt::invalid([&] { invalid.validate(); });
 }
@@ -124,7 +126,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "request assembly preserves source CLI defaults distinct from dataclass defaults");
     auto invalid = request; invalid.sensors.sample_period_s = .001;
     bt::invalid([&] { (void)prepare_environment(invalid); });
-    invalid = request; invalid.setup.model.physics->drive_mode = "coast";
+    invalid = request; invalid.setup.model.physics.value().drive_mode = "coast"; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     bt::invalid([&] { (void)prepare_environment(invalid); });
     const auto field = research_field(request.setup.track, .005);
     bt::require(field.ncol > 2, "native terrain uses the requested road resolution");

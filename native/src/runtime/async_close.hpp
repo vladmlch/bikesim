@@ -16,16 +16,24 @@ class AsyncWorkerLost : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
     ~AsyncWorkerLost() override;
+    AsyncWorkerLost(const AsyncWorkerLost&) = default;
+    AsyncWorkerLost& operator=(const AsyncWorkerLost&) = default;
+    AsyncWorkerLost(AsyncWorkerLost&&) = default;
+    AsyncWorkerLost& operator=(AsyncWorkerLost&&) = default;
 };
 class AsyncPublicationError : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
     ~AsyncPublicationError() override;
+    AsyncPublicationError(const AsyncPublicationError&) = default;
+    AsyncPublicationError& operator=(const AsyncPublicationError&) = default;
+    AsyncPublicationError(AsyncPublicationError&&) = default;
+    AsyncPublicationError& operator=(AsyncPublicationError&&) = default;
 };
 class AsyncCloseRunner {
 public:
     struct Result {
-        std::uint64_t sequence;
+        std::uint64_t sequence{};
         AccountingPublication publication;
     };
     // The optional hook supplies deterministic worker fault injection to the
@@ -36,6 +44,8 @@ public:
     ~AsyncCloseRunner();
     AsyncCloseRunner(const AsyncCloseRunner&) = delete;
     AsyncCloseRunner& operator=(const AsyncCloseRunner&) = delete;
+    AsyncCloseRunner(AsyncCloseRunner&&) = delete;
+    AsyncCloseRunner& operator=(AsyncCloseRunner&&) = delete;
     void submit(std::shared_ptr<const std::vector<RawStep>>);
     [[nodiscard]] std::shared_ptr<const Result> peek(bool block);
     void acknowledge(std::uint64_t);
@@ -44,7 +54,7 @@ public:
     [[nodiscard]] std::vector<std::shared_ptr<const std::vector<RawStep>>> detach_pending();
     void close() noexcept;
 private:
-    struct Job { std::uint64_t sequence; std::shared_ptr<const std::vector<RawStep>> raws; };
+    struct Job { std::uint64_t sequence{}; std::shared_ptr<const std::vector<RawStep>> raws; };
     void work() noexcept;
     std::unique_ptr<PeriodAccounting> evaluator_;
     BeforeClose before_close_;

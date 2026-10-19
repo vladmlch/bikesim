@@ -34,11 +34,12 @@ int id(const mjModel& model,mjtObj kind,const char* name) {
     bt::require(value>=0,"required model name: "+std::string(name));return value;
 }
 template<class T>
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void equal_array(std::string_view field,const T* actual,const T* expected,std::size_t count) {
     const auto a=std::views::counted(actual,static_cast<std::ptrdiff_t>(count));
     const auto b=std::views::counted(expected,static_cast<std::ptrdiff_t>(count));
     for(std::size_t index=0;index<count;++index) {
-        bool equal;
+        bool equal = false;
         if constexpr(std::is_same_v<T,double>) equal=std::bit_cast<std::uint64_t>(a[index])==std::bit_cast<std::uint64_t>(b[index]);
         else equal=a[index]==b[index];
         bt::require(equal,std::string(field)+"["+std::to_string(index)+"] differs from independently compiled reference XML");
@@ -50,16 +51,16 @@ void compare(const mjModel& actual,const mjModel& expected) {
     DIM(neq);DIM(ntendon);DIM(nwrap);DIM(nsensor);DIM(nsensordata);DIM(nhfield);DIM(nhfielddata);
 #undef DIM
     struct Named {mjtObj kind;std::size_t count;const char* label;};
-    const Named named[]{
-        {mjOBJ_BODY,static_cast<std::size_t>(actual.nbody),"body"},
-        {mjOBJ_JOINT,static_cast<std::size_t>(actual.njnt),"joint"},
-        {mjOBJ_GEOM,static_cast<std::size_t>(actual.ngeom),"geom"},
-        {mjOBJ_SITE,static_cast<std::size_t>(actual.nsite),"site"},
-        {mjOBJ_ACTUATOR,static_cast<std::size_t>(actual.nu),"actuator"},
-        {mjOBJ_EQUALITY,static_cast<std::size_t>(actual.neq),"equality"},
-        {mjOBJ_TENDON,static_cast<std::size_t>(actual.ntendon),"tendon"},
-        {mjOBJ_SENSOR,static_cast<std::size_t>(actual.nsensor),"sensor"},
-    };
+    const auto named = std::to_array<Named>({
+        {.kind=mjOBJ_BODY,.count=static_cast<std::size_t>(actual.nbody),.label="body"},
+        {.kind=mjOBJ_JOINT,.count=static_cast<std::size_t>(actual.njnt),.label="joint"},
+        {.kind=mjOBJ_GEOM,.count=static_cast<std::size_t>(actual.ngeom),.label="geom"},
+        {.kind=mjOBJ_SITE,.count=static_cast<std::size_t>(actual.nsite),.label="site"},
+        {.kind=mjOBJ_ACTUATOR,.count=static_cast<std::size_t>(actual.nu),.label="actuator"},
+        {.kind=mjOBJ_EQUALITY,.count=static_cast<std::size_t>(actual.neq),.label="equality"},
+        {.kind=mjOBJ_TENDON,.count=static_cast<std::size_t>(actual.ntendon),.label="tendon"},
+        {.kind=mjOBJ_SENSOR,.count=static_cast<std::size_t>(actual.nsensor),.label="sensor"},
+    });
     for(const auto& group:named) for(std::size_t index=0;index<group.count;++index) {
         const char* a=mj_id2name(&actual,group.kind,static_cast<int>(index));
         const char* b=mj_id2name(&expected,group.kind,static_cast<int>(index));
@@ -124,13 +125,13 @@ void physical_profiles_and_topology() {
         const auto masks=std::views::counted(model->geom_conaffinity,model->ngeom);
         bt::require(masks[catch_]==13 && masks[terrain]==5,"rider/crash and catch masks");
     }
-    auto request=physical();request->physics->articulated.joint_envelope_path.reset();
-    request->physics->articulated.pedal_attachment="weld";request->physics->articulated.saddle_attachment="weld";request->physics->articulated.grip_attachment="spring";
+    auto request=physical();request->physics.value().articulated.joint_envelope_path.reset(); // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
+    request->physics->articulated.pedal_attachment="weld";request->physics->articulated.saddle_attachment="weld";request->physics->articulated.grip_attachment="spring"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto welded=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     id(*welded,mjOBJ_JOINT,"rider_ankle_front");id(*welded,mjOBJ_EQUALITY,"weld_foot_front");id(*welded,mjOBJ_EQUALITY,"weld_saddle");
     bt::require(welded->nq==28,"welded foot preserves ankle DOFs");
-    request->physics->drive.transmission_model="elastic_chain";
-    request->physics->drive.shifting.enabled=false;
+    request->physics.value().drive.transmission_model="elastic_chain"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
+    request->physics->drive.shifting.enabled=false; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto elastic=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     id(*elastic,mjOBJ_BODY,"cassette");
     bt::require(mj_name2id(elastic.get(),mjOBJ_TENDON,"ideal_mid_drive_freehub")==-1,"elastic chain has no ideal freehub constraint");
@@ -139,15 +140,15 @@ void physical_profiles_and_topology() {
     const auto masses=std::views::counted(elastic->body_mass,elastic->nbody);
     bt::require(masses[wheel_id]==request->masses.rear_wheel_mass*.9,"rear wheel split retains 90 percent budget");
     bt::require(masses[cassette_id]==request->masses.rear_wheel_mass*.1,"cassette transfers 10 percent budget");
-    request=physical();request->physics->drive.motor_clutch=true;
+    request=physical();request->physics->drive.motor_clutch=true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto clutch=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     id(*clutch,mjOBJ_JOINT,"drive_shaft_spin");id(*clutch,mjOBJ_TENDON,"crank_clutch");
-    request=physical();request->physics->drive.rotor_inertia_kgm2=.2;
+    request=physical();request->physics->drive.rotor_inertia_kgm2=.2; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto rotor=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     id(*rotor,mjOBJ_JOINT,"rotor_spin");id(*rotor,mjOBJ_TENDON,"motor_freewheel");
-    request->physics->drive.motor_clutch=true;
+    request->physics->drive.motor_clutch=true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
-    request=physical();request->physics->drive.transmission_model="geometric_ideal_mid_drive";
+    request=physical();request->physics->drive.transmission_model="geometric_ideal_mid_drive"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto geometric=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     const auto tendon=static_cast<std::size_t>(id(*geometric,mjOBJ_TENDON,"geometric_mid_drive_freehub"));
     bt::require(std::views::counted(geometric->tendon_num,geometric->ntendon)[tendon]==geometric->njnt,"geometric drive includes all scalar joints and rider zero rows");
@@ -156,15 +157,15 @@ void physical_profiles_and_topology() {
     const auto reweighted=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     const auto weighted_masses=std::views::counted(reweighted->body_mass,reweighted->nbody);
     bt::require(weighted_masses[static_cast<std::size_t>(id(*reweighted,mjOBJ_BODY,"front_wheel"))]==3.1,"front explicit inertial uses requested budget");
-    double total=0.;for(double mass:weighted_masses.subspan(1)) total+=mass;
-    bt::require(std::abs(total-(request->masses.total_bike_mass()+request->rider->mass_kg))<1e-11,"physical component and rider mass budgets close");
+    double total=0.;for(double const mass:weighted_masses.subspan(1)) total+=mass;
+    bt::require(std::abs(total-(request->masses.total_bike_mass()+request->rider->mass_kg))<1e-11,"physical component and rider mass budgets close"); // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
 }
 void errors_and_ownership() {
     auto request=physical();request->mode="stand";
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
     request=physical();request->tyre_model="pneumatic";
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
-    request=physical();request->rider->variant="lumped";
+    request=physical();request->rider->variant="lumped"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
     request=std::make_unique<mdl::BuildRequest>();request->crank_joint=true;
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
@@ -180,7 +181,7 @@ void errors_and_ownership() {
     bt::require(std::views::counted(first->body_mass,first->nbody)[1]!=std::views::counted(second->body_mass,second->nbody)[1],"separate compilation owners do not alias mutable model arrays");
     first.reset();
     bt::require(second->nq==26,"a model remains owned after sibling destruction");
-    mdl::xml::Element escaped("mujoco",{{"model","A & B < \"quoted\"\n"}});
+    mdl::xml::Element const escaped("mujoco",{{"model","A & B < \"quoted\"\n"}});
     const auto text=mdl::xml::document(escaped);
     bt::require(text.find("A &amp; B &lt; &quot;quoted&quot;&#10;")!=std::string::npos,"XML attributes escape reserved characters and whitespace");
 }

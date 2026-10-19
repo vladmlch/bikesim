@@ -1,16 +1,17 @@
 #include "builder_internal.hpp"
 #include <stdexcept>
+#include <array>
 
 namespace bike::model::detail {
 namespace {
 void build_lumped_rider(Element& frame,const configuration::RiderSpecs& rider) {
     const bool visible=rider.variant=="lumped";
     struct Part {const char* name;const char* fromto;const char* size;double mass;};
-    const Part parts[]{
-        {"torso","0.10 0 0.48 0.22 0 0.82","0.13",rider.torso_helmet_mass()},
-        {"legs","0.0 0 0.0 0.10 0 0.48","0.075",rider.legs_mass()},
-        {"arms","0.22 0 0.78 0.45 0 0.66","0.055",rider.arms_mass()},
-    };
+    const auto parts = std::to_array<Part>({
+        {.name="torso",.fromto="0.10 0 0.48 0.22 0 0.82",.size="0.13",.mass=rider.torso_helmet_mass()},
+        {.name="legs",.fromto="0.0 0 0.0 0.10 0 0.48",.size="0.075",.mass=rider.legs_mass()},
+        {.name="arms",.fromto="0.22 0 0.78 0.45 0 0.66",.size="0.055",.mass=rider.arms_mass()},
+    });
     for(const auto& part:parts) geom(frame,"geom_rider_"+std::string(part.name),"capsule",{{"fromto",part.fromto},
         {"size",visible?part.size:"0.0001"},{"mass",visible?f(part.mass,1):"0.0"},
         {"rgba",visible?"0.5 0.5 0.5 1.0":"0.5 0.5 0.5 0.0"},{"material","mat_rider"},{"contype","0"},{"conaffinity","0"}});
@@ -140,7 +141,7 @@ Element& build_frame_body(Element& world,BuildContext& c) {
         for(const auto& [name,parts]:c.registry) { (void)name;excluded.insert(parts.begin(),parts.end()); }
         std::vector<Element*> remaining;
         for(auto* value:frame.direct("geom")) if(!excluded.contains(value) && !value->get("name").starts_with("geom_rider_")) remaining.push_back(value);
-        register_component(c.mass_registry(),"frame_structure",std::move(remaining));
+        register_component(c.mass_registry(),"frame_structure",remaining);
     }
     return frame;
 }

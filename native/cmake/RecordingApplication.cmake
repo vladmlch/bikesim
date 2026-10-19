@@ -45,7 +45,11 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
     "${native_dir}/src/recording/report.cpp"
     "${native_dir}/src/recording/export.cpp")
   bike_startup_target_policy(bike_recording_reader "${native_dir}")
-  target_link_libraries(bike_recording_reader PUBLIC bike_io bike_platform bike::duckdb)
+  # bike_numpy_io supplies the bounded no-follow byte reader used for manifest,
+  # asset and ledger payloads. It links bike_io/bike_platform only — no engine,
+  # runtime, model, policy or display edge enters the analyst chain.
+  target_link_libraries(bike_recording_reader PUBLIC
+    bike_io bike_platform bike_numpy_io bike::duckdb)
 
   add_library(bike_recording STATIC
     "${native_dir}/src/recording/catalog_model.cpp"
@@ -188,7 +192,10 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
     target_link_libraries(${_command} PRIVATE bike_cli)
     bike_rewrite_mujoco_load_name(${_command} "${mujoco_library}")
     set_target_properties(${_command} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-    install(TARGETS ${_command} RUNTIME DESTINATION bin)
+    # OPTIONAL: focused builds (e.g. the T03 bindings-OFF provenance build)
+    # compile only a subset of targets; installing the produced subset must
+    # not fail on executables that were never built.
+    install(TARGETS ${_command} RUNTIME DESTINATION bin OPTIONAL)
   endforeach()
   add_library(bike_recording_cli STATIC "${native_dir}/src/cli/recording.cpp")
   bike_startup_target_policy(bike_recording_cli "${native_dir}")
@@ -198,12 +205,12 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
   bike_startup_target_policy(bike-recording "${native_dir}")
   target_link_libraries(bike-recording PRIVATE bike_recording_cli)
   set_target_properties(bike-recording PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-  install(TARGETS bike-recording RUNTIME DESTINATION bin)
+  install(TARGETS bike-recording RUNTIME DESTINATION bin OPTIONAL)
   add_executable(bike-research-sweep "${native_dir}/src/tools/research_sweep_main.cpp")
   bike_startup_target_policy(bike-research-sweep "${native_dir}")
   target_link_libraries(bike-research-sweep PRIVATE bike_batch)
   set_target_properties(bike-research-sweep PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-  install(TARGETS bike-research-sweep RUNTIME DESTINATION bin)
+  install(TARGETS bike-research-sweep RUNTIME DESTINATION bin OPTIONAL)
   if(BUILD_TESTING)
     add_executable(bike-test-child "${native_dir}/src/tools/test_child_main.cpp")
     bike_startup_target_policy(bike-test-child "${native_dir}")

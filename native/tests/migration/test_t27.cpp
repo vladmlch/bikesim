@@ -74,13 +74,13 @@ void native_topologies() {
         "native availability includes existing elastic, clutch and rotor branches");
     struct Variant { std::string_view family; bool clutch; double rotor; };
     constexpr std::array variants{
-        Variant{"elastic_chain", false, 0.},
-        Variant{"ideal_mid_drive", false, 0.},
-        Variant{"ideal_mid_drive", true, 0.},
-        Variant{"ideal_mid_drive", false, .02},
-        Variant{"geometric_ideal_mid_drive", false, 0.},
-        Variant{"geometric_ideal_mid_drive", true, 0.},
-        Variant{"geometric_ideal_mid_drive", false, .02}};
+        Variant{.family="elastic_chain", .clutch=false, .rotor=0.},
+        Variant{.family="ideal_mid_drive", .clutch=false, .rotor=0.},
+        Variant{.family="ideal_mid_drive", .clutch=true, .rotor=0.},
+        Variant{.family="ideal_mid_drive", .clutch=false, .rotor=.02},
+        Variant{.family="geometric_ideal_mid_drive", .clutch=false, .rotor=0.},
+        Variant{.family="geometric_ideal_mid_drive", .clutch=true, .rotor=0.},
+        Variant{.family="geometric_ideal_mid_drive", .clutch=false, .rotor=.02}};
     const auto track = bike::terrain::load_track(bt::fixture("tracks/flat.toml"));
     for (const auto& variant : variants) {
         auto request = std::make_unique<bike::model::BuildRequest>();
@@ -100,10 +100,10 @@ void native_topologies() {
         const auto topology = drivetrain::motor_topology(*config.drive);
         const int actuator = bike::model::required_id(*model, mjOBJ_ACTUATOR, "mid_drive");
         const int target = bike::model::required_id(*model, mjOBJ_JOINT, topology.actuator_joint);
-        bt::require(std::views::counted(model->actuator_trnid, 2 * model->nu)[static_cast<std::size_t>(2 * actuator)] == target,
+        bt::require(std::views::counted(model->actuator_trnid, 2 * model->nu)[2U*static_cast<std::size_t>(actuator)] == target,
             "motor actuator targets the selected crank, shaft or rotor joint");
 
-        drivetrain::OwnedData data(engine::make_data(model.get()));
+        drivetrain::OwnedData const data(engine::make_data(model.get()));
         engine::forward(model.get(), data.get());
         auto writer = std::make_unique<drivetrain::DrivetrainWriter>(model.get(), data.get(), *config.drive);
         writer->reset();
@@ -126,7 +126,7 @@ void native_topologies() {
         for (const auto& component : candidate.components) {
             bt::require(component.values.size() == static_cast<std::size_t>(model->nv),
                 "force component width matches the owning model");
-            for (double value : component.values) bt::require(std::isfinite(value), "finite staged force");
+            for (double const value : component.values) bt::require(std::isfinite(value), "finite staged force");
         }
         auto malformed = std::make_unique<drivetrain::DriveSnapshot>(*initial);
         malformed->battery.energy_j = -1.;

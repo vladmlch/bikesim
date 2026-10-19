@@ -101,6 +101,9 @@ private:
     friend std::unique_ptr<RideSimulation> make_ride(RideOptions);
 };
 [[nodiscard]] std::unique_ptr<RideSimulation> make_ride(RideOptions);
+// RideOptions carries the multi-KB setup; the heap-owning overload keeps the
+// by-value argument temporary out of strict caller frames.
+[[nodiscard]] std::unique_ptr<RideSimulation> make_ride(std::unique_ptr<RideOptions>);
 [[nodiscard]] std::unique_ptr<RideSimulation> make_ride(const std::filesystem::path& request);
 
 // Explicit, opt-in legacy CSV recorder. No growing history exists in the

@@ -21,6 +21,7 @@ public:
     [[nodiscard]] RiderLoads loads() const;
     [[nodiscard]] double stored_energy(const mjData&) const;
 private:
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const mjModel& model_;
     std::vector<RiderForcesWriter::Path> paths_;
     std::vector<RiderForcesWriter::Telemetry> telemetry_, staging_;

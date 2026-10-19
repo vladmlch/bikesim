@@ -2,6 +2,7 @@
 #include "analysis_detail.hpp"
 #include <array>
 #include <functional>
+#include <format>
 
 namespace bike::recording {
 namespace {
@@ -11,7 +12,7 @@ std::string display(const Value& value) {
     if (io::is_null(value)) return "unavailable / null";
     const auto source = io::recording_json(value);
     std::string out;
-    for (char c : source) { if (c == '|') out += '\\'; out += c == '\n' ? ' ' : c; }
+    for (char const c : source) { if (c == '|') out += '\\'; out += c == '\n' ? ' ' : c; }
     return out;
 }
 std::string raw(const Object& row, std::string_view name) {
@@ -77,17 +78,19 @@ std::string render(const Query& query) {
             std::string domain = "episode_id=?";
             if (table == "channel_energy" && string(field(field_row, "measurement")) == "forwarded") domain += " AND measured IS TRUE";
             const auto column = quote(name);
-            const auto values = query("SELECT count(*) AS n,count(" + column + ") AS present,count(*) FILTER(WHERE isfinite(" + column +
-                ")) AS finite,min(" + column + ") FILTER(WHERE isfinite(" + column + ")) AS minimum,max(" + column +
-                ") FILTER(WHERE isfinite(" + column + ")) AS maximum FROM " + quote(table) + " WHERE " + domain, params).at(0);
+            const auto values = query(std::format(
+                "SELECT count(*) AS n,count({0}) AS present,count(*) FILTER(WHERE isfinite({0})) AS finite,"
+                "min({0}) FILTER(WHERE isfinite({0})) AS minimum,max({0}) FILTER(WHERE isfinite({0})) AS maximum"
+                " FROM {1} WHERE {2}", column, quote(table), domain), params).at(0);
             Value minimum = field(values, "minimum"), maximum = field(values, "maximum");
             if (string(field(field_row, "phase")) == "episode") {
-                const auto last = query("SELECT " + column + " AS value FROM " + quote(table) + " WHERE " + domain + " ORDER BY interval_id DESC LIMIT 1", params);
+                const auto last = query(std::format("SELECT {} AS value FROM {} WHERE {} ORDER BY interval_id DESC LIMIT 1", column, quote(table), domain), params);
                 minimum = last.empty() ? Value{} : field(last[0], "value"); maximum = text("cumulative: not a peak");
             }
-            out += "| `" + table + '.' + name + "` | " + raw(field_row, "unit") + " / " + raw(field_row, "phase") + " | " + raw(values, "finite") +
-                " | " + std::to_string(count(field(values, "n")) - count(field(values, "present"))) + " | " +
-                std::to_string(count(field(values, "present")) - count(field(values, "finite"))) + " | " + display(minimum) + " | " + display(maximum) + " |\n";
+            out += std::format("| `{}`.{} | {} / {} | {} | {} | {} | {} | {} |\n", table, name,
+                raw(field_row, "unit"), raw(field_row, "phase"), raw(values, "finite"),
+                count(field(values, "n")) - count(field(values, "present")),
+                count(field(values, "present")) - count(field(values, "finite")), display(minimum), display(maximum));
         }
         out += "\nReproduce each extrema row as `SELECT min(FIELD), max(FIELD) FROM TABLE WHERE episode_id=" + std::to_string(id) +
             " AND isfinite(FIELD)`; for `channel_energy` fields marked `forwarded` in `field_catalog`, also require `measured IS TRUE`. "

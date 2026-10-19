@@ -34,14 +34,17 @@ void comparisons_and_playback() {
     bt::invalid([&] { (void)replay::pose_at(data,std::numeric_limits<double>::quiet_NaN()); });
     auto changed=data; changed.times_s[1]=0.; bt::invalid([&] { replay::validate_playback(changed,5,1); });
     changed=data; changed.qvel[1].clear(); bt::invalid([&] { replay::validate_playback(changed,5,1); });
-    changed=data; changed.qpos[1][0]=std::numeric_limits<double>::infinity(); bt::invalid([&] { replay::validate_playback(changed,5,1); });
+    changed=std::move(data); changed.qpos[1][0]=std::numeric_limits<double>::infinity(); bt::invalid([&] { replay::validate_playback(changed,5,1); });
     replay::ReplayInput historical; historical.replay_contract_version=1;
     bool incompatible=false; try { replay::check_execution(historical); } catch(const replay::IncompatibleExecution&) { incompatible=true; }
     bt::require(incompatible,"historical arithmetic is rejected explicitly until qualified, never relabeled as native-executable replay");
 }
-void native_roundtrip() {
+// The request, prepared environment and recording owners are each several KB;
+// three phase functions keep every frame inside the strict stack bound.
+std::unique_ptr<bike::research::ResearchRequest> roundtrip_request() {
     namespace research=bike::research;
-    research::ResearchRequest request;
+    auto owner=std::make_unique<research::ResearchRequest>();
+    auto& request=*owner;
     bike::configuration::SimulationPhysicsConfig physics;
     physics.physics_mode="physical"; physics.drive_mode="crank_effort"; physics.timestep_s=.0005;
     physics.initial_speed_mps=.1; physics.equilibrium_cache_enabled=false;
@@ -53,10 +56,18 @@ void native_roundtrip() {
     request.experiment.record_decimation=1; request.experiment.stop_on_model_violation=false;
     request.sensors=research::SensorConfig::ideal(); request.sensors.sample_period_s=.001;
     request.road_resolution_m=.05; request.capture_mode=runtime::ResearchCaptureMode::full;
-    auto prepared=research::prepare_environment(request);
-    bike::model::ModelOwner model{engine::load_model_image(prepared.bootstrap.ride.model.mjb)};
+    return owner;
+}
+struct NativeRoundTrip {
+    rec::Publication publication;
+    replay::LegacySnapshot legacy;
+};
+NativeRoundTrip record_roundtrip(const std::filesystem::path& root) {
+    namespace research=bike::research;
+    auto prepared=research::prepare_environment(roundtrip_request());
+    bike::model::ModelOwner const model{engine::load_model_image(prepared->bootstrap.ride.model.mjb)};
     const auto catalog=rec::build_catalog(*model);
-    auto environment=runtime::make_research(std::move(prepared.bootstrap));
+    auto environment=runtime::make_research(std::make_unique<runtime::ResearchBootstrap>(std::move(prepared->bootstrap)));
     runtime::RideControl command; command.motor_torque_nm=0.; command.human_torque_nm=0.;
     for (;;) {
         const auto status=research::wire_value(runtime::Wire{environment->status()});
@@ -70,10 +81,12 @@ void native_roundtrip() {
     set(owner.run_metadata,"identity_checks",research::identity_receipt(owner.configuration.metadata));
     const auto summary=research::summarize(owner);
     bt::require(io::as_bool(field(field(summary,"recording_extents"),"replay_eligible"),"eligible"),"clean finite completed recording qualifies structurally");
-    recording_reader_test::Directory tmp;
     rec::RunCapture run(recording_fixture::metadata("00000000-0000-4000-8000-000000000044"));
     run.add_episode(rec::make_research_evidence(0,std::move(owner),catalog,summary));
-    const auto publication=rec::finalize(run,tmp.path / "runs"); environment->close();
+    auto publication=rec::finalize(run,root / "runs"); environment->close();
+    return {.publication=std::move(publication),.legacy=std::move(legacy)};
+}
+void replay_roundtrip(const rec::Publication& publication) {
     replay::ReplaySession session(publication.directory,0);
     const auto initial=session.snapshot();
     bt::require(!session.advance(0.,0)&&session.pending()&&session.snapshot().step==initial.step,"zero-budget yield keeps one accepted pending control without integrating");
@@ -90,10 +103,12 @@ void native_roundtrip() {
     const auto rendered=playback.frame(.001,2);
     bt::require(rendered.state.generation==2&&rendered.state.time_s==.001&&rendered.model_sha256==playback.model_image().sha256,
         "saved-state playback produces owned model-bound frames without a live replay control loop");
+}
+void tamper_roundtrip(replay::LegacySnapshot& legacy, const std::filesystem::path& root) {
     bt::require(!legacy.data.transitions.empty(),"test includes actual transitions");
     auto& transition=legacy.data.transitions.front();
     set(transition,"numerically_valid",Value{!io::as_bool(field(transition,"numerically_valid"),"numerical")});
-    const auto tampered=tmp.path/"changed-evidence"; (void)replay::export_legacy(legacy,tampered);
+    const auto tampered=root/"changed-evidence"; (void)replay::export_legacy(legacy,tampered);
     replay::ReplaySession failing(tampered,0);
     recording_reader_test::rejects([&] { while(!failing.advance(.008)){} });
     const auto diagnostic=failing.diagnostics();
@@ -101,6 +116,12 @@ void native_roundtrip() {
         !io::as_bool(field(diagnostic,"passed"),"passed"),"real runtime rejects altered transition evidence with structured first mismatch");
     bt::require(failing.snapshot().step==0&&failing.snapshot().generation>0,"failed verification restores the last verified frame under a newer presentation generation");
     failing.close();
+}
+void native_roundtrip() {
+    recording_reader_test::Directory const tmp;
+    auto recorded=record_roundtrip(tmp.path);
+    replay_roundtrip(recorded.publication);
+    tamper_roundtrip(recorded.legacy,tmp.path);
 }
 }
 int main(){return bt::run([]{comparisons_and_playback();native_roundtrip();});}

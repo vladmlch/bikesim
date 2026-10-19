@@ -9,11 +9,12 @@
 #include <cmath>
 #include <limits>
 #include <functional>
+#include <utility>
 
 namespace bike::replay {
 namespace {
 using namespace detail;
-constexpr std::size_t maximum_state_values = 64 * 1024 * 1024;
+constexpr std::size_t maximum_state_values = std::size_t{64} * 1024 * 1024;
 struct DataDeleter { void operator()(mjData* data) const noexcept { mj_deleteData(data); } };
 using DataOwner = std::unique_ptr<mjData, DataDeleter>;
 
@@ -28,23 +29,23 @@ void append(PlaybackData& output, const Value& row, std::size_t& stored_values) 
     output.qpos.push_back(std::move(q)); output.qvel.push_back(std::move(v));
 }
 runtime::ModelImage reconstruct_model(const ReplayInput& input) {
-    FixedAssets assets(input);
+    FixedAssets const assets(input);
     auto request = request_from_input(input, assets);
     // Recreate visual topology from the immutable recipe. This is model
-    // compilation only: no settle(), controller construction or mj_step().
-    auto model = model::compile_mjcf(model::generate_mjcf(request.setup.model), assets.path());
+    // compilation only: no settle(), controller construction or stepping.
+    auto model = model::compile_mjcf(model::generate_mjcf(request->setup.model), assets.path());
     const int road = mj_name2id(model.get(), mjOBJ_HFIELD, "road");
     if (road < 0) throw recording::RecordingError("playback model lacks recorded road heightfield");
-    const auto heights = terrain::build_field_data(request.setup.track, request.setup.model.field);
+    const auto heights = terrain::build_field_data(request->setup.track, request->setup.model.field);
     const auto road_index=static_cast<std::size_t>(road);
     const auto rows=model_access::readonly_buffer(model->hfield_nrow,model->nhfield);
     const auto cols=model_access::readonly_buffer(model->hfield_ncol,model->nhfield);
     if(rows[road_index]<2 || cols[road_index]<2)throw recording::RecordingError("playback heightfield needs at least two rows and columns");
-    auto raster=model_access::mutable_buffer(model->hfield_data,model->nhfielddata);
+    auto const raster=model_access::mutable_buffer(model->hfield_data,model->nhfielddata);
     const auto count = model_access::checked_product(static_cast<std::size_t>(rows[road_index]),static_cast<std::size_t>(cols[road_index]),raster.size());
     if (heights.size() != count) throw recording::RecordingError("playback heightfield dimensions differ from recipe");
     const auto address = model_access::readonly_buffer(model->hfield_adr,model->nhfield)[road_index];
-    if (address < 0 || address > model->nhfielddata || count > static_cast<std::size_t>(model->nhfielddata - address))
+    if (address < 0 || address > model->nhfielddata || std::cmp_greater(count ,model->nhfielddata - address))
         throw recording::RecordingError("playback road address is outside heightfield storage");
     for (std::size_t i = 0; i < count; ++i) {
         if (!std::isfinite(heights[i]) || heights[i] < 0. || heights[i] > 1.) throw recording::RecordingError("playback normalized road height is outside [0,1]");
@@ -56,12 +57,13 @@ std::pair<std::size_t, double> bracket(const PlaybackData& data, double time_s) 
     if (!std::isfinite(time_s)) throw std::invalid_argument("pose_at requires a finite time");
     if (data.times_s.empty()) throw std::invalid_argument("playback has no recorded frames");
     const double time = std::clamp(time_s, 0., data.duration_s);
-    const auto after = std::upper_bound(data.times_s.begin(), data.times_s.end(), time);
+    const auto after = std::ranges::upper_bound(data.times_s, time);
     if (after == data.times_s.begin()) return {0, 0.};
     const auto index = static_cast<std::size_t>(after - data.times_s.begin() - 1);
     if (index + 1 == data.times_s.size()) return {index, 0.};
     return {index, (time - data.times_s[index]) / (data.times_s[index + 1] - data.times_s[index])};
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 std::vector<double> interpolate(const std::vector<std::vector<double>>& rows, std::size_t index, double weight) {
     auto value = rows.at(index);
     if (weight == 0.) return value;
@@ -122,7 +124,7 @@ PlaybackData load_playback(const std::filesystem::path& path, std::optional<std:
         for (const auto& row : reader.rows("SELECT name,content FROM assets WHERE episode_id=? ORDER BY name", params))
             input.assets.emplace(string(field(row, "name")), std::get<io::Bytes>(field(row, "content").data).value);
         if (const auto image = input.assets.find("model.mjb"); image != input.assets.end())
-            output.model = {image->second, io::sha256(image->second)};
+            output.model = {.mjb=image->second, .sha256=io::sha256(image->second)};
         else {
             // Stored poses remain viewable for interrupted/unqualified runs.
             // Their container and asset hashes still validate through reader.
@@ -201,13 +203,14 @@ PlaybackSession::~PlaybackSession() = default;
 const runtime::ModelImage& PlaybackSession::model_image() const noexcept { return impl_->evidence.model; }
 double PlaybackSession::duration_s() const noexcept { return impl_->evidence.duration_s; }
 const PlaybackData& PlaybackSession::data() const noexcept { return impl_->evidence; }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 runtime::RenderFrame PlaybackSession::frame(double time_s, int generation) {
     if (generation < 0) throw std::invalid_argument("playback generation must be nonnegative");
     auto& p = *impl_; const auto index = bracket(p.evidence, time_s).first;
     const auto qpos = pose_at(p.evidence, time_s);
     // Source playback_viewer uses searchsorted's right keyframe for velocity;
     // only generalized position is interpolated between saved intervals.
-    const auto found = std::lower_bound(p.evidence.times_s.begin(), p.evidence.times_s.end(), std::clamp(time_s, 0., p.evidence.duration_s));
+    const auto found = std::ranges::lower_bound(p.evidence.times_s, std::clamp(time_s, 0., p.evidence.duration_s));
     const auto velocity_index = std::min(static_cast<std::size_t>(found - p.evidence.times_s.begin()), p.evidence.qvel.size() - 1);
     const auto& qvel = p.evidence.qvel[velocity_index];
     engine::reset_data(p.model.get(), p.data.get());

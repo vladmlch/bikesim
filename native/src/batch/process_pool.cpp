@@ -35,7 +35,7 @@ std::vector<Result> execute(std::span<const Job> jobs,unsigned workers,const Exe
     for(std::size_t i=0;i<jobs.size();++i)results[i].id=jobs[i].id;
     std::atomic<std::size_t> next{0};
     std::stop_source stop;
-    std::stop_callback relay(options.cancellation,[&]{stop.request_stop();});
+    std::stop_callback const relay(options.cancellation,[&]{stop.request_stop();});
     std::mutex mutex;
     std::condition_variable wake;
     // Allocate delivery storage before launching a child. Result delivery
@@ -44,8 +44,8 @@ std::vector<Result> execute(std::span<const Job> jobs,unsigned workers,const Exe
     std::size_t published=0;
     std::exception_ptr fatal;
     std::vector<std::jthread> pool;
-    const auto work=[&](std::stop_token thread_stop) {
-        std::stop_callback relay_thread(thread_stop,[&]{stop.request_stop();});
+    const auto work=[&](const std::stop_token& thread_stop) {
+        std::stop_callback const relay_thread(thread_stop,[&]{stop.request_stop();});
         try {
         for(;;) {
             const auto index=next.fetch_add(1,std::memory_order_relaxed);if(index>=jobs.size())return;
@@ -65,11 +65,11 @@ std::vector<Result> execute(std::span<const Job> jobs,unsigned workers,const Exe
             } catch(...) { result.exit_code=-1;result.err="non-standard worker failure"; }
             result.wall_s=std::chrono::duration<double>(Clock::now()-started).count();
             // No reader observes the result before the queue's release/acquire.
-            {std::lock_guard lock(mutex);completed[published++]=index;}
+            {std::scoped_lock const lock(mutex);completed[published++]=index;}
             wake.notify_one();
         }
         } catch(...) {
-            {std::lock_guard lock(mutex);if(!fatal)fatal=std::current_exception();}
+            {std::scoped_lock const lock(mutex);if(!fatal)fatal=std::current_exception();}
             stop.request_stop();wake.notify_one();
         }
     };

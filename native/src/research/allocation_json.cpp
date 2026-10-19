@@ -1,4 +1,4 @@
-#include "allocation.hpp"
+#include "../rider/allocation.hpp"
 #include "../io/value.hpp"
 #include "../numerics/dense.hpp"
 #include <algorithm>
@@ -26,7 +26,7 @@ std::vector<double> vector(const io::Value& value,bool bounds=false) {
     return out;
 }
 Matrix matrix(const io::Value& value,std::size_t columns) {
-    Matrix out{0,columns,{}};
+    Matrix out{.rows=0,.cols=columns,.values={}};
     for(const auto& row:io::as_array(value,"allocation matrix")) {
         const auto data=vector(row);
         bike::numerics::dense::append_row(out,data);
@@ -39,7 +39,7 @@ AllocationProblem allocation_problem_from_json(const io::Value& value) {
     const std::array<std::string_view,10> keys{"target","equality","equality_rhs","inequality","inequality_rhs","lower","upper","extra","initial","fixture"};
     for(const auto& [key,v]:object){(void)v;if(std::ranges::find(keys,key)==keys.end())throw std::invalid_argument("allocation fixture: unknown field "+key);}
     AllocationProblem p;p.target=vector(member(object,"target"));const auto n=p.target.size();
-    p.equality={0,n,{}};p.inequality={0,n,{}};
+    p.equality={.rows=0,.cols=n,.values={}};p.inequality={.rows=0,.cols=n,.values={}};
     if(const auto* a=io::find_member(object,"equality"))p.equality=matrix(*a,n);
     if(const auto* b=io::find_member(object,"equality_rhs"))p.equality_rhs=vector(*b);
     if(const auto* a=io::find_member(object,"inequality"))p.inequality=matrix(*a,n);

@@ -859,10 +859,10 @@ def run_controller_kind(kind: str, *, timeout: int = 180) -> subprocess.Complete
 
 def test_standalone_header_sweep_compiles_first_party_headers() -> None:
     # The sweep compiles every first-party header in every library
-    # target's context: 112 headers x 9 contexts = 1008 header TUs and
-    # ~290 s on this machine (each new native library adds another
-    # context — bike_geometry/bike_kinematics grew the matrix ~30%).
-    result = run_controller_kind("headers", timeout=480)
+    # target's context: 228 headers x ~32 contexts = 7194 header TUs and
+    # ~40 min on this machine (each new native library adds another
+    # context — the matrix has grown ~7x since the first calibration).
+    result = run_controller_kind("headers", timeout=3600)
 
     assert result.returncode == 0, result.stdout + result.stderr
     summary = json.loads(

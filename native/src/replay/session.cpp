@@ -6,6 +6,8 @@
 #include "../rider/state_codec.hpp"
 #include <algorithm>
 #include <set>
+#include <utility>
+#include <format>
 
 namespace bike::replay {
 IncompatibleExecution::~IncompatibleExecution() = default;
@@ -15,9 +17,14 @@ class MismatchFailure final : public recording::RecordingError {
 public:
     explicit MismatchFailure(Comparison value) : RecordingError(value.first_path + ": " + value.reason), comparison(std::move(value)) {}
     ~MismatchFailure() override;
+    MismatchFailure(const MismatchFailure&) = default;
+    MismatchFailure& operator=(const MismatchFailure&) = default;
+    MismatchFailure(MismatchFailure&&) = default;
+    MismatchFailure& operator=(MismatchFailure&&) = default;
     Comparison comparison;
 };
 MismatchFailure::~MismatchFailure() = default;
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void compare_tree(const Value& actual, const Value& expected, const std::string& path, Comparison& result) {
     const auto fail = [&](std::string why) {
         if (result.matched) { result.matched = false; result.first_path = path; result.reason = std::move(why); }
@@ -25,7 +32,7 @@ void compare_tree(const Value& actual, const Value& expected, const std::string&
     if (const auto* object = std::get_if<Object>(&expected.data)) {
         const auto* current = std::get_if<Object>(&actual.data);
         if (!current || keys(actual) != keys(expected)) { fail("different fields"); return; }
-        for (const auto& [key, value] : *object) compare_tree(field(*current, key), value, path + '.' + key, result);
+        for (const auto& [key, value] : *object) compare_tree(field(*current, key), value, std::format("{}.{}", path, key), result);
     } else if (const auto* array = std::get_if<Array>(&expected.data)) {
         const auto* current = std::get_if<Array>(&actual.data);
         if (!current || current->size() != array->size()) { fail("different array length"); return; }
@@ -46,21 +53,21 @@ void require_evidence(const Value& actual, const Value& expected, const std::str
     if (!compared.matched) throw MismatchFailure(compared);
 }
 double require_state(std::span<const double> actual, std::span<const double> expected, const std::string& label) {
-    if (actual.size() != expected.size()) throw MismatchFailure({false, label, "incompatible state shape", 0.});
+    if (actual.size() != expected.size()) throw MismatchFailure({.matched=false, .first_path=label, .reason="incompatible state shape", .max_absolute_error=0.});
     double maximum = 0.; std::optional<std::size_t> first;
     for (std::size_t i = 0; i < actual.size(); ++i) {
-        if (!std::isfinite(actual[i]) || !std::isfinite(expected[i])) throw MismatchFailure({false, label + '[' + std::to_string(i) + ']', "nonfinite state", maximum});
+        if (!std::isfinite(actual[i]) || !std::isfinite(expected[i])) throw MismatchFailure({.matched=false, .first_path=label + '[' + std::to_string(i) + ']', .reason="nonfinite state", .max_absolute_error=maximum});
         const double error = std::abs(actual[i] - expected[i]); maximum = std::max(maximum, error);
         // numpy.allclose's asymmetric state rule, kept distinct from the
         // recursive evidence comparator's math.isclose rule.
         if (error > 1e-9 + 1e-9 * std::abs(expected[i]) && !first) first = i;
     }
-    if (first) throw MismatchFailure({false, label + '[' + std::to_string(*first) + ']', "integration state differs", maximum});
+    if (first) throw MismatchFailure({.matched=false, .first_path=label + '[' + std::to_string(*first) + ']', .reason="integration state differs", .max_absolute_error=maximum});
     return maximum;
 }
 Value status(const runtime::NativeResearchRuntime& environment) { return research::wire_value(runtime::Wire{environment.status()}); }
 } // namespace
-Comparison compare_evidence(const io::Value& actual, const io::Value& expected, std::string path) {
+Comparison compare_evidence(const io::Value& actual, const io::Value& expected, const std::string& path) {
     Comparison result; compare_tree(actual, expected, path, result); return result;
 }
 
@@ -84,23 +91,28 @@ struct ReplaySession::Impl {
     std::string replay_executable_sha256;
 
     Impl(std::filesystem::path path, std::optional<std::int64_t> selected, int next_generation = 0)
-        : directory(std::move(path)), episode(selected), input(load_replay_input(directory, episode)), generation(next_generation) {
+        : directory(std::move(path)), episode(selected), input(load_replay_input(directory, episode)), verified(frame), generation(next_generation) {
         check_execution(input);
         replay_executable_sha256 = platform::build_identity().executable_sha256;
         assets = std::make_unique<FixedAssets>(input);
-        auto prepared = research::prepare_environment(request_from_input(input, *assets));
-        verify_configuration(input, prepared);
-        model = prepared.bootstrap.ride.model.mjb;
-        environment = runtime::make_research(std::move(prepared.bootstrap));
+        start();
         (void)require_state(environment->snapshot().integration_state, input.initial_state, "initial integration state");
         require_evidence(field(status(*environment), "observation"), input.observations.at(0), "initial observation", max_error);
-        frame = environment->render_frame(); frame.state.generation = generation; verified = frame;
+        frame = environment->render_frame(); frame.state.generation = generation; 
+    }
+    // The request and prepared environment each exceed the strict stack bound;
+    // both stay heap-owned so this frame only carries a pair of unique_ptrs.
+    void start() {
+        auto prepared = research::prepare_environment(request_from_input(input, *assets));
+        verify_configuration(input, *prepared);
+        model = prepared->bootstrap.ride.model.mjb;
+        environment = runtime::make_research(std::move(prepared->bootstrap));
     }
     void require_open() const { if (closed) throw std::runtime_error("replay session is closed"); }
     void applied_prefix() {
         const auto prefix = research::wire_value(runtime::Wire{environment->prepare_applied_since(applied)});
         const auto cursor = count(field(prefix, "next_cursor")); const auto& rows = io::as_array(field(prefix, "rows"), "applied rows");
-        if (cursor < applied || static_cast<std::uint64_t>(cursor - applied) != rows.size() || static_cast<std::uint64_t>(cursor) > input.applied.size())
+        if (cursor < applied || std::cmp_not_equal(cursor - applied, rows.size()) || std::cmp_greater(cursor, input.applied.size()))
             throw recording::RecordingError("applied commands: replay produced extra events or an invalid cursor");
         for (std::size_t i = 0; i < rows.size(); ++i)
             require_evidence(rows[i], input.applied.at(static_cast<std::size_t>(applied) + i), "applied commands[" + std::to_string(applied + static_cast<std::int64_t>(i)) + ']', max_error);
@@ -109,7 +121,7 @@ struct ReplaySession::Impl {
     void capture_verified() { frame = environment->render_frame(); frame.state.generation = generation; verified = frame; }
     void finish() {
         applied_prefix();
-        if (static_cast<std::uint64_t>(applied) != input.applied.size()) throw recording::RecordingError("applied commands: replay omitted recorded events");
+        if (std::cmp_not_equal(applied, input.applied.size())) throw recording::RecordingError("applied commands: replay omitted recorded events");
         auto expected_reason = field(field(input.summary, "outcome"), "reason");
         if (const auto* reason = std::get_if<std::string>(&expected_reason.data); reason && *reason == "not_finished") expected_reason = Value{};
         auto current = status(*environment);
@@ -207,6 +219,7 @@ bool ReplaySession::advance(std::optional<double> wall_budget, std::optional<std
     } catch (const std::exception& error) {
         p.mismatch = error.what();
         p.failure_step = p.frame.state.step;
+        // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
         try { p.failure_step = p.environment->snapshot().step; } catch (...) { /* Keep the last safely copied boundary. */ }
         if (const auto* compared = dynamic_cast<const MismatchFailure*>(&error)) p.first_mismatch = compared->comparison;
         // A verified-boundary rollback can move time backwards after a UI
@@ -234,21 +247,22 @@ ReplayResult check(const std::filesystem::path& path, std::int64_t episode) {
         catch (const std::exception& error) {
             auto details = session.diagnostics();
             if (dynamic_cast<const IncompatibleExecution*>(&error)) set(details, "status", text("incompatible-execution"));
+            // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
             try { session.close(); } catch (...) { /* Preserve the numerical mismatch as primary. */ }
-            return {false, false, error.what(), std::move(details)};
+            return {.matched=false, .physically_valid=false, .reason=error.what(), .details=std::move(details)};
         }
         auto details = session.report();
         const bool valid = io::as_bool(field(details, "numerically_valid"), "numerically_valid") && io::as_bool(field(details, "model_valid"), "model_valid");
-        session.close(); return {true, valid, valid ? "matched" : "matched invalid numerical/model evidence", std::move(details)};
+        session.close(); return {.matched=true, .physically_valid=valid, .reason=valid ? "matched" : "matched invalid numerical/model evidence", .details=std::move(details)};
     } catch (const IncompatibleExecution& error) {
-        return {false, false, error.what(), Value{Object{{"passed", Value{false}}, {"status", text("incompatible-execution")},
+        return {.matched=false, .physically_valid=false, .reason=error.what(), .details=Value{Object{{"passed", Value{false}}, {"status", text("incompatible-execution")},
             {"reason", text(error.what())}, {"stored_state_playback_available", Value{true}}}}};
     } catch (const MismatchFailure& error) {
-        return {false, false, error.what(), Value{Object{{"passed", Value{false}}, {"status", text("mismatch")}, {"reason", text(error.what())},
+        return {.matched=false, .physically_valid=false, .reason=error.what(), .details=Value{Object{{"passed", Value{false}}, {"status", text("mismatch")}, {"reason", text(error.what())},
             {"first_mismatch_step", integer(0)}, {"first_mismatch_field", text(error.comparison.first_path)},
             {"maximum_absolute_error", real(error.comparison.max_absolute_error)}}}};
     } catch (const std::exception& error) {
-        return {false, false, error.what(), Value{Object{{"passed", Value{false}}, {"status", text("mismatch-or-invalid-input")}, {"reason", text(error.what())}}}};
+        return {.matched=false, .physically_valid=false, .reason=error.what(), .details=Value{Object{{"passed", Value{false}}, {"status", text("mismatch-or-invalid-input")}, {"reason", text(error.what())}}}};
     }
 }
 } // namespace bike::replay

@@ -15,19 +15,25 @@ class IncompatibleExecution : public std::invalid_argument {
 public:
     using std::invalid_argument::invalid_argument;
     ~IncompatibleExecution() override;
+    IncompatibleExecution(const IncompatibleExecution&) = default;
+    IncompatibleExecution& operator=(const IncompatibleExecution&) = default;
+    IncompatibleExecution(IncompatibleExecution&&) = default;
+    IncompatibleExecution& operator=(IncompatibleExecution&&) = default;
 };
 struct Comparison {
     bool matched = true;
     std::string first_path, reason;
     double max_absolute_error = 0.;
 };
-[[nodiscard]] Comparison compare_evidence(const io::Value& actual, const io::Value& expected, std::string path = "evidence");
+[[nodiscard]] Comparison compare_evidence(const io::Value& actual, const io::Value& expected, const std::string& path = "evidence");
 class ReplaySession {
 public:
     explicit ReplaySession(const std::filesystem::path&, std::optional<std::int64_t> episode = {});
     ~ReplaySession();
     ReplaySession(const ReplaySession&) = delete;
     ReplaySession& operator=(const ReplaySession&) = delete;
+    ReplaySession(ReplaySession&&) = delete;
+    ReplaySession& operator=(ReplaySession&&) = delete;
     [[nodiscard]] bool advance(std::optional<double> wall_budget_s = {}, std::optional<std::int64_t> target_step = {});
     [[nodiscard]] bool done() const noexcept;
     [[nodiscard]] bool pending() const;

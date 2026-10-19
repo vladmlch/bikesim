@@ -681,14 +681,22 @@ def _rcp02_config(ctx: Context):
 
     # --- request files (interface-contracts section 3 schema) ---
     requests = {
+        # The welded bootstrap oracle restores a captured t=0 state: the
+        # initial_state_file transfers that pose instead of re-solving or
+        # consulting the derived-name cache, keeping every choice explicit.
         "welded_flat": dict(physics="../config/viewer_physics_welded.toml",
                             track="../tracks/flat.toml", mode="ride",
                             rider="articulated_planar", speed="0.0",
-                            seed="1234", cache="false", extra=""),
+                            seed="1234", cache="false",
+                            extra='initial_state_file = "../initial_state/welded_flat.json"\n'),
+        # legacy.toml leaves drive_mode to post_init (ideal_speed_control);
+        # the RCP-01 bootstrap recipe pins drive_mode="coast", so the request
+        # carries that effective choice explicitly through [overrides].
         "legacy_flat": dict(physics="../config/legacy.toml",
                             track="../tracks/flat.toml", mode="ride",
                             rider="lumped", speed="10.0",
-                            seed="1234", cache="false", extra=""),
+                            seed="1234", cache="false",
+                            extra='[overrides]\ndrive_mode = "coast"\n'),
         "pneumatic_flat": dict(physics="../config/viewer_physics_pneumatic.toml",
                                track="../tracks/flat.toml", mode="ride",
                                rider="articulated_planar", speed="0.0",
@@ -1164,6 +1172,24 @@ def _rcp01_bootstrap(ctx: Context):
                 files=files,
                 inputs=[out.root / "requests/welded_flat.toml"],
                 notes="startup outputs for the matching frozen-flat request")
+        # requests/welded_flat.toml restores this captured t=0 state through
+        # the audited initial-state transfer. A second build is a guaranteed
+        # equilibrium-cache hit (the first build saved the entry), so the
+        # captured qacc_warmstart is the canonical zeroed restore value and
+        # the fixture bytes are deterministic on cold and warm caches.
+        from bike_sim.sim.ride.initial_state import PhysicalInitialState
+        sim_is = ride_cli.build_physical_simulation_from_args(args)
+        transferred = PhysicalInitialState.capture(sim_is)
+        record = out.text("initial_state/welded_flat.json",
+                          transferred.payload_json)
+        rec.add("initial_state/welded_flat.json", recipe="RCP-01",
+                group="bootstrap", comparison="S",
+                expected={"kind": "accepted"},
+                produced_by="PhysicalInitialState.capture on a welded-flat "
+                            "cache-hit build",
+                files=[record],
+                inputs=[out.root / "requests/welded_flat.toml"],
+                notes="t=0 state transferred by requests/welded_flat.toml")
     except Exception as exc:
         rec.blocker("bootstrap/native_start_welded", "RCP-01",
                     "".join(traceback.format_exception(exc))[-2000:])

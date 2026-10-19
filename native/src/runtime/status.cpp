@@ -223,6 +223,18 @@ WireObject ModelStatus::as_wire() const {
             {"calibration_status", Wire(calibration_status)}};
 }
 
+WireObject ModelStatus::state_wire() const {
+    WireObject counted;
+    for (const auto &[name, count] : counts) counted.emplace_back(name, Wire(count));
+    return {{"counts", Wire(std::move(counted))},
+            {"first", first.has_value() ? Wire(*first) : Wire(nullptr)},
+            {"last_interval", Wire(last_interval)},
+            {"maximum_compression_fraction", Wire(maximum_compression_fraction)},
+            {"maximum_linkage_error_m", Wire(maximum_linkage_error_m)},
+            {"numerically_valid", numerically_valid},
+            {"calibration_status", Wire(calibration_status)}};
+}
+
 ModelStatus ModelStatus::from_wire(const WireObject &value) {
     constexpr std::array<std::string_view, 7> keys{
         "counts", "first", "last_interval", "maximum_compression_fraction",

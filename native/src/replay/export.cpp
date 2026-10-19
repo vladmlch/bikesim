@@ -8,12 +8,14 @@
 #include <cstdlib>
 #include <limits>
 #include <system_error>
+#include <unistd.h>
 
 namespace bike::replay {
 namespace {
 using namespace detail;
 constexpr std::array fixed_files{"summary.json", "commands_requested.jsonl", "commands_applied.jsonl", "observations.jsonl",
     "transitions.jsonl", "states.npz", "terrain_vertices.npy", "track.toml", "trace.csv", "episode_metrics.json", "telemetry.csv", "intervals.jsonl"};
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void plain(const Value& value) {
     if (std::holds_alternative<io::Tagged>(value.data) || std::holds_alternative<io::Bytes>(value.data))
         throw recording::RecordingError("legacy JSON cannot represent tagged/nonfinite/byte evidence; use the lossless recording export");
@@ -33,7 +35,7 @@ std::string json(const Value& value, bool pretty = false) {
     for (std::size_t i = 0; i < compact.size(); ++i) {
         const auto first = static_cast<unsigned char>(compact[i]);
         if (first < 128) { escaped_ascii += compact[i]; continue; }
-        unsigned remaining = first < 224 ? 1U : first < 240 ? 2U : 3U;
+        unsigned const remaining = first < 224 ? 1U : first < 240 ? 2U : 3U;
         std::uint32_t code = first & ((1U << (6U - remaining)) - 1U);
         for (unsigned j = 0; j < remaining; ++j) code = (code << 6U) | (static_cast<unsigned char>(compact[++i]) & 63U);
         if (code < 0x10000U) unicode(code);
@@ -75,7 +77,7 @@ std::string csv_row(const std::vector<std::string>& cells) {
         if (i) out += ',';
         const auto& cell = cells[i]; const bool quote = cell.find_first_of(",\"\r\n") != std::string::npos || (cells.size() == 1 && cell.empty());
         if (quote) out += '"';
-        for (char c : cell) { out += c; if (c == '"') out += '"'; }
+        for (char const c : cell) { out += c; if (c == '"') out += '"'; }
         if (quote) out += '"';
     }
     return out + "\r\n";
@@ -136,6 +138,7 @@ void telemetry(const std::filesystem::path& path, const runtime::SampleColumns& 
     platform::sync(file); file.close();
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void le(std::vector<std::byte>& output, std::uint32_t value, unsigned bytes) {
     for (unsigned i = 0; i < bytes; ++i) { output.push_back(static_cast<std::byte>(value & 255U)); value >>= 8U; }
 }
@@ -150,8 +153,8 @@ std::uint32_t crc(std::span<const std::byte> bytes) {
 std::vector<std::byte> states(const ReplayInput& input) {
     if (input.initial_state.empty() || input.initial_state.size() != input.final_state.size()) throw recording::RecordingError("legacy initial/final integration state dimensions disagree");
     struct Member { std::string name; std::vector<std::byte> bytes; std::uint32_t crc = 0, offset = 0; };
-    std::array members{Member{"initial.npy", io::encode_npy(io::double_array(input.initial_state, {input.initial_state.size()}))},
-        Member{"final.npy", io::encode_npy(io::double_array(input.final_state, {input.final_state.size()}))}};
+    std::array members{Member{.name="initial.npy", .bytes=io::encode_npy(io::double_array(input.initial_state, {input.initial_state.size()}))},
+        Member{.name="final.npy", .bytes=io::encode_npy(io::double_array(input.final_state, {input.final_state.size()}))}};
     std::vector<std::byte> output;
     // A standards-compliant stored ZIP: no compression/provider dependency.
     // The .npy member bytes, shape, endian and values are the source contract;
@@ -184,6 +187,10 @@ public:
     }
     ~Staging() { std::error_code ignored; std::filesystem::remove_all(path, ignored); }
     std::filesystem::path path;
+    Staging(const Staging&) = delete;
+    Staging& operator=(const Staging&) = delete;
+    Staging(Staging&&) = delete;
+    Staging& operator=(Staging&&) = delete;
 };
 void destination_check(const std::filesystem::path& destination, bool overwrite) {
     const auto status = std::filesystem::symlink_status(destination);
@@ -233,7 +240,7 @@ LegacySnapshot capture_legacy(runtime::OwnedResearchEpisode episode) {
     set(data.summary, "research", std::move(research_metadata));
     return output;
 }
-LegacySnapshot capture_legacy(runtime::NativeResearchRuntime& environment) { return capture_legacy(environment.legacy_snapshot()); }
+LegacySnapshot capture_legacy(runtime::NativeResearchRuntime const& environment) { return capture_legacy(environment.legacy_snapshot()); }
 
 io::Value export_legacy(const LegacySnapshot& snapshot, const std::filesystem::path& destination, bool overwrite) {
     if (destination.empty()) throw std::invalid_argument("legacy output directory is required");
@@ -250,7 +257,7 @@ io::Value export_legacy(const LegacySnapshot& snapshot, const std::filesystem::p
         {"checked_replay_qualified_by_export", Value{false}}}};
     set(summary, "compatibility_export", compatibility);
     const auto parent = destination.parent_path().empty() ? std::filesystem::path(".") : destination.parent_path();
-    std::filesystem::create_directories(parent); Staging staging(parent);
+    std::filesystem::create_directories(parent); Staging const staging(parent);
     write(staging.path / "summary.json", json(summary, true) + '\n');
     lines(staging.path / "commands_requested.jsonl", data.requested); lines(staging.path / "commands_applied.jsonl", data.applied);
     lines(staging.path / "observations.jsonl", data.observations); lines(staging.path / "transitions.jsonl", data.transitions);
@@ -288,7 +295,7 @@ io::Value export_legacy(const LegacySnapshot& snapshot, const std::filesystem::p
     platform::link_new(staging.path / "replay.json", destination / "replay.json"); platform::sync_directory(destination); platform::sync_directory(parent);
     return Value{Object{{"output", text(destination.string())}, {"schema_version", integer(2)}, {"compatibility", compatibility}}};
 }
-io::Value export_legacy(runtime::NativeResearchRuntime& environment, const std::filesystem::path& path, bool overwrite) {
+io::Value export_legacy(const runtime::NativeResearchRuntime& environment, const std::filesystem::path& path, bool overwrite) {
     const auto snapshot = capture_legacy(environment); return export_legacy(snapshot, path, overwrite);
 }
 } // namespace bike::replay

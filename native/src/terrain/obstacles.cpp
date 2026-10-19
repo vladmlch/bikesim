@@ -33,10 +33,12 @@ template<class T> auto make_nodes(const T& o) {
         double smooth=raw[i]*weights[4];
         // NI_Correlate1D's symmetric loop walks negative offsets -radius
         // through -1: outermost pair first, after the center contribution.
+        // The scipy binary's `out += (l+r)*w` contracts to fmadd; spell the
+        // fma because the project build pins -ffp-contract=off.
         for(std::size_t j=4;j>0;--j) {
             const std::size_t left=i<j?0:i-j;
             const std::size_t right=std::min(i+j,n-1);
-            smooth+=(raw[left]+raw[right])*weights[4-j];
+            smooth=std::fma(raw[left]+raw[right],weights[4-j],smooth);
         }
         double taper=1.;
         if(x[i]<taper_len) taper=.5*(1.-numeric::cos(pi*x[i]/taper_len));
@@ -121,7 +123,7 @@ void Obstacle::validate() const {
     },shape);
 }
 std::vector<double> Obstacle::elevation(std::span<const double> points) const {
-    validate(); for(double x:points) detail::finite(x,"Obstacle.local_x");
+    validate(); for(double const x:points) detail::finite(x,"Obstacle.local_x");
     return std::visit([&](const auto& s) {
         using T=std::decay_t<decltype(s)>;
         std::vector<double> out(points.size(),0.);
@@ -129,7 +131,7 @@ std::vector<double> Obstacle::elevation(std::span<const double> points) const {
             const auto [x,z]=s.nodes(); for(std::size_t i=0;i<out.size();++i) out[i]=detail::gd::np_interp(points[i],x,z);
         } else if constexpr(std::is_same_v<T,Roots>) {
             const double half=s.width_m/2.;
-            for(double center:s.bump_centres_m()) for(std::size_t i=0;i<out.size();++i) {
+            for(double const center:s.bump_centres_m()) for(std::size_t i=0;i<out.size();++i) {
                 const double d=std::abs(points[i]-center);
                 if(d<half) out[i]+=s.height_m*.5*(1.+numeric::cos(pi*d/half));
             }
@@ -174,7 +176,7 @@ std::vector<double> Obstacle::elevation(std::span<const double> points) const {
                 }
             }
         }
-        for(double value:out) detail::finite(value,"Obstacle.elevation");
+        for(double const value:out) detail::finite(value,"Obstacle.elevation");
         return out;
     },shape);
 }

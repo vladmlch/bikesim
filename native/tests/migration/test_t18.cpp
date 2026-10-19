@@ -52,7 +52,7 @@ mdl::ModelOwner compiled(const mdl::BuildRequest& request, const trn::TrackSpec&
     const auto samples = trn::build_field_data(track, request.field);
     bt::require(offset >= 0 && std::cmp_less_equal(offset, result->nhfielddata), "road address is in range");
     bt::require(samples.size() <= static_cast<std::size_t>(result->nhfielddata - offset), "road samples fit engine storage");
-    auto target = std::views::counted(result->hfield_data, result->nhfielddata)
+    auto const target = std::views::counted(result->hfield_data, result->nhfielddata)
         .subspan(static_cast<std::size_t>(offset), samples.size());
     for (std::size_t i = 0; i < samples.size(); ++i) target[i] = static_cast<float>(samples[i]);
     return result;
@@ -104,9 +104,9 @@ void relocate_declared_assets(Value& controller, const cfg::ArticulatedConfig& c
              std::pair{"joint_strength_path", config.joint_strength_path}}) {
         bt::require(local.has_value(), "captured profile uses the declared rider asset");
         const auto& captured = std::get<std::string>(field(controller, name).data);
-        bt::require(std::filesystem::path(captured).filename() == std::filesystem::path(*local).filename(),
+        bt::require(std::filesystem::path(captured).filename() == std::filesystem::path(local.value()).filename(), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
                     "relocation retains the same captured asset filename");
-        set(controller, name, text(*local));
+        set(controller, name, text(local.value())); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     }
 }
 
@@ -121,7 +121,7 @@ void independent_projection() {
     const auto actual = runtime::project_runtime(*request, *model, track, options);
     auto captured = captured_config();
     auto controller = field(captured, "rider_controller");
-    relocate_declared_assets(controller, request->physics->articulated);
+    relocate_declared_assets(controller, request->physics.value().articulated); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     set(captured, "rider_controller", std::move(controller));
     const auto expected = runtime::decode_runtime_config(captured);
     equal_value(actual.writer_config, expected.writer_config, "complete writer projection matches captured Python setup");
@@ -162,12 +162,12 @@ void model_identity_and_heightfield() {
     bt::require(mdl::joint_address(*model, "fork_travel") == mdl::joint_address(*foreign, "fork_travel"),
                 "wrong-geometry regression holds names and addresses constant");
     bt::invalid([&] { (void)runtime::project_runtime(*request, *foreign, track); });
-    auto masses = std::views::counted(model->body_mass, model->nbody);
+    auto const masses = std::views::counted(model->body_mass, model->nbody);
     const auto frame = static_cast<std::size_t>(mdl::required_id(*model, mjOBJ_BODY, "frame"));
     const double old_mass = masses[frame]; masses[frame] += .01;
     bt::invalid([&] { (void)runtime::project_runtime(*request, *model, track); });
     masses[frame] = old_mass;
-    auto samples = std::views::counted(model->hfield_data, model->nhfielddata);
+    auto const samples = std::views::counted(model->hfield_data, model->nhfielddata);
     const float old_sample = samples[0]; samples[0] = std::nextafter(old_sample, 1.F);
     bt::invalid([&] { (void)runtime::project_runtime(*request, *model, track); });
     samples[0] = old_sample;
@@ -175,7 +175,7 @@ void model_identity_and_heightfield() {
     equal_value(restored.writer_config, projected.writer_config, "failed identity checks do not poison projection");
     const auto empty_road = mdl::compile_mjcf(mdl::generate_mjcf(*request));
     bt::invalid([&] { (void)runtime::project_runtime(*request, *empty_road, track); });
-    DataOwner data(engine::make_data(model.get()));
+    DataOwner const data(engine::make_data(model.get()));
     engine::forward(model.get(), data.get());
     const auto vertices = biketyre::compiled_profile_vertices(model.get(), data.get(), "terrain");
     const auto x = request->field.track_x();
@@ -197,7 +197,7 @@ void model_identity_and_heightfield() {
 void backend_projection() {
     auto track = trn::flat();
     track.surface = "asphalt";
-    track.surface_sections = {{10., 12., "hardpack"}};
+    track.surface_sections = {{.start_m=10., .end_m=12., .surface="hardpack"}};
     for (const auto* profile : {"viewer_physics_welded.toml", "viewer_physics_distributed.toml", "viewer_physics_pneumatic.toml"}) {
         auto request = physical(profile);
         auto model = compiled(*request, track);
@@ -209,7 +209,7 @@ void backend_projection() {
         const auto& section = array(field(map, "sections")).front();
         bt::require(number(field(section, "start_m")) == 10. && number(field(section, "end_m")) == 12., "surface section extent");
         bt::require(std::get<std::string>(field(field(section, "surface"), "name").data) == "hardpack", "section surface is resolved");
-        const auto& backend = request->physics->tires.backend;
+        const auto& backend = request->physics.value().tires.backend; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
         if (backend == "compliant_2d") {
             bt::require(find(field(tire, "front"), "material") != nullptr, "compliant material belongs to each wheel");
         } else {
@@ -217,7 +217,7 @@ void backend_projection() {
         }
         if (backend == "distributed_2d_reference") {
             const auto& distributed = field(tire, "distributed");
-            bt::require(number(field(distributed, "station_count")) == static_cast<double>(request->physics->tires.distributed.station_count), "distributed station count");
+            bt::require(number(field(distributed, "station_count")) == static_cast<double>(request->physics.value().tires.distributed.station_count), "distributed station count"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
             bt::require(find(field(distributed, "front"), "calibration_status") != nullptr &&
                         find(field(distributed, "rear"), "valid_load_range_n") != nullptr, "distributed wheel material metadata");
         }
@@ -231,17 +231,17 @@ void backend_projection() {
             const double ground = bike::geometry::compute_ground_z(request->bike) / 1000.;
             for (std::size_t i = 0; i < z.size(); ++i)
                 bt::require(same_bits(number(actual[i]), ground + z[i]), "pneumatic road preserves unquantized source binary64 heights");
-            request->physics->tires.surface_mode = "configured";
-            request->physics->tires.pneumatic.surface = "hardpack";
+            request->physics.value().tires.surface_mode = "configured"; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+            request->physics.value().tires.pneumatic.surface = "hardpack"; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
             model = compiled(*request, track);
             const auto uniform = runtime::project_runtime(*request, *model, track);
             const auto& uniform_tire = field(uniform.writer_config, "tire");
             bt::require(find(uniform_tire, "surface_map") == nullptr, "configured pneumatic surface omits a track map");
             bt::require(std::get<std::string>(field(field(field(uniform_tire, "pneumatic"), "surface"), "name").data) == "hardpack", "configured pneumatic surface is resolved");
-            request->physics->tires.pneumatic.surface.reset();
+            request->physics.value().tires.pneumatic.surface.reset(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
             bt::invalid([&] { runtime::validate_native_supported(*request->physics, *request->rider); });
         } else {
-            request->physics->tires.surface_mode = "configured";
+            request->physics.value().tires.surface_mode = "configured"; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
             const auto configured = runtime::project_writer_config(*request, *model, track);
             bt::require(find(field(configured, "tire"), "surface_map") == nullptr, "configured material projection omits track data");
             bt::invalid([&] { runtime::validate_native_supported(*request->physics, *request->rider); });
@@ -257,7 +257,7 @@ void mapping_and_virtual_work() {
         "<body name='rotor' pos='0 0 1'><joint name='rotation' type='hinge' axis='0 1 0'/>"
         "<geom type='sphere' size='.1' mass='3'/></body></worldbody></mujoco>");
     DataOwner data(engine::make_data(model.get()));
-    auto qvel = std::views::counted(data->qvel, model->nv);
+    auto const qvel = std::views::counted(data->qvel, model->nv);
     qvel[0] = 2.; qvel[1] = 3.;
     engine::forward(model.get(), data.get());
     const int slider = mdl::required_id(*model, mjOBJ_BODY, "slider");

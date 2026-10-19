@@ -10,13 +10,14 @@
 #include <set>
 #include <stdexcept>
 #include <system_error>
+#include <utility>
 #include <unistd.h>
 
 namespace bike::initialization {
 namespace {
 const io::Value& field(const io::Value::Object& object,std::string_view key){const auto* found=io::find_member(object,key);if(!found)throw std::invalid_argument("state file: missing "+std::string(key));return *found;}
 io::Value array_document(const io::NpyArray& array){
-    array.validate();io::Value::Array shape;for(std::size_t width:array.shape)shape.emplace_back(io::Number{std::to_string(width)});
+    array.validate();io::Value::Array shape;for(std::size_t const width:array.shape)shape.emplace_back(io::Number{std::to_string(width)});
     return io::Value{io::Value::Object{{"dtype",io::Value{array.dtype}},{"shape",io::Value{std::move(shape)}},{"fortran_order",io::Value{array.fortran_order}},{"bytes",io::Value{io::Bytes{array.bytes}}}}};
 }
 io::Value document(const StateFile& state){
@@ -35,7 +36,7 @@ StateFile decode(const io::Value& value){
     for(const auto& [name,data]:arrays){
         const auto& item=io::as_object(data,"array");if(item.size()!=4)throw std::invalid_argument("state file: unknown array member");io::NpyArray array;
         array.dtype=io::as_string(field(item,"dtype"),"dtype");array.fortran_order=io::as_bool(field(item,"fortran_order"),"fortran_order");
-        for(const auto& dimension:io::as_array(field(item,"shape"),"shape")){const auto n=io::as_int64(dimension,"shape dimension");if(n<0||static_cast<std::uint64_t>(n)>io::kMaxNumpyBytes)throw std::invalid_argument("state file: oversized dimension");array.shape.push_back(static_cast<std::size_t>(n));}
+        for(const auto& dimension:io::as_array(field(item,"shape"),"shape")){const auto n=io::as_int64(dimension,"shape dimension");if(n<0||std::cmp_greater(n,io::kMaxNumpyBytes))throw std::invalid_argument("state file: oversized dimension");array.shape.push_back(static_cast<std::size_t>(n));}
         const auto* bytes=std::get_if<io::Bytes>(&field(item,"bytes").data);if(!bytes)throw std::invalid_argument("state file: typed bytes required");
         if(bytes->value.size()>io::kMaxNumpyBytes-total)throw std::invalid_argument("state file: byte limit exceeded");
         total+=bytes->value.size();array.bytes=bytes->value;array.validate();state.arrays.emplace_back(name,std::move(array));
@@ -49,8 +50,8 @@ const io::NpyArray& state_array(const StateFile& state,std::string_view name){
 StateFile read_state_file(const std::filesystem::path& file){
     try{
         const auto bytes=io::read_numpy_bytes(file);
-        if(bytes.size()>=4&&bytes[0]==std::byte{'P'}&&bytes[1]==std::byte{'K'})return StateFile{0,io::Value{},io::parse_npz(bytes)};
-        std::string text;text.reserve(bytes.size());for(auto byte:bytes)text.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
+        if(bytes.size()>=4&&bytes[0]==std::byte{'P'}&&bytes[1]==std::byte{'K'})return StateFile{.schema_version=0,.metadata=io::Value{},.arrays=io::parse_npz(bytes)};
+        std::string text;text.reserve(bytes.size());for(auto const byte:bytes)text.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
         return decode(io::parse_recording_json(text));
     }catch(const std::bad_alloc&){throw;}
     catch(const std::exception& error){throw std::invalid_argument("equilibrium state file "+file.string()+": "+error.what());}
@@ -77,6 +78,6 @@ std::string fingerprint(const StateFile& state){
     }
     if(state.schema_version==1){const auto text=io::canonical_json(document(state));return io::sha256(std::as_bytes(std::span{text}));}
     io::Sha256 digest;for(const auto& [name,array]:state.arrays){digest.update(std::as_bytes(std::span{name}));const auto encoded=io::encode_npy(array);digest.update(encoded);}
-    const auto value=digest.finish();static constexpr std::string_view digits="0123456789abcdef";std::string out;out.reserve(64);for(auto b:value){out.push_back(digits[b>>4]);out.push_back(digits[b&15]);}return out;
+    const auto value=digest.finish();static constexpr std::string_view digits="0123456789abcdef";std::string out;out.reserve(64);for(auto const b:value){out.push_back(digits[std::uint32_t{b}>>4U]);out.push_back(digits[std::uint32_t{b}&15U]);}return out;
 }
 } // namespace bike::initialization

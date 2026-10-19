@@ -19,9 +19,17 @@ struct Temporary {
     fs::path path;
     Temporary(){auto name=(fs::temp_directory_path()/"bike-t42-XXXXXX").string();
         std::vector<char> bytes(name.begin(),name.end());bytes.push_back('\0');
-        if(!::mkdtemp(bytes.data()))throw std::runtime_error("temporary directory unavailable");path=bytes.data();}
+        if(!::mkdtemp(bytes.data()))throw std::runtime_error("temporary directory unavailable");
+        // path is an owning fs::path — the assignment copies the C string, not the pointer.
+        // cppcheck-suppress danglingLifetime
+        path=bytes.data();}
     ~Temporary(){std::error_code error;fs::remove_all(path,error);}
+    Temporary(const Temporary&) = delete;
+    Temporary& operator=(const Temporary&) = delete;
+    Temporary(Temporary&&) = delete;
+    Temporary& operator=(Temporary&&) = delete;
 };
+[[noreturn]] std::string report_failure(const fs::path&){throw std::runtime_error("report renderer failure");}
 rec::FinalizeOptions options(){rec::FinalizeOptions out;out.report=[](const fs::path&){return std::string("# Authored report\n");};return out;}
 std::vector<fs::path> manifests(const fs::path& root){
     std::vector<fs::path> result;
@@ -35,7 +43,7 @@ void fault_matrix(){
         "database_close","database_link","sync_run.duckdb","hash_run.duckdb","sync_summary.md","hash_summary.md",
         "manifest_write","destination_create","link_run.duckdb","link_summary.md","manifest_link"};
     for(const auto* stage:stages){
-        Temporary temp;auto capture=recording_fixture::capture(1);auto settings=options();
+        Temporary const temp;auto capture=recording_fixture::capture(1);auto settings=options();
         settings.before_stage=[stage](std::string_view current){if(current==stage)throw std::runtime_error("injected publication failure");};
         bool rejected=false;try{(void)rec::finalize(*capture,temp.path,settings);}catch(const std::runtime_error&){rejected=true;}
         bt::require(rejected&&capture->state()==rec::RunCapture::State::publication_failed,
@@ -55,7 +63,7 @@ void publication_contract(){
     const auto disabled=rec::finalize(*off,temp.path/"disabled",options());
     bt::require(disabled.report_status=="disabled"&&!fs::exists(temp.path/"disabled"),"record-off creates no output path");
     auto capture=recording_fixture::capture(1);auto settings=options();
-    settings.report=[](const fs::path&)->std::string{throw std::runtime_error("report renderer failure");};
+    settings.report=&report_failure;
     const auto report_failed=rec::finalize(*capture,temp.path,settings);
     bt::require(report_failed.report_status=="failed"&&!fs::exists(report_failed.directory/"summary.md"),"report failure can seal a valid DB with explicit status");
     const auto manifest=io::parse_recording_json(bt::text(report_failed.directory/"manifest.json"));
@@ -79,20 +87,22 @@ void publication_contract(){
 }
 void crash_and_signal_contract(){
     for(const auto* stage:{"checkpoint","link_run.duckdb","manifest_link"}){
-        Temporary temp;const auto pid=::fork();if(pid<0)throw std::runtime_error("fork failed");
+        Temporary const temp;const auto pid=::fork();if(pid<0)throw std::runtime_error("fork failed");
         if(pid==0){auto capture=recording_fixture::capture(1);auto settings=options();
-            settings.before_stage=[stage](std::string_view current){if(current==stage){::raise(SIGKILL);::_exit(99);}};
+            settings.before_stage=[stage](std::string_view current){if(current==stage){(void)::raise(SIGKILL);::_exit(99);}};
             try{(void)rec::finalize(*capture,temp.path,settings);}catch(...){::_exit(98);}::_exit(97);}
         int status=0;if(::waitpid(pid,&status,0)!=pid)throw std::runtime_error("waitpid failed");
         bt::require(WIFSIGNALED(status)&&WTERMSIG(status)==SIGKILL&&manifests(temp.path).empty(),"killed precommit finalizer leaves no recognizable sealed partial recording");
     }
-    Temporary temp;const auto pid=::fork();if(pid<0)throw std::runtime_error("fork failed");
+    Temporary const temp;const auto pid=::fork();if(pid<0)throw std::runtime_error("fork failed");
     if(pid==0){auto capture=recording_fixture::capture(1);auto settings=options();
-        settings.before_stage=[](std::string_view stage){if(stage=="manifest_link"){::raise(SIGINT);::raise(SIGINT);}};
+        settings.before_stage=[](std::string_view stage){if(stage=="manifest_link"){(void)::raise(SIGINT);(void)::raise(SIGINT);}};
         try{(void)rec::finalize_guarded(*capture,temp.path,settings);}catch(const bike::research::OperatorInterrupted&){::_exit(capture->state()==rec::RunCapture::State::published?0:93);}catch(...){::_exit(94);}::_exit(95);}
     int status=0;if(::waitpid(pid,&status,0)!=pid)throw std::runtime_error("waitpid failed");
     bt::require(WIFEXITED(status)&&WEXITSTATUS(status)==0&&manifests(temp.path).size()==1,
         "repeated SIGINT defers until the owning finalizer seals and caches its path");
 }
 }
+// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// cppcheck-suppress throwInEntryPoint
 int main(){return bt::run([]{async_close_contract::run();fault_matrix();publication_contract();crash_and_signal_contract();});}

@@ -38,8 +38,8 @@ void pacing() {
         "resume avoids a catch-up burst");
     bt::invalid([&] { (void)pacing.poll(zero); });
     bt::invalid([&] { pacing.set_scale(3); });
-    bt::invalid([] { view::Pacer bad(0.); });
-    bt::invalid([] { view::Pacer bad(.00125, 0.); });
+    bt::invalid([] { view::Pacer const bad(0.); });
+    bt::invalid([] { view::Pacer const bad(.00125, 0.); });
     pacing.reset(zero + 6s);
     bt::require(pacing.debt_s() == 0., "reset discards previous-episode debt");
 
@@ -89,11 +89,11 @@ void controls_and_camera() {
     bt::require(camera.azimuth == 135. && camera.elevation == -15. && camera.distance == 3.2 &&
         camera.lookat[2] == 3.3, "chase preset resets rather than interpolating the old camera");
     bt::invalid([&] { tracking.update(camera, std::numeric_limits<double>::infinity(), 0.); });
-    bt::invalid([] { view::Camera bad(-.1); });
+    bt::invalid([] { view::Camera const bad(-.1); });
     bt::require(view::help_text(view::Mode::inspection).find("Shift 0.1 s") != std::string::npos &&
         view::replay_exit_code(false, true) == 2 && view::replay_exit_code(true, false) == 1 &&
         view::replay_exit_code(true, true) == 0, "inspection help and checked replay outcomes are explicit");
-    const std::vector<view::HudColumn> legend{{"F", " L→10"}, {"v", " 2°"}};
+    const std::vector<view::HudColumn> legend{{.legend="F", .text=" L→10"}, {.legend="v", .text=" 2°"}};
     bt::require(view::hud_legend(legend) == " F    v ", "HUD legends measure visible Unicode symbols rather than UTF-8 bytes");
 }
 }

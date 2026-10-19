@@ -24,24 +24,27 @@ namespace {
 using Values=std::span<const double>;
 Values channel(const Channels& columns,std::string_view name,bool required=true){
     for(const auto& [key,data]:columns)if(key==name)return data;
-    if(required)throw std::invalid_argument("missing legacy metric channel '"+std::string(name)+"'");return {};
+    if(required)throw std::invalid_argument("missing legacy metric channel '"+std::string(name)+"'");
+    return {};
 }
 void positive(double value,std::string_view name){if(!std::isfinite(value)||value<=0.)throw std::invalid_argument(std::string(name)+" must be positive and finite");}
 void same(Values a,Values b){if(a.size()!=b.size())throw std::invalid_argument("legacy metric channel lengths differ");}
 double sum(Values x){return numeric::numpy_pairwise_sum(x);}
 double mean(Values x){return x.empty()?0.:sum(x)/static_cast<double>(x.size());}
-double maximum(Values x){if(x.empty())return 0.;double result=x.front();for(double v:x){if(std::isnan(v))return v;result=std::max(result,v);}return result;}
-double minimum(Values x){if(x.empty())return 0.;double result=x.front();for(double v:x){if(std::isnan(v))return v;result=std::min(result,v);}return result;}
-template<class F>std::vector<unsigned char> flags(Values x,F predicate){std::vector<unsigned char> out;out.reserve(x.size());for(double v:x)out.push_back(predicate(v)?1:0);return out;}
-double count_time(std::span<const unsigned char> x,double dt){std::size_t n=0;for(auto v:x)n+=v!=0;return static_cast<double>(n)*dt;}
-double fraction(Values x){if(x.empty())return 0.;std::size_t n=0;for(double v:x)n+=v>.5;return static_cast<double>(n)/static_cast<double>(x.size());}
-double percentile95(Values x){if(x.empty())return 0.;for(double v:x)if(std::isnan(v))return v;std::vector<double> sorted(x.begin(),x.end());std::ranges::sort(sorted);
+double maximum(Values x){if(x.empty())return 0.;double result=x.front();for(double const v:x){if(std::isnan(v))return v;result=std::max(result,v);}return result;}
+double minimum(Values x){if(x.empty())return 0.;double result=x.front();for(double const v:x){if(std::isnan(v))return v;result=std::min(result,v);}return result;}
+template<class F>std::vector<unsigned char> flags(Values x,F predicate){std::vector<unsigned char> out;out.reserve(x.size());for(double const v:x)out.push_back(predicate(v)?1:0);return out;}
+double count_time(std::span<const unsigned char> x,double dt){std::size_t n=0;for(auto const v:x)n+=v!=0;return static_cast<double>(n)*dt;}
+double fraction(Values x){if(x.empty())return 0.;std::size_t n=0;for(double const v:x)n+=v>.5;return static_cast<double>(n)/static_cast<double>(x.size());}
+double percentile95(Values x){if(x.empty())return 0.;for(double const v:x)if(std::isnan(v))return v;std::vector<double> sorted(x.begin(),x.end());std::ranges::sort(sorted);
     const double position=.95*static_cast<double>(sorted.size()-1);const auto index=static_cast<std::size_t>(position);const double t=position-static_cast<double>(index);
-    if(index+1==sorted.size())return sorted.back();const double delta=sorted[index+1]-sorted[index];
+    if(index+1==sorted.size())return sorted.back();
+    const double delta=sorted[index+1]-sorted[index];
     // NumPy _lerp uses the second endpoint for the upper half interval.
     return t>=.5?sorted[index+1]-delta*(1.-t):sorted[index]+delta*t;
 }
-TyreStats tyre_stats(std::string side,const Channels& w,double dt,double start,const RideRecorder::TyreHistory* history){
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
+TyreStats tyre_stats(const std::string& side,const Channels& w,double dt,double start,const RideRecorder::TyreHistory* history){
     TyreStats out;out.wheel=side;
     const auto fz=channel(w,side+"_tyre_fz_n",false);
     const std::vector<double> zeros(fz.size());
@@ -49,36 +52,46 @@ TyreStats tyre_stats(std::string side,const Channels& w,double dt,double start,c
     const auto defl=optional(side+"_tyre_deflection_mm"),loss=optional(side+"_tyre_loss_w");
     const auto slip=optional(side+"_slip_ratio"),sliding=optional(side+"_tyre_full_sliding"),rim=optional(side+"_rim_strike"),speed=optional("speed_mps");
     out.peak_fz_n=maximum(fz);out.max_deflection_mm=maximum(defl);out.mean_dissipated_power_w=mean(loss);
-    if(!fz.empty())same(fz,speed);std::vector<double> load_speed;load_speed.reserve(fz.size());for(std::size_t i=0;i<fz.size();++i)load_speed.push_back(fz[i]*std::abs(speed[i]));
+    if(!fz.empty())same(fz,speed);
+    std::vector<double> load_speed;
+    load_speed.reserve(fz.size());
+    for(std::size_t i=0;i<fz.size();++i)load_speed.push_back(fz[i]*std::abs(speed[i]));
     const double denominator=mean(load_speed);if(denominator>1e-9)out.crr_equivalent=out.mean_dissipated_power_w/denominator;
     out.rim_strikes=count_events(flags(rim,[](double v){return v>.5;}));
     if(history){
         for(const auto& event:history->events)if(event.x_m>=start)out.rim_strike_events.push_back(event);
-        out.rim_strikes=0;for(double x:history->starts_m)out.rim_strikes+=x>=start;
+        out.rim_strikes=0;for(double const x:history->starts_m)out.rim_strikes+=x>=start;
         out.wheelspin_time_s=history->wheelspin_time_s;out.locked_time_s=history->locked_time_s;
     }else{same(slip,sliding);std::size_t spinning=0,locked=0;for(std::size_t i=0;i<slip.size();++i)if(sliding[i]>.5){spinning+=slip[i]>0.;locked+=slip[i]<0.;}
         out.wheelspin_time_s=static_cast<double>(spinning)*dt;out.locked_time_s=static_cast<double>(locked)*dt;}
     out.completed_rim_impact_episodes=count_completed_impact_episodes(out.rim_strike_events);return out;
 }
 }
-std::size_t count_events(std::span<const unsigned char> flags){bool previous=false;std::size_t count=0;for(auto f:flags){const bool current=f!=0;if(current&&!previous)++count;previous=current;}return count;}
+std::size_t count_events(std::span<const unsigned char> flags){bool previous=false;std::size_t count=0;for(auto const f:flags){const bool current=f!=0;if(current&&!previous)++count;previous=current;}return count;}
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 TravelStats travel_stats(std::string end,Values travel,Values velocity,double limit,double threshold){
     positive(limit,"travel limit");same(travel,velocity);TravelStats out;out.end=std::move(end);out.travel_limit_mm=limit;out.bottom_out_threshold_mm=threshold;
-    if(travel.empty())return out;out.max_mm=maximum(travel);out.max_pct=100.*out.max_mm/limit;out.p95_mm=percentile95(travel);out.mean_mm=mean(travel);
+    if(travel.empty())return out;
+    out.max_mm=maximum(travel);
+    out.max_pct=100.*out.max_mm/limit;
+    out.p95_mm=percentile95(travel);
+    out.mean_mm=mean(travel);
     out.bottom_outs=count_events(flags(travel,[=](double x){return x>=threshold;}));out.top_outs=count_events(flags(travel,[](double x){return x<=kTopOutToleranceMm;}));
     out.max_compression_mps=std::max(0.,maximum(velocity));out.max_rebound_mps=std::max(0.,-minimum(velocity));return out;
 }
 AccelStats accel_stats(std::string point,Values acceleration,double dt){
     positive(dt,"sample interval");AccelStats out;out.point=std::move(point);if(acceleration.empty())return out;
-    std::vector<double> a;for(double v:acceleration)a.push_back(v-kGravityMps2);
+    std::vector<double> a;for(double const v:acceleration)a.push_back(v-kGravityMps2);
     const auto filtered=numerics::legacy_lowpass(a,dt,kAccelFilterHz,4);
     std::vector<double> squared,absolute,raw;squared.reserve(a.size());absolute.reserve(a.size());raw.reserve(a.size());
     for(std::size_t i=0;i<a.size();++i){squared.push_back(filtered[i]*filtered[i]);absolute.push_back(std::abs(filtered[i]));raw.push_back(std::abs(a[i]));}
     out.rms_filtered_mps2=std::sqrt(mean(squared));out.peak_filtered_mps2=maximum(absolute);out.peak_raw_mps2=maximum(raw);return out;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 RiderStats rider_stats(const Channels& w,double dt,double weight){
     positive(weight,"rider weight");const auto saddle=channel(w,"saddle_load_n"),front=channel(w,"pedal_load_front_n"),rear=channel(w,"pedal_load_rear_n"),bar=channel(w,"bar_hand_load_n"),gap=channel(w,"saddle_gap_m");
-    same(saddle,front);same(saddle,rear);same(saddle,bar);same(saddle,gap);std::vector<double> pedals;for(std::size_t i=0;i<saddle.size();++i)pedals.push_back(front[i]+rear[i]);
+    same(saddle,front);same(saddle,rear);same(saddle,bar);same(saddle,gap);std::vector<double> pedals;pedals.reserve(saddle.size());
+for(std::size_t i=0;i<saddle.size();++i)pedals.push_back(front[i]+rear[i]);
     RiderStats out;out.torso=accel_stats("torso",channel(w,"rider_torso_acc_vert_mps2"),dt);out.pelvis=accel_stats("pelvis",channel(w,"rider_pelvis_acc_vert_mps2"),dt);
     const auto lifted=flags(gap,[](double x){return x>0.;});out.saddle_lift_events=count_events(lifted);out.saddle_lift_time_s=count_time(lifted,dt);out.saddle_gap_max_mm=maximum(gap)*1000.;
     const auto n=static_cast<double>(std::max<std::size_t>(1,saddle.size()));out.mean_saddle_share=sum(saddle)/n/weight;out.mean_pedal_share=sum(pedals)/n/weight;out.mean_bar_share=sum(bar)/n/weight;
@@ -97,6 +110,7 @@ double sine_amplitude(Values signal,double frequency,double dt){
     const auto result=solve.solve(basis,n,2,centred,1,std::numeric_limits<double>::epsilon()*static_cast<double>(std::max<::rider::lapack_int>(n,2)));
     return std::hypot(result.solution[0],result.solution[1]);
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 std::optional<PedalBobStats> pedal_bob_stats(const Channels& w,double dt,int switches){
     const auto cadence=channel(w,"cadence_rpm",false);if(cadence.empty()||std::ranges::none_of(cadence,[](double v){return std::isfinite(v);}))return std::nullopt;
     const auto coast=channel(w,"freewheel"),crank=channel(w,"crank_torque_nm"),assist=channel(w,"assist_torque_nm"),wheel=channel(w,"drive_torque_nm");
@@ -113,8 +127,8 @@ std::vector<PotholeReport> pothole_reports(const terrain::TrackSpec& track){
     for(const auto& obstacle:track.sorted_obstacles()){
         if(obstacle.is_pothole()){
             const double depth=std::visit([](const auto& shape){if constexpr(requires{shape.depth_m;})return shape.depth_m;else return 0.;},obstacle.shape);
-            out.push_back({obstacle.label(),std::string(obstacle.kind()),obstacle.start_m(),obstacle.length_m(),depth*1000.,
-                terrain::effective_drop_m(obstacle,terrain::FRONT_WHEEL_RADIUS_M)*1000.,terrain::effective_drop_m(obstacle,terrain::REAR_WHEEL_RADIUS_M)*1000.});
+            out.push_back({.label=obstacle.label(),.kind=std::string(obstacle.kind()),.start_m=obstacle.start_m(),.length_m=obstacle.length_m(),.declared_depth_mm=depth*1000.,
+                .effective_drop_front_mm=terrain::effective_drop_m(obstacle,terrain::FRONT_WHEEL_RADIUS_M)*1000.,.effective_drop_rear_mm=terrain::effective_drop_m(obstacle,terrain::REAR_WHEEL_RADIUS_M)*1000.});
         }
     }
     return out;
@@ -125,10 +139,10 @@ std::size_t count_completed_impact_episodes(std::span<const RimStrikeStats> even
     std::optional<double> previous_end,previous_x;std::size_t count=0;
     for(const auto& event:events){if(!std::isfinite(event.x_m))throw std::invalid_argument("rim event x must be finite");
         if(!event.start_time_s||!event.end_time_s){++count;previous_end.reset();previous_x.reset();continue;}
-        const double start=*event.start_time_s,end=*event.end_time_s;
+        const double start=event.start_time_s.value(),end=event.end_time_s.value();
         if(!std::isfinite(start)||!std::isfinite(end)||start<0.||end<start)throw std::invalid_argument("invalid rim event interval");
         if(previous_end&&start<*previous_end-1e-12)throw std::invalid_argument("rim events must be ordered and nonoverlapping");
-        if(!(previous_end&&start-*previous_end<=gap+1e-12&&std::abs(event.x_m-*previous_x)<=distance))++count;
+        if(!(previous_end&&start-*previous_end<=gap+1e-12&&std::abs(event.x_m-*previous_x)<=distance))++count; // NOLINT(bugprone-unchecked-optional-access) previous_x engages iff previous_end does
         previous_end=end;previous_x=event.x_m;
     }return count;
 }
@@ -139,7 +153,8 @@ RideSummary summarize_ride(const Channels& columns,double dt,const terrain::Trac
     out.target_speed_kmh=options.target_speed_kmh;out.outcome=outcome.reason;out.completed=outcome.completed();out.steps=outcome.steps;out.sim_time_s=outcome.sim_time_s;out.wall_clock_s=outcome.wall_clock_s;
     if(outcome.crash){const auto& c=*outcome.crash;std::ostringstream text;text.imbue(std::locale::classic());text<<c.cause<<" at x = "<<std::fixed<<std::setprecision(2)<<c.position_m<<" m, t = "<<std::setprecision(3)<<c.time_s<<" s, pitch = "<<std::showpos<<std::setprecision(1)<<c.pitch_rad*180./std::numbers::pi<<" deg";out.crash=text.str();}
     out.sample_interval_s=dt;out.window_start_m=start;out.window_rows=channel(window,"x_m").size();out.mean_speed_kmh=mean(channel(window,"speed_mps"))*3.6;
-    const auto front=channel(window,"front_contact"),rear=channel(window,"rear_contact");std::vector<unsigned char> air;for(std::size_t i=0;i<front.size();++i)air.push_back(front[i]<.5&&rear[i]<.5?1:0);
+    const auto front=channel(window,"front_contact"),rear=channel(window,"rear_contact");std::vector<unsigned char> air;air.reserve(front.size());
+for(std::size_t i=0;i<front.size();++i)air.push_back(front[i]<.5&&rear[i]<.5?1:0);
     out.airborne_events=count_events(air);out.airborne_time_s=count_time(air,dt);
     out.fork=travel_stats("fork",channel(window,"fork_travel_mm"),channel(window,"fork_shaft_mps"),options.fork_travel_mm,options.fork_travel_mm-kForkBottomMarginMm);
     out.shock=travel_stats("shock",channel(window,"shock_stroke_mm"),channel(window,"shock_shaft_mps"),options.shock_stroke_mm,options.shock_bumper_engage_mm);
@@ -147,7 +162,8 @@ RideSummary summarize_ride(const Channels& columns,double dt,const terrain::Trac
     out.potholes=pothole_reports(track);out.extras=options.extras;out.rider_variant=options.rider_variant;
     if(options.rider_variant=="seated"&&std::ranges::any_of(window,[](const auto& entry){return entry.first=="saddle_load_n";}))out.rider=rider_stats(window,dt,options.rider_mass_kg*kGravityMps2);
     if(out.window_rows)out.pedals=pedal_bob_stats(window,dt,options.assist_switches);
-    for(std::size_t i=0;i<2;++i)out.tyres[i]=tyre_stats(i==0?"front":"rear",window,dt,start,options.tyre_history?&(*options.tyre_history)[i]:nullptr);return out;
+    for(std::size_t i=0;i<2;++i)out.tyres[i]=tyre_stats(i==0?"front":"rear",window,dt,start,options.tyre_history?&(*options.tyre_history)[i]:nullptr);
+    return out;
 }
 
 namespace {
@@ -182,18 +198,20 @@ std::string ascii_json_string(std::string_view value){
     // The legacy report additionally uses json.dumps' default ensure_ascii.
     const auto utf8=io::canonical_json(text(value));std::string out;
     constexpr std::string_view digits="0123456789abcdef";
-    const auto unit=[&](std::uint32_t cp){out+="\\u";for(int shift:{12,8,4,0})out+=digits[(cp>>shift)&0xfU];};
+    const auto unit=[&](std::uint32_t cp){out+="\\u";for(std::uint32_t const shift:{12U,8U,4U,0U})out+=digits[(cp>>shift)&0xfU];};
     for(std::size_t i=0;i<utf8.size();){const auto first=static_cast<unsigned char>(utf8[i++]);
         if(first<0x7fU){out+=static_cast<char>(first);continue;}
         if(first==0x7fU){unit(first);continue;}
         const std::size_t remaining=first<0xe0U?1:first<0xf0U?2:3;
-        std::uint32_t cp=first&(remaining==1?0x1fU:remaining==2?0x0fU:0x07U);
-        for(std::size_t k=0;k<remaining;++k)cp=(cp<<6)|(static_cast<unsigned char>(utf8[i++])&0x3fU);
-        if(cp<=0xffffU)unit(cp);else{cp-=0x10000U;unit(0xd800U+(cp>>10));unit(0xdc00U+(cp&0x3ffU));}}
+        std::uint32_t cp=std::uint32_t{first}&(remaining==1?0x1fU:remaining==2?0x0fU:0x07U);
+        for(std::size_t k=0;k<remaining;++k)cp=(cp<<6U)|(static_cast<unsigned char>(utf8[i++])&0x3fU);
+        if(cp<=0xffffU)unit(cp);else{cp-=0x10000U;unit(0xd800U+(cp>>10U));unit(0xdc00U+(cp&0x3ffU));}}
     return out;
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void pretty_json(std::ostream& stream,const Value& value,std::size_t depth=0){
-    if(depth>io::kMaxDepth)throw std::invalid_argument("legacy summary nesting limit");const auto indent=[&](std::size_t n){stream<<std::string(n*2,' ');};
+    if(depth>io::kMaxDepth)throw std::invalid_argument("legacy summary nesting limit");
+    const auto indent=[&](std::size_t n){stream<<std::string(n*2,' ');};
     if(const auto* object=std::get_if<Object>(&value.data)){stream<<'{';for(std::size_t i=0;i<object->size();++i){stream<<(i?",\n":"\n");indent(depth+1);stream<<ascii_json_string((*object)[i].first)<<": ";pretty_json(stream,(*object)[i].second,depth+1);}if(!object->empty()){stream<<'\n';indent(depth);}stream<<'}';}
     else if(const auto* array=std::get_if<Array>(&value.data)){stream<<'[';for(std::size_t i=0;i<array->size();++i){stream<<(i?",\n":"\n");indent(depth+1);pretty_json(stream,(*array)[i],depth+1);}if(!array->empty()){stream<<'\n';indent(depth);}stream<<']';}
     else if(const auto* string=std::get_if<std::string>(&value.data))stream<<ascii_json_string(*string);

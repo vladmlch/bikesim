@@ -15,6 +15,10 @@ class RecordingError : public std::invalid_argument {
 public:
     using std::invalid_argument::invalid_argument;
     ~RecordingError() override;
+    RecordingError(const RecordingError&) = default;
+    RecordingError& operator=(const RecordingError&) = default;
+    RecordingError(RecordingError&&) = default;
+    RecordingError& operator=(RecordingError&&) = default;
 };
 [[nodiscard]] io::Value read_manifest(const std::filesystem::path&);
 class Recording {
@@ -24,6 +28,8 @@ public:
     void close() noexcept;
     Recording(const Recording&) = delete;
     Recording& operator=(const Recording&) = delete;
+    Recording(Recording&&) = delete;
+    Recording& operator=(Recording&&) = delete;
     [[nodiscard]] const std::filesystem::path& path() const noexcept { return path_; }
     [[nodiscard]] const io::Value& manifest() const noexcept { return manifest_; }
     [[nodiscard]] std::int64_t schema_version() const noexcept { return 1; }
@@ -46,8 +52,8 @@ private:
 [[nodiscard]] io::Value fields(const Recording&, std::optional<std::string> pattern = {}, std::uint64_t limit = 200);
 [[nodiscard]] io::Value events(const Recording&, std::int64_t episode, std::optional<std::string> kind = {}, std::uint64_t limit = 200);
 [[nodiscard]] io::Value window(const Recording&, std::int64_t episode, double start_s, double end_s,
-    std::optional<std::string> fields = {}, std::uint64_t limit = 200);
+    const std::optional<std::string>& fields = {}, std::uint64_t limit = 200);
 [[nodiscard]] io::Value compare(const Recording&, const Recording&, std::int64_t left_episode, std::int64_t right_episode,
-    std::string_view mode = "exact", std::optional<std::string> fields = {}, double atol = 1e-9, double rtol = 1e-9,
+    std::string_view mode = "exact", const std::optional<std::string>& fields = {}, double atol = 1e-9, double rtol = 1e-9,
     std::uint64_t limit = 200);
 } // namespace bike::recording

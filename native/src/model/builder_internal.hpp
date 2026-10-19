@@ -32,11 +32,13 @@ Element& block(Element& root,std::string_view tag);
 Element& inertial(Element& body,double mass,const Vec3& com,const Mat3& tensor);
 void set_inertia(Element& body,double mass,const Vec3& com,const Mat3& tensor);
 using MassRegistry = std::vector<std::pair<std::string,std::vector<Element*>>>;
-void register_component(MassRegistry* registry,std::string name,std::vector<Element*> parts);
+void register_component(MassRegistry* registry,std::string name,const std::vector<Element*>& parts);
 void assign_budgets(Element& frame,MassRegistry& registry,const BikeMassSpecs& masses);
 
 struct BuildContext {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const BuildRequest& request;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const kinematics::HorstLinkageSolver& solver;
     configuration::RiderSpecs rider;
     std::optional<SeatedPose> seated;

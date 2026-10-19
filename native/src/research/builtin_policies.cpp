@@ -13,6 +13,10 @@ using namespace runtime::setupvalue;
 class SimplePolicy final : public Policy {
 public:
     ~SimplePolicy() override;
+    SimplePolicy(const SimplePolicy&) = delete;
+    SimplePolicy& operator=(const SimplePolicy&) = delete;
+    SimplePolicy(SimplePolicy&&) = delete;
+    SimplePolicy& operator=(SimplePolicy&&) = delete;
     SimplePolicy(std::string name, bool zero, bool limit, bool zero_missing)
         : name_(std::move(name)), zero_(zero), limit_(limit), zero_missing_(zero_missing) {}
     void reset(std::string_view seed) override { (void)validate_seed(seed); }

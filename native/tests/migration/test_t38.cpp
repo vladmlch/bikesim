@@ -8,6 +8,7 @@
 namespace {
 namespace rec = bike::recording;
 namespace io = bike::io;
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 std::size_t descriptors(const rec::FieldSpec& field) {
     std::size_t count = 1;
     field.validate();
@@ -38,19 +39,19 @@ void catalog_contract() {
         const auto index = io::as_int64(rec::value::require(coordinate,"index"),"index");
         bt::require(io::as_string(rec::value::require(coordinate,"component"),"component").empty(),
             "the acquired welded fixture declares scalar joint input blocks");
-        joints.push_back({io::as_string(rec::value::require(coordinate,"joint"),"joint"),
-            io::as_string(rec::value::require(coordinate,"dof_kind"),"kind") == "translation" ? "slide" : "hinge", index,index});
+        joints.push_back({.name=io::as_string(rec::value::require(coordinate,"joint"),"joint"),
+            .joint_type=io::as_string(rec::value::require(coordinate,"dof_kind"),"kind") == "translation" ? "slide" : "hinge", .qposadr=index,.dofadr=index});
     }
     const auto actual = rec::build_catalog(joints);
     bt::require(io::recording_json(rec::describe_catalog(actual)) == io::recording_json(golden),
         "model coordinate input reproduces the acquired welded catalog, aliases and root inventory");
-    bt::require(actual.resolve_alias("power_chain_w")->parameter == "chain", "component templates bind exact component names");
-    bt::require(actual.resolve_alias("energy.residual_j")->canonical == "channel_energy.residual_j", "flattened paths resolve by reviewed meaning");
+    bt::require(actual.resolve_alias("power_chain_w").value().parameter == "chain", "component templates bind exact component names"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    bt::require(actual.resolve_alias("energy.residual_j")->canonical == "channel_energy.residual_j", "flattened paths resolve by reviewed meaning"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     bt::require(!actual.resolve_alias("unreviewed.channel"), "unreviewed aliases never guess a column");
     bt::invalid([&] { (void)actual.channel_table("unreviewed"); });
 }
 void coordinates_contract() {
-    const std::array<rec::JointCoords,3> blocks{{{"free","free",0,0},{"ball","ball",7,6},{"slide","slide",11,9}}};
+    const std::array<rec::JointCoords,3> blocks{{{.name="free",.joint_type="free",.qposadr=0,.dofadr=0},{.name="ball",.joint_type="ball",.qposadr=7,.dofadr=6},{.name="slide",.joint_type="slide",.qposadr=11,.dofadr=9}}};
     const auto catalog = rec::build_catalog(blocks, std::span<const rec::ScalarAlias>{});
     bt::require(catalog.coordinates().qpos.size()==12 && catalog.coordinates().dof.size()==10,
         "free/ball coordinate widths differ from DOF widths");
@@ -58,11 +59,11 @@ void coordinates_contract() {
         catalog.coordinates().force_unit(9)=="N", "quaternion and rotational/translational units stay distinct");
     auto invalid = blocks; invalid[1].qposadr = 8;
     bt::invalid([&] { (void)rec::build_catalog(invalid,std::span<const rec::ScalarAlias>{}); });
-    const std::array<rec::ScalarAlias,1> nonscalar{{{"x","qpos","free"}}};
+    const std::array<rec::ScalarAlias,1> nonscalar{{{.alias="x",.kind="qpos",.joint="free"}}};
     bt::invalid([&] { (void)rec::build_catalog(blocks,nonscalar); });
     auto field = rec::table_spec("physics").fields.front(); field.phase="unspecified";
     bt::invalid([&] { field.validate(); });
-    bt::require(rec::quote("a\"b") == "\"a\"\"b\"", "SQL identifiers escape embedded quotes");
+    bt::require(rec::quote("a\"b") == R"("a""b")", "SQL identifiers escape embedded quotes");
 }
 }
 int main() { return bt::run([] { catalog_contract(); coordinates_contract(); }); }

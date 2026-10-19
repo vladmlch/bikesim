@@ -17,6 +17,10 @@ struct TempDir {
         ("bike-t50-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     TempDir() { if (!std::filesystem::create_directory(path)) throw std::runtime_error("T50 temp directory already exists"); }
     ~TempDir() { std::error_code ignored; std::filesystem::remove_all(path, ignored); }
+    TempDir(const TempDir&) = delete;
+    TempDir& operator=(const TempDir&) = delete;
+    TempDir(TempDir&&) = delete;
+    TempDir& operator=(TempDir&&) = delete;
 };
 void write(const std::filesystem::path& path, std::string_view value) {
     bike::platform::write_exclusive(path, std::as_bytes(std::span(value)));
@@ -27,7 +31,7 @@ const bike::io::Value& member(const bike::io::Value& value, std::string_view nam
     return *found;
 }
 bike::io::Value embedded(const std::string& html) {
-    constexpr std::string_view marker = "<script id=\"bike-plot-data\" type=\"application/json\">";
+    constexpr std::string_view marker = R"(<script id="bike-plot-data" type="application/json">)";
     const auto begin = html.find(marker);
     bt::require(begin != std::string::npos, "offline HTML has an explicit semantic payload");
     const auto start = begin + marker.size(), end = html.find("</script>", start);
@@ -36,13 +40,13 @@ bike::io::Value embedded(const std::string& html) {
 }
 void formats() {
     const double missing = std::numeric_limits<double>::quiet_NaN();
-    viz::Plot plot{"Torque <front> — </script><script>alert(1)</script>", "time (s)", "Nm", {}};
-    plot.series.push_back({"measured", {0., 1., 2., 3.}, {1., missing, 3., 2.}, "#38bdf8"});
-    plot.series.push_back({"requested", {0., 1., 2., 3.}, {2., 2., 4., 4.}, "#fbbf24", viz::SeriesStyle::step, true, true});
+    viz::Plot plot{.title="Torque <front> — </script><script>alert(1)</script>", .x_label="time (s)", .y_label="Nm", .series={}};
+    plot.series.push_back({.name="measured", .x={0., 1., 2., 3.}, .y={1., missing, 3., 2.}, .color="#38bdf8"});
+    plot.series.push_back({.name="requested", .x={0., 1., 2., 3.}, .y={2., 2., 4., 4.}, .color="#fbbf24", .style=viz::SeriesStyle::step, .secondary_y=true, .dashed=true});
     plot.secondary_y_label = "W";
-    plot.markers.push_back({viz::MarkerKind::vertical, 1.5, 0., "shift 21->24", "#a855f7", true});
-    plot.markers.push_back({viz::MarkerKind::band, 1., 1.5, "torque cut"});
-    const viz::Report report{plot.title, {plot}, 1, 640, 480};
+    plot.markers.push_back({.kind=viz::MarkerKind::vertical, .first=1.5, .second=0., .label="shift 21->24", .color="#a855f7", .full_height=true});
+    plot.markers.push_back({.kind=viz::MarkerKind::band, .first=1., .second=1.5, .label="torque cut"});
+    const viz::Report report{.title=plot.title, .panels={plot}, .columns=1, .width=640, .height=480};
     const auto svg = viz::to_svg(report), html = viz::to_html(report);
     bt::require(svg.find("&lt;front&gt;") != std::string::npos && svg.find("<script>alert") == std::string::npos,
         "SVG escapes labels while retaining Unicode text");
@@ -75,7 +79,7 @@ void formats() {
     bt::invalid([&] { viz::validate(bad); });
     bad = plot; bad.series[0].color = "red;script";
     bt::invalid([&] { viz::validate(bad); });
-    bad = plot; bad.log_y = true; bad.y_range = std::pair{-1., 1.};
+    bad = std::move(plot); bad.log_y = true; bad.y_range = std::pair{-1., 1.};
     bt::invalid([&] { viz::validate(bad); });
     bt::invalid([&] { viz::write_artifact(report, temporary.path / "plot.exe"); });
 }
@@ -118,4 +122,6 @@ void csv_and_annotations() {
         "physical static exports keep their canonical artifact names even with optional channels absent");
 }
 }
+// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// cppcheck-suppress throwInEntryPoint
 int main() { return bt::run([] { formats(); csv_and_annotations(); }); }

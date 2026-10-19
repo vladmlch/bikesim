@@ -15,6 +15,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -71,7 +72,8 @@ struct CoilShockSpecs {
 // ---------------------------------------------------------------------------
 // damper.py DamperPreset labels + DamperClickConfig + DAMPER_PRESETS.
 // ---------------------------------------------------------------------------
-enum class DamperPreset { kBase, kPlush, kEnduro, kPark, kCustom };
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+enum class DamperPreset : std::uint8_t { kBase, kPlush, kEnduro, kPark, kCustom };
 
 // The enum's .value strings, in declaration order.
 [[nodiscard]] std::string_view damper_preset_label(DamperPreset preset);
@@ -128,10 +130,10 @@ struct SuspensionInputs {
 struct SuspensionSpec {
     DamperClickConfig clicks;
     nativecfg::Charger3Config fork_damper;
-    nativecfg::SuperDeluxeConfig shock_damper;
+    nativecfg::SuperDeluxeConfig shock_damper{};
     AirSpringSpecs air;
-    int num_tokens;
-    double gauge_pressure_psi;
+    int num_tokens{};
+    double gauge_pressure_psi{};
     CoilShockSpecs coil;
 };
 
@@ -187,79 +189,83 @@ void post_init(const CoilShockSpecs &);
 namespace detail {
 
 inline const AirSpringSpecs kDeclaredAirSpringSpecs{};
-inline constexpr FieldDecl kAirSpringSpecsFields[] = {
-    {"stanchion_inner_diam_mm", "<class 'float'>", FieldKind::Real,
-     offsetof(AirSpringSpecs, stanchion_inner_diam_mm), false, "", nullptr,
-     nullptr},
-    {"total_travel_mm", "<class 'float'>", FieldKind::Real,
-     offsetof(AirSpringSpecs, total_travel_mm), false, "", nullptr, nullptr},
-    {"pos_chamber_length_mm", "<class 'float'>", FieldKind::Real,
-     offsetof(AirSpringSpecs, pos_chamber_length_mm), false, "", nullptr,
-     nullptr},
-    {"neg_chamber_length_mm", "<class 'float'>", FieldKind::Real,
-     offsetof(AirSpringSpecs, neg_chamber_length_mm), false, "", nullptr,
-     nullptr},
-    {"token_volume_cm3", "<class 'float'>", FieldKind::Real,
-     offsetof(AirSpringSpecs, token_volume_cm3), false, "", nullptr,
-     nullptr},
-    {"max_tokens", "<class 'int'>", FieldKind::Integer,
-     offsetof(AirSpringSpecs, max_tokens), false, "", nullptr, nullptr},
-    {"default_tokens", "<class 'int'>", FieldKind::Integer,
-     offsetof(AirSpringSpecs, default_tokens), false, "", nullptr, nullptr},
-    {"gamma", "<class 'float'>", FieldKind::Real,
-     offsetof(AirSpringSpecs, gamma), false, "", nullptr, nullptr},
-    {"atm_pressure_pa", "<class 'float'>", FieldKind::Real,
-     offsetof(AirSpringSpecs, atm_pressure_pa), false, "", nullptr, nullptr},
-};
+inline constexpr auto kAirSpringSpecsFields = std::to_array<FieldDecl>({
+    {.name="stanchion_inner_diam_mm", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(AirSpringSpecs, stanchion_inner_diam_mm), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="total_travel_mm", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(AirSpringSpecs, total_travel_mm), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="pos_chamber_length_mm", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(AirSpringSpecs, pos_chamber_length_mm), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="neg_chamber_length_mm", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(AirSpringSpecs, neg_chamber_length_mm), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="token_volume_cm3", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(AirSpringSpecs, token_volume_cm3), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="max_tokens", .type="<class 'int'>", .kind=FieldKind::Integer,
+     .offset=offsetof(AirSpringSpecs, max_tokens), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="default_tokens", .type="<class 'int'>", .kind=FieldKind::Integer,
+     .offset=offsetof(AirSpringSpecs, default_tokens), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="gamma", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(AirSpringSpecs, gamma), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="atm_pressure_pa", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(AirSpringSpecs, atm_pressure_pa), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kAirSpringSpecsSchema{
-    "bike_sim.physics.air_spring.AirSpringSpecs", kAirSpringSpecsFields,
-    &kDeclaredAirSpringSpecs};
+    .path="bike_sim.physics.air_spring.AirSpringSpecs", .fields=kAirSpringSpecsFields,
+    .declared_default=&kDeclaredAirSpringSpecs};
 
 inline const CoilShockSpecs kDeclaredCoilShockSpecs{};
-inline constexpr FieldDecl kCoilShockSpecsFields[] = {
-    {"rate_n_m", "<class 'float'>", FieldKind::Real,
-     offsetof(CoilShockSpecs, rate_n_m), false, "", nullptr, nullptr},
-    {"preload_mm", "<class 'float'>", FieldKind::Real,
-     offsetof(CoilShockSpecs, preload_mm), false, "", nullptr, nullptr},
-    {"stroke_mm", "<class 'float'>", FieldKind::Real,
-     offsetof(CoilShockSpecs, stroke_mm), false, "", nullptr, nullptr},
-    {"bumper_length_mm", "<class 'float'>", FieldKind::Real,
-     offsetof(CoilShockSpecs, bumper_length_mm), false, "", nullptr,
-     nullptr},
-    {"bumper_peak_n", "<class 'float'>", FieldKind::Real,
-     offsetof(CoilShockSpecs, bumper_peak_n), false, "", nullptr, nullptr},
-};
+inline constexpr auto kCoilShockSpecsFields = std::to_array<FieldDecl>({
+    {.name="rate_n_m", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(CoilShockSpecs, rate_n_m), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="preload_mm", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(CoilShockSpecs, preload_mm), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="stroke_mm", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(CoilShockSpecs, stroke_mm), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="bumper_length_mm", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(CoilShockSpecs, bumper_length_mm), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="bumper_peak_n", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(CoilShockSpecs, bumper_peak_n), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kCoilShockSpecsSchema{
-    "bike_sim.physics.coil_shock.CoilShockSpecs", kCoilShockSpecsFields,
-    &kDeclaredCoilShockSpecs};
+    .path="bike_sim.physics.coil_shock.CoilShockSpecs", .fields=kCoilShockSpecsFields,
+    .declared_default=&kDeclaredCoilShockSpecs};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const DamperClickConfig kDeclaredDamperClickConfig{};
-inline constexpr FieldDecl kDamperClickConfigFields[] = {
-    {"fork_hsc", "<class 'int'>", FieldKind::Integer,
-     offsetof(DamperClickConfig, fork_hsc), false, "", nullptr, nullptr},
-    {"fork_lsc", "<class 'int'>", FieldKind::Integer,
-     offsetof(DamperClickConfig, fork_lsc), false, "", nullptr, nullptr},
-    {"fork_rebound", "<class 'int'>", FieldKind::Integer,
-     offsetof(DamperClickConfig, fork_rebound), false, "", nullptr,
-     nullptr},
-    {"shock_hsc", "<class 'int'>", FieldKind::Integer,
-     offsetof(DamperClickConfig, shock_hsc), false, "", nullptr, nullptr},
-    {"shock_lsc", "<class 'int'>", FieldKind::Integer,
-     offsetof(DamperClickConfig, shock_lsc), false, "", nullptr, nullptr},
-    {"shock_rebound", "<class 'int'>", FieldKind::Integer,
-     offsetof(DamperClickConfig, shock_rebound), false, "", nullptr,
-     nullptr},
-    {"shock_hbo", "<class 'int'>", FieldKind::Integer,
-     offsetof(DamperClickConfig, shock_hbo), false, "", nullptr, nullptr},
-    {"shock_lockout", "<class 'bool'>", FieldKind::Boolean,
-     offsetof(DamperClickConfig, shock_lockout), false, "", nullptr,
-     nullptr},
-    {"preset_name", "<class 'str'>", FieldKind::Text,
-     offsetof(DamperClickConfig, preset_name), false, "", nullptr, nullptr},
-};
+inline constexpr auto kDamperClickConfigFields = std::to_array<FieldDecl>({
+    {.name="fork_hsc", .type="<class 'int'>", .kind=FieldKind::Integer,
+     .offset=offsetof(DamperClickConfig, fork_hsc), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="fork_lsc", .type="<class 'int'>", .kind=FieldKind::Integer,
+     .offset=offsetof(DamperClickConfig, fork_lsc), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="fork_rebound", .type="<class 'int'>", .kind=FieldKind::Integer,
+     .offset=offsetof(DamperClickConfig, fork_rebound), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="shock_hsc", .type="<class 'int'>", .kind=FieldKind::Integer,
+     .offset=offsetof(DamperClickConfig, shock_hsc), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="shock_lsc", .type="<class 'int'>", .kind=FieldKind::Integer,
+     .offset=offsetof(DamperClickConfig, shock_lsc), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="shock_rebound", .type="<class 'int'>", .kind=FieldKind::Integer,
+     .offset=offsetof(DamperClickConfig, shock_rebound), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="shock_hbo", .type="<class 'int'>", .kind=FieldKind::Integer,
+     .offset=offsetof(DamperClickConfig, shock_hbo), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="shock_lockout", .type="<class 'bool'>", .kind=FieldKind::Boolean,
+     .offset=offsetof(DamperClickConfig, shock_lockout), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="preset_name", .type="<class 'str'>", .kind=FieldKind::Text,
+     .offset=offsetof(DamperClickConfig, preset_name), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kDamperClickConfigSchema{
-    "bike_sim.physics.damper.DamperClickConfig", kDamperClickConfigFields,
-    &kDeclaredDamperClickConfig};
+    .path="bike_sim.physics.damper.DamperClickConfig", .fields=kDamperClickConfigFields,
+    .declared_default=&kDeclaredDamperClickConfig};
 
 } // namespace detail
 } // namespace bike::configuration

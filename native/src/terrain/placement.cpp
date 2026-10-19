@@ -19,9 +19,10 @@ std::optional<Interval> place(bike::random::NumpyRng& rng,double length,double l
     }
 }
 std::vector<Interval> free_intervals(Interval span,std::span<const Interval> occupied,double gap){
-    std::vector<Interval> sorted(occupied.begin(),occupied.end());std::sort(sorted.begin(),sorted.end());
+    std::vector<Interval> sorted(occupied.begin(),occupied.end());std::ranges::sort(sorted);
     std::vector<Interval> out;double cursor=span.first;
     for(const auto& [start,end]:sorted){const double right=std::min(start-gap,span.second);if(right>cursor)out.emplace_back(cursor,right);cursor=std::max(cursor,end+gap);}
-    if(span.second>cursor)out.emplace_back(cursor,span.second);return out;
+    if(span.second>cursor)out.emplace_back(cursor,span.second);
+    return out;
 }
 } // namespace bike::terrain

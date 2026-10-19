@@ -7,7 +7,8 @@
 
 namespace bike::numerics {
 
-enum class DifferenceScheme { two_point, three_point };
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+enum class DifferenceScheme : std::uint8_t { two_point, three_point };
 struct LeastSquaresOptions {
     int max_evaluations = 80;
     DifferenceScheme difference = DifferenceScheme::two_point;

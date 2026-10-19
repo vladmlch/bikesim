@@ -87,6 +87,7 @@ struct EncodePlan {
     // leaf_columns/roots strings and column_owned points into `deeper`,
     // so a copy would leave the views aimed at the source.
     EncodePlan() = default;
+    ~EncodePlan() = default;
     EncodePlan(const EncodePlan &) = delete;
     EncodePlan &operator=(const EncodePlan &) = delete;
     EncodePlan(EncodePlan &&) = default;

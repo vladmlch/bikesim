@@ -41,6 +41,7 @@ public:
     Directory& operator=(Directory&&)=delete;
     std::filesystem::path path;
 };
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void little(std::vector<std::byte>& out,std::uint64_t value,std::size_t width) {
     for(std::size_t i=0;i<width;++i){out.push_back(static_cast<std::byte>(value&255U));value>>=8U;}
 }
@@ -49,7 +50,7 @@ void bytes(std::vector<std::byte>& out,std::string_view text) {
 }
 std::uint32_t crc(std::span<const std::byte> data) {
     std::uint32_t result=0xffffffffU;
-    for(auto cell:data){result^=std::to_integer<std::uint32_t>(cell);for(int i=0;i<8;++i)result=(result>>1U)^((result&1U)?0xedb88320U:0U);}
+    for(auto const cell:data){result^=std::to_integer<std::uint32_t>(cell);for(int i=0;i<8;++i)result=(result>>1U)^((result&1U)?0xedb88320U:0U);}
     return ~result;
 }
 std::vector<std::byte> fixed_deflate(std::span<const std::byte> data) {
@@ -59,7 +60,7 @@ std::vector<std::byte> fixed_deflate(std::span<const std::byte> data) {
     auto put=[&](unsigned int value,unsigned int width) {
         for(unsigned int i=0;i<width;++i){if(bit%8==0)out.push_back(std::byte{0});if(((value>>i)&1U)!=0)out[bit/8]|=static_cast<std::byte>(1U<<(bit%8));++bit;}
     };
-    auto code=[&](unsigned int symbol) {
+    auto const code=[&](unsigned int symbol) {
         unsigned int value=0,width=0;
         if(symbol<=143){value=0x30U+symbol;width=8;}
         else if(symbol<=255){value=0x190U+symbol-144U;width=9;}
@@ -68,7 +69,7 @@ std::vector<std::byte> fixed_deflate(std::span<const std::byte> data) {
         put(reversed,width);
     };
     put(1,1);put(1,2);
-    for(auto cell:data)code(std::to_integer<unsigned int>(cell));
+    for(auto const cell:data)code(std::to_integer<unsigned int>(cell));
     code(256);return out;
 }
 std::vector<std::byte> archive(std::string_view name,std::span<const std::byte> data,
@@ -111,8 +112,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::require(io::parse_npy(io::encode_npy(io::bool_array({true,false},{2}))).booleans()==std::vector<bool>{true,false},"boolean state flags retain their dtype");
     auto invalid=encoded;invalid.pop_back();bt::invalid([&]{(void)io::parse_npy(invalid);});
     auto oversized=array;oversized.shape={io::kMaxNumpyBytes,2};bt::invalid([&]{oversized.validate();});
-    io::NpyArray object{"|O8",{1},false,std::vector<std::byte>(8)};bt::invalid([&]{object.validate();});
-    for(bool compressed:{false,true})for(bool zip64:{false,true}) {
+    io::NpyArray object{.dtype="|O8",.shape={1},.fortran_order=false,.bytes=std::vector<std::byte>(8)};bt::invalid([&]{object.validate();});
+    for(bool const compressed:{false,true})for(bool const zip64:{false,true}) {
         const auto zip=archive("qpos.npy",encoded,compressed,zip64);
         const auto restored=io::parse_npz(zip);
         bt::require(restored.size()==1 && restored[0].first=="qpos" && restored[0].second.bytes==array.bytes,
@@ -124,7 +125,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 }
 
 [[gnu::noinline]] void durable_file() {
-    Directory temporary;
+    Directory const temporary;
     init::StateFile state;state.metadata=io::Value{io::Value::Object{}};
     state.arrays.emplace_back("qpos",io::double_array(std::array{1.,-0.},{2}));
     state.arrays.emplace_back("fingerprint_sha256",io::string_array(std::array{std::string(64,'a')},{}));
@@ -145,7 +146,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[gnu::noinline]] void recorded_identity() {
     bt::require(init::detail::source_json(io::parse_json(R"({"s":"é𝄞"})"))==R"({"s":"\u00e9\ud834\udd1e"})",
                 "historical JSON identity preserves Python ensure_ascii surrogate escaping");
-    io::Value native=io::parse_json("{\"backend\":\"native\",\"runtime_schema\":1,\"python_source_sha256\":\""+std::string(64,'a')+"\",\"native_source_sha256\":\""+std::string(64,'b')+"\",\"extension_sha256\":\""+std::string(64,'c')+"\",\"mujoco_library_sha256\":\""+std::string(64,'d')+"\",\"mujoco_version\":\"3.12.0\",\"build_context\":{\"build_type\":\"Release\",\"compiler_id\":\"Clang\",\"compiler_version\":\"21\",\"numerical_flags\":\"-ffp-contract=off\"}}");
+    io::Value const native=io::parse_json(R"({"backend":"native","runtime_schema":1,"python_source_sha256":")"+std::string(64,'a')+R"(","native_source_sha256":")"+std::string(64,'b')+R"(","extension_sha256":")"+std::string(64,'c')+R"(","mujoco_library_sha256":")"+std::string(64,'d')+R"(","mujoco_version":"3.12.0","build_context":{"build_type":"Release","compiler_id":"Clang","compiler_version":"21","numerical_flags":"-ffp-contract=off"}})");
     init::validate_recorded_execution(native);
     bt::require(true,"complete recorded native identity is accepted as data");
     auto wrong=native;auto& object=std::get<io::Value::Object>(wrong.data);object.emplace_back("recorded_path",io::Value{std::string("/untrusted/module")});
@@ -161,10 +162,11 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 }
 
 [[gnu::noinline]] void cache_and_transfer() {
-    Directory temporary;
+    Directory const temporary;
     auto request=init::read_setup_request(bt::fixture("requests/welded_flat.toml"));
-    request.model.physics->equilibrium_cache_enabled=true;
-    request.model.physics->equilibrium_state_file.reset();request.model.physics->initial_speed_mps=0.;
+    request.model.physics.value().equilibrium_cache_enabled=true; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    request.model.physics->equilibrium_state_file.reset();request.model.physics->initial_speed_mps=0.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    request.initial_state.reset();
     request.cache_directory=temporary.path;
     auto original=init::make_setup(request);const auto first=init::settle(*original);
     bt::require(!first.cache_hit && first.residual_qacc<=.05,"first native equilibrium is physically accepted");
@@ -173,8 +175,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::require(second.cache_hit && second.steps==first.steps,"the derived-name native cache restores validated metadata");
     std::vector<std::filesystem::path> paths;for(const auto& entry:std::filesystem::directory_iterator(temporary.path))if(entry.path().extension()==".npz")paths.push_back(entry.path());
     bt::require(paths.size()==1,"one resolved fingerprint names one cache entry");
-    auto explicit_request=request;explicit_request.model.physics->equilibrium_cache_enabled=false;
-    explicit_request.model.physics->equilibrium_state_file=paths.front().string();
+    auto explicit_request=request;explicit_request.model.physics.value().equilibrium_cache_enabled=false; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    explicit_request.model.physics->equilibrium_state_file=paths.front().string(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     auto explicit_owner=init::make_setup(explicit_request);
     bt::require(init::settle(*explicit_owner).cache_hit,"explicit matching state is rechecked against measured acceleration");
     auto corrupt=init::read_state_file(paths.front());
@@ -183,8 +185,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     auto invalid=init::make_setup(explicit_request);
     bt::invalid([&]{(void)init::settle(*invalid);});
     bt::invalid([&]{(void)invalid->seal_bootstrap();});
-    auto transfer=request;transfer.model.physics->equilibrium_cache_enabled=false;
-    transfer.model.physics->timestep_s*=.5;transfer.initial_state=initial;
+    auto transfer=request;transfer.model.physics.value().equilibrium_cache_enabled=false; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    transfer.model.physics->timestep_s*=.5;transfer.initial_state=initial; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     auto target=init::make_setup(transfer);const auto transferred=init::settle(*target);
     bt::require(transferred.initial_state_sha256==initial.sha256() &&
                 transferred.initial_state_target_residual_qacc.has_value(),

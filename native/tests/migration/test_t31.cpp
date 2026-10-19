@@ -29,15 +29,15 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::require(authored.area_factor==.46&&authored.tyre_height_mm()==52.&&authored.rim_strike_deflection_mm()==46.&&authored.pressure_pa()==150000.,"tyre defaults and physical unit properties");
     config.model="pneumatic";config=config.with_pressures(1.2,2.1);bt::require(config.front.pressure_bar==1.2&&config.rear.pressure_bar==2.1,"front/rear tyre pressures independent");
     bt::invalid([&]{(void)l::tier_spec("unknown");});bt::invalid([&]{(void)config.with_pressures(0.,1.5);});
-    biketyre::RoadProfile road(-1.,.01,std::vector<double>(201,0.));
+    biketyre::RoadProfile const road(-1.,.01,std::vector<double>(201,0.));
     const auto crossing=l::first_crossing_reference(0.,0.,.30,.372,road);
     bt::require(crossing&&std::abs(*crossing-.30)<1e-15,"reference ray finds the first visible surface");
     bt::require(!l::first_crossing_reference(0.,0.,1.,.372,road),"reference ray reports no contact beyond radius");
-    for(std::string_view name:{"fast","detailed"})for(double pressure:{1.1,2.3}){
+    for(std::string_view const name:{"fast","detailed"})for(double const pressure:{1.1,2.3}){
         const auto tier=l::tier_spec(name);const auto spec=l::with_pressure(l::front_tyre(),pressure);
         biketyre::PneumaticTyreModel tyre(spec,tier.n_rays,tier.half_angle_deg,tier.discretised_brush);
         const std::array hub{0.,0.,.365},velocity{0.,0.,0.};
-        nativecfg::SurfaceMap surface{{"hardpack",.7,.5,18.,4.5},{}};
+        nativecfg::SurfaceMap const surface{.surface={.name="hardpack",.mu_peak=.7,.mu_slide=.5,.slip_stiffness_per_load=18.,.stribeck_speed_mps=4.5},.sections={}};
         const auto& loaded=tyre.evaluate(hub,velocity,0.,road,surface,tier.timestep_s);
         bt::require(loaded.support_n>0.&&!loaded.airborne&&loaded.pressure_bar==pressure,"each legacy tier computes pressure-dependent support");
         tyre.reset();const auto& reset=tyre.last_outputs();bt::require(reset.support_n==0.&&reset.airborne,"tyre reset clears contact/material history");
@@ -53,19 +53,20 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::require(sim->steps()==5&&recorder.rows()==3,"legacy advances once and decimates first/every nth call");
     const auto columns=recorder.columns();bt::require(columns.size()==l::kLegacyChannels.size(),"legacy CSV schema retains all named channels");
     for(std::size_t i=0;i<columns.size();++i)bt::require(columns[i].first==l::kLegacyChannels[i]&&columns[i].second.size()==3,"column ordering and width retained");
-    for(double value:recorder.column("crank_phase_rad"))bt::require(std::isnan(value),"motor mode records missing cranks as NaN");
-    for(double value:recorder.column("front_tyre_fz_n"))bt::require(value==0.,"sphere mode keeps the legacy zero tyre channels");
+    for(double const value:recorder.column("crank_phase_rad"))bt::require(std::isnan(value),"motor mode records missing cranks as NaN");
+    for(double const value:recorder.column("front_tyre_fz_n"))bt::require(value==0.,"sphere mode keeps the legacy zero tyre channels");
     const auto sampled=sim->snapshot();(void)sim->telemetry();(void)recorder.columns();same(sampled.integration_state,sim->snapshot().integration_state,"legacy metrics leave authoritative stepping unchanged");
     sim->reset();const auto reset=sim->snapshot();same(before.integration_state,reset.integration_state,"repeat native equilibrium restores deterministic legacy state");
     bt::require(reset.generation>before.generation,"reset advances generation");
     bt::manifest_verify_files(bt::manifest_entry("bootstrap/legacy_flat"));
     bt::golden_f64("bootstrap/legacy_flat/integration.f64",before.integration_state);
-    sim->step();bt::golden_f64("bootstrap/legacy_flat/step1.f64",sim->snapshot().integration_state);
+    sim->step();
+    bt::golden_f64("bootstrap/legacy_flat/step1.f64",sim->snapshot().integration_state);
 }
 [[gnu::noinline]] void mode_contracts(){
-    for(std::string_view mode:{"pedal","pedelec"}){
+    for(std::string_view const mode:{"pedal","pedelec"}){
         bike::legacy::RideOptions options;options.setup=bike::initialization::read_setup_request(bt::fixture("requests/legacy_flat.toml"));
-        options.setup.model.rider->variant="seated";options.drive_mode=mode;options.legs="articulated";options.drivetrain.crank_phase_deg=25.;
+        options.setup.model.rider.value().variant="seated";options.drive_mode=mode;options.legs="articulated";options.drivetrain.crank_phase_deg=25.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
         auto ride=bike::legacy::make_ride(std::move(options));ride->step();bike::legacy::RideRecorder recorder(ride->timestep_s());recorder.record(*ride);
         bt::require(std::isfinite(recorder.column("crank_phase_rad").front()),"both pedalled modes expose a real crank phase");
     }

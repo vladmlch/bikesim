@@ -5,7 +5,7 @@
 namespace bike::recording {
 Publication finalize_guarded(RunCapture& capture, const std::filesystem::path& root,
                               const FinalizeOptions& options) {
-    platform::InterruptShield shield;
+    platform::InterruptShield const shield;
     auto publication = finalize(capture, root, options);
     // The sealed path stays cached even when the deferred signal is delivered
     // to the owning frontend after its critical section. ResearchRun/ride

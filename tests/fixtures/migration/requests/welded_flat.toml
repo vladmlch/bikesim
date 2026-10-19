@@ -6,3 +6,4 @@ rider_variant = "articulated_planar"
 speed_kph = 0.0
 seed_decimal = "1234"
 use_equilibrium_cache = false
+initial_state_file = "../initial_state/welded_flat.json"

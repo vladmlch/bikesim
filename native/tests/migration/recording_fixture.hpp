@@ -11,12 +11,12 @@ namespace recording_fixture {
 namespace rec = bike::recording;
 namespace io = bike::io;
 inline rec::RunMetadata metadata(std::string uuid = "00000000-0000-4000-8000-000000000038") {
-    return {std::move(uuid), "2026-10-17T12:00:00.123456+00:00", "native", "ride",
-        io::Value{io::Value::Object{{"fixture", io::Value{true}}}}, 0.};
+    return {.run_uuid=std::move(uuid), .started_utc="2026-10-17T12:00:00.123456+00:00", .backend="native", .mode="ride",
+        .values=io::Value{io::Value::Object{{"fixture", io::Value{true}}}}, .wall_origin_s=0.};
 }
 inline rec::Catalog catalog() {
-    const std::array<rec::JointCoords,2> joints{{{"root_x", "slide", 0, 0},
-                                              {"root_pitch", "hinge", 1, 1}}};
+    const std::array<rec::JointCoords,2> joints{{{.name="root_x", .joint_type="slide", .qposadr=0, .dofadr=0},
+                                              {.name="root_pitch", .joint_type="hinge", .qposadr=1, .dofadr=1}}};
     return rec::build_catalog(joints);
 }
 inline runtime::OwnedNativeEpisode episode(std::size_t count = 3) {
@@ -55,8 +55,8 @@ inline std::unique_ptr<rec::RunCapture> capture(std::size_t count = 3,
     bool enabled = true, std::string uuid = "00000000-0000-4000-8000-000000000038") {
     auto result = std::make_unique<rec::RunCapture>(metadata(std::move(uuid)), enabled);
     result->add_episode(evidence(count));
-    result->event({0,0,"episode_ended",.25,static_cast<std::int64_t>(count),{},
-        io::Value{io::Value::Object{{"reason",rec::value::text("fixture")}}}});
+    result->event({.episode_id=0,.event_id=0,.kind="episode_ended",.received_wall_s=.25,.processed_step=static_cast<std::int64_t>(count),.applied_step={},
+        .values=io::Value{io::Value::Object{{"reason",rec::value::text("fixture")}}}});
     return result;
 }
 inline rec::Publication publish(const std::filesystem::path& root, std::size_t count = 3) {

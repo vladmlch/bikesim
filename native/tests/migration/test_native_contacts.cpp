@@ -52,7 +52,7 @@ void native_rows_and_bridge() {
         "native patch retains full world wrench and terrain provenance");
     bt::require(std::abs(patch.slip_mps - 2.) < 1e-12,
         "contact slip uses the supplied incoming generalized velocity");
-    bt::require(std::abs((*patch.native_world_force_n)[2] - patch.normal_load_n) < 1e-9,
+    bt::require(std::abs((patch.native_world_force_n.value())[2] - patch.normal_load_n) < 1e-9, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
         "flat plane normal transforms into an upward wheel force");
     const auto state = query.state();
     bt::invalid([&] {
@@ -65,7 +65,7 @@ void native_rows_and_bridge() {
 
     const int front_z = mj_name2id(model.get(), mjOBJ_JOINT, "front_z");
     const auto addresses = std::views::counted(model->jnt_qposadr, model->njnt);
-    auto qpos = std::views::counted(data->qpos, model->nq);
+    auto const qpos = std::views::counted(data->qpos, model->nq);
     qpos[static_cast<std::size_t>(addresses[static_cast<std::size_t>(front_z)])] = 1.;
     engine::forward(model.get(), data.get());
     const auto dropout = query.query(model.get(), data.get(), .001);

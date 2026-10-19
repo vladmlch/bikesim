@@ -9,7 +9,7 @@
 #include <vector>
 
 namespace bike::io {
-inline constexpr std::size_t kMaxNumpyBytes=128U*1024U*1024U;
+inline constexpr std::size_t kMaxNumpyBytes=static_cast<std::size_t>(128U*1024U*1024U);
 inline constexpr std::size_t kMaxNumpyMembers=4096;
 struct NpyArray {
     std::string dtype;

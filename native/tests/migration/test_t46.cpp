@@ -9,13 +9,33 @@
 namespace {
 using namespace bike::recording::detail;
 struct Result { int code; std::string out,error; };
-Result command(std::vector<std::string> args) {
-    std::vector<std::string_view> views; for(const auto& arg:args)views.push_back(arg);
+Result command(const std::vector<std::string>& args) {
+    std::vector<std::string_view> views; views.reserve(args.size());
+for(const auto& arg:args)views.push_back(arg);
     std::ostringstream out,error; const int code=bike::cli::recording_command(views,out,error);
-    return {code,out.str(),error.str()};
+    return {.code=code,.out=out.str(),.error=error.str()};
+}
+// The standalone process receives the same genuine sealed fixture. These
+// cases verify dispatch/stdio/exit status beyond the direct C++ entry point.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
+void analyst_process(const std::filesystem::path& executable, const std::string& path,
+                     const std::string& expected_json, const std::filesystem::path& cwd) {
+    const auto process=[&](std::vector<std::string> args) {
+        args.insert(args.begin(),executable.string());return bike::platform::run(args,cwd);
+    };
+    const auto help=process({"--help"});
+    bt::require(help.exit_code==0&&help.out.find("usage: bike-recording")!=std::string::npos&&help.err.empty(),"standalone analyst help runs without a simulator or display request");
+    const auto overview=process({"overview",path,"--json"});
+    bt::require(overview.exit_code==0&&overview.err.empty()&&equal(bike::io::parse_recording_json(overview.out),bike::io::parse_recording_json(expected_json)),
+        "native executable and direct analyst API return the same sealed evidence");
+    const auto invalid=process({"sql",path,"--query","DELETE FROM physics"});
+    bt::require(invalid.exit_code==1&&invalid.out.empty()&&invalid.err.find("RECORDING ERROR")!=std::string::npos,"standalone SQL rejection keeps stdout and stderr separate");
+    const auto process_export=cwd/"process-metrics.csv";
+    const auto exported_process=process({"export",path,"--episode","0","--table","metrics","--format","csv","--output",process_export.string()});
+    bt::require(exported_process.exit_code==0&&bt::text(process_export).find("9007199254740993")!=std::string::npos,"standalone export writes actual exact-integer CSV output");
 }
 void analyst(const std::filesystem::path& executable) {
-    recording_reader_test::Directory tmp;
+    recording_reader_test::Directory const tmp;
     bt::require(command({"--help"}).code==0,"analyst help does not open a recording");
     bt::require(command({}).code==2&&command({"missing-command"}).code==2,"required command/parser failures return status 2");
     bt::require(command({"window","missing","--episode","0","--start","0","--end","1"}).code==2,"window requires explicit fields before recording access");
@@ -42,21 +62,7 @@ void analyst(const std::filesystem::path& executable) {
     bt::require(command({"window",path,"--episode","0","--start","1e-9999","--end",".003","--fields","x_m"}).code==0,"source float underflow becomes zero before interval selection");
     bt::require(command({"window",path,"--episode","0","--start","0","--end","1e9999","--fields","x_m"}).code==1,"source float overflow is rejected by the finite interval domain, not the parser");
     bt::require(command({"window",path,"--episode","0","--start","nan(payload)","--end",".003","--fields","x_m"}).code==2,"implementation NaN payload syntax is not a source CLI float token");
-    // The standalone process receives the same genuine sealed fixture. These
-    // cases verify dispatch/stdio/exit status beyond the direct C++ entry point.
-    const auto process=[&](std::vector<std::string> args) {
-        args.insert(args.begin(),executable.string());return bike::platform::run(args,tmp.path);
-    };
-    const auto help=process({"--help"});
-    bt::require(help.exit_code==0&&help.out.find("usage: bike-recording")!=std::string::npos&&help.err.empty(),"standalone analyst help runs without a simulator or display request");
-    const auto overview=process({"overview",path,"--json"});
-    bt::require(overview.exit_code==0&&overview.err.empty()&&equal(bike::io::parse_recording_json(overview.out),bike::io::parse_recording_json(json.out)),
-        "native executable and direct analyst API return the same sealed evidence");
-    const auto invalid=process({"sql",path,"--query","DELETE FROM physics"});
-    bt::require(invalid.exit_code==1&&invalid.out.empty()&&invalid.err.find("RECORDING ERROR")!=std::string::npos,"standalone SQL rejection keeps stdout and stderr separate");
-    const auto process_export=tmp.path/"process-metrics.csv";
-    const auto exported_process=process({"export",path,"--episode","0","--table","metrics","--format","csv","--output",process_export.string()});
-    bt::require(exported_process.exit_code==0&&bt::text(process_export).find("9007199254740993")!=std::string::npos,"standalone export writes actual exact-integer CSV output");
+    analyst_process(executable,path,json.out,tmp.path);
 }
 }
 int main(int argc,char** argv){return bt::run([&]{

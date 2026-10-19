@@ -81,6 +81,7 @@ const void* variant_object(const void* address) {
 // One `dataclasses.field()` row. `required` marks a leaf with no declared
 // default (schema emits `default: null`); the member itself is only read
 // for defaults when required == false, and always for instance encoding.
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding) field order is the schema declaration order consumed by designated initializers; reordering would break every table literal
 struct FieldDecl {
     std::string_view name;
     std::string_view type;      // str(f.type) from the source dataclass

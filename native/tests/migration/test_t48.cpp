@@ -100,7 +100,7 @@ void replica_contracts() {
     renderer.close(); renderer.close();
     bt::require(renderer.closed(), "render cleanup is idempotent without graphics initialization");
     auto invalid_image = image; invalid_image.sha256 = std::string(64, '0');
-    bt::invalid([&] { bike::viewer::RenderOwner rejected(invalid_image); });
+    bt::invalid([&] { bike::viewer::RenderOwner const rejected(invalid_image); });
 }
 }
 int main() { return bt::run(replica_contracts); }

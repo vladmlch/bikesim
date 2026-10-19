@@ -33,6 +33,7 @@ private:
         std::size_t pedal_q=0, pedal_v=0;
         std::optional<model::Vec3> previous;
     };
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const mjModel& model_;
     double crank_length_, ripple_depth_;
     std::size_t pelvis_q_ = 0, crank_q_ = 0;

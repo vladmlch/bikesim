@@ -13,6 +13,10 @@ class ArgumentError : public std::invalid_argument {
 public:
     using std::invalid_argument::invalid_argument;
     ~ArgumentError() override;
+    ArgumentError(const ArgumentError&) = default;
+    ArgumentError& operator=(const ArgumentError&) = default;
+    ArgumentError(ArgumentError&&) = default;
+    ArgumentError& operator=(ArgumentError&&) = default;
 };
 struct OptionSpec {
     std::vector<std::string> names, choices;
@@ -28,7 +32,7 @@ struct Arguments {
     [[nodiscard]] bool present(std::string_view key) const;
     [[nodiscard]] bool has(std::string_view key) const;
     [[nodiscard]] bool flag(std::string_view key) const;
-    [[nodiscard]] std::string text(std::string_view key, std::string fallback = {}) const;
+    [[nodiscard]] std::string text(std::string_view key, const std::string& fallback = {}) const;
     [[nodiscard]] double real(std::string_view key, double fallback = 0.) const;
     [[nodiscard]] std::int64_t integer(std::string_view key, std::int64_t fallback = 0) const;
     [[nodiscard]] std::optional<std::string> optional_text(std::string_view key) const;

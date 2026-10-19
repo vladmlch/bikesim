@@ -4,12 +4,14 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <array>
+#include <format>
 
 namespace bike::recording {
 std::string quote(std::string_view name) {
     if (name.empty() || name.find('\0') != std::string_view::npos) throw std::invalid_argument("invalid SQL identifier");
     std::string out = "\"";
-    for (char c : name) { out += c; if (c == '"') out += c; }
+    for (char const c : name) { out += c; if (c == '"') out += c; }
     return out + '"';
 }
 std::vector<std::vector<std::string>> parent_paths(const TableSpec& spec) {
@@ -26,7 +28,7 @@ std::vector<std::string> parent_masks(const TableSpec& spec) {
 }
 std::vector<std::pair<std::string, std::string>> column_types(const TableSpec& spec) {
     std::vector<std::pair<std::string, std::string>> out;
-    auto add = [&](const FieldSpec& f) { out.emplace_back(f.key, f.duckdb_type()); if (f.optional) out.emplace_back(f.key + "_present", "BOOLEAN"); };
+    auto const add = [&](const FieldSpec& f) { out.emplace_back(f.key, f.duckdb_type()); if (f.optional) out.emplace_back(f.key + "_present", "BOOLEAN"); };
     for (const auto& f : spec.keys) add(f);
     for (const auto& f : spec.fields) add(f);
     for (const auto& mask : parent_masks(spec)) out.emplace_back(mask, "BOOLEAN");
@@ -35,7 +37,7 @@ std::vector<std::pair<std::string, std::string>> column_types(const TableSpec& s
 std::vector<io::Value::Array> catalog_rows() {
     std::vector<io::Value::Array> rows;
     for (const auto& spec : all_tables()) {
-        auto add = [&](const FieldSpec& f) {
+        auto const add = [&](const FieldSpec& f) {
             rows.push_back({value::text(spec.name), value::text(f.key), value::text(f.duckdb_type()), value::text(f.unit), value::text(f.phase), io::Value{f.optional}, value::text(f.measurement), value::text(f.source), value::text(f.frame), value::text(io::recording_json(describe_field(f)))});
             if (f.optional) rows.push_back({value::text(spec.name), value::text(f.key + "_present"), value::text("BOOLEAN"), value::text("1"), value::text(f.phase), io::Value{false}, value::text("declared"), value::text(f.source), value::text("n/a"), value::text(io::recording_json(io::Value{io::Value::Object{{"presence_of", value::text(f.key)}, {"description", value::text("field existed in source payload")}}}))});
         };
@@ -45,8 +47,8 @@ std::vector<io::Value::Array> catalog_rows() {
     }
     return rows;
 }
-void create_metadata(Connection& connection) {
-    static const std::pair<std::string_view, std::string_view> definitions[]{
+void create_metadata(Connection const& connection) {
+    static const auto definitions = std::to_array<std::pair<std::string_view, std::string_view>>({
         {"recording_meta", "schema_version INTEGER NOT NULL, run_id UUID NOT NULL, codec VARCHAR NOT NULL"},
         {"runs", "run_id UUID PRIMARY KEY, started_at TIMESTAMPTZ NOT NULL, backend VARCHAR NOT NULL, mode VARCHAR NOT NULL, metadata_json VARCHAR NOT NULL"},
         {"episodes", "episode_id BIGINT PRIMARY KEY, generation BIGINT NOT NULL, physical_rows BIGINT NOT NULL, complete_control_steps BIGINT NOT NULL, replay_contract_version INTEGER, replay_eligible BOOLEAN NOT NULL, summary_json VARCHAR NOT NULL"},
@@ -56,10 +58,10 @@ void create_metadata(Connection& connection) {
         {"alias_catalog", "episode_id BIGINT NOT NULL, alias VARCHAR NOT NULL, canonical VARCHAR NOT NULL, vector_index BIGINT, parameter VARCHAR, note VARCHAR NOT NULL, PRIMARY KEY(episode_id,alias)"},
         {"assets", "episode_id BIGINT NOT NULL, name VARCHAR NOT NULL, media_type VARCHAR NOT NULL, sha256 VARCHAR NOT NULL, content BLOB NOT NULL, PRIMARY KEY(episode_id,name)"},
         {"integration_states", "episode_id BIGINT NOT NULL, phase VARCHAR NOT NULL, signature VARCHAR NOT NULL, state DOUBLE[] NOT NULL, PRIMARY KEY(episode_id,phase)"},
-        {"metrics", "episode_id BIGINT NOT NULL, name VARCHAR NOT NULL, kind VARCHAR NOT NULL, double_value DOUBLE, bigint_value BIGINT, boolean_value BOOLEAN, text_value VARCHAR, list_value DOUBLE[], json_value VARCHAR, PRIMARY KEY(episode_id,name)"}};
+        {"metrics", "episode_id BIGINT NOT NULL, name VARCHAR NOT NULL, kind VARCHAR NOT NULL, double_value DOUBLE, bigint_value BIGINT, boolean_value BOOLEAN, text_value VARCHAR, list_value DOUBLE[], json_value VARCHAR, PRIMARY KEY(episode_id,name)"}});
     for (const auto& [name, definition] : definitions) connection.execute("CREATE TABLE " + quote(name) + " (" + std::string(definition) + ")");
 }
-void create_streams(Connection& connection) {
+void create_streams(Connection const& connection) {
     for (const auto& spec : all_tables()) {
         std::string sql = "CREATE TABLE " + quote(spec.name) + " (";
         bool first = true;
@@ -69,7 +71,7 @@ void create_streams(Connection& connection) {
         connection.execute(sql + "))");
     }
 }
-void create_views(Connection& connection) {
+void create_views(Connection const& connection) {
     std::string select = "p.episode_id, p.interval_id", joins;
     std::size_t index = 0;
     for (const auto& spec : schema_catalog().table_order()) {
@@ -83,7 +85,7 @@ void create_views(Connection& connection) {
     connection.execute("CREATE VIEW legacy_intervals AS SELECT episode_id, interval_id, time_s, interval_end_s AS end_time_s, dt_s, qpos, qvel FROM physics");
     connection.execute("CREATE VIEW legacy_observations AS SELECT * EXCLUDE(episode_id, observation_id) FROM observations");
 }
-void create_legacy_view(Connection& connection) {
+void create_legacy_view(Connection const& connection) {
     std::map<std::string, std::vector<std::string>, std::less<>> expressions;
     for (const auto& row : connection.query("SELECT episode_id,alias,canonical,vector_index,parameter FROM alias_catalog ORDER BY alias,episode_id")) {
         const auto& alias = io::as_string(value::require(row, "alias"), "alias");
@@ -91,8 +93,8 @@ void create_legacy_view(Connection& connection) {
         if (alias.find('{') != std::string::npos || !io::is_null(value::require(row, "parameter")) || canonical.starts_with("forces.") || std::count(canonical.begin(), canonical.end(), '.') != 1) continue;
         std::string expression = quote(canonical);
         const auto& index = value::require(row, "vector_index");
-        if (!io::is_null(index)) expression = "(" + expression + ")[" + std::to_string(io::as_int64(index, "vector_index") + 1) + "]";
-        expressions[alias].push_back("WHEN episode_id=" + std::to_string(io::as_int64(value::require(row, "episode_id"), "episode_id")) + " THEN " + expression);
+        if (!io::is_null(index)) expression = std::format("({})[{}]", expression, io::as_int64(index, "vector_index") + 1);
+        expressions[alias].push_back(std::format("WHEN episode_id={} THEN {}", io::as_int64(value::require(row, "episode_id"), "episode_id"), expression));
     }
     std::string columns = "episode_id, interval_id";
     for (const auto& [name, cases] : expressions) columns += ", CASE " + value::join(cases, " ") + " END AS " + quote(name);

@@ -77,6 +77,11 @@ PreparedEnvironment prepare_environment(ResearchRequest request) {
     prepare_environment_into(request, out);
     return out;
 }
+[[gnu::noinline]] std::unique_ptr<PreparedEnvironment> prepare_environment(std::unique_ptr<ResearchRequest> request) {
+    auto prepared = std::make_unique<PreparedEnvironment>();
+    prepare_environment_into(*request, *prepared);
+    return prepared;
+}
 [[gnu::noinline]] std::unique_ptr<runtime::NativeResearchRuntime> make_environment(ResearchRequest request) {
     auto prepared = std::make_unique<PreparedEnvironment>();
     prepare_environment_into(request, *prepared);

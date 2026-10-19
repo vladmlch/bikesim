@@ -6,12 +6,13 @@
 
 namespace bike::terrain {
 namespace {
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 const std::array<SurfaceSpec,5> registry{{
-    {"asphalt",1.05,.75,15.,4.5,"dry asphalt"},
-    {"hardpack",.80,.60,12.,4.5,"dry hard-packed dirt"},
-    {"loose",.55,.45,7.,4.5,"loose gravel over hardpack"},
-    {"wet",.50,.40,10.,4.5,"wet dirt"},
-    {"scree",.45,.38,4.5,4.5,"alpine scree: loose rock debris over bedrock"}
+    {.name="asphalt",.mu_peak=1.05,.mu_slide=.75,.slip_stiffness_per_load=15.,.stribeck_speed_mps=4.5,.description="dry asphalt"},
+    {.name="hardpack",.mu_peak=.80,.mu_slide=.60,.slip_stiffness_per_load=12.,.stribeck_speed_mps=4.5,.description="dry hard-packed dirt"},
+    {.name="loose",.mu_peak=.55,.mu_slide=.45,.slip_stiffness_per_load=7.,.stribeck_speed_mps=4.5,.description="loose gravel over hardpack"},
+    {.name="wet",.mu_peak=.50,.mu_slide=.40,.slip_stiffness_per_load=10.,.stribeck_speed_mps=4.5,.description="wet dirt"},
+    {.name="scree",.mu_peak=.45,.mu_slide=.38,.slip_stiffness_per_load=4.5,.stribeck_speed_mps=4.5,.description="alpine scree: loose rock debris over bedrock"}
 }};
 }
 void SurfaceSpec::validate() const {
@@ -33,7 +34,9 @@ std::vector<double> SurfaceSpec::mu(std::span<const double> speeds) const {
     return out;
 }
 std::vector<std::string> available_surfaces() {
-    std::vector<std::string> out; for(const auto& s:registry) out.push_back(s.name); return out;
+    std::vector<std::string> out; out.reserve(registry.size());
+    for(const auto& s:registry) out.push_back(s.name);
+    return out;
 }
 const SurfaceSpec& get_surface(std::string_view name) {
     for(const auto& s:registry) if(s.name==name) return s;
@@ -45,7 +48,7 @@ void SurfaceSection::validate() const {
     (void)get_surface(surface);
 }
 SurfaceMap::SurfaceMap(SurfaceSpec surface,std::vector<SurfaceSection> sections):surface_(std::move(surface)),sections_(std::move(sections)) {
-    std::stable_sort(sections_.begin(),sections_.end(),[](const auto& a,const auto& b){return a.start_m<b.start_m;});
+    std::ranges::stable_sort(sections_,[](const auto& a,const auto& b){return a.start_m<b.start_m;});
     validate();
 }
 SurfaceMap SurfaceMap::uniform(std::string_view name) { return SurfaceMap(get_surface(name)); }

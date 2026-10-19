@@ -274,7 +274,7 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
             const auto bytes = io::read_numpy_bytes(state_file);
             std::string source;
             source.reserve(bytes.size());
-            for (auto byte : bytes) source.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
+            for (auto const byte : bytes) source.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
             const auto first = source.find_first_not_of(" \t\r\n");
             bool transfer = false;
             if (first != std::string::npos && source[first] == '{')

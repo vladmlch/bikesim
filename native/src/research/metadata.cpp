@@ -35,9 +35,9 @@ Value damper_coefficients(const nativecfg::DamperCore& c) {
 }
 Value active_suspension(const geometry::BikeSpecs& b) {
     const auto s = configuration::resolve_suspension(configuration::SuspensionInputs{
-        b.fork_hsc, b.fork_lsc, b.fork_rebound, b.shock_hsc, b.shock_lsc, b.shock_rebound,
-        b.shock_hbo, b.shock_lockout, b.fork_travel, b.shock_stroke, b.fork_initial_psi,
-        b.fork_air_tokens, b.shock_stiffness});
+        .fork_hsc=b.fork_hsc, .fork_lsc=b.fork_lsc, .fork_rebound=b.fork_rebound, .shock_hsc=b.shock_hsc, .shock_lsc=b.shock_lsc, .shock_rebound=b.shock_rebound,
+        .shock_hbo=b.shock_hbo, .shock_lockout=b.shock_lockout, .fork_travel=b.fork_travel, .shock_stroke=b.shock_stroke, .fork_initial_psi=b.fork_initial_psi,
+        .fork_air_tokens=b.fork_air_tokens, .shock_stiffness=b.shock_stiffness});
     auto shock = damper_coefficients(s.shock_damper.core);
     const auto& d = s.shock_damper;
     const double frac = std::clamp(d.hbo_clicks, 0, d.max_hbo) / static_cast<double>(d.max_hbo);
@@ -78,7 +78,7 @@ std::string configuration_digest(const Value& resolved) {
 }
 runtime::ResearchAsset asset(std::string name, std::string media_type, std::vector<std::byte> content) {
     const auto hash = io::sha256(content);
-    return {std::move(name), std::move(media_type), hash, std::move(content)};
+    return {.name=std::move(name), .media_type=std::move(media_type), .sha256=hash, .content=std::move(content)};
 }
 runtime::ResearchAsset text_asset(std::string name, std::string media_type, std::string_view content) {
     const auto bytes = std::as_bytes(std::span{content.data(), content.size()});
@@ -157,7 +157,8 @@ io::Value physical_configuration_metadata(const initialization::SetupRequest& re
         {"configuration_sha256", text(configuration_hash)}, {"terrain_sha256", text(hash)},
         {"resolved_config", std::move(resolved)}, {"seed", seed}, {"timestep_s", real(bootstrap.config.timestep_s)},
         {"controller_interval_s", real(bootstrap.config.control_period_s)}, {"tire_backend", text(physics.tires.backend)},
-        {"drive_mode", text(physics.drive_mode.value())}, {"rider_model", field(field(inputs, "rider"), "variant")},
+        { // NOLINTNEXTLINE(bugprone-unchecked-optional-access) physics schema requires drive_mode
+        "drive_mode", text(physics.drive_mode.value())}, {"rider_model", field(field(inputs, "rider"), "variant")},
         {"external_speed_controller", Value{physics.drive_mode == "ideal_speed_control"}}, {"calibration_status", text("parameterized_unvalidated")},
         {"environment_contract", Value{Object{{"scope", text("native executable, provider and dependency-lock identity")},
             {"dependency_lock_sha256", text(build.dependency_lock_sha256)}, {"build_type", text(build.build_type)},

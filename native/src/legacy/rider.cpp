@@ -14,7 +14,7 @@ RiderForces::RiderForces(const mjModel& m, const std::optional<model::SeatedPose
     if (!pose) return;
     nativecfg::RiderForcesConfig config;
     for (const auto& b : pose->bodies)
-        config.paths.push_back({b.name,b.joint,b.stiffness_n_m,b.damping_ns_m,b.preload_deflection_m(),0.,b.unilateral});
+        config.paths.push_back({.name=b.name,.joint=b.joint,.stiffness_n_m=b.stiffness_n_m,.damping_ns_m=b.damping_ns_m,.preload_deflection_m=b.preload_deflection_m(),.offset_m=0.,.unilateral=b.unilateral});
     // The existing writer owns the named/unlimited-slide validation.
     const RiderForcesWriter checked(&m,config);
     paths_.assign(checked.paths().begin(),checked.paths().end());
@@ -70,7 +70,7 @@ EnergyLedger::EnergyLedger(double initial) : initial_(initial) {
     if (!std::isfinite(initial)) throw std::invalid_argument("invalid initial mechanical energy");
 }
 double EnergyLedger::residual(double energy, double active, double external, double loss) const {
-    for (double x : {energy,active,external,loss}) if (!std::isfinite(x)) throw std::invalid_argument("non-finite energy ledger");
+    for (double const x : {energy,active,external,loss}) if (!std::isfinite(x)) throw std::invalid_argument("non-finite energy ledger");
     if (loss < 0.) throw std::invalid_argument("dissipation cannot be negative");
     return energy - initial_ - active - external + loss;
 }
@@ -80,9 +80,9 @@ MechanicalEnergy mechanical_energy_terms(const mjModel& model, mjData& data, dou
     engine::forward(&model,&data);
     const auto n = static_cast<std::size_t>(model.nv);
     std::vector<double> mass(n*n), left(n);
-    struct Call { const mjModel* m; const mjData* d; double* result; } call{&model,&data,mass.data()};
+    struct Call { const mjModel* m; const mjData* d; double* result; } call{.m=&model,.d=&data,.result=mass.data()};
     engine::ErrorBuffer error;
-    if (!engine::invoke([](void* raw) noexcept { auto& c = *static_cast<Call*>(raw); mj_fullM(c.m,c.d,c.result); },&call,error)) engine::throw_failure(error);
+    if (!engine::invoke([](void* raw) noexcept { auto const& c = *static_cast<Call*>(raw); mj_fullM(c.m,c.d,c.result); },&call,error)) engine::throw_failure(error);
     for (std::size_t i = 0; i < n; ++i) left[i] = .5 * std::views::counted(data.qvel,model.nv)[i];
     std::vector<double> mv(n);
     if (n) blas::cblas_dgemv(static_cast<int>(blas::Order::row_major),static_cast<int>(blas::Transpose::yes),
@@ -94,7 +94,7 @@ MechanicalEnergy mechanical_energy_terms(const mjModel& model, mjData& data, dou
         for (std::size_t axis = 0; axis < 3; ++axis)
             gravitational_terms[3*b+axis]=masses[b]*positions[3*b+axis]*std::span(model.opt.gravity)[axis];
     const double gravitational=-numeric::numpy_pairwise_sum(gravitational_terms);
-    return {kinetic,gravitational,elastic};
+    return {.kinetic_j=kinetic,.gravitational_j=gravitational,.elastic_j=elastic};
 }
 SystemMomentum system_momentum(const mjModel& model, mjData& data) {
     if(model.nbody<0||model.nbody>std::numeric_limits<int>::max())throw std::invalid_argument("momentum body count exceeds MuJoCo ID range");
@@ -114,9 +114,9 @@ SystemMomentum system_momentum(const mjModel& model, mjData& data) {
     for (std::size_t b = 0; b < masses.size(); ++b) {
         if (masses[b] == 0.) continue;
         const bike::model::WorldVector point{positions[3*b],positions[3*b+1],positions[3*b+2]};
-        struct JacobianCall{const mjModel* model;const mjData* data;double* jp;double* jr;int body;} call{&model,&data,jp.data(),jr.data(),static_cast<int>(b)};
+        struct JacobianCall{const mjModel* model;const mjData* data;double* jp;double* jr;int body;} call{.model=&model,.data=&data,.jp=jp.data(),.jr=jr.data(),.body=static_cast<int>(b)};
         engine::ErrorBuffer error;
-        if(!engine::invoke([](void* raw)noexcept{auto& c=*static_cast<JacobianCall*>(raw);mj_jacBodyCom(c.model,c.data,c.jp,c.jr,c.body);},&call,error))engine::throw_failure(error);
+        if(!engine::invoke([](void* raw)noexcept{auto const& c=*static_cast<JacobianCall*>(raw);mj_jacBodyCom(c.model,c.data,c.jp,c.jr,c.body);},&call,error))engine::throw_failure(error);
         std::array<double,3> velocity{},omega{},linear{},spin{},arm{};
         if(width){blas::dgemv(blas::Order::row_major,blas::Transpose::no,3,width,1.,jp.data(),width,data.qvel,1,0.,velocity.data(),1);
             blas::dgemv(blas::Order::row_major,blas::Transpose::no,3,width,1.,jr.data(),width,data.qvel,1,0.,omega.data(),1);}

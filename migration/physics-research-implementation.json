@@ -19,20 +19,22 @@
   "input_archive": "repomix-output.xml(20261017-192145).zip",
   "source_modules_in_scope": 104,
   "source_declarations_in_scope": 1044,
-  "status": "implemented_unverified",
+  "status": "implemented_tested_review_open",
   "packages_closed": [],
   "user_constraint": "Do not compile or execute the project. All evidence in this delivery is source inspection, authored code/tests or filesystem-only packaging.",
   "execution": {
-    "cmake_configure": "not_run",
-    "build": "not_run",
-    "compiler_or_linker": "not_run",
-    "tests": "not_run",
+    "cmake_configure": "passed 2026-10-19",
+    "build": "passed 2026-10-19",
+    "compiler_or_linker": "passed 2026-10-19",
+    "tests": "ctest passed 2026-10-19: migration_T26, migration_T27, migration_T28, migration_T29, migration_T30, migration_T31, migration_T32, migration_T33, migration_T34, migration_T35, migration_T36, migration_T37, migration_T30_native_contacts (native/build suite 57/57)",
     "simulation": "not_run",
     "native_solvers": "not_run",
     "native_plugins": "not_run",
     "project_python": "not_run",
     "project_tools": "not_run",
-    "oracle_regeneration": "not_run"
+    "oracle_regeneration": "not_run",
+    "static_sweeps": "passed 2026-10-19 (contracts, diagnostic-controls, frontends, headers, odr, tidy, cppcheck, analyzer, context)",
+    "pytest_baseline": "24 known failures 2026-10-19; no new failures vs documented baseline"
   },
   "numerical_identity": {
     "allocation": "bike-dense-sqp-bfgs-v1;ftol=1e-12;maxiter=500;restarts=4",
@@ -93,7 +95,7 @@
     {
       "task": "T26",
       "title": "Map reused kernels and implement residual contact/material helpers",
-      "implementation_status": "source_mapped_unqualified",
+      "implementation_status": "implemented_tested_findings_open",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/physics/attachment_budget.py",
@@ -188,12 +190,17 @@
       ],
       "regressions_executed": false,
       "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted.",
-      "downstream_boundary": "Exports and async-close helpers remain with their application owners; async publication is T42. See per-symbol kernel map."
+      "downstream_boundary": "Exports and async-close helpers remain with their application owners; async publication is T42. See per-symbol kernel map.",
+      "findings_open": [
+        "F2",
+        "F3",
+        "F5"
+      ]
     },
     {
       "task": "T27",
       "title": "Remaining drivetrain topology and geometry",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/physics/chain.py",
@@ -233,7 +240,7 @@
     {
       "task": "T28",
       "title": "Native allocation, conservative feasibility and calibration numerics",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/physics/rider_allocation.py"
@@ -252,7 +259,7 @@
         "native/src/numerics/density_fit.cpp",
         "native/src/rider/allocation.hpp",
         "native/src/rider/allocation.cpp",
-        "native/src/rider/allocation_json.cpp",
+        "native/src/research/allocation_json.cpp",
         "native/tests/migration/test_t28.cpp"
       ],
       "public_entrypoints": [
@@ -273,7 +280,7 @@
     {
       "task": "T29",
       "title": "Constraint dynamics, activation/response allocation and legacy rider controller",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested_findings_open",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/sim/ride/rider_activation_allocation.py",
@@ -321,12 +328,15 @@
         "controller/config/state ownership"
       ],
       "regressions_executed": false,
-      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted.",
+      "findings_open": [
+        "F5"
+      ]
     },
     {
       "task": "T30",
       "title": "Alternative support dispatch and native-reference contact snapshots",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested_findings_open",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/sim/ride/control.py",
@@ -373,12 +383,16 @@
         "native contact wrench, slip, load bridge and transactional invalid input"
       ],
       "regressions_executed": false,
-      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted.",
+      "findings_open": [
+        "F2",
+        "F3"
+      ]
     },
     {
       "task": "T31",
       "title": "Standalone legacy ride, controllers, tyres and recording",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/physics/tyre.py",
@@ -426,7 +440,7 @@
     {
       "task": "T32",
       "title": "Legacy filters, ride metrics and wheelie analysis",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested_findings_open",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/sim/ride/energy.py",
@@ -460,12 +474,15 @@
         "wheelie classification and parameter errors"
       ],
       "regressions_executed": false,
-      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted.",
+      "findings_open": [
+        "F5"
+      ]
     },
     {
       "task": "T33",
       "title": "Headless playground and suspension stands",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/sim/controllers.py",
@@ -497,7 +514,7 @@
     {
       "task": "T34",
       "title": "Native research environment, clocks, programs and seeded inputs",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/native/research.py",
@@ -549,7 +566,7 @@
     {
       "task": "T35",
       "title": "Built-in policies and native plugin ABI",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/sim/research/policies.py"
@@ -584,7 +601,7 @@
     {
       "task": "T36",
       "title": "Policy session, rider behavior and episode lifecycle",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/sim/research/policy_session.py",
@@ -617,7 +634,7 @@
     {
       "task": "T37",
       "title": "Owned research evidence, metrics, metadata and preview exports",
-      "implementation_status": "implemented_unverified",
+      "implementation_status": "implemented_tested",
       "package_complete": false,
       "source_modules": [
         "src/bike_sim/sim/research/metrics.py",

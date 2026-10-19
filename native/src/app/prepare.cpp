@@ -33,6 +33,11 @@ PreparedSimulation prepare(SetupRequest request) {
     prepare_into(request, out);
     return out;
 }
+std::unique_ptr<PreparedSimulation> prepare(std::unique_ptr<SetupRequest> request) {
+    auto out = std::make_unique<PreparedSimulation>();
+    prepare_into(*request, *out);
+    return out;
+}
 PreparedSimulation prepare(const std::filesystem::path& request_toml) {
     auto req = load_request_ptr(request_toml);
     PreparedSimulation out;

@@ -19,7 +19,9 @@ namespace bike::initialization {
 // live NativeRideRuntime. Numeric fields are resolved from the same model
 // and source configuration used to construct these two owners.
 struct SetupContext {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     Stepper& stepper;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     runtime::PhysicalStep& physical;
     configuration::SimulationPhysicsConfig physics;
     double start_x_m = 2.;

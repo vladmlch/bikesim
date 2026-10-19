@@ -3,6 +3,7 @@
 #include <array>
 #include <map>
 #include <set>
+#include <format>
 
 namespace bike::recording {
 namespace {
@@ -23,7 +24,7 @@ std::vector<std::string> requested_fields(const std::optional<std::string>& requ
     std::size_t start = 0;
     for (;;) {
         const auto end = requested->find(',', start);
-        auto name = requested->substr(start, end == std::string::npos ? end : end - start);
+        auto const name = requested->substr(start, end == std::string::npos ? end : end - start);
         const auto first = name.find_first_not_of(" \t\n\r"), last = name.find_last_not_of(" \t\n\r");
         if (first == std::string::npos) throw std::invalid_argument("fields must contain nonempty catalog names");
         out.push_back(name.substr(first, last - first + 1));
@@ -50,7 +51,7 @@ std::vector<Selection> selection(const Recording& reader, std::int64_t episode_i
     for (const auto& label : requested) {
         if (label.empty()) throw std::invalid_argument("fields must contain nonempty catalog names");
         if (labels.contains(label)) continue;
-        Selection chosen{label, label, {}, {}, {}, {}, {}};
+        Selection chosen{.label=label, .canonical=label, .root={}, .expression={}, .index={}, .parameter={}, .definition={}};
         if (!catalog.contains(chosen.canonical)) {
             for (const auto& alias : aliases) {
                 const auto name = string(field(alias, "alias"));
@@ -88,7 +89,7 @@ std::vector<Selection> selection(const Recording& reader, std::int64_t episode_i
             else chosen.expression = "(SELECT f." + quote(name) + " FROM forces f WHERE f.episode_id=telemetry.episode_id "
                 "AND f.interval_id=telemetry.interval_id AND f.component=" + literal(string(chosen.parameter)) + ')';
         } else if (table == "physics" || table.starts_with("channel_")) chosen.expression = quote(chosen.root);
-        else throw std::invalid_argument(label + " is not an interval field; query " + table + " using sql");
+        else throw std::invalid_argument(std::format("{} is not an interval field; query {} using sql", label, table));
         const auto definition = io::parse_recording_json(string(field(chosen.definition, "definition_json")));
         auto current = definition;
         auto remainder = chosen.canonical.substr(chosen.root.size());
@@ -130,12 +131,12 @@ std::vector<Selection> selection(const Recording& reader, std::int64_t episode_i
                     if (i) parent += '.';
                     parent += string(parts[i]);
                     if (i + 1 < parts.size() || i == 0)
-                        for (auto suffix : {"_present", "_valid"}) masks.push_back(table + ".__" + parent + suffix);
+                        for (auto suffix : {"_present", "_valid"}) masks.push_back(std::format("{}.__{}{}", table, parent, suffix));
                 }
             }
             for (const auto& mask : masks)
                 if (catalog.contains(mask) && labels.insert(mask).second)
-                    out.push_back(Selection{mask, mask, mask, quote(mask), {}, {}, catalog.at(mask)});
+                    out.push_back(Selection{.label=mask, .canonical=mask, .root=mask, .expression=quote(mask), .index={}, .parameter={}, .definition=catalog.at(mask)});
         }
     }
     return out;
@@ -186,6 +187,7 @@ std::optional<double> floating(const Value& value) {
         }
     return {};
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 Value difference(const Value& left, const Value& right, const std::string& path, double atol, double rtol, Statistics& stats) {
     const auto mismatch = [&](std::string_view kind) { return Value{Object{{"path", text(path)}, {"kind", text(kind)}, {"left", left}, {"right", right}}}; };
     if (io::is_null(left) || io::is_null(right)) return io::is_null(left) && io::is_null(right) ? Value{} : mismatch("null_or_presence");
@@ -198,9 +200,9 @@ Value difference(const Value& left, const Value& right, const std::string& path,
             for (const auto& key : names) {
                 const auto* av = find(*a, key); const auto* bv = find(*b, key);
                 Value current;
-                if (!av || !bv) current = Value{Object{{"path", text(path + '.' + key)}, {"kind", text("presence")},
+                if (!av || !bv) current = Value{Object{{"path", text(std::format("{}.{}", path, key))}, {"kind", text("presence")},
                     {"left_present", Value{av != nullptr}}, {"right_present", Value{bv != nullptr}}}};
-                else current = difference(*av, *bv, path + '.' + key, atol, rtol, stats);
+                else current = difference(*av, *bv, std::format("{}.{}", path, key), atol, rtol, stats);
                 if (io::is_null(first) && !io::is_null(current)) first = std::move(current);
             }
             return first;
@@ -226,7 +228,7 @@ Value difference(const Value& left, const Value& right, const std::string& path,
             return mismatch("nonfinite");
         }
         const auto absolute = std::abs(*a - *b), scale = std::max(std::abs(*a), std::abs(*b));
-        const auto relative = scale ? absolute / scale : 0.;
+        const auto relative = scale != 0. ? absolute / scale : 0.;
         stats.absolute = std::max(stats.absolute, absolute); stats.relative = std::max(stats.relative, relative);
         if (*a == 0. && *b == 0. && std::signbit(*a) != std::signbit(*b)) ++stats.signed_zero;
         if (absolute <= atol + rtol * scale) return Value{};
@@ -235,84 +237,8 @@ Value difference(const Value& left, const Value& right, const std::string& path,
     if (a.has_value() != b.has_value() || left.data.index() != right.data.index()) return mismatch("type");
     return equal(left, right) ? Value{} : mismatch("category");
 }
-} // namespace
-
-io::Value overview(const Recording& reader, std::uint64_t maximum) {
-    limit(maximum);
-    auto run = reader.rows("SELECT * FROM runs").at(0);
-    set(run, "metadata", io::parse_recording_json(string(pop(run, "metadata_json"))));
-    const std::array params{integer(static_cast<std::int64_t>(maximum + 1))};
-    auto episodes = reader.rows("SELECT e.*,min(p.time_s) AS first_time_s,max(p.interval_end_s) AS last_time_s FROM episodes e "
-        "LEFT JOIN physics p USING(episode_id) GROUP BY ALL ORDER BY e.episode_id LIMIT ?", params);
-    for (auto& row : episodes) set(row, "summary", io::parse_recording_json(string(pop(row, "summary_json"))));
-    return Value{Object{{"run", Value{std::move(run)}}, {"manifest", reader.manifest()},
-        {"episodes", bounded(std::move(episodes), maximum, scalar_count(reader, "SELECT count(*) FROM episodes"))},
-        {"limitations", Value{Array{text("Full launch retained in RAM; no crash-recovery promise."),
-            text("Ordinary recipes are not checked research replay."), text("Model/numerical validity is not calibration evidence.")}}}}};
-}
-io::Value fields(const Recording& reader, std::optional<std::string> pattern, std::uint64_t maximum) {
-    limit(maximum); std::string condition; std::vector<Value> params;
-    if (pattern) {
-        std::string like;
-        for (char c : *pattern) { if (c == '\\' || c == '%' || c == '_') like += '\\'; like += c == '*' ? '%' : c; }
-        if (pattern->find('*') == std::string::npos) like = '%' + like + '%';
-        condition = " WHERE (table_name || '.' || field_name) LIKE ? ESCAPE '\\'"; params.push_back(text(like));
-    }
-    const auto total = scalar_count(reader, "SELECT count(*) FROM field_catalog" + condition, params);
-    params.push_back(integer(static_cast<std::int64_t>(maximum + 1)));
-    auto rows = reader.rows("SELECT * FROM field_catalog" + condition + " ORDER BY table_name,field_name LIMIT ?", params);
-    for (auto& row : rows) {
-        set(row, "canonical", text(string(field(row, "table_name")) + '.' + string(field(row, "field_name"))));
-        set(row, "definition", io::parse_recording_json(string(pop(row, "definition_json"))));
-    }
-    return bounded(std::move(rows), maximum, total);
-}
-io::Value events(const Recording& reader, std::int64_t episode_id, std::optional<std::string> kind, std::uint64_t maximum) {
-    limit(maximum); (void)reader.episode(episode_id);
-    std::vector<Value> params{integer(episode_id)}; std::string condition = "e.episode_id=?";
-    if (kind) { condition += " AND e.kind=?"; params.push_back(text(*kind)); }
-    const auto total = scalar_count(reader, "SELECT count(*) FROM events e WHERE " + condition, params);
-    params.push_back(integer(static_cast<std::int64_t>(maximum + 1)));
-    auto rows = reader.rows("SELECT e.*,p.time_s AS interval_time_s FROM events e LEFT JOIN physics p "
-        "ON p.episode_id=e.episode_id AND p.interval_id=e.processed_step WHERE " + condition + " ORDER BY e.event_id LIMIT ?", params);
-    for (auto& row : rows) set(row, "values", io::parse_recording_json(string(pop(row, "values_json"))));
-    auto result = bounded(std::move(rows), maximum, total); set(result, "episode_id", integer(episode_id)); return result;
-}
-io::Value window(const Recording& reader, std::int64_t episode_id, double start, double end,
-    std::optional<std::string> requested, std::uint64_t maximum) {
-    limit(maximum); (void)reader.episode(episode_id);
-    if (!std::isfinite(start) || !std::isfinite(end) || end <= start) throw std::invalid_argument("window requires finite start < end");
-    const auto selected = selection(reader, episode_id, requested_fields(requested));
-    const std::string condition = "episode_id=? AND \"physics.time_s\">=? AND \"physics.time_s\"<?";
-    const std::array count_params{integer(episode_id), real(start), real(end)};
-    const auto total = scalar_count(reader, "SELECT count(*) FROM telemetry WHERE " + condition, count_params);
-    const std::array params{real(end), integer(episode_id), real(start), real(end), integer(static_cast<std::int64_t>(maximum + 1))};
-    auto rows = reader.rows("SELECT " + projection(selected) + ", \"physics.interval_end_s\">? AS overlaps_end FROM telemetry WHERE " +
-        condition + " ORDER BY interval_id LIMIT ?", params);
-    const std::array overlap_params{integer(episode_id), real(start), real(start), integer(static_cast<std::int64_t>(maximum + 1))};
-    auto overlaps = reader.rows("SELECT episode_id,interval_id,time_s,interval_end_s FROM physics "
-        "WHERE episode_id=? AND time_s<? AND interval_end_s>? ORDER BY interval_id LIMIT ?", overlap_params);
-    auto result = bounded(std::move(rows), maximum, total); Array selected_fields;
-    for (const auto& chosen : selected) selected_fields.push_back(Value{Object{{"name", text(chosen.label)}, {"canonical", text(chosen.canonical)}}});
-    set(result, "episode_id", integer(episode_id)); set(result, "start_s", real(start)); set(result, "end_s", real(end));
-    set(result, "selection", text("interval start in [start_s,end_s); no interpolation"));
-    set(result, "fields", Value{std::move(selected_fields)}); set(result, "overlap_before_start", bounded(std::move(overlaps), maximum)); return result;
-}
-
-io::Value compare(const Recording& left, const Recording& right, std::int64_t left_episode, std::int64_t right_episode,
-    std::string_view mode, std::optional<std::string> requested, double atol, double rtol, std::uint64_t maximum) {
-    limit(maximum);
-    if (!std::isfinite(atol) || atol < 0. || !std::isfinite(rtol) || rtol < 0.) throw std::invalid_argument("atol and rtol must be finite and nonnegative");
-    const auto lmeta = left.episode(left_episode), rmeta = right.episode(right_episode);
-    Value result{Object{{"mode", text(mode)}, {"left_episode", integer(left_episode)}, {"right_episode", integer(right_episode)},
-        {"atol", real(atol)}, {"rtol", real(rtol)}, {"tolerance_rule", text("abs(a-b) <= atol + rtol*max(abs(a),abs(b))")}, {"alignment", text("none")}}};
-    if (mode == "summary") {
-        set(result, "left", summary(left, left_episode, maximum)); set(result, "right", summary(right, right_episode, maximum));
-        set(result, "interpretation", text("Compare outcome/metrics/event times and saved surrounding windows; no automatic alignment.")); return result;
-    }
-    if (mode != "exact") throw std::invalid_argument("comparison mode must be exact or summary");
-    auto names = requested_fields(requested); for (const auto* name : provenance) names.emplace_back(name);
-    const auto lf = selection(left, left_episode, names), rf = selection(right, right_episode, names);
+Array compare_field_schema(const Recording& left, const Recording& right, std::int64_t left_episode, std::int64_t right_episode,
+    const std::vector<Selection>& lf, const std::vector<Selection>& rf) {
     Array incompatible;
     for (std::size_t i = 0; i < std::min(lf.size(), rf.size()); ++i) {
         const auto& a = lf[i]; const auto& b = rf[i];
@@ -325,14 +251,14 @@ io::Value compare(const Recording& left, const Recording& right, std::int64_t le
     constexpr auto coordinates = "SELECT kind,coordinate_index,joint,component,dof_kind,unit FROM coordinate_catalog WHERE episode_id=? ORDER BY kind,coordinate_index";
     if (!equal(Value{values(left.rows(coordinates, lparams))}, Value{values(right.rows(coordinates, rparams))}))
         incompatible.push_back(Value{Object{{"reason", text("coordinate_identity")}}});
-    const Value validity{Object{{"left", maybe(io::parse_recording_json(string(field(lmeta, "summary_json"))), "model_status")},
-        {"right", maybe(io::parse_recording_json(string(field(rmeta, "summary_json"))), "model_status")}}};
-    set(result, "validity", validity);
-    if (!incompatible.empty()) {
-        set(result, "compatible", Value{false}); set(result, "agrees", Value{false}); set(result, "incompatibilities", Value{std::move(incompatible)});
-        set(result, "compared_intervals", integer(0)); return result;
-    }
-    constexpr auto clock = ", \"physics.time_s\" AS __start, \"physics.interval_end_s\" AS __end, \"physics.dt_s\" AS __dt";
+    return incompatible;
+}
+void compare_streams(const Recording& left, const Recording& right, std::int64_t left_episode, std::int64_t right_episode,
+    const std::vector<Selection>& lf, const std::vector<Selection>& rf, const Value& lmeta, const Value& rmeta,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
+    double atol, double rtol, std::uint64_t maximum, Array incompatible, Value& result) {
+    const std::array lparams{integer(left_episode)}, rparams{integer(right_episode)};
+    constexpr auto clock = R"(, "physics.time_s" AS __start, "physics.interval_end_s" AS __end, "physics.dt_s" AS __dt)";
     // Independent readers make comparing a recording to itself safe: a new
     // streaming query never invalidates the other side's engine cursor.
     auto left_stream = open_recording(left.path()), right_stream = open_recording(right.path());
@@ -381,6 +307,95 @@ io::Value compare(const Recording& left, const Recording& right, std::int64_t le
     set(result, "deviations", bounded(std::move(deviations), maximum, static_cast<std::int64_t>(lf.size())));
     set(result, "matching_invalid_pairs", integer(invalid_pairs));
     set(result, "interpretation", text(invalid_pairs ? "Matching nonfinite values are agreeing INVALID evidence, not a valid physical result." :
-        "Agreement concerns saved fields, not physical calibration.")); return result;
+        "Agreement concerns saved fields, not physical calibration."));
+}
+} // namespace
+
+io::Value overview(const Recording& reader, std::uint64_t maximum) {
+    limit(maximum);
+    auto run = reader.rows("SELECT * FROM runs").at(0);
+    set(run, "metadata", io::parse_recording_json(string(pop(run, "metadata_json"))));
+    const std::array params{integer(static_cast<std::int64_t>(maximum + 1))};
+    auto episodes = reader.rows("SELECT e.*,min(p.time_s) AS first_time_s,max(p.interval_end_s) AS last_time_s FROM episodes e "
+        "LEFT JOIN physics p USING(episode_id) GROUP BY ALL ORDER BY e.episode_id LIMIT ?", params);
+    for (auto& row : episodes) set(row, "summary", io::parse_recording_json(string(pop(row, "summary_json"))));
+    return Value{Object{{"run", Value{std::move(run)}}, {"manifest", reader.manifest()},
+        {"episodes", bounded(std::move(episodes), maximum, scalar_count(reader, "SELECT count(*) FROM episodes"))},
+        {"limitations", Value{Array{text("Full launch retained in RAM; no crash-recovery promise."),
+            text("Ordinary recipes are not checked research replay."), text("Model/numerical validity is not calibration evidence.")}}}}};
+}
+io::Value fields(const Recording& reader, std::optional<std::string> pattern, std::uint64_t maximum) {
+    limit(maximum); std::string condition; std::vector<Value> params;
+    if (pattern) {
+        std::string like;
+        for (char const c : *pattern) { if (c == '\\' || c == '%' || c == '_') like += '\\'; like += c == '*' ? '%' : c; }
+        if (pattern->find('*') == std::string::npos) like = '%' + like + '%';
+        condition = " WHERE (table_name || '.' || field_name) LIKE ? ESCAPE '\\'"; params.push_back(text(like));
+    }
+    const auto total = scalar_count(reader, "SELECT count(*) FROM field_catalog" + condition, params);
+    params.push_back(integer(static_cast<std::int64_t>(maximum + 1)));
+    auto rows = reader.rows("SELECT * FROM field_catalog" + condition + " ORDER BY table_name,field_name LIMIT ?", params);
+    for (auto& row : rows) {
+        set(row, "canonical", text(string(field(row, "table_name")) + '.' + string(field(row, "field_name"))));
+        set(row, "definition", io::parse_recording_json(string(pop(row, "definition_json"))));
+    }
+    return bounded(std::move(rows), maximum, total);
+}
+io::Value events(const Recording& reader, std::int64_t episode_id, std::optional<std::string> kind, std::uint64_t maximum) {
+    limit(maximum); (void)reader.episode(episode_id);
+    std::vector<Value> params{integer(episode_id)}; std::string condition = "e.episode_id=?";
+    if (kind) { condition += " AND e.kind=?"; params.push_back(text(*kind)); }
+    const auto total = scalar_count(reader, "SELECT count(*) FROM events e WHERE " + condition, params);
+    params.push_back(integer(static_cast<std::int64_t>(maximum + 1)));
+    auto rows = reader.rows("SELECT e.*,p.time_s AS interval_time_s FROM events e LEFT JOIN physics p "
+        "ON p.episode_id=e.episode_id AND p.interval_id=e.processed_step WHERE " + condition + " ORDER BY e.event_id LIMIT ?", params);
+    for (auto& row : rows) set(row, "values", io::parse_recording_json(string(pop(row, "values_json"))));
+    auto result = bounded(std::move(rows), maximum, total); set(result, "episode_id", integer(episode_id)); return result;
+}
+io::Value window(const Recording& reader, std::int64_t episode_id, double start, double end,
+    const std::optional<std::string>& requested, std::uint64_t maximum) {
+    limit(maximum); (void)reader.episode(episode_id);
+    if (!std::isfinite(start) || !std::isfinite(end) || end <= start) throw std::invalid_argument("window requires finite start < end");
+    const auto selected = selection(reader, episode_id, requested_fields(requested));
+    const std::string condition = R"(episode_id=? AND "physics.time_s">=? AND "physics.time_s"<?)";
+    const std::array count_params{integer(episode_id), real(start), real(end)};
+    const auto total = scalar_count(reader, "SELECT count(*) FROM telemetry WHERE " + condition, count_params);
+    const std::array params{real(end), integer(episode_id), real(start), real(end), integer(static_cast<std::int64_t>(maximum + 1))};
+    auto rows = reader.rows("SELECT " + projection(selected) + ", \"physics.interval_end_s\">? AS overlaps_end FROM telemetry WHERE " +
+        condition + " ORDER BY interval_id LIMIT ?", params);
+    const std::array overlap_params{integer(episode_id), real(start), real(start), integer(static_cast<std::int64_t>(maximum + 1))};
+    auto overlaps = reader.rows("SELECT episode_id,interval_id,time_s,interval_end_s FROM physics "
+        "WHERE episode_id=? AND time_s<? AND interval_end_s>? ORDER BY interval_id LIMIT ?", overlap_params);
+    auto result = bounded(std::move(rows), maximum, total); Array selected_fields;
+    for (const auto& chosen : selected) selected_fields.push_back(Value{Object{{"name", text(chosen.label)}, {"canonical", text(chosen.canonical)}}});
+    set(result, "episode_id", integer(episode_id)); set(result, "start_s", real(start)); set(result, "end_s", real(end));
+    set(result, "selection", text("interval start in [start_s,end_s); no interpolation"));
+    set(result, "fields", Value{std::move(selected_fields)}); set(result, "overlap_before_start", bounded(std::move(overlaps), maximum)); return result;
+}
+
+io::Value compare(const Recording& left, const Recording& right, std::int64_t left_episode, std::int64_t right_episode,
+    std::string_view mode, const std::optional<std::string>& requested, double atol, double rtol, std::uint64_t maximum) {
+    limit(maximum);
+    if (!std::isfinite(atol) || atol < 0. || !std::isfinite(rtol) || rtol < 0.) throw std::invalid_argument("atol and rtol must be finite and nonnegative");
+    const auto lmeta = left.episode(left_episode), rmeta = right.episode(right_episode);
+    Value result{Object{{"mode", text(mode)}, {"left_episode", integer(left_episode)}, {"right_episode", integer(right_episode)},
+        {"atol", real(atol)}, {"rtol", real(rtol)}, {"tolerance_rule", text("abs(a-b) <= atol + rtol*max(abs(a),abs(b))")}, {"alignment", text("none")}}};
+    if (mode == "summary") {
+        set(result, "left", summary(left, left_episode, maximum)); set(result, "right", summary(right, right_episode, maximum));
+        set(result, "interpretation", text("Compare outcome/metrics/event times and saved surrounding windows; no automatic alignment.")); return result;
+    }
+    if (mode != "exact") throw std::invalid_argument("comparison mode must be exact or summary");
+    auto names = requested_fields(requested); for (const auto* name : provenance) names.emplace_back(name);
+    const auto lf = selection(left, left_episode, names), rf = selection(right, right_episode, names);
+    auto incompatible = compare_field_schema(left, right, left_episode, right_episode, lf, rf);
+    const Value validity{Object{{"left", maybe(io::parse_recording_json(string(field(lmeta, "summary_json"))), "model_status")},
+        {"right", maybe(io::parse_recording_json(string(field(rmeta, "summary_json"))), "model_status")}}};
+    set(result, "validity", validity);
+    if (!incompatible.empty()) {
+        set(result, "compatible", Value{false}); set(result, "agrees", Value{false}); set(result, "incompatibilities", Value{std::move(incompatible)});
+        set(result, "compared_intervals", integer(0)); return result;
+    }
+    compare_streams(left, right, left_episode, right_episode, lf, rf, lmeta, rmeta, atol, rtol, maximum, std::move(incompatible), result);
+    return result;
 }
 } // namespace bike::recording

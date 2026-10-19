@@ -40,8 +40,8 @@ void build_bb_and_motor(Element& frame,BuildContext& c) {
             if(name=="geom_motor_core") motor.push_back(value);
             if(name.starts_with("geom_crank_") || name.starts_with("geom_pedal_")) crank_parts.push_back(value);
         }
-        register_component(c.mass_registry(),"motor",std::move(motor));
-        register_component(c.mass_registry(),"crank_pedals",std::move(crank_parts));
+        register_component(c.mass_registry(),"motor",motor);
+        register_component(c.mass_registry(),"crank_pedals",crank_parts);
     }
 }
 void build_chain_constraint(Element& root,double ratio) {

@@ -20,6 +20,7 @@ template<class T> double concave(const T& obstacle,double window){
 }
 double concave_span_deg(const RockGarden& o,double window){return concave(o,window);}
 double concave_span_deg(const RoadRoughness& o,double window){return concave(o,window);}
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 std::vector<std::string> single_contact_hazards(const TrackSpec& track,double radius,double kink,double window){
     std::vector<std::string> out;
     for(const auto& obstacle:track.sorted_obstacles())std::visit([&](const auto& o){

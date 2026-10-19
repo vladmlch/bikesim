@@ -24,8 +24,8 @@ double HeightFieldSpec::catch_plane_z_m(double ground,double clearance)const{ret
 bool HeightFieldSpec::fits(Interval extent)const{return extent.first>=min_profile_m()&&extent.second<=max_profile_m();}
 std::vector<double> HeightFieldSpec::normalize(std::span<const double> values)const{
     validate();if(values.size()!=static_cast<std::size_t>(ncol))throw std::invalid_argument("HeightFieldSpec.normalize: wrong sample count");
-    for(double v:values)detail::finite(v,"HeightFieldSpec.profile");
-    const auto [lo,hi]=std::minmax_element(values.begin(),values.end());
+    for(double const v:values)detail::finite(v,"HeightFieldSpec.profile");
+    const auto [lo,hi]=std::ranges::minmax_element(values);
     if(!fits({*lo,*hi}))throw std::invalid_argument("profile extent leaves the field envelope");
     std::vector<double> out(static_cast<std::size_t>(nrow)*static_cast<std::size_t>(ncol));
     for(std::size_t i=0;i<values.size();++i)out[i]=(values[i]+datum_z_m)/elevation_m;

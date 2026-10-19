@@ -56,6 +56,10 @@ struct ModelStatus {
                  bool include_energy = true);
     void reset();
     [[nodiscard]] WireObject as_wire() const;
+    // The persisted state.runtime.model_status document — dataclass field
+    // schema (native/setup.py::_runtime_state), distinct from as_wire()'s
+    // channel/summary publication view.
+    [[nodiscard]] WireObject state_wire() const;
     [[nodiscard]] static ModelStatus from_wire(const WireObject &value);
 };
 

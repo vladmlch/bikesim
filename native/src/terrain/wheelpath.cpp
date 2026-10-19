@@ -10,7 +10,7 @@ std::pair<std::vector<double>,std::vector<double>> wheel_centre_path(const Obsta
     const double length=obstacle.length_m();
     auto surface=detail::arange(-2.*radius,length+2.*radius+resolution,resolution);
     surface.insert(surface.end(),{-1e-9,0.,std::max(length-1e-9,0.),length});
-    std::sort(surface.begin(),surface.end());surface.erase(std::unique(surface.begin(),surface.end()),surface.end());
+    std::ranges::sort(surface);surface.erase(std::ranges::unique(surface).begin(),surface.end());
     std::vector<double> z_surface(surface.size(),0.),local;std::vector<std::size_t> indices;
     for(std::size_t i=0;i<surface.size();++i)if(surface[i]>=0.&&surface[i]<length){local.push_back(surface[i]);indices.push_back(i);}
     if(!local.empty()){const auto heights=obstacle.elevation(local);for(std::size_t i=0;i<indices.size();++i)z_surface[indices[i]]=heights[i];}
@@ -18,8 +18,8 @@ std::pair<std::vector<double>,std::vector<double>> wheel_centre_path(const Obsta
     for(std::size_t i=0;i<center.size();++i){
         // The maximum ignores every candidate outside the circle. Use a
         // conservative one-node halo; reach retains the exact source test.
-        const auto lo_it=std::lower_bound(surface.begin(),surface.end(),center[i]-radius);
-        const auto hi_it=std::upper_bound(surface.begin(),surface.end(),center[i]+radius);
+        const auto lo_it=std::ranges::lower_bound(surface,center[i]-radius);
+        const auto hi_it=std::ranges::upper_bound(surface,center[i]+radius);
         const auto lo=lo_it==surface.begin()?0:static_cast<std::size_t>(lo_it-surface.begin()-1);
         const auto hi=std::min(surface.size(),static_cast<std::size_t>(hi_it-surface.begin())+1);
         double top=-std::numeric_limits<double>::infinity();
@@ -27,7 +27,8 @@ std::pair<std::vector<double>,std::vector<double>> wheel_centre_path(const Obsta
         z_center[i]=top;
     }return {std::move(center),std::move(z_center)};
 }
-double effective_drop_m(const Obstacle& o,double radius,double resolution){const auto result=wheel_centre_path(o,radius,resolution);return std::max(0.,radius-*std::min_element(result.second.begin(),result.second.end()));}
-double effective_rise_m(const Obstacle& o,double radius,double resolution){const auto result=wheel_centre_path(o,radius,resolution);return std::max(0.,*std::max_element(result.second.begin(),result.second.end())-radius);}
+double effective_drop_m(const Obstacle& o,double radius,double resolution){const auto result=wheel_centre_path(o,radius,resolution);return std::max(0.,radius-*std::ranges::min_element(result.second));}
+double effective_rise_m(const Obstacle& o,double radius,double resolution){const auto result=wheel_centre_path(o,radius,resolution);return std::max(0.,*std::ranges::max_element(result.second)-radius);}
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double bridged_drop_m(double length,double radius){const double half=length/2.;if(half>=radius)return std::numeric_limits<double>::infinity();return radius-std::sqrt(radius*radius-half*half);}
 } // namespace bike::terrain

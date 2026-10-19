@@ -116,6 +116,8 @@ public:
     ~PeriodAccounting();
     PeriodAccounting(const PeriodAccounting&) = delete;
     PeriodAccounting& operator=(const PeriodAccounting&) = delete;
+    PeriodAccounting(PeriodAccounting&&) = delete;
+    PeriodAccounting& operator=(PeriodAccounting&&) = delete;
     void push(RawStep raw);
     [[nodiscard]] bool full() const noexcept { return buffer_.full(); }
     [[nodiscard]] bool has_raws() const;

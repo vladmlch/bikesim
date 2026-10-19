@@ -22,6 +22,7 @@ std::string scalar(const Value& value) {
     if (const auto* s = std::get_if<std::string>(&value.data)) return *s;
     throw std::invalid_argument("batch flags must be bool, int, float or str; lists belong in [grid]");
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 Object merged(Object base, const Object& overrides) {
     for (const auto& [key, value] : overrides) {
         bool found = false;
@@ -65,8 +66,10 @@ bool numeric_equal(const Value& a, const Value& b) {
     std::array<char,384> digits{};
     const auto result=std::to_chars(digits.begin(),digits.end(),number,std::chars_format::fixed,0);
     if(result.ec!=std::errc{})throw std::runtime_error("batch numeric comparison conversion failed");
-    return *(ia?ia:ib)==integer_detail::normalize(std::string(digits.begin(),result.ptr));
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the caller parses at least one side; a missing pair is a contract violation reported by .value()
+    return (ia?ia:ib).value()==integer_detail::normalize(std::string(digits.begin(),result.ptr));
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 std::string slug(const Object& params, const Object& base) {
     std::string result;
     for (const auto& [key, value] : params) {
@@ -200,7 +203,8 @@ std::vector<std::string> parse_seeds(std::string_view input) {
                 if(seen.insert(seed).second)seeds.push_back(seed);
             }
         }
-        if(comma==std::string_view::npos)break;input.remove_prefix(comma+1);
+        if(comma==std::string_view::npos)break;
+        input.remove_prefix(comma+1);
     }
     return seeds;
 }

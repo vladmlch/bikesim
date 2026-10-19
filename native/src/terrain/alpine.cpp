@@ -30,6 +30,9 @@ AlpineGenSpec AlpineGenSpec::from_dict(const bike::io::Value& value){
     AlpineGenSpec out;for(const auto& [key,v]:bike::io::as_object(value,"AlpineGenSpec")){
         bool found=false;
 #define READ_FIELD(name) if(key==#name){detail::read_field(out.name,v,key);found=true;}
+        // X-macro taking the callback name, defined in terrain/spec_io.hpp;
+        // cppcheck cannot expand this idiom.
+        // cppcheck-suppress unknownMacro
         BIKE_ALPINE_SPEC_FIELDS(READ_FIELD)
 #undef READ_FIELD
         if(!found)throw std::invalid_argument("unknown alpine generator key: "+key);
@@ -38,6 +41,9 @@ AlpineGenSpec AlpineGenSpec::from_dict(const bike::io::Value& value){
 bike::io::Value AlpineGenSpec::to_dict()const{
     bike::io::Value::Object out;
 #define WRITE_FIELD(name) out.emplace_back(#name,detail::field_value(name));
+    // X-macro taking the callback name, defined in terrain/spec_io.hpp;
+    // cppcheck cannot expand this idiom.
+    // cppcheck-suppress unknownMacro
     BIKE_ALPINE_SPEC_FIELDS(WRITE_FIELD)
 #undef WRITE_FIELD
     return {std::move(out)};
@@ -48,9 +54,10 @@ struct Segment{std::string kind;double start,end,grade;};
 std::vector<Segment> segments(const AlpineGenSpec& s,bike::random::NumpyRng& rng){
     const double body_end=rounded(s.length_m-s.lead_out_m,2),limit=rounded(body_end-s.transition_m,2);
     double cursor=rounded(s.lead_in_m+s.transition_m,2);std::vector<Segment> out;
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     const auto push=[&](std::string kind,double length,double grade){
         if(cursor>=limit)return false;
-        const double end=rounded(std::min(cursor+length,limit),2);out.push_back({std::move(kind),cursor,end,grade});cursor=rounded(end+s.transition_m,2);return end<limit;
+        const double end=rounded(std::min(cursor+length,limit),2);out.push_back({.kind=std::move(kind),.start=cursor,.end=end,.grade=grade});cursor=rounded(end+s.transition_m,2);return end<limit;
     };
     while(cursor<limit){
         const double length=rounded(rng.uniform(s.ramp_len_m[0],s.ramp_len_m[1]),2);
@@ -103,38 +110,38 @@ TrackSpec generate_alpine_track(const AlpineGenSpec& s,std::string_view seed,std
         const double corr=rounded(rng.uniform(s.scree_corr_m[0],s.scree_corr_m[1]),3);
         Interval span{lo,hi};if(rng.uniform01()<s.scree_ramp_bias)span=ramps.at(static_cast<std::size_t>(rng.integers(0,static_cast<std::int64_t>(ramps.size()))));
         const auto placed=place(rng,wanted,span.first,span.second,taken,true);if(placed){
-            const auto [start,length]=*placed;obstacles.push_back(faceted<RoadRoughness>(s,rng,start,length,amp,corr));sections.push_back({start,rounded(start+length,2),"scree"});taken.emplace_back(start,start+length);used.emplace_back(start,start+length);
+            const auto [start,length]=*placed;obstacles.push_back(faceted<RoadRoughness>(s,rng,start,length,amp,corr));sections.push_back({.start_m=start,.end_m=rounded(start+length,2),.surface="scree"});taken.emplace_back(start,start+length);used.emplace_back(start,start+length);
         }
     }
     const auto boulder_count=detail::count_draw(rng,s.n_boulders);
     for(std::int64_t i=0;i<boulder_count;++i){
         const double height=rounded(rng.uniform(s.boulder_height_m[0],s.boulder_height_m[1]));double length=rounded(rng.uniform(s.boulder_len_m[0],s.boulder_len_m[1]),2);
         if(s.single_contact_safe)length=std::max(length,rounded(std::ceil(min_bump_length_m(height,s.min_contact_radius_m)*100.)/100.,2));
-        const auto placed=place(rng,length,lo,hi,taken);if(placed){const double start=placed->first;obstacles.push_back({Bump{start,height,length}});taken.emplace_back(start,start+length);}
+        const auto placed=place(rng,length,lo,hi,taken);if(placed){const double start=placed->first;obstacles.push_back({.shape=Bump{.start_m=start,.height_m=height,.bump_length_m=length}});taken.emplace_back(start,start+length);}
     }
     const auto bar_count=detail::count_draw(rng,s.n_water_bars);
     for(std::int64_t i=0;i<bar_count;++i){
         double depth=rounded(rng.uniform(s.water_bar_depth_m[0],s.water_bar_depth_m[1]));const double length=rounded(rng.uniform(s.water_bar_len_m[0],s.water_bar_len_m[1]),2);
         if(s.single_contact_safe)depth=std::min(depth,rounded(max_bowl_depth_m(length,s.min_contact_radius_m)*.98));
-        const auto placed=place(rng,length,lo,hi,taken);if(placed){const double start=placed->first;obstacles.push_back({BowlPothole{start,depth,length}});taken.emplace_back(start,start+length);}
+        const auto placed=place(rng,length,lo,hi,taken);if(placed){const double start=placed->first;obstacles.push_back({.shape=BowlPothole{.start_m=start,.depth_m=depth,.hole_length_m=length}});taken.emplace_back(start,start+length);}
     }
     const auto edge_count=detail::count_draw(rng,s.n_sharp_edges);
     for(std::int64_t i=0;i<edge_count;++i){
         const double height=rounded(rng.uniform(s.sharp_edge_height_m[0],s.sharp_edge_height_m[1]));const double length=rounded(rng.uniform(.2,.6),2);
-        const auto placed=place(rng,length,lo,hi,taken);if(placed){const double start=placed->first;obstacles.push_back({SquareEdge{start,height,length}});taken.emplace_back(start,start+length);}
+        const auto placed=place(rng,length,lo,hi,taken);if(placed){const double start=placed->first;obstacles.push_back({.shape=SquareEdge{.start_m=start,.height_m=height,.ledge_length_m=length}});taken.emplace_back(start,start+length);}
     }
     const auto wet_count=detail::count_draw(rng,s.n_wet);
     for(std::int64_t i=0;i<wet_count;++i){
         const double wanted=rounded(rng.uniform(s.wet_len_m[0],s.wet_len_m[1]),2);const auto placed=place(rng,wanted,lo,hi,used,true);
-        if(placed){const auto [start,length]=*placed;sections.push_back({start,rounded(start+length,2),"wet"});used.emplace_back(start,start+length);}
+        if(placed){const auto [start,length]=*placed;sections.push_back({.start_m=start,.end_m=rounded(start+length,2),.surface="wet"});used.emplace_back(start,start+length);}
     }
     const double amp=rounded(rng.uniform(s.background_amp_m[0],s.background_amp_m[1]));
     const double corr=rounded(rng.uniform(s.background_corr_m[0],s.background_corr_m[1]),3);
     for(const auto& [a,b]:free_intervals({lo,hi},taken,0.))if(b-a>=4.*corr){
         double length=rounded(b-a,6);while(a+length>b)length=rounded(length-1e-6,6);obstacles.push_back(faceted<RoadRoughness>(s,rng,a,length,amp,corr));
     }
-    std::stable_sort(sections.begin(),sections.end(),[](const auto&a,const auto&b){return a.start_m<b.start_m;});
-    TrackSpec track{(name&&!name->empty())?*name:"alpine_"+seed_text,s.length_m,std::move(obstacles),"Alpine scree climb; seed="+seed_text+"; spec_sha256="+s.sha256(),s.base_surface,std::move(grade),std::move(sections)};
+    std::ranges::stable_sort(sections,[](const auto&a,const auto&b){return a.start_m<b.start_m;});
+    TrackSpec track{.name=(name&&!name->empty())?*name:"alpine_"+seed_text,.length_m=s.length_m,.obstacles=std::move(obstacles),.description="Alpine scree climb; seed="+seed_text+"; spec_sha256="+s.sha256(),.surface=s.base_surface,.grade_profile=std::move(grade),.surface_sections=std::move(sections)};
     track.validate();return track;
 }
 TrackSpec generate_alpine_track(const AlpineGenSpec& spec,std::uint64_t seed,std::optional<std::string>name){return generate_alpine_track(spec,std::to_string(seed),std::move(name));}

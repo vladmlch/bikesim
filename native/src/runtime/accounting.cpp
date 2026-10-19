@@ -358,8 +358,8 @@ EffortContext::EffortContext(const rider::SpindleController& controller,
     : config_(controller.config()), joints_(controller.joints()), nq_(nq), nv_(nv) {
     for (const auto& joint : joints_)
         if (joint.qpos_adr < 0 || joint.dof_adr < 0 || joint.actuator_id < 0 ||
-            static_cast<std::size_t>(joint.qpos_adr) >= nq_ ||
-            static_cast<std::size_t>(joint.dof_adr) >= nv_)
+            std::cmp_greater_equal(joint.qpos_adr, nq_) ||
+            std::cmp_greater_equal(joint.dof_adr, nv_))
             throw std::invalid_argument("async effort context has invalid joint addresses");
 }
 
@@ -419,7 +419,7 @@ PeriodAccounting::PeriodAccounting(AccountingConfig config, AccountingState init
 
 PeriodAccounting::PeriodAccounting(AccountingConfig config, AccountingState state,
     int generation, std::optional<EffortContext> effort)
-    : PeriodAccounting(std::move(config), std::move(state), generation, nullptr, nullptr) {
+    : PeriodAccounting(config, std::move(state), generation, nullptr, nullptr) {
     effort_context_ = std::move(effort);
 }
 PeriodAccounting::~PeriodAccounting() = default;
@@ -492,7 +492,7 @@ void PeriodAccounting::detach_async() {
         std::optional<std::string> strict_error;
         try { evaluator.flush_local(); }
         catch (const InvalidReferenceRun& error) { strict_error = error.what(); }
-        auto result = evaluator.take_publication();
+        auto const result = evaluator.take_publication();
         apply_publication(result);
         detached_[detached_at_++].reset();
         if (strict_error) throw InvalidReferenceRun(*strict_error);

@@ -23,7 +23,7 @@ inline Value text(std::string_view x) { return Value{std::string(x)}; }
 inline Value reals(std::span<const double> values) {
     Array out;
     out.reserve(values.size());
-    for (double x : values) out.push_back(real(x));
+    for (double const x : values) out.push_back(real(x));
     return Value{std::move(out)};
 }
 inline const Value* find(const Value& value, std::string_view key) {

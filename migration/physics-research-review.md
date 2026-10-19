@@ -143,3 +143,25 @@ T38–T51 application work and T52–T60 platform/delivery work are not closed.
 No commit or evidence from the user's original macOS worktree/HEAD is
 available in this restored snapshot. The patch is based on the supplied
 archive.
+
+## Execution status 2026-10-19
+
+Execution has since run in this checkout. The tree compiles: ctest passes
+57/57 registered tests (including `migration_T26`–`migration_T37` and
+`migration_T35`) and all nine sweep summaries
+(`native/build/native_check_summaries/*.json`) report `status: passed`.
+`.pytest_cache/lastfailed` holds exactly the documented 24-failure
+full-suite baseline — no new failures.
+
+Of the wave-scope findings in
+[native-waves-commit-review.md](native-waves-commit-review.md), **F1 and
+F4 are resolved** (bootstrap tire-writer guards; policy ABI now validates
+numeric domains via `control_validate_for` → `PolicyFailure`).
+**F2, F3 and F5 remain open (P1/P2)**: `ideal_speed_control` still
+commands zero torque, `native_reference` still drops resistance forces,
+and pedal recovery still ignores `seated_climb.enabled`. All three sites
+now carry `OPEN FINDING` comments in `runtime/step.cpp`.
+
+This verifies compilation and the registered migration tests only.
+Runtime qualification, per-source oracle equivalence and wave acceptance
+remain open; nothing here closes T61/T62 acceptance or T63 deletion.

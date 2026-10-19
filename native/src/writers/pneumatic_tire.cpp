@@ -144,7 +144,9 @@ namespace {
         return {
             .point_m = point, .normal = normal, .normal_load_n = load,
             .tangent_force_n = force, .slip_mps = slip,
-            .working_surface = true
+            .working_surface = true,
+            .native_world_force_n = std::nullopt,
+            .couple_world_nm = {}
         };
     }
     NATIVE_DIAG_POP

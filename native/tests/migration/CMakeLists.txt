@@ -771,12 +771,14 @@ foreach(_recording_task RANGE 38 51)
   elseif(_recording_task LESS 51)
     target_link_libraries(${_recording_test} PRIVATE bike_viz)
   else()
-    target_link_libraries(${_recording_test} PRIVATE bike_batch)
+    # bike_batch's ordered TOML parse pulls bike_terrain's TrackSpec methods,
+    # which are implemented against biketyre objects in the shared core set.
+    target_link_libraries(${_recording_test} PRIVATE bike_batch bike_startup_runtime)
     if(BUILD_TESTING)
       add_dependencies(${_recording_test} bike-test-child)
     endif()
   endif()
-  if(NOT _recording_task EQUAL 38 AND NOT _recording_task EQUAL 51)
+  if(NOT _recording_task EQUAL 38)
     if(BIKE_ROOT_BUILD)
       bike_rewrite_mujoco_load_name(${_recording_test}
         "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")

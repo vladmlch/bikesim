@@ -1,4 +1,5 @@
 #include "builder_internal.hpp"
+#include <algorithm>
 #include <charconv>
 #include <memory>
 #include <stdexcept>
@@ -15,6 +16,7 @@ void Element::set(std::string name,std::string value) {
     for(auto& [key,old]:attributes) if(key==name) { old=std::move(value); return; }
     attributes.emplace_back(std::move(name),std::move(value));
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 std::string Element::get(std::string_view name,std::string_view fallback) const {
     for(const auto& [key,value]:attributes) if(key==name) return value;
     return std::string(fallback);
@@ -23,6 +25,7 @@ Element* Element::child(std::string_view tag_) const {
     for(const auto& value:children) if(value->tag==tag_) return value.get();
     return nullptr;
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 Element* Element::find(std::string_view tag_,std::string_view name) const {
     for(const auto& value:children) {
         if(value->tag==tag_ && value->get("name")==name) return value.get();
@@ -35,6 +38,7 @@ std::vector<Element*> Element::direct(std::string_view tag_) const {
     for(const auto& value:children) if(value->tag==tag_) values.push_back(value.get());
     return values;
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 std::vector<Element*> Element::descendants(std::string_view tag_) const {
     std::vector<Element*> values;
     for(const auto& value:children) {
@@ -51,7 +55,7 @@ std::unique_ptr<Element> Element::remove(Element* child_) {
 }
 std::string escape_attribute(std::string_view value) {
     std::string result;
-    for(char raw:value) {
+    for(char const raw:value) {
         const auto ch=static_cast<unsigned char>(raw);
         switch(ch) {
         case '&':result+="&amp;";break; case '<':result+="&lt;";break;
@@ -64,6 +68,7 @@ std::string escape_attribute(std::string_view value) {
     return result;
 }
 namespace {
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void emit(const Element& element,std::string& result,std::size_t depth) {
     result.append(depth*2,' ');result+='<';result+=element.tag;
     for(const auto& [key,value]:element.attributes) {
@@ -94,7 +99,8 @@ Element& joint(Element& parent,std::string name,std::string type,Attributes attr
 }
 Element& site(Element& parent,std::string name,std::string pos,std::string size,std::string rgba) {
     Attributes all{{"name",std::move(name)},{"pos",std::move(pos)},{"size",std::move(size)}};
-    if(!rgba.empty()) all.emplace_back("rgba",std::move(rgba));return parent.add("site",std::move(all));
+    if(!rgba.empty()) all.emplace_back("rgba",std::move(rgba));
+    return parent.add("site",std::move(all));
 }
 Element& marker(Element& parent,std::string name,const Vec3& pos,std::string size,std::string material) {
     return geom(parent,std::move(name),"sphere",{{"pos",vec(pos)},{"size",std::move(size)},
@@ -107,6 +113,7 @@ Element& required(Element& root,std::string_view tag,std::string_view name) {
 Element& block(Element& root,std::string_view tag) { if(auto* value=root.child(tag)) return *value;return root.add(std::string(tag)); }
 Element& inertial(Element& owner,double mass,const Vec3& com,const Mat3& tensor) {
     XmlBodyElement carrier;add_body_inertial(carrier,mass,com,tensor);
+    if(!carrier.inertial) throw std::logic_error("inertial writer produced no inertial element");
     const auto& a=*carrier.inertial;
     return owner.add("inertial",{{"mass",a.mass},{"pos",a.pos},{"fullinertia",a.fullinertia}});
 }
@@ -125,7 +132,7 @@ double mass_of(const Element& element) {
     return value;
 }
 }
-void register_component(MassRegistry* registry,std::string name,std::vector<Element*> parts) {
+void register_component(MassRegistry* registry,std::string name,const std::vector<Element*>& parts) {
     if(!registry) return;
     std::vector<Element*> positive;
     for(auto* part:parts) if(mass_of(*part)>0.) positive.push_back(part);
@@ -149,22 +156,22 @@ void assign_budgets(Element& frame,MassRegistry& registry,const BikeMassSpecs& m
     std::set<Element*> geoms,inertials;
     for(auto* item:frame.descendants("geom")) if(mass_of(*item)>0. && !item->get("name").starts_with("geom_rider_")) geoms.insert(item);
     if(geoms!=registered_geoms) throw std::invalid_argument("mass registry does not cover every bike geom exactly once");
-    for(auto* item:frame.descendants("body")) if(item->get("name")=="front_wheel" || item->get("name")=="rear_wheel")
+    for(auto const* item:frame.descendants("body")) if(item->get("name")=="front_wheel" || item->get("name")=="rear_wheel")
         for(auto* value:item->direct("inertial")) inertials.insert(value);
     if(inertials!=registered_inertials) throw std::invalid_argument("wheel inertial registry mismatch");
     for(auto& [name,parts]:registry) {
-        const auto budget=std::find_if(budgets.begin(),budgets.end(),[&](const auto& item){return item.first==name;})->second;
+        const auto budget=std::ranges::find_if(budgets,[&](const auto& item){return item.first==name;})->second;
         if(name=="front_wheel" || name=="rear_wheel") {
             if(parts.size()!=1 || parts[0]->tag!="inertial" || mass_of(*parts[0])!=budget)
                 throw std::invalid_argument("wheel component '"+name+"' must own one budgeted inertial");
         } else {
             std::vector<XmlGeomElement> weights;weights.reserve(parts.size());
-            for(auto* part:parts) {
+            for(auto const* part:parts) {
                 if(part->tag!="geom") throw std::invalid_argument("component '"+name+"' must own geoms");
                 weights.push_back({part->get("mass","0")});
             }
             assign_component_mass(weights,budget);
-            for(std::size_t i=0;i<parts.size();++i) parts[i]->set("mass",*weights[i].mass);
+            for(std::size_t i=0;i<parts.size();++i) parts[i]->set("mass",*weights[i].mass); // NOLINT(bugprone-unchecked-optional-access) assign_component_mass fills every mass above
         }
     }
 }

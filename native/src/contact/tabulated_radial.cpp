@@ -8,10 +8,10 @@
 
 namespace contactlaw {
 MaterialRangeError::~MaterialRangeError() = default;
-TabulatedRadial::TabulatedRadial(const nativecfg::TireTable &table) {
+TabulatedRadial::TabulatedRadial(const nativecfg::TireTable &table) : deflection_m_(table.deflection_m), force_n_(table.force_n) {
     nativecfg::validate(table);
-    deflection_m_ = table.deflection_m;
-    force_n_ = table.force_n;
+    
+    
     slopes_.reserve(deflection_m_.size() - 1);
     integral_.reserve(deflection_m_.size());
     integral_.push_back(0.);
@@ -26,7 +26,7 @@ std::pair<double, double> TabulatedRadial::elastic_response(double penetration_m
     if (penetration_m <= 0.) return {0., 0.};
     if (penetration_m > deflection_m_.back())
         throw MaterialRangeError("tire deflection exceeds supplied curve limit");
-    const auto right = std::upper_bound(deflection_m_.begin(), deflection_m_.end(), penetration_m);
+    const auto right = std::ranges::upper_bound(deflection_m_, penetration_m);
     const auto i = std::min(static_cast<std::size_t>(right - deflection_m_.begin() - 1), slopes_.size() - 1);
     const double dx = penetration_m - deflection_m_[i];
     const double force = force_n_[i] + slopes_[i] * dx;
@@ -35,6 +35,7 @@ std::pair<double, double> TabulatedRadial::elastic_response(double penetration_m
             validation::derived(energy, "TabulatedTireSpec.elastic_response")};
 }
 std::pair<double, double> TabulatedRadial::normal_contact(
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     double penetration_m, double rate_mps, double damping_ns_m) const {
     validation::finite(rate_mps, "deflection rate");
     validation::nonnegative(damping_ns_m, "radial damping");

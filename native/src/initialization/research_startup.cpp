@@ -54,7 +54,7 @@ ResearchStartup prepare_research_startup(SetupContext& context) {
     auto& physical = context.physical;
     if (physical.drive_mode() != "crank_effort" && physical.drive_mode() != "articulated_effort")
         throw std::invalid_argument("research startup requires a physical effort drive");
-    auto* data = stepper.data();
+    auto const* data = stepper.data();
     const auto* model = stepper.model();
     // ResearchEnvironment._begin_episode: holding brakes do not enter the
     // policy episode. This is a non-advancing force evaluation and one forward.

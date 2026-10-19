@@ -16,12 +16,12 @@
 namespace bike::initialization {
 namespace {
 void initial_speed(SetupContext& context,const runtime::WheelSnapshots& snapshots){
-    mjModel* m=context.stepper.model();mjData* d=context.stepper.data();auto velocity=std::views::counted(d->qvel,m->nv);
+    mjModel const* m=context.stepper.model();mjData* d=context.stepper.data();auto const velocity=std::views::counted(d->qvel,m->nv);
     std::array<double,3> tangent{};
     for(const auto& snapshot:snapshots)if(snapshot)for(const auto& p:snapshot->patches)if(p.working_surface){tangent[0]+=p.normal_load_n*p.normal[2];tangent[2]-=p.normal_load_n*p.normal[0];}
     const double length=std::sqrt(tangent[0]*tangent[0]+tangent[2]*tangent[2]);
     if(length>0.){tangent[0]/=length;tangent[2]/=length;}else tangent={1.,0.,0.};
-    for(std::string_view root:{"root","rider_root"}){
+    for(std::string_view const root:{"root","rider_root"}){
         if(root=="rider_root"&&!context.physical.rider_present())continue;
         velocity[static_cast<std::size_t>(joint_address(context,std::string(root)+"_x").dof)]=context.physics.initial_speed_mps*tangent[0];
         velocity[static_cast<std::size_t>(joint_address(context,std::string(root)+"_z").dof)]=context.physics.initial_speed_mps*tangent[2];
@@ -31,13 +31,12 @@ void initial_speed(SetupContext& context,const runtime::WheelSnapshots& snapshot
     const auto centers=std::views::counted(d->geom_xpos,3*m->ngeom);
     const auto sizes=std::views::counted(m->geom_size,3*m->ngeom);
     for(std::size_t side=0;side<2;++side){
-        if(!snapshots[side])throw std::invalid_argument("initial speed requires both physical tire snapshots");
-        const auto& snap=*snapshots[side];
+        const auto& snap=snapshots[side];if(!snap)throw std::invalid_argument("initial speed requires both physical tire snapshots");
         const auto geom=static_cast<std::size_t>(side==0?context.front_geom_id:context.rear_geom_id);
         const int body=bodies[geom];
         const std::array<double,3> point{centers[3*geom],centers[3*geom+1],centers[3*geom+2]};
-        const std::array<double,3> direction=snap.patches.empty()?std::array<double,3>{1.,0.,0.}:std::array<double,3>{snap.patches.front().normal[2],0.,-snap.patches.front().normal[0]};
-        const double radius=snap.effective_radius_m>0.?snap.effective_radius_m:sizes[3*geom];
+        const std::array<double,3> direction=snap->patches.empty()?std::array<double,3>{1.,0.,0.}:std::array<double,3>{snap->patches.front().normal[2],0.,-snap->patches.front().normal[0]};
+        const double radius=snap->effective_radius_m>0.?snap->effective_radius_m:sizes[3*geom];
         const auto v=model::point_velocity(*m,*d,body,point);const auto omega=model::body_angular_velocity(*m,*d,body);
         const auto dof=static_cast<std::size_t>(joint_address(context,side==0?"front_wheel_spin":"rear_wheel_spin").dof);
         const double roll=v[0]*direction[0]+v[1]*direction[1]+v[2]*direction[2],parent_omega=omega[1]-velocity[dof];
@@ -50,7 +49,7 @@ void initial_speed(SetupContext& context,const runtime::WheelSnapshots& snapshot
     if(drive.pedaling.enabled&&std::abs(rate)*60./(2.*std::numbers::pi)>=drive.pedaling.coast_above_rpm)pedaling=false;
     if(pedaling){
         velocity[static_cast<std::size_t>(joint_address(context,"crank_spin").dof)]=rate;
-        for(std::string_view name:{"drive_shaft_spin","rotor_spin","cassette_spin"})if(mj_name2id(m,mjOBJ_JOINT,std::string(name).c_str())>=0)
+        for(std::string_view const name:{"drive_shaft_spin","rotor_spin","cassette_spin"})if(mj_name2id(m,mjOBJ_JOINT,std::string(name).c_str())>=0)
             velocity[static_cast<std::size_t>(joint_address(context,name).dof)]=name=="cassette_spin"?velocity[static_cast<std::size_t>(joint_address(context,"rear_wheel_spin").dof)]:rate;
         const double frame_rate=model::body_angular_velocity(*m,*d,context.frame_body_id)[1];
         velocity[static_cast<std::size_t>(joint_address(context,"pedal_front_spin").dof)]=-rate-frame_rate;
@@ -86,8 +85,8 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
     physical.contacts_=physical.refresh_contacts(false,std::nullopt,false);
     context.equilibrium->total_vertical_force_n=0.;
     for(std::size_t side=0;side<2;++side){
-        if(!physical.snapshots_[side])throw std::invalid_argument("settled model lacks a wheel contact snapshot");
-        numeric::PythonSum normal,vertical;for(const auto& p:physical.snapshots_[side]->patches){normal.add(p.normal_load_n);vertical.add(p.native_world_force_n ? (*p.native_world_force_n)[2] : p.normal_load_n*p.normal[2]-p.tangent_force_n*p.normal[0]);}
+        const auto& snap=physical.snapshots_[side];if(!snap)throw std::invalid_argument("settled model lacks a wheel contact snapshot");
+        numeric::PythonSum normal,vertical;for(const auto& p:snap->patches){normal.add(p.normal_load_n);vertical.add(p.native_world_force_n ? (p.native_world_force_n.value())[2] : p.normal_load_n*p.normal[2]-p.tangent_force_n*p.normal[0]);}
         if(side==0)context.equilibrium->static_front_load_n=normal.total();
         else context.equilibrium->static_rear_load_n=normal.total();
         context.equilibrium->total_vertical_force_n+=vertical.total();

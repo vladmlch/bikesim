@@ -568,10 +568,23 @@ def test_spindle_probe_rejects_bad_input(tmp_path):
             True, None, False)
     with pytest.raises(Exception):
         probe.spindle_restore({'enabled': True})
-    # An unsupported attachment mode is rejected at decode, not routed.
+    # A schema-valid non-spindle attachment routes to the ported legacy
+    # controller rather than rejecting at decode.
     config = rider_controller_config(controller.config, controller)
     config['pedal_attachment'] = 'flat'
     path = tmp_path / 'flat.mjb'
+    mujoco.mj_saveModel(model, str(path))
+    flat_adapter = load_native().NativeTestAdapter(str(path), {
+        'spindle_controller': {
+            'config': config,
+            'pose': pose,
+            'crank_length_m': 0.17}})
+    flat_adapter.spindle_compute(
+        _command_dict(_command(mean_crank_torque_nm=5.0)),
+        True, None, False)
+    # A mode outside the schema set is still rejected at decode.
+    config['pedal_attachment'] = 'pin'
+    path = tmp_path / 'pin.mjb'
     mujoco.mj_saveModel(model, str(path))
     with pytest.raises(Exception):
         load_native().NativeTestAdapter(str(path), {

@@ -37,6 +37,8 @@ public:
     ~Connection();
     Connection(const Connection&) = delete;
     Connection& operator=(const Connection&) = delete;
+    Connection(Connection&&) = delete;
+    Connection& operator=(Connection&&) = delete;
     [[nodiscard]] duckdb_connection handle() const noexcept { return connection_; }
     void execute(std::string_view sql, std::span<const io::Value> parameters = {}) const;
     [[nodiscard]] Cursor stream(std::string_view sql, std::span<const io::Value> parameters = {},
@@ -56,6 +58,8 @@ public:
     ~Database();
     Database(const Database&) = delete;
     Database& operator=(const Database&) = delete;
+    Database(Database&&) = delete;
+    Database& operator=(Database&&) = delete;
     [[nodiscard]] Connection& connection() const noexcept { return *connection_; }
     // Hash the validated read-only inode used by DuckDB, without reopening
     // its original pathname. Writer connections have no input descriptor.

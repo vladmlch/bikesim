@@ -19,6 +19,7 @@
 #include "physical_config.hpp"
 #include "../io/value.hpp"
 #include "../rider/intent.hpp"
+#include <array>
 
 namespace bike::configuration {
 
@@ -113,34 +114,36 @@ void post_init(const SeatedClimbConfig&);
 // ---- field tables ---------------------------------------------------------------
 namespace detail {
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const EndStopConfig kDeclaredEndStopConfig{};
-inline constexpr FieldDecl kEndStopConfigFields[] = {
-    {"reference_force_n", "<class 'float'>", FieldKind::Real,
-     offsetof(EndStopConfig, reference_force_n), false, "", nullptr,
-     nullptr},
-    {"reference_deflection_m", "<class 'float'>", FieldKind::Real,
-     offsetof(EndStopConfig, reference_deflection_m), false, "", nullptr,
-     nullptr},
-    {"damping_n_s_m", "<class 'float'>", FieldKind::Real,
-     offsetof(EndStopConfig, damping_n_s_m), false, "", nullptr, nullptr},
-    {"overtravel_m", "<class 'float'>", FieldKind::Real,
-     offsetof(EndStopConfig, overtravel_m), false, "", nullptr, nullptr},
-    {"provenance", "<class 'str'>", FieldKind::Text,
-     offsetof(EndStopConfig, provenance), false, "", nullptr, nullptr},
-};
+inline constexpr auto kEndStopConfigFields = std::to_array<FieldDecl>({
+    {.name="reference_force_n", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(EndStopConfig, reference_force_n), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="reference_deflection_m", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(EndStopConfig, reference_deflection_m), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="damping_n_s_m", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(EndStopConfig, damping_n_s_m), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="overtravel_m", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(EndStopConfig, overtravel_m), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="provenance", .type="<class 'str'>", .kind=FieldKind::Text,
+     .offset=offsetof(EndStopConfig, provenance), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kEndStopConfigSchema{
-    "bike_sim.physics.model_config.EndStopConfig", kEndStopConfigFields,
-    &kDeclaredEndStopConfig};
+    .path="bike_sim.physics.model_config.EndStopConfig", .fields=kEndStopConfigFields,
+    .declared_default=&kDeclaredEndStopConfig};
 
 // seated_climb.py SeatedClimbConfig — FieldDecls over the shared
 // rider::IntentConfig record (the aliased type above).
 inline const SeatedClimbConfig kDeclaredSeatedClimbConfig{};
-inline constexpr FieldDecl kSeatedClimbConfigFields[] = {
+inline constexpr auto kSeatedClimbConfigFields = std::to_array<FieldDecl>({
 #define SC_REAL(f)                                                            \
     {#f, "<class 'float'>", FieldKind::Real, offsetof(SeatedClimbConfig, f), \
      false, "", nullptr, nullptr}
-    {"enabled", "<class 'bool'>", FieldKind::Boolean,
-     offsetof(SeatedClimbConfig, enabled), false, "", nullptr, nullptr},
+    {.name="enabled", .type="<class 'bool'>", .kind=FieldKind::Boolean,
+     .offset=offsetof(SeatedClimbConfig, enabled), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
     SC_REAL(period_s),
     SC_REAL(reaction_delay_s),
     SC_REAL(target_crank_power_w),
@@ -160,79 +163,82 @@ inline constexpr FieldDecl kSeatedClimbConfigFields[] = {
     SC_REAL(lean_trim_limit_rad),
     SC_REAL(trim_dead_time_s),
 #undef SC_REAL
-};
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kSeatedClimbConfigSchema{
-    "bike_sim.physics.seated_climb.SeatedClimbConfig",
-    kSeatedClimbConfigFields, &kDeclaredSeatedClimbConfig};
+    .path="bike_sim.physics.seated_climb.SeatedClimbConfig",
+    .fields=kSeatedClimbConfigFields, .declared_default=&kDeclaredSeatedClimbConfig};
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const SimulationPhysicsConfig kDeclaredSimulationPhysicsConfig{};
-inline constexpr FieldDecl kSimulationPhysicsConfigFields[] = {
-    {"physics_mode", "<class 'str'>", FieldKind::Text,
-     offsetof(SimulationPhysicsConfig, physics_mode), false, "", nullptr,
-     nullptr},
-    {"drive_mode", "str | None", FieldKind::OptionalText,
-     offsetof(SimulationPhysicsConfig, drive_mode), false, "", nullptr,
-     nullptr},
-    {"timestep_s", "<class 'float'>", FieldKind::Real,
-     offsetof(SimulationPhysicsConfig, timestep_s), false, "", nullptr,
-     nullptr},
-    {"control_period_s", "<class 'float'>", FieldKind::Real,
-     offsetof(SimulationPhysicsConfig, control_period_s), false, "", nullptr,
-     nullptr},
-    {"pitch_assist", "bool | None", FieldKind::OptionalBoolean,
-     offsetof(SimulationPhysicsConfig, pitch_assist), false, "", nullptr,
-     nullptr},
-    {"end_stops", "<class 'bike_sim.physics.model_config.EndStopConfig'>",
-     FieldKind::Dataclass, offsetof(SimulationPhysicsConfig, end_stops),
-     false, "EndStopConfig", &kEndStopConfigSchema, nullptr},
-    {"tires",
-     "<class 'bike_sim.physics.physical_config.TireBackendConfig'>",
-     FieldKind::Dataclass, offsetof(SimulationPhysicsConfig, tires), false,
-     "TireBackendConfig", &kTireBackendConfigSchema, nullptr},
-    {"drive",
-     "<class 'bike_sim.physics.physical_config.PhysicalDriveConfig'>",
-     FieldKind::Dataclass, offsetof(SimulationPhysicsConfig, drive), false,
-     "PhysicalDriveConfig", &kPhysicalDriveConfigSchema, nullptr},
-    {"resistance",
-     "<class 'bike_sim.physics.physical_config.ResistanceConfig'>",
-     FieldKind::Dataclass, offsetof(SimulationPhysicsConfig, resistance),
-     false, "ResistanceConfig", &kResistanceConfigSchema, nullptr},
-    {"articulated",
-     "<class 'bike_sim.physics.physical_config.ArticulatedConfig'>",
-     FieldKind::Dataclass, offsetof(SimulationPhysicsConfig, articulated),
-     false, "ArticulatedConfig", &kArticulatedConfigSchema, nullptr},
-    {"seated_climb",
-     "<class 'bike_sim.physics.seated_climb.SeatedClimbConfig'>",
-     FieldKind::Dataclass, offsetof(SimulationPhysicsConfig, seated_climb),
-     false, "SeatedClimbConfig", &kSeatedClimbConfigSchema, nullptr},
-    {"initial_speed_mps", "<class 'float'>", FieldKind::Real,
-     offsetof(SimulationPhysicsConfig, initial_speed_mps), false, "",
-     nullptr, nullptr},
-    {"initial_front_brake", "<class 'float'>", FieldKind::Real,
-     offsetof(SimulationPhysicsConfig, initial_front_brake), false, "",
-     nullptr, nullptr},
-    {"initial_rear_brake", "<class 'float'>", FieldKind::Real,
-     offsetof(SimulationPhysicsConfig, initial_rear_brake), false, "",
-     nullptr, nullptr},
-    {"closure_time_constant_s", "<class 'float'>", FieldKind::Real,
-     offsetof(SimulationPhysicsConfig, closure_time_constant_s), false, "",
-     nullptr, nullptr},
-    {"equilibrium_refine_after_s", "<class 'float'>", FieldKind::Real,
-     offsetof(SimulationPhysicsConfig, equilibrium_refine_after_s), false,
-     "", nullptr, nullptr},
-    {"equilibrium_refine_period_s", "<class 'float'>", FieldKind::Real,
-     offsetof(SimulationPhysicsConfig, equilibrium_refine_period_s), false,
-     "", nullptr, nullptr},
-    {"equilibrium_cache_enabled", "<class 'bool'>", FieldKind::Boolean,
-     offsetof(SimulationPhysicsConfig, equilibrium_cache_enabled), false,
-     "", nullptr, nullptr},
-    {"equilibrium_state_file", "str | None", FieldKind::OptionalText,
-     offsetof(SimulationPhysicsConfig, equilibrium_state_file), false, "",
-     nullptr, nullptr},
-};
+inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>({
+    {.name="physics_mode", .type="<class 'str'>", .kind=FieldKind::Text,
+     .offset=offsetof(SimulationPhysicsConfig, physics_mode), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="drive_mode", .type="str | None", .kind=FieldKind::OptionalText,
+     .offset=offsetof(SimulationPhysicsConfig, drive_mode), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="timestep_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SimulationPhysicsConfig, timestep_s), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="control_period_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SimulationPhysicsConfig, control_period_s), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="pitch_assist", .type="bool | None", .kind=FieldKind::OptionalBoolean,
+     .offset=offsetof(SimulationPhysicsConfig, pitch_assist), .required=false, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="end_stops", .type="<class 'bike_sim.physics.model_config.EndStopConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, end_stops),
+     .required=false, .factory="EndStopConfig", .nested=&kEndStopConfigSchema, .nested2=nullptr},
+    {.name="tires",
+     .type="<class 'bike_sim.physics.physical_config.TireBackendConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, tires), .required=false,
+     .factory="TireBackendConfig", .nested=&kTireBackendConfigSchema, .nested2=nullptr},
+    {.name="drive",
+     .type="<class 'bike_sim.physics.physical_config.PhysicalDriveConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, drive), .required=false,
+     .factory="PhysicalDriveConfig", .nested=&kPhysicalDriveConfigSchema, .nested2=nullptr},
+    {.name="resistance",
+     .type="<class 'bike_sim.physics.physical_config.ResistanceConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, resistance),
+     .required=false, .factory="ResistanceConfig", .nested=&kResistanceConfigSchema, .nested2=nullptr},
+    {.name="articulated",
+     .type="<class 'bike_sim.physics.physical_config.ArticulatedConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, articulated),
+     .required=false, .factory="ArticulatedConfig", .nested=&kArticulatedConfigSchema, .nested2=nullptr},
+    {.name="seated_climb",
+     .type="<class 'bike_sim.physics.seated_climb.SeatedClimbConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, seated_climb),
+     .required=false, .factory="SeatedClimbConfig", .nested=&kSeatedClimbConfigSchema, .nested2=nullptr},
+    {.name="initial_speed_mps", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SimulationPhysicsConfig, initial_speed_mps), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="initial_front_brake", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SimulationPhysicsConfig, initial_front_brake), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="initial_rear_brake", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SimulationPhysicsConfig, initial_rear_brake), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="closure_time_constant_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SimulationPhysicsConfig, closure_time_constant_s), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="equilibrium_refine_after_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SimulationPhysicsConfig, equilibrium_refine_after_s), .required=false,
+     .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="equilibrium_refine_period_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SimulationPhysicsConfig, equilibrium_refine_period_s), .required=false,
+     .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="equilibrium_cache_enabled", .type="<class 'bool'>", .kind=FieldKind::Boolean,
+     .offset=offsetof(SimulationPhysicsConfig, equilibrium_cache_enabled), .required=false,
+     .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="equilibrium_state_file", .type="str | None", .kind=FieldKind::OptionalText,
+     .offset=offsetof(SimulationPhysicsConfig, equilibrium_state_file), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kSimulationPhysicsConfigSchema{
-    "bike_sim.physics.model_config.SimulationPhysicsConfig",
-    kSimulationPhysicsConfigFields, &kDeclaredSimulationPhysicsConfig};
+    .path="bike_sim.physics.model_config.SimulationPhysicsConfig",
+    .fields=kSimulationPhysicsConfigFields, .declared_default=&kDeclaredSimulationPhysicsConfig};
 
 } // namespace detail
 } // namespace bike::configuration

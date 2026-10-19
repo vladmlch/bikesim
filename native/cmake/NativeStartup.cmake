@@ -129,7 +129,7 @@ function(bike_add_native_startup native_dir)
   include("${native_dir}/cmake/RecordingApplication.cmake")
   bike_add_recording_application("${native_dir}" "${_startup_core}" "${_startup_mujoco}")
   bike_rewrite_mujoco_load_name(bike-native-ride "${_startup_mujoco}")
-  install(TARGETS bike-native-ride RUNTIME DESTINATION bin)
+  install(TARGETS bike-native-ride RUNTIME DESTINATION bin OPTIONAL)
   install(FILES "${native_dir}/src/numerics/SCIPY-LICENSE.txt"
     DESTINATION share/licenses/bike-native-ride)
   # Keep shipped TOML and relative rider assets together after relocation.

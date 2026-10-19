@@ -35,7 +35,7 @@ function(bike_add_physics_research native_dir core_target)
     "${native_dir}/src/runtime/capabilities.cpp"
     "${native_dir}/src/initialization/research_startup.cpp")
   target_sources(bike_app PRIVATE
-    "${native_dir}/src/rider/allocation_json.cpp"
+    "${native_dir}/src/research/allocation_json.cpp"
     "${native_dir}/src/numerics/density_fit.cpp"
     "${native_dir}/src/research/environment.cpp"
     "${native_dir}/src/research/configuration.cpp"

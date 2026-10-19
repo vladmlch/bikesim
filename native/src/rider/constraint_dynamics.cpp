@@ -11,6 +11,7 @@
 #include <limits>
 #include <numeric>
 #include <stdexcept>
+#include <utility>
 
 namespace bike::rider {
 namespace {
@@ -39,7 +40,7 @@ ConstraintSystem snapshot(const mjModel& model,const mjData& data,std::span<cons
         s.known_force[i]=qfrc_applied[i]+qfrc_passive[i]+qfrc_actuator[i]-qfrc_bias[i];
     std::vector<bool> seen(nv,false);
     for(std::size_t j=0;j<dofs.size();++j) {
-        if(dofs[j]<0 || static_cast<std::size_t>(dofs[j])>=nv || seen[static_cast<std::size_t>(dofs[j])])
+        if(dofs[j]<0 || std::cmp_greater_equal(dofs[j],nv) || seen[static_cast<std::size_t>(dofs[j])])
             throw std::invalid_argument("constraint dynamics: invalid/duplicate actuator dof");
         const auto i=static_cast<std::size_t>(dofs[j]);seen[i]=true;
         s.known_force[i]-=qfrc_actuator[i];s.actuation.values[i*dofs.size()+j]=1.;
@@ -124,12 +125,13 @@ ConstraintResponse ConstraintDynamics::linearize(std::span<const double> torque)
         std::vector<double> force(n,0.);for(const auto& [i,value]:fixed)force[i]=value;
         if(!free.empty()) {
             auto target=d::add(rhs,d::multiply(matrix,force),-1.);std::vector<double> b;
-            for(auto i:free)b.push_back(target[i]);
+            b.reserve(free.size());
+for(auto const i:free)b.push_back(target[i]);
             const auto solved=d::solve(selected(matrix,free,free),b);
             for(std::size_t j=0;j<free.size();++j)force[free[j]]=solved[j];
         }
         std::size_t worst=n;double violation=1e-9;
-        for(auto i:free) {
+        for(auto const i:free) {
             const double error=std::max(lower[i]-force[i],force[i]-upper[i]);
             if(error>violation){violation=error;worst=i;}
         }
@@ -171,7 +173,7 @@ ConstraintResponse ConstraintDynamics::response_for_mode(const ConstraintMode& m
         }
     }
     auto rows=d::zeros(0,nt);std::vector<double> bounds;
-    for(auto i:free) {
+    for(auto const i:free) {
         std::vector<double> row(derivative.values.begin()+static_cast<std::ptrdiff_t>(i*nt),derivative.values.begin()+static_cast<std::ptrdiff_t>((i+1)*nt));
         if(std::isfinite(lower[i])) {for(double&v:row)v=-v;d::append_row(rows,row);bounds.push_back(offset[i]-lower[i]);for(double&v:row)v=-v;}
         if(std::isfinite(upper[i])) {d::append_row(rows,row);bounds.push_back(upper[i]-offset[i]);}
@@ -183,8 +185,8 @@ ConstraintResponse ConstraintDynamics::response_for_mode(const ConstraintMode& m
         for(std::size_t j=0;j<nt;++j)row[j]=sign*gradient_matrix.values[i*nt+j];
         d::append_row(rows,row);bounds.push_back(-sign*gradient_offset[i]);
     }
-    return {d::add(smooth_offset,d::multiply(inverse_jacobian,offset)),
-        d::add(smooth_matrix,d::multiply(inverse_jacobian,derivative)),std::move(offset),std::move(derivative),std::move(rows),std::move(bounds),mode};
+    return {.acceleration_offset=d::add(smooth_offset,d::multiply(inverse_jacobian,offset)),
+        .acceleration_matrix=d::add(smooth_matrix,d::multiply(inverse_jacobian,derivative)),.force_offset=std::move(offset),.force_matrix=std::move(derivative),.domain_matrix=std::move(rows),.domain_bound=std::move(bounds),.mode=mode};
 }
 
 std::vector<ConstraintMode> ConstraintDynamics::neighboring_modes(const ConstraintMode& mode) const {
@@ -209,9 +211,9 @@ Matrix attachment_force_map(const mjModel& model,const mjData& data,const Constr
         throw std::invalid_argument("attachment force map: incompatible constraint snapshot");
     auto spatial=d::zeros(6,nv);
     struct Context {const mjModel* m;const mjData* data;double* p;double* r;const double* point;int body;};
-    Context context{&model,&data,spatial.values.data(),std::span{spatial.values}.subspan(3*nv).data(),point.data(),body};
+    Context context{.m=&model,.data=&data,.p=spatial.values.data(),.r=std::span{spatial.values}.subspan(3*nv).data(),.point=point.data(),.body=body};
     engine::ErrorBuffer error;
-    if(!engine::invoke([](void* raw) noexcept {auto& c=*static_cast<Context*>(raw);mj_jac(c.m,c.data,c.p,c.r,c.point,c.body);},&context,error))engine::throw_failure(error);
+    if(!engine::invoke([](void* raw) noexcept {auto const& c=*static_cast<Context*>(raw);mj_jac(c.m,c.data,c.p,c.r,c.point,c.body);},&context,error))engine::throw_failure(error);
     std::vector<std::size_t> columns;
     for(std::size_t j=0;j<nv;++j) for(std::size_t i=0;i<6;++i) if(spatial.values[i*nv+j]!=0.) {columns.push_back(j);break;}
     const std::array<std::size_t,3> planar{0,2,4};

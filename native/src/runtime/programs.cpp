@@ -12,17 +12,6 @@ Wire optional_wire(std::optional<double> value) { return value ? Wire(*value) : 
 std::optional<double> optional_number(const Wire &value) {
     return is_none(value) ? std::nullopt : std::optional(number(value));
 }
-void validate_posture(const rider::RiderPosture &p) {
-    if (!std::isfinite(p.torso_lean_rad) || std::abs(p.torso_lean_rad) > .8 ||
-        !std::isfinite(p.pelvis_pitch_rad) || std::abs(p.pelvis_pitch_rad) > .5)
-        throw std::invalid_argument("research posture exceeds the command envelope");
-    if (p.pelvis_offset_m) {
-        const auto &xy = *p.pelvis_offset_m;
-        if (!std::isfinite(xy[0]) || !std::isfinite(xy[1]) ||
-            std::abs(xy[0]) > .25 || xy[1] < -.15 || xy[1] > .25)
-            throw std::invalid_argument("research hip offset exceeds the command envelope");
-    }
-}
 rider::RiderPosture posture_from_wire(const WireObject &value) {
     constexpr std::array<std::string_view, 4> keys{
         "torso_lean_rad", "pelvis_pitch_rad", "pelvis_offset_m", "use_saddle"};
@@ -37,7 +26,7 @@ rider::RiderPosture posture_from_wire(const WireObject &value) {
         if (xy.size() != 2) throw std::invalid_argument("research hip offset requires width 2");
         p.pelvis_offset_m = std::array<double, 2>{number(xy[0]), number(xy[1])};
     }
-    validate_posture(p);
+    rider::validate_posture(p);
     return p;
 }
 WireObject posture_wire(const rider::RiderPosture &p) {

@@ -299,4 +299,12 @@ make_research(ResearchBootstrap bootstrap) {
         std::move(bootstrap.tape), std::move(bootstrap.startup));
 }
 
+std::unique_ptr<NativeResearchRuntime>
+make_research(std::unique_ptr<ResearchBootstrap> bootstrap) {
+    auto ride = std::make_unique<NativeRideRuntime>(std::move(bootstrap->ride));
+    return std::make_unique<NativeResearchRuntime>(
+        std::move(ride), std::move(bootstrap->config),
+        std::move(bootstrap->tape), std::move(bootstrap->startup));
+}
+
 } // namespace runtime

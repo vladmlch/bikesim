@@ -56,11 +56,11 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
 [[gnu::noinline]] void request_contract() {
-    Directory directory;
+    Directory const directory;
     std::filesystem::create_directory(directory.path / "case");
     std::filesystem::create_directory(directory.path / "config");
     std::filesystem::create_directory(directory.path / "tracks");
-    for (std::string_view file : {"viewer_physics_welded.toml", "rider_joint_envelope_anatomical.json",
+    for (std::string_view const file : {"viewer_physics_welded.toml", "rider_joint_envelope_anatomical.json",
                                  "rider_strength_reference.json"})
         std::filesystem::copy_file(bt::fixture("config/" + std::string(file)), directory.path / "config" / file);
     std::filesystem::copy_file(bt::fixture("tracks/flat.toml"), directory.path / "tracks/flat.toml");
@@ -75,9 +75,9 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::require(input.track.name == "flat" && input.track.length_m == 112.,
         "request resolves track relative to the declaring file");
     bt::require(input.seed_decimal == "184467440737095516160012345", "request seed is never narrowed");
-    bt::require(input.model.physics->initial_speed_mps == 0., "explicit initial speed retained");
-    bt::require(input.model.physics->articulated.joint_strength_path &&
-        std::filesystem::path(*input.model.physics->articulated.joint_strength_path).is_absolute(),
+    bt::require(input.model.physics.value().initial_speed_mps == 0., "explicit initial speed retained"); // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
+    bt::require(input.model.physics.value().articulated.joint_strength_path && // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
+        std::filesystem::path(input.model.physics.value().articulated.joint_strength_path.value()).is_absolute(), // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
         "strength path resolves against the physics file");
     write(request_file, document + "unknown_field = 1\n");
     bool named = false;
@@ -98,22 +98,22 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     }
     bt::require(missing_state, "ordinary request does not silently ignore a missing saved state");
     input = bike::initialization::read_setup_request(request_file, true);
-    bt::require(!input.initial_state && !input.model.physics->equilibrium_state_file,
+    bt::require(!input.initial_state && !input.model.physics.value().equilibrium_state_file, // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
         "fresh request does not open the missing saved state");
     write(directory.path / "case/broken-state.json", "{broken-json");
     write(request_file, document + "initial_state_file = 'broken-state.json'\n");
     bt::invalid([&] { (void)bike::initialization::read_setup_request(request_file); });
     input = bike::initialization::read_setup_request(request_file, true);
-    bt::require(!input.initial_state && !input.model.physics->equilibrium_state_file,
+    bt::require(!input.initial_state && !input.model.physics.value().equilibrium_state_file, // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
         "fresh request does not parse the discarded saved state");
     write(request_file, document + "initial_state_file = 'missing-state.json'\nunknown_field = 1\n");
     bt::invalid([&] { (void)bike::initialization::read_setup_request(request_file, true); });
 
     write(request_file, document + "[overrides]\ninitial_front_brake = 0.25\n");
     input = bike::initialization::read_setup_request(request_file);
-    bt::require(input.model.physics->initial_front_brake == .25, "request override precedence");
-    input.model.physics->drive.motor_clutch = true;
-    input.model.physics->drive.rotor_inertia_kgm2 = .02;
+    bt::require(input.model.physics.value().initial_front_brake == .25, "request override precedence"); // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
+    input.model.physics.value().drive.motor_clutch = true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
+    input.model.physics.value().drive.rotor_inertia_kgm2 = .02; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     bt::invalid([&] { (void)bike::app::prepare(input); });
     bt::require(!std::filesystem::exists(directory.path / "runs") &&
         !std::filesystem::exists(directory.path / "manifest.json"),
@@ -121,7 +121,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 }
 
 [[gnu::noinline]] void ownership_and_reset() {
-    auto request = bike::initialization::read_setup_request(bt::fixture("requests/welded_flat.toml"));
+    auto const request = bike::initialization::read_setup_request(bt::fixture("requests/welded_flat.toml"));
     auto early = bike::initialization::make_setup(request);
     bt::invalid([&] { (void)early->seal_bootstrap(); });
     early.reset();
@@ -152,14 +152,14 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 }
 
 [[gnu::noinline]] void shipped_backends() {
-    for (std::string_view profile : {"welded", "distributed", "pneumatic"}) {
+    for (std::string_view const profile : {"welded", "distributed", "pneumatic"}) {
         auto request = bike::initialization::read_setup_request(
             bt::fixture("requests/" + std::string(profile) + "_flat.toml"));
         // The shipped pneumatic profile explicitly names a legacy pose.
         // This case deliberately asks for a fresh native equilibrium, the
         // same explicit choice exposed by bike-native-ride --fresh.
-        request.model.physics->equilibrium_state_file.reset();
-        request.model.physics->equilibrium_cache_enabled = false;
+        request.model.physics.value().equilibrium_state_file.reset(); // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
+        request.model.physics.value().equilibrium_cache_enabled = false; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
         auto ride = bike::app::make_ride(bike::app::prepare(std::move(request)));
         bt::require(ride->snapshot().step == 0, "shipped backend prepares from ordinary configuration");
         bt::require(ride->advance(1, runtime::RideControl{}, 0., 0., std::nullopt).step == 1,

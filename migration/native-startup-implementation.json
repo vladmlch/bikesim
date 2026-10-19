@@ -15,16 +15,18 @@
   "date": "2026-10-17",
   "input_archive": "repomix-output.xml(6).zip",
   "source_modules_in_scope": 45,
-  "status": "implemented_unverified",
+  "status": "implemented_tested_review_open",
   "user_constraint": "No compilation and no project execution. This overrides ordinary executable validation steps for this delivery only.",
   "execution": {
-    "cmake_configure": "not_run",
-    "build": "not_run",
-    "compiler_or_linker": "not_run",
-    "tests": "not_run",
+    "cmake_configure": "passed 2026-10-19",
+    "build": "passed 2026-10-19",
+    "compiler_or_linker": "passed 2026-10-19",
+    "tests": "ctest passed 2026-10-19: migration_T16, migration_T17, migration_T18, migration_T20, migration_T21, migration_T22, migration_T23, migration_T24, migration_T25 (native/build suite 57/57)",
     "simulation": "not_run",
     "project_tools": "not_run",
-    "oracle_regeneration": "not_run"
+    "oracle_regeneration": "not_run",
+    "static_sweeps": "passed 2026-10-19 (contracts, diagnostic-controls, frontends, headers, odr, tidy, cppcheck, analyzer, context)",
+    "pytest_baseline": "24 known failures 2026-10-19; no new failures vs documented baseline"
   },
   "evidence": {
     "review": "migration/native-startup-review.md",
@@ -51,7 +53,7 @@
     {
       "task": "T16",
       "title": "Generate and compile physical MJCF entirely in C++",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "source_modules": [
         "src/bike_sim/mujoco/_xml_format.py",
         "src/bike_sim/mujoco/actuators.py",
@@ -93,7 +95,7 @@
     {
       "task": "T17",
       "title": "Port standard, stand, playground and legacy MJCF exports",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "source_modules": [
         "src/bike_sim/mujoco/__init__.py",
         "src/bike_sim/mujoco/assets.py",
@@ -133,7 +135,7 @@
     {
       "task": "T18",
       "title": "Resolve model names into typed native writer/runtime configuration",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "source_modules": [
         "src/bike_sim/native/config.py",
         "src/bike_sim/sim/ride/physical_mapping.py"
@@ -163,7 +165,7 @@
     {
       "task": "T20",
       "title": "Port terrain primitives, profiles, surfaces and heightfields",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "source_modules": [
         "src/bike_sim/terrain/contact_profile.py",
         "src/bike_sim/terrain/contact_safety.py",
@@ -206,7 +208,7 @@
     {
       "task": "T21",
       "title": "Port all track generators, presets and track-file round trips",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "source_modules": [
         "src/bike_sim/terrain/__init__.py",
         "src/bike_sim/terrain/alpine.py",
@@ -249,7 +251,7 @@
     {
       "task": "T22",
       "title": "Port physical settling without a reference RideSimulation",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "source_modules": [
         "src/bike_sim/sim/ride/physical_equilibrium.py"
       ],
@@ -282,7 +284,7 @@
     {
       "task": "T23",
       "title": "Port bounded least squares, equilibrium refinement and sag fitting",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "source_modules": [
         "src/bike_sim/sim/equilibrium.py",
         "src/bike_sim/sim/ride/equilibrium_refine.py",
@@ -319,7 +321,7 @@
     {
       "task": "T24",
       "title": "Replace Python equilibrium cache/state files and retain old readers",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "source_modules": [
         "src/bike_sim/native/artifact.py",
         "src/bike_sim/sim/ride/equilibrium_cache.py",
@@ -368,7 +370,7 @@
     {
       "task": "T25",
       "title": "Construct standalone native rides from user configuration",
-      "status": "implemented_unverified",
+      "status": "implemented_tested",
       "source_modules": [
         "src/bike_sim/native/setup.py"
       ],

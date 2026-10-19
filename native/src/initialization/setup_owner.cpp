@@ -27,7 +27,7 @@ namespace bike::initialization {
 namespace {
 using namespace runtime::setupvalue;
 
-void populate_heightfield(mjModel& compiled, const SetupRequest& request) {
+void populate_heightfield(mjModel const& compiled, const SetupRequest& request) {
     const int id = model::required_id(compiled, mjOBJ_HFIELD, "road");
     const auto rows = std::views::counted(compiled.hfield_nrow, compiled.nhfield);
     const auto columns = std::views::counted(compiled.hfield_ncol, compiled.nhfield);
@@ -41,7 +41,7 @@ void populate_heightfield(mjModel& compiled, const SetupRequest& request) {
     if (offset < 0 || std::cmp_greater(offset, compiled.nhfielddata) ||
         heights.size() > static_cast<std::size_t>(compiled.nhfielddata - offset))
         throw std::invalid_argument("compiled road address is outside heightfield storage");
-    auto target = std::views::counted(compiled.hfield_data, compiled.nhfielddata)
+    auto const target = std::views::counted(compiled.hfield_data, compiled.nhfielddata)
         .subspan(static_cast<std::size_t>(offset), heights.size());
     for (std::size_t i = 0; i < heights.size(); ++i) {
         if (!std::isfinite(heights[i]) || heights[i] < 0. || heights[i] > 1.)
@@ -101,7 +101,7 @@ std::string legacy_source_fingerprint(const std::filesystem::path& root) {
     for (const auto& relative : files) {
         const auto file = root / relative;
         const auto size = std::filesystem::file_size(file);
-        if (size > 512U * 1024U * 1024U)
+        if (size > std::uintmax_t{512U} * 1024U * 1024U)
             throw std::invalid_argument(file.string() + ": source file exceeds 512 MiB");
         std::ifstream input(file, std::ios::binary);
         if (!input) throw std::runtime_error(file.string() + ": cannot read source fingerprint input");
@@ -126,8 +126,8 @@ std::string legacy_source_fingerprint(const std::filesystem::path& root) {
     std::string result;
     result.reserve(64);
     for (const auto byte : digest.finish()) {
-        result.push_back(digits[byte >> 4]);
-        result.push_back(digits[byte & 15]);
+        result.push_back(digits[std::uint32_t{byte} >> 4U]);
+        result.push_back(digits[std::uint32_t{byte} & 15U]);
     }
     return result;
 }
@@ -166,7 +166,7 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     terrain::assert_track_fits(request.track, request.model.field);
     request.model.rider = resolved_rider;
     request.model.crank_joint = true;
-    auto compiled = model::compile_mjcf(model::generate_mjcf(request.model), request.asset_root);
+    const auto compiled = model::compile_mjcf(model::generate_mjcf(request.model), request.asset_root);
     populate_heightfield(*compiled, request);
     auto impl = std::make_unique<SetupOwner::Impl>();
     impl->config = runtime::project_runtime(request.model, *compiled, request.track, request.runtime);
@@ -175,7 +175,7 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     impl->physical = runtime::make_physical_step(*impl->stepper, impl->config);
     impl->request = std::move(request);
     impl->context = std::make_unique<SetupContext>(SetupContext{
-        *impl->stepper, *impl->physical, *impl->request.model.physics});
+        .stepper=*impl->stepper, .physical=*impl->physical, .physics=*impl->request.model.physics});
     auto& context = *impl->context;
     context.start_x_m = impl->request.start_x_m;
     context.ground_z_m = geometry::compute_ground_z(impl->request.model.bike) / 1000.;
@@ -278,7 +278,7 @@ io::Value SetupOwner::metadata() const {
         impl_->request.model.rider->variant == "articulated_planar" &&
         context.physics.articulated.pedal_attachment != "spindle") {
         fields.emplace_back("allocation_solver",
-            text(std::string(bike::rider::allocation_numeric_identity)));
+            text(bike::rider::allocation_numeric_identity));
         fields.emplace_back("allocation_solver_qualification", text("pending"));
     }
     return Value{std::move(fields)};

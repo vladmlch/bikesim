@@ -150,7 +150,7 @@ struct MassObservations {
 class PhysicalStep {
     friend class bike::initialization::PhysicalInitialState;
     friend void bike::initialization::finalize_initial_state(
-        bike::initialization::SetupContext&, const RuntimeConfig&);
+        bike::initialization::SetupContext&, const runtime::RuntimeConfig&);
     friend bike::initialization::ResearchStartup bike::initialization::prepare_research_startup(
         bike::initialization::SetupContext&);
 public:

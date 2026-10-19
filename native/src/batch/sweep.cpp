@@ -8,6 +8,7 @@
 #include <iostream>
 #include <limits>
 #include <thread>
+#include <utility>
 
 namespace bike::batch {
 int research_sweep(std::span<const std::string_view> input, const std::filesystem::path& executable) {
@@ -32,14 +33,15 @@ int research_sweep(std::span<const std::string_view> input, const std::filesyste
     if (!args.has("out") || !args.has("seeds")) throw cli::ArgumentError("--out and --seeds are required");
     const auto seeds = parse_seeds(args.text("seeds"));
     const auto count = std::max<std::int64_t>(1, args.integer("jobs"));
-    if (count > std::numeric_limits<unsigned>::max()) throw cli::ArgumentError("sweep worker count exceeds range");
+    if (std::cmp_greater(count , std::numeric_limits<unsigned>::max())) throw cli::ArgumentError("sweep worker count exceeds range");
     const auto root = std::filesystem::path(args.text("out"));
     std::vector<Job> jobs;
     for (const auto& seed : seeds) {
         Job job; job.id = "seed-" + seed; job.index = jobs.size(); job.output = root / job.id;
         job.params = Value{Object{{"seed", Value{io::Number{seed}}}}};
         job.argv = passthrough; job.argv.insert(job.argv.end(), {"--seed", seed, "--out", job.output.string()});
-        std::vector<std::string_view> views; for (const auto& arg : job.argv) views.push_back(arg);
+        std::vector<std::string_view> views; views.reserve(job.argv.size());
+for (const auto& arg : job.argv) views.push_back(arg);
         (void)cli::parse_arguments("bike-research", views);
         job.requested_argv = job.argv; job.argv.insert(job.argv.begin(), executable.string());
         jobs.push_back(std::move(job));
@@ -65,7 +67,7 @@ int research_sweep(std::span<const std::string_view> input, const std::filesyste
     for (std::size_t i = 0; i < results.size(); ++i)
         runs.push_back(Value{Object{{"seed", Value{io::Number{seeds[i]}}}, {"returncode", integer(results[i].exit_code)}, {"wall_s", real(results[i].wall_s)}}});
     write_log(root / "sweep.json", io::recording_json(Value{Object{{"jobs", integer(args.integer("jobs"))},
-        {"passthrough", Value{std::move(passed)}}, {"runs", Value{std::move(runs)}}}) + "\n", false);
+        {"passthrough", Value{std::move(passed)}}, {"runs", Value{std::move(runs)}}}}) + "\n", false);
     return interrupt.deferred() ? 130 : std::ranges::all_of(results, [](const auto& r) { return r.exit_code == 0; }) ? 0 : 1;
 }
 } // namespace bike::batch

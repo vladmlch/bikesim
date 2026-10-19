@@ -10,6 +10,8 @@
 #include <string>
 
 NATIVE_DIAG_PUSH
+// NATIVE_DIAG_IGNORE is the project diagnostic-pragma macro from diag.hpp; cppcheck cannot resolve it.
+// cppcheck-suppress unknownMacro
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
 namespace {
@@ -45,9 +47,10 @@ namespace init=bike::initialization;
 
 [[gnu::noinline]] void convergence_and_failure() {
     auto request=init::read_setup_request(bt::fixture("requests/welded_flat.toml"));
-    request.model.physics->equilibrium_cache_enabled=false;
-    request.model.physics->equilibrium_state_file.reset();
-    request.model.physics->initial_speed_mps=0.;
+    request.model.physics.value().equilibrium_cache_enabled=false; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    request.model.physics.value().equilibrium_state_file.reset(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    request.initial_state.reset();
+    request.model.physics.value().initial_speed_mps=0.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     auto insufficient=init::make_setup(request);
     init::EquilibriumOptions short_budget;short_budget.max_steps=1;
     short_budget.tolerance=1e-12;
@@ -80,12 +83,13 @@ namespace init=bike::initialization;
 
 [[gnu::noinline]] void slope_brake_and_crank() {
     auto request=init::read_setup_request(bt::fixture("requests/welded_flat.toml"));
-    request.model.physics->equilibrium_cache_enabled=false;
-    request.model.physics->equilibrium_state_file.reset();
-    request.model.physics->initial_speed_mps=0.;
-    request.model.physics->initial_front_brake=1.;
-    request.model.physics->initial_rear_brake=1.;
-    request.model.physics->drive.crank_phase_rad=.75;
+    request.model.physics.value().equilibrium_cache_enabled=false; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    request.model.physics.value().equilibrium_state_file.reset(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    request.initial_state.reset();
+    request.model.physics.value().initial_speed_mps=0.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    request.model.physics.value().initial_front_brake=1.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    request.model.physics.value().initial_rear_brake=1.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    request.model.physics.value().drive.crank_phase_rad=.75; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     request.track.grade_profile=bike::terrain::GradeProfile{{{0.,.04},{request.track.length_m,.04}}};
     request.model.field=bike::terrain::HeightFieldSpec::for_track(request.track);
     auto owner=init::make_setup(request);const auto result=init::settle(*owner);

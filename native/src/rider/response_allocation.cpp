@@ -53,7 +53,7 @@ BranchResult select_allocation_branch(std::span<const double> target,const Branc
         if(result.solution.size()!=target.size())throw std::invalid_argument("allocation branch result shape");
         const auto delta=d::add(result.solution,target,-1.);const double error=d::dot(delta,delta);
         if(!have || (result.feasible && !best.allocation.feasible) || (result.feasible && best.allocation.feasible && error<best_error) || (!result.feasible && !best.allocation.feasible && result.violation<best.allocation.violation)) {
-            best={std::move(result),branch};best_error=error;have=true;
+            best={.allocation=std::move(result),.branch=branch};best_error=error;have=true;
         }
         if(best.allocation.feasible && memory.branch && branch==*memory.branch)break;
     }
@@ -69,13 +69,15 @@ std::array<double,3> allocation_support_point(const mjModel& model,const mjData&
         const auto eq_data=model_access::readonly_buffer(model.eq_data,model.neq*mjNEQDATA,"eq_data");
         const auto base=static_cast<std::size_t>(a.equality_id)*mjNEQDATA+3;
         const auto offset=rotated(rotation,{eq_data[base],eq_data[base+1],eq_data[base+2]});
-        for(std::size_t j=0;j<3;++j)point[j]+=offset[j];return point;
+        for(std::size_t j=0;j<3;++j)point[j]+=offset[j];
+        return point;
     }
     return row3(data.site_xpos,a.site_id,static_cast<int>(model.nsite));
 }
 std::vector<ExtraConstraint> allocation_grip_constraints(const Matrix& f,const std::array<double,2>& direction,bool pulling,double limit) {
     auto out=grip_constraints(f,direction,pulling,pulling?limit*(1.-grip_radius_guard_fraction):limit);
-    if(!pulling)out[0].lower={support_force_guard_n};return out;
+    if(!pulling)out[0].lower={support_force_guard_n};
+    return out;
 }
 std::pair<Matrix,Vector> support_rows(const Matrix& force,const std::array<double,2>& normal,
     bool saddle,const bike::configuration::ArticulatedConfig& config,double weight,double half) {
@@ -88,12 +90,12 @@ std::pair<Matrix,Vector> support_rows(const Matrix& force,const std::array<doubl
     const double mu=saddle?config.saddle_mu:config.foot_mu;
     const double floor=saddle?config.saddle_reserve_weight_fraction*weight:config.pedal_min_normal_n;
     auto g=d::zeros(0,n);Vector h;
-    for(double sign:{1.,-1.}) {
+    for(double const sign:{1.,-1.}) {
         Vector row(n);for(std::size_t j=0;j<n;++j)row[j]=sign*ft[j]-mu*fn[j];
         d::append_row(g,row);h.push_back(-support_force_guard_n);
     }
     Vector row(n);for(std::size_t j=0;j<n;++j)row[j]=-fn[j];d::append_row(g,row);h.push_back(-floor-support_force_guard_n);
-    if(half>0.)for(double sign:{1.,-1.}) {
+    if(half>0.)for(double const sign:{1.,-1.}) {
         for(std::size_t j=0;j<n;++j)row[j]=sign*force.values[2*n+j]-half*fn[j];
         d::append_row(g,row);h.push_back(-support_moment_guard_nm);
     }
@@ -119,11 +121,12 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
         target[i]=request.torque_intent[i]/50.;scales[i]=50.;
     }
     lower[constant]=upper[constant]=target[constant]=1.;
-    if(task)target[*task]=*request.crank_torque_nm/crank_task_scale_nm;
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) a crank task is only emitted when crank torque was requested
+    if(task)target[task.value()]=request.crank_torque_nm.value()/crank_task_scale_nm;
     std::optional<ActivationLaw> activation;std::vector<std::size_t> ti(nt),ei;
-    std::iota(ti.begin(),ti.end(),0U);
+    std::ranges::iota(ti,0U);
     if(activated) {
-        ei.resize(nt);std::iota(ei.begin(),ei.end(),base);
+        ei.resize(nt);std::ranges::iota(ei,base);
         activation.emplace(request.activation_state,speed,request.lower_torque_nm,request.upper_torque_nm,request.dt_s,cfg.activation_tau_s,cfg.active_positive_power_limit_w);
         Vector excitation(nt);
         for(std::size_t i=0;i<nt;++i) {
@@ -170,7 +173,7 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
         }
         normals.push_back(normal);half_lengths.push_back(half);
     }
-    struct Payload {std::array<bool,2> branch;std::vector<Matrix> forces;};std::vector<Payload> payloads;
+    struct Payload {std::array<bool,2> branch{};std::vector<Matrix> forces;};std::vector<Payload> payloads;
     std::size_t pruned=0;auto staged_memory=memory;
     const auto mode_solver=[&](const ConstraintResponse& response)->ModeCandidate {
         Payload payload;
@@ -212,11 +215,11 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
             for(std::size_t k=0;k<request.attachments.size();++k)if(request.attachments[k].name.starts_with("grip")) {
                 const auto pelvis=row3(data.xpos,request.pelvis_body,static_cast<int>(model.nbody));std::array<double,2> direction{pelvis[0]-points[k][0],pelvis[2]-points[k][2]};
                 const double length=d::norm(direction);if(length==0.)throw std::invalid_argument("allocation grip direction is undefined");for(double&v:direction)v/=length;
-                Matrix force{2,nz,Vector(payload.forces[k].values.begin(),payload.forces[k].values.begin()+static_cast<std::ptrdiff_t>(2*nz))};
+                Matrix const force{.rows=2,.cols=nz,.values=Vector(payload.forces[k].values.begin(),payload.forces[k].values.begin()+static_cast<std::ptrdiff_t>(2*nz))};
                 auto extras=allocation_grip_constraints(force,direction,branch[request.attachments[k].name=="grip_left"?0:1],cfg.grip_pull_per_hand_n);
                 problem.extra.insert(problem.extra.end(),extras.begin(),extras.end());
             }
-            if(base_empty)return Allocation{fallback,false,allocation_residual(problem,fallback)};
+            if(base_empty)return Allocation{.solution=fallback,.feasible=false,.violation=allocation_residual(problem,fallback)};
             auto branch_g=problem.inequality;auto branch_h=problem.inequality_rhs;bool has_linear=false;
             for(const auto& e:problem.extra)if(e.linear) {
                 has_linear=true;for(std::size_t i=0;i<e.linear->rows;++i) {
@@ -227,7 +230,7 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
             if(has_linear) {
                 auto relaxation=problem;relaxation.extra.clear();relaxation.inequality=branch_g;relaxation.inequality_rhs=branch_h;
                 if(allocation_residual(relaxation,fallback)>1e-7 && bike::numerics::linear_region_infeasible(branch_g,branch_h,lower,upper,problem.equality,problem.equality_rhs)) {
-                    ++pruned;return Allocation{fallback,false,allocation_residual(problem,fallback)};
+                    ++pruned;return Allocation{.solution=fallback,.feasible=false,.violation=allocation_residual(problem,fallback)};
                 }
             }
             auto result=allocate(problem);
@@ -235,7 +238,7 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
             return result;
         },staged_memory);
         payload.branch=branch_result.branch;payloads.push_back(std::move(payload));
-        return {std::move(branch_result.allocation),payloads.size()-1};
+        return {.allocation=std::move(branch_result.allocation),.payload_index=payloads.size()-1};
     };
     Vector wish(nt);for(std::size_t i=0;i<nt;++i)wish[i]=target[i]*50.;
     auto result=search_constraint_modes(kernel,wish,mode_solver,[nt](const Allocation& a) {
@@ -253,8 +256,8 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
     out.modes_tried=result.modes_tried;out.mode_search_complete=result.complete;out.linear_mode_rejections=pruned;
     out.lower_torque_nm=request.lower_torque_nm;out.upper_torque_nm=request.upper_torque_nm;out.saddle_normal_lower_bound_n=cfg.saddle_reserve_weight_fraction*weight;
     out.effort_scale=request.effort_scale;out.crank_torque_target_nm=request.crank_torque_nm;
-    for(int i:request.rider_dofs) {if(i<0||i>=model.nv)throw std::invalid_argument("rider acceleration dof");out.rider_acceleration.push_back(out.acceleration[static_cast<std::size_t>(i)]);}
-    for(int i:request.bike_dofs) {if(i<0||i>=model.nv)throw std::invalid_argument("base acceleration dof");out.base_acceleration.push_back(out.acceleration[static_cast<std::size_t>(i)]);}
+    for(int const i:request.rider_dofs) {if(i<0||i>=model.nv)throw std::invalid_argument("rider acceleration dof");out.rider_acceleration.push_back(out.acceleration[static_cast<std::size_t>(i)]);}
+    for(int const i:request.bike_dofs) {if(i<0||i>=model.nv)throw std::invalid_argument("base acceleration dof");out.base_acceleration.push_back(out.acceleration[static_cast<std::size_t>(i)]);}
     memory=std::move(staged_memory);return out;
 }
 } // namespace bike::rider

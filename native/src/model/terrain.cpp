@@ -3,6 +3,7 @@
 namespace bike::model::detail {
 // mujoco/terrain.py. Elevation is populated by T21 into the owned model;
 // generating XML does not bake a Python-created heightfield into the asset.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void build_terrain(Element& root,Element& world,const BuildContext& c) {
     const auto& field=c.request.field;
     block(root,"asset").add("hfield",{{"name","road"},{"nrow",std::to_string(field.nrow)},

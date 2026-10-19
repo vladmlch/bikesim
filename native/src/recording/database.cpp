@@ -9,18 +9,19 @@
 #include <exception>
 #include <set>
 #include <system_error>
+#include <unistd.h>
 
 namespace bike::recording {
 namespace {
 using io::Value;
 using Row = Value::Array;
-void insert(Connection& c, std::string_view table, const Row& row) {
+void insert(Connection const& c, std::string_view table, const Row& row) {
     if (row.empty()) throw std::invalid_argument("recording insert has no columns");
     std::string sql = "INSERT INTO " + quote(table) + " VALUES (";
     for (std::size_t i = 0; i < row.size(); ++i) { if (i) sql += ','; sql += '?'; }
     c.execute(sql + ')', row);
 }
-void metrics(Connection& c, std::int64_t id, const Value& summary) {
+void metrics(const Connection& c, std::int64_t id, const Value& summary) {
     const auto* metrics = io::find_member(io::as_object(summary, "summary"), "episode_metrics");
     if (!metrics) return;
     for (const auto& [name, v] : io::as_object(*metrics, "episode_metrics")) {
@@ -43,7 +44,7 @@ void episode(Connection& c, const EpisodeEvidence& evidence, std::size_t maximum
     const auto* catalog = evidence.physical->catalog();
     if (!catalog && evidence.physical->row_count()) throw std::invalid_argument("nonempty physical evidence must own its coordinate catalog");
     if (catalog) {
-        auto coordinates = [&](const std::vector<Coordinate>& sequence) { for (const auto& coordinate : sequence) insert(c, "coordinate_catalog", {
+        auto const coordinates = [&](const std::vector<Coordinate>& sequence) { for (const auto& coordinate : sequence) insert(c, "coordinate_catalog", {
             value::integer(id), value::text(coordinate.kind), value::integer(coordinate.index), value::text(coordinate.joint),
             value::text(coordinate.component), value::text(coordinate.dof_kind), value::text(coordinate.unit)}); };
         coordinates(catalog->coordinates().qpos); coordinates(catalog->coordinates().dof);
@@ -54,19 +55,21 @@ void episode(Connection& c, const EpisodeEvidence& evidence, std::size_t maximum
         if (io::sha256(a.content) != a.sha256) throw std::invalid_argument("asset checksum mismatch: " + a.name);
         insert(c, "assets", {value::integer(id), value::text(a.name), value::text(a.media_type), value::text(a.sha256), Value{io::Bytes{a.content}}});
     }
-    const auto physical_batch = [&](std::string_view name, runtime::EncodedTable&& batch) {
+    const auto physical_batch = [&](std::string_view name, runtime::EncodedTable&& batch) {  // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved) callback signature is fixed by EncodedTables::tables; the batch is consumed by append_pieces, not moved
         const auto& spec = table_spec(name);
         const bool control = name == "commands_requested" || name == "commands_applied" || name == "observations" || name == "transitions";
         if (control && !(name == "commands_applied" && !r && evidence.physical->ordinary_commands())) throw std::invalid_argument("physical source emitted research table " + std::string(name));
         if (batch.rows < 0 || std::cmp_greater(batch.rows, maximum)) throw std::invalid_argument("physical source exceeded batch_rows bound");
-        if (before) before("append"); append_pieces(c, spec, batch, id, before);
+        if (before) before("append");
+        append_pieces(c, spec, batch, id, before);
     };
     evidence.physical->tables(maximum, physical_batch);
     if (r) {
-        r->history->tables(maximum, [&](std::string_view name, runtime::EncodedTable&& batch) {
+        r->history->tables(maximum, [&](std::string_view name, runtime::EncodedTable&& batch) {  // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved) callback signature is fixed by EncodedTables::tables; the batch is consumed by append_pieces, not moved
             if (name != "commands_requested" && name != "commands_applied" && name != "observations" && name != "transitions") throw std::invalid_argument("research source emitted physical table");
             if (batch.rows < 0 || std::cmp_greater(batch.rows, maximum)) throw std::invalid_argument("research source exceeded batch_rows bound");
-            if (before) before("append"); append_pieces(c, table_spec(name), batch, id, before);
+            if (before) before("append");
+            append_pieces(c, table_spec(name), batch, id, before);
         });
         insert(c, "integration_states", {value::integer(id), value::text("initial"), value::text("mjSTATE_INTEGRATION"), value::doubles(r->initial_integration_state)});
         insert(c, "integration_states", {value::integer(id), value::text("final"), value::text("mjSTATE_INTEGRATION"), value::doubles(r->final_integration_state)});
@@ -76,7 +79,7 @@ void episode(Connection& c, const EpisodeEvidence& evidence, std::size_t maximum
 std::filesystem::path temporary_directory(const std::filesystem::path& parent) {
     auto text = (parent / ".recording-db-XXXXXX").string(); std::vector<char> bytes(text.begin(), text.end()); bytes.push_back('\0');
     if (!::mkdtemp(bytes.data())) throw std::system_error(errno, std::generic_category(), "exclusive recording database staging");
-    return std::filesystem::path(bytes.data());
+    return {bytes.data()};
 }
 } // namespace
 io::Value::Object write_database(const std::filesystem::path& file, const RunCapture& capture, std::size_t maximum,
@@ -91,11 +94,13 @@ io::Value::Object write_database(const std::filesystem::path& file, const RunCap
     // An existing output (even an empty file) is never opened by the engine.
     {
         if (before) before("database_open");
-        Database database(payload, false); auto& c = database.connection();
+        Database const database(payload, false); auto& c = database.connection();
         bool committed = false;
         try {
             c.execute("BEGIN TRANSACTION");
-            if (before) before("schema_write"); create_metadata(c); create_streams(c);
+            if (before) before("schema_write");
+            create_metadata(c);
+            create_streams(c);
             const auto& metadata = capture.metadata();
             if (before) before("metadata_write");
             insert(c, "recording_meta", {value::integer(schema_version), value::text(metadata.run_uuid), value::text("bike_recording.json.v1")});
@@ -104,10 +109,16 @@ io::Value::Object write_database(const std::filesystem::path& file, const RunCap
             for (const auto& row : catalog_rows()) insert(c, "field_catalog", row);
             for (const auto& evidence : capture.episodes()) episode(c, *evidence, maximum, before);
             for (const auto& e : capture.events()) insert(c, "events", {value::integer(e.episode_id), value::integer(e.event_id), value::text(e.kind), value::real(e.received_wall_s), value::integer(e.processed_step), e.applied_step ? value::integer(*e.applied_step) : Value{}, value::text(io::recording_json(e.values))});
-            if (before) before("views_write"); create_views(c); create_legacy_view(c);
-            if (before) before("validate_database"); counts = validate_database(c);
-            if (before) before("commit"); c.execute("COMMIT"); committed = true;
-            if (before) before("checkpoint"); c.execute("CHECKPOINT");
+            if (before) before("views_write");
+            create_views(c);
+            create_legacy_view(c);
+            if (before) before("validate_database");
+            counts = validate_database(c);
+            if (before) before("commit");
+            c.execute("COMMIT");
+            committed = true;
+            if (before) before("checkpoint");
+            c.execute("CHECKPOINT");
             if (before) before("database_close");
         } catch (...) {
             const auto primary = std::current_exception();
@@ -121,11 +132,12 @@ io::Value::Object write_database(const std::filesystem::path& file, const RunCap
     }
     if (std::filesystem::exists(payload.string() + ".wal")) throw std::runtime_error("recording database retains a WAL after close");
     auto opened = platform::open_regular(payload); platform::sync(opened); opened.close();
-    if (before) before("database_link"); platform::link_new(payload, file);
+    if (before) before("database_link");
+    platform::link_new(payload, file);
     platform::sync_directory(parent);
     std::error_code cleanup; std::filesystem::remove(payload, cleanup); std::filesystem::remove(owned, cleanup);
     return counts;
 }
 void write_database(const std::filesystem::path& file, const RunCapture& capture) { (void)write_database(file, capture, batch_rows); }
-void validate_database(const std::filesystem::path& file) { Database database(file, true); (void)validate_database(database.connection()); }
+void validate_database(const std::filesystem::path& file) { Database const database(file, true); (void)validate_database(database.connection()); }
 } // namespace bike::recording

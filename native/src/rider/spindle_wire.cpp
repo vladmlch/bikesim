@@ -22,20 +22,23 @@ using wire::keys;
 
 // Binding-only lowering for the newly reached cold records. The owned core
 // codec remains the single legacy diagnostic/config schema authority.
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 bike::io::Value owned_value(nb::handle value,std::string_view path,std::size_t depth=0) {
     using V=bike::io::Value;
     if(depth>64)wire::invalid(path,"document nesting exceeds 64");
     if(value.is_none())return V{};
-    if(value.ptr()==Py_True)return V{true};if(value.ptr()==Py_False)return V{false};
+    if(value.ptr()==Py_True)return V{true};
+    if(value.ptr()==Py_False)return V{false};
     if(nb::isinstance<nb::str>(value))return V{wire::string(value,path)};
     if(nb::isinstance<nb::dict>(value)){V::Object out;for(const auto item:nb::borrow<nb::dict>(value))out.emplace_back(wire::string(item.first,path),owned_value(item.second,path,depth+1));return V{std::move(out)};}
     const auto numbers=nb::module_::import_("numbers");
     if(nb::isinstance(value,numbers.attr("Integral"))&&!wire::numeric_boolean(value))return V{bike::io::Number{std::to_string(wire::integer(value,path))}};
     if(nb::isinstance(value,numbers.attr("Real"))&&!wire::numeric_boolean(value)){
-        const double real=wire::real(value,path);if(!std::isfinite(real))return V{bike::io::Tagged{"float64",{{"value",std::isnan(real)?"nan":real>0.?"+inf":"-inf"}}}};std::array<char,32>b{};auto written=std::to_chars(b.data(),std::to_address(b.end()),real);if(written.ec!=std::errc())throw std::runtime_error("rider float encode");std::string text(b.data(),written.ptr);if(text.find_first_of(".eE")==std::string::npos)text+=".0";return V{bike::io::Number{std::move(text)}};
+        const double real=wire::real(value,path);if(!std::isfinite(real))return V{bike::io::Tagged{.kind="float64",.fields={{"value",std::isnan(real)?"nan":real>0.?"+inf":"-inf"}}}};std::array<char,32>b{};auto const written=std::to_chars(b.data(),std::to_address(b.end()),real);if(written.ec!=std::errc())throw std::runtime_error("rider float encode");std::string text(b.data(),written.ptr);if(text.find_first_of(".eE")==std::string::npos)text+=".0";return V{bike::io::Number{std::move(text)}};
     }
-    V::Array out;for(nb::handle item:wire::sequence(value,path))out.push_back(owned_value(item,path,depth+1));return V{std::move(out)};
+    V::Array out;for(nb::handle const item:wire::sequence(value,path))out.push_back(owned_value(item,path,depth+1));return V{std::move(out)};
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 nb::object python_value(const bike::io::Value& value) {
     using V=bike::io::Value;
     if(bike::io::is_null(value))return nb::none();

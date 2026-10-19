@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 
 namespace bike::cli {
 int settle_command(const Arguments& args) {
@@ -13,19 +14,20 @@ int settle_command(const Arguments& args) {
         throw ArgumentError("--max-steps and --tolerance must be positive");
     const auto output = std::filesystem::path(args.text("out"));
     if (std::filesystem::is_directory(output)) throw ArgumentError("--out must be a file path, not a directory");
-    auto resolved = resolve_ride(args, true);
-    resolved.setup.equilibrium.max_steps = steps;
-    resolved.setup.equilibrium.tolerance = tolerance;
-    const auto options = resolved.setup.equilibrium;
-    const auto track = resolved.setup.track.name;
+    // ResolvedRide is several KB; heap storage keeps this frame bounded.
+    const auto resolved = resolve_ride(args, true);
+    resolved->setup.equilibrium.max_steps = steps;
+    resolved->setup.equilibrium.tolerance = tolerance;
+    const auto options = resolved->setup.equilibrium;
+    const auto track = resolved->setup.track.name;
     std::cout << "[bike-settle] " << track << ": settling (budget " << steps << " steps, tolerance "
               << tolerance << ") -> " << output << '\n' << std::flush;
     const auto start = platform::monotonic_seconds();
     std::unique_ptr<initialization::SetupOwner> setup;
     initialization::EquilibriumResult equilibrium;
-    platform::InterruptShield interrupt;
+    platform::InterruptShield const interrupt;
     try {
-        setup = initialization::make_setup(std::move(resolved.setup));
+        setup = initialization::make_setup(std::move(resolved->setup));
         equilibrium = initialization::settle(*setup, options);
     } catch (const std::exception& error) {
         std::cerr << "[bike-settle] settle failed: " << error.what() << '\n'; return interrupt.deferred() ? 130 : 3;

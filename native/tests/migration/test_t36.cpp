@@ -23,6 +23,10 @@ class CountingPolicy final : public Policy {
 public:
     explicit CountingPolicy(std::shared_ptr<Calls> calls) : calls_(std::move(calls)) {}
     ~CountingPolicy() override;
+    CountingPolicy(const CountingPolicy&) = delete;
+    CountingPolicy& operator=(const CountingPolicy&) = delete;
+    CountingPolicy(CountingPolicy&&) = delete;
+    CountingPolicy& operator=(CountingPolicy&&) = delete;
     void reset(std::string_view) override { ++calls_->resets; }
     runtime::RideControl act(const runtime::SensorObservation&, std::optional<double>) override {
         ++calls_->acts; runtime::RideControl control; control.motor_torque_nm = 0.; return control;
@@ -33,7 +37,12 @@ private:
 CountingPolicy::~CountingPolicy() = default;
 class ResetFailurePolicy final : public Policy {
 public:
+    ResetFailurePolicy() = default;
     ~ResetFailurePolicy() override;
+    ResetFailurePolicy(const ResetFailurePolicy&) = delete;
+    ResetFailurePolicy& operator=(const ResetFailurePolicy&) = delete;
+    ResetFailurePolicy(ResetFailurePolicy&&) = delete;
+    ResetFailurePolicy& operator=(ResetFailurePolicy&&) = delete;
     [[noreturn]] void reset(std::string_view) override { throw std::runtime_error("injected initial policy reset failure"); }
     [[noreturn]] runtime::RideControl act(const runtime::SensorObservation&, std::optional<double>) override {
         throw std::runtime_error("act must not run after reset failure");
@@ -42,7 +51,12 @@ public:
 ResetFailurePolicy::~ResetFailurePolicy() = default;
 class Publication final : public ResearchPublication {
 public:
+    Publication() = default;
     ~Publication() override;
+    Publication(const Publication&) = delete;
+    Publication& operator=(const Publication&) = delete;
+    Publication(Publication&&) = delete;
+    Publication& operator=(Publication&&) = delete;
     int calls = 0;
     bool fail_first = false, interrupt = false;
     std::size_t episodes = 0;
@@ -50,14 +64,14 @@ public:
         ++calls; episodes = receipts.size();
         bt::require(!receipts.empty() && !events.empty(), "publication receives immutable evidence and event rows");
         if (fail_first && calls == 1) throw std::runtime_error("injected publication failure");
-        if (interrupt) std::raise(SIGINT);
+        if (interrupt) (void)std::raise(SIGINT);
         return std::filesystem::temp_directory_path() / "t36-publication-receipt";
     }
 };
 Publication::~Publication() = default;
 template<class F> void runtime_failure(F&& call, std::string_view contains) {
     bool matched = false;
-    try { call(); }
+    try { std::forward<F>(call)(); }
     catch (const std::runtime_error& error) { matched = std::string(error.what()).find(contains) != std::string::npos; }
     bt::require(matched, std::string("expected failure: ") + std::string(contains));
 }
@@ -71,7 +85,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     request->experiment.duration_s = .12;
     request->experiment.stop_on_model_violation = false;
     request->experiment.maximum_energy_residual_ratio = 1e12; // timing test: numeric outcome tested in T37
-    request->setup.model.physics->initial_speed_mps = 0.;
+    request->setup.model.physics.value().initial_speed_mps = 0.; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     return std::make_unique<PreparedEnvironment>(prepare_environment(std::move(*request)));
 }
 void clock_contract() {
@@ -88,7 +102,7 @@ void clock_contract() {
     clock.rebase(21., 0);
     bt::require(clock.target(21., 0) == 0, "episode reset rebases pacing");
     bt::invalid([&] { clock.set_scale(3, 21., 0); });
-    bt::invalid([] { PlaybackClock invalid(0.); });
+    bt::invalid([] { PlaybackClock const invalid(0.); });
 }
 void boundary_and_retry(const PreparedEnvironment& seed) {
     const auto calls = std::make_shared<Calls>();
@@ -150,6 +164,7 @@ void loader_failure_receipt(const PreparedEnvironment& seed) {
         run.episodes().front().episode.requested.empty() && run.episodes().front().episode.observations.size() == 1,
         "policy loading failure retains zero-step startup evidence");
     environment->close();
+    // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
     try { (void)run.finish(); } catch (const std::invalid_argument&) {}
     bt::require(publisher->calls == 2, "primary failure still permits an explicit owned-data publication retry");
 }
@@ -164,13 +179,16 @@ void preview_contract() {
     bt::require(stream.str() == "generation,event,time_s,label\r\n1,,0.0,\"a,b\"\r\n1,,0.01,\"quoted\"\"\"\r\n2,reset,0.0,reset\r\n2,duration,,\r\n",
         "preview fixes initial columns, quotes CSV and marks reset/end without retaining history");
     runtime_failure([&] { csv.write_marker("late"); }, "closed");
-    bt::invalid([&] { PhysicalLiveCsv invalid(stream, 0.); });
+    bt::invalid([&] { PhysicalLiveCsv const invalid(stream, 0.); });
 }
 void reset_failure_receipt(const PreparedEnvironment& seed) {
     auto environment = runtime::make_research(seed.bootstrap);
     std::exception_ptr primary;
-    try { PolicySession failed(std::move(environment), std::make_unique<ResetFailurePolicy>()); }
+    try { PolicySession const failed(std::move(environment), std::make_unique<ResetFailurePolicy>()); }
     catch (const std::runtime_error&) { primary = std::current_exception(); }
+    // Deliberate use-after-move: asserting restored ownership is the test's purpose.
+    // cppcheck-suppress accessMoved
+    // NOLINTNEXTLINE(bugprone-use-after-move) asserting the restored ownership is the test's purpose
     bt::require(primary && environment && environment->snapshot().step == 0,
         "constructor reset failure restores named caller environment ownership");
     const auto publisher = std::make_shared<Publication>();
@@ -209,7 +227,7 @@ void failure_child() {
 void interrupt_child() {
     const auto seed = prepared();
     auto environment = runtime::make_research(seed->bootstrap);
-    auto publication = std::make_shared<Publication>(); publication->interrupt = true;
+    auto const publication = std::make_shared<Publication>(); publication->interrupt = true;
     ResearchRun run(*environment, publication);
     bool deferred = false;
     try { (void)run.finish(); } catch (const OperatorInterrupted&) { deferred = true; }
@@ -230,7 +248,7 @@ int main(int argc, char** argv) {
         boundary_and_retry(*seed); queued_reset(*seed); loader_failure_receipt(*seed); reset_failure_receipt(*seed);
         for (const auto child : {"--failure-child", "--interrupt-child"}) {
             const auto result = bike::platform::run({bike::platform::executable_path().string(), child},
-                std::filesystem::temp_directory_path(), {.timeout_s = 300., .max_output_bytes = 1024U * 1024U});
+                std::filesystem::temp_directory_path(), {.cancellation = {}, .timeout_s = 300., .max_output_bytes = std::size_t{1024U} * std::size_t{1024U}});
             bt::require(result.exit_code == 0, std::string(child) + ": " + result.err + result.out);
         }
     });

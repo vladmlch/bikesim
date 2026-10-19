@@ -43,6 +43,8 @@ struct PhysicalCase {
     std::unique_ptr<init::SetupContext> context;
 };
 
+// NOLINTBEGIN(modernize-make-unique) make_unique's inlined forwarding path keeps each
+// by-value result on this frame and overflows the 8192-byte budget; new T(f()) elides.
 std::unique_ptr<PhysicalCase> physical_case() {
     auto request=std::unique_ptr<init::SetupRequest>{new init::SetupRequest(
         init::read_setup_request(bt::fixture("requests/welded_flat.toml")))};
@@ -53,19 +55,19 @@ std::unique_ptr<PhysicalCase> physical_case() {
     bt::require(address>=0 && std::cmp_less_equal(address,compiled->nhfielddata) &&
         samples.size()<=static_cast<std::size_t>(compiled->nhfielddata-address),
         "physical refinement fixture has valid compiled road storage");
-    auto heightfield=std::views::counted(compiled->hfield_data,compiled->nhfielddata)
+    auto const heightfield=std::views::counted(compiled->hfield_data,compiled->nhfielddata)
         .subspan(static_cast<std::size_t>(address),samples.size());
     for(std::size_t i=0;i<samples.size();++i)heightfield[i]=static_cast<float>(samples[i]);
-    auto config=std::make_unique<runtime::RuntimeConfig>(runtime::project_runtime(
-        request->model,*compiled,request->track));
+    auto config=std::unique_ptr<runtime::RuntimeConfig>{new runtime::RuntimeConfig(runtime::project_runtime(
+        request->model,*compiled,request->track))};
     const auto image=init::capture_model_image(*compiled);
     auto out=std::make_unique<PhysicalCase>();
-    auto writer_config=std::unique_ptr<nativecfg::WriterConfig>{new nativecfg::WriterConfig(
+    auto const writer_config=std::unique_ptr<nativecfg::WriterConfig>{new nativecfg::WriterConfig(
         nativecfg::decode(config->writer_config))};
     out->stepper=std::make_unique<Stepper>(image.mjb,*writer_config);
     out->physical=runtime::make_physical_step(*out->stepper,*config);
-    out->context=std::unique_ptr<init::SetupContext>{new init::SetupContext{
-        *out->stepper,*out->physical,*request->model.physics}};
+    out->context=std::unique_ptr<init::SetupContext>{new init::SetupContext(init::SetupContext{
+        .stepper=*out->stepper,.physical=*out->physical,.physics=request->model.physics.value()})}; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     auto& context=*out->context;
     context.ground_z_m=bike::geometry::compute_ground_z(request->model.bike)/1000.;
     context.frame_body_id=bike::model::required_id(*compiled,mjOBJ_BODY,"frame");
@@ -78,7 +80,7 @@ std::unique_ptr<PhysicalCase> physical_case() {
     // internal spring/rider/drive adjustment can provide the missing road
     // reaction; tiny differences at budget=1 cannot meet the unchanged .05
     // acceptance threshold. This exercises real physical trial evaluations.
-    auto q=std::views::counted(out->stepper->data()->qpos,out->stepper->model()->nq);
+    auto const q=std::views::counted(out->stepper->data()->qpos,out->stepper->model()->nq);
     for(auto name:{"root_z","rider_root_z"})
         q[static_cast<std::size_t>(init::joint_address(context,name).qpos)]+=10.;
     out->stepper->note_posvel_stale();
@@ -88,7 +90,7 @@ std::unique_ptr<PhysicalCase> physical_case() {
     for(std::size_t i=0;i<names.size();++i)
         if(names[i].ends_with(".xi"))tire[i]=.0003;
     out->stepper->set_tire_state(names,tire);
-    auto contacts=std::make_unique<writers::RiderContactsState>(out->stepper->rider_contacts().state());
+    auto contacts=std::unique_ptr<writers::RiderContactsState>{new writers::RiderContactsState(out->stepper->rider_contacts().state())};
     for(auto& support:contacts->supports)support.xi=.0002;
     for(auto& grip:contacts->grip_xi_local){grip[0]=.0001;grip[2]=-.0001;}
     auto probe=out->stepper->rider_contacts().probe();
@@ -102,6 +104,7 @@ std::unique_ptr<PhysicalCase> physical_case() {
             bt::require(patch.normal_load_n==0.,"airborne refinement has no road support");
     return out;
 }
+// NOLINTEND(modernize-make-unique)
 
 struct MaterialSnapshot {
     double time_s=0.;
@@ -120,8 +123,8 @@ MaterialSnapshot snapshot(const PhysicalCase& owner) {
     out.qvel.assign(owner.stepper->qvel().begin(),owner.stepper->qvel().end());
     out.tire=owner.stepper->tire_state();
     out.tire_names=owner.stepper->tire_state_names();
-    out.drive=std::unique_ptr<drivetrain::DriveSnapshot>{new drivetrain::DriveSnapshot(owner.stepper->drive().state())};
-    out.physical=std::unique_ptr<runtime::StepState>{new runtime::StepState(owner.physical->state())};
+    out.drive=std::make_unique<drivetrain::DriveSnapshot>(owner.stepper->drive().state());
+    out.physical=std::make_unique<runtime::StepState>(owner.physical->state());
     out.rider=std::make_unique<writers::RiderContactsState>(owner.stepper->rider_contacts().state());
     out.rider_probe=std::make_unique<std::optional<writers::RiderContactsProbe>>(
         owner.stepper->rider_contacts().probe());
@@ -152,8 +155,8 @@ void same_material(const MaterialSnapshot& actual,const MaterialSnapshot& expect
         "rejected candidates do not leak rider material or probe state");
     bt::require(actual.physical->rider_controller && expected.physical->rider_controller,
         "physical regression exercises the articulated controller");
-    exact_value(rider::encode_spindle_state(*actual.physical->rider_controller),
-        rider::encode_spindle_state(*expected.physical->rider_controller),
+    exact_value(rider::encode_spindle_state(actual.physical->rider_controller.value()), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+        rider::encode_spindle_state(expected.physical->rider_controller.value()), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
         "rejected candidates do not leak rider control state");
     exact_value(rider::encode_intent_state(actual.physical->rider_intent),
         rider::encode_intent_state(expected.physical->rider_intent),"rider intent remains isolated");
@@ -177,10 +180,10 @@ void evaluate_selected_once(PhysicalCase& reference,const MaterialSnapshot& inco
     for(std::size_t i=0;i<contacts->supports.size();++i)
         contacts->supports[i].xi=selected.rider->supports[i].xi;
     for(std::size_t side=0;side<contacts->grip_xi_local.size();++side)
-        for(std::size_t axis:{0U,2U})contacts->grip_xi_local[side][axis]=selected.rider->grip_xi_local[side][axis];
+        for(std::size_t const axis:{0U,2U})contacts->grip_xi_local[side][axis]=selected.rider->grip_xi_local[side][axis];
     auto probe=*incoming.rider_probe;
     reference.stepper->rider_contacts().assign_state(std::move(*contacts),std::move(probe));
-    auto* data=reference.stepper->data();const auto* model=reference.stepper->model();
+    auto const* data=reference.stepper->data();const auto* model=reference.stepper->model();
     std::ranges::copy(selected.qpos,std::views::counted(data->qpos,model->nq).begin());
     std::ranges::fill(std::views::counted(data->qvel,model->nv),0.);
     reference.stepper->note_posvel_stale();
@@ -215,7 +218,7 @@ void analytic_solutions() {
     const num::Residual residual=[](std::span<const double> x) {
         return std::vector<double>{2.*(x[0]-1.),x[1]+.5,.25*(x[0]+x[1]-.5)};
     };
-    for(auto difference:{num::DifferenceScheme::two_point,num::DifferenceScheme::three_point}) {
+    for(auto const difference:{num::DifferenceScheme::two_point,num::DifferenceScheme::three_point}) {
         num::LeastSquaresOptions options;options.difference=difference;
         const auto result=num::bounded_least_squares(residual,initial,lower,upper,options);
         bt::require(result.converged && result.cost<1e-14 &&

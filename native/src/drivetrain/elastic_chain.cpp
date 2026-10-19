@@ -23,7 +23,7 @@ std::vector<double> chain_jacobian(
     std::span<const double> q,
     const std::function<double(std::span<const double>)>& evaluate,
     double epsilon) {
-    for (double coordinate : q) finite(coordinate, "generalized coordinates");
+    for (double const coordinate : q) finite(coordinate, "generalized coordinates");
     positive(epsilon, "difference step");
     if (!evaluate) throw std::invalid_argument("chain Jacobian requires an evaluator");
     std::vector<double> result(q.size()), plus(q.size()), minus(q.size());

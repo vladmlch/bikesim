@@ -7,7 +7,7 @@
 
 namespace bike::recording {
 Asset asset(std::string name, std::string media_type, std::vector<std::byte> content) {
-    Asset out{std::move(name), std::move(media_type), io::sha256(content), std::move(content)}; out.validate(); return out;
+    Asset out{.name=std::move(name), .media_type=std::move(media_type), .sha256=io::sha256(content), .content=std::move(content)}; out.validate(); return out;
 }
 Asset json_asset(std::string name, const io::Value& value) {
     const auto json = io::recording_json(value) + '\n';

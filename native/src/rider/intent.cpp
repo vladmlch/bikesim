@@ -32,6 +32,8 @@ namespace {
     return static_cast<std::int64_t>(rounded);
 }
 
+} // namespace
+
 // RiderPosture.__post_init__ — the scalar()/array() finiteness gates and
 // bounds the oracle enforces every time a posture object is constructed.
 void validate_posture(const RiderPosture &posture) {
@@ -54,8 +56,6 @@ void validate_posture(const RiderPosture &posture) {
                 "hip offset exceeds the posture command envelope");
     }
 }
-
-} // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
 double body_pulse(double time_s, double start_s, double duration_s,

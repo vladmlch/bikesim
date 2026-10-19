@@ -6,7 +6,7 @@
 
 namespace bike::recording {
 class RunCapture;
-[[nodiscard]] io::Value::Object validate_database(Connection& connection);
+[[nodiscard]] io::Value::Object validate_database(const Connection& connection);
 void validate_database(const std::filesystem::path& file);
 void write_database(const std::filesystem::path& file, const RunCapture& capture);
 [[nodiscard]] io::Value::Object write_database(const std::filesystem::path& file,

@@ -4,6 +4,7 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <ranges>
 #include <utility>
 
 namespace bike::recording {
@@ -17,10 +18,15 @@ struct Logical {
     explicit Logical(duckdb_logical_type type) : handle(type) { if (!handle) failed("logical type"); }
     ~Logical() { if (handle) duckdb_destroy_logical_type(&handle); }
     Logical(Logical&& other) noexcept : handle(std::exchange(other.handle, nullptr)) {}
-    Logical& operator=(Logical&&) = delete;
+    Logical& operator=(Logical&& other) noexcept {
+        if (handle) duckdb_destroy_logical_type(&handle);
+        handle = std::exchange(other.handle, nullptr);
+        return *this;
+    }
     Logical(const Logical&) = delete;
     Logical& operator=(const Logical&) = delete;
 };
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 Logical logical(const FieldSpec& field) {
     if (field.dtype == "double") return Logical(duckdb_create_logical_type(DUCKDB_TYPE_DOUBLE));
     if (field.dtype == "bigint") return Logical(duckdb_create_logical_type(DUCKDB_TYPE_BIGINT));
@@ -34,21 +40,23 @@ Logical logical(const FieldSpec& field) {
             if (child.optional) { owners.emplace_back(duckdb_create_logical_type(DUCKDB_TYPE_BOOLEAN)); names.push_back(child.key + "_present"); }
         }
         std::vector<duckdb_logical_type> types; std::vector<const char*> labels;
-        for (const auto& owner : owners) types.push_back(owner.handle);
-        for (const auto& name : names) labels.push_back(name.c_str());
+        types.reserve(owners.size());
+for (const auto& owner : owners) types.push_back(owner.handle);
+        labels.reserve(names.size());
+for (const auto& name : names) labels.push_back(name.c_str());
         Logical structure(duckdb_create_struct_type(types.data(), labels.data(), static_cast<idx_t>(types.size())));
         if (field.dtype == "struct") return structure;
         if (field.dtype == "struct[]") return Logical(duckdb_create_list_type(structure.handle));
-        Logical key(duckdb_create_logical_type(DUCKDB_TYPE_VARCHAR));
+        Logical const key(duckdb_create_logical_type(DUCKDB_TYPE_VARCHAR));
         return Logical(duckdb_create_map_type(key.handle, structure.handle));
     }
     auto member = field;
     if (field.dtype.starts_with("map<")) {
         member.dtype = field.dtype.substr(4, field.dtype.size()-5);
-        auto child = logical(member); Logical key(duckdb_create_logical_type(DUCKDB_TYPE_VARCHAR));
+        auto const child = logical(member); Logical const key(duckdb_create_logical_type(DUCKDB_TYPE_VARCHAR));
         return Logical(duckdb_create_map_type(key.handle, child.handle));
     }
-    if (field.dtype.ends_with("[]")) { member.dtype.resize(member.dtype.size()-2); auto child = logical(member); return Logical(duckdb_create_list_type(child.handle)); }
+    if (field.dtype.ends_with("[]")) { member.dtype.resize(member.dtype.size()-2); auto const child = logical(member); return Logical(duckdb_create_list_type(child.handle)); }
     throw std::invalid_argument("recording unsupported logical type: " + field.dtype);
 }
 struct Chunk {
@@ -56,6 +64,7 @@ struct Chunk {
     explicit Chunk(std::span<duckdb_logical_type> types) : handle(duckdb_create_data_chunk(types.data(), static_cast<idx_t>(types.size()))) { if (!handle) failed("create data chunk"); }
     ~Chunk() { if (handle) duckdb_destroy_data_chunk(&handle); }
     Chunk(const Chunk&) = delete; Chunk& operator=(const Chunk&) = delete;
+    Chunk(Chunk&&) = delete; Chunk& operator=(Chunk&&) = delete;
 };
 struct Appender {
     duckdb_appender handle = nullptr;
@@ -68,6 +77,7 @@ struct Appender {
     }
     ~Appender() { if (handle) (void)duckdb_appender_destroy(&handle); }
     Appender(const Appender&) = delete; Appender& operator=(const Appender&) = delete;
+    Appender(Appender&&) = delete; Appender& operator=(Appender&&) = delete;
     void append(duckdb_data_chunk chunk) {
         if (duckdb_append_data_chunk(handle, chunk) == DuckDBError) failed("append data chunk", duckdb_appender_error(handle));
     }
@@ -97,6 +107,7 @@ void strings(duckdb_vector vector, const std::vector<std::string>& values, std::
     }
 }
 void fill(duckdb_vector, const Piece&, const FieldSpec&, std::size_t, std::size_t);
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void structure(duckdb_vector vector, const Piece& p, const FieldSpec& f, std::size_t first, std::size_t count) {
     idx_t column = 0;
     for (const auto& child : f.children) {
@@ -110,7 +121,7 @@ void structure(duckdb_vector vector, const Piece& p, const FieldSpec& f, std::si
 std::pair<std::size_t,std::size_t> list_extent(duckdb_vector vector, const Piece& p, std::size_t first, std::size_t count) {
     auto* data = static_cast<duckdb_list_entry*>(duckdb_vector_get_data(vector));
     if (!data && count) failed("list data allocation");
-    const std::span<duckdb_list_entry> entries(data, count);
+    const auto entries = std::views::counted(data, static_cast<std::ptrdiff_t>(count));
     const auto begin = static_cast<std::size_t>(p.offsets[first]);
     const auto end = static_cast<std::size_t>(p.offsets[first+count]);
     const auto elements = end - begin;
@@ -125,8 +136,11 @@ std::pair<std::size_t,std::size_t> list_extent(duckdb_vector vector, const Piece
 template<class T> void copy_values(duckdb_vector vector, const std::vector<T>& values, std::size_t first, std::size_t count) {
     auto* out = static_cast<T*>(duckdb_vector_get_data(vector));
     if (!out && count) failed("numeric data allocation");
-    if (count) std::memcpy(out, std::span<const T>(values).subspan(first,count).data(), count*sizeof(T));
+    const auto source = std::span<const T>(values).subspan(first, count);
+    const auto target = std::views::counted(out, static_cast<std::ptrdiff_t>(count));
+    for (std::size_t i = 0; i < count; ++i) target[i] = source[i];
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void fill(duckdb_vector vector, const Piece& p, const FieldSpec& f, std::size_t first, std::size_t count) {
     // A valid empty list/map has no child lanes to allocate or touch. The
     // recursive piece was already validated before entering the C API seam.
@@ -138,7 +152,7 @@ void fill(duckdb_vector vector, const Piece& p, const FieldSpec& f, std::size_t 
         case Piece::Kind::scalar_b: {
             auto* data = static_cast<bool*>(duckdb_vector_get_data(vector));
             if (!data) failed("boolean data allocation");
-            const std::span<bool> values(data, count);
+            const auto values = std::views::counted(data, static_cast<std::ptrdiff_t>(count));
             for (std::size_t i = 0; i < count; ++i) values[i] = p.b[first+i] != 0;
             break;
         }
@@ -182,7 +196,7 @@ void fill(duckdb_vector vector, const Piece& p, const FieldSpec& f, std::size_t 
     }
 }
 } // namespace
-void append_pieces(Connection& connection, const TableSpec& spec, const runtime::EncodedTable& batch, std::int64_t episode_id,
+void append_pieces(Connection const& connection, const TableSpec& spec, const runtime::EncodedTable& batch, std::int64_t episode_id,
     const std::function<void(std::string_view)>& before) {
     validate_pieces(batch, spec);
     if (episode_id < 0) throw std::invalid_argument("negative publication episode identity");
@@ -193,8 +207,9 @@ void append_pieces(Connection& connection, const TableSpec& spec, const runtime:
         (void)dtype; if (const auto* field = spec.field(name)) owners.push_back(logical(*field));
         else owners.emplace_back(duckdb_create_logical_type(DUCKDB_TYPE_BOOLEAN));
     }
-    for (const auto& owner : owners) types.push_back(owner.handle);
-    Chunk chunk(types); Appender appender(connection.handle(), spec.name);
+    types.reserve(owners.size());
+for (const auto& owner : owners) types.push_back(owner.handle);
+    Chunk const chunk(types); Appender appender(connection.handle(), spec.name);
     const auto maximum = static_cast<std::size_t>(duckdb_vector_size());
     if (!maximum) failed("zero vector size");
     const auto rows = static_cast<std::size_t>(batch.rows);
@@ -207,7 +222,7 @@ void append_pieces(Connection& connection, const TableSpec& spec, const runtime:
             if (name == "episode_id") {
                 auto* data = static_cast<std::int64_t*>(duckdb_vector_get_data(vector));
                 if (!data) failed("episode identity allocation");
-                std::ranges::fill(std::span<std::int64_t>(data,count), episode_id);
+                std::ranges::fill(std::views::counted(data,static_cast<std::ptrdiff_t>(count)), episode_id);
             } else {
                 const auto* field = spec.field(name); FieldSpec generated; generated.dtype = "boolean";
                 fill(vector, batch.columns.at(name), field ? *field : generated, first, count);

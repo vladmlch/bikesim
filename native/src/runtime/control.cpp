@@ -19,6 +19,19 @@ namespace runtime {
 
 void control_validate_for(const RideControl &control,
                           bool articulated_planar, std::string_view drive_mode) {
+    // RideControl.__post_init__ (control.py:25-32): each present torque or
+    // rate command is a finite nonnegative scalar and a supplied posture is
+    // a valid RiderPosture. The POD cannot run construction invariants, so
+    // the admission gate re-checks the domain for every control source
+    // (wire decode already gates; the policy ABI does not).
+    for (const std::pair<std::optional<double>, const char *> &entry : {
+             std::pair{control.motor_torque_nm, "motor_torque_nm"},
+             std::pair{control.motor_limit_nm, "motor_limit_nm"},
+             std::pair{control.human_torque_nm, "human_torque_nm"},
+             std::pair{control.crank_target_rate_rad_s, "crank_target_rate_rad_s"}})
+        if (entry.first && (!std::isfinite(*entry.first) || *entry.first < 0.))
+            throw std::invalid_argument(std::string("invalid ") + entry.second);
+    if (control.posture) rider::validate_posture(*control.posture);
     // control.py:36-41: a physical plant admits effort commands only
     // in either effort drive mode; coast/speed commands remain empty.
     if ((control.motor_torque_nm || control.motor_limit_nm || control.human_torque_nm) &&
@@ -156,9 +169,9 @@ double RuntimeContactQuery::handlebar_load(const mjModel *model,
         if (!((geom1 == handlebar_id && g2_terrain) ||
               (geom2 == handlebar_id && g1_terrain)))
             continue;
-        struct Call{const mjModel* model;const mjData* data;int row;double* result;} call{model,data,i,force_.data()};
+        struct Call{const mjModel* model;const mjData* data;int row;double* result;} call{.model=model,.data=data,.row=i,.result=force_.data()};
         engine::ErrorBuffer error;
-        if(!engine::invoke([](void* raw)noexcept{auto& c=*static_cast<Call*>(raw);mj_contactForce(c.model,c.data,c.row,c.result);},&call,error))
+        if(!engine::invoke([](void* raw)noexcept{auto const& c=*static_cast<Call*>(raw);mj_contactForce(c.model,c.data,c.row,c.result);},&call,error))
             engine::throw_failure(error);
         validation::derived(force_[0],"native handlebar contact load");
         load_n += std::abs(force_[0]);

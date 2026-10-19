@@ -21,7 +21,7 @@ inline Value text(std::string_view value) { return Value{std::string(value)}; }
 inline Value integer(std::int64_t value) { return Value{io::Number{std::to_string(value)}}; }
 inline Value real(double value) {
     if (!std::isfinite(value))
-        return Value{io::Tagged{"float64", {{"value", std::isnan(value) ? "nan" : value < 0. ? "-inf" : "+inf"}}}};
+        return Value{io::Tagged{.kind="float64", .fields={{"value", std::isnan(value) ? "nan" : value < 0. ? "-inf" : "+inf"}}}};
     return Value{io::Number{io::repr_binary64(value)}};
 }
 inline const Value* find(const Object& object, std::string_view name) { return io::find_member(object, name); }
@@ -52,13 +52,13 @@ inline std::int64_t count(const Value& value) { return io::as_int64(value, "reco
 inline std::string quote(std::string_view name) {
     if (name.empty() || name.find('\0') != std::string_view::npos) throw std::invalid_argument("invalid SQL identifier");
     std::string out = "\"";
-    for (char c : name) { out += c; if (c == '"') out += '"'; }
+    for (char const c : name) { out += c; if (c == '"') out += '"'; }
     return out + '"';
 }
 inline std::string literal(std::string_view value) {
     if (value.find('\0') != std::string_view::npos) throw std::invalid_argument("SQL value contains NUL");
     std::string out = "'";
-    for (char c : value) { out += c; if (c == '\'') out += '\''; }
+    for (char const c : value) { out += c; if (c == '\'') out += '\''; }
     return out + '\'';
 }
 inline void limit(std::uint64_t value) {
@@ -81,7 +81,8 @@ inline Value bounded(std::vector<Object> rows, std::uint64_t maximum, std::optio
 }
 inline std::string read_text(const std::filesystem::path& path) {
     auto bytes = io::read_numpy_bytes(path);
-    return std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) byte-to-char aliasing is the designed idiom for raw file bytes
+    return {reinterpret_cast<const char*>(bytes.data()), bytes.size()};
 }
 inline std::string pretty_json(const Value& value) {
     const auto compact = io::recording_json(value);

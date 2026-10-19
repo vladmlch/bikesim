@@ -11,7 +11,7 @@
 namespace bike::cli {
 namespace {
 using namespace recording::detail;
-struct ParseError : std::invalid_argument { using std::invalid_argument::invalid_argument; ~ParseError() override; };
+struct ParseError : std::invalid_argument { using std::invalid_argument::invalid_argument; ~ParseError() override; ParseError(const ParseError&) = default; ParseError& operator=(const ParseError&) = default; ParseError(ParseError&&) = default; ParseError& operator=(ParseError&&) = default; };
 ParseError::~ParseError() = default;
 constexpr std::string_view help =
     "usage: bike-recording [-h] {overview,fields,events,window,sql,export,compare} ...\n\n"
@@ -44,7 +44,7 @@ struct Arguments {
     [[nodiscard]] std::optional<std::string> optional(std::string_view name) const {
         const auto it = options.find(std::string(name)); return it == options.end() ? std::nullopt : std::optional(it->second);
     }
-    [[nodiscard]] std::string get(std::string_view name, std::string fallback) const { const auto value = optional(name); return value ? *value : std::move(fallback); }
+    [[nodiscard]] std::string get(std::string_view name, const std::string& fallback) const { const auto value = optional(name); return value ? *value : fallback; }
 };
 std::string numeric_token(const std::string& source,std::string_view name,bool integral) {
     constexpr std::string_view whitespace=" \t\n\r\v\f";
@@ -108,7 +108,8 @@ Arguments parse(std::span<const std::string_view> arguments) {
             if (!allowed.contains(name)) throw ParseError("unrecognized argument: --" + name);
             if (equal != std::string::npos) out.options[name] = token.substr(equal + 1);
             else {
-                if (++i == arguments.size() || arguments[i].starts_with("--")) throw ParseError("argument --" + name + " expected one value");
+                ++i;
+                if (i == arguments.size() || arguments[i].starts_with("--")) throw ParseError("argument --" + name + " expected one value");
                 out.options[name] = arguments[i];
             }
         } else out.positions.push_back(token);

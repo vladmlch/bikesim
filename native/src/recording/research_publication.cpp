@@ -7,6 +7,10 @@ namespace {
 class ResearchRecording final : public research::ResearchPublication {
 public:
     ~ResearchRecording() override;
+    ResearchRecording(const ResearchRecording&) = delete;
+    ResearchRecording& operator=(const ResearchRecording&) = delete;
+    ResearchRecording(ResearchRecording&&) = delete;
+    ResearchRecording& operator=(ResearchRecording&&) = delete;
     ResearchRecording(RunMetadata metadata, Catalog catalog, std::filesystem::path root, FinalizeOptions options)
         : metadata_(std::move(metadata)), catalog_(std::move(catalog)), root_(std::move(root)), options_(std::move(options)) { metadata_.validate(); }
     std::filesystem::path publish(std::span<const research::EpisodeReceipt> receipts,

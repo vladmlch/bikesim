@@ -12,17 +12,20 @@
 #include <iostream>
 #include <limits>
 #include <ranges>
+#include <utility>
 
 namespace bike::cli {
 int batch_command(const Arguments& args) {
     using Clock=std::chrono::steady_clock;
     const auto bytes=io::read_numpy_bytes(args.text("spec"));
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) byte-to-char aliasing is the designed idiom for raw file bytes
     const std::string source(reinterpret_cast<const char*>(bytes.data()),bytes.size());
     auto jobs=batch::expand_spec(batch::parse_spec_toml(source,args.text("spec")));
     // Validate every job with the exact research parser before any process or
     // output is created. Typed setup is resolved later in each isolated child.
     for(const auto& job:jobs) {
-        std::vector<std::string_view> views;for(const auto& arg:job.argv)views.push_back(arg);
+        std::vector<std::string_view> views;views.reserve(job.argv.size());
+for(const auto& arg:job.argv)views.push_back(arg);
         try {const auto parsed=parse_arguments("bike-research",views);if(!parsed.help)validate_research_arguments(parsed);}
         catch(const std::exception& error){throw ArgumentError("job "+job.id+": "+error.what());}
     }
@@ -31,7 +34,7 @@ int batch_command(const Arguments& args) {
         std::cout<<jobs.size()<<" job(s)\n";return 0;
     }
     const auto count=args.flag("serial")?1:args.integer("jobs",batch::performance_cores());
-    if(count<1||count>std::numeric_limits<unsigned>::max())throw ArgumentError("--jobs must be positive");
+    if(count<1||std::cmp_greater(count,std::numeric_limits<unsigned>::max()))throw ArgumentError("--jobs must be positive");
     const auto root=std::filesystem::absolute(args.text("out"));
     if(std::filesystem::exists(root)&&!std::filesystem::is_empty(root)&&!args.flag("overwrite"))throw ArgumentError("output exists; choose another --out or pass --overwrite: "+root.string());
     std::filesystem::create_directories(root);
@@ -45,7 +48,7 @@ int batch_command(const Arguments& args) {
         job.output=root/job.id;
         if(std::filesystem::exists(job.output)&&!std::filesystem::is_empty(job.output)&&!args.flag("overwrite"))throw ArgumentError("job output exists: "+job.output.string());
         std::filesystem::create_directories(job.output);
-        job.argv.insert(job.argv.begin(),binary.string());job.argv.push_back("--out");job.argv.push_back(job.output.string());
+        job.argv.insert(job.argv.begin(),binary.string());job.argv.emplace_back("--out");job.argv.push_back(job.output.string());
     }
     platform::InterruptShield interrupt;
     const auto started=Clock::now();std::size_t done=0;

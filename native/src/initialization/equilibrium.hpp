@@ -42,6 +42,10 @@ public:
     EquilibriumFailure(std::int64_t steps, double residual,
                        std::vector<std::pair<std::string, double>> worst);
     ~EquilibriumFailure() override;
+    EquilibriumFailure(const EquilibriumFailure&) = default;
+    EquilibriumFailure& operator=(const EquilibriumFailure&) = default;
+    EquilibriumFailure(EquilibriumFailure&&) = default;
+    EquilibriumFailure& operator=(EquilibriumFailure&&) = default;
     std::int64_t steps;
     double residual_qacc;
     std::vector<std::pair<std::string, double>> worst_accelerations;
@@ -57,7 +61,7 @@ struct SetupContext;
 void initialize_pose(SetupContext&);
 void settle_contacts(SetupContext&, const std::vector<double>& qpos,
                      const std::vector<double>& qvel);
-[[nodiscard]] double acceleration_residual(SetupContext&);
+[[nodiscard]] double acceleration_residual(SetupContext const&);
 void apply_initial_forces(SetupContext&, bool advance);
 [[nodiscard]] double refine_equilibrium(SetupContext&, int max_evaluations = 80,
                                        double acceleration_tolerance = .05);

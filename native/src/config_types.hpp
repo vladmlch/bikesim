@@ -244,7 +244,7 @@ namespace nativecfg {
     // non-overlapping sections; `at` scans sections then falls back to default.
     struct SurfaceMap {
         SurfaceSpec surface;
-        std::vector<SurfaceSection> sections;
+        std::vector<SurfaceSection> sections{};
     };
 
     // HingeDensity (physics/distributed_tire.py:12-29) — radial stiffness as
@@ -303,7 +303,7 @@ namespace nativecfg {
     // grid origin, uniform sample spacing and the elevation row.
     struct PneumaticProfile {
         double x0_m{}, dx_m{};
-        std::vector<double> z_m;
+        std::vector<double> z_m{};
     };
 
     // PneumaticTireConfig resolved on the wire (native/config.py
@@ -355,7 +355,7 @@ namespace nativecfg {
     };
 
     struct RiderForcesConfig {
-        std::vector<RiderPathConfig> paths; // _paths order
+        std::vector<RiderPathConfig> paths{}; // _paths order
     };
 
     // The whole-config aggregate (formerly NativeConfig) lives in

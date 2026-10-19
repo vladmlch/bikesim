@@ -21,7 +21,7 @@ inline std::size_t size(std::size_t rows, std::size_t cols) {
     return rows * cols;
 }
 inline Matrix zeros(std::size_t rows, std::size_t cols) {
-    return {rows, cols, Vector(size(rows, cols), 0.)};
+    return {.rows=rows, .cols=cols, .values=Vector(size(rows, cols), 0.)};
 }
 inline bool finite(std::span<const double> x) {
     return std::ranges::all_of(x, [](double v) { return std::isfinite(v); });
@@ -115,7 +115,7 @@ inline Matrix solve(Matrix a, Matrix b) {
     return b;
 }
 inline Vector solve(const Matrix& a, std::span<const double> b) {
-    return solve(a,Matrix{b.size(),1,Vector(b.begin(),b.end())}).values;
+    return solve(a,Matrix{.rows=b.size(),.cols=1,.values=Vector(b.begin(),b.end())}).values;
 }
 
 struct LeastSquares { Matrix solution; std::size_t rank=0; Vector singular_values; };
@@ -136,7 +136,7 @@ inline LeastSquares least_squares(const Matrix& a, const Matrix& b, double rcond
     ::rider::LeastSquaresWorkspace workspace(m,n,nrhs);
     const Vector empty_rhs(b.cols==0?a.rows:0,0.);
     auto solved=workspace.solve(a.values,m,n,b.cols==0?std::span<const double>(empty_rhs):std::span<const double>(b.values),nrhs,rcond);
-    LeastSquares result{{a.cols,b.cols,b.cols==0?Vector{}:std::move(solved.solution)},static_cast<std::size_t>(solved.rank),std::move(solved.singular_values)};
+    LeastSquares result{.solution={.rows=a.cols,.cols=b.cols,.values=b.cols==0?Vector{}:std::move(solved.solution)},.rank=static_cast<std::size_t>(solved.rank),.singular_values=std::move(solved.singular_values)};
     if(!finite(result.solution.values)) throw std::runtime_error("dense least squares: nonfinite solution");
     return result;
 }

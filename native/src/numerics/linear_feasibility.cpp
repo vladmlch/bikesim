@@ -37,10 +37,10 @@ FeasibilityResult linear_feasibility(const bike::rider::Matrix& g,
     p.equality=a;p.equality_rhs.assign(b.begin(),b.end());p.inequality=g;p.inequality_rhs.assign(h.begin(),h.end());
     for(double& v:p.inequality_rhs) v+=options.inequality_slack;
     bike::rider::validate(p);
-    if(options.max_iterations==0) return {FeasibilityStatus::unknown,{},"linear feasibility budget exhausted"};
+    if(options.max_iterations==0) return {.status=FeasibilityStatus::unknown,.witness={},.reason="linear feasibility budget exhausted"};
     auto rows=g; if(rows.rows==0) rows.cols=n;
     std::vector<long double> bounds;bounds.reserve(h.size()+2*b.size());
-    for(double value:h)bounds.push_back(up(static_cast<long double>(value)+options.inequality_slack));
+    for(double const value:h)bounds.push_back(up(static_cast<long double>(value)+options.inequality_slack));
     for(std::size_t i=0;i<a.rows;++i) {
         const auto row=std::span<const double>(a.values).subspan(i*n,n);
         d::append_row(rows,row);bounds.push_back(up(static_cast<long double>(b[i])+options.primal_tolerance));
@@ -54,7 +54,7 @@ FeasibilityResult linear_feasibility(const bike::rider::Matrix& g,
             const auto row=std::span<const double>(rows.values).subspan(i*n,n);
             const long double least=minimum(row,lo,hi,n);
             if(std::isfinite(least) && least>up(bounds[i]))
-                return {FeasibilityStatus::proven_infeasible,{},"outward-rounded linear row contradicts propagated box"};
+                return {.status=FeasibilityStatus::proven_infeasible,.witness={},.reason="outward-rounded linear row contradicts propagated box"};
             for(std::size_t j=0;j<n;++j) if(row[j]!=0.) {
                 const long double rest=minimum(row,lo,hi,j);
                 if(!std::isfinite(rest)) continue;
@@ -68,7 +68,7 @@ FeasibilityResult linear_feasibility(const bike::rider::Matrix& g,
                     const double new_lo=std::nextafter(static_cast<double>(down(raw)),-std::numeric_limits<double>::infinity());
                     if(new_lo>lo[j]) {lo[j]=new_lo;changed=true;}
                 }
-                if(lo[j]>hi[j]) return {FeasibilityStatus::proven_infeasible,{},"outward-rounded propagated bounds are disjoint"};
+                if(lo[j]>hi[j]) return {.status=FeasibilityStatus::proven_infeasible,.witness={},.reason="outward-rounded propagated bounds are disjoint"};
             }
         }
         if(!changed) break;
@@ -77,14 +77,14 @@ FeasibilityResult linear_feasibility(const bike::rider::Matrix& g,
     const auto valid=[&](std::span<const double> x) {
         return bike::rider::allocation_residual(p,x)<=options.primal_tolerance;
     };
-    if(valid(p.target)) return {FeasibilityStatus::feasible,p.target,"verified linear witness"};
+    if(valid(p.target)) return {.status=FeasibilityStatus::feasible,.witness=p.target,.reason="verified linear witness"};
     try {
         SlsqpOptions opt;opt.max_iterations=options.max_iterations;
         const auto result=slsqp(p,p.target,opt);
-        if(valid(result.x)) return {FeasibilityStatus::feasible,result.x,"verified linear witness"};
-        return {FeasibilityStatus::unknown,result.x,"no witness and no verified infeasibility certificate"};
+        if(valid(result.x)) return {.status=FeasibilityStatus::feasible,.witness=result.x,.reason="verified linear witness"};
+        return {.status=FeasibilityStatus::unknown,.witness=result.x,.reason="no witness and no verified infeasibility certificate"};
     } catch(const std::runtime_error&) {
-        return {FeasibilityStatus::unknown,{},"numerical failure has no infeasibility certificate"};
+        return {.status=FeasibilityStatus::unknown,.witness={},.reason="numerical failure has no infeasibility certificate"};
     }
 }
 bool linear_region_infeasible(const bike::rider::Matrix& g,std::span<const double> h,

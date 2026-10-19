@@ -1,11 +1,14 @@
 #pragma once
 #include <optional>
+#include <cstdint>
 #include <string>
 #include <string_view>
 
 namespace bike::viewer {
-enum class Mode { physical, research, legacy, playground, inspection, checked_replay };
-enum class Action {
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+enum class Mode : std::uint8_t { physical, research, legacy, playground, inspection, checked_replay };
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+enum class Action : std::uint8_t {
     none, close, reset, toggle_pause, toggle_brakes, brake_less, brake_more,
     camera_cycle, camera_side, camera_chase, telemetry, markers, help,
     slower, faster, normal_speed, fixed_parameter

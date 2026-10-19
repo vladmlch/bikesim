@@ -52,6 +52,11 @@ struct RiderSignals {
 class RiderBehavior {
 public:
     virtual ~RiderBehavior();
+    RiderBehavior() = default;
+    RiderBehavior(const RiderBehavior&) = delete;
+    RiderBehavior& operator=(const RiderBehavior&) = delete;
+    RiderBehavior(RiderBehavior&&) = delete;
+    RiderBehavior& operator=(RiderBehavior&&) = delete;
     virtual void reset(std::string_view seed_decimal) = 0;
     [[nodiscard]] virtual std::optional<::rider::RiderPosture> act(double time_s, const RiderSignals&) = 0;
 };
@@ -64,6 +69,9 @@ public:
     std::string_view scenario, const std::optional<std::filesystem::path>& generator_spec_file, std::string_view seed_decimal);
 [[nodiscard]] ResearchRequest read_research_request(const std::filesystem::path&);
 [[nodiscard]] PreparedEnvironment prepare_environment(ResearchRequest);
+// Heap-returning twin for callers whose frame cannot host the request and
+// prepared values at once; the request itself stays caller-owned on the heap.
+[[nodiscard]] std::unique_ptr<PreparedEnvironment> prepare_environment(std::unique_ptr<ResearchRequest>);
 [[nodiscard]] std::unique_ptr<runtime::NativeResearchRuntime> make_environment(ResearchRequest);
 [[nodiscard]] std::unique_ptr<runtime::NativeResearchRuntime> make_environment(const std::filesystem::path&);
 

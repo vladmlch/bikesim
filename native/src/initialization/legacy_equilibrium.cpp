@@ -43,7 +43,7 @@ StaticEquilibriumResult solve_static_equilibrium(StaticEquilibriumContext& conte
     const auto fork=static_cast<std::size_t>(stepper.suspension().fork_qposadr());
     const auto shock=static_cast<std::size_t>(stepper.suspension().shock_qposadr());
     const auto crank=(options.crank_phase_rad||context.leg_initialize)?std::optional<std::size_t>(coordinate(*model,"crank_spin")):std::nullopt;
-    auto forces=[&] {
+    auto const forces=[&] {
         stepper.mutate([&] {
             if(context.before_forces)context.before_forces();
             if(context.tire_forces){engine::forward(model,data);context.tire_forces();}
@@ -55,7 +55,7 @@ StaticEquilibriumResult solve_static_equilibrium(StaticEquilibriumContext& conte
     stepper.mutate([&] {
         engine::reset_data(model,data);
         if(context.tire_reset)context.tire_reset();
-        auto q=std::views::counted(data->qpos,model->nq);
+        auto const q=std::views::counted(data->qpos,model->nq);
         q[x]=options.start_x_m;q[z]=.005;
         if(options.crank_phase_rad)q[*crank]=*options.crank_phase_rad;
         if(context.drive_initialize)context.drive_initialize();
@@ -70,7 +70,7 @@ StaticEquilibriumResult solve_static_equilibrium(StaticEquilibriumContext& conte
         stepper.note_posvel_stale();
         if(context.tire_reset){stepper.mutate([&]{context.tire_reset();});stepper.forward();}
         forces();stepper.forward();residual=0.;
-        for(double value:stepper.qacc()) {
+        for(double const value:stepper.qacc()) {
             if(!std::isfinite(value))throw std::runtime_error("nonfinite static-equilibrium acceleration");
             residual=std::max(residual,std::abs(value));
         }

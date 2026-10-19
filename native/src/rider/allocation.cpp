@@ -12,6 +12,7 @@
 namespace bike::rider {
 namespace {
 namespace d = bike::numerics::dense;
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double bound(const std::vector<double>& a, std::size_t i, std::size_t n) {
     if(a.size()!=1 && a.size()!=n) throw std::invalid_argument("allocation constraint bound shape");
     return a[a.size()==1?0:i];
@@ -54,7 +55,9 @@ void validate(const AllocationProblem& p) {
                 throw std::invalid_argument("invalid allocation constraint bounds");
         }
         if(c.linear) {
-            d::validate(*c.linear,"allocation extra matrix");
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access) guarded by the enclosing if
+            d::validate(c.linear.value(),"allocation extra matrix");
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access) guarded by the enclosing if
             if(c.linear->cols!=n) throw std::invalid_argument("allocation extra matrix column count");
         }
     }
@@ -93,7 +96,7 @@ Allocation allocate(const AllocationProblem& p) {
     validate(p);
     auto bounded=clipped(p.target,p);
     const double residual=allocation_residual(p,bounded);
-    if(residual<=1e-7) return {std::move(bounded),true,residual};
+    if(residual<=1e-7) return {.solution=std::move(bounded),.feasible=true,.violation=residual};
     auto x=clipped(p.initial?std::span<const double>(*p.initial):std::span<const double>(p.target),p);
     for(int restart=0;restart<4;++restart) {
         x=bike::numerics::slsqp(p,x).x;
@@ -106,10 +109,10 @@ Allocation allocate(const AllocationProblem& p) {
             if(std::isnan(v)) v=0.;
             else if(std::isinf(v)) v=std::copysign(std::numeric_limits<double>::max(),v);
         }
-        return {clipped(x,p),false,std::numeric_limits<double>::infinity()};
+        return {.solution=clipped(x,p),.feasible=false,.violation=std::numeric_limits<double>::infinity()};
     }
     const double violation=allocation_residual(p,x);
-    return {std::move(x),violation<=1e-7,violation};
+    return {.solution=std::move(x),.feasible=violation<=1e-7,.violation=violation};
 }
 
 std::pair<Matrix,std::vector<double>> inverse_dynamics_rows(
@@ -131,8 +134,8 @@ std::pair<Matrix,std::vector<double>> inverse_dynamics_rows(
 ExtraConstraint linear_constraint(Matrix matrix,std::vector<double> lower,std::vector<double> upper) {
     d::validate(matrix);
     const auto shared=std::make_shared<const Matrix>(std::move(matrix));
-    return {[shared](std::span<const double> x){return d::multiply(*shared,x);},
-        [shared](std::span<const double>){return *shared;},std::move(lower),std::move(upper),*shared};
+    return {.evaluate=[shared](std::span<const double> x){return d::multiply(*shared,x);},
+        .jacobian=[shared](std::span<const double>){return *shared;},.lower=std::move(lower),.upper=std::move(upper),.linear=*shared};
 }
 
 std::vector<ExtraConstraint> grip_constraints(const Matrix& force_map,
@@ -150,16 +153,18 @@ std::vector<ExtraConstraint> grip_constraints(const Matrix& force_map,
     std::vector<ExtraConstraint> result;
     result.push_back(linear_constraint(std::move(row),{0.},{std::numeric_limits<double>::infinity()}));
     if(pulling) {
-        result.push_back({[force_map,limit_n](std::span<const double> x){
+        // NOLINTNEXTLINE(bugprone-exception-escape) entry point lets failures surface as the reference does
+        result.push_back({.evaluate=[force_map,limit_n](std::span<const double> x){
             const auto force=d::multiply(force_map,x);
             return std::vector<double>{d::dot(force,force)/(limit_n*limit_n)};
-        },[force_map,limit_n](std::span<const double> x){
+        // NOLINTNEXTLINE(bugprone-exception-escape) entry point lets failures surface as the reference does
+        },.jacobian=[force_map,limit_n](std::span<const double> x){
             const auto force=d::multiply(force_map,x);
             auto out=d::zeros(1,force_map.cols);
             for(std::size_t j=0;j<out.cols;++j)
                 out.values[j]=2.*(force_map.values[j]*force[0]+force_map.values[out.cols+j]*force[1])/(limit_n*limit_n);
             return out;
-        },{-std::numeric_limits<double>::infinity()},{1.},std::nullopt});
+        },.lower={-std::numeric_limits<double>::infinity()},.upper={1.},.linear=std::nullopt});
     }
     return result;
 }

@@ -186,7 +186,7 @@ runtime::RenderFrame legacy_frame(const legacy::RideSnapshot& sample,const runti
     if(sample.crash)frame.state.outcome="crash:"+sample.crash->cause;
     auto& p=frame.presentation;p.time_s=sample.time_s;p.position_m=sample.position_m;p.speed_mps=sample.speed_mps;p.pitch_rad=sample.pitch_rad;p.z_m=sample.z_m;
     p.model_fields=sample.model_fields;
-    const auto lane=[&](std::string_view name){const auto it=std::find(legacy::kLegacyChannels.begin(),legacy::kLegacyChannels.end(),name);return sample.telemetry[static_cast<std::size_t>(it-legacy::kLegacyChannels.begin())];};
+    const auto lane=[&](std::string_view name){const auto it=std::ranges::find(legacy::kLegacyChannels,name);return sample.telemetry[static_cast<std::size_t>(it-legacy::kLegacyChannels.begin())];};
     p.fork_travel_mm=lane("fork_travel_mm");p.shock_stroke_mm=lane("shock_stroke_mm");p.front_load_n=lane("front_load_n");p.rear_load_n=lane("rear_load_n");
     frame.state.view=p.as_wire();return frame;
 }
@@ -216,7 +216,7 @@ RunResult run_playground(legacy::Playground& stand,const ViewerOptions& supplied
     hooks.frame=[&]{const auto sample=stand.snapshot();if(sample.generation!=generation){image=stand.model_image();generation=sample.generation;}
         if(sample.generation>static_cast<std::uint64_t>(std::numeric_limits<int>::max()))throw std::overflow_error("playground viewer generation overflow");
         runtime::RenderFrame frame;frame.model_sha256=image.sha256;frame.state.generation=static_cast<int>(sample.generation);
-        frame.state.step=static_cast<std::int64_t>(std::llround(sample.time_s/sample.timestep_s));frame.state.time_s=sample.time_s;frame.state.integration_state=sample.integration_state;
+        frame.state.step=std::llround(sample.time_s/sample.timestep_s);frame.state.time_s=sample.time_s;frame.state.integration_state=sample.integration_state;
         frame.presentation.time_s=sample.time_s;frame.presentation.model_fields=sample.model_fields;frame.presentation.z_m=.4;
         const auto& telemetry=io::as_object(sample.telemetry,"playground telemetry");
         const auto value=[&](std::string_view name){const auto* result=io::find_member(telemetry,name);return result?io::as_double(*result,name):0.;};
@@ -224,8 +224,11 @@ RunResult run_playground(legacy::Playground& stand,const ViewerOptions& supplied
         frame.presentation.front_load_n=value("front_load_n");frame.presentation.rear_load_n=value("rear_load_n");
         frame.state.view=frame.presentation.as_wire();return frame;};
     hooks.advance=[&](std::int64_t target,double budget){const auto start=std::chrono::steady_clock::now();
-        while(static_cast<std::int64_t>(std::llround(stand.snapshot().time_s/options.timestep_s))<target){
-            if(std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()>=budget)break;stand.step_at(monotonic());}};
+        while(std::llround(stand.snapshot().time_s/options.timestep_s)<target){
+            if(std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()>=budget)break;
+            stand.step_at(monotonic());
+            }
+            };
     hooks.terminal=[] {return false;};hooks.reset=[&]{stand.reset();};
     hooks.unhandled_key=[&](int key){return stand.handle_key(key,monotonic());};hooks.model_image=[&]{return image;};
     hooks.hud=[&](const runtime::RenderFrame&,const InputState&,std::optional<double>){const auto sample=stand.snapshot();return playground_hud(sample.telemetry,sample.auto_sweep);};

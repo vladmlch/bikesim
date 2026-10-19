@@ -7,16 +7,20 @@ struct Publication;
 struct FinalizeOptions;
 class RunCapture {
 public:
+    // NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
     enum class State { collecting, publishing, published, publication_failed };
     explicit RunCapture(RunMetadata metadata, bool enabled = true);
     RunCapture(const RunCapture&) = delete;
     RunCapture& operator=(const RunCapture&) = delete;
+    RunCapture(RunCapture&&) = delete;
+    RunCapture& operator=(RunCapture&&) = delete;
+    ~RunCapture() = default;
     [[nodiscard]] const RunMetadata& metadata() const noexcept { return metadata_; }
     [[nodiscard]] bool enabled() const noexcept { return enabled_; }
     [[nodiscard]] State state() const noexcept { return state_; }
     [[nodiscard]] std::string_view state_name() const noexcept;
     void event(InputEvent event);
-    void add_episode(std::shared_ptr<const EpisodeEvidence> evidence);
+    void add_episode(const std::shared_ptr<const EpisodeEvidence>& evidence);
     [[nodiscard]] const std::vector<std::shared_ptr<const EpisodeEvidence>>& episodes() const noexcept { return episodes_; }
     [[nodiscard]] const std::vector<InputEvent>& events() const noexcept { return events_; }
 private:

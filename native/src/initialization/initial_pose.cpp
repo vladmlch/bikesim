@@ -26,8 +26,8 @@ JointAddress joint_address(const SetupContext& context, std::string_view name) {
     const auto index=static_cast<std::size_t>(id);
     if(types[index]!=mjJNT_SLIDE && types[index]!=mjJNT_HINGE)
         throw std::invalid_argument("equilibrium requires scalar planar joint '"+std::string(name)+"'");
-    return {id,std::views::counted(m->jnt_qposadr,m->njnt)[index],
-               std::views::counted(m->jnt_dofadr,m->njnt)[index]};
+    return {.joint=id,.qpos=std::views::counted(m->jnt_qposadr,m->njnt)[index],
+               .dof=std::views::counted(m->jnt_dofadr,m->njnt)[index]};
 }
 
 void initialize_pose(SetupContext& context) {
@@ -40,16 +40,16 @@ void initialize_pose(SetupContext& context) {
     for(std::size_t i=0;i<vertices.size();++i)
         if(!std::isfinite(vertices[i][0])||!std::isfinite(vertices[i][1])||(i>0&&vertices[i][0]<=vertices[i-1][0]))
             throw std::invalid_argument("initial pose road vertices must be finite and strictly increasing");
-    for(int id:{context.front_geom_id,context.rear_geom_id})
+    for(int const id:{context.front_geom_id,context.rear_geom_id})
         if(id<0||id>=m->ngeom)throw std::invalid_argument("initial pose wheel geometry id is invalid");
     const JointAddress x=joint_address(context,"root_x"),z=joint_address(context,"root_z"),pitch=joint_address(context,"root_pitch");
     const JointAddress crank=joint_address(context,"crank_spin"),front=joint_address(context,"pedal_front_spin"),rear=joint_address(context,"pedal_rear_spin");
     auto locate=[&](double position){
-        auto it=std::lower_bound(vertices.begin(),vertices.end(),position,[](const auto& a,double p){return a[0]<p;});
-        const auto distance=std::distance(vertices.begin(),it);
+        const auto it=std::ranges::lower_bound(vertices,position,{},[](const auto& a){return a[0];});
+        const auto distance=std::ranges::distance(vertices.begin(),it);
         return static_cast<std::size_t>(std::clamp<std::ptrdiff_t>(distance-1,0,static_cast<std::ptrdiff_t>(vertices.size())-2));
     };
-    auto height=[&](double position){
+    auto const height=[&](double position){
         if(position<=vertices.front()[0])return vertices.front()[1];
         if(position>=vertices.back()[0])return vertices.back()[1];
         const auto at=locate(position);
@@ -57,11 +57,11 @@ void initialize_pose(SetupContext& context) {
     };
     const auto i=locate(context.start_x_m);
     const double slope=(vertices[i+1][1]-vertices[i][1])/(vertices[i+1][0]-vertices[i][0]);
-    auto stage=std::unique_ptr<runtime::StepState>{new runtime::StepState(context.physical.state())};
+    auto stage=std::make_unique<runtime::StepState>(context.physical.state());
     stage->initializing=true;stage->contact_query={};stage->probe_query={};
     context.physical.restore(*stage);
     stepper.mutate([&]{engine::reset_data(m,d);});
-    auto q=std::views::counted(d->qpos,m->nq);
+    auto const q=std::views::counted(d->qpos,m->nq);
     q[static_cast<std::size_t>(x.qpos)]=context.start_x_m;
     q[static_cast<std::size_t>(z.qpos)]=height(context.start_x_m)-context.ground_z_m+.005;
     q[static_cast<std::size_t>(pitch.qpos)]=-std::atan(slope);
@@ -69,7 +69,7 @@ void initialize_pose(SetupContext& context) {
     double clearance=0.;
     const auto centers=std::views::counted(d->geom_xpos,3*m->ngeom);
     const auto sizes=std::views::counted(m->geom_size,3*m->ngeom);
-    for(int id:{context.front_geom_id,context.rear_geom_id}) {
+    for(int const id:{context.front_geom_id,context.rear_geom_id}) {
         const auto offset=3*static_cast<std::size_t>(id);
         clearance=std::max(clearance,height(centers[offset])+sizes[offset]*std::sqrt(1.+slope*slope)-centers[offset+2]+.005);
     }

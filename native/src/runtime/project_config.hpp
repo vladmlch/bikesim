@@ -9,7 +9,9 @@
 namespace runtime {
 
 struct ProjectionOptions {
-    bool strict = true;
+    // The programmatic driver default is diagnostic (PhysicalRideDriver
+    // strict=False); strict arrives only through an explicit check policy.
+    bool strict = false;
     bool async_telemetry = false;
     int measurement_decimation = 1;
     RetentionMode record_retention = RetentionMode::off;

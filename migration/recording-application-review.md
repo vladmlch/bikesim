@@ -248,3 +248,22 @@ T11 after its last change, T14 edge cases and T56/T57 evidence are not promoted
 by this source-only wave. T61/T62 acceptance and T63 deletion remain unchanged.
 The supplied text snapshot is not a live Git checkout, so no current HEAD,
 commit, clean repository state or successful build is claimed.
+
+## Execution status 2026-10-19
+
+Execution has since run in this checkout. The tree compiles: ctest passes
+57/57 registered tests (including `migration_T38`–`migration_T51`) and all
+nine sweep summaries (`native/build/native_check_summaries/*.json`)
+report `status: passed`. `.pytest_cache/lastfailed` holds exactly the
+documented 24-failure full-suite baseline — no new failures.
+
+None of the F1–F5 findings in
+[native-waves-commit-review.md](native-waves-commit-review.md) apply to
+this wave's scope. Note that the T38–T51 integration plus post-review
+fixes are still **uncommitted in the working tree** — the verified state
+above describes the current checkout, not a committed revision.
+
+This verifies compilation and the registered migration tests only.
+Runtime qualification, database/replay/viewer acceptance, per-source
+oracle equivalence and wave acceptance remain open; nothing here closes
+T61/T62 acceptance or T63 deletion.

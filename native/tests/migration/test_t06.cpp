@@ -137,6 +137,7 @@ void checks_process() {
     // keeps the signal-encoded status (128+SIGKILL) and partial streams.
     {
         const pf::ProcessOptions options{
+            .cancellation = {},
             .timeout_s = 0.25,
             .max_output_bytes = std::size_t{4U} * 1024U * 1024U};
         const auto started = std::chrono::steady_clock::now();
@@ -164,6 +165,7 @@ void checks_process() {
     // the runaway child is killed and reaped, never truncated silently.
     {
         const pf::ProcessOptions options{
+            .cancellation = {},
             .timeout_s = std::nullopt,
             .max_output_bytes = 4096U};
         throws_runtime([&] {
@@ -181,7 +183,7 @@ void checks_process() {
     bt::invalid([] { (void) pf::run({"/usr/bin/true"}, "/no/such/dir-t06"); });
     bt::invalid([] {
         (void) pf::run({"/usr/bin/true"}, "/",
-                       pf::ProcessOptions{.timeout_s = 0.0,
+                       pf::ProcessOptions{.cancellation = {}, .timeout_s = 0.0,
                                           .max_output_bytes = 16U});
     });
     // Nonfinite deadlines are the same input-domain violation: NaN and
@@ -190,6 +192,7 @@ void checks_process() {
         (void) pf::run(
             {"/usr/bin/true"}, "/",
             pf::ProcessOptions{
+                .cancellation = {},
                 .timeout_s = std::numeric_limits<double>::infinity(),
                 .max_output_bytes = 16U});
     });
@@ -197,6 +200,7 @@ void checks_process() {
         (void) pf::run(
             {"/usr/bin/true"}, "/",
             pf::ProcessOptions{
+                .cancellation = {},
                 .timeout_s = std::numeric_limits<double>::quiet_NaN(),
                 .max_output_bytes = 16U});
     });
@@ -204,7 +208,7 @@ void checks_process() {
     // contract and zero is a misconfiguration, not "capture nothing".
     bt::invalid([] {
         (void) pf::run({"/usr/bin/true"}, "/",
-                       pf::ProcessOptions{.timeout_s = std::nullopt,
+                       pf::ProcessOptions{.cancellation = {}, .timeout_s = std::nullopt,
                                           .max_output_bytes = 0U});
     });
 }

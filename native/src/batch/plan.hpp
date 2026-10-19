@@ -16,9 +16,9 @@ struct Job {
     std::vector<std::string> argv;
     std::size_t index = 0;
     io::Value params{io::Value::Object{}};
-    std::filesystem::path output;
+    std::filesystem::path output{};
     // User tokens before the native executable/output suffix is attached.
-    std::optional<std::vector<std::string>> requested_argv;
+    std::optional<std::vector<std::string>> requested_argv{};
 };
 struct Result {
     std::string id;

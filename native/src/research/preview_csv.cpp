@@ -9,6 +9,7 @@
 
 namespace bike::research {
 namespace {
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void validate_options(double interval, int flush) {
     if (!std::isfinite(interval) || interval <= 0.) throw std::invalid_argument("preview csv interval must be positive and finite");
     if (flush < 1) throw std::invalid_argument("preview csv flush_every must be positive");
@@ -57,6 +58,7 @@ PhysicalLiveCsv::PhysicalLiveCsv(const std::filesystem::path& path, double inter
 }
 PhysicalLiveCsv::PhysicalLiveCsv(std::ostream& stream, double interval, int flush)
     : stream_(&stream), interval_s_(interval), flush_every_(flush) { validate_options(interval, flush); }
+// NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
 PhysicalLiveCsv::~PhysicalLiveCsv() { try { close(); } catch (...) {} }
 void PhysicalLiveCsv::require_open() const {
     if (closed_) throw std::runtime_error("preview csv is closed");
@@ -72,7 +74,7 @@ void PhysicalLiveCsv::emit(const runtime::WireObject& row, bool flush) {
     if (columns.empty())
         for (const auto& [name, ignored] : row) {
             (void)ignored;
-            if (std::find(columns.begin(), columns.end(), name) != columns.end())
+            if (std::ranges::find(columns, name) != columns.end())
                 throw std::invalid_argument("preview row contains a duplicate column");
             columns.push_back(name);
         }
@@ -126,6 +128,7 @@ void PhysicalLiveCsv::close() {
     try { if (file_) file_->close(); }
     catch (const std::exception& error) {
         if (!failure) failure = std::current_exception();
+        // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
         else { try { cleanup_notes_.push_back(std::string("preview stream close also failed: ") + error.what()); } catch (...) {} }
     }
     closed_ = true;

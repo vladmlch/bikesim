@@ -48,12 +48,13 @@ std::string integer_token(std::string_view input) {
     value.erase(0,first);if(negative)value.insert(value.begin(),'-');
     return value;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double real_token(std::string_view value, std::string_view key) {
     const auto spelling=number_spelling(value);value=spelling;
     if (!value.empty() && value.front() == '+') value.remove_prefix(1);
     double result = 0.;
     const auto end = std::to_address(value.cend());
-    const auto parsed = std::from_chars(value.data(), end, result);
+    const auto parsed = std::from_chars(value.data(), end, result); // NOLINT(bugprone-suspicious-stringview-data-usage) std::from_chars parses the (data, data+size) pointer range, not a C string
     if (parsed.ec != std::errc{} || parsed.ptr != end || !std::isfinite(result))
         throw ArgumentError("argument --" + std::string(key) + ": expected a finite number");
     return result;
@@ -74,8 +75,8 @@ ArgumentError::~ArgumentError() = default;
 bool Arguments::present(std::string_view key) const { return std::ranges::find(supplied, key) != supplied.end(); }
 bool Arguments::has(std::string_view key) const { return lookup(*this, key) != nullptr; }
 bool Arguments::flag(std::string_view key) const { return text(key) == "true"; }
-std::string Arguments::text(std::string_view key, std::string fallback) const {
-    const auto* value = lookup(*this, key); return value ? *value : std::move(fallback);
+std::string Arguments::text(std::string_view key, const std::string& fallback) const {
+    const auto* value = lookup(*this, key); return value ? *value : fallback;
 }
 double Arguments::real(std::string_view key, double fallback) const {
     const auto* value = lookup(*this, key); return value ? real_token(*value, key) : fallback;
@@ -88,7 +89,7 @@ std::int64_t Arguments::integer(std::string_view key, std::int64_t fallback) con
     if (!token.empty() && token.front() == '+') token.remove_prefix(1);
     std::int64_t result = 0;
     const auto end = std::to_address(token.cend());
-    const auto parsed = std::from_chars(token.data(), end, result);
+    const auto parsed = std::from_chars(token.data(), end, result); // NOLINT(bugprone-suspicious-stringview-data-usage) std::from_chars parses the (data, data+size) pointer range, not a C string
     if (parsed.ec != std::errc{} || parsed.ptr != end) throw ArgumentError(std::string(key) + ": integer out of range");
     return result;
 }

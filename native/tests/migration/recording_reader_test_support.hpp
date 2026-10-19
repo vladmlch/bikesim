@@ -5,6 +5,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <system_error>
+#include <unistd.h>
 
 namespace recording_reader_test {
 struct Directory {
@@ -17,6 +18,10 @@ struct Directory {
         path = made;
     }
     ~Directory() { std::error_code ignored; std::filesystem::remove_all(path, ignored); }
+    Directory(const Directory&) = delete;
+    Directory& operator=(const Directory&) = delete;
+    Directory(Directory&&) = delete;
+    Directory& operator=(Directory&&) = delete;
 };
 inline void write(const std::filesystem::path& file, const std::string& text) {
     bike::platform::write_exclusive(file, std::as_bytes(std::span(text.data(), text.size())));

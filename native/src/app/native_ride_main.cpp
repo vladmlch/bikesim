@@ -30,10 +30,11 @@ struct Options {
     bool fresh = false, strict = true, help = false;
 };
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 template<class T> T number(std::string_view text, std::string_view option) {
     T value{};
     const auto end = std::to_address(text.end());
-    const auto parsed = std::from_chars(text.data(), end, value);
+    const auto parsed = std::from_chars(text.data(), end, value); // NOLINT(bugprone-suspicious-stringview-data-usage) std::from_chars parses the (data, data+size) pointer range, not a C string
     if (text.empty() || parsed.ec != std::errc{} || parsed.ptr != end)
         throw std::invalid_argument(std::string(option) + ": invalid numeric value");
     return value;
@@ -43,7 +44,7 @@ Options parse(std::span<char*> arguments) {
     Options result;
     for (std::size_t i = 1; i < arguments.size(); ++i) {
         const std::string_view key(arguments[i]);
-        auto value = [&]() -> std::string_view {
+        auto const value = [&]() -> std::string_view {
             if (i + 1 >= arguments.size())
                 throw std::invalid_argument(std::string(key) + ": missing value");
             return arguments[++i];
@@ -92,29 +93,35 @@ Options parse(std::span<char*> arguments) {
     return result;
 }
 
+[[gnu::noinline]] void request_from_args(bike::app::SetupRequest& result, const Options& options) {
+    // parse() already rejects a launch without --physics-config when --request is absent.
+    if (!options.physics) throw std::invalid_argument("provide --physics-config FILE or --request FILE");
+    result.origin = std::filesystem::absolute(options.physics.value()).string();
+    result.asset_root = std::filesystem::absolute(options.physics.value()).parent_path();
+    result.model.physics = bike::configuration::load_physics(options.physics.value());
+    result.model.mode = "ride";
+    result.model.rider = bike::model::rider_from_args(options.rider.value_or(
+        result.model.physics.value().physics_mode == "legacy" ? "seated" : "articulated_planar"));
+    result.model.crank_joint = true;
+    result.seed_decimal = options.seed.value_or("0");
+    result.track = options.track_file
+        ? bike::initialization::load_track_for_setup(options.track_file.value(), result.seed_decimal)
+        : bike::terrain::get_preset(options.track.value_or("flat"));
+    result.model.field = bike::terrain::HeightFieldSpec::for_track(result.track);
+}
+
 [[gnu::noinline]] std::unique_ptr<bike::app::SetupRequest> request_ptr(const Options& options) {
     auto result = std::make_unique<bike::app::SetupRequest>();
     if (options.request)
         *result = bike::initialization::read_setup_request(*options.request, options.fresh);
-    else {
-        result->origin = std::filesystem::absolute(*options.physics).string();
-        result->asset_root = std::filesystem::absolute(*options.physics).parent_path();
-        result->model.physics = bike::configuration::load_physics(*options.physics);
-        result->model.mode = "ride";
-        result->model.rider = bike::model::rider_from_args(options.rider.value_or(
-            result->model.physics->physics_mode == "legacy" ? "seated" : "articulated_planar"));
-        result->model.crank_joint = true;
-        result->seed_decimal = options.seed.value_or("0");
-        result->track = options.track_file
-            ? bike::initialization::load_track_for_setup(*options.track_file, result->seed_decimal)
-            : bike::terrain::get_preset(options.track.value_or("flat"));
-        result->model.field = bike::terrain::HeightFieldSpec::for_track(result->track);
-    }
+    else
+        request_from_args(*result, options);
     result->runtime.strict = options.strict;
     result->legacy_source_root = options.legacy_source;
     result->cache_directory = options.cache_directory;
     result->equilibrium.max_steps = options.equilibrium_steps;
-    if (options.speed_kph) result->model.physics->initial_speed_mps = *options.speed_kph / 3.6;
+    if (!result->model.physics) throw std::invalid_argument("setup request must declare model.physics");
+    if (options.speed_kph) result->model.physics->initial_speed_mps = options.speed_kph.value() / 3.6;
     if (options.fresh) {
         result->model.physics->equilibrium_cache_enabled = false;
         result->model.physics->equilibrium_state_file.reset();
@@ -157,7 +164,7 @@ void usage() {
     auto limits = ride->default_limits();
     limits.max_steps = steps;
     const auto outcome = steps == 0
-        ? bike::legacy::RunOutcome{"target", 0, ride->time_s(), 0., ride->position_m(), std::nullopt}
+        ? bike::legacy::RunOutcome{.reason="target", .steps=0, .sim_time_s=ride->time_s(), .wall_clock_s=0., .position_m=ride->position_m(), .crash=std::nullopt}
         : ride->run(limits);
     using namespace runtime::setupvalue;
     const Value result{Object{{"schema", integer(1)}, {"physics_mode", text("legacy")},
@@ -170,6 +177,7 @@ void usage() {
 
 [[gnu::noinline]] std::unique_ptr<bike::app::PreparedSimulation> prepare_physical_ptr(
     std::unique_ptr<bike::app::SetupRequest> setup_request) {
+    // NOLINTNEXTLINE(modernize-make-unique) make_unique's inlined forwarding path overflows the 8192-byte frame budget here
     return std::unique_ptr<bike::app::PreparedSimulation>{
         new bike::app::PreparedSimulation(bike::app::prepare(std::move(*setup_request)))};
 }
@@ -182,6 +190,7 @@ void usage() {
 [[gnu::noinline]] int run_physical(const Options& options, std::unique_ptr<bike::app::SetupRequest> setup_request) {
     if (options.legacy_drive || options.legacy_tyre || options.legacy_tier || options.assist_mode)
         throw std::invalid_argument("legacy drive/tyre/assist options require physics_mode='legacy'");
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) request_ptr() throws unless model.physics is engaged
     const double dt = setup_request->model.physics->timestep_s;
     const double finish_m = setup_request->track.length_m;
     const std::string track = setup_request->track.name;
@@ -213,6 +222,7 @@ int main(int argc, char** argv) {
         const auto options = std::make_unique<Options>(parse(std::views::counted(argv, argc)));
         if (options->help) { usage(); return 0; }
         auto setup_request = request_ptr(*options);
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) request_ptr() throws unless model.physics is engaged
         if (setup_request->model.physics->physics_mode == "legacy")
             return run_legacy(*options, std::move(setup_request));
         return run_physical(*options, std::move(setup_request));

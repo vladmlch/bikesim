@@ -26,6 +26,8 @@ public:
     ~PolicySession();
     PolicySession(const PolicySession&) = delete;
     PolicySession& operator=(const PolicySession&) = delete;
+    PolicySession(PolicySession&&) = delete;
+    PolicySession& operator=(PolicySession&&) = delete;
     void begin_advance(std::optional<double> front_brake_demand = {}, std::optional<double> rear_brake_demand = {});
     [[nodiscard]] std::optional<runtime::ResearchTransition> advance_pending(
         std::optional<double> wall_budget_s = {}, std::optional<std::int64_t> target_step = {});

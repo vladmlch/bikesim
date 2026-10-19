@@ -2627,7 +2627,8 @@ namespace {
                     .radial_c_ns_m = 800.,
                     .pressure_pa_gauge = 250000.,
                     .provenance = "contract-test",
-                    .valid_load_range_n = {0., 3000.}},
+                    .valid_load_range_n = {0., 3000.},
+                    .table = std::nullopt},
                 .tangent_k_n_m = 90000., .mu = 1.2,
                 .relaxation_length_m = .35};
     }

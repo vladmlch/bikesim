@@ -1895,10 +1895,10 @@ SoleGoalDiagnostics decode_sole_goal(const bio::Value &value, std::string_view p
         ncd::exact(entry, keys("requested_compression_m", "applied_compression_m",
             "requested_shear_m", "applied_shear_m", "saturated", "limiting_reasons"));
         out.geometry = SoleGoalDiagnostic{
-            entry["requested_compression_m"].finite_real(path),
-            entry["applied_compression_m"].finite_real(path),
-            entry["requested_shear_m"].finite_real(path),
-            entry["applied_shear_m"].finite_real(path), false, {}};
+            .requested_compression_m=entry["requested_compression_m"].finite_real(path),
+            .applied_compression_m=entry["applied_compression_m"].finite_real(path),
+            .requested_shear_m=entry["requested_shear_m"].finite_real(path),
+            .applied_shear_m=entry["applied_shear_m"].finite_real(path), .saturated=false, .limiting_reasons={}};
     }
     out.saturated = entry["saturated"].boolean(path);
     const auto reasons = entry["limiting_reasons"].sequence(path);

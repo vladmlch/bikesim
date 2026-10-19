@@ -14,6 +14,8 @@ public:
     ~Pacer();
     Pacer(const Pacer&) = delete;
     Pacer& operator=(const Pacer&) = delete;
+    Pacer(Pacer&&) = delete;
+    Pacer& operator=(Pacer&&) = delete;
     void set_scale(unsigned scale);
     void set_paused(bool paused);
     [[nodiscard]] PaceDecision poll(std::chrono::steady_clock::time_point now);

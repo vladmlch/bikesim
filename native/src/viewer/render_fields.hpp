@@ -11,7 +11,7 @@ namespace bike::viewer::detail {
     return static_cast<mjtSize>(model_access::checked_product(static_cast<std::size_t>(count), width,
         static_cast<std::size_t>(std::numeric_limits<mjtSize>::max())));
 }
-[[nodiscard]] inline std::array<std::span<mjtNum>, 6> mutable_model_fields(mjModel& model) {
+[[nodiscard]] inline std::array<std::span<mjtNum>, 6> mutable_model_fields(mjModel const& model) {
     return {model_access::mutable_buffer(model.dof_frictionloss, model.nv),
         model_access::mutable_buffer(model.site_pos, render_extent(model.nsite, 3)),
         model_access::mutable_buffer(model.tendon_stiffness, model.ntendon),

@@ -1,4 +1,5 @@
 #include "policy_session.hpp"
+#include <cstdint>
 #include "evidence.hpp"
 #include "../io/json.hpp"
 #include "../platform/provenance.hpp"
@@ -24,7 +25,8 @@ bool done_status(const runtime::WireObject& status) { return flag(status, "termi
 } // namespace
 
 struct PolicySession::Impl {
-    enum class Action { stop, pause, resume, brakes, reset };
+    // NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+    enum class Action : std::uint8_t { stop, pause, resume, brakes, reset };
     struct Queued { Action action; double front = 0., rear = 0.; std::optional<std::string> seed; };
     struct Command { runtime::RideControl control; double front = 0., rear = 0.; };
     std::unique_ptr<runtime::NativeResearchRuntime> environment;
@@ -54,9 +56,14 @@ struct PolicySession::Impl {
     }
     void note_cleanup(std::string_view operation) noexcept {
         try {
+            // note_cleanup is invoked only from catch handlers during exception
+            // unwinding, so the bare `throw;` legally rethrows the in-flight
+            // exception for inspection.
+            // cppcheck-suppress rethrowNoCurrentException
             try { throw; }
             catch (const std::exception& error) { cleanup_notes.push_back(std::string(operation) + ": " + error.what()); }
             catch (...) { cleanup_notes.push_back(std::string(operation) + ": non-standard exception"); }
+        // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
         } catch (...) { /* No allocation failure may replace the primary error. */ }
     }
     void mark_policy_failure(std::string_view message) noexcept {
@@ -94,10 +101,10 @@ struct PolicySession::Impl {
         }
         Value values{Object{{"action", text(action)}, {"value", std::move(value)},
             {"queued", Value{queued_value}}, {"terminal", Value{terminal}}}};
-        events.push_back(OperatorEvent{static_cast<std::int64_t>(events.size()),
-            runtime::sample_wire::integer(runtime::sample_wire::required(s, "step")),
-            runtime::sample_wire::number(runtime::sample_wire::required(s, "time_s")),
-            platform::monotonic_seconds(), std::move(kind), queued_value, terminal, applied, std::move(values)});
+        events.push_back(OperatorEvent{.event_id=static_cast<std::int64_t>(events.size()),
+            .processed_step=runtime::sample_wire::integer(runtime::sample_wire::required(s, "step")),
+            .time_s=runtime::sample_wire::number(runtime::sample_wire::required(s, "time_s")),
+            .received_wall_s=platform::monotonic_seconds(), .kind=std::move(kind), .queued=queued_value, .terminal=terminal, .applied=applied, .values=std::move(values)});
     }
     void reset_now(const std::optional<std::string>& seed) {
         const auto chosen = seed ? validate_seed(*seed) : config.seed_decimal;
@@ -108,7 +115,7 @@ struct PolicySession::Impl {
             SensorConfig sensors;
             sensors.delivery = config.sensors;
             sensors.sample_period_s = static_cast<double>(config.sensor_steps) * config.timestep_s;
-            sensors.noise = {config.noise_std[0], config.noise_std[1], config.noise_std[2], config.noise_std[3]};
+            sensors.noise = {.acceleration_std_mps2=config.noise_std[0], .gyro_std_rad_s=config.noise_std[1], .encoder_std_rad_s=config.noise_std[2], .torque_std_nm=config.noise_std[3]};
             tape = make_sensor_tape(sensors, chosen, 1 + config.max_steps / config.sensor_steps);
             state = startup_sensor_state(sensors, *tape, *config.raw_initial);
         } else if (chosen != config.seed_decimal) {
@@ -117,7 +124,7 @@ struct PolicySession::Impl {
         auto next_metadata = reseed_metadata(config.metadata, chosen);
         auto next_assets = reseed_assets(config.assets, next_metadata);
         if (before_reset) before_reset();
-        if (tape) environment->reset(std::move(*tape), std::move(*state), chosen, next_metadata, next_assets);
+        if (tape) environment->reset(std::move(*tape), std::move(*state), chosen, next_metadata, next_assets); // NOLINT(bugprone-unchecked-optional-access) a captured state accompanies every tape
         else environment->reset();
         config.seed_decimal = chosen;
         config.metadata = std::move(next_metadata);
@@ -127,7 +134,7 @@ struct PolicySession::Impl {
         if (after_reset) after_reset();
         start_policy();
     }
-    void apply(Queued request) {
+    void apply(const Queued& request) {
         const bool terminal_before = done_status(status());
         switch (request.action) {
             case Action::stop: staged.reset(); environment->stop(); break;
@@ -142,13 +149,12 @@ struct PolicySession::Impl {
         const bool wait = pending();
         record("operator_requested", request, wait, false);
         if (wait) queued.push_back(std::move(request));
-        else apply(std::move(request));
+        else apply(request);
     }
     void apply_queued() {
         while (!queued.empty()) {
-            auto request = std::move(queued.front());
+            apply(queued.front());
             queued.pop_front();
-            apply(std::move(request));
         }
     }
 };
@@ -197,7 +203,7 @@ void PolicySession::begin_advance(std::optional<double> front, std::optional<dou
                 signals_from_sample(s.environment->snapshot().latest_sample));
             s.config.programs.validate_control(command);
             runtime::control_validate_for(command, true);
-            s.staged = Impl::Command{command, f, r};
+            s.staged = Impl::Command{.control=command, .front=f, .rear=r};
         } catch (const std::exception& error) { s.mark_policy_failure(error.what()); throw; }
         catch (...) { s.mark_policy_failure("policy act raised a non-standard exception"); throw; }
     }
@@ -252,14 +258,14 @@ void PolicySession::run_until(std::optional<double> wall_limit) {
     }
     while (pending()) (void)advance_pending(.008);
 }
-void PolicySession::request_stop() { impl_->request({Impl::Action::stop, 0., 0., {}}); }
-void PolicySession::pause() { impl_->request({Impl::Action::pause, 0., 0., {}}); }
-void PolicySession::resume() { impl_->request({Impl::Action::resume, 0., 0., {}}); }
-void PolicySession::set_brakes(double front, double rear) { brakes(front, rear); impl_->request({Impl::Action::brakes, front, rear, {}}); }
+void PolicySession::request_stop() { impl_->request({.action=Impl::Action::stop, .front=0., .rear=0., .seed={}}); }
+void PolicySession::pause() { impl_->request({.action=Impl::Action::pause, .front=0., .rear=0., .seed={}}); }
+void PolicySession::resume() { impl_->request({.action=Impl::Action::resume, .front=0., .rear=0., .seed={}}); }
+void PolicySession::set_brakes(double front, double rear) { brakes(front, rear); impl_->request({.action=Impl::Action::brakes, .front=front, .rear=rear, .seed={}}); }
 void PolicySession::reset(std::optional<std::string> seed) {
     if (seed) *seed = validate_seed(*seed);
     if (!impl_->pending()) impl_->queued.clear();
-    impl_->request({Impl::Action::reset, 0., 0., std::move(seed)});
+    impl_->request({.action=Impl::Action::reset, .front=0., .rear=0., .seed=std::move(seed)});
 }
 io::Value PolicySession::run_metadata() const {
     Value out = impl_->launch_metadata;

@@ -16,7 +16,7 @@ struct DataDelete { void operator()(mjData* value) const noexcept { if (value) m
 constexpr std::array<std::string_view, 6> field_names{"dof_frictionloss", "site_pos", "tendon_stiffness",
     "tendon_damping", "tendon_lengthspring", "tendon_range"};
 bool finite(std::span<const double> values) {
-    return std::all_of(values.begin(), values.end(), [](double v) { return std::isfinite(v); });
+    return std::ranges::all_of(values, [](double v) { return std::isfinite(v); });
 }
 }
 struct RenderOwner::Impl {
@@ -91,12 +91,12 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
     const bool generation_changed = !p.frame || p.frame->state.generation != state.generation;
     for (std::size_t i = 0; i < fields.size(); ++i)
         std::copy(staged.presentation.model_fields[i].begin(), staged.presentation.model_fields[i].end(), fields[i].begin());
-    struct Refresh { mjModel* m; mjData* d; const double* state; } refresh{p.model.get(), p.data.get(), staged.state.integration_state.data()};
+    struct Refresh { mjModel* m; mjData* d; const double* state; } refresh{.m=p.model.get(), .d=p.data.get(), .state=staged.state.integration_state.data()};
     engine::ErrorBuffer error;
     // Deliberately kinematic only. No mj_forward, mj_step, sensor acquisition,
     // force writers or policy evaluation can be reached from this operation.
     const bool ok = engine::invoke([](void* opaque) noexcept {
-        auto* r = static_cast<Refresh*>(opaque);
+        auto const* r = static_cast<Refresh*>(opaque);
         mj_setState(r->m, r->d, r->state, mjSTATE_INTEGRATION);
         mj_kinematics(r->m, r->d);
         mj_comPos(r->m, r->d);
@@ -109,7 +109,7 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
     p.frame = std::move(staged);
 }
 void RenderOwner::draw(int width, int height) {
-    auto& p = *impl_; p.require_live();
+    auto const& p = *impl_; p.require_live();
     if (width < 0 || height < 0) throw std::invalid_argument("negative framebuffer dimension");
     if (width == 0 || height == 0) return; // minimized window, no division by zero
 #if defined(BIKE_BUILD_GUI) && BIKE_BUILD_GUI
@@ -144,12 +144,12 @@ void RenderOwner::move_camera(int action, double dx, double dy) {
     auto& p = *impl_; p.require_live();
     if (!std::isfinite(dx) || !std::isfinite(dy) || action < mjMOUSE_ROTATE_V || action > mjMOUSE_ZOOM)
         throw std::invalid_argument("invalid camera movement");
-    if (p.graphics) mjv_moveCamera(p.model.get(), action, dx, dy, &p.scene, &p.camera);
+    if (p.graphics) mjv_moveCamera(p.model.get(), action, dx, dy, &p.camera);
 }
 void RenderOwner::set_markers(bool visible) {
     auto& p = *impl_; p.require_live();
-    auto sizes = model_access::mutable_buffer(p.model->geom_size, detail::render_extent(p.model->ngeom, 3));
-    auto colors = model_access::mutable_buffer(p.model->geom_rgba, detail::render_extent(p.model->ngeom, 4));
+    auto const sizes = model_access::mutable_buffer(p.model->geom_size, detail::render_extent(p.model->ngeom, 3));
+    auto const colors = model_access::mutable_buffer(p.model->geom_rgba, detail::render_extent(p.model->ngeom, 4));
     for (const auto& [id, dimensions] : p.marker_sizes) {
         const auto index = static_cast<std::size_t>(id);
         colors[4 * index + 3] = visible ? 1.f : 0.f;

@@ -13,7 +13,7 @@ void check_weights(const Weights& values,std::span<const std::string_view> allow
 }
 double draw(bike::random::NumpyRng& rng,Range bounds){const double value=bounds[1]<=bounds[0]?bounds[0]:rng.uniform(bounds[0],bounds[1]);return rounded(value/.001,0)*.001;}
 std::string choose(bike::random::NumpyRng& rng,const Weights& weights){
-    auto sorted=weights;std::sort(sorted.begin(),sorted.end(),[](const auto&a,const auto&b){return a.first<b.first;});
+    auto sorted=weights;std::ranges::sort(sorted,[](const auto&a,const auto&b){return a.first<b.first;});
     std::vector<double> p;for(const auto& [key,value]:sorted){(void)key;p.push_back(value);}const double sum=numeric::numpy_pairwise_sum(p);for(double& v:p)v/=sum;
     return sorted.at(static_cast<std::size_t>(rng.choice(p))).first;
 }
@@ -27,13 +27,13 @@ double position(bike::random::NumpyRng& rng,double length,Interval span,std::spa
 }
 std::size_t defect_count(double rate,double usable){return detail::count(std::floor(rate*usable/100.+.5),"road defect count");}
 Obstacle make_pothole(std::string_view edge,double start,double depth,double length,double edge_m){
-    if(edge=="sharp")return {Pothole{start,depth,length}};
-    if(edge=="sloped")return {SlopedPothole{start,depth,length,edge_m}};
-    return {BowlPothole{start,depth,length}};
+    if(edge=="sharp")return {.shape=Pothole{.start_m=start,.depth_m=depth,.hole_length_m=length}};
+    if(edge=="sloped")return {.shape=SlopedPothole{.start_m=start,.depth_m=depth,.hole_length_m=length,.edge_m=edge_m}};
+    return {.shape=BowlPothole{.start_m=start,.depth_m=depth,.hole_length_m=length}};
 }
 Obstacle make_bump(std::string_view shape,double start,double height,double length,double fraction){
-    if(shape=="cosine")return {Bump{start,height,length}};
-    const double ramp=length*fraction;return {TrapezoidBump{start,height,ramp,length-2.*ramp}};
+    if(shape=="cosine")return {.shape=Bump{.start_m=start,.height_m=height,.bump_length_m=length}};
+    const double ramp=length*fraction;return {.shape=TrapezoidBump{.start_m=start,.height_m=height,.ramp_m=ramp,.plateau_m=length-2.*ramp}};
 }
 }
 void RoadGeneratorSpec::validate()const{
@@ -52,9 +52,9 @@ std::vector<Obstacle> generate_road(const RoadGeneratorSpec& spec,double length,
     bike::random::NumpyRng rng(spec.seed,{});std::vector<Interval> occupied(reserved.begin(),reserved.end());std::vector<Obstacle> obstacles;
     struct Defect{bool pothole;std::string shape;double height,length;};std::vector<Defect> defects;
     const auto holes=defect_count(spec.potholes_per_100m,usable),bumps=defect_count(spec.bumps_per_100m,usable);
-    for(std::size_t i=0;i<holes;++i){const auto edge=choose(rng,spec.pothole_edge);const double depth=draw(rng,spec.pothole_depth_m);const double size=draw(rng,spec.pothole_length_m);defects.push_back({true,edge,depth,size});}
-    for(std::size_t i=0;i<bumps;++i){const auto shape=choose(rng,spec.bump_shape);const double height=draw(rng,spec.bump_height_m);const double size=draw(rng,spec.bump_length_m);defects.push_back({false,shape,height,size});}
-    std::stable_sort(defects.begin(),defects.end(),[](const auto&a,const auto&b){return a.length>b.length;});
+    for(std::size_t i=0;i<holes;++i){const auto edge=choose(rng,spec.pothole_edge);const double depth=draw(rng,spec.pothole_depth_m);const double size=draw(rng,spec.pothole_length_m);defects.push_back({.pothole=true,.shape=edge,.height=depth,.length=size});}
+    for(std::size_t i=0;i<bumps;++i){const auto shape=choose(rng,spec.bump_shape);const double height=draw(rng,spec.bump_height_m);const double size=draw(rng,spec.bump_length_m);defects.push_back({.pothole=false,.shape=shape,.height=height,.length=size});}
+    std::ranges::stable_sort(defects,[](const auto&a,const auto&b){return a.length>b.length;});
     for(const auto& d:defects){const double start=position(rng,d.length,span,occupied,spec.min_gap_m,d.pothole?"pothole":"bump");
         Obstacle o=d.pothole?make_pothole(d.shape,start,d.height,d.length,spec.pothole_edge_m):make_bump(d.shape,start,d.height,d.length,spec.bump_ramp_fraction);
         occupied.emplace_back(o.start_m(),o.end_m());obstacles.push_back(std::move(o));
@@ -63,7 +63,7 @@ std::vector<Obstacle> generate_road(const RoadGeneratorSpec& spec,double length,
         for(const auto& [a,b]:free_intervals(span,occupied,0.)){
             if(b-a>=4.*spec.roughness_correlation_m){
                 double size=rounded(b-a,6);while(a+size>b)size=rounded(size-1e-6,6);
-                const auto seed=std::to_string(rng.integers(0,2147483647));obstacles.push_back({RoadRoughness{a,size,spec.roughness_m,spec.roughness_correlation_m,seed}});
+                const auto seed=std::to_string(rng.integers(0,2147483647));obstacles.push_back({.shape=RoadRoughness{.start_m=a,.section_length_m=size,.amplitude_m=spec.roughness_m,.correlation_length_m=spec.roughness_correlation_m,.seed=seed}});
             }
         }
     }
@@ -72,7 +72,7 @@ std::vector<Obstacle> generate_road(const RoadGeneratorSpec& spec,double length,
 TrackSpec build_road(std::string name,const RoadGeneratorSpec& spec,double length,std::span<const Obstacle> hand,std::string description,std::string surface){
     std::vector<Interval> reserved;for(const auto&o:hand)reserved.emplace_back(o.start_m(),o.end_m());
     auto generated=generate_road(spec,length,reserved);std::vector<Obstacle> all(hand.begin(),hand.end());all.insert(all.end(),generated.begin(),generated.end());
-    TrackSpec track{std::move(name),length,std::move(all),std::move(description),std::move(surface),std::nullopt,{}};track.validate();return track;
+    TrackSpec track{.name=std::move(name),.length_m=length,.obstacles=std::move(all),.description=std::move(description),.surface=std::move(surface),.grade_profile=std::nullopt,.surface_sections={}};track.validate();return track;
 }
 RoadGeneratorSpec road_smooth_spec(){RoadGeneratorSpec s;s.potholes_per_100m=1.;s.pothole_depth_m={.030,.060};s.pothole_length_m={.300,.500};s.bumps_per_100m=2.;s.bump_height_m={.020,.040};s.bump_length_m={.300,.500};s.roughness_m=.002;return s;}
 RoadGeneratorSpec road_worn_spec(){return {};}

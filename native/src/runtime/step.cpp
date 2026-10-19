@@ -885,7 +885,7 @@ wire_allocation(const rider::AllocationDiagnostics &d) {
     if (!d.present)
         return {};
     if (d.legacy) {
-        auto value = bike::rider::encode_response_allocation(*d.legacy);
+        auto const value = bike::rider::encode_response_allocation(*d.legacy);
         auto wire = vread::wire_from_value(value, "channels.rider_allocation");
         return std::get<WireObject>(std::move(wire.value));
     }
@@ -903,7 +903,7 @@ WireObject wire_support_targets(const rider::SupportDiagnostics &d) {
     if (!d.present)
         return {};
     if (d.legacy) {
-        auto value = bike::rider::encode_support_diagnostics(*d.legacy);
+        auto const value = bike::rider::encode_support_diagnostics(*d.legacy);
         auto wire = vread::wire_from_value(value, "channels.rider_support_targets");
         return std::get<WireObject>(std::move(wire.value));
     }
@@ -1292,8 +1292,11 @@ PhysicalStep::apply_forces_body(
                 stepper_->tire_writer().probe_compute_into(d, dt, component_out_);
             accumulator_.add("tires", component_out_);
         }
-        // Source physical_runtime couples applied-tire resistance only
-        // to a tire writer. native_reference remains engine-contact-only.
+        // OPEN FINDING F3: when the tire writer is absent the oracle still
+        // evaluates resistance from the solved contact snapshots
+        // (physical_runtime.py:385-387 — `self.tire is None`). This port
+        // runs resistance only inside the tire-writer path, so the
+        // native_reference route drops aerodynamic/rolling losses.
         if (active && stepper_->has_tire()) {
             // The resistance input reads the POST-compute committed
             // state — snapshots_committed() is the same publication gate
@@ -1420,6 +1423,9 @@ PhysicalStep::apply_forces_body(
                     d, command, advance,
                     advance && !initializing_ ? control_clock_.period_s : dt,
                     !active, stepper_->rider_contacts().state().enabled,
+                    // OPEN FINDING F5: pedal_recovery — the oracle passes
+                    // cfg.seated_climb.enabled (physical_runtime.py:367);
+                    // this port passes the active-tick flag instead.
                     active && !initializing_);
                 if (advance) {
                     control_clock_.hold(torques);
@@ -1440,16 +1446,18 @@ PhysicalStep::apply_forces_body(
             refresh_contacts(false, std::nullopt, active && advance);
         if (stepper_->has_cruise()) {
             // sim.cruise.torque_nm = 0. — the oracle clears the scalar
-            // unconditionally before the (unreachable for the pinned
-            // mode) ideal_speed_control write below.
+            // unconditionally before the ideal_speed_control write below.
             CruiseState cs = stepper_->cruise().state();
             cs.torque_nm = 0.;
             stepper_->cruise().set_state(cs);
         }
         if (active &&
             stepper_->drive().config().drive_mode == "ideal_speed_control") {
-            // The runtime pins articulated_effort; this branch is dead by
-            // construction but kept for parity with the oracle's shape.
+            // OPEN FINDING F2: capabilities.cpp admits this drive mode and
+            // the oracle calls cruise.compute() here
+            // (physical_runtime.py:389-394, braking suppresses positive
+            // torque). The cruise-controller port is pending, so the
+            // branch intentionally commands zero torque for now.
             wbuf(d->ctrl, m->nu)[static_cast<std::size_t>(
                 drive_ctrl_adr_)] = 0.;
         }

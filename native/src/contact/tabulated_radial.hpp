@@ -11,6 +11,10 @@ class MaterialRangeError : public std::invalid_argument {
 public:
     using std::invalid_argument::invalid_argument;
     ~MaterialRangeError() override;
+    MaterialRangeError(const MaterialRangeError&) = default;
+    MaterialRangeError& operator=(const MaterialRangeError&) = default;
+    MaterialRangeError(MaterialRangeError&&) = default;
+    MaterialRangeError& operator=(MaterialRangeError&&) = default;
 };
 // tire_curve.py TabulatedTireSpec: immutable input and prefix-integral
 // caches built before stepping. Pressure is metadata, never a multiplier.

@@ -8,7 +8,7 @@ Element& tube(Element& parent,std::string name,std::string type,const Vec3& a,co
     return geom(parent,std::move(name),std::move(type),{{"fromto",fromto(a,b)},{"size",std::move(size)},
         {"mass",std::move(mass)},{"material",std::move(material)}});
 }
-Element& front_wheel(Element& lower,const Vec3& axle,BuildContext& c) {
+Element& front_wheel(Element& lower,const Vec3& axle,BuildContext const& c) {
     auto& wheel=body(lower,"front_wheel",axle);
     joint(wheel,"front_wheel_spin","hinge",{{"axis","0 1 0"},{"damping","0.01"}});
     geom(wheel,"geom_front_hub","cylinder",{{"fromto","0 -0.055 0 0 0.055 0"},{"size","0.018"},{"mass",c.physical()?"0":"0.35"},{"material","mat_metal"}});
@@ -59,7 +59,7 @@ void shock_assembly(Element& yoke,const Vec3& p6,const Vec3& p7,BuildContext& c)
     tube(damper,"geom_shock_piggy_bridge","cylinder",bridge1,bridge2,"0.010","0.04","mat_damper_body");
     site(damper,"site_P7_shock","0 0 0","0.008","0.1 0.6 0.9 1.0");
     auto parts=shaft.direct("geom");const auto more=damper.direct("geom");parts.insert(parts.end(),more.begin(),more.end());
-    register_component(c.mass_registry(),"shock_damper",std::move(parts));
+    register_component(c.mass_registry(),"shock_damper",parts);
 }
 } // namespace
 
@@ -97,8 +97,8 @@ void build_steering_and_fork(Element& frame,BuildContext& c) {
     if(c.physical()) {
         std::vector<Element*> assembly,stanchions;
         for(auto* value:steer.direct("geom")) (value->get("name").starts_with("geom_stanchion_")?stanchions:assembly).push_back(value);
-        register_component(c.mass_registry(),"steer_assembly",std::move(assembly));
-        register_component(c.mass_registry(),"stanchions",std::move(stanchions));
+        register_component(c.mass_registry(),"steer_assembly",assembly);
+        register_component(c.mass_registry(),"stanchions",stanchions);
         register_component(c.mass_registry(),"fork_lowers",lower.direct("geom"));
         register_component(c.mass_registry(),"front_wheel",wheel.direct("inertial"));
     }

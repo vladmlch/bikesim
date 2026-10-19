@@ -10,6 +10,10 @@ class OperatorInterrupted : public std::runtime_error {
 public:
     OperatorInterrupted() : std::runtime_error("operator interrupt deferred during research publication") {}
     ~OperatorInterrupted() override;
+    OperatorInterrupted(const OperatorInterrupted&) = default;
+    OperatorInterrupted& operator=(const OperatorInterrupted&) = default;
+    OperatorInterrupted(OperatorInterrupted&&) = default;
+    OperatorInterrupted& operator=(OperatorInterrupted&&) = default;
 };
 struct FailureReport {
     std::exception_ptr primary;
@@ -27,6 +31,11 @@ struct EpisodeReceipt {
 class ResearchPublication {
 public:
     virtual ~ResearchPublication();
+    ResearchPublication() = default;
+    ResearchPublication(const ResearchPublication&) = delete;
+    ResearchPublication& operator=(const ResearchPublication&) = delete;
+    ResearchPublication(ResearchPublication&&) = delete;
+    ResearchPublication& operator=(ResearchPublication&&) = delete;
     // The recording owner implements one exclusive final publication over
     // immutable RAM receipts. An exception leaves receipts available for retry.
     [[nodiscard]] virtual std::filesystem::path publish(std::span<const EpisodeReceipt>,
@@ -48,6 +57,8 @@ public:
     ~ResearchRun();
     ResearchRun(const ResearchRun&) = delete;
     ResearchRun& operator=(const ResearchRun&) = delete;
+    ResearchRun(ResearchRun&&) = delete;
+    ResearchRun& operator=(ResearchRun&&) = delete;
     void reset(std::optional<std::string> seed_decimal = {});
     [[nodiscard]] const EpisodeReceipt* seal(std::string reason);
     [[nodiscard]] std::optional<std::filesystem::path> finish(std::exception_ptr primary = {}, bool stop = false);

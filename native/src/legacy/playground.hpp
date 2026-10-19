@@ -23,8 +23,11 @@ public:
     [[nodiscard]] SuspensionForce compute_fork_force(double travel_mm,double velocity_mps) const;
     [[nodiscard]] SuspensionForce compute_shock_force(double stroke_mm,double velocity_mps) const;
 private:
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const geometry::BikeSpecs& specs_;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const model::ForkAirSpring& air_;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const model::BikeSuspensionSystem& suspension_;
 };
 struct SimModelHandles {
@@ -40,9 +43,13 @@ public:
     [[nodiscard]] io::Value compute(const mjModel&,const mjData&,double target_rear_mm,
         bool include_rider,const SimModelHandles&,std::string_view camera_mode="2d") const;
 private:
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const geometry::BikeSpecs& specs_;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const kinematics::HorstLinkageSolver& solver_;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const model::ForkAirSpring& air_;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const model::BikeSuspensionSystem& suspension_;
 };
 struct PlaygroundOptions {
@@ -69,6 +76,8 @@ public:
     ~Playground();
     Playground(const Playground&)=delete;
     Playground& operator=(const Playground&)=delete;
+    Playground(Playground&&) = delete;
+    Playground& operator=(Playground&&) = delete;
     void step();
     void step_at(double wall_time_s);
     void reset();
@@ -104,7 +113,7 @@ void reset(Playground&);
 // second relaxation algorithm or second physical stepping path exists.
 [[nodiscard]] initialization::StaticEquilibriumResult solve_static_equilibrium(
     initialization::StaticEquilibriumContext&,const initialization::StaticEquilibriumOptions& = {});
-void apply_stand_targets(const mjModel&,mjData&,const kinematics::HorstLinkageSolver&,
+void apply_stand_targets(const mjModel&,mjData const&,const kinematics::HorstLinkageSolver&,
     int rear_actuator,int fork_actuator,double rear_mm,double fork_mm);
 void reset_stand(const mjModel&,mjData&,const kinematics::HorstLinkageSolver&,int rear_actuator,int fork_actuator);
 } // namespace bike::legacy

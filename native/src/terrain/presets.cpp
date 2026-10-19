@@ -4,13 +4,13 @@
 
 namespace bike::terrain {
 TrackSpec enduro_aggressive(){
-    TrackSpec track{"enduro_aggressive",115.,{},"Braking bumps, square edges, rock gardens, pothole, G-out, drop and kicker.","hardpack",std::nullopt,{}};
-    track.obstacles={{Washboard{12.,.035,.900,9}},{SquareEdge{22.,.090,.250}},{RockGarden{26.,8.,.060,.250,"1701"}},{Pothole{38.,.180,.600}},{GOut{42.,.350,5.}},{Drop{52.,.600,0.}},{Kicker{57.,.350,1.400,2.500,20.,5.}},{Roots{69.,7,.080,.250,7.,.35,"2029"}},{SquareEdge{80.,.070,.250}},{SquareEdge{80.8,.090,.250}},{RockGarden{84.,11.,.090,.200,"3301"}}};return track;
+    TrackSpec track{.name="enduro_aggressive",.length_m=115.,.obstacles={},.description="Braking bumps, square edges, rock gardens, pothole, G-out, drop and kicker.",.surface="hardpack",.grade_profile=std::nullopt,.surface_sections={}};
+    track.obstacles={{.shape=Washboard{.start_m=12.,.amplitude_m=.035,.wavelength_m=.900,.n_waves=9}},{.shape=SquareEdge{.start_m=22.,.height_m=.090,.ledge_length_m=.250}},{.shape=RockGarden{.start_m=26.,.section_length_m=8.,.amplitude_m=.060,.correlation_length_m=.250,.seed="1701"}},{.shape=Pothole{.start_m=38.,.depth_m=.180,.hole_length_m=.600}},{.shape=GOut{.start_m=42.,.depth_m=.350,.dip_length_m=5.}},{.shape=Drop{.start_m=52.,.height_m=.600,.ramp_m=0.}},{.shape=Kicker{.start_m=57.,.height_m=.350,.ramp_m=1.400,.gap_m=2.500,.landing_angle_deg=20.,.landing_m=5.}},{.shape=Roots{.start_m=69.,.n_bumps=7,.height_m=.080,.width_m=.250,.section_length_m=7.,.jitter=.35,.seed="2029"}},{.shape=SquareEdge{.start_m=80.,.height_m=.070,.ledge_length_m=.250}},{.shape=SquareEdge{.start_m=80.8,.height_m=.090,.ledge_length_m=.250}},{.shape=RockGarden{.start_m=84.,.section_length_m=11.,.amplitude_m=.090,.correlation_length_m=.200,.seed="3301"}}};return track;
 }
-TrackSpec flat(double length){return {"flat",length,{},"No obstacles; sag, rolling resistance and coast-down reference.","hardpack",std::nullopt,{}};}
-TrackSpec single_edge(){return {"single_edge",40.,{{SquareEdge{20.,.090,.250}}},"Run-up and one 90 mm square edge at 20 m.","hardpack",std::nullopt,{}};}
-TrackSpec washboard_only(){return {"washboard_only",60.,{{Washboard{15.,.035,.900,20}}},"Run-up and 20 waves of 35 mm braking bumps.","hardpack",std::nullopt,{}};}
-TrackSpec climb_steps(){SteppedClimb climb;climb.start_m=15.;return {"climb_steps",115.,{{std::move(climb)}},"Stepped climb: 5%, 10%, 15%, 20%, 25% grades with smooth transitions.","hardpack",std::nullopt,{}};}
+TrackSpec flat(double length){return {.name="flat",.length_m=length,.obstacles={},.description="No obstacles; sag, rolling resistance and coast-down reference.",.surface="hardpack",.grade_profile=std::nullopt,.surface_sections={}};}
+TrackSpec single_edge(){return {.name="single_edge",.length_m=40.,.obstacles={{.shape=SquareEdge{.start_m=20.,.height_m=.090,.ledge_length_m=.250}}},.description="Run-up and one 90 mm square edge at 20 m.",.surface="hardpack",.grade_profile=std::nullopt,.surface_sections={}};}
+TrackSpec washboard_only(){return {.name="washboard_only",.length_m=60.,.obstacles={{.shape=Washboard{.start_m=15.,.amplitude_m=.035,.wavelength_m=.900,.n_waves=20}}},.description="Run-up and 20 waves of 35 mm braking bumps.",.surface="hardpack",.grade_profile=std::nullopt,.surface_sections={}};}
+TrackSpec climb_steps(){SteppedClimb climb;climb.start_m=15.;return {.name="climb_steps",.length_m=115.,.obstacles={{.shape=std::move(climb)}},.description="Stepped climb: 5%, 10%, 15%, 20%, 25% grades with smooth transitions.",.surface="hardpack",.grade_profile=std::nullopt,.surface_sections={}};}
 std::vector<std::string> available_presets(){return {"alpine_rocky","alpine_scree","climb_steps","enduro_aggressive","flat","road_broken","road_smooth","road_worn","single_edge","washboard_only"};}
 TrackSpec get_preset(std::string_view name){
     TrackSpec track;

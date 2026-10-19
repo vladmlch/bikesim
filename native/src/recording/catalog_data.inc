@@ -1,5 +1,8 @@
 // Statically transcribed from the source catalog; no runtime schema generation.
-static constexpr std::string_view kCatalogDocument = R"CATALOG({
+// Split into <64 KiB raw literals: a single concatenated literal exceeds the
+// ISO C++ minimum maximum (65536) that -Woverlength-strings enforces.
+static constexpr std::array<std::string_view, 6> kCatalogDocumentParts{
+R"CATALOG({
   "schema": 1,
   "tables": [
     {
@@ -1916,7 +1919,8 @@ static constexpr std::string_view kCatalogDocument = R"CATALOG({
         {
           "frame": "n/a",
           "path": [
-            "drive",
+)CATALOG",
+R"CATALOG(            "drive",
             "human_active_power_w"
           ],
           "aliases": [],
@@ -3751,7 +3755,8 @@ static constexpr std::string_view kCatalogDocument = R"CATALOG({
               "shape": null,
               "axes": null,
               "except_keys": [],
-              "children": [],
+)CATALOG",
+R"CATALOG(              "children": [],
               "key": "tangent_center_speed_mps",
               "dtype": "double",
               "unit": "m/s",
@@ -5540,7 +5545,8 @@ static constexpr std::string_view kCatalogDocument = R"CATALOG({
           "measurement": "declared",
           "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
           "description": "accounted physics interval identifier, consecutive per episode"
-        }
+)CATALOG",
+R"CATALOG(        }
       ],
       "fields": [
         {
@@ -7299,7 +7305,8 @@ static constexpr std::string_view kCatalogDocument = R"CATALOG({
                       "phase": "control_period",
                       "optional": true,
                       "measurement": "diagnostic",
-                      "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
+)CATALOG",
+R"CATALOG(                      "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
                       "description": "sole-goal radial request"
                     },
                     {
@@ -9089,7 +9096,8 @@ static constexpr std::string_view kCatalogDocument = R"CATALOG({
                   "axes": null,
                   "except_keys": [],
                   "children": [],
-                  "key": "pelvis_offset_m",
+)CATALOG",
+R"CATALOG(                  "key": "pelvis_offset_m",
                   "dtype": "double[]",
                   "unit": "m",
                   "phase": "control_period",
@@ -10042,4 +10050,5 @@ static constexpr std::string_view kCatalogDocument = R"CATALOG({
     }
   ]
 }
-)CATALOG";
+)CATALOG",
+};

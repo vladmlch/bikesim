@@ -117,6 +117,27 @@ get_filename_component(_native_nb_package "${_native_nb_include}/.." REALPATH)
 get_filename_component(_native_robin_include "${_native_nb_package}/ext/robin_map/include" REALPATH)
 get_filename_component(_native_python_include "${Python_INCLUDE_DIRS}" REALPATH)
 
+# The header sweep (tools/native_checks.py --kind headers) compiles each
+# first-party header as a standalone TU under every target context of its
+# root, so all first-party targets share one include surface. Declaring it
+# once here keeps the sweep's matrix honest as new dep-bound headers land.
+file(READ "${BIKE_DEPENDENCY_LOCK}" _native_dependency_lock_json)
+string(JSON _native_duckdb_include GET "${_native_dependency_lock_json}"
+  dependencies duckdb extracted_root)
+set(_native_duckdb_include "${BIKE_DEPENDENCY_ROOT}/${_native_duckdb_include}/include")
+if(NOT IS_DIRECTORY "${_native_duckdb_include}")
+  message(FATAL_ERROR
+    "pinned DuckDB include tree is missing: ${_native_duckdb_include} — acquire the locked .deps before configure")
+endif()
+include_directories(SYSTEM
+  "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests"
+  "${MJ_DIR}/include"
+  "${_native_python_include}"
+  "${_native_nb_include}"
+  "${_native_robin_include}"
+  "${_native_duckdb_include}")
+
 bike_detect_libcpp_hardening()
 set(_native_libcpp_hardening_supported "${BIKE_LIBCPP_HARDENING_SUPPORTED}")
 set(_native_libcpp_hardening_mode "${BIKE_LIBCPP_HARDENING_EFFECTIVE}")

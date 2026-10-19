@@ -14,9 +14,9 @@ ModeSearchResult search_constraint_modes(const ConstraintDynamics& dynamics,std:
     std::set<ConstraintMode> seen;
     ModeSearchResult best;bool have_best=false;
     while(!pending.empty() && seen.size()<budget) {
-        auto mode=std::move(pending.front());pending.pop_front();seen.insert(mode);
+        auto const mode=std::move(pending.front());pending.pop_front();seen.insert(mode);
         auto response=dynamics.response_for_mode(mode);
-        auto candidate=solve(response);
+        auto const candidate=solve(response);
         const bool feasible=candidate.allocation.feasible;
         const auto torque=torque_of?torque_of(candidate.allocation):candidate.allocation.solution;
         if(!have_best || candidate.allocation.violation<best.allocation.violation || feasible) {

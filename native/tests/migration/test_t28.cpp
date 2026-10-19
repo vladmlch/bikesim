@@ -9,6 +9,7 @@
 #include "io/json.hpp"
 #include <array>
 #include <cmath>
+#include <numbers>
 #include <limits>
 
 namespace {
@@ -20,38 +21,38 @@ AllocationProblem box(std::vector<double> target) {
 }
 void projection_and_residuals() {
     auto p=box({2.,-3.});p.lower={0.,0.};p.upper={1.,1.};p.initial=std::vector<double>{.2,.3};
-    int calls=0;p.extra.push_back({[&](std::span<const double>x){++calls;bt::require(x[0]>=0.&&x[0]<=1.&&x[1]>=0.&&x[1]<=1.,"callback only sees projected bounds");return std::vector<double>{std::sqrt(x[0])};},{},{0.},{1.},std::nullopt});
+    int calls=0;p.extra.push_back({.evaluate=[&](std::span<const double>x){++calls;bt::require(x[0]>=0.&&x[0]<=1.&&x[1]>=0.&&x[1]<=1.,"callback only sees projected bounds");return std::vector<double>{std::sqrt(x[0])};},.jacobian={},.lower={0.},.upper={1.},.linear=std::nullopt});
     auto result=allocate(p);bt::require(result.feasible&&result.solution==std::vector<double>({1.,0.})&&calls==1,"bounded target exact optimum ignores warm start");
-    p=box({0.,0.});p.equality={1,2,{1.,1.}};p.equality_rhs={1.};p.lower={0.,0.};p.upper={1.,1.};
+    p=box({0.,0.});p.equality={.rows=1,.cols=2,.values={1.,1.}};p.equality_rhs={1.};p.lower={0.,0.};p.upper={1.,1.};
     result=allocate(p);bt::require(result.feasible&&std::abs(result.solution[0]-.5)<1e-7&&std::abs(result.solution[1]-.5)<1e-7,"nearest point on equality simplex");
-    p=box({0.});p.equality={1,1,{1.}};p.equality_rhs={2.};p.lower={0.};p.upper={1.};result=allocate(p);
+    p=box({0.});p.equality={.rows=1,.cols=1,.values={1.}};p.equality_rhs={2.};p.lower={0.};p.upper={1.};result=allocate(p);
     bt::require(!result.feasible&&result.violation>=1.&&std::isfinite(result.solution[0]),"infeasible bounded point is a diagnostic");
-    p=box({2.,0.});p.extra=grip_constraints({2,2,{1.,0.,0.,1.}},{-1.,0.},true,1.);result=allocate(p);
+    p=box({2.,0.});p.extra=grip_constraints({.rows=2,.cols=2,.values={1.,0.,0.,1.}},{-1.,0.},true,1.);result=allocate(p);
     bt::require(result.feasible&&std::abs(result.solution[0]-1.)<1e-6&&std::abs(result.solution[1])<1e-7,"nonlinear pulling radius constrains nearest point");
     p=box({0.});p.lower={inf};p.upper={-inf};bt::invalid([&]{(void)allocate(p);});
     p=box({0.});p.lower.clear();bt::invalid([&]{(void)allocation_residual(p,p.target);});
-    p=box({0.});p.extra.push_back({[](std::span<const double>){return std::vector<double>{std::numeric_limits<double>::quiet_NaN()};},{},{0.},{1.},std::nullopt});
+    p=box({0.});p.extra.push_back({.evaluate=[](std::span<const double>){return std::vector<double>{std::numeric_limits<double>::quiet_NaN()};},.jacobian={},.lower={0.},.upper={1.},.linear=std::nullopt});
     bt::require(std::isinf(allocation_residual(p,p.target)),"nonfinite extra is infinite violation");
     const auto parsed=allocation_problem_from_json(bike::io::parse_json(R"({"target":[2,-3],"equality":[],"equality_rhs":[],"inequality":[],"inequality_rhs":[],"lower":[0,0],"upper":[1,1],"extra":[],"initial":null})"));
     bt::require(allocate(parsed).solution==std::vector<double>({1.,0.}),"cold problem adapter reaches same bounded objective");
 }
 void conservative_linear_regions() {
-    const Matrix g{2,1,{1.,-1.}};const std::array<double,2> h{0.,-1.};const std::array<double,1> lo{-inf},hi{inf};
+    const Matrix g{.rows=2,.cols=1,.values={1.,-1.}};const std::array<double,2> h{0.,-1.};const std::array<double,1> lo{-inf},hi{inf};
     bt::require(n::linear_feasibility(g,h,lo,hi).status==n::FeasibilityStatus::proven_infeasible,"contradictory linear interval certificate");
     n::FeasibilityOptions stopped;stopped.max_iterations=0;
     bt::require(n::linear_feasibility(g,h,lo,hi,{}, {},stopped).status==n::FeasibilityStatus::unknown,"budget exhaustion cannot certify emptiness");
     const std::array<double,1> zero{0.},small{1e-10};
-    bt::require(n::linear_feasibility({0,1,{}},{},zero,zero,{1,1,{1.}},small).status!=n::FeasibilityStatus::proven_infeasible,"equality tolerance is retained by interval propagation");
-    const auto rows=inverse_dynamics_rows({1,1,{2.}},{1,1,{1.}},{1,1,{3.}},std::array<double,1>{4.},std::array<double,1>{5.});
+    bt::require(n::linear_feasibility({.rows=0,.cols=1,.values={}},{},zero,zero,{.rows=1,.cols=1,.values={1.}},small).status!=n::FeasibilityStatus::proven_infeasible,"equality tolerance is retained by interval propagation");
+    const auto rows=inverse_dynamics_rows({.rows=1,.cols=1,.values={2.}},{.rows=1,.cols=1,.values={1.}},{.rows=1,.cols=1,.values={3.}},std::array<double,1>{4.},std::array<double,1>{5.});
     bt::require(rows.first.values==std::vector<double>({2.,-1.,-3.})&&rows.second==std::vector<double>({1.}),"inverse dynamics sign convention");
 }
 void calibration_and_root() {
-    const auto fit=n::nnls({3,2,{1.,0.,0.,1.,1.,1.}},std::array<double,3>{-1.,2.,1.});
+    const auto fit=n::nnls({.rows=3,.cols=2,.values={1.,0.,0.,1.,1.,1.}},std::array<double,3>{-1.,2.,1.});
     bt::require(fit.x[0]==0.&&std::abs(fit.x[1]-1.5)<1e-12&&std::abs(fit.residual_norm-std::sqrt(1.5))<1e-12,"NNLS boundary optimum");
     const auto root=n::brentq([](double x){return x*x-2.;},0.,2.);
-    bt::require(std::abs(root.root-std::sqrt(2.))<2e-12,"safeguarded bracket converges to analytic root");
+    bt::require(std::abs(root.root-std::numbers::sqrt2)<2e-12,"safeguarded bracket converges to analytic root");
     bt::invalid([]{(void)n::brentq([](double x){return x*x+1.;},-1.,1.);});
-    bike::configuration::HingeDensity material{{0.,.01},{100.,100.},10.,"analytic test"};
+    bike::configuration::HingeDensity material{.knots_m={0.,.01},.stiffness_n_m={100.,100.},.damping_ns_m=10.,.provenance="analytic test"};
     const auto response=n::density_response(std::array<double,3>{-.01,.01,.02},material);
     bt::require(response.force==std::vector<double>({0.,1.,3.})&&std::abs(response.energy[2]-.025)<1e-15,"hinge potential derivative and separated force");
     const auto detached=n::normal_station_response(std::array<double,1>{0.},std::array<double,1>{100.},std::array<double,1>{1.},material);

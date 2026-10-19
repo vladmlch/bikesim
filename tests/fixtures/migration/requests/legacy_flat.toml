@@ -6,3 +6,5 @@ rider_variant = "lumped"
 speed_kph = 10.0
 seed_decimal = "1234"
 use_equilibrium_cache = false
+[overrides]
+drive_mode = "coast"

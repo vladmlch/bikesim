@@ -20,6 +20,7 @@ inline constexpr std::string_view database_name = "run.duckdb";
 inline constexpr std::string_view manifest_name = "manifest.json";
 inline constexpr std::string_view report_name = "summary.md";
 
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 struct FieldSpec {
     std::string key, dtype, unit, phase;
     bool optional = false;
@@ -47,7 +48,7 @@ struct Coordinate {
 };
 struct CoordinateCatalog {
     std::vector<Coordinate> qpos, dof;
-    [[nodiscard]] std::string force_unit(std::size_t index) const;
+    [[nodiscard]] std::string_view force_unit(std::size_t index) const;
     [[nodiscard]] const std::string& velocity_unit(std::size_t index) const;
 };
 struct AliasSpec {
@@ -94,9 +95,9 @@ private:
 [[nodiscard]] std::vector<std::pair<std::string, std::string>> column_types(const TableSpec& table);
 
 class Connection;
-void create_metadata(Connection& connection);
-void create_streams(Connection& connection);
-void create_views(Connection& connection);
-void create_legacy_view(Connection& connection);
+void create_metadata(Connection const& connection);
+void create_streams(Connection const& connection);
+void create_views(Connection const& connection);
+void create_legacy_view(Connection const& connection);
 [[nodiscard]] std::vector<io::Value::Array> catalog_rows();
 } // namespace bike::recording

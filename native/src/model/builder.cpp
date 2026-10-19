@@ -42,7 +42,7 @@ std::string generate_mjcf(const BuildRequest& request) {
     const auto fixed=geometry::get_fixed_frame_points(request.bike);
     const auto state=solver.solve_state_from_wheel_travel(0.);
     const Vec3 cg=physical?Vec3{.001,0.,0.}:compute_static_system_cg(request.bike,request.masses,rider.present()?&rider:nullptr,&solver).cg_pos_m;
-    BuildContext context{request,solver,std::move(rider),std::move(seated),std::move(articulated),std::move(physics),fixed,state,cg,crank,{}};
+    BuildContext context{.request=request,.solver=solver,.rider=std::move(rider),.seated=std::move(seated),.articulated=articulated,.physics=std::move(physics),.fixed=fixed,.state=state,.cg=cg,.crank_joint=crank,.registry={}};
     Element root("mujoco",{{"model","enduro_bike_horst_yoke"}});
     root.add("compiler",{{"angle","degree"},{"coordinate","local"},{"inertiafromgeom","auto"},{"autolimits","true"}});
     std::string timestep="0.002";
@@ -87,12 +87,14 @@ struct VirtualFiles {
     ~VirtualFiles() { mj_deleteVFS(&value); }
     VirtualFiles(const VirtualFiles&)=delete;
     VirtualFiles& operator=(const VirtualFiles&)=delete;
+    VirtualFiles(VirtualFiles&&) = delete;
+    VirtualFiles& operator=(VirtualFiles&&) = delete;
 };
 struct MountOperation {
-    mjVFS* vfs;
-    const char* name;
-    const void* bytes;
-    int size;
+    mjVFS* vfs{};
+    const char* name{};
+    const void* bytes{};
+    int size{};
     int result=-1;
 };
 void mount_operation(void* raw) noexcept {
@@ -100,10 +102,10 @@ void mount_operation(void* raw) noexcept {
     call->result=mj_addBufferVFS(call->vfs,call->name,call->bytes,call->size);
 }
 struct CompileOperation {
-    const char* file;
-    const mjVFS* vfs;
-    char* message;
-    int capacity;
+    const char* file{};
+    const mjVFS* vfs{};
+    char* message{};
+    int capacity{};
     mjModel* model=nullptr;
 };
 void compile_operation(void* raw) noexcept {
@@ -122,16 +124,16 @@ ModelOwner compile_mjcf(std::string_view xml,const std::filesystem::path& asset_
     // a basename alias for VFS versions that strip source directories.
     const auto filename=(std::filesystem::absolute(asset_root.empty()?std::filesystem::path("."):asset_root)/"__bike_generated_model__.xml").lexically_normal().string();
     engine::ErrorBuffer error;
-    MountOperation mount{&files->value,filename.c_str(),xml.data(),static_cast<int>(xml.size())};
+    MountOperation mount{.vfs=&files->value,.name=filename.c_str(),.bytes=xml.data(),.size=static_cast<int>(xml.size())};
     if(!engine::invoke(mount_operation,&mount,error)) engine::throw_failure(error);
     if(mount.result!=0) throw std::runtime_error("compile_mjcf: cannot mount generated MJCF in VFS");
-    MountOperation alias{&files->value,"__bike_generated_model__.xml",xml.data(),static_cast<int>(xml.size())};
+    MountOperation alias{.vfs=&files->value,.name="__bike_generated_model__.xml",.bytes=xml.data(),.size=static_cast<int>(xml.size())};
     if(!engine::invoke(mount_operation,&alias,error)) engine::throw_failure(error);
     if(alias.result!=0 && alias.result!=2) throw std::runtime_error("compile_mjcf: cannot mount VFS source alias");
     auto message=std::make_unique<std::array<char,4096>>();
-    CompileOperation compile{filename.c_str(),&files->value,message->data(),static_cast<int>(message->size())};
+    CompileOperation compile{.file=filename.c_str(),.vfs=&files->value,.message=message->data(),.capacity=static_cast<int>(message->size())};
     if(!engine::invoke(compile_operation,&compile,error)) {
-        ModelOwner cleanup(compile.model);engine::throw_failure(error);
+        ModelOwner const cleanup(compile.model);engine::throw_failure(error);
     }
     ModelOwner result(compile.model);
     if(!result) throw std::invalid_argument("compile_mjcf: "+std::string(message->data()));

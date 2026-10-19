@@ -7,11 +7,13 @@
 
 namespace bike::viz {
 namespace {
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) process-local table mirrors the reference module structure
 std::mutex resource_mutex;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) process-local table mirrors the reference module structure
 std::optional<std::filesystem::path> plotly_override;
 std::optional<std::string> plotly_script() {
     std::optional<std::filesystem::path> configured;
-    {std::lock_guard lock(resource_mutex);configured=plotly_override;}
+    {std::scoped_lock const lock(resource_mutex);configured=plotly_override;}
     std::vector<std::filesystem::path> candidates;
     if(configured)candidates.push_back(*configured);
     else{
@@ -79,22 +81,22 @@ for(const text of p.notes){const note=document.createElement('p');note.className
 }
 void set_plotly_resource(const std::filesystem::path& path) {
     if(path.empty())throw std::invalid_argument("Plotly resource path is empty");
-    std::lock_guard lock(resource_mutex);plotly_override=path;
+    std::scoped_lock const lock(resource_mutex);plotly_override=path;
 }
 namespace detail {
 std::string report_json(const Report& report) {
     validate(report);std::string out="{\"title\":"+json_string(report.title)+",\"columns\":"+std::to_string(report.columns)+",\"panels\":[";
-    const auto values=[](const std::vector<double>& array){std::string encoded="[";bool first=true;for(double x:array){if(!first)encoded+=',';first=false;encoded+=number(x);}return encoded+"]";};
-    for(std::size_t panel=0;panel<report.panels.size();++panel){if(panel)out+=',';const auto& p=report.panels[panel];out+="{\"title\":"+json_string(p.title)+",\"xlabel\":"+json_string(p.x_label)+",\"ylabel\":"+json_string(p.y_label)+
+    const auto values=[](const std::vector<double>& array){std::string encoded="[";bool first=true;for(double const x:array){if(!first)encoded+=',';first=false;encoded+=number(x);}return encoded+"]";};
+    for(std::size_t panel_index=0;panel_index<report.panels.size();++panel_index){if(panel_index)out+=',';const auto& p=report.panels[panel_index];out+="{\"title\":"+json_string(p.title)+",\"xlabel\":"+json_string(p.x_label)+",\"ylabel\":"+json_string(p.y_label)+
         ",\"secondary_label\":"+json_string(p.secondary_y_label)+",\"log\":"+(p.log_y?"true":"false")+",\"equal_axes\":"+(p.equal_axes?"true":"false")+",\"series\":[";
         for(std::size_t i=0;i<p.series.size();++i){if(i)out+=',';const auto& s=p.series[i];const auto style=s.style==SeriesStyle::bars?"bars":s.style==SeriesStyle::step?"step":s.style==SeriesStyle::points?"points":"line";
             out+="{\"name\":"+json_string(s.name)+",\"x\":"+values(s.x)+",\"y\":"+values(s.y)+",\"color\":"+json_string(color(s,i))+",\"secondary\":"+(s.secondary_y?"true":"false")+",\"dashed\":"+(s.dashed?"true":"false")+",\"style\":"+json_string(style)+"}";}
         out+="],\"markers\":[";for(std::size_t i=0;i<p.markers.size();++i){if(i)out+=',';const auto& m=p.markers[i];out+="{\"kind\":"+json_string(m.kind==MarkerKind::vertical?"vertical":m.kind==MarkerKind::horizontal?"horizontal":"band")+
             ",\"first\":"+number(m.first)+",\"second\":"+number(m.second)+",\"label\":"+json_string(m.label)+",\"color\":"+json_string(m.color)+",\"full_height\":"+(m.full_height?"true":"false")+"}";}
-        out+="],\"notes\":[";for(std::size_t i=0;i<p.notes.size();++i){if(i)out+=',';out+=json_string(p.notes[i]);}out+="]";
+        out+="],\"notes\":[";for(std::size_t i=0;i<p.notes.size();++i){if(i)out+=',';out+=json_string(p.notes[i]);}out+=']';
         if(p.x_range)out+=",\"xrange\":["+number(p.x_range->first)+","+number(p.x_range->second)+"]";
         if(p.y_range)out+=",\"yrange\":["+number(p.y_range->first)+","+number(p.y_range->second)+"]";
-        out+="}";}
+        out+='}';}
     return out+"]}";
 }
 }
@@ -102,14 +104,14 @@ std::string to_html(std::span<const Report> reports) {
     if(reports.empty())throw std::invalid_argument("HTML report requires at least one figure");
     const auto plotly=plotly_script();
     std::string data="[";for(std::size_t i=0;i<reports.size();++i){if(i)data+=',';data+=detail::report_json(reports[i]);}data+=']';
-    std::string out="<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"bike-plot-backend\" content=\""+
+    std::string out=R"(<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="bike-plot-backend" content=")"+
         std::string(plotly?"plotly-local":"native-html-v1")+"\"><title>"+detail::escape_xml(reports.front().title)+"</title>"
         "<style>body{margin:0;background:#1a1e24;color:#e6edf3;font:14px system-ui,sans-serif}main{max-width:1800px;margin:auto;padding:20px}h2{margin-top:30px}h3{margin:12px 0}article{min-width:0;background:#1a1e24;padding:12px;border:1px solid #444c56;border-radius:8px}svg{width:100%;height:auto;display:block;touch-action:none;user-select:none}.panels{display:grid;gap:14px}.toolbar,.legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0}button{background:#22272e;color:#e6edf3;border:1px solid #484f58;padding:6px 10px;border-radius:5px;cursor:pointer}.tooltip{min-height:2em;max-height:140px;overflow:auto;color:#8b949e;font-size:12px}.note{color:#8b949e}.plotly-chart{min-height:360px}@media(max-width:800px){.panels{grid-template-columns:1fr!important}main{padding:8px}}</style></head><body><main><div id=\"reports\"></div><noscript>";
     for(const auto& report:reports)out+=to_svg(report);
-    out+="</noscript></main><script id=\"bike-plot-data\" type=\"application/json\">"+data+"</script>";
+    out+=R"(</noscript></main><script id="bike-plot-data" type="application/json">)"+data+"</script>";
     if(plotly)out+="<script>"+*plotly+"</script>";
     out+="<script>";out+=script;out+="</script></body></html>";return out;
 }
 std::string to_html(const Report& report){const std::array reports{report};return to_html(reports);}
-std::string to_html(const Plot& plot){return to_html(Report{plot.title,{plot},1,1280,720});}
+std::string to_html(const Plot& plot){return to_html(Report{.title=plot.title,.panels={plot},.columns=1,.width=1280,.height=720});}
 } // namespace bike::viz

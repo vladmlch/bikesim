@@ -10,7 +10,8 @@ inline constexpr std::array<std::string_view, 8> palette{
 inline constexpr std::string_view background="#1a1e24", panel="#22272e", foreground="#e6edf3", muted="#8b949e", grid="#484f58";
 struct Point { double x=0., y=0.; };
 struct Primitive {
-    enum class Kind { line, rectangle, text } kind=Kind::line;
+    // NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+    enum class Kind : std::uint8_t { line, rectangle, text } kind=Kind::line;
     std::vector<Point> points;
     std::string color, text;
     double thickness=1., font_size=14.;

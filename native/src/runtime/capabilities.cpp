@@ -36,27 +36,34 @@ CapabilityReport implemented_capabilities(
     if(tires.backend!="native_reference" && tires.backend!="compliant_2d" &&
        tires.backend!="distributed_2d_reference" && tires.backend!="pneumatic")
         reject("tires.backend","unknown contact dispatch");
+    // setup.py validate_supported:67-76 — surface_mode's supported set is
+    // backend-dependent: compliant/distributed writers read the track map
+    // only; pneumatic additionally accepts a configured uniform surface.
+    // native_reference has no writer, so the field is unconsumed for it.
     if(tires.backend=="pneumatic" && tires.surface_mode=="configured" && !tires.pneumatic.surface)
         reject("tires.pneumatic.surface","configured pneumatic contact requires a named surface");
+    if((tires.backend=="compliant_2d" || tires.backend=="distributed_2d_reference") &&
+       tires.surface_mode!="track")
+        reject("tires.surface_mode","compliant_2d/distributed_2d_reference resolve the track surface map");
     if(out.rejections.empty()) {
         out.paths={"runtime/step.cpp", "writers/drivetrain.cpp", "runtime/native_contacts.cpp"};
-        if(tires.backend=="compliant_2d")out.paths.push_back("writers/tire.cpp");
-        if(tires.backend=="distributed_2d_reference")out.paths.push_back("writers/distributed_tire.cpp");
-        if(tires.backend=="pneumatic")out.paths.push_back("writers/pneumatic_tire.cpp");
+        if(tires.backend=="compliant_2d")out.paths.emplace_back("writers/tire.cpp");
+        if(tires.backend=="distributed_2d_reference")out.paths.emplace_back("writers/distributed_tire.cpp");
+        if(tires.backend=="pneumatic")out.paths.emplace_back("writers/pneumatic_tire.cpp");
         if(rider.variant=="articulated_planar") {
-            out.paths.push_back("rider/spindle_controller.cpp");
-            out.paths.push_back("writers/rider_contacts.cpp");
+            out.paths.emplace_back("rider/spindle_controller.cpp");
+            out.paths.emplace_back("writers/rider_contacts.cpp");
             if(config.articulated.pedal_attachment!="spindle") {
-                out.paths.push_back("rider/legacy_controller.cpp");
-                out.paths.push_back("rider/response_allocation.cpp");
-                out.paths.push_back("rider/legacy_allocation.cpp");
+                out.paths.emplace_back("rider/legacy_controller.cpp");
+                out.paths.emplace_back("rider/response_allocation.cpp");
+                out.paths.emplace_back("rider/legacy_allocation.cpp");
                 out.allocation_numeric_identity=std::string(bike::rider::allocation_numeric_identity);
             }
         }
         out.implemented=true;
     }
     out.reasons=out.rejections;
-    if(out.implemented)out.reasons.push_back("implementation is connected; numerical and runtime qualification has not been executed");
+    if(out.implemented)out.reasons.emplace_back("implementation is connected; numerical and runtime qualification has not been executed");
     return out;
 }
 CapabilityReport capabilities(const bike::configuration::SimulationPhysicsConfig& config,

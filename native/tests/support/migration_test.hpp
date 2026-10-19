@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <source_location>
 #include <functional>
 #include <span>
 #include <stdexcept>
@@ -53,14 +54,16 @@ void golden_f64(std::string_view relative, std::span<const double> actual);
 // derived from it). A plain return fails via require; any other exception
 // propagates to run() as a test failure instead of falsely satisfying the
 // validation contract.
-template <class F> void invalid(F &&action) {
+template <class F> void invalid(F &&action,
+    const std::source_location &loc = std::source_location::current()) {
     bool rejected = false;
     try {
         std::forward<F>(action)();
     } catch (const std::invalid_argument &) {
         rejected = true;
     }
-    require(rejected, "expected std::invalid_argument");
+    require(rejected, (std::string("expected std::invalid_argument at ") +=
+                       loc.file_name()) += ":" + std::to_string(loc.line()));
 }
 
 // ---- strict oracle-manifest/provenance validation (task T05) --------------

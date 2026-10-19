@@ -20,6 +20,8 @@ public:
     ~PhysicalLiveCsv();
     PhysicalLiveCsv(const PhysicalLiveCsv&) = delete;
     PhysicalLiveCsv& operator=(const PhysicalLiveCsv&) = delete;
+    PhysicalLiveCsv(PhysicalLiveCsv&&) = delete;
+    PhysicalLiveCsv& operator=(PhysicalLiveCsv&&) = delete;
     [[nodiscard]] bool due(double time_s, std::int64_t generation) const;
     void write(double time_s, std::int64_t generation, const runtime::WireObject& scalar_row);
     void write_marker(std::string marker);

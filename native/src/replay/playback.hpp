@@ -29,6 +29,8 @@ public:
     ~PlaybackSession();
     PlaybackSession(const PlaybackSession&) = delete;
     PlaybackSession& operator=(const PlaybackSession&) = delete;
+    PlaybackSession(PlaybackSession&&) = delete;
+    PlaybackSession& operator=(PlaybackSession&&) = delete;
     [[nodiscard]] runtime::RenderFrame frame(double time_s, int generation = 0);
     [[nodiscard]] const runtime::ModelImage& model_image() const noexcept;
     [[nodiscard]] double duration_s() const noexcept;

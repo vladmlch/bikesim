@@ -26,7 +26,7 @@ cfg::SimulationPhysicsConfig physical() {
     auto c=cfg::default_physics();c.physics_mode="physical";c.drive_mode="articulated_effort";c.pitch_assist=false;cfg::post_init(c);return c;
 }
 ::rider::RiderContactsConfig contacts(const cfg::ArticulatedConfig& a) {
-    ::rider::RiderContactsConfig c;c.arm_reach_m=.7;c.saddle_patch_half_length_m=a.saddle_patch_half_length_m;c.pedal_patch_half_length_m=a.pedal_patch_half_length_m;c.support_pad_radius_m=a.support_pad_radius_m;c.support_k_n_m=a.support_k_n_m;c.support_c_ns_m=a.support_c_ns_m;c.pedal_c_ns_m=a.pedal_c_ns_m;c.support_tangent_k_n_m=a.support_tangent_k_n_m;c.support_mu=a.support_mu;c.support_length_m=a.support_length_m;c.grip_k_n_m=a.grip_k_n_m;c.grip_c_ns_m=a.grip_c_ns_m;c.grip_release_distance_m=a.grip_release_distance_m;c.grip_pair_force_limit_n=a.grip_pair_force_limit_n;c.grip_capture_distance_m=a.grip_capture_distance_m;c.grip_capture_speed_mps=a.grip_capture_speed_mps;c.pedal_attachment=*::rider::pedal_attachment(a.pedal_attachment);c.saddle_attachment=*::rider::saddle_attachment(a.saddle_attachment);c.grip_attachment=*::rider::grip_attachment(a.grip_attachment);return c;
+    ::rider::RiderContactsConfig c;c.arm_reach_m=.7;c.saddle_patch_half_length_m=a.saddle_patch_half_length_m;c.pedal_patch_half_length_m=a.pedal_patch_half_length_m;c.support_pad_radius_m=a.support_pad_radius_m;c.support_k_n_m=a.support_k_n_m;c.support_c_ns_m=a.support_c_ns_m;c.pedal_c_ns_m=a.pedal_c_ns_m;c.support_tangent_k_n_m=a.support_tangent_k_n_m;c.support_mu=a.support_mu;c.support_length_m=a.support_length_m;c.grip_k_n_m=a.grip_k_n_m;c.grip_c_ns_m=a.grip_c_ns_m;c.grip_release_distance_m=a.grip_release_distance_m;c.grip_pair_force_limit_n=a.grip_pair_force_limit_n;c.grip_capture_distance_m=a.grip_capture_distance_m;c.grip_capture_speed_mps=a.grip_capture_speed_mps;c.pedal_attachment=::rider::pedal_attachment(a.pedal_attachment).value();c.saddle_attachment=::rider::saddle_attachment(a.saddle_attachment).value();c.grip_attachment=::rider::grip_attachment(a.grip_attachment).value();return c; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
 }
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
@@ -54,7 +54,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         auto&a=request.physics->articulated;a.pedal_attachment=pedal;a.saddle_attachment=saddle;a.grip_attachment=grip;
         const auto report=runtime::implemented_capabilities(*request.physics,*request.rider);
         bt::require(report.implemented&&report.qualification_pending&&!report.supported,"implemented topology remains distinct from qualified evidence");
-        auto model=mdl::compile_mjcf(mdl::generate_mjcf(request));std::unique_ptr<mjData,decltype(&mj_deleteData)> data(engine::make_data(model.get()),mj_deleteData);engine::forward(model.get(),data.get());
+        auto const model=mdl::compile_mjcf(mdl::generate_mjcf(request));std::unique_ptr<mjData,decltype(&mj_deleteData)> data(engine::make_data(model.get()),mj_deleteData);engine::forward(model.get(),data.get());
         auto writer=r::make_support_writer(*model,contacts(a));writer->reset(data.get());
         const auto dispatch=r::support_dispatch(contacts(a));bt::require(dispatch.closed_form_spindle==(a.pedal_attachment=="spindle"),"source spindle selection depends on pedal topology");
         const auto pose=mdl::geometry_pose(*request.rider,request.bike);

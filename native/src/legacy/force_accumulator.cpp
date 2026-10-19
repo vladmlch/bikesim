@@ -16,7 +16,7 @@ void ForceAccumulator::add(std::string_view name,std::span<const double> row) {
     auto found=std::ranges::find(components_,name,&ForceContribution::name);
     if(found!=components_.end())for(std::size_t i=0;i<row.size();++i)
         if(!std::isfinite(found->force[i]+row[i]))throw std::invalid_argument("legacy named force contribution overflow");
-    if (found==components_.end()) { components_.push_back({std::string(name),std::vector<double>(row.size())}); found=components_.end()-1; }
+    if (found==components_.end()) { components_.push_back({.name=std::string(name),.force=std::vector<double>(row.size())}); found=components_.end()-1; }
     for (std::size_t i=0;i<row.size();++i) { found->force[i]+=row[i]; total_[i]+=row[i]; }
 }
 } // namespace bike::legacy

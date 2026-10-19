@@ -106,9 +106,15 @@ struct Directory {
         throw std::runtime_error("cannot create test directory");
     }
     ~Directory() { std::error_code ignored; std::filesystem::remove_all(path, ignored); }
+    Directory(const Directory&) = delete;
+    Directory& operator=(const Directory&) = delete;
+    Directory(Directory&&) = delete;
+    Directory& operator=(Directory&&) = delete;
 };
 }
 int main(int argc, char** argv) {
+    // bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+    // cppcheck-suppress throwInEntryPoint
     return bt::run([&] {
         namespace batch = bike::batch;
         wide_toml_and_ranges();
@@ -129,27 +135,27 @@ int main(int argc, char** argv) {
         bt::invalid([] { (void)batch::expand_spec(bike::io::parse_json(R"({"junk":{}})")); });
         bt::require(batch::parse_seeds("1-3,7,2") == std::vector<std::string>{"1", "2", "3", "7"}, "sweep seed order deduplicates without scheduling");
         bt::require(batch::parse_seeds("18446744073709551616-18446744073709551617") == std::vector<std::string>{"18446744073709551616", "18446744073709551617"}, "wide seeds do not pass through double/int64");
-        bt::require(bike::io::canonical_json(batch::tail_json("diagnostic\n{\"outcome\":\"ok\"}\n")) == "{\"outcome\":\"ok\"}", "worker JSON tail extraction");
+        bt::require(bike::io::canonical_json(batch::tail_json("diagnostic\n{\"outcome\":\"ok\"}\n")) == R"({"outcome":"ok"})", "worker JSON tail extraction");
         bt::require(argc == 2, "native test child is supplied by CTest");
-        Directory output;
+        Directory const output;
         const auto supplied=bike::platform::main_arguments(argc,argv);
         const std::string child = supplied[1];
-        const std::vector<batch::Job> jobs{{"a", {child, "exit", "0"}}, {"b", {child, "exit", "3"}}};
+        const std::vector<batch::Job> jobs{{.id="a", .argv={child, "exit", "0"}}, {.id="b", .argv={child, "exit", "3"}}};
         batch::ExecuteOptions options; options.cwd = output.path;
         const auto serial = batch::execute(jobs, 1, options), parallel = batch::execute(jobs, 2, options);
         bt::require(serial.size() == 2 && parallel[0].id == "a" && parallel[1].id == "b", "worker completion never changes result order");
         bt::require(serial[0].exit_code == parallel[0].exit_code && serial[1].exit_code == 3 && parallel[1].exit_code == 3, "parallel nonzero outcome is preserved");
         const std::string literal = "Путь с пробелами `literal` $(literal)";
-        const std::vector<batch::Job> echo{{"literal", {child, "echo", literal}}, {"missing", {(output.path / "missing-binary").string()}}};
+        const std::vector<batch::Job> echo{{.id="literal", .argv={child, "echo", literal}}, {.id="missing", .argv={(output.path / "missing-binary").string()}}};
         const auto echoed = batch::execute(echo, 2, options);
         bt::require(echoed[0].out == literal + "\n" && echoed[1].exit_code == -1, "argv is literal and spawn failure is a result");
         const auto file = output.path / "exclusive output.txt";
-        const std::vector<batch::Job> write{{"write", {child, "write", file.string(), "first"}}};
+        const std::vector<batch::Job> write{{.id="write", .argv={child, "write", file.string(), "first"}}};
         bt::require(batch::execute(write, 1, options)[0].exit_code == 0, "exclusive child output succeeds once");
         bt::require(batch::execute(write, 1, options)[0].exit_code == 2 && bt::text(file) == "first", "collision preserves prior output");
         std::stop_source cancellation; options.cancellation = cancellation.get_token();
-        std::jthread cancel([&] { std::this_thread::sleep_for(std::chrono::milliseconds(50)); cancellation.request_stop(); });
-        const std::vector<batch::Job> sleepers{{"running", {child, "sleep", "1000"}}, {"queued", {child, "sleep", "1000"}}};
+        std::jthread const cancel([&] { std::this_thread::sleep_for(std::chrono::milliseconds(50)); cancellation.request_stop(); });
+        const std::vector<batch::Job> sleepers{{.id="running", .argv={child, "sleep", "1000"}}, {.id="queued", .argv={child, "sleep", "1000"}}};
         const auto stopped = batch::execute(sleepers, 1, options);
         bt::require(stopped[0].exit_code == 130 && stopped[1].exit_code == 130, "cancellation signals/reaps active child and prevents queued launch");
         bt::require(std::filesystem::current_path() != output.path, "process pool leaves parent cwd unchanged");

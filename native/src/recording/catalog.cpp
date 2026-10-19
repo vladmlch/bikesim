@@ -1,9 +1,12 @@
 #include "catalog.hpp"
 #include "value_util.hpp"
 #include <algorithm>
+#include <array>
 #include <ranges>
 #include <set>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 
 namespace bike::recording {
 namespace {
@@ -14,9 +17,10 @@ std::vector<std::string> read_strings(const Value& value) {
     for (const auto& x : io::as_array(value, "catalog strings")) out.push_back(io::as_string(x, "catalog string"));
     return out;
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 FieldSpec read_field(const Value& document) {
     const auto& d = io::as_object(document, "catalog field");
-    auto string = [&](std::string_view key) { return io::as_string(value::require(d, key), key); };
+    auto const string = [&](std::string_view key) { return io::as_string(value::require(d, key), key); };
     FieldSpec out;
     out.key = string("key"); out.dtype = string("dtype"); out.unit = string("unit"); out.phase = string("phase");
     out.optional = io::as_bool(value::require(d, "optional"), "optional");
@@ -51,7 +55,9 @@ TableSpec read_table(const Value& document) {
 struct Descriptors { std::vector<TableSpec> physical, research; };
 const Descriptors& descriptors() {
     static const Descriptors out = [] {
-        const auto document = io::parse_json(kCatalogDocument);
+        std::string source;
+        for (const auto part : kCatalogDocumentParts) source += part;
+        const auto document = io::parse_json(source);
         if (io::as_int64(value::require(document, "schema"), "catalog.schema") != schema_version)
             throw std::invalid_argument("recording catalog schema differs");
         Descriptors result;
@@ -61,23 +67,25 @@ const Descriptors& descriptors() {
     }();
     return out;
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 std::optional<AliasSpec> walk_struct(const FieldSpec& field, std::span<const std::string> rest,
-                                    std::string table, std::string_view name) {
+                                    const std::string& table, std::string_view name) {
     if (rest.empty()) return {};
     if (field.dtype == "map<struct>") {
         if (rest.size() != 2) return {};
         for (const auto& child : field.children) if (child.key == rest[1])
-            return AliasSpec{std::string(name), table + "." + field.key + "." + rest[0] + "." + child.key, {}, rest[0], "flattened schema-2 channel leaf"};
+            return AliasSpec{.alias=std::string(name), .canonical=table + "." + field.key + "." + rest[0] + "." + child.key, .index={}, .parameter=rest[0], .note="flattened schema-2 channel leaf"};
         return {};
     }
     for (const auto& child : field.children) if (child.key == rest[0]) {
-        if (rest.size() == 1) return AliasSpec{std::string(name), table + "." + field.key + "." + child.key, {}, {}, "flattened schema-2 channel leaf"};
+        if (rest.size() == 1) return AliasSpec{.alias=std::string(name), .canonical=table + "." + field.key + "." + child.key, .index={}, .parameter={}, .note="flattened schema-2 channel leaf"};
         if (child.dtype == "struct" || child.dtype == "map<struct>") return walk_struct(child, rest.subspan(1), table + "." + field.key, name);
     }
     return {};
 }
 } // namespace
 
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 void FieldSpec::validate() const {
     static const std::set<std::string, std::less<>> types{"bigint", "double", "boolean", "varchar", "bigint[]", "double[]", "varchar[]", "map<bigint>", "map<double>", "map<boolean>", "map<varchar>", "map<double[]>", "struct", "struct[]", "map<struct>"};
     static const std::set<std::string, std::less<>> phases{"interval_start", "interval", "interval_end", "control_period", "episode", "n/a"};
@@ -95,20 +103,21 @@ void FieldSpec::validate() const {
             throw std::invalid_argument(key + ": duplicate struct member");
     }
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 std::string FieldSpec::duckdb_type() const {
     static const std::map<std::string, std::string, std::less<>> scalar{
         {"bigint", "BIGINT"}, {"double", "DOUBLE"}, {"boolean", "BOOLEAN"}, {"varchar", "VARCHAR"},
         {"bigint[]", "BIGINT[]"}, {"double[]", "DOUBLE[]"}, {"varchar[]", "VARCHAR[]"},
         {"map<bigint>", "MAP(VARCHAR, BIGINT)"}, {"map<double>", "MAP(VARCHAR, DOUBLE)"},
         {"map<boolean>", "MAP(VARCHAR, BOOLEAN)"}, {"map<varchar>", "MAP(VARCHAR, VARCHAR)"}, {"map<double[]>", "MAP(VARCHAR, DOUBLE[])"}};
-    if (auto it = scalar.find(dtype); it != scalar.end()) return it->second;
+    if (auto const it = scalar.find(dtype); it != scalar.end()) return it->second;
     std::string out = "STRUCT(";
     for (const auto& child : children) {
         if (out != "STRUCT(") out += ", ";
         out += quote(child.key) + " " + child.duckdb_type();
         if (child.optional) out += ", " + quote(child.key + "_present") + " BOOLEAN";
     }
-    out += ")";
+    out += ')';
     if (dtype == "struct") return out;
     if (dtype == "struct[]") return out + "[]";
     if (dtype == "map<struct>") return "MAP(VARCHAR, " + out + ")";
@@ -118,7 +127,7 @@ void TableSpec::validate() const {
     if (name.empty() || (kind != "physics" && kind != "forces" && kind != "channels")) throw std::invalid_argument("invalid recording table " + name);
     if (kind == "channels" && claims.empty()) throw std::invalid_argument(name + ": channel table must claim roots");
     std::set<std::string> names;
-    auto add = [&](const FieldSpec& f) {
+    auto const add = [&](const FieldSpec& f) {
         f.validate();
         if (!names.insert(f.key).second || (f.optional && !names.insert(f.key + "_present").second)) throw std::invalid_argument(name + ": duplicate field key");
     };
@@ -149,12 +158,12 @@ const TableSpec& Catalog::table(std::string_view name) const {
 }
 std::vector<std::string> Catalog::channel_roots() const { std::vector<std::string> out; for (const auto& [root, table] : roots_) { (void)table; out.push_back(root); } return out; }
 const TableSpec& Catalog::channel_table(std::string_view root) const {
-    auto it = roots_.find(root); if (it == roots_.end()) throw std::invalid_argument("unknown recording channel root: " + std::string(root)); return table(it->second);
+    auto const it = roots_.find(root); if (it == roots_.end()) throw std::invalid_argument("unknown recording channel root: " + std::string(root)); return table(it->second);
 }
 std::optional<AliasSpec> Catalog::resolve_alias(std::string_view name) const {
     for (const auto& a : aliases_) if (a.alias == name) return a;
     for (const auto& a : aliases_) {
-        auto pos = a.alias.find("{component}"); if (pos == std::string::npos) continue;
+        auto const pos = a.alias.find("{component}"); if (pos == std::string::npos) continue;
         const auto prefix = std::string_view(a.alias).substr(0, pos), suffix = std::string_view(a.alias).substr(pos + 11);
         if (name.size() > prefix.size() + suffix.size() && name.starts_with(prefix) && name.ends_with(suffix)) {
             auto out = a; out.alias = name; out.parameter = name.substr(prefix.size(), name.size() - prefix.size() - suffix.size()); return out;
@@ -162,16 +171,17 @@ std::optional<AliasSpec> Catalog::resolve_alias(std::string_view name) const {
     }
     std::vector<std::string> path;
     for (std::size_t start = 0; start <= name.size();) {
-        auto end = name.find('.', start); path.emplace_back(name.substr(start, end == std::string_view::npos ? end : end - start));
-        if (end == std::string_view::npos) break; start = end + 1;
+        auto const end = name.find('.', start); path.emplace_back(name.substr(start, end == std::string_view::npos ? end : end - start));
+        if (end == std::string_view::npos) break;
+        start = end + 1;
     }
     if (path.size() < 2 || !roots_.contains(path.front())) return {};
     const auto& spec = channel_table(path.front());
     for (const auto& f : spec.fields) {
-        if (f.path == path) return AliasSpec{std::string(name), spec.name + "." + f.key, {}, {}, "flattened schema-2 channel leaf"};
+        if (f.path == path) return AliasSpec{.alias=std::string(name), .canonical=spec.name + "." + f.key, .index={}, .parameter={}, .note="flattened schema-2 channel leaf"};
         if (path.size() <= f.path.size() || !std::equal(f.path.begin(), f.path.end(), path.begin())) continue;
         const auto rest = std::span<const std::string>(path).subspan(f.path.size());
-        if (f.dtype.starts_with("map<") && rest.size() == 1) return AliasSpec{std::string(name), spec.name + "." + f.key, {}, rest.front(), "flattened schema-2 map member"};
+        if (f.dtype.starts_with("map<") && rest.size() == 1) return AliasSpec{.alias=std::string(name), .canonical=spec.name + "." + f.key, .index={}, .parameter=rest.front(), .note="flattened schema-2 map member"};
         if (f.dtype == "struct" || f.dtype == "struct[]" || f.dtype == "map<struct>") if (auto out = walk_struct(f, rest, spec.name, name)) return out;
     }
     return {};
@@ -181,9 +191,10 @@ const std::vector<TableSpec>& research_tables() { return descriptors().research;
 const std::vector<TableSpec>& all_tables() { static const auto out = [] { auto result = descriptors().physical; result.insert(result.end(), descriptors().research.begin(), descriptors().research.end()); return result; }(); return out; }
 const TableSpec& table_spec(std::string_view name) { for (const auto& spec : all_tables()) if (spec.name == name) return spec; throw std::invalid_argument("unreviewed recording table: " + std::string(name)); }
 
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 io::Value describe_field(const FieldSpec& f) {
     Value::Array children; for (const auto& child : f.children) children.push_back(describe_field(child));
-    Value shape; if (f.shape) { Value::Array a; for (auto n : *f.shape) a.push_back(value::integer(n)); shape.data = std::move(a); }
+    Value shape; if (f.shape) { Value::Array a; for (auto const n : *f.shape) a.push_back(value::integer(n)); shape.data = std::move(a); }
     return Value{Value::Object{{"key", value::text(f.key)}, {"dtype", value::text(f.dtype)}, {"unit", value::text(f.unit)},
         {"phase", value::text(f.phase)}, {"optional", Value{f.optional}}, {"measurement", value::text(f.measurement)},
         {"source", value::text(f.source)}, {"description", value::text(f.description)}, {"frame", value::text(f.frame)},
@@ -191,7 +202,7 @@ io::Value describe_field(const FieldSpec& f) {
         {"axes", f.axes ? value::strings(*f.axes) : Value{}}, {"except_keys", value::strings(f.except_keys)}, {"children", Value{std::move(children)}}}};
 }
 io::Value describe_catalog(const Catalog& catalog) {
-    auto coordinates = [](const std::vector<Coordinate>& cs) {
+    auto const coordinates = [](const std::vector<Coordinate>& cs) {
         Value::Array out;
         for (const auto& c : cs) out.push_back(Value{Value::Object{{"index", value::integer(c.index)}, {"kind", value::text(c.kind)}, {"joint", value::text(c.joint)}, {"component", value::text(c.component)}, {"dof_kind", value::text(c.dof_kind)}, {"unit", value::text(c.unit)}}});
         return Value{std::move(out)};

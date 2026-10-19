@@ -7,6 +7,7 @@
 
 namespace bike::viewer {
 struct Pacer::Impl {
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     explicit Impl(double timestep,double render_interval) : dt(timestep),render_interval_s(render_interval) {}
     double dt, render_interval_s, debt = 0.;
     unsigned scale = 1;
@@ -32,7 +33,7 @@ void Pacer::reset(std::chrono::steady_clock::time_point now) {
 }
 PaceDecision Pacer::poll(std::chrono::steady_clock::time_point now) {
     auto& p = *impl_;
-    if (!p.initialized) { reset(now); return {0, true}; }
+    if (!p.initialized) { reset(now); return {.physics_steps=0, .request_frame=true}; }
     if (now < p.wall) throw std::invalid_argument("playback monotonic clock moved backwards");
     const double elapsed = std::chrono::duration<double>(now - p.wall).count();
     p.wall = now;
@@ -48,7 +49,7 @@ PaceDecision Pacer::poll(std::chrono::steady_clock::time_point now) {
     constexpr std::uint64_t max_offer = 1000000;
     p.offered = p.paused || raw_steps <= 0. ? 0 :
         static_cast<std::uint64_t>(std::min(raw_steps, static_cast<double>(max_offer)));
-    return {p.offered, render};
+    return {.physics_steps=p.offered, .request_frame=render};
 }
 void Pacer::completed(std::uint64_t actual) {
     auto& p = *impl_;

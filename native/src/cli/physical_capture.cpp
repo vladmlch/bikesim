@@ -22,14 +22,14 @@ initialization::ResearchStartup compiled_snapshot(const app::PreparedSimulation&
     const auto& bootstrap=prepared.bootstrap;
     if(io::sha256(bootstrap.model.mjb)!=bootstrap.model.sha256 || bootstrap.state.model_digest!=bootstrap.model.sha256)
         throw std::invalid_argument("recording bootstrap model digest mismatch");
-    model::ModelOwner model{engine::load_model_image(bootstrap.model.mjb)};
+    model::ModelOwner const model{engine::load_model_image(bootstrap.model.mjb)};
     if(!model)throw std::runtime_error("cannot load recording metadata model");
     runtime::verify_model_dims(bootstrap.state.model_dims,*model);
     const auto width=engine::state_size(model.get(),mjSTATE_INTEGRATION);
     if(width<0 || static_cast<std::size_t>(width)!=bootstrap.state.integration_state.size() ||
        !std::ranges::all_of(bootstrap.state.integration_state,[](double value){return std::isfinite(value);}))
         throw std::invalid_argument("recording bootstrap integration state is invalid");
-    std::unique_ptr<mjData,DataDeleter> data{engine::make_data(model.get())};
+    std::unique_ptr<mjData,DataDeleter> const data{engine::make_data(model.get())};
     if(!data)throw std::runtime_error("cannot allocate recording metadata state");
     engine::set_state(model.get(),data.get(),bootstrap.state.integration_state.data(),mjSTATE_INTEGRATION);
     // This detached copy computes only transforms, so its profile includes
@@ -53,7 +53,7 @@ io::NpyArray vertices_array(const initialization::ResearchStartup& snapshot) {
 } // namespace
 recording::Catalog model_catalog(const runtime::ModelImage& image) {
     if(io::sha256(image.mjb)!=image.sha256)throw std::invalid_argument("recording model digest mismatch");
-    model::ModelOwner model{engine::load_model_image(image.mjb)};
+    model::ModelOwner const model{engine::load_model_image(image.mjb)};
     if(!model)throw std::runtime_error("cannot load recording catalog model");
     return recording::build_catalog(*model);
 }
@@ -67,7 +67,7 @@ io::Value launch_metadata(const initialization::SetupRequest& request,const app:
     set(result,"async_telemetry",Value{request.runtime.async_telemetry});
     return result;
 }
-io::Value physical_summary(runtime::NativeRideRuntime& environment,const io::Value& metadata,std::string_view reason) {
+io::Value physical_summary(runtime::NativeRideRuntime const& environment,const io::Value& metadata,std::string_view reason) {
     const auto frame=environment.render_frame();
     auto result=metadata;
     const auto accounting=research::wire_value(runtime::Wire{environment.accounting_state()});

@@ -16,6 +16,7 @@ using bike::rider::AllocationProblem;
 using bike::rider::Matrix;
 using Vector=std::vector<double>;
 struct Linearization { Matrix jacobian; Vector residual; std::size_t equalities=0; };
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double component(const Vector& x,std::size_t i,std::size_t n) {
     if(x.size()!=1 && x.size()!=n) throw std::invalid_argument("SQP constraint bound shape");
     return x[x.size()==1?0:i];
@@ -87,7 +88,7 @@ Linearization constraints(const AllocationProblem& p,const Vector& x,double eps)
     const auto neq=eq.rows;
     eq.values.insert(eq.values.end(),ineq.values.begin(),ineq.values.end());eq.rows+=ineq.rows;
     ce.insert(ce.end(),ci.begin(),ci.end());
-    return {std::move(eq),std::move(ce),neq};
+    return {.jacobian=std::move(eq),.residual=std::move(ce),.equalities=neq};
 }
 double violation(const Linearization& c) {
     double result=0.;
@@ -99,8 +100,8 @@ struct QpResult { Vector step, multipliers; bool solved=false; };
 QpResult quadratic(const Matrix& hessian,const Vector& gradient,const Linearization& c) {
     const auto n=gradient.size(),m=c.residual.size();
     std::vector<std::size_t> active(c.equalities);
-    std::iota(active.begin(),active.end(),0U);
-    QpResult out{Vector(n,0.),Vector(m,0.),false};
+    std::ranges::iota(active,0U);
+    QpResult out{.step=Vector(n,0.),.multipliers=Vector(m,0.),.solved=false};
     for(std::size_t iteration=0;iteration<8*(m+n+1);++iteration) {
         const auto k=active.size();
         Matrix system=d::zeros(n+k,n+k),rhs=d::zeros(n+k,1);
@@ -140,7 +141,7 @@ SlsqpResult slsqp(const AllocationProblem& p,std::span<const double> initial,con
     bike::rider::validate(p);
     if(initial.size()!=p.target.size() || !d::finite(initial) || options.max_iterations==0 || !std::isfinite(options.ftol) || options.ftol<=0. || !std::isfinite(options.finite_difference_step) || options.finite_difference_step<=0.)
         throw std::invalid_argument("SQP initial point/options");
-    SlsqpResult result{Vector(initial.begin(),initial.end()),0,false,9};
+    SlsqpResult result{.x=Vector(initial.begin(),initial.end()),.iterations=0,.converged=false,.status=9};
     const auto n=result.x.size();
     for(std::size_t j=0;j<n;++j)result.x[j]=std::clamp(result.x[j],p.lower[j],p.upper[j]);
     Matrix hessian=d::identity(n);
@@ -170,7 +171,7 @@ SlsqpResult slsqp(const AllocationProblem& p,std::span<const double> initial,con
             hessian=d::identity(n);
         }
         double multipliers=0.;
-        for(double value:qp.multipliers) multipliers=std::max(multipliers,std::abs(value));
+        for(double const value:qp.multipliers) multipliers=std::max(multipliers,std::abs(value));
         penalty=std::max(penalty,multipliers+1.);
         const double current_violation=violation(current);
         const double directional=d::dot(gradient,qp.step)-penalty*current_violation;

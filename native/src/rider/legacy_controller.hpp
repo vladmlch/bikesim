@@ -23,6 +23,7 @@ private:
         double dt,bool steady,std::optional<double> crank) const;
     [[nodiscard]] ResponseAllocation allocate_uncoupled(const mjData&,const ResponseRequest&,
         const PedalingSupportTargets&,const std::array<std::array<double,2>,2>& estimates);
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     ::rider::SpindleController& c_;
     std::vector<AllocationAttachment> attachments_;
     std::vector<int> rider_dofs_,bike_dofs_;

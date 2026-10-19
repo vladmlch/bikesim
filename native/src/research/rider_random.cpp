@@ -11,8 +11,8 @@ void sample_rider(ResearchRequest& request) {
     auto sampled = random::sample_rider(*request.rider_random, seed);
     request.setup.model.rider = std::move(sampled.rider);
     request.programs.reaction_delay_s = sampled.program.reaction_delay_s;
-    for (auto& frame : sampled.program.keyframes)
-        request.programs.rider_frames.push_back({frame.time_s, frame.posture, frame.human_torque_nm});
+    for (auto const& frame : sampled.program.keyframes)
+        request.programs.rider_frames.push_back({.time_s=frame.time_s, .posture=frame.posture, .human_torque_nm=frame.human_torque_nm});
     request.programs.validate();
 }
 
@@ -27,7 +27,7 @@ runtime::NoiseTape make_sensor_tape(const SensorConfig& config, std::string_view
     const auto size = static_cast<std::size_t>(count);
     tape.noise.resize(size); tape.dropout_uniform.resize(size);
     for (std::size_t i = 0; i < size; ++i) {
-        auto row = std::span<double>{tape.noise[i]};
+        auto const row = std::span<double>{tape.noise[i]};
         normal.normal(0., config.noise.acceleration_std_mps2, row.first<3>());
         row[3] = normal.normal(0., config.noise.gyro_std_rad_s);
         normal.normal(0., config.noise.encoder_std_rad_s, row.subspan<4, 3>());

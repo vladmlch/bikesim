@@ -13,7 +13,7 @@ GravitySupportTargets gravity_support_targets(double weight,double com,const std
     const std::array<double,7> scalars{weight,com,crank,pedal,bar,moment,vertical.value_or(weight)};
     if(!d::finite(scalars)||!d::finite(points)||weight<0.||pedal<0.||bar<0.||pedal+bar>=1.)throw std::invalid_argument("invalid postural support distribution");
     const std::array<double,4> preferred{weight*(1.-pedal-bar),weight*pedal/2.,weight*pedal/2.,weight*bar};
-    Matrix matrix{3,4,{1.,1.,1.,1.,points[0]-com,points[1]-com,points[2]-com,points[3]-com,0.,points[1]-crank,points[2]-crank,0.}};
+    Matrix matrix{.rows=3,.cols=4,.values={1.,1.,1.,1.,points[0]-com,points[1]-com,points[2]-com,points[3]-com,0.,points[1]-crank,points[2]-crank,0.}};
     const std::vector<double> target{vertical.value_or(weight),-moment,0.};auto available=enabled;GravitySupportTargets out;
     for(int iteration=0;iteration<4;++iteration) {
         std::vector<std::size_t> columns;for(std::size_t i=0;i<4;++i)if(available[i])columns.push_back(i);
@@ -25,14 +25,14 @@ GravitySupportTargets gravity_support_targets(double weight,double com,const std
         const auto rhs=d::add(target,d::multiply(selected,desired),-1.);const auto trans=d::transpose(selected);std::vector<double> correction;
         try {
             correction=columns.size()>=3?d::multiply(trans,d::solve(d::multiply(selected,trans),rhs)):d::solve(d::multiply(trans,selected),d::multiply(trans,rhs));
-        }catch(const std::runtime_error&){correction=d::least_squares(selected,{3,1,rhs},1e-10).solution.values;}
+        }catch(const std::runtime_error&){correction=d::least_squares(selected,{.rows=3,.cols=1,.values=rhs},1e-10).solution.values;}
         out.forces.fill(0.);for(std::size_t i=0;i<columns.size();++i)out.forces[columns[i]]=desired[i]+correction[i];
         std::size_t negative=4;double minimum=-1e-9;
-        for(auto i:columns)if(i!=3 && out.forces[i]<minimum){minimum=out.forces[i];negative=i;}
+        for(auto const i:columns)if(i!=3 && out.forces[i]<minimum){minimum=out.forces[i];negative=i;}
         if(negative==4){for(std::size_t i=0;i<3;++i)out.forces[i]=std::max(out.forces[i],0.);break;}
         available[negative]=false;
     }
-    const auto error=d::add(d::multiply(matrix,out.forces),target,-1.);double maximum=0.;for(double e:error)maximum=std::max(maximum,std::abs(e));
+    const auto error=d::add(d::multiply(matrix,out.forces),target,-1.);double maximum=0.;for(double const e:error)maximum=std::max(maximum,std::abs(e));
     out.diagnostics.requested_pitch_moment_nm=moment;out.diagnostics.vertical_force_error_n=error[0];out.diagnostics.gravity_moment_error_nm=error[1];out.diagnostics.coasting_crank_torque_nm=error[2];out.diagnostics.feasible=maximum<=std::max(1e-8,weight*1e-8);out.diagnostics.vertical_forces_n=out.forces;return out;
 }
 PedalingSupportTargets pedaling_support_targets(double weight,const std::array<double,3>& com,

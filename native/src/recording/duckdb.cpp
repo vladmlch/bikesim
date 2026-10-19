@@ -12,6 +12,7 @@
 #include <type_traits>
 #include <cerrno>
 #include <system_error>
+#include <utility>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -31,14 +32,26 @@ struct Logical {
     ~Logical() { duckdb_destroy_logical_type(&value); }
     Logical(const Logical&) = delete;
     Logical& operator=(const Logical&) = delete;
+    Logical(Logical&&) = delete;
+    Logical& operator=(Logical&&) = delete;
 };
 struct Prepared {
     duckdb_prepared_statement value = nullptr;
+    Prepared() = default;
     ~Prepared() { if (value) duckdb_destroy_prepare(&value); }
+    Prepared(const Prepared&) = delete;
+    Prepared& operator=(const Prepared&) = delete;
+    Prepared(Prepared&&) = delete;
+    Prepared& operator=(Prepared&&) = delete;
 };
 struct Extracted {
     duckdb_extracted_statements value = nullptr;
+    Extracted() = default;
     ~Extracted() { if (value) duckdb_destroy_extracted(&value); }
+    Extracted(const Extracted&) = delete;
+    Extracted& operator=(const Extracted&) = delete;
+    Extracted(Extracted&&) = delete;
+    Extracted& operator=(Extracted&&) = delete;
 };
 struct Config {
     duckdb_config value = nullptr;
@@ -47,6 +60,10 @@ struct Config {
     void set(const char* name, const char* text_value) {
         if (duckdb_set_config(value, name, text_value) == DuckDBError) failed("config", name);
     }
+    Config(const Config&) = delete;
+    Config& operator=(const Config&) = delete;
+    Config(Config&&) = delete;
+    Config& operator=(Config&&) = delete;
 };
 struct EngineStringDeleter { void operator()(char* value) const noexcept { duckdb_free(value); } };
 using EngineString = std::unique_ptr<char, EngineStringDeleter>;
@@ -71,7 +88,7 @@ void prepare(duckdb_connection connection, std::string_view sql, bool select_onl
 void bind(duckdb_prepared_statement statement, std::span<const Value> parameters) {
     if (duckdb_nparams(statement) != parameters.size()) throw std::invalid_argument("recording SQL parameter count differs");
     for (std::size_t i = 0; i < parameters.size(); ++i) {
-        const auto index = static_cast<idx_t>(i + 1);
+        const auto index = static_cast<idx_t>(i) + 1;
         const auto& value = parameters[i];
         duckdb_state state = DuckDBError;
         if (io::is_null(value)) state = duckdb_bind_null(statement, index);
@@ -97,10 +114,15 @@ void bind(duckdb_prepared_statement statement, std::span<const Value> parameters
             struct Values {
                 std::vector<duckdb_value> children;
                 duckdb_value list = nullptr;
+                Values() = default;
                 ~Values() {
                     if (list) duckdb_destroy_value(&list);
                     for (auto& child : children) if (child) duckdb_destroy_value(&child);
                 }
+                Values(const Values&) = delete;
+                Values& operator=(const Values&) = delete;
+                Values(Values&&) = delete;
+                Values& operator=(Values&&) = delete;
             } values;
             values.children.reserve(array->size());
             for (const auto& child : *array) {
@@ -108,7 +130,7 @@ void bind(duckdb_prepared_statement statement, std::span<const Value> parameters
                 if (!native) failed("create list child", nullptr);
                 values.children.push_back(native);
             }
-            Logical type(duckdb_create_logical_type(DUCKDB_TYPE_DOUBLE));
+            Logical const type(duckdb_create_logical_type(DUCKDB_TYPE_DOUBLE));
             values.list = duckdb_create_list_value(type.value, values.children.data(), static_cast<idx_t>(values.children.size()));
             if (!values.list) failed("create double list", nullptr);
             state = duckdb_bind_value(statement, index, values.list);
@@ -134,6 +156,7 @@ std::string decimal128(std::uint64_t hi, std::uint64_t lo, bool negative) {
     std::array<std::uint32_t, 4> words{static_cast<std::uint32_t>(hi >> 32U), static_cast<std::uint32_t>(hi),
         static_cast<std::uint32_t>(lo >> 32U), static_cast<std::uint32_t>(lo)};
     std::string text_value;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-do-while) mirrors the reference control flow
     do {
         std::uint64_t remainder = 0;
         for (auto& word : words) {
@@ -149,6 +172,7 @@ std::string decimal128(std::uint64_t hi, std::uint64_t lo, bool negative) {
 std::string huge(duckdb_hugeint value) {
     return decimal128(static_cast<std::uint64_t>(value.upper), value.lower, value.upper < 0);
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 std::string pad(std::int64_t number, std::size_t width) {
     auto out = std::to_string(number);
     if (out.size() < width) out.insert(0, width - out.size(), '0');
@@ -176,10 +200,11 @@ Value timestamp(std::int64_t micros, bool timezone) {
     if (remainder < 0) { --days; remainder += 86400000000LL; }
     if (days < std::numeric_limits<std::int32_t>::min() || days > std::numeric_limits<std::int32_t>::max())
         throw std::invalid_argument("recording timestamp is out of range");
-    return Value{io::Tagged{"datetime", {{"value", date_text(static_cast<std::int32_t>(days)) + 'T' +
+    return Value{io::Tagged{.kind="datetime", .fields={{"value", date_text(static_cast<std::int32_t>(days)) + 'T' +
         time_text(remainder) + (timezone ? "+00:00" : "")}}}};
 }
 
+// NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 Value convert(duckdb_vector vector, duckdb_logical_type type, idx_t row, std::size_t depth = 0) {
     if (depth > 128) throw std::invalid_argument("recording query value exceeds nesting limit");
     auto* validity = duckdb_vector_get_validity(vector);
@@ -227,13 +252,13 @@ Value convert(duckdb_vector vector, duckdb_logical_type type, idx_t row, std::si
         const auto scale = duckdb_decimal_scale(type);
         if (scale) {
             const std::size_t sign = value.front() == '-' ? 1U : 0U;
-            if (value.size() - sign <= scale) value.insert(sign, scale + 1 - (value.size() - sign), '0');
+            if (value.size() - sign <= scale) value.insert(sign, static_cast<std::size_t>(scale) + 1 - (value.size() - sign), '0');
             value.insert(value.size() - scale, 1, '.');
         }
-        return Value{io::Tagged{"decimal", {{"value", std::move(value)}}}};
+        return Value{io::Tagged{.kind="decimal", .fields={{"value", std::move(value)}}}};
     }
-    case DUCKDB_TYPE_DATE: return Value{io::Tagged{"date", {{"value", date_text(item<duckdb_date>(vector, row).days)}}}};
-    case DUCKDB_TYPE_TIME: return Value{io::Tagged{"time", {{"value", time_text(item<duckdb_time>(vector, row).micros)}}}};
+    case DUCKDB_TYPE_DATE: return Value{io::Tagged{.kind="date", .fields={{"value", date_text(item<duckdb_date>(vector, row).days)}}}};
+    case DUCKDB_TYPE_TIME: return Value{io::Tagged{.kind="time", .fields={{"value", time_text(item<duckdb_time>(vector, row).micros)}}}};
     case DUCKDB_TYPE_TIME_TZ: {
         const auto value=duckdb_from_time_tz(item<duckdb_time_tz>(vector,row));
         const auto micros=((static_cast<std::int64_t>(value.time.hour)*60+value.time.min)*60+value.time.sec)*1000000+value.time.micros;
@@ -242,7 +267,7 @@ Value convert(duckdb_vector vector, duckdb_logical_type type, idx_t row, std::si
         const auto magnitude=offset<0?-offset:offset;
         auto suffix=std::string(offset<0?"-":"+")+pad(magnitude/3600,2)+':'+pad((magnitude/60)%60,2);
         if(magnitude%60)suffix+=':'+pad(magnitude%60,2);
-        return Value{io::Tagged{"time",{{"value",time_text(micros)+suffix}}}};
+        return Value{io::Tagged{.kind="time",.fields={{"value",time_text(micros)+suffix}}}};
     }
     case DUCKDB_TYPE_TIMESTAMP: return timestamp(item<duckdb_timestamp>(vector, row).micros, false);
     case DUCKDB_TYPE_TIMESTAMP_TZ: return timestamp(item<duckdb_timestamp>(vector, row).micros, true);
@@ -261,7 +286,7 @@ Value convert(duckdb_vector vector, duckdb_logical_type type, idx_t row, std::si
         auto days = static_cast<std::int64_t>(value.months) * 30 + value.days + value.micros / 86400000000LL;
         auto remainder = value.micros % 86400000000LL;
         if (remainder < 0) { --days; remainder += 86400000000LL; }
-        return Value{io::Tagged{"timedelta", {{"days", std::to_string(days)},
+        return Value{io::Tagged{.kind="timedelta", .fields={{"days", std::to_string(days)},
             {"seconds", std::to_string(remainder / 1000000)}, {"microseconds", std::to_string(remainder % 1000000)}}}};
     }
     case DUCKDB_TYPE_UUID: {
@@ -284,7 +309,7 @@ Value convert(duckdb_vector vector, duckdb_logical_type type, idx_t row, std::si
         case DUCKDB_TYPE_UINTEGER: index = item<std::uint32_t>(vector, row); break;
         default: throw std::invalid_argument("unsupported enum storage");
         }
-        EngineString name{duckdb_enum_dictionary_value(type, index)};
+        EngineString const name{duckdb_enum_dictionary_value(type, index)};
         if (!name) failed("enum", "missing dictionary entry");
         return text(name.get());
     }
@@ -293,10 +318,10 @@ Value convert(duckdb_vector vector, duckdb_logical_type type, idx_t row, std::si
         if (n > 4096) throw std::invalid_argument("recording struct exceeds field limit");
         Object out; out.reserve(static_cast<std::size_t>(n));
         for (idx_t i = 0; i < n; ++i) {
-            EngineString key{duckdb_struct_type_child_name(type, i)};
+            EngineString const key{duckdb_struct_type_child_name(type, i)};
             if (!key) failed("struct", "missing child name");
             std::string name(key.get());
-            Logical child(duckdb_struct_type_child_type(type, i));
+            Logical const child(duckdb_struct_type_child_type(type, i));
             out.emplace_back(std::move(name), convert(duckdb_struct_vector_get_child(vector, i), child.value, row, depth + 1));
         }
         return Value{std::move(out)};
@@ -305,9 +330,9 @@ Value convert(duckdb_vector vector, duckdb_logical_type type, idx_t row, std::si
     case DUCKDB_TYPE_ARRAY: {
         const bool fixed = kind == DUCKDB_TYPE_ARRAY;
         const auto width = fixed ? duckdb_array_type_array_size(type) : 0;
-        const auto entry = fixed ? duckdb_list_entry{row * width, width} : item<duckdb_list_entry>(vector, row);
+        const auto entry = fixed ? duckdb_list_entry{.offset=row * width, .length=width} : item<duckdb_list_entry>(vector, row);
         if (entry.length > 1000000) throw std::invalid_argument("recording list exceeds one million elements");
-        Logical child(fixed ? duckdb_array_type_child_type(type) : duckdb_list_type_child_type(type));
+        Logical const child(fixed ? duckdb_array_type_child_type(type) : duckdb_list_type_child_type(type));
         const auto child_vector = fixed ? duckdb_array_vector_get_child(vector) : duckdb_list_vector_get_child(vector);
         Array out; out.reserve(static_cast<std::size_t>(entry.length));
         for (idx_t i = 0; i < entry.length; ++i) out.push_back(convert(child_vector, child.value, entry.offset + i, depth + 1));
@@ -318,7 +343,7 @@ Value convert(duckdb_vector vector, duckdb_logical_type type, idx_t row, std::si
         if (entry.length > 1000000) throw std::invalid_argument("recording map exceeds one million entries");
         const auto pair = duckdb_list_vector_get_child(vector);
         const auto keys = duckdb_struct_vector_get_child(pair, 0), values_vector = duckdb_struct_vector_get_child(pair, 1);
-        Logical key_type(duckdb_map_type_key_type(type)), value_type(duckdb_map_type_value_type(type));
+        const Logical key_type(duckdb_map_type_key_type(type)), value_type(duckdb_map_type_value_type(type));
         Object out; std::set<std::string> names;
         for (idx_t i = 0; i < entry.length; ++i) {
             auto key = convert(keys, key_type.value, entry.offset + i, depth + 1);
@@ -337,6 +362,7 @@ Value convert(duckdb_vector vector, duckdb_logical_type type, idx_t row, std::si
 struct Cursor::Impl {
     duckdb_result result{};
     duckdb_data_chunk chunk = nullptr;
+    Impl() = default;
     std::vector<std::string> columns;
     std::vector<duckdb_logical_type> types;
     idx_t row = 0;
@@ -346,6 +372,10 @@ struct Cursor::Impl {
         for (auto& type : types) duckdb_destroy_logical_type(&type);
         duckdb_destroy_result(&result);
     }
+    Impl(const Impl&) = delete;
+    Impl& operator=(const Impl&) = delete;
+    Impl(Impl&&) = delete;
+    Impl& operator=(Impl&&) = delete;
 };
 Cursor::Cursor(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
 Cursor::~Cursor() = default;
@@ -423,20 +453,15 @@ std::vector<io::Value::Object> Connection::query(std::string_view sql, std::span
 Database::Database(const std::filesystem::path& path, bool read_only) {
     const auto name = path.string();
     if (name.empty() || name.find('\0') != std::string::npos) throw std::invalid_argument("database path must be nonempty");
-    std::string engine_path = name;
+    const std::string& engine_path = name;
     if (read_only) {
         opened_ = platform::open_regular(path);
-        // The DB engine opens the same validated inode, even if a caller
-        // replaces the directory entry after the no-follow open. The handle
-        // survives every streaming query and closes after duckdb_close.
+        // DuckDB resolves descriptor pseudo-paths (/proc/self/fd, /dev/fd)
+        // back to names and refuses them, so the engine must open the path
+        // itself. The held descriptor still pins the validated inode for
+        // opened_sha256(); the post-open inode comparison below fails if the
+        // directory entry was replaced before the engine opened it.
         // Sealed recordings have no WAL sidecar: their writer checkpointed.
-#if defined(__linux__)
-        engine_path = "/proc/self/fd/" + std::to_string(opened_.get());
-#elif defined(__APPLE__)
-        engine_path = "/dev/fd/" + std::to_string(opened_.get());
-#else
-#error "recording read-only inode ownership requires a supported POSIX descriptor filesystem"
-#endif
     }
     Config config;
     if (read_only) config.set("access_mode", "READ_ONLY");
@@ -454,6 +479,17 @@ Database::Database(const std::filesystem::path& path, bool read_only) {
     try {message = owned_error ? owned_error.get() : "cannot open database";}
     catch (...) {if(database_)duckdb_close(&database_);throw;}
     if (state == DuckDBError) { if (database_) duckdb_close(&database_); failed("open", message.c_str()); }
+    if (read_only) {
+        // The engine opened by name: the directory entry must still name
+        // the inode open_regular validated, or the hash manifest could be
+        // satisfied by a different file than the one being queried.
+        const auto current = platform::open_regular(path);
+        struct stat held{}, latest{};
+        if (::fstat(opened_.get(), &held) != 0 || ::fstat(current.get(), &latest) != 0)
+            throw std::system_error(errno, std::generic_category(), "fstat recording inode");
+        if (held.st_dev != latest.st_dev || held.st_ino != latest.st_ino)
+            failed("open", "recording database inode changed during open");
+    }
     try { connection_ = std::unique_ptr<Connection>(new Connection(database_)); }
     catch (...) { duckdb_close(&database_); throw; }
 }
@@ -466,11 +502,11 @@ std::string Database::opened_sha256() const {
     io::Sha256 digest; std::vector<std::byte> buffer(65536); off_t offset = 0;
     while (offset < before.st_size) {
         const auto remaining = before.st_size - offset;
-        const auto wanted = remaining < static_cast<off_t>(buffer.size()) ? static_cast<std::size_t>(remaining) : buffer.size();
+        const auto wanted = std::cmp_less(remaining ,buffer.size()) ? static_cast<std::size_t>(remaining) : buffer.size();
         const auto read = ::pread(opened_.get(), buffer.data(), wanted, offset);
         if (read < 0) { if (errno == EINTR) continue; throw std::system_error(errno, std::generic_category(), "read recording inode"); }
         if (read == 0) throw std::invalid_argument("recording inode changed while hashing");
-        digest.update(std::span(buffer.data(), static_cast<std::size_t>(read))); offset += read;
+        digest.update(std::span{buffer}.first(static_cast<std::size_t>(read))); offset += read;
     }
     struct stat after{};
     if (::fstat(opened_.get(), &after) < 0) throw std::system_error(errno, std::generic_category(), "stat recording inode after hash");

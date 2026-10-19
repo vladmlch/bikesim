@@ -1,9 +1,11 @@
 #pragma once
 #include "../rider/allocation.hpp"
+#include <cstdint>
 #include <string>
 
 namespace bike::numerics {
-enum class FeasibilityStatus { feasible, proven_infeasible, unknown };
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
+enum class FeasibilityStatus : std::uint8_t { feasible, proven_infeasible, unknown };
 struct FeasibilityResult {
     FeasibilityStatus status = FeasibilityStatus::unknown;
     std::vector<double> witness;

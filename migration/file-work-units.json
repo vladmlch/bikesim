@@ -7673,7 +7673,7 @@
       "native/src/numerics/brent.cpp",
       "native/src/numerics/density_fit.hpp",
       "native/src/numerics/density_fit.cpp",
-      "native/src/rider/allocation_json.cpp"
+      "native/src/research/allocation_json.cpp"
     ],
     "deletion_task": "T63",
     "status": "planned",

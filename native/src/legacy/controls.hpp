@@ -61,7 +61,7 @@ struct CrankCommand {
 // controller. Equality datum and ratio are model state, not local caches.
 class PedalDrivetrain {
 public:
-    PedalDrivetrain(mjModel&, DrivetrainSpecs = {}, std::string mode = "pedelec",
+    explicit PedalDrivetrain(mjModel&, DrivetrainSpecs = {}, std::string mode = "pedelec",
                     std::string assist = "tour", bool legs_drive = false);
     [[nodiscard]] const CrankCommand& compute(mjData&, double wheel_demand_nm,
         double speed_mps, bool rear_in_contact, bool traction_limited = false);
@@ -79,6 +79,7 @@ private:
     void redatum(const mjData&);
     void engage(mjData&);
     void shift_to(mjData&, int cog);
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     mjModel& model_;
     DrivetrainSpecs specs_;
     std::string mode_, assist_;
@@ -110,6 +111,7 @@ public:
     [[nodiscard]] runtime::RuntimeContactQuery::State state() const noexcept { return query_.state(); }
     void reset() noexcept;
 private:
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const mjModel& model_;
     runtime::RuntimeContactQuery query_;
 };
@@ -127,8 +129,8 @@ struct PitchState { double moment_nm = 0., angular_impulse_nms = 0., work_j = 0.
     double pitch_rate_radps, const TerrainContacts&, double dt_s);
 
 struct RunLimits {
-    double finish_x_m;
-    std::int64_t max_steps;
+    double finish_x_m{};
+    std::int64_t max_steps{};
     double max_wall_clock_s = 300.;
     void validate() const;
     [[nodiscard]] static RunLimits for_track(double length_m, double start_x_m,

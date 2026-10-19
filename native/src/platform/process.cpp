@@ -185,7 +185,7 @@ ProcessResult run(const std::vector<std::string> &argv,
                   const ProcessOptions &options) {
     const std::string &cwd_text = cwd.native();
     validate_run_inputs(argv, cwd_text, cwd, options);
-    if (options.cancellation.stop_requested()) return {130, {}, {}};
+    if (options.cancellation.stop_requested()) return {.exit_code=130, .out={}, .err={}};
 
     // On platforms without an atomic pipe(O_CLOEXEC), another concurrent
     // platform::run must not spawn between pipe() and fcntl(). Such a child
@@ -245,14 +245,19 @@ ProcessResult run(const std::vector<std::string> &argv,
     // Any allocation, read, poll or callback failure after spawn still reaps
     // the owned process tree. A destructor never lets an exception escape.
     struct ChildOwner {
-        pid_t id;
+        pid_t id{};
         bool released = false;
+        explicit ChildOwner(pid_t pid) : id(pid) {}
         ~ChildOwner() {
             if (released) return;
             (void)::killpg(id, SIGKILL);
             int ignored = 0;
             while (::waitpid(id, &ignored, 0) < 0 && errno == EINTR) {}
         }
+        ChildOwner(const ChildOwner&) = delete;
+        ChildOwner& operator=(const ChildOwner&) = delete;
+        ChildOwner(ChildOwner&&) = delete;
+        ChildOwner& operator=(ChildOwner&&) = delete;
     } child{pid};
     // The child's copies are dup'd; the parent must drop its write ends so
     // EOF can arrive on the read ends.

@@ -21,13 +21,13 @@ void validate_recorded_execution(const io::Value& value) {
     constexpr std::array<std::string_view,8> keys{"backend","runtime_schema","python_source_sha256","native_source_sha256","extension_sha256","mujoco_version","mujoco_library_sha256","build_context"};
     const auto* object=std::get_if<io::Value::Object>(&value.data);
     if(!object||!exact(*object,keys))throw std::invalid_argument("execution must contain the exact schema-2 identity fields");
-    auto field=[&](std::string_view key)->const io::Value&{return *io::find_member(*object,key);};
+    auto const field=[&](std::string_view key)->const io::Value&{return *io::find_member(*object,key);};
     const auto* backend=std::get_if<std::string>(&field("backend").data);
     if(!backend||(*backend!="python"&&*backend!="native"))throw std::invalid_argument("unsupported recorded execution backend");
     const auto* schema=std::get_if<io::Number>(&field("runtime_schema").data);
     if(!schema||schema->lexeme!="1")throw std::invalid_argument("unsupported recorded runtime schema");
     if(!nonempty(field("mujoco_version")))throw std::invalid_argument("execution.mujoco_version must be a nonempty string");
-    for(std::string_view name:{"python_source_sha256","native_source_sha256","extension_sha256","mujoco_library_sha256"}) {
+    for(std::string_view const name:{"python_source_sha256","native_source_sha256","extension_sha256","mujoco_library_sha256"}) {
         if(*backend=="python"&&name!="python_source_sha256") {
             if(!io::is_null(field(name)))throw std::invalid_argument("Python execution."+std::string(name)+" must be null");
         } else {

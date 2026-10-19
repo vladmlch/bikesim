@@ -27,7 +27,7 @@
 
 namespace bike::legacy {
 namespace {
-void populate_road(mjModel& m,const model::BuildRequest& request,const terrain::TrackSpec& track) {
+void populate_road(mjModel const& m,const model::BuildRequest& request,const terrain::TrackSpec& track) {
     const int id=model::required_id(m,mjOBJ_HFIELD,"road");
     const auto field_index=static_cast<std::size_t>(id);
     const auto rows=std::views::counted(m.hfield_nrow,m.nhfield),cols=std::views::counted(m.hfield_ncol,m.nhfield);
@@ -36,11 +36,12 @@ void populate_road(mjModel& m,const model::BuildRequest& request,const terrain::
     const auto start=std::views::counted(m.hfield_adr,m.nhfield)[field_index];
     if(start<0||static_cast<std::size_t>(start)>static_cast<std::size_t>(m.nhfielddata)||heights.size()>static_cast<std::size_t>(m.nhfielddata-start))
         throw std::invalid_argument("legacy road storage extent");
-    auto storage=std::views::counted(m.hfield_data,m.nhfielddata).subspan(static_cast<std::size_t>(start),heights.size());
+    auto const storage=std::views::counted(m.hfield_data,m.nhfielddata).subspan(static_cast<std::size_t>(start),heights.size());
     for(std::size_t i=0;i<heights.size();++i) storage[i]=static_cast<float>(heights[i]);
 }
 struct Accelerometer {
     int address=-1,site=-1;
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     Accelerometer(const mjModel& m,std::string_view sensor,std::string_view name,bool required=true) {
         const int id=mj_name2id(&m,mjOBJ_SENSOR,std::string(sensor).c_str());
         site=mj_name2id(&m,mjOBJ_SITE,std::string(name).c_str());
@@ -93,11 +94,11 @@ struct RideSimulation::Impl {
         rider->set_pedal_offsets(-drop,drop);
     }
     void suspension_forces() {
-        auto* m=stepper->model();auto* d=stepper->data();
+        auto const* m=stepper->model();auto const* d=stepper->data();
         stepper->suspension().components_into(d,suspension_views);
         std::ranges::fill(forces,0.);
-        for(std::size_t j=0;j<suspension_views.size();++j)
-            for(std::size_t i=0;i<forces.size();++i)forces[i]+=suspension_views[j].values[i];
+        for(const auto & suspension_view : suspension_views)
+            for(std::size_t i=0;i<forces.size();++i)forces[i]+=suspension_view.values[i];
         const auto& suspension=stepper->suspension();
         const auto fork_dof=static_cast<std::size_t>(suspension.fork_dofadr()),shock_dof=static_cast<std::size_t>(suspension.shock_dofadr());
         for(std::size_t j=0;j<suspension_views.size();++j) {
@@ -105,20 +106,20 @@ struct RideSimulation::Impl {
             suspension_scalars[j]=-row[fork_dof]-row[shock_dof];
         }
         // Each historical assigning writer owns disjoint qfrc coordinates.
-        auto applied=std::views::counted(d->qfrc_applied,m->nv);
+        auto const applied=std::views::counted(d->qfrc_applied,m->nv);
         applied[fork_dof]=forces[fork_dof];
         applied[shock_dof]=forces[shock_dof];
     }
     void rider_forces() {
         rider->compute_into(*stepper->data(),scratch);
-        auto applied=std::views::counted(stepper->data()->qfrc_applied,stepper->model()->nv);
+        auto const applied=std::views::counted(stepper->data()->qfrc_applied,stepper->model()->nv);
         // The sparse sum preserves other assigning writers, including zero
         // values because the run clears generalized force once per tick.
         for(std::size_t i=0;i<scratch.size();++i)applied[i]+=scratch[i];
     }
     void leg_forces(double torque) {
         legs->compute_into(*stepper->data(),torque,scratch);
-        auto applied=std::views::counted(stepper->data()->qfrc_applied,stepper->model()->nv);
+        auto const applied=std::views::counted(stepper->data()->qfrc_applied,stepper->model()->nv);
         for(std::size_t i=0;i<scratch.size();++i)applied[i]+=scratch[i];
     }
 };
@@ -128,6 +129,7 @@ namespace {
 [[gnu::noinline]] std::unique_ptr<Stepper> make_legacy_stepper(const model::BuildRequest& build, const mjModel& compiled,
                                              const terrain::TrackSpec& track, const runtime::ProjectionOptions& runtime_opts) {
     auto projection = std::make_unique<model::BuildRequest>(build);
+    if (!projection->physics) throw std::invalid_argument("reference request requires model.physics");
     projection->physics->tires.backend = "native_reference";
     auto writers = std::make_unique<nativecfg::WriterConfig>(
         nativecfg::decode(runtime::project_writer_config(*projection, compiled, track, runtime_opts)));
@@ -140,12 +142,16 @@ namespace {
 [[gnu::noinline]] std::unique_ptr<RideOptions> load_legacy_options(const std::filesystem::path& request) {
     auto options = std::make_unique<RideOptions>();
     options->setup=initialization::read_setup_request(request);
-    if(options->setup.model.physics)options->setup.runtime.speed_kph=options->setup.model.physics->initial_speed_mps*3.6;
+    // The file's speed_kph lands on model.physics->initial_speed_mps; the
+    // runtime cruise target keeps its ProjectionOptions default.
     return options;
 }
 } // namespace
 std::unique_ptr<RideSimulation> make_ride(const std::filesystem::path& request) {
     auto options = load_legacy_options(request);
+    return make_ride(std::move(*options));
+}
+[[gnu::noinline]] std::unique_ptr<RideSimulation> make_ride(std::unique_ptr<RideOptions> options) {
     return make_ride(std::move(*options));
 }
 [[gnu::noinline]] std::unique_ptr<RideSimulation> make_ride(RideOptions options) {
@@ -166,9 +172,9 @@ std::unique_ptr<RideSimulation> make_ride(const std::filesystem::path& request) 
     resolved.legs=options.legs.value_or(crank?"articulated":"rigid");
     request.rider=resolved;request.crank_joint=crank;request.tyre_model=options.tyre.model;request.gear_ratio=options.drivetrain.gear_ratio();
     auto p=std::make_unique<RideSimulation::Impl>(std::move(options));
-    auto& build=p->options.setup.model;
+    auto const& build=p->options.setup.model;
     if(resolved.variant=="seated")p->pose=model::seated_pose(resolved,build.bike);
-    auto compiled=model::compile_mjcf(model::generate_mjcf(build),p->options.setup.asset_root);
+    const auto compiled=model::compile_mjcf(model::generate_mjcf(build),p->options.setup.asset_root);
     populate_road(*compiled,build,p->options.setup.track);
     p->stepper=make_legacy_stepper(build,*compiled,p->options.setup.track,p->options.setup.runtime);
     auto& m=*p->stepper->model();
@@ -185,7 +191,7 @@ std::unique_ptr<RideSimulation> make_ride(const std::filesystem::path& request) 
     const auto front_wheel=resolve_wheel_spin(m,"front_wheel_spin","geom_front_contact"),rear_wheel=resolve_wheel_spin(m,"rear_wheel_spin","geom_rear_contact");
     p->wheel_dof={static_cast<std::size_t>(front_wheel.dofadr),static_cast<std::size_t>(rear_wheel.dofadr)};
     p->radius={front_wheel.radius_m,rear_wheel.radius_m};
-    for(double mass:std::views::counted(m.body_mass,m.nbody))p->weight+=mass;
+    for(double const mass:std::views::counted(m.body_mass,m.nbody))p->weight+=mass;
     p->weight*=std::abs(std::span(m.opt.gravity)[2]);
     p->scratch.resize(static_cast<std::size_t>(m.nv));p->forces.resize(static_cast<std::size_t>(m.nv));
     const double requested_intervals=std::nearbyint(build.bike.shock_stroke/.1);
@@ -206,7 +212,7 @@ std::unique_ptr<RideSimulation> make_ride(const std::filesystem::path& request) 
 }
 void RideSimulation::reset() {
     auto& p=*impl_;auto* m=p.stepper->model();auto* d=p.stepper->data();
-    initialization::StaticEquilibriumContext context{*p.stepper};
+    initialization::StaticEquilibriumContext context{.stepper=*p.stepper};
     context.before_forces=[&]{std::ranges::fill(std::views::counted(d->qfrc_applied,m->nv),0.);p.follow_cranks();};
     context.suspension_forces=[&]{p.suspension_forces();};
     context.rear_travel_from_shock_mm=[&](double stroke){return p.solver.solve_state_from_shock_stroke(stroke).wheel_travel;};
@@ -218,6 +224,7 @@ void RideSimulation::reset() {
     if(p.drive)context.drive_initialize=[&]{p.drive->reset(*d);};
     if(p.tyre) {context.tire_forces=[&]{p.tyre->apply(*d);};context.tire_reset=[&]{p.tyre->reset(d);};}
     if(p.rider->active()) {
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) pose is engaged whenever the rider is active
         context.rider_mass_kg=p.pose->total_mass_kg();
         context.rider_loads_n=[&]{const auto loads=p.rider->loads();return std::array{loads.saddle_n,loads.front_pedal_n+loads.rear_pedal_n,loads.bar_n};};
     }
@@ -240,7 +247,7 @@ void RideSimulation::step(double front_brake,double rear_brake) {
         std::ranges::fill(std::views::counted(d->qfrc_applied,m->nv),0.);
         if(p.tyre){p.stepper->forward();p.tyre->apply(*d);p.contacts=p.contact_query->query(*d,p.tyre.get());}
         p.suspension_forces();p.follow_cranks();p.rider_forces();
-        auto applied=std::views::counted(d->qfrc_applied,m->nv);
+        auto const applied=std::views::counted(d->qfrc_applied,m->nv);
         const auto velocity=std::views::counted(d->qvel,m->nv);
         if(!p.tyre) {
             applied[p.wheel_dof[0]]=rolling_torque(p.contacts.front_support_n,velocity[p.wheel_dof[0]],p.radius[0],p.weight);
@@ -256,7 +263,7 @@ void RideSimulation::step(double front_brake,double rear_brake) {
             }
             torque=p.stepper->cruise_compute(p.contacts.rear_in_contact(),p.traction_limited,std::nullopt);
         }
-        auto ctrl=std::views::counted(d->ctrl,m->nu);
+        auto const ctrl=std::views::counted(d->ctrl,m->nu);
         if(!p.drive){ctrl[p.rear_drive]=torque;p.leg_forces(0.);}
         else {
             ctrl[p.rear_drive]=0.;
@@ -317,8 +324,9 @@ std::optional<std::string> RideSimulation::handle_tuning_key(int key) {
         case '=':config.air_spring.gauge_pressure_psi=std::clamp(config.air_spring.gauge_pressure_psi+2.,10.,200.);break;
         case 'P':{
             constexpr std::array presets{model::DamperPreset::base,model::DamperPreset::plush,model::DamperPreset::enduro,model::DamperPreset::park};
-            const auto found=std::find(presets.begin(),presets.end(),p.viewer_preset);
-            next_preset=found==presets.end()||found+1==presets.end()?presets.front():*(found+1);
+            std::size_t current=presets.size();
+            for(std::size_t i=0;i<presets.size();++i)if(presets[i]==p.viewer_preset){current=i;break;}
+            next_preset=current==presets.size()||current+1==presets.size()?presets.front():presets[current+1];
             const auto clicks=model::damper_preset_config(next_preset);
             fork.hsc_clicks=clicks.fork_hsc;fork.lsc_clicks=clicks.fork_lsc;fork.rebound_clicks=clicks.fork_rebound;
             shock.hsc_clicks=clicks.shock_hsc;shock.lsc_clicks=clicks.shock_lsc;shock.rebound_clicks=clicks.shock_rebound;
@@ -355,13 +363,13 @@ TelemetryRow RideSimulation::telemetry()const {
     const auto fork_q=static_cast<std::size_t>(s.fork_qposadr()),shock_q=static_cast<std::size_t>(s.shock_qposadr());
     const auto fork_v=static_cast<std::size_t>(s.fork_dofadr()),shock_v=static_cast<std::size_t>(s.shock_dofadr());
     TelemetryRow row{};
-    auto set=[&](std::string_view name,double value){const auto i=std::ranges::find(kLegacyChannels,name);if(i==kLegacyChannels.end())throw std::logic_error("unknown legacy channel");row[static_cast<std::size_t>(i-kLegacyChannels.begin())]=value;};
+    auto const set=[&](std::string_view name,double value){const auto i=std::ranges::find(kLegacyChannels,name);if(i==kLegacyChannels.end())throw std::logic_error("unknown legacy channel");row[static_cast<std::size_t>(i-kLegacyChannels.begin())]=value;};
     set("time_s",d.time);set("x_m",q[p.x_q]);set("speed_mps",v[p.x_v]);set("pitch_rad",q[p.pitch_q]);
     set("fork_travel_mm",q[fork_q]*1000.);set("fork_shaft_mps",v[fork_v]);
     set("shock_stroke_mm",q[shock_q]*1000.);set("shock_shaft_mps",v[shock_v]);
     const double stroke=q[shock_q]*1000.;
     const auto upper=std::ranges::upper_bound(p.stroke_table_mm,stroke);
-    const auto segment=std::clamp(static_cast<std::ptrdiff_t>(upper-p.stroke_table_mm.begin())-1,
+    const auto segment=std::clamp(upper-p.stroke_table_mm.begin()-1,
         std::ptrdiff_t{0},static_cast<std::ptrdiff_t>(p.stroke_table_mm.size())-2);
     const auto index=static_cast<std::size_t>(segment);
     const double slope=(p.travel_table_mm[index+1]-p.travel_table_mm[index])/(p.stroke_table_mm[index+1]-p.stroke_table_mm[index]);
@@ -412,13 +420,13 @@ RideSnapshot RideSimulation::snapshot()const {
     const auto& p=*impl_;const auto& m=*p.stepper->model();const auto& d=*p.stepper->data();
     RideSnapshot result;result.time_s=d.time;result.position_m=position_m();result.speed_mps=p.stepper->qvel()[p.x_v];result.pitch_rad=p.stepper->qpos()[p.pitch_q];
     result.steps=p.steps;result.generation=p.generation;result.contacts=p.contacts;result.crash=p.crash;result.telemetry=telemetry();
-    auto copy=[](auto span){return std::vector<double>(span.begin(),span.end());};
+    auto const copy=[](auto span){return std::vector<double>(span.begin(),span.end());};
     result.qpos=copy(p.stepper->qpos());result.qvel=copy(p.stepper->qvel());result.ctrl=copy(p.stepper->ctrl());result.qfrc_applied=copy(p.stepper->qfrc_applied());
     result.xfrc_applied=copy(std::views::counted(d.xfrc_applied,6*m.nbody));result.eq_data=copy(std::views::counted(m.eq_data,mjNEQDATA*m.neq));
     result.integration_state.resize(static_cast<std::size_t>(engine::state_size(&m,mjSTATE_INTEGRATION)));
     engine::get_state(&m,&d,result.integration_state.data(),mjSTATE_INTEGRATION);
     const int frame_id=mj_name2id(&m,mjOBJ_BODY,"frame");
-    if(frame_id>=0)result.z_m=std::views::counted(d.xpos,3*m.nbody)[static_cast<std::size_t>(3*frame_id+2)];
+    if(frame_id>=0)result.z_m=std::views::counted(d.xpos,3*m.nbody)[3U*static_cast<std::size_t>(frame_id)+2U];
     result.model_fields={copy(std::views::counted(m.dof_frictionloss,m.nv)),copy(std::views::counted(m.site_pos,3*m.nsite)),
         copy(std::views::counted(m.tendon_stiffness,m.ntendon)),copy(std::views::counted(m.tendon_damping,m.ntendon)),
         copy(std::views::counted(m.tendon_lengthspring,2*m.ntendon)),copy(std::views::counted(m.tendon_range,2*m.ntendon))};
@@ -428,7 +436,7 @@ RunLimits RideSimulation::default_limits(double wall)const{return RunLimits::for
 RunOutcome RideSimulation::run(const RunLimits& limits,const std::function<void(const RideSimulation&)>& on_step,double front,double rear) {
     limits.validate();const auto started=std::chrono::steady_clock::now();
     while(true){const double wall=std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count();
-        if(const auto reason=termination_reason(limits,position_m(),steps(),wall,impl_->crash))return {*reason,steps(),time_s(),wall,position_m(),impl_->crash};
+        if(const auto reason=termination_reason(limits,position_m(),steps(),wall,impl_->crash))return {.reason=*reason,.steps=steps(),.sim_time_s=time_s(),.wall_clock_s=wall,.position_m=position_m(),.crash=impl_->crash};
         step(front,rear);if(on_step)on_step(*this);
     }
 }
@@ -436,9 +444,11 @@ runtime::ModelImage RideSimulation::model_image()const{return initialization::ca
 io::Value RideSimulation::metadata()const {
     using namespace runtime::setupvalue;const auto& p=*impl_;
     return Value{Object{{"physics_revision",text("legacy-v1")},{"physics_mode",text("legacy")},
-        {"rider_variant",text(p.options.setup.model.rider->variant)},{"drive_mode",text(p.options.drive_mode)},
+        { // NOLINTNEXTLINE(bugprone-unchecked-optional-access) setup schema guarantees rider engagement
+        "rider_variant",text(p.options.setup.model.rider.value().variant)},{"drive_mode",text(p.options.drive_mode)},
         {"tire_model",text(p.options.tyre.model)},{"timestep_s",real(timestep_s())},
         {"equilibrium_steps",integer(p.equilibrium.pose.steps)},{"equilibrium_residual_qacc",real(p.equilibrium.pose.residual_qacc)},
-        {"physics",configuration::to_value(*p.options.setup.model.physics)}}};
+        { // NOLINTNEXTLINE(bugprone-unchecked-optional-access) setup schema guarantees physics engagement
+        "physics",configuration::to_value(p.options.setup.model.physics.value())}}};
 }
 } // namespace bike::legacy

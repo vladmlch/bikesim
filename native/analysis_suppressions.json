@@ -29,6 +29,33 @@
       "remove_when": "Remove when CSA stops reporting PyTuple_GET_ITEM's variably sized ob_item access as out-of-bounds at nb_types.h:1583, or nanobind's tuple iterator stops using NB_TUPLE_GET_ITEM."
     },
     {
+      "checker": "cplusplus.Move",
+      "origin": "(?:^|/)native/src/recording/database_validate\\.cpp$",
+      "message": "Method called on moved-from object of type 'std::vector'",
+      "tool_version": "23.1.2",
+      "reason": "CSA flags the field-catalog sort comparator at database_validate.cpp:143 because it models std::ranges::sort's internal element moves pessimistically: the comparator's reference parameters a/b appear potentially moved-from. A correct sort never invokes the comparator on moved-from elements; both arguments denote live rows of the 'declared' vector under permutation.",
+      "reproducer": "uv run python tools/native_checks.py --kind analyzer --build native/build; cplusplus.Move at native/src/recording/database_validate.cpp:143:79",
+      "remove_when": "Remove when CSA no longer reports a moved-from std::vector access inside the sort comparator in validate_declared_catalog."
+    },
+    {
+      "checker": "unix.Stream",
+      "origin": "(?:^|/)native/src/viz/plot\\.cpp$",
+      "message": "File position of the stream might be 'indeterminate' after a failed operation",
+      "tool_version": "23.1.2",
+      "reason": "CSA flags the RFC 4180 CSV reader's get/peek lambdas at plot.cpp:71-73 because fgetc/ungetc execute after an earlier fgetc may have returned EOF. The pattern is defined behavior: fgetc on a stream whose end-of-file indicator is set simply returns EOF again, and peek() only calls ungetc when fgetc returned a real character (c!=EOF guard), so no stream operation ever follows a failed operation with an indeterminate position.",
+      "reproducer": "uv run python tools/native_checks.py --kind analyzer --build native/build; unix.Stream at native/src/viz/plot.cpp:71:38, 73:39 and 73:70",
+      "remove_when": "Remove when CSA no longer emits unix.Stream diagnostics for the fgetc/ungetc calls in the plot.cpp CSV reader, or the reader stops using stream getc/ungetc primitives."
+    },
+    {
+      "checker": "unix.Stream",
+      "origin": "(?:^|/)native/src/viz/plot\\.cpp$",
+      "message": "Read function called when stream is in EOF state. Function has no effect",
+      "tool_version": "23.1.2",
+      "reason": "Companion unix.Stream diagnostic to the indeterminate-position finding in the same file: the CSV reader's loop intentionally probes fgetc past the first EOF return as part of peek/termination handling. fgetc returning EOF again on an EOF-flagged stream is defined, harmless behavior.",
+      "reproducer": "uv run python tools/native_checks.py --kind analyzer --build native/build; unix.Stream 'Read function called when stream is in EOF state' at native/src/viz/plot.cpp:71:38 and 73:39",
+      "remove_when": "Remove when CSA no longer emits the EOF-state read diagnostic for the fgetc calls in the plot.cpp CSV reader."
+    },
+    {
       "checker": "clang-analyzer-security.ArrayBound",
       "origin": "(?:^|/)nanobind/include/nanobind/nb_types\\.h$",
       "message": "Out of bound access to memory after the end of the field 'ob_item'",

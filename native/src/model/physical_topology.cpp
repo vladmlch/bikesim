@@ -38,7 +38,7 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
     const double arm=budget*.20/.85,pedal_mass=budget*.175/.85;
     if(drive.motor_clutch) {shaft_mass=spindle*.6;spindle-=shaft_mass;}
     auto tensor=ring_inertia(spindle,0.,.016,2.*.075);
-    for(double sign:{-1.,1.}) {
+    for(double const sign:{-1.,1.}) {
         add_tensor(tensor,segment_inertia(arm,{length,0.,0.},.012));
         add_tensor(tensor,parallel_axis(arm,{sign*length/2.,-sign*.075,0.}));
     }
@@ -100,16 +100,16 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
             if(value->get("name")=="geom_handlebar" || value->get("contype","1")=="0") continue;
             value->set("contype","8");value->set("conaffinity","0");
         }
-    if(auto* catch_=root.find("geom","catch_plane")) catch_->set("conaffinity",std::to_string(std::stoi(catch_->get("conaffinity","1"))|8));
+    if(auto* catch_=root.find("geom","catch_plane")) catch_->set("conaffinity",std::to_string((static_cast<unsigned>(std::stoi(catch_->get("conaffinity","1")))|8U)));
     auto& contact=block(root,"contact");
     std::set<std::pair<std::string,std::string>> excluded;
     const auto pair=[](std::string a,std::string b){ if(b<a) std::swap(a,b);return std::make_pair(std::move(a),std::move(b)); };
-    for(auto* item:contact.direct("exclude")) excluded.insert(pair(item->get("body1"),item->get("body2")));
+    for(auto const* item:contact.direct("exclude")) excluded.insert(pair(item->get("body1"),item->get("body2")));
     std::vector<std::string> names;
-    for(auto* item:root.descendants("body")) if(!item->get("name").empty()) names.push_back(item->get("name"));
+    for(auto const* item:root.descendants("body")) if(!item->get("name").empty()) names.push_back(item->get("name"));
     std::vector<std::string> moving{"crank","pedal_front","pedal_rear"};
-    if(drive.transmission_model=="elastic_chain") moving.push_back("cassette");
-    if(drive.motor_clutch) moving.push_back("drive_shaft");
+    if(drive.transmission_model=="elastic_chain") moving.emplace_back("cassette");
+    if(drive.motor_clutch) moving.emplace_back("drive_shaft");
     for(const auto& source:moving) for(const auto& target:names) {
         if(source==target || target.starts_with("rider_") || !excluded.insert(pair(source,target)).second) continue;
         contact.add("exclude",{{"body1",source},{"body2",target}});
@@ -146,7 +146,7 @@ void finalize_geometric_transmission(Element& root,const configuration::Simulati
     if(!freehub) freehub=&fixed_tendon(root,"geometric_mid_drive_freehub",cfg.closure_time_constant_s);
     freehub->children.clear();
     const auto driver=cfg.drive.motor_clutch?"drive_shaft_spin":"crank_spin";
-    for(auto* value:block(root,"worldbody").descendants("joint")) {
+    for(auto const* value:block(root,"worldbody").descendants("joint")) {
         const auto kind=value->get("type","hinge"),name=value->get("name");
         if(kind!="slide" && kind!="hinge") throw std::invalid_argument("geometric ideal drive requires scalar planar joints");
         if(name.empty()) throw std::invalid_argument("geometric tendon requires named coordinates");

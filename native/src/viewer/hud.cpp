@@ -58,7 +58,7 @@ std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::
     const auto& p = frame.presentation;
     const std::string mode = text(child(state.view, "drive_mode"), "physical");
     const auto rate = rtf ? f(*rtf, 0, 2) + "x" : "----x";
-    if (!state.latest_sample) return {{"PHYS", "[PHYS|" + mode + "]"}, {"", " initial condition RTF=" + rate}};
+    if (!state.latest_sample) return {{.legend="PHYS", .text="[PHYS|" + mode + "]"}, {.legend="", .text=" initial condition RTF=" + rate}};
     // Samples own their channel payload. Formatting never reads model/data.
     const runtime::Wire channels(state.latest_sample->channels);
     const auto* drive = child(&channels, "drive");
@@ -67,8 +67,8 @@ std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::
     const auto n = [&](std::string_view name) { return number(child(drive, name)).value_or(0.); };
     const double front_angle = std::fmod(std::fmod(n("crank_phase_rad") * (180. / std::numbers::pi), 360.) + 360., 360.);
     std::vector<HudColumn> out;
-    const auto add = [&](std::string legend, std::string value) { out.push_back({std::move(legend), out.empty() || out.back().text == " | " ? std::move(value) : " " + value}); };
-    const auto sep = [&] { out.push_back({"", " | "}); };
+    const auto add = [&](std::string legend, std::string value) { out.push_back({.legend=std::move(legend), .text=out.empty() || out.back().text == " | " ? std::move(value) : " " + value}); };
+    const auto sep = [&] { out.push_back({.legend="", .text=" | "}); };
     add("PHYS", "[PHYS|" + mode + "]");
     add("time", "t=" + f(state.latest_sample->time_s, 7, 2) + "s");
     add("rtf", "RTF=" + rate);
@@ -106,8 +106,9 @@ std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::
     add("arm", "arm=sh " + optional_number(number(path(&channels,{"rider_joint_torques","rider_shoulder_left"})),4,0,true) + "/el " +
         optional_number(number(path(&channels,{"rider_joint_torques","rider_elbow_left"})),4,0,true) + " Nm");
     add("saddle", "saddle=" + optional_number(number(path(rider,{"saddle","normal_load_n"})),4,0) + "N");
+    const auto lean_limit=number(child(&channels,"rider_lean_limit_rad"));
     add("lean", "lean=" + f(p.torso_pitch_deg - p.pitch_rad*(180./std::numbers::pi),5,1,true) + "deg/lim" +
-        (number(child(&channels,"rider_lean_limit_rad")) ? f(*number(child(&channels,"rider_lean_limit_rad"))*(180./std::numbers::pi),0,0) : "--") + "°");
+        (lean_limit ? f(lean_limit.value()*(180./std::numbers::pi),0,0) : "--") + "°");
     const auto* balance = child(&channels,"rider_balance");
     std::string status = "---";
     if (balance && std::holds_alternative<runtime::WireObject>(balance->value)) {

@@ -482,6 +482,7 @@ void TireWriterView::prepare_state(std::span<const std::string> names,
     std::visit([&](auto *w) { w->prepare_state(names, row); }, writer_);
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape) entry point lets failures surface as the reference does
 void TireWriterView::commit_prepared_state() const noexcept {
     std::visit([](auto *w) { w->commit_prepared_state(); }, writer_);
 }

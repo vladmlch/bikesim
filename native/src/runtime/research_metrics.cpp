@@ -31,8 +31,9 @@ double load(const WireObject &wheel) {
 }
 }
 std::string_view classify_contact(double front_load,double rear_load,double front_clearance,
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
         double rear_clearance,double relative_pitch,double load_threshold,double clearance_threshold,double pitch_threshold) {
-    for(double value:{front_load,rear_load,front_clearance,rear_clearance,load_threshold,clearance_threshold,pitch_threshold})
+    for(double const value:{front_load,rear_load,front_clearance,rear_clearance,load_threshold,clearance_threshold,pitch_threshold})
         if(!std::isfinite(value)||value<0.)throw std::invalid_argument("contact classification inputs must be finite and nonnegative");
     if(!std::isfinite(relative_pitch))throw std::invalid_argument("road-relative pitch must be finite");
     const bool front = front_load > load_threshold, rear = rear_load > load_threshold;
@@ -43,9 +44,9 @@ std::string_view classify_contact(double front_load,double rear_load,double fron
     return relative_pitch > pitch_threshold ? "wheelie_candidate" : "front_lift";
 }
 double quasistatic_front_load(double mass,double wheelbase,double forward,double height,double road_pitch,double acceleration,double gravity) {
-    for(double value:{mass,wheelbase,gravity})if(!std::isfinite(value)||value<=0.)throw std::invalid_argument("quasistatic mass, wheelbase and gravity must be positive");
+    for(double const value:{mass,wheelbase,gravity})if(!std::isfinite(value)||value<=0.)throw std::invalid_argument("quasistatic mass, wheelbase and gravity must be positive");
     if(!std::isfinite(height)||height<0.)throw std::invalid_argument("quasistatic CoM height must be nonnegative");
-    for(double value:{forward,road_pitch,acceleration})if(!std::isfinite(value))throw std::invalid_argument("quasistatic input must be finite");
+    for(double const value:{forward,road_pitch,acceleration})if(!std::isfinite(value))throw std::invalid_argument("quasistatic input must be finite");
     // Observation only. A negative estimate remains signed; it never enters
     // applied forces or controller observations.
     return mass*(gravity*numeric::cos(road_pitch)*forward-height*(acceleration+gravity*numeric::sin(road_pitch)))/wheelbase;
@@ -70,10 +71,10 @@ WireObject WheelieTruth::as_wire() const {
         {"com_x_m", com_x_m}, {"com_z_m", com_z_m}};
 }
 void WheelieTruth::validate()const {
-    for(double value:{time_s,front_load_n,rear_load_n,front_clearance_m,rear_clearance_m,relative_pitch_rad,position_m,speed_mps,
+    for(double const value:{time_s,front_load_n,rear_load_n,front_clearance_m,rear_clearance_m,relative_pitch_rad,position_m,speed_mps,
         pitch_up_rad,pitch_rate_up_rad_s,axle_pitch_rad,road_pitch_rad,front_slip_mps,rear_slip_mps,com_x_m,com_z_m})
         if(!std::isfinite(value))throw std::invalid_argument("nonfinite research truth");
-    for(double value:{time_s,front_load_n,rear_load_n,front_clearance_m,rear_clearance_m})
+    for(double const value:{time_s,front_load_n,rear_load_n,front_clearance_m,rear_clearance_m})
         if(value<0.)throw std::invalid_argument("negative truth time, contact load or clearance");
 }
 std::string_view WheelieTruth::contact_state()const {return classify_contact(front_load_n,rear_load_n,front_clearance_m,rear_clearance_m,relative_pitch_rad);}
@@ -124,11 +125,12 @@ WireObject WheelieEpisode::as_wire() const {
         {"max_relative_pitch_rad", max_relative_pitch_rad}, {"max_front_clearance_m", max_front_clearance_m},
         {"min_front_load_n", min_front_load_n}, {"onset", onset}};
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 WheelieTracker::WheelieTracker(double persistence_s,double load_threshold,double clearance_threshold,double pitch_threshold)
     : persistence_(persistence_s),load_threshold_(load_threshold),clearance_threshold_(clearance_threshold),pitch_threshold_(pitch_threshold) {
     if (!std::isfinite(persistence_) || persistence_ < 0.)
         throw std::invalid_argument("wheelie persistence must be finite and nonnegative");
-    for(double value:{load_threshold_,clearance_threshold_,pitch_threshold_})
+    for(double const value:{load_threshold_,clearance_threshold_,pitch_threshold_})
         if(!std::isfinite(value)||value<=0.)throw std::invalid_argument("wheelie thresholds must be positive and finite");
 }
 void WheelieTracker::reset() {

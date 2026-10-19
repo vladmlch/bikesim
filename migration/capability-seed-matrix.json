@@ -66,12 +66,12 @@
           "T22",
           "T25"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/native-startup-implementation.json",
           "migration/native-startup-review.md"
         ],
-        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; only the startup/export/terrain/state portion of this capability is included"
       }
     },
     {
@@ -128,13 +128,18 @@
         "tasks": [
           "T26"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested_findings_open",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained",
+        "findings_open": [
+          "F2",
+          "F3",
+          "F5"
+        ]
       }
     },
     {
@@ -176,13 +181,13 @@
           "T34",
           "T36"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained"
       }
     },
     {
@@ -243,24 +248,29 @@
           "T21",
           "T25"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/native-startup-implementation.json",
           "migration/native-startup-review.md"
         ],
-        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; only the startup/export/terrain/state portion of this capability is included"
       },
       "physics_research_implementation": {
         "tasks": [
           "T26"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested_findings_open",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained",
+        "findings_open": [
+          "F2",
+          "F3",
+          "F5"
+        ]
       }
     },
     {
@@ -321,24 +331,29 @@
           "T21",
           "T25"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/native-startup-implementation.json",
           "migration/native-startup-review.md"
         ],
-        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; only the startup/export/terrain/state portion of this capability is included"
       },
       "physics_research_implementation": {
         "tasks": [
           "T26"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested_findings_open",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained",
+        "findings_open": [
+          "F2",
+          "F3",
+          "F5"
+        ]
       }
     },
     {
@@ -399,24 +414,29 @@
           "T21",
           "T25"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/native-startup-implementation.json",
           "migration/native-startup-review.md"
         ],
-        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; only the startup/export/terrain/state portion of this capability is included"
       },
       "physics_research_implementation": {
         "tasks": [
           "T26"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested_findings_open",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained",
+        "findings_open": [
+          "F2",
+          "F3",
+          "F5"
+        ]
       }
     },
     {
@@ -445,13 +465,13 @@
         "tasks": [
           "T27"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained"
       }
     },
     {
@@ -489,13 +509,16 @@
           "T28",
           "T29"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested_findings_open",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained",
+        "findings_open": [
+          "F5"
+        ]
       }
     },
     {
@@ -524,13 +547,17 @@
         "tasks": [
           "T30"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested_findings_open",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained",
+        "findings_open": [
+          "F2",
+          "F3"
+        ]
       }
     },
     {
@@ -569,13 +596,16 @@
           "T31",
           "T32"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested_findings_open",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained",
+        "findings_open": [
+          "F5"
+        ]
       }
     },
     {
@@ -614,24 +644,24 @@
         "tasks": [
           "T17"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/native-startup-implementation.json",
           "migration/native-startup-review.md"
         ],
-        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; only the startup/export/terrain/state portion of this capability is included"
       },
       "physics_research_implementation": {
         "tasks": [
           "T33"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained"
       }
     },
     {
@@ -701,12 +731,12 @@
           "T17",
           "T18"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/native-startup-implementation.json",
           "migration/native-startup-review.md"
         ],
-        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; only the startup/export/terrain/state portion of this capability is included"
       }
     },
     {
@@ -773,12 +803,12 @@
           "T23",
           "T24"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/native-startup-implementation.json",
           "migration/native-startup-review.md"
         ],
-        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; only the startup/export/terrain/state portion of this capability is included"
       }
     },
     {
@@ -830,12 +860,12 @@
           "T20",
           "T21"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/native-startup-implementation.json",
           "migration/native-startup-review.md"
         ],
-        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; only the startup/export/terrain/state portion of this capability is included"
       }
     },
     {
@@ -872,13 +902,13 @@
           "T35",
           "T36"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/physics-research-implementation.json",
           "migration/physics-research-review.md",
           "migration/physics-research-static-audit.json"
         ],
-        "qualification": "not_run; existing status and all capability gates retained"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; all capability gates retained"
       }
     },
     {
@@ -938,13 +968,13 @@
           "T39",
           "T40"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/recording-application-implementation.json",
           "migration/recording-application-review.md",
           "migration/recording-application-static-audit.json"
         ],
-        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; original capability acceptance/deletion status unchanged"
       }
     },
     {
@@ -998,13 +1028,13 @@
           "T41",
           "T42"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/recording-application-implementation.json",
           "migration/recording-application-review.md",
           "migration/recording-application-static-audit.json"
         ],
-        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; original capability acceptance/deletion status unchanged"
       }
     },
     {
@@ -1052,13 +1082,13 @@
           "T45",
           "T46"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/recording-application-implementation.json",
           "migration/recording-application-review.md",
           "migration/recording-application-static-audit.json"
         ],
-        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; original capability acceptance/deletion status unchanged"
       }
     },
     {
@@ -1092,13 +1122,13 @@
         "tasks": [
           "T44"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/recording-application-implementation.json",
           "migration/recording-application-review.md",
           "migration/recording-application-static-audit.json"
         ],
-        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; original capability acceptance/deletion status unchanged"
       }
     },
     {
@@ -1150,13 +1180,13 @@
           "T48",
           "T49"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/recording-application-implementation.json",
           "migration/recording-application-review.md",
           "migration/recording-application-static-audit.json"
         ],
-        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; original capability acceptance/deletion status unchanged"
       }
     },
     {
@@ -1191,13 +1221,13 @@
         "tasks": [
           "T50"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/recording-application-implementation.json",
           "migration/recording-application-review.md",
           "migration/recording-application-static-audit.json"
         ],
-        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; original capability acceptance/deletion status unchanged"
       }
     },
     {
@@ -1236,13 +1266,13 @@
         "tasks": [
           "T51"
         ],
-        "status": "implemented_unverified",
+        "status": "implemented_tested",
         "evidence": [
           "migration/recording-application-implementation.json",
           "migration/recording-application-review.md",
           "migration/recording-application-static-audit.json"
         ],
-        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+        "qualification": "ctest migration tests passed 2026-10-19; runtime qualification and capability gates open; original capability acceptance/deletion status unchanged"
       }
     },
     {

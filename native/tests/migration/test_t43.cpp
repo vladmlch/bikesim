@@ -12,7 +12,7 @@ using namespace rec::detail;
 void reader_and_analysis() {
     bt::require(io::recording_json(real(1000000.))=="1000000.0"&&io::recording_json(real(.0001))=="0.0001"&&
         io::recording_json(real(-0.))=="-0.0","recording float spelling shares the source fixed/exponent and signed-zero rules");
-    recording_reader_test::Directory tmp;
+    recording_reader_test::Directory const tmp;
     const auto publication = recording_fixture::publish(tmp.path / "runs", 3);
     const auto before = bike::platform::file_sha256(publication.directory / "run.duckdb");
     rec::Recording reader(publication.directory);
@@ -46,7 +46,7 @@ void reader_and_analysis() {
     const auto same = rec::compare(reader, reader, 0, 0, "exact", "physics.qpos,forces.qfrc");
     bt::require(io::as_bool(field(same,"compatible"),"compatible") && io::as_bool(field(same,"agrees"),"agrees") &&
         count(field(same,"compared_intervals")) == 3, "two independent cursors compare every interval even for identical Recording objects");
-    const auto short_run = recording_fixture::publish(tmp.path / "short", 2); rec::Recording short_reader(short_run.directory);
+    const auto short_run = recording_fixture::publish(tmp.path / "short", 2); rec::Recording const short_reader(short_run.directory);
     const auto prefix = rec::compare(reader, short_reader, 0, 0, "exact", "physics.qpos");
     bt::require(!io::as_bool(field(prefix,"agrees"),"agrees") && count(field(field(prefix,"unmatched_extents"),"left_intervals")) == 1,
         "matching common prefix does not pass unequal extents");

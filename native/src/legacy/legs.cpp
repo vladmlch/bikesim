@@ -39,8 +39,8 @@ LegDrive::LegDrive(const mjModel& m, const std::optional<model::SeatedPose>& pos
 }
 void LegDrive::initialize(mjData& data, double phase) {
     if (!std::isfinite(phase)) throw std::invalid_argument("legacy leg phase must be finite");
-    auto q = std::views::counted(data.qpos,model_.nq);
-    auto v = std::views::counted(data.qvel,model_.nv);
+    auto const q = std::views::counted(data.qpos,model_.nq);
+    auto const v = std::views::counted(data.qvel,model_.nv);
     const double pelvis = active() ? q[pelvis_q_] : 0.;
     for (auto& leg : legs_) {
         model::Vec3 actual{};

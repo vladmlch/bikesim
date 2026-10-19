@@ -65,7 +65,7 @@ Recording::Recording(std::filesystem::path path) : path_(std::move(path)), manif
         throw RecordingError("manifest and database identity/extents disagree");
     auto assets = stream("SELECT name,sha256,content FROM assets ORDER BY episode_id,name");
     for (;;) {
-        auto batch = assets.next_batch(64);
+        auto const batch = assets.next_batch(64);
         if (batch.empty()) break;
         for (const auto& row : batch) {
             const auto* bytes = std::get_if<io::Bytes>(&field(row, "content").data);

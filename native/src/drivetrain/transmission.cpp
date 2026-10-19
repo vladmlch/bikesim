@@ -16,8 +16,8 @@ namespace drivetrain {
             throw std::invalid_argument("transmission Jacobian requires scalar planar coordinates");
         finite(phi, "transmission phi");
         finite(boundary, "transmission boundary");
-        for (double value : jacobian) finite(value, "transmission Jacobian");
-        for (double value : q) finite(value, "transmission coordinates");
+        for (double const value : jacobian) finite(value, "transmission Jacobian");
+        for (double const value : q) finite(value, "transmission coordinates");
         const double upper = validation::derived(boundary - phi + dot(jacobian, q),
                                                    "transmission.upper_bound");
         return {std::vector<double>(jacobian.begin(), jacobian.end()), upper};
@@ -28,7 +28,7 @@ namespace drivetrain {
         nonnegative(tension, "transmission tension");
         std::vector<double> result;
         result.reserve(jacobian.size());
-        for (double value : jacobian) {
+        for (double const value : jacobian) {
             finite(value, "transmission Jacobian");
             result.push_back(validation::derived(-tension * value,
                                                  "transmission.reaction"));

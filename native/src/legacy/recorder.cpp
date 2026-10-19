@@ -28,9 +28,10 @@ void RideRecorder::record(const RideSimulation& sim){
         if(sim.position_m()>=sim.start_x_m()+8.){
             bool spin=false,locked=false;for(const auto& patch:t.patches()){
                 spin=spin||(patch.fully_sliding&&patch.slip_ratio>0.);locked=locked||(patch.fully_sliding&&patch.slip_ratio<0.);}
-            if(spin)history.wheelspin_time_s+=sim.timestep_s();if(locked)history.locked_time_s+=sim.timestep_s();
+            if(spin)history.wheelspin_time_s+=sim.timestep_s();
+            if(locked)history.locked_time_s+=sim.timestep_s();
         }
-        if(t.rim_event){const auto& e=*t.rim_event;history.events.push_back({e.x_m,e.speed_mps,e.peak_load_n,e.peak_rim_force_n,e.absorbed_energy_j,rim_start_time_[i],sim.time_s()});}
+        if(t.rim_event){const auto& e=*t.rim_event;history.events.push_back({.x_m=e.x_m,.speed_mps=e.speed_mps,.peak_load_n=e.peak_load_n,.peak_rim_force_n=e.peak_rim_force_n,.absorbed_energy_j=e.absorbed_energy_j,.start_time_s=rim_start_time_[i],.end_time_s=sim.time_s()});}
     }
     record(sim.telemetry());
 }
@@ -44,7 +45,8 @@ std::vector<double> RideRecorder::column(std::string_view name)const {
 }
 Channels RideRecorder::columns()const {
     Channels result;result.reserve(kLegacyChannels.size());
-    for(auto name:kLegacyChannels)result.emplace_back(std::string(name),column(name));return result;
+    for(auto const name:kLegacyChannels)result.emplace_back(std::string(name),column(name));
+    return result;
 }
 std::string RideRecorder::to_csv()const{std::ostringstream out;csv_rows(out,rows_);return out.str();}
 void RideRecorder::write_csv(const std::filesystem::path& path)const {

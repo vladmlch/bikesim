@@ -13,10 +13,10 @@ std::string csv_cell(const Value& value) {
     if (const auto* bytes = std::get_if<io::Bytes>(&value.data)) {
         constexpr std::string_view hex = "0123456789abcdef";
         bool single = false, double_quote = false;
-        for (auto b : bytes->value) { single = single || b == std::byte{39}; double_quote = double_quote || b == std::byte{34}; }
+        for (auto const b : bytes->value) { single = single || b == std::byte{39}; double_quote = double_quote || b == std::byte{34}; }
         const char quote_char = single && !double_quote ? '"' : '\'';
         std::string out = "b"; out += quote_char;
-        for (auto b : bytes->value) {
+        for (auto const b : bytes->value) {
             const auto c = std::to_integer<unsigned char>(b);
             if (c == static_cast<unsigned char>(quote_char) || c == '\\') { out += '\\'; out += static_cast<char>(c); }
             else if (c == '\n') out += "\\n";
@@ -56,7 +56,7 @@ std::string csv_row(const std::vector<std::string>& values) {
         if (i) out += ',';
         const auto& value = values[i]; const bool quoted = value.find_first_of(",\"\r\n") != std::string::npos || (values.size() == 1 && value.empty());
         if (quoted) out += '"';
-        for (char c : value) { out += c; if (c == '"') out += '"'; }
+        for (char const c : value) { out += c; if (c == '"') out += '"'; }
         if (quoted) out += '"';
     }
     return out + "\r\n";

@@ -7,6 +7,7 @@
 #include <array>
 #include <bit>
 #include <dlfcn.h>
+#include <cstring>
 #include <filesystem>
 #include <system_error>
 #include <utility>
@@ -18,6 +19,7 @@ class Library {
 public:
     explicit Library(const std::filesystem::path& path) : handle_(dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL)) {
         if (!handle_) {
+            // NOLINTNEXTLINE(concurrency-mt-unsafe) matches the single-threaded reference semantics
             const char* error = dlerror();
             throw PolicyFailure("cannot load native policy: " + std::string(error ? error : "unknown loader error"));
         }
@@ -25,14 +27,20 @@ public:
     ~Library() { if (handle_) (void)dlclose(handle_); }
     Library(const Library&) = delete;
     Library& operator=(const Library&) = delete;
+    Library(Library&&) = delete;
+    Library& operator=(Library&&) = delete;
     [[nodiscard]] const BikePolicyV1* descriptor() const {
+        // NOLINTNEXTLINE(concurrency-mt-unsafe) matches the single-threaded reference semantics
         (void)dlerror();
         void* symbol = dlsym(handle_, "bike_policy_v1");
+        // NOLINTNEXTLINE(concurrency-mt-unsafe) matches the single-threaded reference semantics
         const char* error = dlerror();
         if (error || !symbol) throw PolicyFailure("native policy is missing bike_policy_v1");
-        using Entry = const BikePolicyV1* (*)(void);
+        using Entry = const BikePolicyV1* (*)();
         static_assert(sizeof(Entry) == sizeof(symbol));
-        const Entry entry = std::bit_cast<Entry>(symbol);
+        Entry entry{};
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,bugprone-bitwise-pointer-cast) POSIX prescribes writing the dlsym object pointer through a void**; reinterpret_cast on the function pointer itself is rejected by GCC pedantic and memcpy by the unsafe-buffer policy
+        *reinterpret_cast<void**>(&entry) = symbol;
         try { return entry(); }
         catch (const std::exception& cause) { throw PolicyFailure("policy entrypoint threw: " + std::string(cause.what())); }
         catch (...) { throw PolicyFailure("policy entrypoint threw a non-standard exception"); }
@@ -44,11 +52,14 @@ struct Instance {
     const BikePolicyV1* api = nullptr;
     void* value = nullptr;
     ~Instance() {
+        // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
         if (value && api) { try { api->destroy(value); } catch (...) {} }
     }
     Instance() = default;
     Instance(const Instance&) = delete;
     Instance& operator=(const Instance&) = delete;
+    Instance(Instance&&) = delete;
+    Instance& operator=(Instance&&) = delete;
     void close() {
         void* previous = std::exchange(value, nullptr);
         if (!previous) return;
@@ -59,9 +70,9 @@ struct Instance {
 };
 template<class Callback> void invoke(std::string_view operation, Callback&& callback) {
     std::array<char, 2048> storage{};
-    BikeErrorV1 error{storage.data(), storage.size(), 0};
+    BikeErrorV1 error{.data=storage.data(), .capacity=storage.size(), .written=0};
     int status = -1;
-    try { status = callback(&error); }
+    try { status = std::forward<Callback>(callback)(&error); }
     catch (const std::exception& cause) { throw PolicyFailure("policy " + std::string(operation) + " threw: " + cause.what()); }
     catch (...) { throw PolicyFailure("policy " + std::string(operation) + " threw a non-standard exception"); }
     if (error.data != storage.data() || error.capacity != storage.size() || error.written > storage.size())
@@ -72,6 +83,10 @@ template<class Callback> void invoke(std::string_view operation, Callback&& call
 class PluginPolicy final : public Policy {
 public:
     ~PluginPolicy() override;
+    PluginPolicy(const PluginPolicy&) = delete;
+    PluginPolicy& operator=(const PluginPolicy&) = delete;
+    PluginPolicy(PluginPolicy&&) = delete;
+    PluginPolicy& operator=(PluginPolicy&&) = delete;
     PluginPolicy(std::filesystem::path path, const Value& config)
         : path_(std::move(path)), digest_(platform::file_sha256(path_)),
           config_(io::canonical_json(config)), library_(path_) {
@@ -91,7 +106,7 @@ public:
     runtime::RideControl act(const runtime::SensorObservation& observation, std::optional<double> demand) override {
         require_open(); validate_policy_input(observation, demand);
         const auto input = policy_observation_to_abi(observation);
-        const BikeDemandV1 requested{static_cast<std::uint8_t>(demand.has_value() ? 1 : 0), demand.value_or(0.)};
+        const BikeDemandV1 requested{.present=static_cast<std::uint8_t>(demand.has_value() ? 1 : 0), .torque_nm=demand.value_or(0.)};
         BikeControlV1 output{};
         output.struct_size = static_cast<std::uint32_t>(sizeof(output));
         output.rider_enabled = 1; output.use_saddle = 1;

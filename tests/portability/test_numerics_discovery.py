@@ -959,6 +959,21 @@ def test_bike_numerics_resolves_auto_backend_from_the_probe(tmp_path):
     assert f"RESOLVED={expected}" in result.stdout
 
 
+def test_bike_numerics_resolves_a_wheel_relative_provider_on_linux(tmp_path):
+    """The record stores the Linux provider relative to site-packages and
+    BikeNumerics resolves it against the live install. The scratch project is
+    record-only (no CXX), so the Linux branch runs on a macOS host too."""
+    document = _document_with_numerics(tmp_path, "Linux")
+    record = _write_record(tmp_path, document)
+    stored = json.loads(record.read_text(encoding="utf-8"))
+    provider = next(iter(stored["records"].values()))["numerics"][
+        "library_paths"][0]["path"]
+    assert provider == "numpy.libs/libscipy_openblas64_-fixture0.so"
+    result = _configure_scratch(tmp_path, document, record=record)
+    assert result.returncode == 0, result.stderr
+    assert "RESOLVED=NUMPY_OPENBLAS" in result.stdout
+
+
 def test_bike_numerics_rejects_a_backend_mismatch(tmp_path):
     """Requesting NUMPY_OPENBLAS on a Darwin host (or vice versa) is a
     provider mismatch — it must fail before any physics target exists."""

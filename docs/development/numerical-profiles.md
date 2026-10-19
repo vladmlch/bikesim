@@ -173,3 +173,28 @@ built against a non-Accelerate/non-scipy-openblas provider, has no file
 records (editable/system install), loads a BLAS outside the wheel, or when
 SciPy interposition moves the provider. `BIKE_NUMERICS_BACKEND` only ever
 selects between already-qualified records — it cannot conjure one.
+
+## 9. Committed numerics record
+
+The Python-free root configure cannot measure NumPy, so the qualified facts
+are committed in `native/numerics.lock.json`, one `records[<platform>]` entry
+per platform (`darwin-arm64` today). Each entry is the probe's `numerics`
+object with the same key names, plus the `platform` and `python` sections;
+host-only values (thread counts, the wheel's build-environment dump, the
+hostname in `numpy_show_runtime`, Xcode paths) are dropped so the file is
+byte-identical across runs.
+
+Regenerate the entry for the current platform with the pinned NumPy:
+
+```bash
+uv run --frozen --group native python tools/native_dependencies.py \
+    --python "$PWD/.venv/bin/python3" \
+    --write-numerics-record native/numerics.lock.json
+```
+
+Staleness identity is the NumPy version, the platform, and the provider
+identity (`library_paths`, `provider_config`). The Python version is
+provenance only: CPython 3.13 and 3.14 measured the same NumPy 2.5.2 wheel
+with identical facts; only `numerics.site_packages` (the install location)
+differs. Re-run the command after changing the interpreter so that path
+matches the environment.

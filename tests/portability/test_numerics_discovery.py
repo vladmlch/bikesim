@@ -26,15 +26,21 @@ import pytest
 from tools.native_dependencies import (
     REQUIRED_NUMPY_VERSION,
     checked_symbol,
+    load_numerics_lock,
     probe_dependencies,
+    project_numerics_record,
+    record_platform_key,
     require_same_library,
     validate_dependencies,
     validate_numerics,
+    validate_numerics_record_entry,
+    write_numerics_record,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PROBE_SCRIPT = REPO_ROOT / "tools" / "native_dependencies.py"
 NUMERICS_CMAKE = REPO_ROOT / "native" / "cmake" / "BikeNumerics.cmake"
+NUMERICS_LOCK = REPO_ROOT / "native" / "numerics.lock.json"
 
 OPENBLAS_SYMBOLS = {
     "ddot": "scipy_cblas_ddot64_",
@@ -959,3 +965,191 @@ def test_bike_numerics_rejects_a_missing_numerics_record(tmp_path):
     document["numerics"] = None
     result = _configure_scratch(tmp_path, document)
     assert result.returncode != 0
+
+
+# --------------------------------------------------------------------------
+# Committed numerics record (native/numerics.lock.json): projection, writer
+# and reader. The fixtures mirror the probe's full output, host-only noise
+# included, so the projection is exercised against what a real run emits.
+# --------------------------------------------------------------------------
+
+HOST_SENTINEL = "HOST-SENTINEL-NOT-A-FACT"
+
+
+def _measured_darwin_document(tmp_path: Path) -> dict:
+    document = _fixture_document(tmp_path)
+    document["platform"] = {"system": "Darwin", "machine": "arm64", "libc": None}
+    document["python"]["version"] = "3.14.3"
+    document["python"]["soabi"] = "cpython-314-darwin"
+    numerics = _accelerate_record(tmp_path)
+    numerics["provider_config"] = {
+        "macos_version": "27.0.1",
+        "macos_build": "26A434",
+        "sdk_version": "27.0",
+        "sdk_build": "26A425",
+        "sdk_path": "/Applications/Xcode.app/Contents/Developer/SDKs/MacOSX27.0.sdk",
+        "accelerate_uuid": "a697e7b98ff4356ca50764b38af1ccaa",
+        "accelerate_images": [ACCELERATE_BLAS_IMAGE, ACCELERATE_LAPACK_IMAGE],
+        "thread_measure": {"baseline_threads": 2, "peak_threads": 6},
+        "wheel": {"tags": ["cp314-cp314-macosx_14_0_arm64"]},
+        "numpy_show_config": {"Build Dependencies": {}},
+        "numpy_show_runtime": f"uname(node='{HOST_SENTINEL}')",
+        "abi_check": {
+            "compile_only": "pass",
+            "compiler": "Apple clang version 21.0.0",
+            "link_run": "pass",
+            "output": "BIKE-ABI-OK ddot=32",
+        },
+        "interposition": {"checked": True, "stable": True, "scipy_version": "1.17.0"},
+    }
+    numerics["threading"] = {"implementation": "accelerate", "num_threads": 5}
+    document["numerics"] = numerics
+    return document
+
+
+def _measured_linux_document(tmp_path: Path) -> dict:
+    document = _fixture_document(tmp_path)
+    document["numerics"] = _openblas_record(tmp_path)
+    document["numerics"]["provider_config"] = {
+        "openblas": {
+            "version": "0.3.30",
+            "core": "Neoverse-V2",
+            "config": "USE64BITINT DYNAMIC_ARCH",
+            "record_path": "numpy-2.5.2.dist-info/RECORD",
+            "num_threads_reported": 8,
+        },
+        "wheel": {"tags": ["cp313-cp313-manylinux_2_27_aarch64"]},
+        "foreign_providers_loaded": [HOST_SENTINEL],
+        "numpy_show_config": {},
+        "numpy_show_runtime": f"uname(node='{HOST_SENTINEL}')",
+        "abi_check": {"compile_only": "pass", "link_run": "pass", "output": "ok"},
+        "interposition": {"checked": True, "stable": True},
+    }
+    document["numerics"]["threading"] = {"implementation": "openblas", "num_threads": 8}
+    return document
+
+
+def test_record_projection_keeps_provider_facts_and_drops_host_state(tmp_path):
+    entry = project_numerics_record(_measured_darwin_document(tmp_path))
+    assert validate_numerics_record_entry("darwin-arm64", entry) is entry
+    assert set(entry["numerics"]) == {
+        "backend", "blas_integer_bits", "lapack_integer_bits", "numpy_version",
+        "site_packages", "symbols", "numpy_imports", "library_paths", "interp",
+        "multiply_broadcast", "provider_config",
+    }
+    text = json.dumps(entry)
+    assert HOST_SENTINEL not in text
+    assert "thread_measure" not in text
+    assert "sdk_path" not in text
+    assert "threading" not in entry["numerics"]
+    assert entry["python"] == {"version": "3.14.3", "soabi": "cpython-314-darwin"}
+
+
+def test_record_writer_is_byte_identical_for_the_same_measurement(tmp_path):
+    lock = tmp_path / "numerics.lock.json"
+    write_numerics_record(lock, _measured_darwin_document(tmp_path))
+    first = lock.read_bytes()
+    write_numerics_record(lock, _measured_darwin_document(tmp_path))
+    assert lock.read_bytes() == first
+    assert first.endswith(b"\n")
+
+
+def test_record_writer_keeps_the_other_platforms_entry(tmp_path):
+    lock = tmp_path / "numerics.lock.json"
+    darwin_key = write_numerics_record(lock, _measured_darwin_document(tmp_path))
+    linux_key = write_numerics_record(lock, _measured_linux_document(tmp_path))
+    assert (darwin_key, linux_key) == ("darwin-arm64", "linux-aarch64")
+    records = load_numerics_lock(lock)["records"]
+    assert set(records) == {"darwin-arm64", "linux-aarch64"}
+    assert records["linux-aarch64"]["numerics"]["backend"] == "NUMPY_OPENBLAS"
+
+
+def test_numerics_lock_rejects_host_state_smuggled_into_a_record(tmp_path):
+    entry = project_numerics_record(_measured_darwin_document(tmp_path))
+    entry["numerics"]["threading"] = {"implementation": "accelerate", "num_threads": 5}
+    with pytest.raises(ValueError, match="extra="):
+        validate_numerics_record_entry("darwin-arm64", entry)
+
+
+def test_numerics_lock_key_must_name_the_recorded_platform(tmp_path):
+    entry = project_numerics_record(_measured_darwin_document(tmp_path))
+    with pytest.raises(ValueError, match="does not match"):
+        validate_numerics_record_entry("linux-aarch64", entry)
+
+
+def test_numerics_lock_rejects_an_unknown_schema_version(tmp_path):
+    lock = tmp_path / "numerics.lock.json"
+    lock.write_text(json.dumps({"schema_version": 2, "records": {}}))
+    with pytest.raises(ValueError, match="schema_version"):
+        load_numerics_lock(lock)
+
+
+def test_numerics_lock_rejects_an_unqualified_integer_width_on_write(tmp_path):
+    document = _measured_darwin_document(tmp_path)
+    document["numerics"]["lapack_integer_bits"] = 32
+    lock = tmp_path / "numerics.lock.json"
+    with pytest.raises(ValueError, match="integer ABI"):
+        write_numerics_record(lock, document)
+    assert not lock.exists()
+
+
+def test_cli_rejects_output_combined_with_numerics_record(tmp_path):
+    result = subprocess.run(
+        [sys.executable, str(PROBE_SCRIPT), "--python", sys.executable,
+         "--output", str(tmp_path / "doc.json"),
+         "--write-numerics-record", str(tmp_path / "lock.json")],
+        capture_output=True, text=True, timeout=60,
+    )
+    assert result.returncode == 2
+    assert "mutually exclusive" in result.stderr
+    assert not (tmp_path / "lock.json").exists()
+
+
+def test_committed_numerics_lock_is_a_valid_darwin_record():
+    lock = load_numerics_lock(NUMERICS_LOCK)
+    entry = lock["records"]["darwin-arm64"]
+    assert entry["numerics"]["backend"] == "ACCELERATE"
+    assert entry["numerics"]["numpy_version"] == REQUIRED_NUMPY_VERSION
+    assert entry["numerics"]["interp"]["lowering"] == "contracted"
+    assert entry["numerics"]["multiply_broadcast"]["nan_winner"] == "scalar"
+
+
+@pytest.mark.skipif(
+    not _real_environment_available(),
+    reason="real provider probe needs the pinned scientific environment",
+)
+def test_cli_numerics_record_is_byte_identical_across_runs(tmp_path):
+    outputs = []
+    for name in ("first.json", "second.json"):
+        target = tmp_path / name
+        result = subprocess.run(
+            [sys.executable, str(PROBE_SCRIPT), "--python", sys.executable,
+             "--write-numerics-record", str(target)],
+            capture_output=True, text=True, timeout=600,
+        )
+        assert result.returncode == 0, result.stderr
+        outputs.append(target.read_bytes())
+    assert outputs[0] == outputs[1]
+
+
+@pytest.mark.skipif(
+    not _real_environment_available(),
+    reason="real provider probe needs the pinned scientific environment",
+)
+def test_committed_numerics_record_matches_the_live_measurement():
+    """Staleness: the committed record must equal a fresh measurement on this
+    host, except for the interpreter provenance and the install location."""
+    document = probe_dependencies(Path(sys.executable))
+    live = project_numerics_record(document)
+    key = record_platform_key(document)
+    committed = load_numerics_lock(NUMERICS_LOCK)["records"].get(key)
+    if committed is None:
+        pytest.skip(f"no committed numerics record for '{key}' yet")
+
+    def identity(entry: dict) -> dict:
+        stripped = json.loads(json.dumps(entry))
+        stripped.pop("python")
+        stripped["numerics"].pop("site_packages")
+        return stripped
+
+    assert identity(live) == identity(committed)

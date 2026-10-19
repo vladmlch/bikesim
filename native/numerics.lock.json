@@ -1,26 +1,22 @@
 {
-  "purpose": "Measured per-platform numerics record for the native build. Each records[<platform>] entry is the numerics projection of the schema-1 dependency document from tools/native_dependencies.py, measured with the pinned NumPy. Regenerate with --write-numerics-record; do not hand-edit.",
+  "purpose": "Committed per-platform numerics facts for the native build, measured with the pinned NumPy by tools/native_dependencies.py. Each records[] entry holds only facts identical on every machine of that platform, plus the NumPy version as the staleness identity. Regenerate with --write-numerics-record; do not hand-edit.",
   "records": {
     "darwin-arm64": {
       "numerics": {
         "backend": "ACCELERATE",
         "blas_integer_bits": 32,
         "interp": {
-          "distinguishing": 1511,
-          "lowering": "contracted",
-          "queries": 4096
+          "lowering": "contracted"
         },
         "lapack_integer_bits": 64,
         "library_paths": [
           {
-            "build_id": "macos-26A434+accelerate-a697e7b9-8ff4-356c-a507-64b38af1ccaa+sdk-26A425",
             "identity_kind": "apple-system",
             "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib",
             "role": "blas",
             "sha256": null
           },
           {
-            "build_id": "macos-26A434+accelerate-a697e7b9-8ff4-356c-a507-64b38af1ccaa+sdk-26A425",
             "identity_kind": "apple-system",
             "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLAPACK.dylib",
             "role": "lapack",
@@ -28,72 +24,9 @@
           }
         ],
         "multiply_broadcast": {
-          "distinguishing": 64,
-          "lanes": 64,
           "nan_winner": "scalar"
         },
-        "numpy_imports": {
-          "ddot": [
-            "cblas_ddot$NEWLAPACK$ILP64"
-          ],
-          "dgelsd": [
-            "dgelsd$NEWLAPACK$ILP64"
-          ],
-          "dgemm": [
-            "cblas_dgemm$NEWLAPACK$ILP64"
-          ],
-          "dgemv": [
-            "cblas_dgemv$NEWLAPACK$ILP64"
-          ]
-        },
         "numpy_version": "2.5.2",
-        "provider_config": {
-          "abi_check": {
-            "compile_only": "pass",
-            "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
-            "link_run": "pass",
-            "output": "BIKE-ABI-OK ddot=32 dgemv=[10 26 42] dgemm=[4 5;10 11] dgelsd_rank=1 x=[0.6 1.2]"
-          },
-          "accelerate_images": [
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vImage.framework/Versions/A/vImage",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBNNS.dylib",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLAPACK.dylib",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLinearAlgebra.dylib",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libQuadrature.dylib",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libSparse.dylib",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libSparseBLAS.dylib",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvDSP.dylib",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvMisc.dylib",
-            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/vecLib"
-          ],
-          "accelerate_uuid": "a697e7b9-8ff4-356c-a507-64b38af1ccaa",
-          "interposition": {
-            "checked": true,
-            "providers_after_scipy": [
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vImage.framework/Versions/A/vImage",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBNNS.dylib",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLAPACK.dylib",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLinearAlgebra.dylib",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libQuadrature.dylib",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libSparse.dylib",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libSparseBLAS.dylib",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvDSP.dylib",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvMisc.dylib",
-              "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/vecLib"
-            ],
-            "scipy_version": "1.17.0",
-            "stable": true
-          },
-          "macos_build": "26A434",
-          "macos_version": "27.0.1",
-          "sdk_build": "26A425",
-          "sdk_version": "27.0"
-        },
-        "site_packages": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/.venv/lib/python3.14/site-packages",
         "symbols": {
           "ddot": "cblas_ddot",
           "dgelsd": "dgelsd$NEWLAPACK$ILP64",
@@ -105,10 +38,6 @@
         "libc": null,
         "machine": "arm64",
         "system": "Darwin"
-      },
-      "python": {
-        "soabi": "cpython-314-darwin",
-        "version": "3.14.3"
       }
     }
   },

@@ -176,13 +176,35 @@ selects between already-qualified records — it cannot conjure one.
 
 ## 9. Committed numerics record
 
-The Python-free root configure cannot measure NumPy, so the qualified facts
-are committed in `native/numerics.lock.json`, one `records[<platform>]` entry
-per platform (`darwin-arm64` today). Each entry is the probe's `numerics`
-object with the same key names, plus the `platform` and `python` sections;
-host-only values (thread counts, the wheel's build-environment dump, the
-hostname in `numpy_show_runtime`, Xcode paths) are dropped so the file is
-byte-identical across runs.
+The Python-free root configure cannot measure NumPy, so the facts that do not
+depend on the machine are committed in `native/numerics.lock.json`, one
+`records[<platform>]` entry per platform (`darwin-arm64` today).
+
+Content rule. An entry holds only:
+
+- `platform` (`system`, `machine`, `libc`), which also derives the key;
+- `numerics.numpy_version`, the staleness identity;
+- the facts BikeNumerics.cmake consumes that are identical on every machine
+  of the platform: `backend`, `blas_integer_bits`, `lapack_integer_bits`,
+  `symbols` (the four qualified spellings), `interp.lowering`,
+  `multiply_broadcast.nan_winner`, and each `library_paths` entry's `path`,
+  `role`, `identity_kind` and `sha256`.
+
+Provider paths follow the backend. Darwin keeps the absolute system Accelerate
+image, with `sha256: null` (apple-system identity). Linux stores the provider
+relative to the NumPy site-packages root (for example `numpy.libs/...`), with
+the wheel-RECORD SHA-256 the probe already checks against the file.
+
+Not committed: the install location (`numerics.site_packages`), the `python`
+section, the macOS and SDK build identity and the Accelerate UUID, the
+`library_paths[].build_id`, the ABI-check transcript, the interposition check,
+`numpy_imports`, the evidence counts (`interp.queries`, `interp.distinguishing`,
+`multiply_broadcast.lanes`, `multiply_broadcast.distinguishing`), threading, and
+the rest of `provider_config`. These are configure-time measurements from the
+live probe. They differ between machines and OS builds, so a difference in them
+is not staleness. See the field-by-field table in
+`.superpowers/sdd/merge-linux-macos-port/task-16-report.md` for the consumers and
+sources.
 
 Regenerate the entry for the current platform with the pinned NumPy:
 
@@ -192,9 +214,6 @@ uv run --frozen --group native python tools/native_dependencies.py \
     --write-numerics-record native/numerics.lock.json
 ```
 
-Staleness identity is the NumPy version, the platform, and the provider
-identity (`library_paths`, `provider_config`). The Python version is
-provenance only: CPython 3.13 and 3.14 measured the same NumPy 2.5.2 wheel
-with identical facts; only `numerics.site_packages` (the install location)
-differs. Re-run the command after changing the interpreter so that path
-matches the environment.
+The writer keeps other platforms' entries, so it reads the existing file
+first. A file written under an older content rule fails the current reader.
+Delete it and regenerate, as the one-time migration did.

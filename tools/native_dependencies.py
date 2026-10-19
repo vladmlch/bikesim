@@ -71,10 +71,11 @@ CLI:
 Without ``--output`` the document is written to stdout; diagnostics and the
 named dependency errors go to stderr with a nonzero exit.
 
-``--write-numerics-record`` measures the same document and stores its
-``numerics`` projection under ``records[<platform key>]`` of the committed
-``native/numerics.lock.json`` (see "Committed numerics record" below). The
-Python-free root configure reads that file and never runs this module.
+``--write-numerics-record`` measures the same document and stores only the
+facts that are identical on every machine of the platform under
+``records[<platform key>]`` of the committed ``native/numerics.lock.json``
+(see "Committed numerics record" below). Machine- and OS-build-specific values
+stay in the live document for configure-time consumers.
 """
 from __future__ import annotations
 
@@ -2081,43 +2082,31 @@ def probe_dependencies(python: Path) -> dict:
 # --------------------------------------------------------------------------
 #
 # Measuring the numerics needs a Python interpreter with the pinned NumPy,
-# which the Python-free root configure never has. The record is the probe's
-# own ``numerics`` object (same keys, same nesting) for each platform,
-# measured once and committed; configure reads it instead of running this
-# module. Only what the native build consumes and what identifies the
-# provider is kept: host-measured values (thread counts, the build machine's
-# NumPy config dump, the hostname inside numpy_show_runtime, Xcode paths) are
-# dropped so the file is byte-identical across runs and carries no machine
-# identity beyond the install location BikeNumerics.cmake requires.
+# which the Python-free root configure never has. The committed record holds
+# only the facts that are identical on every machine of a platform with the
+# pinned NumPy: the provider's integer ABI and symbol spellings, its identity
+# (system framework images on Darwin; wheel-relative files with their SHA-256
+# on Linux), and the wheel's np.interp / np.multiply lowering. Everything tied
+# to a machine or an OS build (install location, Python identity, macOS and
+# SDK build ids, the ABI-check transcript, evidence counts) is a configure-time
+# measurement and is never committed. A record measured on one Mac is
+# therefore not stale on another Mac with the same NumPy wheel.
 
 NUMERICS_LOCK_SCHEMA_VERSION = 1
 NUMERICS_LOCK_PURPOSE = (
-    "Measured per-platform numerics record for the native build. Each "
-    "records[<platform>] entry is the numerics projection of the schema-1 "
-    "dependency document from tools/native_dependencies.py, measured with "
-    "the pinned NumPy. Regenerate with --write-numerics-record; do not "
-    "hand-edit."
+    "Committed per-platform numerics facts for the native build, measured "
+    "with the pinned NumPy by tools/native_dependencies.py. Each records[] "
+    "entry holds only facts identical on every machine of that platform, "
+    "plus the NumPy version as the staleness identity. Regenerate with "
+    "--write-numerics-record; do not hand-edit."
 )
-# The probe's numerics keys that the record keeps. ``threading`` (load-
-# dependent thread counts) and ``numpy_package`` (a host path that
-# validate_numerics needs only at measurement time) are not provider facts.
+# The facts BikeNumerics.cmake consumes, plus the NumPy version. Nothing else
+# the probe measures is committed.
 _RECORD_NUMERICS_KEYS = frozenset({
     "backend", "blas_integer_bits", "lapack_integer_bits", "numpy_version",
-    "site_packages", "symbols", "numpy_imports", "library_paths", "interp",
-    "multiply_broadcast", "provider_config",
+    "symbols", "library_paths", "interp", "multiply_broadcast",
 })
-# provider_config keys kept per backend. Anything else is either a
-# measurement of this host (thread_measure, num_threads_reported) or a dump
-# of the wheel's build environment (numpy_show_config, numpy_show_runtime
-# with the hostname), none of which describes the provider.
-_RECORD_PROVIDER_CONFIG_KEYS = {
-    "ACCELERATE": frozenset({
-        "macos_version", "macos_build", "sdk_version", "sdk_build",
-        "accelerate_uuid", "accelerate_images", "abi_check", "interposition",
-    }),
-    "NUMPY_OPENBLAS": frozenset({"openblas", "abi_check", "interposition"}),
-}
-_RECORD_OPENBLAS_KEYS = ("core", "config", "version")
+_RECORD_LIBRARY_KEYS = frozenset({"path", "role", "identity_kind", "sha256"})
 
 
 def record_platform_key(document: dict) -> str:
@@ -2132,63 +2121,88 @@ def record_platform_key(document: dict) -> str:
     return f"{system.lower()}-{machine}"
 
 
+def _record_library_path(backend: str, raw_path: str, site_packages: str) -> str:
+    """The provider path as the committed record stores it.
+
+    Accelerate keeps its absolute system-framework image: that path is the
+    same on every Mac. A wheel-shipped provider is stored relative to the
+    site-packages root (``numpy.libs/...``), because the install location is
+    a configure-time fact and differs between checkouts.
+    """
+    if backend == "ACCELERATE":
+        return raw_path
+    provider = Path(raw_path).resolve()
+    site = Path(site_packages).resolve()
+    if not provider.is_relative_to(site):
+        raise ValueError(
+            f"numerics provider {provider} is outside the NumPy "
+            f"site-packages tree {site}"
+        )
+    return provider.relative_to(site).as_posix()
+
+
 def project_numerics_record(document: dict) -> dict:
     """Project a validated schema-1 document onto one record entry.
 
-    The entry keeps the probe's key names and nesting. The Python version and
-    SOABI are provenance only: the facts come from the NumPy wheel's compiled
-    kernels, so they are not part of the staleness identity.
+    ``site_packages`` is read here only to relativize a wheel provider path;
+    it is not stored. The result is compared field-for-field in staleness
+    checks, so a field that varies between machines must not appear in it.
     """
     numerics = _require_object(document, "numerics")
     backend = _require_string(numerics, "backend", "numerics.backend")
-    provider_config = _require_object(numerics, "provider_config")
-    kept_config = {
-        key: provider_config[key]
-        for key in sorted(_RECORD_PROVIDER_CONFIG_KEYS[backend])
-    }
-    if backend == "NUMPY_OPENBLAS":
-        openblas = _require_object(provider_config, "openblas")
-        kept_config["openblas"] = {
-            key: openblas[key] for key in _RECORD_OPENBLAS_KEYS
-        }
-    kept_numerics = {
-        key: numerics[key]
-        for key in _RECORD_NUMERICS_KEYS
-        if key != "provider_config"
-    }
-    kept_numerics["provider_config"] = kept_config
+    site_packages = _require_string(
+        numerics, "site_packages", "numerics.site_packages")
+    symbols = _require_object(numerics, "symbols")
+    interp = _require_object(numerics, "interp")
+    broadcast = _require_object(numerics, "multiply_broadcast")
     platform_section = _require_object(document, "platform")
-    python_section = _require_object(document, "python")
     return {
         "platform": {
             "system": platform_section["system"],
             "machine": platform_section["machine"],
             "libc": platform_section["libc"],
         },
-        "python": {
-            "version": python_section["version"],
-            "soabi": python_section["soabi"],
+        "numerics": {
+            "backend": backend,
+            "blas_integer_bits": numerics["blas_integer_bits"],
+            "lapack_integer_bits": numerics["lapack_integer_bits"],
+            "numpy_version": numerics["numpy_version"],
+            "symbols": {op: symbols[op] for op in _NUMERICS_OPS},
+            "library_paths": [
+                {
+                    "path": _record_library_path(
+                        backend, lib["path"], site_packages),
+                    "role": lib["role"],
+                    "identity_kind": lib["identity_kind"],
+                    "sha256": lib["sha256"],
+                }
+                for lib in numerics["library_paths"]
+            ],
+            "interp": {"lowering": interp["lowering"]},
+            "multiply_broadcast": {"nan_winner": broadcast["nan_winner"]},
         },
-        "numerics": kept_numerics,
     }
 
 
 def validate_numerics_record_entry(key: str, entry: dict) -> dict:
     """Validate one records[] entry; return it unchanged.
 
-    Shape and spelling only, no filesystem access: the committed record is
-    read on machines that do not have the measured NumPy installed. The
-    probe's own validate_numerics ran on the live document before projection.
+    Shape and spelling only, with no filesystem access: the committed record
+    is read on machines without the measured NumPy. The probe's own
+    validate_numerics ran on the live document before projection.
     """
     label = f"numerics record '{key}'"
     if not isinstance(entry, dict):
         raise ValueError(f"{label} must be an object, found {entry!r}")
-    if set(entry) != {"platform", "python", "numerics"}:
+    if set(entry) != {"platform", "numerics"}:
         raise ValueError(
-            f"{label} must carry exactly platform, python and numerics; "
+            f"{label} must carry exactly platform and numerics; "
             f"found {sorted(entry)}"
         )
     platform_section = _require_object(entry, "platform")
+    if set(platform_section) != {"system", "machine", "libc"}:
+        raise ValueError(
+            f"{label} platform must carry exactly system, machine and libc")
     system = _require_string(
         platform_section, "system", f"{label} platform.system")
     machine = _require_string(
@@ -2198,17 +2212,14 @@ def validate_numerics_record_entry(key: str, entry: dict) -> dict:
             f"{label} describes {system}/{machine}, which does not match "
             "its records key"
         )
-    libc = platform_section.get("libc")
+    libc = platform_section["libc"]
     if libc is not None and not isinstance(libc, str):
         raise ValueError(f"{label} platform.libc must be a string or null")
-    python_section = _require_object(entry, "python")
-    _require_string(python_section, "version", f"{label} python.version")
-    _require_string(python_section, "soabi", f"{label} python.soabi")
 
     numerics = _require_object(entry, "numerics")
     if set(numerics) != _RECORD_NUMERICS_KEYS:
         raise ValueError(
-            f"{label} numerics must carry exactly the projected keys; "
+            f"{label} numerics must carry exactly the committed facts; "
             f"missing={sorted(_RECORD_NUMERICS_KEYS - set(numerics))} "
             f"extra={sorted(set(numerics) - _RECORD_NUMERICS_KEYS)}"
         )
@@ -2224,85 +2235,72 @@ def validate_numerics_record_entry(key: str, entry: dict) -> dict:
         )
     _require_string(
         numerics, "numpy_version", f"{label} numerics.numpy_version")
-    site = _require_string(
-        numerics, "site_packages", f"{label} numerics.site_packages")
-    if not Path(site).is_absolute():
-        raise ValueError(f"{label} numerics.site_packages is not absolute")
     symbols = _require_object(numerics, "symbols")
     if set(symbols) != set(_NUMERICS_OPS):
         raise ValueError(
             f"{label} numerics.symbols must map exactly {_NUMERICS_OPS}")
     for op in _NUMERICS_OPS:
         checked_symbol(symbols[op])
-    imports = _require_object(numerics, "numpy_imports")
-    if set(imports) != set(_NUMERICS_OPS) or not all(
-        isinstance(imports[op], list) for op in _NUMERICS_OPS
-    ):
-        raise ValueError(
-            f"{label} numerics.numpy_imports must map exactly "
-            f"{_NUMERICS_OPS} to lists")
-    _validate_record_library_paths(label, numerics["library_paths"])
+    _validate_record_library_paths(label, backend, numerics["library_paths"])
     interp = _require_object(numerics, "interp")
-    if interp.get("lowering") not in ("contracted", "separate"):
+    if set(interp) != {"lowering"} or \
+            interp["lowering"] not in ("contracted", "separate"):
         raise ValueError(
-            f"{label} numerics.interp.lowering must be 'contracted' or "
-            "'separate'")
+            f"{label} numerics.interp must be exactly "
+            "{lowering: contracted|separate}")
     broadcast = _require_object(numerics, "multiply_broadcast")
-    if broadcast.get("nan_winner") not in ("scalar", "element"):
+    if set(broadcast) != {"nan_winner"} or \
+            broadcast["nan_winner"] not in ("scalar", "element"):
         raise ValueError(
-            f"{label} numerics.multiply_broadcast.nan_winner must be "
-            "'scalar' or 'element'")
-    config = _require_object(numerics, "provider_config")
-    if set(config) != _RECORD_PROVIDER_CONFIG_KEYS[backend]:
-        raise ValueError(
-            f"{label} numerics.provider_config must carry exactly "
-            f"{sorted(_RECORD_PROVIDER_CONFIG_KEYS[backend])}"
-        )
-    if backend == "NUMPY_OPENBLAS":
-        openblas = _require_object(config, "openblas")
-        if set(openblas) != set(_RECORD_OPENBLAS_KEYS):
-            raise ValueError(
-                f"{label} provider_config.openblas must carry exactly "
-                f"{list(_RECORD_OPENBLAS_KEYS)}")
-        if "USE64BITINT" not in str(openblas["config"]):
-            raise ValueError(
-                f"{label} provider_config.openblas.config must carry the "
-                "USE64BITINT build flag")
+            f"{label} numerics.multiply_broadcast must be exactly "
+            "{nan_winner: scalar|element}")
     return entry
 
 
-def _validate_record_library_paths(label: str, library_paths) -> None:
-    """Shape and identity-kind checks for the record's provider entries."""
+def _validate_record_library_paths(label: str, backend: str,
+                                   library_paths) -> None:
+    """Provider entries: the path form depends on the backend.
+
+    ACCELERATE entries are the absolute system-framework images with the
+    apple-system identity (no digest). NUMPY_OPENBLAS entries are files the
+    NumPy wheel ships, stored relative to site-packages with their SHA-256.
+    """
     if not isinstance(library_paths, list) or not library_paths:
         raise ValueError(
             f"{label} numerics.library_paths must be a nonempty list")
-    expected_keys = {"path", "role", "identity_kind", "sha256", "build_id"}
+    roles: set[str] = set()
     for index, lib in enumerate(library_paths):
         where = f"{label} numerics.library_paths[{index}]"
-        if not isinstance(lib, dict) or set(lib) != expected_keys:
+        if not isinstance(lib, dict) or set(lib) != _RECORD_LIBRARY_KEYS:
             raise ValueError(
-                f"{where} must carry exactly {sorted(expected_keys)}")
+                f"{where} must carry exactly {sorted(_RECORD_LIBRARY_KEYS)}")
         path = _require_string(lib, "path", f"{where}.path")
-        if not Path(path).is_absolute():
-            raise ValueError(f"{where}.path is not absolute: {path}")
         if lib["role"] not in _NUMERICS_ROLES:
             raise ValueError(f"{where}.role {lib['role']!r} is unknown")
-        identity = lib["identity_kind"]
-        digest, build_id = lib["sha256"], lib["build_id"]
-        has_digest = (isinstance(digest, str)
-                      and _SHA256_HEX.fullmatch(digest) is not None)
-        has_build_id = isinstance(build_id, str) and build_id != ""
-        if identity == "file" and not (has_digest and build_id is None):
-            raise ValueError(
-                f"{where} file identity needs a sha256 digest and a null "
-                "build_id")
-        if identity == "apple-system" and not (
-                has_build_id and digest is None):
-            raise ValueError(
-                f"{where} apple-system identity needs a build_id and a null "
-                "sha256")
-        if identity not in ("file", "apple-system"):
-            raise ValueError(f"{where}.identity_kind {identity!r} is unknown")
+        roles.update(lib["role"].split("_"))
+        digest = lib["sha256"]
+        if backend == "ACCELERATE":
+            if lib["identity_kind"] != "apple-system" or digest is not None:
+                raise ValueError(
+                    f"{where} must be an apple-system entry with a null "
+                    "sha256")
+            if not path.startswith(_ACCELERATE_IMAGE_PREFIX):
+                raise ValueError(
+                    f"{where}.path must be an absolute system Accelerate "
+                    f"image, found {path!r}")
+        else:
+            if lib["identity_kind"] != "file" or not (
+                    isinstance(digest, str)
+                    and _SHA256_HEX.fullmatch(digest) is not None):
+                raise ValueError(
+                    f"{where} must be a file entry with a lowercase SHA-256")
+            if path.startswith("/") or ".." in path.split("/") or not path:
+                raise ValueError(
+                    f"{where}.path must be relative to site-packages, found "
+                    f"{path!r}")
+    if not {"blas", "lapack"} <= roles:
+        raise ValueError(
+            f"{label} numerics.library_paths does not cover blas and lapack")
 
 
 def validate_numerics_lock(value: dict) -> dict:

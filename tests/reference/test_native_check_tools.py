@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import os
 import platform
@@ -2420,3 +2421,38 @@ def test_schema2_linux_absent_compile_database_fails(
         native_checks.CheckError, match="missing compilation database"
     ):
         load_entries(build, expected)
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _python_support_modules() -> set[str]:
+    """_SUPPORT_TEST_MODULES from the Python reference, read without importing it."""
+    tree = ast.parse((REPO_ROOT / "tools" / "check_native_contracts.py").read_text(encoding="utf-8"))
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id == "_SUPPORT_TEST_MODULES"
+            for target in node.targets
+        ):
+            return {ast.literal_eval(element) for element in node.value.elts}
+    raise AssertionError("tools/check_native_contracts.py defines no _SUPPORT_TEST_MODULES")
+
+
+def _cxx_support_modules() -> set[str]:
+    """kSupportTestModules from the C++ port, with its declared array size checked."""
+    text = (REPO_ROOT / "native" / "src" / "tools" / "check_contracts.cpp").read_text(encoding="utf-8")
+    match = re.search(
+        r"std::array<std::string_view,\s*(\d+)>\s*kSupportTestModules\s*\{(.*?)\};", text, re.DOTALL
+    )
+    assert match is not None, "check_contracts.cpp defines no kSupportTestModules"
+    names = re.findall(r'"([^"]+)"', match.group(2))
+    assert len(names) == int(match.group(1)), (
+        f"kSupportTestModules declares {match.group(1)} entries and lists {len(names)}"
+    )
+    return set(names)
+
+
+def test_native_support_modules_match_the_python_reference() -> None:
+    """The C++ port and the Python reference exempt the same support modules from the
+    loader rule. Drift in either list silently changes which test files the rule checks."""
+    assert _cxx_support_modules() == _python_support_modules()

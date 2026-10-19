@@ -25,10 +25,12 @@
 #       is derived from the host, and the entry it names must describe that same
 #       host. The record's structure and facts are checked exactly as in LIVE
 #       mode, but they are not compared with a measurement: the LIVE check run by
-#       the binding graph is what keeps the committed record current. This mode
-#       creates no provider target and no bike_native_numerics, because the root
-#       graph has no compiler-policy macro and no Python-free provider location.
-#       It exports the compile definitions the root needs. Only Darwin is
+#       the binding graph is what keeps the committed record current. It exports
+#       the compile definitions the root needs and binds the Darwin Accelerate
+#       profile exactly as LIVE does: Bike::NumericsProvider and
+#       bike_native_numerics are created. Accelerate is an apple-system framework,
+#       so its location needs no probe. The includer supplies the two inputs the
+#       live probe would otherwise provide (see Prerequisites). Only Darwin is
 #       qualified here: a Linux provider lives inside the NumPy install, and
 #       neither its location nor the libc family is known without a probe.
 #
@@ -60,22 +62,31 @@
 #   BIKE_NUMERICS_RECORD          the committed record; defaults to
 #                                 native/numerics.lock.json, overridable so
 #                                 harnesses can supply a fixture record
+#   BIKE_NUMERICS_MUJOCO_INCLUDE  RECORD_ONLY only: the MuJoCo include root for
+#                                 the backend TUs (cblas_abi.hpp includes
+#                                 mujoco.h). LIVE takes it from the probe.
+#   BIKE_NUMERICS_APPLY_POLICY    optional: the policy function applied to
+#                                 bike_native_numerics. Default
+#                                 bike_apply_native_policy (BikeCompilerPolicy);
+#                                 the root graph sets bike_target_strict_policy
+#                                 until it moves onto BikeCompilerPolicy.
 #
 # Exports consumed by the rest of the native build:
-#   Bike::Numerics                  LIVE only: ALIAS of bike_native_numerics — the
+#   Bike::Numerics                  ALIAS of bike_native_numerics — the
 #                                   typed CBLAS/LAPACK adapter static
 #                                   library (link this; the provider
 #                                   arrives via its PUBLIC usage
-#                                   requirements)
-#   Bike::NumericsProvider          LIVE only: IMPORTED target — INTERFACE on
+#                                   requirements). LIVE and RECORD_ONLY.
+#   Bike::NumericsProvider          IMPORTED target — INTERFACE on
 #                                   Darwin (-framework Accelerate) or SHARED
-#                                   with IMPORTED_LOCATION on Linux
-#   bike_native_numerics            LIVE only: STATIC target holding exactly
+#                                   with IMPORTED_LOCATION on Linux (LIVE only).
+#                                   LIVE and RECORD_ONLY (Darwin).
+#   bike_native_numerics            STATIC target holding exactly
 #                                   the two resolved backend TUs
 #                                   (src/platform/blas_*.cpp +
 #                                   lapack_*.cpp); created only when CXX
 #                                   is enabled — record-only consumers
-#                                   configure fine
+#                                   configure fine. LIVE and RECORD_ONLY.
 #   BIKE_NUMERICS_BACKEND_RESOLVED  ACCELERATE or NUMPY_OPENBLAS
 #   _native_numerics_blas_bits      qualified BLAS integer width
 #   _native_numerics_lapack_bits    qualified LAPACK integer width
@@ -546,14 +557,15 @@ endforeach()
 # framework link interface on Darwin, a SHARED import at the qualified
 # path on Linux. Runtime kernels never link it directly: the adapter
 # carries it through PUBLIC usage requirements. Nothing calls dlsym or
-# mutates provider threading here. RECORD_ONLY creates no provider target: the
-# root graph links the framework itself, and its Accelerate binding is the
-# later root-link task's decision.
+# mutates provider threading here. RECORD_ONLY creates the same target for the
+# Darwin Accelerate profile: the framework is an apple-system image, so no probe
+# is needed to name it. Linux is refused above in RECORD_ONLY, so the SHARED
+# branch below is LIVE-only in practice.
 # --------------------------------------------------------------------------
 if(_numerics_backend STREQUAL "ACCELERATE")
   set(_numerics_provider "Accelerate.framework (apple-system)")
 endif()
-if(_numerics_is_live AND NOT TARGET Bike::NumericsProvider)
+if(NOT TARGET Bike::NumericsProvider)
   if(_numerics_backend STREQUAL "ACCELERATE")
     add_library(Bike::NumericsProvider INTERFACE IMPORTED GLOBAL)
     set_target_properties(Bike::NumericsProvider PROPERTIES
@@ -596,17 +608,13 @@ set(_native_numerics_symbols_header
 # platform per interface (verified against the generated record width at
 # compile time), strict ISO C++23, PIC so it can join the extension
 # module, and the provider through PUBLIC usage requirements so
-# Python-free harnesses receive the link too. bike_apply_native_policy
-# (BikeCompilerPolicy, T09) is applied when the includer has already
-# defined it. The mujoco include dir comes from the same schema-1
-# document — the blas backend TU reaches cblas_abi.hpp's mjtNum
-# assertion through it.
+# Python-free harnesses receive the link too. The policy applied is
+# BIKE_NUMERICS_APPLY_POLICY (default bike_apply_native_policy, BikeCompilerPolicy,
+# T09). The mujoco include dir is measured by the live probe, or in RECORD_ONLY
+# supplied by the includer as BIKE_NUMERICS_MUJOCO_INCLUDE — the blas backend TU
+# reaches cblas_abi.hpp's mjtNum assertion through it.
 # --------------------------------------------------------------------------
-if(NOT _numerics_is_live)
-  message(STATUS
-    "bike_native_numerics not created: RECORD_ONLY (the root graph binds no "
-    "adapter target)")
-elseif(NOT DEFINED _native_numerics_target_guard)
+if(NOT DEFINED _native_numerics_target_guard)
   set(_native_numerics_target_guard TRUE)
   if(CMAKE_CXX_COMPILER_LOADED)
     if(_numerics_backend STREQUAL "ACCELERATE")
@@ -618,7 +626,18 @@ elseif(NOT DEFINED _native_numerics_target_guard)
         "${CMAKE_CURRENT_LIST_DIR}/../src/platform/blas_numpy_openblas.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/../src/platform/lapack_numpy_openblas.cpp")
     endif()
-    _numerics_live_field(_numerics_mujoco_include mujoco include_dir)
+    if(_numerics_is_live)
+      _numerics_live_field(_numerics_mujoco_include mujoco include_dir)
+    else()
+      if(NOT DEFINED BIKE_NUMERICS_MUJOCO_INCLUDE
+         OR "${BIKE_NUMERICS_MUJOCO_INCLUDE}" STREQUAL "")
+        message(FATAL_ERROR
+          "BikeNumerics.cmake RECORD_ONLY requires BIKE_NUMERICS_MUJOCO_INCLUDE "
+          "(the MuJoCo include root of the locked dependency tree) to build "
+          "bike_native_numerics")
+      endif()
+      set(_numerics_mujoco_include "${BIKE_NUMERICS_MUJOCO_INCLUDE}")
+    endif()
     add_library(bike_native_numerics STATIC "${_numerics_backend_sources}")
     set_target_properties(bike_native_numerics PROPERTIES
       CXX_STANDARD 23
@@ -633,17 +652,20 @@ elseif(NOT DEFINED _native_numerics_target_guard)
       ${BIKE_MUJOCO_COMPAT_INCLUDE}
       "${_numerics_mujoco_include}")
     # Fail closed: a CXX-enabled project that reaches this point is a real
-    # target-build context, so the compiler policy must already be loaded —
-    # BikeCompilerPolicy.cmake is included before BikeNumerics.cmake under
-    # the project's CMakeLists.txt. Silently skipping the policy would emit
-    # a first-party TU without the contract flags.
-    if(NOT COMMAND bike_apply_native_policy)
-      message(FATAL_ERROR
-        "bike_apply_native_policy is undefined while CXX is enabled: "
-        "include cmake/BikeCompilerPolicy.cmake before BikeNumerics.cmake "
-        "under the project")
+    # target-build context, so the compiler policy must already be loaded.
+    # Silently skipping the policy would emit a first-party TU without the
+    # contract flags. The default is the port's policy; an includer that has
+    # not loaded it must name the policy it did load.
+    if(NOT DEFINED BIKE_NUMERICS_APPLY_POLICY)
+      set(BIKE_NUMERICS_APPLY_POLICY bike_apply_native_policy)
     endif()
-    bike_apply_native_policy(bike_native_numerics)
+    if(NOT COMMAND ${BIKE_NUMERICS_APPLY_POLICY})
+      message(FATAL_ERROR
+        "${BIKE_NUMERICS_APPLY_POLICY} is undefined while CXX is enabled: "
+        "include the policy module before BikeNumerics.cmake under the project, "
+        "or name a loaded policy in BIKE_NUMERICS_APPLY_POLICY")
+    endif()
+    cmake_language(CALL ${BIKE_NUMERICS_APPLY_POLICY} bike_native_numerics)
     target_link_libraries(bike_native_numerics
       PUBLIC Bike::NumericsProvider)
     if(NOT TARGET Bike::Numerics)

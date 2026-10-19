@@ -54,14 +54,10 @@ function(bike_add_native_startup native_dir)
   target_link_libraries(bike_startup_runtime INTERFACE
     ${_startup_core} "$<TARGET_OBJECTS:${_startup_core}>"
     ${_startup_engine} bike_rider_math)
-  # The core objects call the typed blas:: face, so the legacy graph consumes
-  # the qualified numerics adapter (provider included). The standalone root
-  # graph has no adapter and keeps the raw framework edge.
-  if(BIKE_ROOT_BUILD)
-    target_link_libraries(bike_startup_runtime INTERFACE "-framework Accelerate")
-  else()
-    target_link_libraries(bike_startup_runtime INTERFACE Bike::Numerics)
-  endif()
+  # The core objects call the typed blas:: face, so every app consumer links the
+  # qualified numerics adapter (provider included) in both graphs. The root
+  # graph's adapter comes from BikeNumerics.cmake's RECORD_ONLY binding.
+  target_link_libraries(bike_startup_runtime INTERFACE Bike::Numerics)
 
   add_library(bike_terrain STATIC
     "${native_dir}/src/terrain/profile.cpp"

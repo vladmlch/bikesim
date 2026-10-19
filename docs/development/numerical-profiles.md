@@ -223,7 +223,7 @@ committed record, at the same index as the bound path. Only `build_id` and the
 bound real path come from the live side.
 | `python` section | live probe | BikeCheckContext.cmake (required `python` member) |
 | `provider_config`, `numpy_imports`, `threading`, `interp.queries` and `distinguishing`, `multiply_broadcast.lanes` and `distinguishing` | live probe | embedded verbatim in `native_check_context.json` (BikeCheckContext.cmake) |
-| `mujoco.include_dir` (never in the record) | live probe (legacy graph); `.deps` (root graph) | BikeNumerics.cmake: include root of `bike_native_numerics` (LIVE only) |
+| `mujoco.include_dir` (never in the record) | live probe (legacy graph); `.deps` (root graph, passed as `BIKE_NUMERICS_MUJOCO_INCLUDE`) | BikeNumerics.cmake: include root of `bike_native_numerics` (LIVE and RECORD_ONLY) |
 
 Configure-time check. The legacy graph (`cmake -S native`, Python present)
 measures live and passes the probe document to
@@ -238,9 +238,12 @@ record-only mode (`BIKE_NUMERICS_SOURCE=RECORD_ONLY`): it runs no probe and no
 interpreter, derives the platform key from the host, and requires the entry to
 describe that host. It takes the facts without comparing them with a
 measurement, so the legacy graph's check is what keeps the committed record
-current. Record-only is qualified for Darwin. Linux root configure fails
-closed until the libc family and the NumPy provider location can be read
-without a probe.
+current. On Darwin it binds the same Accelerate backend the legacy graph binds
+(`Bike::NumericsProvider` and `bike_native_numerics`, built with the root's
+strict policy and the `.deps` MuJoCo include), because Accelerate is a system
+framework that needs no probe to name. Record-only is qualified for Darwin.
+Linux root configure fails closed until the libc family and the NumPy provider
+location can be read without a probe.
 
 The root graph's runtime identity needs the Darwin `build_id`, which the
 legacy graph reads from its live probe. The root graph has no Python probe, so

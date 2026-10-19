@@ -58,19 +58,14 @@ if(APPLE)
   bike_verify_sdk_compat()
 endif()
 
-# Numerics facts come from the committed record alone (RECORD_ONLY: no probe,
-# no Python). BikeNumerics.cmake projects the BIKE_NUMPY_* compile definitions
-# that numeric_numpy.hpp requires at directory scope, so this must precede the
-# first target. BikePlatform.cmake is not included: its Apple SDK probe would
-# run a second SDK resolution beside bike_resolve_macos_sdk() above. The host
-# dispatch and its cross-compilation refusal come from BikeHostTarget.cmake,
+# The host dispatch and its cross-compilation refusal come from BikeHostTarget.cmake,
 # the same function BikePlatform.cmake uses. It runs after project(), where
 # CMAKE_SYSTEM_NAME is the target system CMake actually configured, including
 # a toolchain-file cross setting that is not visible before project().
+# BikePlatform.cmake is not included: its Apple SDK probe would run a second
+# SDK resolution beside bike_resolve_macos_sdk() above.
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeHostTarget.cmake")
 bike_host_target_system(BIKE_TARGET_SYSTEM)
-set(BIKE_NUMERICS_SOURCE RECORD_ONLY)
-include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeNumerics.cmake")
 
 # Same libc++ hardening contract as the legacy binding build: EXTENSIVE by
 # default, FAST as an explicit comparison option — probed, not assumed.
@@ -86,6 +81,19 @@ bike_detect_libcpp_hardening()
 option(NATIVE_SANITIZE "ASan+UBSan build" OFF)
 option(NATIVE_RTSAN "RealtimeSanitizer build (brew clang only)" OFF)
 option(NATIVE_COVERAGE "llvm-cov instrumented build" OFF)
+
+# Numerics facts come from the committed record alone (RECORD_ONLY: no probe,
+# no Python). BikeNumerics.cmake projects the BIKE_NUMPY_* compile definitions
+# that numeric_numpy.hpp requires at directory scope, so it must precede the
+# first target. It also creates the Accelerate backend (bike_native_numerics),
+# whose strict policy reads the hardening and instrumentation state above, so it
+# follows them. The backend's policy is bike_target_strict_policy: this root
+# graph's first-party policy until it moves onto BikeCompilerPolicy.cmake.
+# The MuJoCo include root is the locked .deps copy, as for every root target.
+set(BIKE_NUMERICS_SOURCE RECORD_ONLY)
+set(BIKE_NUMERICS_MUJOCO_INCLUDE "${BIKE_DEP_mujoco_ROOT}/include")
+set(BIKE_NUMERICS_APPLY_POLICY bike_target_strict_policy)
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeNumerics.cmake")
 
 include(CTest)
 
@@ -410,6 +418,9 @@ bike_target_strict_policy(bike_rider_math)
 # other first-party target's MuJoCo include.
 target_include_directories(bike_rider_math SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+# spindle_math.cpp's np_norm reaches the blas:: face (ddot), so the adapter is
+# part of this library's interface, as in the legacy graph.
+target_link_libraries(bike_rider_math PUBLIC Bike::Numerics)
 
 # bike_configuration: the T12 configuration boundary — the ported Python
 # dataclass records with declared defaults, every __post_init__/domain
@@ -443,10 +454,11 @@ target_link_libraries(bike_configuration PRIVATE bike_io bike_platform
 # cockpit.py's metre-domain saddle/seatpost/grip/pedal placement. One
 # STATIC library keeps each TU in a single compile-database entry per
 # build graph (the ODR sweep relocatable-links every selected TU into
-# one image). The Accelerate edge is PUBLIC: specs.hpp's
+# one image). The provider edge is PUBLIC and Darwin-only: specs.hpp's
 # detail::np_dot/np_norm declare the same Accelerate ILP64 CBLAS entry
 # points the oracle's numpy resolves, so every consumer's final link
-# needs the framework.
+# needs the framework. Bike::NumericsProvider is the port's mechanism for
+# that edge (the legacy graph links it the same way).
 add_library(bike_geometry STATIC
   "${_bike_native_dir}/src/geometry/specs.hpp"
   "${_bike_native_dir}/src/geometry/hardpoints.cpp"
@@ -456,7 +468,9 @@ set_target_properties(bike_geometry PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_target_strict_policy(bike_geometry)
 target_include_directories(bike_geometry SYSTEM PRIVATE
   "${_bike_native_dir}/src")
-target_link_libraries(bike_geometry PUBLIC "-framework Accelerate")
+if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+  target_link_libraries(bike_geometry PUBLIC Bike::NumericsProvider)
+endif()
 
 # bike_kinematics: the T14 Horst-link boundary — linkage_math.py's
 # brentq_pure/circle_circle_intersection_2d primitives, solver.py's
@@ -532,7 +546,9 @@ set_target_properties(bike_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_target_strict_policy(bike_engine)
 target_include_directories(bike_engine SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
-target_link_libraries(bike_engine PUBLIC bike::mujoco bike_io)
+# engine_call.cpp reports the numerics provider through blas::provider_name, so
+# the typed adapter is part of this library's interface, as in the legacy graph.
+target_link_libraries(bike_engine PUBLIC bike::mujoco bike_io Bike::Numerics)
 
 include("${_bike_native_dir}/cmake/NativeStartup.cmake")
 bike_add_native_startup("${_bike_native_dir}")
@@ -563,7 +579,6 @@ if(BUILD_TESTING)
     "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
   target_link_libraries(native_distance_tests PRIVATE bike_core bike_engine
     bike_rider_math)
-  target_link_libraries(native_distance_tests PRIVATE "-framework Accelerate")
   bike_rewrite_mujoco_load_name(native_distance_tests
     "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
 
@@ -573,7 +588,6 @@ if(BUILD_TESTING)
     "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
   target_link_libraries(native_station_tests PRIVATE bike_core bike_engine
     bike_rider_math)
-  target_link_libraries(native_station_tests PRIVATE "-framework Accelerate")
   bike_rewrite_mujoco_load_name(native_station_tests
     "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
 

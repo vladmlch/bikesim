@@ -1,4 +1,4 @@
-// lapack_numpy_openblas.cpp — the Linux backend for lapack.hpp's typed
+// lapack_numpy_openblas.cpp — the Linux backend for lapack_abi.hpp's typed
 // call face. The wheel's scipy-openblas provider is ILP64 (USE64BITINT
 // in the qualified build): its Fortran entry points take 64-bit
 // integers, and the export spelling scipy_dgelsd_64_ recorded in the
@@ -22,7 +22,7 @@
 // fails closed at link time with undefined numeric_backend:: wrappers.
 #if defined(__linux__)
 
-#include "lapack.hpp"
+#include "../lapack_abi.hpp"
 
 #include "numerics_symbols.hpp"
 

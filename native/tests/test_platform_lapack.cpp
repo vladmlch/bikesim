@@ -1,5 +1,5 @@
 // test_platform_lapack.cpp — direct C++ contracts for the typed platform
-// LAPACK adapter (src/platform/lapack.hpp). Exactly one backend TU
+// LAPACK adapter (src/lapack_abi.hpp). Exactly one backend TU
 // implements numeric_backend::dgelsd: lapack_accelerate.cpp on Darwin
 // (Accelerate's dgelsd$NEWLAPACK$ILP64) or lapack_numpy_openblas.cpp on
 // Linux (the wheel's scipy_dgelsd_64_ export through the generated asm
@@ -16,7 +16,7 @@
 // (no rounding up — a different lwork lets LAPACK pick a different
 // blocking and change rounding), then issues the real call with
 // LWORK == the queried optimum.
-#include "../src/platform/lapack.hpp"
+#include "../src/lapack_abi.hpp"
 
 #include <array>
 #include <cmath>

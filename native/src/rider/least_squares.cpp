@@ -1,7 +1,7 @@
 // least_squares.cpp — platform ILP64 DGELSD driver.
 //
 // The foreign entry point lives behind numeric_backend::dgelsd
-// (src/platform/lapack.hpp) — Accelerate's dgelsd$NEWLAPACK$ILP64 on
+// (src/lapack_abi.hpp) — Accelerate's dgelsd$NEWLAPACK$ILP64 on
 // Darwin, the wheel's scipy_dgelsd_64_ on Linux — declared in exactly
 // one selected backend TU per platform. That symbol is exactly the
 // undefined import numpy's _umath_linalg carries for its lstsq gufunc
@@ -32,7 +32,7 @@
 #include "least_squares.hpp"
 
 #include "../model_access.hpp"
-#include "../platform/lapack.hpp"
+#include "../lapack_abi.hpp"
 
 #include <algorithm>
 #include <cfenv>

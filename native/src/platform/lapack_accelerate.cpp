@@ -1,4 +1,4 @@
-// lapack_accelerate.cpp — the Darwin backend for lapack.hpp's typed
+// lapack_accelerate.cpp — the Darwin backend for lapack_abi.hpp's typed
 // call face. macOS numpy links Apple Accelerate; dgelsd$NEWLAPACK$ILP64
 // is the SAME entry point the Python oracle's np.linalg.lstsq resolves
 // to (nm -u shows the identical import on _umath_linalg), so invoking
@@ -23,7 +23,7 @@
 // closed at link time with undefined numeric_backend:: wrappers.
 #if defined(__APPLE__)
 
-#include "lapack.hpp"
+#include "../lapack_abi.hpp"
 
 #include "numerics_symbols.hpp"
 

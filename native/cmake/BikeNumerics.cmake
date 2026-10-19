@@ -1,13 +1,24 @@
 # Qualified BLAS/LAPACK provider binding for the native build.
 #
-# This module consumes ONLY the numerics record of the schema-1 dependency
-# document produced by tools/native_dependencies.py — the probe already ran
-# the provider inside the selected interpreter, inspected its export table,
-# and compile/linked/ran a C control against the qualified signatures. There
-# is deliberately no find_package(BLAS) here: a generic BLAS search could
-# return a system library whose integer ABI differs from the NumPy provider
-# the record describes, and a wrong BLAS integer width is memory corruption,
-# not a link error.
+# Two sources, with a split by what each may contain:
+#
+#   facts     the committed numerics record (native/numerics.lock.json,
+#             records[<platform key>]) — integer widths, symbol spellings,
+#             provider identity, np.interp / np.multiply lowering. Identical on
+#             every machine of the platform with the pinned NumPy.
+#   live      the schema-1 probe document captured by BikeDependencies.cmake —
+#             machine-specific values only: the NumPy install location
+#             (site_packages), the Darwin build_id, and the MuJoCo include.
+#
+# Before any fact is read, the live measurement is projected and compared with
+# the committed entry by tools/native_dependencies.py --check-numerics-record.
+# A missing or stale entry fails configure and names the regeneration command.
+# The probe already ran the provider inside the selected interpreter, inspected
+# its export table, and compile/linked/ran a C control against the qualified
+# signatures. There is deliberately no find_package(BLAS) here: a generic BLAS
+# search could return a system library whose integer ABI differs from the NumPy
+# provider the record describes, and a wrong BLAS integer width is memory
+# corruption, not a link error.
 #
 # Selection:
 #   BIKE_NUMERICS_BACKEND=AUTO          (default) platform profile:
@@ -19,9 +30,14 @@
 #
 # Prerequisites for the includer:
 #   BIKE_TARGET_SYSTEM            set by BikePlatform.cmake
-#   _native_dependencies_json     the probe document, normally populated by
+#   _native_dependencies_json     the live probe document, normally populated by
 #                                 BikeDependencies.cmake; it may also be
 #                                 file(READ) from a captured document
+#   Python_EXECUTABLE             the selected interpreter that runs the
+#                                 record check (stdlib only, no probe)
+#   BIKE_NUMERICS_RECORD          the committed record; defaults to
+#                                 native/numerics.lock.json, overridable so
+#                                 harnesses can supply a fixture record
 #
 # Exports consumed by the rest of the native build:
 #   Bike::Numerics                  ALIAS of bike_native_numerics — the
@@ -48,6 +64,8 @@
 #   _native_numerics_provider       provider path (Linux file or Darwin
 #                                   framework umbrella description)
 #   _native_numerics_symbols_header generated numerics_symbols.hpp path
+#   _native_numerics_record_key     the records[] key the check verified
+#                                   (e.g. darwin-arm64)
 #   _native_numerics_interp_contracted  1 when the wheel contracts
 #                                   np.interp's slope*(x-dx)+dy into one
 #                                   fmadd, 0 when it rounds separately —
@@ -70,17 +88,35 @@ set(BIKE_NUMERICS_BACKEND "AUTO" CACHE STRING
   "Native numerical backend: AUTO|ACCELERATE|NUMPY_OPENBLAS")
 set_property(CACHE BIKE_NUMERICS_BACKEND PROPERTY STRINGS
   AUTO ACCELERATE NUMPY_OPENBLAS)
+set(BIKE_NUMERICS_RECORD "${CMAKE_CURRENT_LIST_DIR}/../numerics.lock.json"
+  CACHE FILEPATH "Committed numerics record (records[<platform key>] holds the facts)")
+get_filename_component(_numerics_record_file "${BIKE_NUMERICS_RECORD}" ABSOLUTE)
 
 # --------------------------------------------------------------------------
 # JSON field access — typed member reads only, fail closed on anything
-# missing/mistyped/-NOTFOUND. Document text is never evaluated.
+# missing/mistyped/-NOTFOUND. Document text is never evaluated. Two sources:
+# _numerics_record_field reads the committed record's entry for this
+# platform (facts); _numerics_live_field reads the live probe document
+# (machine-specific values only).
 # --------------------------------------------------------------------------
-macro(_numerics_field _out_var)
+macro(_numerics_record_field _out_var)
+  string(JSON ${_out_var} ERROR_VARIABLE _numerics_json_error
+    GET "${_numerics_record_json}" records "${_native_numerics_record_key}" ${ARGN})
+  if(_numerics_json_error OR "${${_out_var}}" MATCHES "-NOTFOUND$")
+    message(FATAL_ERROR
+      "committed numerics record '${_native_numerics_record_key}' is missing "
+      "required field '${ARGN}': ${_numerics_json_error} — regenerate it "
+      "with tools/native_dependencies.py --python <interpreter> "
+      "--write-numerics-record ${_numerics_record_file}")
+  endif()
+endmacro()
+
+macro(_numerics_live_field _out_var)
   string(JSON ${_out_var} ERROR_VARIABLE _numerics_json_error
     GET "${_native_dependencies_json}" ${ARGN})
   if(_numerics_json_error OR "${${_out_var}}" MATCHES "-NOTFOUND$")
     message(FATAL_ERROR
-      "numerics record is missing required field '${ARGN}': "
+      "dependency document is missing required field '${ARGN}': "
       "${_numerics_json_error} — run tools/native_dependencies.py to "
       "produce a qualified dependency document")
   endif()
@@ -96,11 +132,51 @@ if(_numerics_type_error OR NOT _numerics_type STREQUAL "OBJECT")
     "--python <selected interpreter> against the pinned environment")
 endif()
 
-_numerics_field(_numerics_backend numerics backend)
-_numerics_field(_numerics_blas_bits numerics blas_integer_bits)
-_numerics_field(_numerics_lapack_bits numerics lapack_integer_bits)
-_numerics_field(_numerics_numpy_version numerics numpy_version)
-_numerics_field(_numerics_site_packages numerics site_packages)
+# --------------------------------------------------------------------------
+# Live-versus-committed check. The probe document is written to the build
+# tree so the stdlib-only checker can read it; the checker projects it,
+# requires its platform entry to equal the committed one, and prints that
+# entry's key. Its exit status is the verdict: a missing or stale entry is a
+# configure error that carries the regeneration command.
+# --------------------------------------------------------------------------
+set(_numerics_probe_document "${CMAKE_CURRENT_BINARY_DIR}/bike_numerics/probe_document.json")
+file(WRITE "${_numerics_probe_document}" "${_native_dependencies_json}\n")
+execute_process(
+  COMMAND "${Python_EXECUTABLE}"
+          "${CMAKE_CURRENT_LIST_DIR}/../../tools/native_dependencies.py"
+          --check-numerics-record "${_numerics_record_file}"
+          --probe-document "${_numerics_probe_document}"
+  RESULT_VARIABLE _numerics_check_result
+  OUTPUT_VARIABLE _native_numerics_record_key
+  ERROR_VARIABLE _numerics_check_error
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT _numerics_check_result EQUAL 0)
+  message(FATAL_ERROR "${_numerics_check_error}")
+endif()
+if(NOT _native_numerics_record_key MATCHES "^[a-z]+-[A-Za-z0-9_]+$")
+  message(FATAL_ERROR
+    "numerics record check returned an invalid platform key "
+    "'${_native_numerics_record_key}'")
+endif()
+
+file(READ "${_numerics_record_file}" _numerics_record_json)
+string(JSON _numerics_record_type ERROR_VARIABLE _numerics_record_error
+  TYPE "${_numerics_record_json}" records "${_native_numerics_record_key}" numerics)
+if(_numerics_record_error OR NOT _numerics_record_type STREQUAL "OBJECT")
+  message(FATAL_ERROR
+    "committed numerics record has no entry '${_native_numerics_record_key}' "
+    "(${_numerics_record_error}) — regenerate it with "
+    "tools/native_dependencies.py --python <interpreter> "
+    "--write-numerics-record ${_numerics_record_file}")
+endif()
+
+_numerics_record_field(_numerics_backend numerics backend)
+_numerics_record_field(_numerics_blas_bits numerics blas_integer_bits)
+_numerics_record_field(_numerics_lapack_bits numerics lapack_integer_bits)
+_numerics_record_field(_numerics_numpy_version numerics numpy_version)
+_numerics_live_field(_numerics_site_packages numerics site_packages)
+message(STATUS
+  "numerics record '${_native_numerics_record_key}' matches the live measurement")
 
 # --------------------------------------------------------------------------
 # Backend resolution — AUTO binds the qualified profile for this platform;
@@ -171,7 +247,7 @@ set(_native_numerics_lapack_bits "${_numerics_lapack_bits}")
 # --------------------------------------------------------------------------
 set(_numerics_symbol_re "^[A-Za-z_][A-Za-z0-9_$]*$")
 foreach(_op ddot dgemv dgemm dgelsd)
-  _numerics_field(_native_numerics_symbol_${_op} numerics symbols ${_op})
+  _numerics_record_field(_native_numerics_symbol_${_op} numerics symbols ${_op})
   set(_sym "${_native_numerics_symbol_${_op}}")
   if(NOT _sym MATCHES "${_numerics_symbol_re}")
     message(FATAL_ERROR
@@ -217,7 +293,7 @@ endforeach()
 # inline in numeric_numpy.hpp; an inconsistent define would be an ODR
 # violation and a silent bitwise fork).
 # --------------------------------------------------------------------------
-_numerics_field(_numerics_interp_lowering numerics interp lowering)
+_numerics_record_field(_numerics_interp_lowering numerics interp lowering)
 if(_numerics_interp_lowering STREQUAL "contracted")
   set(_native_numerics_interp_contracted 1)
 elseif(_numerics_interp_lowering STREQUAL "separate")
@@ -247,7 +323,7 @@ message(STATUS
 # numeric::np_multiply_broadcast. Directory scope like the interp
 # define — an inconsistent inline-helper define is an ODR violation.
 # --------------------------------------------------------------------------
-_numerics_field(_numerics_mul_nan_winner
+_numerics_record_field(_numerics_mul_nan_winner
   numerics multiply_broadcast nan_winner)
 if(_numerics_mul_nan_winner STREQUAL "element")
   set(_native_numerics_mul_element_nan 1)
@@ -272,9 +348,15 @@ message(STATUS
 # must exist inside the recorded site-packages and carry its SHA-256;
 # Accelerate entries carry the apple-system identity with a real build id
 # (dyld-cache images have no file to hash).
+# The record stores Linux providers relative to site-packages, so they are
+# resolved against the live install location here. Darwin paths are absolute
+# system images and need no resolution. build_id is machine-specific and is
+# read from the live document at the same index; the check above guarantees
+# the two documents list the providers in the same order.
 # --------------------------------------------------------------------------
 string(JSON _numerics_library_count ERROR_VARIABLE _numerics_json_error
-  LENGTH "${_native_dependencies_json}" numerics library_paths)
+  LENGTH "${_numerics_record_json}"
+  records "${_native_numerics_record_key}" numerics library_paths)
 if(_numerics_json_error OR NOT _numerics_library_count MATCHES "^[0-9]+$")
   message(FATAL_ERROR
     "numerics record is missing 'library_paths': ${_numerics_json_error}")
@@ -286,10 +368,13 @@ math(EXPR _numerics_library_last "${_numerics_library_count} - 1")
 set(_numerics_roles "")
 set(_numerics_provider "")
 foreach(_i RANGE ${_numerics_library_last})
-  _numerics_field(_lib_path numerics library_paths ${_i} path)
-  _numerics_field(_lib_role numerics library_paths ${_i} role)
-  _numerics_field(_lib_kind numerics library_paths ${_i} identity_kind)
+  _numerics_record_field(_lib_path numerics library_paths ${_i} path)
+  _numerics_record_field(_lib_role numerics library_paths ${_i} role)
+  _numerics_record_field(_lib_kind numerics library_paths ${_i} identity_kind)
   list(APPEND _numerics_roles "${_lib_role}")
+  if(_numerics_backend STREQUAL "NUMPY_OPENBLAS")
+    set(_lib_path "${_numerics_site_packages}/${_lib_path}")
+  endif()
   if(NOT IS_ABSOLUTE "${_lib_path}")
     message(FATAL_ERROR
       "numerics provider path is not absolute: '${_lib_path}'")
@@ -300,7 +385,7 @@ foreach(_i RANGE ${_numerics_library_last})
         "numerics provider '${_lib_path}' has identity '${_lib_kind}', "
         "not 'file' — the wheel provider must be a hashable file")
     endif()
-    _numerics_field(_lib_sha numerics library_paths ${_i} sha256)
+    _numerics_record_field(_lib_sha numerics library_paths ${_i} sha256)
     # CMake's MATCHES regex has no counted repetition — check the
     # lowercase-hex shape and the 64-char length separately.
     string(LENGTH "${_lib_sha}" _lib_sha_len)
@@ -331,7 +416,7 @@ foreach(_i RANGE ${_numerics_library_last})
         "numerics provider '${_lib_path}' has identity '${_lib_kind}', "
         "not 'apple-system' — Darwin binds only the dyld-cache Accelerate")
     endif()
-    _numerics_field(_lib_build numerics library_paths ${_i} build_id)
+    _numerics_live_field(_lib_build numerics library_paths ${_i} build_id)
     if(_lib_build STREQUAL "")
       message(FATAL_ERROR
         "numerics provider '${_lib_path}' has an empty build_id — the "
@@ -419,7 +504,7 @@ if(NOT DEFINED _native_numerics_target_guard)
         "${CMAKE_CURRENT_LIST_DIR}/../src/platform/blas_numpy_openblas.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/../src/platform/lapack_numpy_openblas.cpp")
     endif()
-    _numerics_field(_numerics_mujoco_include mujoco include_dir)
+    _numerics_live_field(_numerics_mujoco_include mujoco include_dir)
     add_library(bike_native_numerics STATIC "${_numerics_backend_sources}")
     set_target_properties(bike_native_numerics PROPERTIES
       CXX_STANDARD 23

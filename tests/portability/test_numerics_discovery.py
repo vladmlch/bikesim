@@ -26,6 +26,7 @@ import pytest
 
 from tools.native_dependencies import (
     REQUIRED_NUMPY_VERSION,
+    check_numerics_record,
     checked_symbol,
     load_numerics_lock,
     probe_dependencies,
@@ -880,14 +881,37 @@ def test_numpy_provider_identity_is_stable_across_scipy_import_order(scipy_first
 # --------------------------------------------------------------------------
 
 
+def _write_record(tmp_path: Path, document: dict) -> Path:
+    """Commit the document's projection to a fixture record (same format as
+    native/numerics.lock.json). Call it before any tampering of ``document``:
+    the writer validates what it projects."""
+    record = tmp_path / "numerics.lock.json"
+    write_numerics_record(record, document)
+    return record
+
+
+def _squashed(text: str) -> str:
+    """CMake wraps FATAL_ERROR text at 80 columns; match on words, not lines."""
+    return " ".join(text.split())
+
+
 def _configure_scratch(
-    tmp_path: Path, document: dict, backend: str = "AUTO"
+    tmp_path: Path, document: dict, backend: str = "AUTO",
+    record: Path | None = None,
 ) -> subprocess.CompletedProcess:
+    """Configure BikeNumerics.cmake against ``document`` and ``record``.
+
+    The check runs the selected interpreter (Python_EXECUTABLE), so the scratch
+    project sets it to this test's interpreter; the record defaults to one
+    projected from ``document`` so the live measurement and the record agree.
+    """
     cmake = shutil.which("cmake")
     if cmake is None:
         pytest.skip("cmake is not installed")
     scratch = tmp_path / "scratch"
     scratch.mkdir()
+    if record is None:
+        record = _write_record(tmp_path, document)
     doc = dict(document)
     doc["numerics"] = doc.get("numerics")
     json_path = tmp_path / "dependencies.json"
@@ -896,6 +920,7 @@ def _configure_scratch(
         "cmake_minimum_required(VERSION 3.27)\n"
         "project(numerics_check NONE)\n"
         f'set(BIKE_TARGET_SYSTEM "{document["platform"]["system"]}")\n'
+        f'set(Python_EXECUTABLE "{sys.executable}")\n'
         f'file(READ "{json_path}" _native_dependencies_json)\n'
         f'include("{NUMERICS_CMAKE}")\n'
         'message(STATUS "RESOLVED=${BIKE_NUMERICS_BACKEND_RESOLVED}")\n'
@@ -904,7 +929,8 @@ def _configure_scratch(
     )
     return subprocess.run(
         [cmake, "-S", str(scratch), "-B", str(tmp_path / "scratch-build"),
-         f"-DBIKE_NUMERICS_BACKEND={backend}"],
+         f"-DBIKE_NUMERICS_BACKEND={backend}",
+         f"-DBIKE_NUMERICS_RECORD={record}"],
         capture_output=True, text=True, timeout=300,
     )
 
@@ -947,25 +973,64 @@ def test_bike_numerics_rejects_a_backend_mismatch(tmp_path):
 def test_bike_numerics_rejects_an_unqualified_width(tmp_path):
     system = platform.system()
     document = _document_with_numerics(tmp_path, system)
+    record = _write_record(tmp_path, document)
     document["numerics"]["blas_integer_bits"] = None
-    result = _configure_scratch(tmp_path, document)
+    result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0
 
 
 def test_bike_numerics_rejects_a_tampered_symbol(tmp_path):
     system = platform.system()
     document = _document_with_numerics(tmp_path, system)
+    record = _write_record(tmp_path, document)
     document["numerics"]["symbols"]["ddot"] = 'ddot";execute_process(COMMAND rm -rf'
-    result = _configure_scratch(tmp_path, document)
+    result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0
 
 
 def test_bike_numerics_rejects_a_missing_numerics_record(tmp_path):
     system = platform.system()
     document = _document_with_numerics(tmp_path, system)
+    record = _write_record(tmp_path, document)
     document["numerics"] = None
-    result = _configure_scratch(tmp_path, document)
+    result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0
+
+
+def test_bike_numerics_fails_configure_on_a_tampered_committed_fact(tmp_path):
+    """One fact flipped in the committed record: configure must fail, name
+    the stale entry and the Task 16 regeneration command."""
+    system = platform.system()
+    document = _document_with_numerics(tmp_path, system)
+    record = _write_record(tmp_path, document)
+    lock = json.loads(record.read_text(encoding="utf-8"))
+    entry = next(iter(lock["records"].values()))
+    entry["numerics"]["interp"]["lowering"] = (
+        "separate" if entry["numerics"]["interp"]["lowering"] == "contracted"
+        else "contracted")
+    record.write_text(json.dumps(lock), encoding="utf-8")
+    result = _configure_scratch(tmp_path, document, record=record)
+    assert result.returncode != 0, result.stdout
+    stderr = _squashed(result.stderr)
+    assert "is stale against the live measurement" in stderr
+    assert "interp.lowering" in stderr
+    assert "--write-numerics-record" in stderr
+
+
+def test_bike_numerics_fails_configure_without_a_platform_entry(tmp_path):
+    """A record with no entry for this platform fails configure with the
+    same regeneration hint."""
+    system = platform.system()
+    document = _document_with_numerics(tmp_path, system)
+    record = _write_record(tmp_path, document)
+    lock = json.loads(record.read_text(encoding="utf-8"))
+    lock["records"] = {}
+    record.write_text(json.dumps(lock), encoding="utf-8")
+    result = _configure_scratch(tmp_path, document, record=record)
+    assert result.returncode != 0, result.stdout
+    stderr = _squashed(result.stderr)
+    assert "has no committed entry" in stderr
+    assert "--write-numerics-record" in stderr
 
 
 # --------------------------------------------------------------------------
@@ -1247,3 +1312,95 @@ def test_committed_numerics_record_matches_the_live_measurement():
     if committed is None:
         pytest.skip(f"no committed numerics record for '{key}' yet")
     assert project_numerics_record(document) == committed
+
+
+# --------------------------------------------------------------------------
+# Configure-time verdict: check_numerics_record and --check-numerics-record.
+# The verdict projects an already-measured document and compares it with the
+# committed entry. No probe runs here, so fixture documents are enough.
+# --------------------------------------------------------------------------
+
+
+def test_numerics_check_accepts_the_matching_measurement(tmp_path):
+    document = _document_with_numerics(tmp_path, "Darwin")
+    lock = tmp_path / "numerics.lock.json"
+    write_numerics_record(lock, document)
+    assert check_numerics_record(lock, document) == "darwin-aarch64"
+
+
+def test_numerics_check_ignores_machine_specific_values(tmp_path):
+    """The install location and build id are configure-time values, not
+    committed facts: changing them must not make the record stale."""
+    document = _document_with_numerics(tmp_path, "Darwin")
+    lock = tmp_path / "numerics.lock.json"
+    write_numerics_record(lock, document)
+    moved = copy.deepcopy(document)
+    for entry in moved["numerics"]["library_paths"]:
+        entry["build_id"] = "macos-99Z999+accelerate-other+sdk-99Z999"
+    assert check_numerics_record(lock, moved) == "darwin-aarch64"
+
+
+def test_numerics_check_names_a_flipped_fact_with_the_regeneration_command(
+        tmp_path):
+    document = _document_with_numerics(tmp_path, "Darwin")
+    lock = tmp_path / "numerics.lock.json"
+    write_numerics_record(lock, document)
+    stored = json.loads(lock.read_text(encoding="utf-8"))
+    stored["records"]["darwin-aarch64"]["numerics"]["interp"]["lowering"] = \
+        "separate"
+    lock.write_text(json.dumps(stored), encoding="utf-8")
+    with pytest.raises(ValueError) as caught:
+        check_numerics_record(lock, document)
+    message = str(caught.value)
+    assert "entry.numerics.interp.lowering" in message
+    assert "is stale against the live measurement" in message
+    assert (f"tools/native_dependencies.py --python {sys.executable} "
+            f"--write-numerics-record {lock}") in message
+
+
+def test_numerics_check_names_a_missing_platform_entry(tmp_path):
+    """The lock holds only the Linux entry; this Darwin host has no record
+    and must be told to regenerate, not silently pass."""
+    linux_document = _document_with_numerics(tmp_path / "linux", "Linux")
+    darwin_document = _document_with_numerics(tmp_path / "darwin", "Darwin")
+    lock = tmp_path / "numerics.lock.json"
+    write_numerics_record(lock, linux_document)
+    with pytest.raises(ValueError, match="has no committed entry") as caught:
+        check_numerics_record(lock, darwin_document)
+    assert "--write-numerics-record" in str(caught.value)
+
+
+def test_cli_numerics_check_prints_the_key_and_fails_with_the_hint(tmp_path):
+    document = _document_with_numerics(tmp_path, "Darwin")
+    lock = tmp_path / "numerics.lock.json"
+    write_numerics_record(lock, document)
+    probe = tmp_path / "probe.json"
+    probe.write_text(json.dumps(document), encoding="utf-8")
+    command = [sys.executable, str(PROBE_SCRIPT), "--check-numerics-record",
+               str(lock), "--probe-document", str(probe)]
+    matching = subprocess.run(command, capture_output=True, text=True,
+                              timeout=60)
+    assert matching.returncode == 0, matching.stderr
+    assert matching.stdout.strip() == "darwin-aarch64"
+
+    stored = json.loads(lock.read_text(encoding="utf-8"))
+    stored["records"]["darwin-aarch64"]["numerics"]["multiply_broadcast"][
+        "nan_winner"] = "element"
+    lock.write_text(json.dumps(stored), encoding="utf-8")
+    stale = subprocess.run(command, capture_output=True, text=True, timeout=60)
+    assert stale.returncode == 1
+    assert stale.stdout == ""
+    assert "numerics record check failed" in stale.stderr
+    assert "--write-numerics-record" in stale.stderr
+
+
+def test_cli_numerics_check_does_not_combine_with_a_probe_run(tmp_path):
+    result = subprocess.run(
+        [sys.executable, str(PROBE_SCRIPT),
+         "--check-numerics-record", str(tmp_path / "lock.json"),
+         "--probe-document", str(tmp_path / "probe.json"),
+         "--python", sys.executable],
+        capture_output=True, text=True, timeout=60,
+    )
+    assert result.returncode == 2
+    assert "does not combine" in result.stderr

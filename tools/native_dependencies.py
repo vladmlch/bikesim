@@ -67,6 +67,8 @@ CLI:
     python tools/native_dependencies.py --python PATH [--output PATH]
     python tools/native_dependencies.py --python PATH \
         --write-numerics-record native/numerics.lock.json
+    python tools/native_dependencies.py --check-numerics-record \
+        native/numerics.lock.json --probe-document PATH
 
 Without ``--output`` the document is written to stdout; diagnostics and the
 named dependency errors go to stderr with a nonzero exit.
@@ -76,6 +78,12 @@ facts that are identical on every machine of the platform under
 ``records[<platform key>]`` of the committed ``native/numerics.lock.json``
 (see "Committed numerics record" below). Machine- and OS-build-specific values
 stay in the live document for configure-time consumers.
+
+``--check-numerics-record`` is the configure-time verdict: it projects an
+already-measured probe document (``--probe-document``, the one the legacy
+configure captured) and requires it to equal the committed entry for this
+platform. It runs no probe. On success it prints the platform key on stdout;
+on a missing or stale entry it exits 1 with the regeneration command.
 """
 from __future__ import annotations
 
@@ -2328,6 +2336,68 @@ def load_numerics_lock(path: Path) -> dict:
     return validate_numerics_lock(value)
 
 
+def _record_differences(committed, live, where: str) -> list[str]:
+    """Paths at which the committed entry and the live projection differ."""
+    if isinstance(committed, dict) and isinstance(live, dict):
+        found: list[str] = []
+        for key in sorted(set(committed) | set(live)):
+            child = f"{where}.{key}"
+            if key not in live:
+                found.append(f"{child} is committed but not measured live")
+            elif key not in committed:
+                found.append(f"{child} is measured live but not committed")
+            else:
+                found += _record_differences(committed[key], live[key], child)
+        return found
+    if isinstance(committed, list) and isinstance(live, list):
+        if len(committed) != len(live):
+            return [f"{where}: committed {len(committed)} entries, "
+                    f"live {len(live)}"]
+        found = []
+        for index, (old, new) in enumerate(zip(committed, live)):
+            found += _record_differences(old, new, f"{where}[{index}]")
+        return found
+    if committed != live:
+        return [f"{where}: committed {committed!r}, live {live!r}"]
+    return []
+
+
+def check_numerics_record(path: Path, document: dict) -> str:
+    """Require the live measurement to equal the committed entry; return its key.
+
+    ``document`` is a probe document already measured in this checkout. Its
+    projection is compared with ``records[<platform key>]`` in full: the
+    committed facts and the NumPy version, plus the platform identity that the
+    key is derived from. Machine- and OS-build-specific values are not
+    compared, because they are not committed (see
+    ``_RECORD_NUMERICS_KEYS``). A missing entry or any differing fact is a
+    ``ValueError`` that names the regeneration command.
+    """
+    document = validate_dependencies(document)
+    key = record_platform_key(document)
+    lock = load_numerics_lock(path)
+    committed = lock["records"].get(key)
+    hint = (
+        "regenerate it with: tools/native_dependencies.py --python "
+        f"{document['python']['executable']} --write-numerics-record {path}"
+    )
+    if committed is None:
+        raise ValueError(
+            f"numerics record '{key}' has no committed entry in {path}; {hint}"
+        )
+    differences = _record_differences(
+        committed, project_numerics_record(document), "entry")
+    if differences:
+        shown = "; ".join(differences[:6])
+        more = "" if len(differences) <= 6 else (
+            f" (and {len(differences) - 6} more)")
+        raise ValueError(
+            f"numerics record '{key}' in {path} is stale against the live "
+            f"measurement: {shown}{more}; {hint}"
+        )
+    return key
+
+
 def write_numerics_record(path: Path, document: dict) -> str:
     """Store the document's projection under its platform key; return the key.
 
@@ -2384,6 +2454,19 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--check-numerics-record",
+        metavar="PATH",
+        help=(
+            "require the --probe-document measurement to match this platform's "
+            "entry in the committed numerics lock; prints the platform key"
+        ),
+    )
+    parser.add_argument(
+        "--probe-document",
+        metavar="PATH",
+        help="the measured probe document to check (with --check-numerics-record)",
+    )
+    parser.add_argument(
         "--child-probe",
         action="store_true",
         help=argparse.SUPPRESS,  # internal: run inside the selected interpreter
@@ -2401,6 +2484,27 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1
         sys.stdout.write(json.dumps(document, sort_keys=True) + "\n")
+        return 0
+
+    if args.check_numerics_record or args.probe_document:
+        if not (args.check_numerics_record and args.probe_document):
+            parser.error(
+                "--check-numerics-record and --probe-document must be given "
+                "together")
+        if args.python or args.output or args.write_numerics_record:
+            parser.error(
+                "--check-numerics-record reads a measured document; it does "
+                "not combine with --python, --output or "
+                "--write-numerics-record")
+        try:
+            document = json.loads(
+                Path(args.probe_document).read_text(encoding="utf-8"))
+            key = check_numerics_record(
+                Path(args.check_numerics_record), document)
+        except (ValueError, OSError) as exc:
+            print(f"numerics record check failed: {exc}", file=sys.stderr)
+            return 1
+        print(key)
         return 0
 
     if not args.python:

@@ -127,9 +127,12 @@ function(bike_write_check_context)
     "{\"name\":${_ctx_stdlib_name_json},\"version\":${_ctx_stdlib_version_json},\"hardening\":{\"mode\":${_ctx_stdlib_mode_json},\"effective\":true}}")
 
   # ---------------------------------------------------------------
-  # Numerics — embed the dependency probe's validated record verbatim.
-  # It is a build-only record (absolute provider paths); it never enters
-  # the persisted runtime identity.
+  # Numerics — embed the LIVE probe document's numerics object verbatim, not
+  # the committed record: the committed entry omits the machine-specific
+  # fields (install location, build ids, ABI transcript, evidence counts)
+  # that check-context readers expect, and its Linux provider paths are
+  # relative. The live object carries absolute provider paths; it is a
+  # build-only record and never enters the persisted runtime identity.
   # ---------------------------------------------------------------
   string(JSON _ctx_numerics_json ERROR_VARIABLE _ctx_numerics_error
     GET "${_native_dependencies_json}" numerics)

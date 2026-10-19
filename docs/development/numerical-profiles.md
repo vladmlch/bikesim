@@ -202,9 +202,27 @@ section, the macOS and SDK build identity and the Accelerate UUID, the
 `multiply_broadcast.lanes`, `multiply_broadcast.distinguishing`), threading, and
 the rest of `provider_config`. These are configure-time measurements from the
 live probe. They differ between machines and OS builds, so a difference in them
-is not staleness. See the field-by-field table in
-`.superpowers/sdd/merge-linux-macos-port/task-16-report.md` for the consumers and
-sources.
+is not staleness.
+
+Where each value that is not in the record comes from at configure time:
+
+| Value not in the record | Configure-time source | Consumer |
+|---|---|---|
+| `numerics.site_packages` | live probe | BikeNumerics.cmake: resolves a Linux wheel-relative provider path; containment check |
+| `numerics.library_paths[].build_id` (Darwin) | live probe | BikeNumerics.cmake: apple-system identity must be non-empty |
+| `numerics.library_paths[].path` as absolute (Linux) | live probe | native/CMakeLists.txt runtime identity (`required_provider_images`) |
+| `python` section | live probe | BikeCheckContext.cmake (required `python` member) |
+| `provider_config`, `numpy_imports`, `threading`, `interp.queries` and `distinguishing`, `multiply_broadcast.lanes` and `distinguishing` | live probe | embedded verbatim in `native_check_context.json` (BikeCheckContext.cmake) |
+| `mujoco.include_dir` (never in the record) | live probe | BikeNumerics.cmake: include root of `bike_native_numerics` |
+
+Configure-time check. The legacy graph (`cmake -S native`, Python present)
+measures live and passes the probe document to
+`tools/native_dependencies.py --check-numerics-record`. That command projects
+the document and requires it to equal the committed `records[<platform>]`
+entry in full: facts, NumPy version, and platform identity. A stale or missing
+entry fails configure and prints the regeneration command. The check needs
+Python, so only the legacy graph runs it; the Python-free root graph does not
+read the record yet.
 
 Regenerate the entry for the current platform with the pinned NumPy:
 

@@ -1,8 +1,9 @@
 // migration_test.hpp — standalone contract-test harness shared by the
 // Python→C++ migration regressions (migration/interface-contracts.md §8).
-// The fixture root arrives as the BIKE_FIXTURE_ROOT compile definition wired
-// by native/tests/migration/CMakeLists.txt — never the process working
-// directory. Registration is one executable and one CTest name
+// The fixture root arrives as the BIKE_FIXTURE_ROOT macro from the
+// configure-generated bike_migration_paths.hpp (native/tests/migration/
+// CMakeLists.txt), computed from the repository root — never the process
+// working directory. Registration is one executable and one CTest name
 // (migration_TNN) per task; T05 layers strict manifest/SHA-256 validation
 // onto this seam.
 #pragma once

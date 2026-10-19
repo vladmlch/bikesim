@@ -22578,7 +22578,7 @@
     "harness_source": "native/tests/support/migration_test.cpp",
     "task_source": "native/tests/migration/test_t02.cpp",
     "cmake_registration": "native/tests/migration/CMakeLists.txt via add_subdirectory(tests/migration) in native/CMakeLists.txt",
-    "fixture_root": "BIKE_FIXTURE_ROOT compile definition computed from native/tests/migration/../../.. (repository root), never the process working directory",
+    "fixture_root": "BIKE_FIXTURE_ROOT macro from the configure-generated bike_migration_paths.hpp (native/tests/migration/CMakeLists.txt), computed from native/tests/migration/../../.. (repository root), never the process working directory",
     "produced_api": [
       "bt::run",
       "bt::require",

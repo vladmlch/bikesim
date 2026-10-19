@@ -16,16 +16,16 @@ if(NOT IS_DIRECTORY "${_migration_fixture_root}")
   message(FATAL_ERROR
     "migration fixture tree is missing: ${_migration_fixture_root}")
 endif()
-# The root is embedded into the harness TU as a compile definition; quotes
-# or backslashes would break the -D flag's quoting contract.
+# The root is embedded into the generated bike_migration_paths.hpp as a C
+# string literal; quotes or backslashes would break that literal.
 if(_migration_fixture_root MATCHES "[\"'\\\\]")
   message(FATAL_ERROR
     "fixture root must not contain quotes or backslashes: ${_migration_fixture_root}")
 endif()
 
 # T05 oracle-manifest path: the harness TU also owns BIKE_ORACLE_MANIFEST —
-# same compile-definition contract as BIKE_FIXTURE_ROOT, verified present at
-# configure time.
+# provided, like BIKE_FIXTURE_ROOT, by the generated bike_migration_paths.hpp,
+# verified present at configure time.
 set(_migration_oracle_manifest "${_migration_repo_root}/migration/oracle-manifest.json")
 if(NOT EXISTS "${_migration_oracle_manifest}")
   message(FATAL_ERROR

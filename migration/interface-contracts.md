@@ -331,14 +331,11 @@ CMake registration for a concrete task uses:
 add_executable(migration_T15 test_t15.cpp)
 target_link_libraries(migration_T15 PRIVATE bike_model bike_test_support)
 target_compile_features(migration_T15 PRIVATE cxx_std_23)
-target_compile_definitions(migration_T15 PRIVATE
-  BIKE_FIXTURE_ROOT="${PROJECT_SOURCE_DIR}/tests/fixtures/migration"
-  BIKE_BINARY_DIR="${PROJECT_BINARY_DIR}")
 add_test(NAME migration_T15 COMMAND migration_T15)
 set_tests_properties(migration_T15 PROPERTIES LABELS "migration;unit;model")
 ```
 
-Apply the shared compiler policy to every test, including this one. Set `RUNTIME_OUTPUT_DIRECTORY` consistently so commands referencing `build/native-release/bin/` are true. The root CMake project source/binary directories, not a nested native subproject's local directories, supply these definitions. `ctest --no-tests=error` is required for focused selections, or an equivalent explicit discovery-count check in the native runner.
+Apply the shared compiler policy to every test, including this one. Set `RUNTIME_OUTPUT_DIRECTORY` consistently so commands referencing `build/native-release/bin/` are true. The root CMake project source/binary directories, not a nested native subproject's local directories, supply these paths. They reach the test sources through a configure-generated header, never a quoted compile definition: the native check-context writer embeds target properties verbatim, so a quote inside one is a configure error. `ctest --no-tests=error` is required for focused selections, or an equivalent explicit discovery-count check in the native runner.
 
 ## 9. Fixture records and comparison metadata
 

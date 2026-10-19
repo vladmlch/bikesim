@@ -25,6 +25,8 @@ from tools import dev
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_SOURCE = ROOT / "src/bike_sim/native/artifact.py"
+# artifact.py imports this stdlib-only leaf module from the same package.
+BUILD_ID_SOURCE = ROOT / "src/bike_sim/native/provider_build_id.py"
 
 
 def _package_at(path: Path) -> None:
@@ -33,6 +35,7 @@ def _package_at(path: Path) -> None:
     (native.parent / "__init__.py").write_text("", encoding="utf-8")
     (native / "__init__.py").write_text("", encoding="utf-8")
     shutil.copyfile(ARTIFACT_SOURCE, native / "artifact.py")
+    shutil.copyfile(BUILD_ID_SOURCE, native / "provider_build_id.py")
 
 
 @pytest.fixture

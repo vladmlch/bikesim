@@ -135,15 +135,15 @@ NATIVE_TEST_BUILD_PATH="$PWD/native/build" uv run python -m pytest tests/referen
 ## Standalone root build
 
 `cmake -S . -B build/native-release` is the Python-free graph. Only the Darwin
-host is qualified: its configure reads the committed numerics record and starts
-no interpreter, which `tests/portability/test_root_configure.py` checks against
-the real `CMakeLists.txt` with logging interpreter stubs on `PATH` and a cache
-check, since FindPython resolves interpreters by absolute path and bypasses
-`PATH`. A cross-compiling toolchain (`-DCMAKE_SYSTEM_NAME=Windows`) is refused
-by the root's own include chain. `BIKE_BUILD_PYTHON_BINDINGS=ON` is not a root
-mode: `native/CMakeLists.txt` refuses it when included from the root, so the
-nanobind extension is built only with `cmake -S native`, which keeps its own
-Python discovery and dependency policy.
+host is qualified: its configure reads the committed numerics record.
+`tests/portability/test_root_configure.py` checks two things on that configure.
+No interpreter reachable by name on `PATH` is spawned, and none is recorded in
+the CMake cache. An absolute-path spawn is not caught. A cross-compiling
+toolchain (`-DCMAKE_SYSTEM_NAME=Windows`) is refused by the root's own include
+chain. `BIKE_BUILD_PYTHON_BINDINGS=ON` is not a root mode: the root routes it
+into `native/CMakeLists.txt`, which refuses it, so the nanobind extension is
+built only with `cmake -S native`, which keeps its own Python discovery and
+dependency policy.
 
 ## Static analysis and sanitizer builds
 

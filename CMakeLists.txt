@@ -35,12 +35,13 @@ endif()
 
 project(bike_sim CXX)
 
-# Decision: ON is not a root build mode. The root's dependencies come from the
-# locked .deps tree and its numerics from the committed record; native/ still
-# resolves Python and its own dependency policy. Mixing the two in one configure
-# produced duplicate targets, so native/CMakeLists.txt fails closed instead of
-# adding the subdirectory. Keep the transition extension on cmake -S native.
-option(BIKE_BUILD_PYTHON_BINDINGS "Build the nanobind extension (requires the Python native dev group)" OFF)
+# ON is not a root build mode. The root's dependencies come from the locked
+# .deps tree and its numerics from the committed record; native/ resolves
+# Python and its own dependency policy. Mixing the two in one configure
+# produced duplicate targets, so the root's ON branch (below) adds native/,
+# and native/CMakeLists.txt refuses that configure. The extension builds only
+# via cmake -S native.
+option(BIKE_BUILD_PYTHON_BINDINGS "Root: refused; build the nanobind extension with cmake -S native (requires the Python native dev group)" OFF)
 option(BIKE_BUILD_GUI "Enable the native GLFW viewer; headless recording/plots remain available when OFF" OFF)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -606,13 +607,12 @@ endif()
 add_subdirectory(native/tests/migration)
 
 # ---------------------------------------------------------------------------
-# Optional transition extension: the existing native/ project as a subdir.
-# BIKE_ROOT_BUILD suppresses its duplicate test/graph targets and redirects
-# its MuJoCo edge to the locked .deps copy so no .venv path enters the
-# produced binary's load commands (the byte-identical copy was verified at
-# configure time above). The binding TUs only compile in this mode — the
-# Python discovery stays inside the transition, exactly as the standalone
-# legacy configure does.
+# BIKE_BUILD_PYTHON_BINDINGS=ON routes into native/, which refuses it when
+# BIKE_ROOT_BUILD is set (native/CMakeLists.txt). This root never builds the
+# extension: the binding TUs and Python discovery run only under cmake -S native.
+# The branch is kept on purpose. It is the only path that reaches that refusal.
+# Removing it would let ON configure silently without bindings, and
+# test_root_fails_closed_on_python_bindings would fail.
 if(BIKE_BUILD_PYTHON_BINDINGS)
   add_subdirectory(native)
 endif()

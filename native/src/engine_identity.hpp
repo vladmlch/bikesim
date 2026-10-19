@@ -12,10 +12,10 @@
 // Identity.numeric_provider is the recorded supplier name of the pinned
 // binary64 numeric surface (the Apple Accelerate CBLAS entry points in
 // cblas_abi.hpp, the platform libm calls behind numeric_sincos.hpp, and
-// the ported NumPy ufunc kernels in numeric_numpy.hpp): "accelerate", the
-// environment.blas.name captured by the T01 reference manifest. The field
-// pins the supplier identity as recorded; the bitwise fixtures pin the
-// numerical results themselves.
+// the ported NumPy ufunc kernels in numeric_numpy.hpp): blas::provider_name
+// of the backend this build links — "accelerate" on Darwin,
+// "scipy-openblas" on Linux. The field pins the supplier identity as
+// recorded; the bitwise fixtures pin the numerical results themselves.
 #pragma once
 
 #include <string>

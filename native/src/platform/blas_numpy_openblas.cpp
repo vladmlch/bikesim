@@ -40,6 +40,10 @@
 #endif
 
 namespace blas {
+    // Defines the header's declaration (cblas_abi.hpp); the name matches the
+    // NumPy build-dependency name the probe qualifies for this provider.
+    const std::string_view provider_name = "scipy-openblas";
+
     // The provider's ILP64 integer type; private to this TU.
     using blas_int = std::int64_t;
     static_assert(sizeof(blas_int) * 8 == BIKE_NUMERICS_BLAS_BITS,

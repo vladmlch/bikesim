@@ -53,8 +53,8 @@ WorldVector multiply(const mjModel& model, const mjData& data,
     WorldVector velocity{};
     if (model.nv == 0) return velocity;
     // NumPy's (3,nv) @ (nv,) goes through the same pinned CBLAS provider.
-    blas::cblas_dgemv(static_cast<int>(blas::Order::row_major),
-        static_cast<int>(blas::Transpose::no), 3, static_cast<int>(model.nv),
+    blas::dgemv(blas::Order::row_major,
+        blas::Transpose::no, 3, static_cast<int>(model.nv),
         1., matrix.data(), static_cast<int>(model.nv), data.qvel, 1,
         0., velocity.data(), 1);
     return velocity;

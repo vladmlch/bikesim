@@ -53,11 +53,14 @@ static_assert(sizeof(int) == 4,
 
 namespace blas {
 
-    // The recorded BLAS/reduction supplier identity for this build —
-    // `environment.blas.name` in the T01 oracle manifest capture. T04's
-    // engine::Identity reports it as numeric_provider, so the resolved
-    // runtime identity stays tied to this single declaration site.
-    inline constexpr std::string_view provider_name = "accelerate";
+    // The BLAS supplier name of the backend this build links: the NumPy
+    // build-dependency name the dependency probe qualifies for the platform
+    // ("accelerate" on Darwin, "scipy-openblas" on Linux). Each backend TU
+    // defines it beside the foreign symbols it binds, so the name follows
+    // the same configure-time selection as the provider and no platform
+    // macro is re-tested here. T04's engine::Identity reports it as
+    // numeric_provider.
+    extern const std::string_view provider_name;
 
     // Classic CBLAS integer constants (stable since the reference CBLAS;
     // accepted unchanged by both qualified providers). enum class

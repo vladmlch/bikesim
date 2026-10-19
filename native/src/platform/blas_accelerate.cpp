@@ -23,6 +23,10 @@
 #include "../cblas_abi.hpp"
 
 namespace blas {
+    // Defines the header's declaration (cblas_abi.hpp); the name matches the
+    // NumPy build-dependency name the probe qualifies for this provider.
+    const std::string_view provider_name = "accelerate";
+
     // Declared inside namespace blas so nothing else in a TU sees an
     // unqualified cblas_* name; extern "C" keeps the linked symbol names
     // identical to the Accelerate exports.

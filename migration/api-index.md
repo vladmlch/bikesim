@@ -40,7 +40,7 @@ void golden_f64(std::string_view relative, std::span<const double> actual);
 template<class F> void invalid(F&& action); // requires std::invalid_argument
 }
 // golden_f64 compares uint64_t object representations; signed zero is significant.
-// The root is supplied by a CMake compile definition, never the current directory.
+// The root arrives as BIKE_FIXTURE_ROOT from the configure-generated bike_migration_paths.hpp (native/tests/migration/CMakeLists.txt:73), computed from the repository root, never the current directory.
 ```
 
 ## T03

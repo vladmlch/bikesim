@@ -1178,10 +1178,15 @@ int run_context_checks(const fs::path &build) {
 
 namespace {
 
-constexpr std::array<std::string_view, 3> kSupportTestModules{
+// Must list the same modules as _SUPPORT_TEST_MODULES in
+// tools/check_native_contracts.py, the reference this port follows. The
+// platform linkage module inspects configured binaries and is exempt there;
+// omitting it here made the loader rule fail on the merged tree (migration_T56).
+constexpr std::array<std::string_view, 4> kSupportTestModules{
     "test_native_check_tools.py",
     "test_native_contract_checks.py",
     "test_native_loader.py",
+    "test_native_platform_linkage.py",
 };
 
 Value read_contract_json(const fs::path &path, const std::string &label) {

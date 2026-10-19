@@ -277,7 +277,7 @@ double lean_limit_rad(
     const double arm_lower = np_norm(lower);
     const double upper0 = std::atan2(upper[1], upper[0]);
     const double lower0 = std::atan2(lower[1], lower[0]);
-    const int branch = std::sin(lower0 - upper0) >= 0. ? 1 : -1;
+    const int branch = numeric::math_sin(lower0 - upper0) >= 0. ? 1 : -1;
     const Vec2 crank{(pose.pedal_front[0] + pose.pedal_rear[0]) / 2.,
                      (pose.pedal_front[2] + pose.pedal_rear[2]) / 2.};
     std::array<double, 2> hips_at_tdc{};
@@ -566,7 +566,7 @@ void SpindleController::resolve_model_layout(
     arm_upper_angle0_ = std::atan2(upper[2], upper[0]);
     arm_lower_angle0_ = std::atan2(lower[2], lower[0]);
     arm_branch_ =
-        std::sin(arm_lower_angle0_ - arm_upper_angle0_) >= 0. ? 1 : -1;
+        numeric::math_sin(arm_lower_angle0_ - arm_upper_angle0_) >= 0. ? 1 : -1;
     {
         const Vec2 goal{xz(vec_sub(pose_.grip, pose_.hip))};
         const double reach =
@@ -576,7 +576,7 @@ void SpindleController::resolve_model_layout(
         const auto second =
             spindle::two_link_ik(goal, np_norm(trunk), reach, 1);
         const auto &neutral =
-            std::sin(first.angles[0]) >= std::sin(second.angles[0])
+            numeric::math_sin(first.angles[0]) >= numeric::math_sin(second.angles[0])
                 ? first
                 : second;
         neutral_torso_saturated_ = neutral.saturated;

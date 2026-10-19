@@ -1,4 +1,4 @@
-// lapack.hpp — the typed call face for the platform LAPACK backend this
+// lapack_abi.hpp — the typed call face for the platform LAPACK backend this
 // port shares with numpy.
 //
 // Bitwise contract: np.linalg.lstsq's gufunc (numpy/linalg/

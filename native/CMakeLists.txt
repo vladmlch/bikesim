@@ -664,7 +664,7 @@ if(_identity_library_count GREATER 0)
   foreach(_index RANGE ${_identity_library_last})
     string(JSON _identity_build_type TYPE "${_native_dependencies_json}"
       numerics library_paths ${_index} build_id)
-    set(_identity_build_id "")
+    set(_identity_build_id "<none>")
     if(_identity_build_type STREQUAL "STRING")
       string(JSON _identity_build_id GET "${_native_dependencies_json}"
         numerics library_paths ${_index} build_id)

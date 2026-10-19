@@ -1,0 +1,400 @@
+"""Numerics provider identity: the probe's output, the declarations generator
+and the Python-free root graph's configure-time probe.
+
+native/cmake/BikeProviderIdentity.cmake generates numerics_provider_policy_json
+and required_provider_images for both graphs. The pure tests drive it through
+``cmake -P`` with fixture records, so they run on any host that has CMake. The
+Darwin tests configure real projects: the probe compiles and runs the runtime's
+discovery code against Accelerate, and the root graph's identity must equal the
+legacy graph's on the same machine.
+"""
+from __future__ import annotations
+
+import importlib.util
+import json
+import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+MODULE = REPO_ROOT / "native" / "cmake" / "BikeProviderIdentity.cmake"
+NUMERICS_LOCK = REPO_ROOT / "native" / "numerics.lock.json"
+
+ACCELERATE_DIR = "/System/Library/Frameworks/Accelerate.framework/Versions/A"
+BLAS_IMAGE = f"{ACCELERATE_DIR}/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib"
+LAPACK_IMAGE = f"{ACCELERATE_DIR}/Frameworks/vecLib.framework/Versions/A/libLAPACK.dylib"
+UMBRELLA_IMAGE = f"{ACCELERATE_DIR}/Accelerate"
+BLAS_UUID = "31104d4f-4a7e-3fa7-9e18-55937b2011f2"
+UMBRELLA_UUID = "a697e7b9-8ff4-356c-a507-64b38af1ccaa"
+BUILD_ID = "macos-26A434+accelerate-a697e7b9-8ff4-356c-a507-64b38af1ccaa+sdk-26A425"
+RECORD_KEY = "darwin-arm64"
+SHA256 = "ab" * 32
+
+
+def _cmake_quote(text: str) -> str:
+    """A CMake quoted argument that carries ``text`` verbatim, tabs and newlines included."""
+    escaped = (text.replace("\\", "\\\\").replace('"', '\\"')
+               .replace("\t", "\\t").replace("\n", "\\n"))
+    return f'"{escaped}"'
+
+
+def _cmake(tmp_path: Path, body: str) -> subprocess.CompletedProcess:
+    """Run ``body`` in CMake script mode, with the identity module included."""
+    cmake = shutil.which("cmake")
+    if cmake is None:
+        pytest.skip("cmake is not installed")
+    script = tmp_path / "identity-harness.cmake"
+    script.write_text(f'include("{MODULE}")\n{body}\n', encoding="utf-8")
+    return subprocess.run(
+        [cmake, "-P", str(script)], capture_output=True, text=True, timeout=300)
+
+
+def _squashed(text: str) -> str:
+    """CMake wraps FATAL_ERROR text; match on words, not lines."""
+    return " ".join(text.split())
+
+
+def _accelerate_record() -> dict:
+    """The committed darwin-arm64 facts the declarations read: role,
+    identity_kind and sha256 per provider, in record order."""
+    return {"records": {RECORD_KEY: {"numerics": {
+        "backend": "ACCELERATE",
+        "blas_integer_bits": 32,
+        "lapack_integer_bits": 64,
+        "library_paths": [
+            {"path": BLAS_IMAGE, "role": "blas",
+             "identity_kind": "apple-system", "sha256": None},
+            {"path": LAPACK_IMAGE, "role": "lapack",
+             "identity_kind": "apple-system", "sha256": None},
+        ],
+    }}}}
+
+
+def _openblas_record() -> dict:
+    """A Linux wheel-provider entry: a file identity with a SHA-256 and no build_id."""
+    return {"records": {"linux-x86_64": {"numerics": {
+        "backend": "NUMPY_OPENBLAS",
+        "blas_integer_bits": 64,
+        "lapack_integer_bits": 64,
+        "library_paths": [
+            {"path": "numpy.libs/libscipy_openblas64_.so", "role": "blas_lapack",
+             "identity_kind": "file", "sha256": SHA256},
+        ],
+    }}}}
+
+
+def _declarations(tmp_path: Path, record: dict, key: str, *, backend: str,
+                  bits: tuple[int, int], paths: list[str], build_ids: list[str]) -> str:
+    """Generate the declarations through bike_provider_identity_declarations()."""
+    record_file = tmp_path / "numerics.lock.json"
+    record_file.write_text(json.dumps(record), encoding="utf-8")
+    out = tmp_path / "declarations.txt"
+    path_args = " ".join(_cmake_quote(path) for path in paths)
+    id_args = " ".join(_cmake_quote(build_id) for build_id in build_ids)
+    result = _cmake(tmp_path, f"""
+file(READ "{record_file}" _record_json)
+set(_paths {path_args})
+set(_ids {id_args})
+bike_provider_identity_declarations(_decl
+  RECORD_VAR _record_json RECORD_KEY "{key}"
+  BACKEND "{backend}" BLAS_BITS {bits[0]} LAPACK_BITS {bits[1]}
+  PROVIDER_PATHS_VAR _paths BUILD_IDS_VAR _ids)
+file(WRITE "{out}" "${{_decl}}")
+""")
+    assert result.returncode == 0, result.stderr
+    return out.read_text(encoding="utf-8")
+
+
+def _parse_declarations(text: str) -> tuple[dict, list[str]]:
+    """The policy object and the image list, as the runtime reads them back."""
+    policy = re.search(
+        r'numerics_provider_policy_json\[\] = R"identity\((.*?)\)identity";', text)
+    images = re.search(r'required_provider_images\[\] = "(.*)";', text)
+    assert policy and images, text
+    # The header carries newline separators as the two characters \n.
+    return json.loads(policy.group(1)), images.group(1).split("\\n")
+
+
+def test_probe_text_yields_the_reported_uuid(tmp_path):
+    """The umbrella's LC_UUID is read from the probe line that names it, not
+    from the neighbouring image lines."""
+    probe = f"{BLAS_IMAGE}\t{BLAS_UUID}\n{UMBRELLA_IMAGE}\t{UMBRELLA_UUID}\n"
+    out = tmp_path / "uuid.txt"
+    result = _cmake(tmp_path, f"""
+bike_provider_probe_image_uuid(_uuid IMAGE "{UMBRELLA_IMAGE}" PROBE {_cmake_quote(probe)})
+file(WRITE "{out}" "${{_uuid}}")
+""")
+    assert result.returncode == 0, result.stderr
+    assert out.read_text(encoding="utf-8") == UMBRELLA_UUID
+
+
+def test_probe_text_fails_for_an_image_it_did_not_report(tmp_path):
+    """A required image missing from the probe output is a named failure, not a
+    build_id taken from some other image."""
+    result = _cmake(tmp_path, f"""
+bike_provider_probe_image_uuid(_uuid IMAGE "{UMBRELLA_IMAGE}"
+  PROBE {_cmake_quote(f"{BLAS_IMAGE}\t{BLAS_UUID}\n")})
+""")
+    assert result.returncode != 0
+    assert "did not report the required image" in _squashed(result.stderr)
+
+
+def test_probe_text_fails_for_an_image_without_an_lc_uuid(tmp_path):
+    """A '-' uuid means the image has no LC_UUID; the apple-system identity
+    must not be formed from it."""
+    result = _cmake(tmp_path, f"""
+bike_provider_probe_image_uuid(_uuid IMAGE "{UMBRELLA_IMAGE}"
+  PROBE {_cmake_quote(f"{UMBRELLA_IMAGE}\t-\n")})
+""")
+    assert result.returncode != 0
+    assert "has no LC_UUID" in _squashed(result.stderr)
+
+
+@pytest.mark.parametrize("uuid", [
+    "a697e7b9-8ff4-356c-a507-64b38af1cca",     # last group one digit short
+    "A697E7B9-8FF4-356C-A507-64B38AF1CCAA",    # the probe prints lowercase only
+    "a697e7b98ff4356ca50764b38af1ccaa",        # no separators
+])
+def test_probe_text_rejects_a_malformed_uuid(tmp_path, uuid):
+    result = _cmake(tmp_path, f"""
+bike_provider_probe_image_uuid(_uuid IMAGE "{UMBRELLA_IMAGE}"
+  PROBE {_cmake_quote(f"{UMBRELLA_IMAGE}\t{uuid}\n")})
+""")
+    assert result.returncode != 0
+    assert "malformed LC_UUID" in _squashed(result.stderr)
+
+
+def test_declarations_reproduce_the_accelerate_identity(tmp_path):
+    """The Accelerate policy takes role, identity_kind and sha256 from the
+    record, the path from the bound list and build_id from the probe; the
+    required images are the bound providers plus the umbrella."""
+    text = _declarations(
+        tmp_path, _accelerate_record(), RECORD_KEY, backend="ACCELERATE",
+        bits=(32, 64), paths=[BLAS_IMAGE, LAPACK_IMAGE],
+        build_ids=[BUILD_ID, BUILD_ID])
+    policy, images = _parse_declarations(text)
+    assert policy == {
+        "backend": "ACCELERATE",
+        "blas_integer_bits": 32,
+        "lapack_integer_bits": 64,
+        "libraries": [
+            {"path": BLAS_IMAGE, "role": "blas",
+             "identity_kind": "apple-system", "sha256": None,
+             "build_id": BUILD_ID},
+            {"path": LAPACK_IMAGE, "role": "lapack",
+             "identity_kind": "apple-system", "sha256": None,
+             "build_id": BUILD_ID},
+        ],
+    }
+    assert images == [BLAS_IMAGE, LAPACK_IMAGE, UMBRELLA_IMAGE]
+
+
+def test_declarations_write_a_missing_build_id_as_null(tmp_path):
+    """The <none> marker means the identity has no build_id, so the policy
+    carries null. This is the one-provider file identity, the case where an
+    empty element would vanish from the CMake list and misalign the count."""
+    provider = "/site/numpy.libs/libscipy_openblas64_.so"
+    text = _declarations(
+        tmp_path, _openblas_record(), "linux-x86_64", backend="NUMPY_OPENBLAS",
+        bits=(64, 64), paths=[provider], build_ids=["<none>"])
+    policy, images = _parse_declarations(text)
+    assert policy["libraries"] == [{
+        "path": provider, "role": "blas_lapack", "identity_kind": "file",
+        "sha256": SHA256, "build_id": None,
+    }]
+    assert images == [provider]
+
+
+def test_declarations_reject_a_build_id_count_that_does_not_match(tmp_path):
+    """One build_id for two bound providers must fail, not pair the first build
+    id with both providers."""
+    record_file = tmp_path / "numerics.lock.json"
+    record_file.write_text(json.dumps(_accelerate_record()), encoding="utf-8")
+    result = _cmake(tmp_path, f"""
+file(READ "{record_file}" _record_json)
+set(_paths {_cmake_quote(BLAS_IMAGE)} {_cmake_quote(LAPACK_IMAGE)})
+set(_ids {_cmake_quote(BUILD_ID)})
+bike_provider_identity_declarations(_decl
+  RECORD_VAR _record_json RECORD_KEY "{RECORD_KEY}"
+  BACKEND ACCELERATE BLAS_BITS 32 LAPACK_BITS 64
+  PROVIDER_PATHS_VAR _paths BUILD_IDS_VAR _ids)
+""")
+    assert result.returncode != 0
+    assert "has 1 build ids for 2 bound providers" in _squashed(result.stderr)
+
+
+def test_declarations_reject_a_record_that_lists_other_providers(tmp_path):
+    record = _accelerate_record()
+    record["records"][RECORD_KEY]["numerics"]["library_paths"].pop()
+    record_file = tmp_path / "numerics.lock.json"
+    record_file.write_text(json.dumps(record), encoding="utf-8")
+    result = _cmake(tmp_path, f"""
+file(READ "{record_file}" _record_json)
+set(_paths {_cmake_quote(BLAS_IMAGE)} {_cmake_quote(LAPACK_IMAGE)})
+set(_ids {_cmake_quote(BUILD_ID)} {_cmake_quote(BUILD_ID)})
+bike_provider_identity_declarations(_decl
+  RECORD_VAR _record_json RECORD_KEY "{RECORD_KEY}"
+  BACKEND ACCELERATE BLAS_BITS 32 LAPACK_BITS 64
+  PROVIDER_PATHS_VAR _paths BUILD_IDS_VAR _ids)
+""")
+    assert result.returncode != 0
+    assert "lists 1 providers, BikeNumerics bound 2" in _squashed(result.stderr)
+
+
+def _scratch_project(tmp_path: Path, body: str) -> subprocess.CompletedProcess:
+    """Configure a minimal CXX project that includes the module on Darwin."""
+    cmake = shutil.which("cmake")
+    if cmake is None:
+        pytest.skip("cmake is not installed")
+    project = tmp_path / "probe-project"
+    project.mkdir()
+    (project / "CMakeLists.txt").write_text(
+        "cmake_minimum_required(VERSION 3.24)\n"
+        "project(provider_identity_probe_check CXX)\n"
+        'set(BIKE_TARGET_SYSTEM "Darwin")\n'
+        f'include("{MODULE}")\n'
+        f"{body}\n",
+        encoding="utf-8")
+    return subprocess.run(
+        [cmake, "-S", str(project), "-B", str(tmp_path / "probe-build")],
+        capture_output=True, text=True, timeout=600)
+
+
+darwin_only = pytest.mark.skipif(
+    platform.system() != "Darwin", reason="Accelerate and LC_UUID are Darwin facts")
+
+
+@darwin_only
+def test_probe_reports_the_loaded_accelerate_images(tmp_path):
+    """The configure-time probe compiles the runtime's discovery code, links
+    Accelerate, and reports the umbrella with a well-formed LC_UUID."""
+    result = _scratch_project(tmp_path, f"""
+set(_required "{UMBRELLA_IMAGE}")
+bike_provider_probe_loaded_images(_probe REQUIRED_VAR _required)
+bike_provider_probe_image_uuid(_uuid IMAGE "{UMBRELLA_IMAGE}" PROBE "${{_probe}}")
+message(STATUS "PROBE_UUID=${{_uuid}}")
+""")
+    assert result.returncode == 0, result.stderr
+    assert re.search(r"PROBE_UUID=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+                     result.stdout)
+
+
+@darwin_only
+def test_probe_fails_configure_when_a_required_image_is_not_loaded(tmp_path):
+    """The discovery's own check runs in the probe: a required image the
+    process did not load fails configure, and no identity is written."""
+    missing = f"{ACCELERATE_DIR}/Frameworks/NotAProvider.framework/NotAProvider"
+    result = _scratch_project(tmp_path, f"""
+set(_required "{missing}")
+bike_provider_probe_loaded_images(_probe REQUIRED_VAR _required)
+""")
+    assert result.returncode != 0
+    assert f"qualified numerics provider image is not loaded: {missing}" in _squashed(
+        result.stderr)
+
+
+@darwin_only
+def test_darwin_build_id_is_the_measured_formula(tmp_path):
+    """The root graph's build_id is macos-<sw_vers>+accelerate-<uuid>+sdk-<SDK
+    build>, the same formula tools/native_dependencies.py measures."""
+    macos = subprocess.run(["sw_vers", "-buildVersion"], capture_output=True,
+                           text=True, check=True).stdout.strip()
+    sdk = subprocess.run(["xcrun", "--sdk", "macosx", "--show-sdk-build-version"],
+                         capture_output=True, text=True, check=True).stdout.strip()
+    out = tmp_path / "build-id.txt"
+    result = _scratch_project(tmp_path, f"""
+bike_darwin_accelerate_build_id(_build_id UUID "{UMBRELLA_UUID}")
+file(WRITE "{out}" "${{_build_id}}")
+""")
+    assert result.returncode == 0, result.stderr
+    assert out.read_text(encoding="utf-8") == (
+        f"macos-{macos}+accelerate-{UMBRELLA_UUID}+sdk-{sdk}")
+
+
+def _real_environment_available() -> bool:
+    return all(
+        importlib.util.find_spec(name) is not None
+        for name in ("numpy", "threadpoolctl", "mujoco", "nanobind")
+    )
+
+
+def _configure_root_without_python(tmp_path: Path) -> Path:
+    """Configure the Python-free root graph with no Python or uv reachable.
+
+    The PATH holds only cmake and ninja, plus logging stubs for the interpreters
+    and uv that exit 97. A configure that starts one fails, and the stubs record
+    the attempt, so the test checks the absence of Python and not just its output.
+    """
+    cmake = shutil.which("cmake")
+    ninja = shutil.which("ninja")
+    if cmake is None or ninja is None:
+        pytest.skip("cmake and ninja are required for the root configure")
+    if not (REPO_ROOT / ".deps").is_dir():
+        pytest.skip("the locked .deps tree is not acquired")
+    bin_dir = tmp_path / "nopy-bin"
+    bin_dir.mkdir()
+    for tool in (cmake, ninja):
+        (bin_dir / Path(tool).name).symlink_to(tool)
+    calls = tmp_path / "python-calls.log"
+    for name in ("python", "python3", "python3.13", "python3.14", "python3.15", "uv"):
+        stub = bin_dir / name
+        stub.write_text(f'#!/bin/sh\necho "{name} $*" >> "{calls}"\nexit 97\n',
+                        encoding="utf-8")
+        stub.chmod(0o755)
+    env = dict(os.environ)
+    env["PATH"] = os.pathsep.join([str(bin_dir), "/usr/bin", "/bin"])
+    build = tmp_path / "root-build"
+    result = subprocess.run(
+        [cmake, "-S", str(REPO_ROOT), "-B", str(build), "-G", "Ninja",
+         "-DCMAKE_BUILD_TYPE=Release", "-DBIKE_BUILD_PYTHON_BINDINGS=OFF",
+         "-DBIKE_BUILD_GUI=OFF", f"-DBIKE_DEPENDENCY_ROOT={REPO_ROOT / '.deps'}"],
+        capture_output=True, text=True, timeout=900, env=env)
+    assert result.returncode == 0, result.stderr
+    assert not calls.exists(), calls.read_text(encoding="utf-8")
+    return build
+
+
+def _configure_legacy_graph(tmp_path: Path) -> Path:
+    """Configure the legacy graph (cmake -S native) with this test's interpreter."""
+    cmake = shutil.which("cmake")
+    if cmake is None:
+        pytest.skip("cmake is not installed")
+    env = dict(os.environ)
+    env["PATH"] = os.pathsep.join([str(Path(sys.executable).parent), env.get("PATH", "")])
+    build = tmp_path / "legacy-build"
+    result = subprocess.run(
+        [cmake, "-S", str(REPO_ROOT / "native"), "-B", str(build),
+         f"-DBIKE_NUMERICS_RECORD={NUMERICS_LOCK}"],
+        capture_output=True, text=True, timeout=900, env=env)
+    assert result.returncode == 0, result.stderr
+    return build
+
+
+def _identity_lines(build: Path) -> tuple[str, str]:
+    """The two declarations this task generates, from a configured build tree."""
+    headers = list(build.rglob("research_build_identity.hpp"))
+    assert len(headers) == 1, headers
+    lines = headers[0].read_text(encoding="utf-8").splitlines()
+    policy = [line for line in lines if "numerics_provider_policy_json[]" in line]
+    images = [line for line in lines if "required_provider_images[]" in line]
+    assert len(policy) == 1 and len(images) == 1, lines
+    return policy[0], images[0]
+
+
+@darwin_only
+@pytest.mark.skipif(not _real_environment_available(),
+                    reason="the legacy graph configure needs the pinned scientific environment")
+def test_root_identity_equals_the_legacy_graph_on_this_host(tmp_path):
+    """The Python-free root graph and the legacy graph (live probe) generate the
+    same policy and image declarations on the same machine. Only the root's
+    build_id comes from its own probe, so equality is the proof that the probe
+    reads the same provider the live measurement read."""
+    root = _configure_root_without_python(tmp_path)
+    legacy = _configure_legacy_graph(tmp_path)
+    assert _identity_lines(root) == _identity_lines(legacy)

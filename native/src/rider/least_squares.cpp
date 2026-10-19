@@ -31,8 +31,8 @@
 //   BLAS leaves them raised) are not solver failures.
 #include "least_squares.hpp"
 
-#include "../model_access.hpp"
 #include "../lapack_abi.hpp"
+#include "../model_access.hpp"
 
 #include <algorithm>
 #include <cfenv>

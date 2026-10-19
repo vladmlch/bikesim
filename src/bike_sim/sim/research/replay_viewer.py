@@ -16,6 +16,7 @@ def replay_exit_code(session):
 
 
 def run_replay_viewer(session, *, time_scale=1):
+    primary = None
     try:
         import mujoco.viewer
         keys = SimpleQueue()
@@ -96,5 +97,13 @@ def run_replay_viewer(session, *, time_scale=1):
             print(f'REPLAY INCOMPLETE: closed at physics step {session.step}; final verification not performed.',
                   file=sys.stderr)
         return code
+    except BaseException as error:
+        primary = error
+        raise
     finally:
-        session.close()
+        try:
+            session.close()
+        except BaseException as cleanup:
+            if primary is None:
+                raise
+            primary.add_note(f'replay close failed: {type(cleanup).__name__}: {cleanup}')

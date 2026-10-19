@@ -64,12 +64,13 @@ HELP_LINE = (
 class _PlaybackState:
     """Mutable playback cursor shared between the GLFW key callback and the render loop."""
 
-    __slots__ = ("t_s", "speed", "paused")
+    __slots__ = ("t_s", "speed", "paused", "stop")
 
     def __init__(self, speed: float) -> None:
         self.t_s = 0.0
         self.speed = float(speed)
         self.paused = False
+        self.stop = False
 
 
 def _shift_held() -> bool:
@@ -143,7 +144,9 @@ def run_playback_viewer(
         elif keycode in _KEYS_R:
             state.t_s = 0.0
         elif keycode in _KEYS_Q or keycode == _KEY_ESC:
-            viewer.close()
+            # A callback can arrive before launch_passive returns its handle.
+            # Let the render owner leave the context and close its own window.
+            state.stop = True
 
     print(HELP_LINE, file=sys.stderr)
 
@@ -159,7 +162,7 @@ def run_playback_viewer(
         last_frame = time.monotonic()
         last_sync = last_frame
 
-        while viewer.is_running():
+        while viewer.is_running() and not state.stop:
             now = time.monotonic()
             elapsed, last_frame = now - last_frame, now
 

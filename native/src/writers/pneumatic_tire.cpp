@@ -11,7 +11,8 @@
 //                                   oracle materializes the product
 //                                   before the +=; never fused
 //   np.linalg.norm / np.dot on (3,) → blas::ddot (+ sqrt)
-//   np.sum(row)                   → numeric::numpy_pairwise_sum
+//   np.sum(row)                   → numeric::numpy_sum (np.sum reduce
+//                                   identity over pairwise order)
 //   builtin sum(generator)        → numeric::PythonSum (Neumaier)
 //   np.max(delta)                 → sequential np_maximum fold (the
 //                                   maximum.reduce path; NaN propagates)
@@ -732,7 +733,7 @@ double PneumaticTireWriter::radial_energy_j(
                 0.5 * k_c * delta_m[i] * delta_m[i] * ds_m +
                 0.5 * k_rim * overlap * overlap * ds_m;
     }
-    return numeric::numpy_pairwise_sum(
+    return numeric::numpy_sum(
             std::span<const double>(energy_scratch_)
                     .first(delta_m.size()));
 }
@@ -773,7 +774,7 @@ double PneumaticTireWriter::shear_energy_j(
             shear_scratch_[i] = state.bristle_deflection_m[i] *
                                 state.bristle_deflection_m[i];
         energy += 0.5 * k_px * dx_m *
-                  numeric::numpy_pairwise_sum(
+                  numeric::numpy_sum(
                           std::span<const double>(shear_scratch_)
                                   .first(elements));
     }

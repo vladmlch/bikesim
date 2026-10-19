@@ -2,13 +2,16 @@
 #include <cstdlib>
 #include <new>
 
-// Overrides of the throwing global allocation operators for the test
-// executable only. Replacements are permitted by [replacement.functions];
-// the nothrow and placement forms stay implicit, which is what the
-// production build relies on: the compiler-rt defaults forward to these
-// replacements, so every throwing allocation in the test binary funnels
-// through this file while the disarmed path remains an exact malloc/free
-// implementation.
+// Overrides of the throwing AND nothrow global allocation operators for
+// the test executable only. Replacements are permitted by
+// [replacement.functions]. The nothrow forms must funnel through the same
+// malloc/free pair: under AddressSanitizer the compiler-rt defaults do
+// NOT forward to these replacements — an unreplaced operator
+// new(nothrow) (what libstdc++ get_temporary_buffer uses) allocates
+// through the sanitizer's bookkeeping while the replaced operator delete
+// releases via std::free, which ASan reports as alloc-dealloc-mismatch.
+// Only the placement forms stay implicit; the disarmed path remains an
+// exact malloc/free implementation either way.
 //
 // Alignment: __STDCPP_DEFAULT_NEW_ALIGNMENT__ (16 on this platform) is the
 // boundary between the scalar forms and the align_val_t overloads
@@ -60,6 +63,17 @@ namespace {
         return pointer;
     }
 
+    // The nothrow operator news share the funnel but translate the two
+    // throwing exits (budget exhaustion, raw-allocation failure) into the
+    // contract's nullptr return.
+    void *allocate_nothrow(std::size_t size, std::size_t alignment) noexcept {
+        try {
+            return allocate(size, alignment);
+        } catch (...) {
+            return nullptr;
+        }
+    }
+
     // The matching raw release for every replacement delete overload —
     // NOLINTNEXTLINE applies per line because each operator needs its own.
     // nullptr releases count too: a delete call is still allocator activity.
@@ -99,3 +113,27 @@ void operator delete(void *pointer, std::align_val_t) noexcept { release(pointer
 void operator delete[](void *pointer, std::align_val_t) noexcept { release(pointer); }
 void operator delete(void *pointer, std::size_t, std::align_val_t) noexcept { release(pointer); }
 void operator delete[](void *pointer, std::size_t, std::align_val_t) noexcept { release(pointer); }
+
+// Nothrow forms — see the file-level comment: leaving these implicit lets
+// compiler-rt allocate through its own bookkeeping while the deletes above
+// release via std::free, which AddressSanitizer reports as a mismatch.
+void *operator new(std::size_t size, const std::nothrow_t &) noexcept {
+    return allocate_nothrow(size, default_alignment);
+}
+void *operator new[](std::size_t size, const std::nothrow_t &) noexcept {
+    return allocate_nothrow(size, default_alignment);
+}
+void *operator new(std::size_t size, std::align_val_t alignment,
+                   const std::nothrow_t &) noexcept {
+    return allocate_nothrow(size, static_cast<std::size_t>(alignment));
+}
+void *operator new[](std::size_t size, std::align_val_t alignment,
+                     const std::nothrow_t &) noexcept {
+    return allocate_nothrow(size, static_cast<std::size_t>(alignment));
+}
+void operator delete(void *pointer, const std::nothrow_t &) noexcept { release(pointer); }
+void operator delete[](void *pointer, const std::nothrow_t &) noexcept { release(pointer); }
+void operator delete(void *pointer, std::align_val_t,
+                     const std::nothrow_t &) noexcept { release(pointer); }
+void operator delete[](void *pointer, std::align_val_t,
+                       const std::nothrow_t &) noexcept { release(pointer); }

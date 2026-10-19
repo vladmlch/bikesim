@@ -229,3 +229,114 @@ def load_replay_input(path, *, episode_id=None):
            for name in ('manifest.json', 'run.duckdb', 'UNSEALED')):
         return DuckDBReplayInput.load(path, episode_id=episode_id)
     return LegacyReplayInput.load(path, episode_id=episode_id)
+
+
+# ---------------------------------------------------------------------------
+# Portable recorded-state playback — inspection data, never a checked recipe
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class PlaybackInput:
+    """Recorded-state playback bundle for a sealed run container.
+
+    Shares the container's data-only validation (manifest, checksums, recipe
+    shape, bundled-asset consistency) while deliberately dropping the
+    checked-replay run-integrity gates: eligibility, completed-prefix coverage
+    and identity-change flags exist for verification, not for displaying the
+    frames that were actually recorded. ``frames`` are ``physics`` rows —
+    ``interval_id``, ``time_s``, ``interval_end_s``, ``dt_s``, ``qpos``,
+    ``qvel`` — for the selected episode only. This object is never an input
+    to checked stepping and carries no verdict about physical replay.
+    """
+
+    summary: object
+    recipe: object
+    assets: object
+    frames: tuple
+    episode_id: int
+
+    def __post_init__(self):
+        for name in ('summary', 'recipe', 'assets'):
+            object.__setattr__(self, name, freeze(getattr(self, name)))
+        object.__setattr__(self, 'frames',
+                         tuple(freeze(row) for row in self.frames))
+
+
+def _validate_playback_recipe(summary, recipe, assets):
+    """Structural recipe/asset checks shared with the checked-replay adapter.
+
+    Unlike ``_validate_recipe`` this performs no eligibility, coverage or
+    identity-change gating and computes no current-runtime identity —
+    ``validate_execution`` only validates the recorded record's own shape.
+    """
+    required = {'replay_contract_version', 'start_x_m', 'heightfield', 'state_signature', 'execution'}
+    optional = {'joint_envelope_file', 'joint_strength_file'}
+    if (not isinstance(recipe, dict) or not required <= set(recipe)
+            or set(recipe) - required - optional or type(recipe['replay_contract_version']) is not int
+            or recipe['replay_contract_version'] != 3
+            or recipe['state_signature'] != 'mjSTATE_INTEGRATION'
+            or type(recipe['start_x_m']) not in (int, float)
+            or not math.isfinite(recipe['start_x_m']) or not isinstance(recipe['heightfield'], dict)):
+        raise RecordingError('invalid replay contract 3 recipe')
+    from bike_sim.native.artifact import validate_execution
+    execution = validate_execution(recipe['execution'])
+    research = summary.get('research', {})
+    if not isinstance(research, dict) or research.get('execution') != execution:
+        raise RecordingError('summary and recipe execution identities disagree')
+    bundled = assets.get('resolved_config.json')
+    if bundled is None:
+        raise RecordingError('recording is missing the bundled resolved configuration')
+    if loads(bundled.decode('utf-8')) != summary.get('resolved_config'):
+        raise RecordingError('bundled and summarized resolved configurations disagree')
+    resolved = summary['resolved_config']
+    physics = resolved.get('physics') if isinstance(resolved, dict) else None
+    articulated = physics.get('articulated') if isinstance(physics, dict) else None
+    if not isinstance(articulated, dict):
+        raise RecordingError('recording articulated recipe must be an object')
+    expected_assets = {'track.toml', 'terrain_vertices.npy', 'resolved_config.json', 'recipe.json'}
+    for key, name in (('joint_envelope', 'rider_joint_envelope.json'),
+                      ('joint_strength', 'rider_joint_strength.json')):
+        declared = articulated.get(key + '_path') is not None
+        bundled = key + '_file' in recipe
+        if declared != bundled or (bundled and (recipe[key + '_file'] != name
+                or name not in assets or hashlib.sha256(assets[name]).hexdigest()
+                != resolved.get(key + '_sha256'))):
+            raise RecordingError(f'inconsistent recorded {key} bundle')
+        if bundled:
+            expected_assets.add(name)
+    if set(assets) != expected_assets:
+        raise RecordingError('playback recipe must own exactly its fixed input assets')
+
+
+def load_playback_input(directory, *, episode_id=None):
+    """Load the portable playback bundle for one episode of a sealed run.
+
+    Read-only container validation; no extension, policy, recorded path or
+    recorded runtime identity is ever loaded or compared. Episodes that are
+    not replay-eligible still yield their recorded frames — failure evidence
+    is inspectable data, and playback output is labeled unverified.
+    """
+    try:
+        recording = Recording(directory)
+    except RecordingError:
+        raise
+    except Exception as error:
+        raise RecordingError(
+            f'recording cannot be opened for playback: {type(error).__name__}: {error}') from error
+    with recording:
+        selected = recording.episode(episode_id)
+        eid = selected['episode_id']
+        summary = loads(selected['summary_json'])
+        assets = {row['name']: bytes(row['content']) for row in recording.rows(
+            'SELECT name,content FROM assets WHERE episode_id=? ORDER BY name', [eid])}
+        if 'recipe.json' not in assets:
+            raise RecordingError(
+                'recording does not bundle the authored replay recipe; '
+                'recorded-state playback requires the fixed input assets')
+        recipe = loads(assets['recipe.json'].decode('utf-8'))
+        _validate_playback_recipe(summary, recipe, assets)
+        frames = tuple(recording.rows(
+            'SELECT interval_id,time_s,interval_end_s,dt_s,qpos,qvel FROM physics '
+            'WHERE episode_id=? ORDER BY interval_id', [eid]))
+    return PlaybackInput(summary, recipe, assets, frames, eid)

@@ -126,15 +126,59 @@ def test_resealed_semantic_tamper_still_fails_verification(
         session.close()
 
 
+def _execution_identity(backend='native', **overrides):
+    record = dict(backend=backend, runtime_schema=1, python_source_sha256='a'*64,
+        native_source_sha256='b'*64 if backend == 'native' else None,
+        extension_sha256='c'*64 if backend == 'native' else None,
+        mujoco_version='3.12.0',
+        mujoco_library_sha256='d'*64 if backend == 'native' else None,
+        build_context=dict(build_type='Release', compiler_id='AppleClang',
+            compiler_version='21.0.0', numerical_flags='-O2 -ffp-contract=off')
+            if backend == 'native' else None)
+    record.update(overrides)
+    return record
+
+
 def test_identity_mismatch_rejected_before_plant_construction(monkeypatch, tmp_path):
     import bike_sim.sim.research.replay as replay
     import bike_sim.sim.ride_sim as plant
     import bike_sim.native.artifact as artifact
     monkeypatch.setattr(replay, '_check_runtime', lambda summary: None)
-    monkeypatch.setattr(artifact, 'execution_provenance', lambda backend: {'backend': backend, 'stamp': 'current'})
+    monkeypatch.setattr(artifact, 'execution_provenance',
+                        lambda backend: _execution_identity(mujoco_version='3.12.1'))
     def forbidden(*args, **kwargs):
         raise AssertionError('constructed a plant before rejecting identity')
     monkeypatch.setattr(plant, 'RideSimulation', forbidden)
-    with pytest.raises(ValueError, match='execution identity'):
+    with pytest.raises(ValueError, match='execution identity mismatch.*mujoco_version'):
         replay._rebuild(tmp_path, {}, {'schema_version': 2,
-            'execution': {'backend': 'native', 'stamp': 'different'}})
+            'execution': _execution_identity()})
+
+
+def test_identity_recheck_failure_advances_no_physics(environment_factory, tmp_path, monkeypatch):
+    """A playback-time identity drift surfaces at the final boundary with the
+    named field — and once raised, the session commits no further physics."""
+    from copy import deepcopy
+    import bike_sim.native.artifact as artifact
+    env = environment_factory()
+    path = record_prefix(env, tmp_path/'episode')
+    drifted = deepcopy(env.execution)
+    drifted['mujoco_version'] = '0.0.0'
+    session = ReplaySession(path)
+    try:
+        monkeypatch.setattr(artifact, 'execution_provenance',
+                            lambda backend: deepcopy(drifted))
+        # The per-command transitions still verify; the recheck fires at the
+        # terminal boundary — the failure must not advance the step count.
+        with pytest.raises(ValueError, match='execution identity mismatch.*mujoco_version'):
+            while not session.advance(target_step=session.step+1):
+                pass
+        steps_at_failure = session._env.sim.steps
+        assert not session.done
+        assert session.error is not None
+        with pytest.raises(RuntimeError, match='replay stopped after mismatch'):
+            session.advance()
+        assert session._env.sim.steps == steps_at_failure
+        with pytest.raises(RuntimeError, match='incomplete'):
+            session.report()
+    finally:
+        session.close()

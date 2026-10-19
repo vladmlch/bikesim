@@ -346,9 +346,16 @@ class NativeResearchEnvironment:
         if type(chosen) is not int or chosen < 0:
             raise ValueError('reset seed must be a nonnegative integer')
         from bike_sim.native.artifact import execution_provenance
+        from bike_sim.native.execution_identity import (
+            execution_identity_differences,
+        )
         current_execution = execution_provenance('native')
-        if current_execution != self.execution or self.current_metadata() != self.metadata:
-            raise ValueError('source, binary or recipe changed; construct a fresh environment before reset')
+        differences = execution_identity_differences(self.execution,
+                                                     current_execution)
+        if differences or self.current_metadata() != self.metadata:
+            detail = f' ({ "; ".join(differences) })' if differences else ''
+            raise ValueError('source, binary or recipe changed; construct a '
+                             f'fresh environment before reset{detail}')
         tape = build_noise_tape(self.sensor_config, seed=chosen, count=1+self.max_steps//self.sensor_steps)
         pipeline = SensorPipeline(self.sensor_config, seed=chosen)
         pipeline.reset(self._raw_initial)

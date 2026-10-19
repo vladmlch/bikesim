@@ -394,6 +394,8 @@ class PhysicalRideDriver:
             return
         if self._native is not None:
             self._native.close()
+        if self._sim is not None:
+            self._sim.physical._close_async_worker()
         self._closed = True
 
 
@@ -410,11 +412,15 @@ def build_physical_driver(track, args, rider, *, seed=None, strict=None,
         policy = getattr(args, 'resolved_check_policy', None)
         strict = (policy == 'strict') if policy is not None \
             else bool(getattr(args, 'headless', False))
-    if async_telemetry:
-        # Period evaluation moves to a spawned worker; results surface one
-        # step later. Viewer-only path — no mid-period consumers.
-        sim.physical.set_async_close(True)
-    return PhysicalRideDriver(sim, backend=backend,
-        strict=strict, decimation=args.decimate,
-        duration_s=args.duration, seed=seed,
-        record=getattr(args, 'record', None))
+    try:
+        if async_telemetry and backend == 'python':
+            # Native owns publication; its temporary Python setup must not
+            # acquire a worker the native driver will never consume.
+            sim.physical.set_async_close(True)
+        return PhysicalRideDriver(sim, backend=backend,
+            strict=strict, decimation=args.decimate,
+            duration_s=args.duration, seed=seed,
+            record=getattr(args, 'record', None))
+    except BaseException as error:
+        sim.physical._close_async_worker(primary=error)
+        raise

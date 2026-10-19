@@ -7,7 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "numpy>=1.24.0",
     "matplotlib>=3.7.0",
-    "mujoco>=3.0.0",
+    "mujoco==3.12.0",
     "scipy==1.17.0",
     "glfw>=2.10.0",
     "pytest>=7.0.0",
@@ -47,5 +47,7 @@ dev = [
 ]
 native = [
     "mujoco==3.12.0",
+    "numpy==2.5.2",
     "nanobind>=3.1.0",
+    "threadpoolctl>=3.6",
 ]

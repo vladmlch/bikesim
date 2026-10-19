@@ -21,6 +21,7 @@
 #include "../engine_call.hpp"
 #include "../interval_clock.hpp"
 #include "../model_access.hpp"
+#include "../numeric_sincos.hpp"
 #include "pyfloat.hpp"
 
 #include <algorithm>
@@ -662,7 +663,7 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         d->geom_xpos, model_access::kXYZ * m_->ngeom);
     const std::span<const mjtNum> qvel =
             model_access::readonly_buffer(d->qvel, m_->nv);
-    const double normal_cosine = std::cos(
+    const double normal_cosine = numeric::np_cos(
         cfg_.distinct_normal_deg * (std::numbers::pi / 180.0));
     for (std::size_t s = 0; s < 2; ++s) {
         const nativecfg::TireParams &pcfg =

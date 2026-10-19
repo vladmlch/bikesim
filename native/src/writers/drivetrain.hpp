@@ -429,6 +429,18 @@ namespace drivetrain {
 
         std::map<std::string, Joint> joints_;
         std::vector<Joint> bearing_joints_;
+        // Warm-path joint caches resolved once at construction: the joints_
+        // map keys are std::string and its comparator is not transparent, so
+        // every at()/contains() materializes a key string — "drive_shaft_spin"
+        // (16 chars) exceeds libstdc++'s 15-char small-string buffer and
+        // heap-allocates once per tick. The joint set never changes after
+        // the ctor, so the tick path reads these cached values instead of
+        // paying a map lookup (and a possible allocation) per tick.
+        // cassette_joint_ is valid only under the elastic-chain topology —
+        // the same guard that emplaces "cassette_spin" — and shaft_joint_
+        // caches the drive-shaft → rotor → crank fallback chain.
+        Joint crank_joint_{}, wheel_joint_{}, cassette_joint_{},
+                shaft_joint_{};
         int human_actuator_ = absent_id, motor_actuator_ = absent_id;
         PedalingPolicy pedaling_;
         CadenceShifter shifting_;

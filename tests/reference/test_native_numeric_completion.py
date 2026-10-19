@@ -905,8 +905,12 @@ int main() {
 ''')
     includes = Path(__file__).resolve().parents[2]/'native/src'
     context = json.loads((selected_build(os.environ)/'native_check_context.json').read_text())
+    # The selected sysroot is the Apple SDK on Darwin; Linux builds record
+    # an explicit sysroot or none at all.
+    sysroot = context.get('sysroot') or context.get('sdk')
+    sysroot_args = ['-isysroot', sysroot] if sysroot else []
     result = subprocess.run([context['compiler']['path'], '-std=c++23', '-pedantic-errors',
-        '-isysroot', context['sdk'], '-I', str(includes), str(source), '-o', str(executable)],
+        *sysroot_args, '-I', str(includes), str(source), '-o', str(executable)],
         capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     subprocess.run([str(executable)], check=True, capture_output=True, text=True)

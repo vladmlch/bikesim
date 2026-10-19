@@ -27,12 +27,22 @@ def test_shared_export_native_rows_and_complete_provenance(environment_pair, tmp
     native.save(native_path)
     summary, manifest = validate_recording(native_path)
     python_summary, python_manifest = validate_recording(python_path)
-    assert set(manifest['execution']) == EXECUTION_FIELDS
+    # Version-2 identity: the legacy field set plus identity_schema, with the
+    # measured platform/numerics context inside build_context.
+    assert set(manifest['execution']) == EXECUTION_FIELDS | {'identity_schema'}
+    assert manifest['execution']['identity_schema'] == 2
     assert manifest['execution']['backend'] == 'native'
     assert python_manifest['execution']['backend'] == 'python'
-    # A Python export carries schema-2 provenance with all native fields null.
+    native_context = manifest['execution']['build_context']
+    assert set(native_context) == {'build_type', 'compiler_id', 'compiler_version',
+                                   'numerical_flags', 'platform', 'numerics'}
+    python_context = python_manifest['execution']['build_context']
+    assert set(python_context) == {'platform', 'numerics'}
+    assert python_context == {key: native_context[key]
+                              for key in ('platform', 'numerics')}
+    # A Python export still carries all native-binary fields null.
     for null_field in ('native_source_sha256', 'extension_sha256',
-                       'mujoco_library_sha256', 'build_context'):
+                       'mujoco_library_sha256'):
         assert python_manifest['execution'][null_field] is None
     assert set(manifest['file_sha256']) == set(SCHEMA2_FILES) | {ENVELOPE_FILE, STRENGTH_FILE}
     assert not summary['research']['execution_changed_during_run']

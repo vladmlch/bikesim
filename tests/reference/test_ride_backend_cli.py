@@ -79,8 +79,11 @@ def test_missing_artifact_names_directory_commands_and_code(tmp_path, monkeypatc
                  '--out', str(tmp_path/'out')]) == 2
     error = capsys.readouterr().err
     assert str(missing.resolve()) in error
-    assert 'cmake -S native -B native/build/release -DCMAKE_BUILD_TYPE=Release' in error
-    assert 'cmake --build native/build/release' in error
+    assert 'tools/dev.py doctor --build' in error
+    assert 'tools/dev.py configure --build' in error
+    assert '--config Release' in error
+    assert 'tools/dev.py build --build' in error
+    assert 'python=' in error and 'soabi=' in error
 
 
 def test_python_command_never_loads_the_extension(tmp_path, monkeypatch):

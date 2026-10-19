@@ -152,6 +152,7 @@ def test_headless_tail_failure_preserves_primary_error_without_files(tmp_path, m
     runtime = SimpleNamespace(set_strict=lambda value: None,
         set_recording_retention=lambda value: None,
         reference_monitor=ReferenceMonitor(strict=True), vertices=np.zeros((2, 2)),
+        _close_async_worker=lambda **kwargs: None,
         model_status=SimpleNamespace(as_dict=lambda: {'model_valid':False}))
     def step(*args, **kwargs):
         raise ValueError('primary integration failure')

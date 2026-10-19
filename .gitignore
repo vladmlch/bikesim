@@ -25,6 +25,8 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+# Non-default native build trees (native/build-linux-*, sanitizer dirs, ...)
+native/build-*/
 .venv/
 .pytest_cache/
 

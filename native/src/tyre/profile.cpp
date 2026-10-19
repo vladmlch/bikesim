@@ -9,18 +9,23 @@
 //   `np.linalg.norm(v)` on (2,)/(3,)    → sqrt(ddot(v, v))
 //   `np.linalg.norm(M, axis=1)` on (k,2)→ elementwise sqrt(x*x + y*y)
 //   `np.einsum('ij,ij->i')` on (n,2)    → seeded `0.0 + a0*b0 + a1*b1`
-//   `np.interp` scalar                  → np_interp() below (fma form)
+//   `np.interp` scalar                  → np_interp() below — the
+//                                       segment eval follows the
+//                                       wheel's measured lowering via
+//                                       numeric::np_interp_segment
 //   `math.hypot`                        → py_hypot()
 //                                       (numeric::python_vector_norm)
 //   `np.searchsorted` right/left        → upper_bound/lower_bound
 //   `np.linspace(-s, s, n)`             → i*step + (-s), last element = s
-//   `np.cos/np.radians/np.exp` scalars  → std::cos / x*(pi/180) / std::exp
+//   `np.cos/np.radians/np.exp` scalars  → numeric::np_cos / x*(pi/180) / std::exp
 //   `round()`                           → std::nearbyint (banker's, default FP)
 #include "profile.hpp"
 
 #include "../cblas_abi.hpp"
 #include "../model_access.hpp"
 #include "../numeric_norm.hpp"
+#include "../numeric_numpy.hpp"
+#include "../numeric_sincos.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -126,13 +131,12 @@ namespace biketyre {
         if (xs[ju] == xq)
             return ys[ju];
         const double slope = (ys[ju + 1] - ys[ju]) / (xs[ju + 1] - xs[ju]);
-        double result = std::fma(slope, xq - xs[ju], ys[ju]);
-        if (std::isnan(result)) {
-            result = std::fma(slope, xq - xs[ju + 1], ys[ju + 1]);
-            if (std::isnan(result) && ys[ju] == ys[ju + 1])
-                result = ys[ju];
-        }
-        return result;
+        // slope*(xq-xs[j])+ys[j] under the wheel's measured lowering —
+        // contracted on the macOS build, separate on the Linux build —
+        // plus np_interp's right-endpoint retry and constant-segment
+        // fallback, all inside np_interp_segment (numeric_numpy.hpp).
+        return numeric::np_interp_segment(slope, xq, xs[ju], ys[ju],
+                                          xs[ju + 1], ys[ju + 1]);
     }
 
     std::vector<std::array<double, 2> >
@@ -345,9 +349,10 @@ namespace biketyre {
             throw std::invalid_argument("invalid multi-support threshold");
         significant_delta_m_ = significant_delta_m;
         significance_fraction_ = significance_fraction;
-        // np.cos(np.deg2rad(angle)) — deg2rad is x*(pi/180), cos is libm cos.
+        // np.cos(np.deg2rad(angle)) — deg2rad is x*(pi/180), cos is
+        // npy_cos (numeric::np_cos; a lone call — nothing to fuse).
         normal_cosine_ =
-                std::cos(normal_angle_deg * (std::numbers::pi / 180.0));
+                numeric::np_cos(normal_angle_deg * (std::numbers::pi / 180.0));
         // Warm-contact scratch: contact() refills this storage every call
         // instead of allocating per query like the Python original. A
         // candidates window never exceeds the segment count, so px_.size()

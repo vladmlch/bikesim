@@ -17,7 +17,7 @@
 //  - pneumatic/model.cpp — implementation; its header comment lists the
 //    NumPy/CPython lowering decisions that keep the port
 //    bitwise-identical (np.linalg.norm/np.dot -> blas::ddot, np.sum ->
-//    numeric::numpy_pairwise_sum, np.sign -> numeric::np_sign, float **
+//    numeric::numpy_sum, np.sign -> numeric::np_sign, float **
 //    -> pyfloat::float_pow, np.maximum -> numeric::np_maximum).
 //  - src/bike_sim/sim/ride/tyre/model.py — the behavioral oracle.
 //  - tests/reference/test_native_pneumatic_model.py — the bitwise

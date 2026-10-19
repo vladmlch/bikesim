@@ -12,10 +12,11 @@
 //                               multiply then in-place add: two roundings
 //                               under -ffp-contract=off), y[-1] = stop.
 //   ux = sin, uz = -cos       — a same-operand sin/cos pair per angle:
-//                               numeric::sin / numeric::cos keep the two
-//                               standalone libm calls the oracle makes
-//                               (volatile-lowered; __sincos_stret fusion
-//                               can drift one ulp — see the header).
+//                               numeric::np_sin / numeric::np_cos keep
+//                               the two standalone libm calls the oracle
+//                               makes (volatile-lowered; __sincos_stret
+//                               fusion can drift one ulp — see the
+//                               header).
 //   np.arctan2                — std::atan2: the 'd' ufunc lowers to
 //                               npy_atan2 = the platform libm call on this
 //                               toolchain (the SVML dispatch requires
@@ -116,8 +117,8 @@ namespace biketyre {
         for (std::size_t i = 0; i < n_; ++i) {
             // :116-117 — one operand feeding both sin and cos: the
             // volatile-lowered calls keep __sincos_stret fusion out.
-            ux_[i] = numeric::sin(theta_[i]);
-            uz_[i] = -numeric::cos(theta_[i]);
+            ux_[i] = numeric::np_sin(theta_[i]);
+            uz_[i] = -numeric::np_cos(theta_[i]);
         }
     }
 

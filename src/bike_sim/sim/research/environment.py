@@ -138,7 +138,11 @@ class ResearchEnvironment:
         if sim.steps != 0 or sim.time_s != 0.:
             raise ValueError('construct research environment from a freshly reset simulation')
         self.seed = self.config.seed
-        self._begin_episode()
+        try:
+            self._begin_episode()
+        except BaseException as error:
+            self.sim.physical._close_async_worker(primary=error)
+            raise
 
     def _begin_episode(self):
         self._generation += 1
@@ -399,12 +403,12 @@ class ResearchEnvironment:
                 self._consume_completed_samples()
                 if self.done:
                     break
-            # End of the external policy window can leave a partial period.
-            if self.sim.physical._buffer._raws:
+            # End of the external policy window can leave a partial period,
+            # and an async close can still hold submitted-but-unapplied work.
+            if self.sim.physical.has_pending_close():
                 self.sim.physical.flush()
                 self._consume_completed_samples()
         except Exception as exc:
-            from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
             self.terminated = True
             primary_reason = ('invalid_controller' if isinstance(exc, InvalidReferenceRun)
                               else 'simulation_error')
@@ -413,7 +417,7 @@ class ResearchEnvironment:
             # Account a partial physical period even when integration or a
             # caller fails, without replacing the originating exception.
             try:
-                if self.sim.physical._buffer._raws:
+                if self.sim.physical.has_pending_close():
                     self.sim.physical.flush()
             except Exception as tail_error:
                 exc.add_note(f'trailing interval check: {tail_error}')
@@ -470,7 +474,7 @@ class ResearchEnvironment:
             if self._sealed_episode.episode_id != episode_id:
                 raise ValueError('an episode cannot be sealed under two identities')
             return self._sealed_episode
-        if self.sim.physical._buffer._raws:
+        if self.sim.physical.has_pending_close():
             try:
                 self.sim.physical.flush()
             except InvalidReferenceRun as error:
@@ -518,7 +522,20 @@ class ResearchEnvironment:
             raise RuntimeError("finish the active interval before closing the environment")
         self._window = None
         self._closed = True
-        owner = getattr(self, "_replay_assets_owner", None)
-        if owner is not None:
-            owner.cleanup()
-            self._replay_assets_owner = None
+        primary = None
+        try:
+            self.sim.physical._close_async_worker()
+        except BaseException as error:
+            primary = error
+            raise
+        finally:
+            owner = getattr(self, "_replay_assets_owner", None)
+            if owner is not None:
+                try:
+                    owner.cleanup()
+                except BaseException as error:
+                    if primary is None:
+                        raise
+                    primary.add_note(f'replay assets cleanup failed: {type(error).__name__}: {error}')
+                else:
+                    self._replay_assets_owner = None

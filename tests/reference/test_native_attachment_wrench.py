@@ -1,14 +1,16 @@
-"""Native equality reactions + Accelerate DGELSD least squares (T2a).
+"""Native equality reactions + platform ILP64 DGELSD least squares (T2a).
 
 Every native reading is taken on the Stepper's owned (mjModel, mjData)
 pair — the same solved EFC arena the Python oracle reads — so the outputs
 must be bitwise identical. Equality rows are re-derived from the CURRENT
 efc_type/efc_id arena on every evaluation: membership is never cached.
-The least-squares hook runs the same Accelerate ILP64 DGELSD
-(_dgelsd$NEWLAPACK$ILP64) that numpy.linalg.lstsq dispatches to on this
-platform, with numpy's exact buffer layout, workspace query, FP-flag
+The least-squares hook runs the same ILP64 DGELSD that
+numpy.linalg.lstsq dispatches to on this platform (Accelerate
+_dgelsd$NEWLAPACK$ILP64 on macOS, the wheel's scipy_dgelsd_64_ on
+Linux), with numpy's exact buffer layout, workspace query, FP-flag
 error semantics, and output contract.
 """
+import ctypes
 import dataclasses
 import math
 
@@ -466,6 +468,132 @@ def test_least_squares_output_layout_and_ownership():
     assert not np.may_share_memory(x1, np.asarray(a))
     x1[:] = 0.
     assert_bitwise_equal(x2, np.linalg.lstsq(a, b, rcond=1e-12)[0])
+
+
+def test_linux_and_mac_lstsq_use_numpy_workspace_contract():
+    """Multiple right-hand sides flow through the column-major B staging
+    and the (m, n, nrhs)-keyed workspace-query cache: both backends must
+    reproduce np.linalg.lstsq bitwise on every output."""
+    rng = np.random.default_rng(808)
+    a = rng.normal(size=(9, 4))
+    b = rng.normal(size=(9, 3))
+    expected = np.linalg.lstsq(a, b, rcond=1e-12)
+    actual = bike_native._rider_least_squares(a, b, 1e-12)
+    for got, want in zip(actual, expected):
+        got, want = np.asarray(got), np.asarray(want)
+        if got.ndim == 0:
+            # numpy boxes rank as np.int32; the binding returns a Python
+            # int — compare the value, not the boxing.
+            assert int(got) == int(want)
+        else:
+            assert_bitwise_equal(got, want)
+    # Same shape again: the second call replays the remembered
+    # (m, n, nrhs) workspace answer instead of probing again — the
+    # result must be identical regardless of which path ran.
+    _lstsq_oracle(a, b, rcond=1e-12)
+    # Strided, non-contiguous views resolve to the same staged bytes —
+    # the oracle contract is on values, not on input layout.
+    a_strided = rng.normal(size=(18, 8))[::2, :4]
+    b_strided = rng.normal(size=(18, 6))[::2, :3]
+    assert not a_strided.flags.c_contiguous
+    assert not b_strided.flags.c_contiguous
+    _lstsq_oracle(a_strided, b_strided)
+
+
+def _fp_exception_controls():
+    """(fetestexcept, feraiseexcept, feclearexcept, FE_INVALID, all-bits
+    mask) via libc — or None when the platform's fenv controls are
+    unreachable. The FE_INVALID bit is measured, never assumed: every
+    flag is cleared, a genuine invalid operation (0 * inf) runs on the
+    FPU, and the single bit the hardware raised is the answer."""
+    for library in (None, 'libm.so.6', 'libm.dylib', 'libSystem.B.dylib'):
+        try:
+            handle = (ctypes.CDLL(library) if library is not None
+                      else ctypes.CDLL(None))
+            test, raise_, clear = (handle.fetestexcept,
+                                   handle.feraiseexcept,
+                                   handle.feclearexcept)
+        except (AttributeError, OSError):
+            continue
+        for fn in (test, raise_, clear):
+            fn.restype = ctypes.c_int
+            fn.argtypes = [ctypes.c_int]
+        all_bits = (1 << 7) - 1  # every standard FE_* mask lives in 0x01..0x40
+        clear(all_bits)
+        zero, inf = 0., math.inf  # locals keep the product out of folding
+        _ = zero * inf            # hardware invalid operation
+        raised = [1 << bit for bit in range(7) if test(1 << bit)]
+        if len(raised) != 1:
+            continue  # an unusable/aliased fenv: not this platform's story
+        fe_invalid = raised[0]
+        # The bit must clear and re-raise — anything else is not a flag.
+        clear(fe_invalid)
+        if test(fe_invalid) != 0:
+            continue
+        raise_(fe_invalid)
+        if test(fe_invalid) == 0:
+            continue
+        clear(all_bits)
+        return test, raise_, clear, fe_invalid, all_bits
+    return None
+
+
+def test_least_squares_prior_fp_invalid_flag():
+    """An FE_INVALID already set on entry is the gufunc's error_occurred
+    seed: it never fails a well-posed solve, and — like
+    set_fp_invalid_or_clear — the flag is preserved through the call.
+    The oracle succeeds identically under the same entry state."""
+    controls = _fp_exception_controls()
+    if controls is None:
+        pytest.skip('fenv exception controls unavailable on this platform')
+    test, raise_, clear, fe_invalid, all_bits = controls
+    rng = np.random.default_rng(3141)
+    a = rng.normal(size=(6, 3))
+    b = rng.normal(size=(6, 2))
+    clear(all_bits)
+    raise_(fe_invalid)
+    expected = np.linalg.lstsq(a, b, rcond=1e-12)
+    clear(all_bits)
+    raise_(fe_invalid)
+    actual = bike_native._rider_least_squares(a, b, 1e-12)
+    for got, want in zip(actual, expected):
+        got, want = np.asarray(got), np.asarray(want)
+        if got.ndim == 0:
+            assert int(got) == int(want)
+        else:
+            assert_bitwise_equal(got, want)
+    # The port re-raises the entry flag like the gufunc does — the flag
+    # stays set across a successful solve.
+    assert test(fe_invalid) != 0
+    # Clean entry: a successful solve leaves every flag the LAPACK calls
+    # raised cleared — set_fp_invalid_or_clear(0) verbatim.
+    clear(all_bits)
+    bike_native._rider_least_squares(a, b, 1e-12)
+    assert test(all_bits) == 0
+    clear(all_bits)
+
+
+def test_least_squares_fp_invalid_raised_on_failure():
+    """A non-convergent solve raises the flag like the oracle's failed
+    lstsq: the same 'SVD did not converge' ValueError, FE_INVALID left
+    set — including when the flag was already set on entry."""
+    controls = _fp_exception_controls()
+    if controls is None:
+        pytest.skip('fenv exception controls unavailable on this platform')
+    test, raise_, clear, fe_invalid, all_bits = controls
+    a = np.array([[1., np.nan], [0., 1.]])
+    b = np.array([1., 2.])
+    clear(all_bits)
+    with pytest.raises(ValueError, match='SVD did not converge'):
+        np.linalg.lstsq(a, b, rcond=1e-12)
+    oracle_flag = test(fe_invalid)
+    clear(all_bits)
+    raise_(fe_invalid)
+    with pytest.raises(ValueError, match='SVD did not converge'):
+        bike_native._rider_least_squares(a, b, 1e-12)
+    assert test(fe_invalid) != 0
+    assert oracle_flag != 0
+    clear(all_bits)
 
 
 # --------------------- T2b: solved attachment measurements -----------------

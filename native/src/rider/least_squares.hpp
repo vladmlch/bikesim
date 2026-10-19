@@ -1,12 +1,15 @@
-// least_squares.hpp — reusable Accelerate ILP64 DGELSD workspace.
+// least_squares.hpp — reusable platform ILP64 DGELSD workspace.
 //
 // numpy.linalg.lstsq's gufunc (numpy/linalg/umath_linalg.cpp, lstsq_m /
 // lstsq_n over the 'ddd->ddid' signature) drives DGELSD through the
-// Accelerate $NEWLAPACK$ILP64 ABI on this platform. This workspace
-// reproduces that contract bitwise: the same exported entry point, the
-// same column-major buffer layouts (LDA = max(1, m), LDB = max(1, m, n)),
-// the same lwork/iwork workspace query, and the same outputs —
-// solution, effective rank, singular values, residual sums.
+// platform's qualified ILP64 ABI (Accelerate's $NEWLAPACK$ILP64 on
+// Darwin, scipy_dgelsd_64_ on Linux — bound in
+// src/platform/lapack_*.cpp behind numeric_backend::dgelsd). This
+// workspace reproduces that contract bitwise: the same exported entry
+// point, the same column-major buffer layouts (LDA = max(1, m),
+// LDB = max(1, m, n)), the same lwork/iwork workspace query, and the
+// same outputs — solution, effective rank, singular values, residual
+// sums.
 //
 // Error contract, mirroring the oracle exactly:
 //   * dimension/shape violations -> std::invalid_argument before any
@@ -38,9 +41,9 @@
 
 namespace rider {
 
-    // Accelerate's ILP64 Fortran integer (__LAPACK_int == long under
-    // ACCELERATE_LAPACK_ILP64 — signed 64-bit on this platform, pinned at
-    // the call-site declaration in least_squares.cpp).
+    // The qualified ILP64 Fortran integer (Accelerate's __LAPACK_int ==
+    // long under ACCELERATE_LAPACK_ILP64; scipy-openblas's USE64BITINT
+    // integer — signed 64-bit on both, pinned in the backend TUs).
     using lapack_int = std::int64_t;
 
     // One DGELSD solve's numpy.linalg.lstsq output tuple.

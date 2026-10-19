@@ -1,0 +1,106 @@
+{
+  "scope": "Planning-artifact validation only; not project implementation or platform qualification.",
+  "status": "pass",
+  "task_count": 30,
+  "work_package_count": 7,
+  "tracked_phase_checkboxes": 150,
+  "python_examples_ast_parsed": 45,
+  "shell_examples_bash_syntax_checked": 96,
+  "json_examples_parsed": 0,
+  "yaml_examples_parsed": 1,
+  "code_fences_by_language": {
+    "python": 45,
+    "sh": 96,
+    "cmake": 4,
+    "cpp": 5,
+    "text": 2,
+    "yaml": 1
+  },
+  "task_dependency_graph": "acyclic",
+  "possible_ready_batches": [
+    [
+      "T01"
+    ],
+    [
+      "T02"
+    ],
+    [
+      "T03"
+    ],
+    [
+      "T04"
+    ],
+    [
+      "T05"
+    ],
+    [
+      "T06",
+      "T09"
+    ],
+    [
+      "T07",
+      "T13"
+    ],
+    [
+      "T08"
+    ],
+    [
+      "T10"
+    ],
+    [
+      "T11",
+      "T14"
+    ],
+    [
+      "T12",
+      "T15",
+      "T20"
+    ],
+    [
+      "T16",
+      "T17",
+      "T18",
+      "T23"
+    ],
+    [
+      "T19",
+      "T24"
+    ],
+    [
+      "T21"
+    ],
+    [
+      "T22",
+      "T25"
+    ],
+    [
+      "T26",
+      "T27"
+    ],
+    [
+      "T28"
+    ],
+    [
+      "T29"
+    ],
+    [
+      "T30"
+    ]
+  ],
+  "task_statuses": "all not_started",
+  "global_constraints": "identical across eight plan documents",
+  "source_text_files_rehashed": 1072,
+  "source_text_files_changed": [],
+  "original_archive_sha256": "cd44e1ad291c887e8cf91303b153ccc9c016284b341b6db4efbdb8f059e4fecc",
+  "markdown_word_count_before_review": 34104,
+  "errors": [],
+  "not_performed": [
+    "Native project compilation",
+    "Project pytest/CTest qualification",
+    "macOS execution",
+    "Linux/macOS GUI acceptance",
+    "Same-environment bitwise numerical qualification",
+    "Offline target-host installation"
+  ],
+  "actual_project_probe": "Original Linux CMake configure fails at unconditional macOS SDK selection; raw log included."
+}

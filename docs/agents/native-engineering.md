@@ -4,7 +4,12 @@ Read this document before changing `native/`, native test loading, native config
 code, analysis wrappers, benchmarks, or sanitizer/coverage tooling. It applies to implementation and review.
 The [safety specification](../superpowers/specs/2026-10-06-native-safety.md) defines the required behavior;
 the [master plan](../superpowers/plans/2026-10-06-native-safety-master.md) tracks implementation. A planned check is not
-evidence that the check already exists.
+evidence that the check already exists. (Both links reference documents recorded as `missing_inputs` by the T01
+inventory — the specs tree is not preserved in this checkout; this file remains the authoritative in-repo rules text.)
+
+These rules apply on every platform lane. Qualified development hosts, toolchain details and per-platform diagnostics
+live in [development/linux.md](../development/linux.md), [development/macos.md](../development/macos.md) and
+[development/troubleshooting.md](../development/troubleshooting.md); a platform difference never weakens a rule below.
 
 ## Establish the contract
 

@@ -231,8 +231,8 @@ DistributedTireWriter::DistributedTireWriter(const mjModel *m,
     for (std::size_t s = 0; s < 2; ++s) {
         local_[s].resize(n);
         for (std::size_t i = 0; i < n; ++i)
-            local_[s][i] = {radii_[s] * numeric::cos(stations_.angles[i]), 0.0,
-                            radii_[s] * numeric::sin(stations_.angles[i])};
+            local_[s][i] = {radii_[s] * numeric::np_cos(stations_.angles[i]), 0.0,
+                            radii_[s] * numeric::np_sin(stations_.angles[i])};
     }
     // Spec §4.5 scratch — every container the Task-5 warm core fills, plus
     // the stored-energy and wire scratch this task already uses.
@@ -570,10 +570,12 @@ std::vector<double> DistributedTireWriter::qfrc(const mjData *d, double dt) {
 //                                     oracle materializes the product
 //                                     before the += — never fused)
 //   velocity/tangent/center dots    → blas::ddot on (3,) rows
-//   np.sum(loads) / np.sum(energies)→ numeric::numpy_pairwise_sum
-//   np.cos(np.radians(x))           → std::cos(x * (pi/180)): np.radians
-//                                     is one multiply and the lone cos
-//                                     has no same-operand sin partner
+//   np.sum(loads) / np.sum(energies)→ numeric::numpy_sum (the np.sum
+//                                     reduce identity over pairwise
+//                                     order)
+//   np.cos(np.radians(x))           → numeric::np_cos(x * (pi/180)):
+//                                     np.radians is one multiply and
+//                                     the ufunc contract is npy_cos
 //                                     (the numeric_sincos rationale)
 //   xi ** 2 / old.xi ** 2           → pyfloat::pow — the libm call, not
 //                                     the x*x compiler fold
@@ -601,7 +603,7 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
     constexpr std::size_t kDim =
             static_cast<std::size_t>(model_access::kXYZ);
     double energy = 0.0, total_loss = 0.0, radial_loss_power = 0.0;
-    const double cos_distinct = std::cos(
+    const double cos_distinct = numeric::np_cos(
         cfg_.distinct_normal_deg * (std::numbers::pi / 180.0));
     const std::span<const mjtNum> xpos = model_access::readonly_buffer(
         d->geom_xpos, model_access::kXYZ * m_->ngeom);
@@ -778,9 +780,9 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
         // :193-196 — the wheel's numpy reductions and the signed
         // overlap convention (deepest penetration, else the negative
         // of the nonnegative center clearance).
-        const double normal_total = numeric::numpy_pairwise_sum(
+        const double normal_total = numeric::numpy_sum(
                 std::span{loads_}.first(count));
-        const double radial_energy = numeric::numpy_pairwise_sum(
+        const double radial_energy = numeric::numpy_sum(
                 std::span{energies_}.first(count));
         const double max_depth =
                 count > 0 ? *std::ranges::max_element(

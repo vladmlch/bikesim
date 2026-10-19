@@ -13,6 +13,13 @@
 //   * `a @ b`, `float(x @ y)`, `norm()` → blas::ddot (np.linalg.norm is
 //     sqrt(x.dot(x)) for 1-D input — the same ddot + libm sqrt);
 //   * `jrel @ qvel`, `R @ v`, `jrel.T @ f` → blas::dgemv;
+//   * `qfrc += jrel.T @ f` → blas::dgemv into scratch, then an
+//     elementwise += — the oracle is TWO ufuncs (matmul, then add), so
+//     the product must be rounded before the accumulate. dgemv(beta=1)
+//     is NOT equivalent: OpenBLAS's trans kernel fuses the add into the
+//     dot accumulator (one rounding) and differs on ~40% of lanes, while
+//     Accelerate happens to round first — the beta=1 shortcut was
+//     silently Accelerate-only correct;
 //   * `math.hypot(*v)` → rider::hypot3 (the CPython port);
 //   * `x ** 2`/`x ** y` → pyfloat::pow (CPython float_pow → libm pow);
 //   * `np.cross` → the literal component products below;
@@ -439,6 +446,9 @@ namespace writers {
         // per call, and efc contents do not change mid-evaluation.
         std::ranges::fill(out, 0.);
         const int nv = static_cast<int>(model_->nv);
+        // `qfrc += jrel.T @ f` scratch — see the header contract: the
+        // product must be a separately rounded vector before the +=.
+        std::vector<double> transport(static_cast<std::size_t>(nv));
         double energy = 0.;
         double loss = w.pending_release_loss_j;
         double radial_power = 0.;
@@ -542,9 +552,14 @@ namespace writers {
                 const Vec3 f =
                     rider::add(rider::multiply(c.normal, normal),
                                rider::multiply(c.tangent, friction));
+                // `qfrc += jrel.T @ f` — matmul into scratch, then +=
+                // (the provider's beta=1 accumulate fuses the add on
+                // OpenBLAS; see the file-header contract).
                 blas::dgemv(blas::Order::row_major, blas::Transpose::yes, 3,
-                            nv, 1., jrel.data(), nv, f.data(), 1, 1.,
-                            out.data(), 1);
+                            nv, 1., jrel.data(), nv, f.data(), 1, 0.,
+                            transport.data(), 1);
+                for (std::size_t i = 0; i < transport.size(); ++i)
+                    out[i] += transport[i];
                 if (si > 0)
                     delivered += blas::ddot(
                         3, f.data(), 1,
@@ -716,9 +731,13 @@ namespace writers {
                             s.grip_loss = release.loss_j;
                         }
                     }
+                    // `qfrc += jrel.T @ force` — same two-ufunc contract
+                    // as the pad loop above.
                     blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
                                 3, nv, 1., jrel.data(), nv, s.force.data(), 1,
-                                1., out.data(), 1);
+                                0., transport.data(), 1);
+                    for (std::size_t i = 0; i < transport.size(); ++i)
+                        out[i] += transport[i];
                 } else {
                     s.grip_loss = .5 * cfg_.grip_k_n_m * rider::dot(old, old);
                 }

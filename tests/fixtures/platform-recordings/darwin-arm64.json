@@ -1,0 +1,125 @@
+{
+  "data_policy": "Generated run bytes stay under output/ (gitignored run artifacts); this manifest carries provenance, the recorded execution identity and integrity hashes only. Re-run the documented command on the target host to materialize the second-platform fixture; semantic row counts and identities \u2014 never raw DuckDB bytes \u2014 are what must compare equal.",
+  "execution_identity": {
+    "backend": "native",
+    "build_context": {
+      "build_type": "default",
+      "compiler_id": "AppleClang",
+      "compiler_version": "21.0.0.21000334",
+      "numerical_flags": "     -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wdouble-promotion -Wshadow -Wcast-qual -Wformat=2 -Wundef -Wimplicit-fallthrough -Wnon-virtual-dtor -Wold-style-cast -Woverloaded-virtual -Wnull-dereference -Wunsafe-buffer-usage -Wmissing-declarations -Wmissing-variable-declarations -Wmissing-noreturn -Wredundant-decls -Wredeclared-class-member -Wstatic-in-inline -Wcast-align -Wcast-function-type-strict -Wreinterpret-base-class -Wunreachable-code-break -Wunreachable-code-return -Wunreachable-code-aggressive -Wconditional-uninitialized -Wloop-analysis -Wrange-loop-analysis -Winfinite-recursion -Winconsistent-missing-override -Winconsistent-missing-destructor-override -Wsuggest-override -Wsuggest-destructor-override -Wweak-vtables -Wweak-template-vtables -Wdelete-non-abstract-non-virtual-dtor -Wabstract-vbase-init -Wctad-maybe-unsupported -Wswitch-enum -Wcovered-switch-default -Wassign-enum -Wbitfield-enum-conversion -Wsigned-enum-bitfield -Wduplicate-enum -Wreserved-identifier -Wreserved-macro-identifier -Wreserved-user-defined-literal -Wunevaluated-expression -Wnull-pointer-arithmetic -Warray-bounds-pointer-arithmetic -Watomic-implicit-seq-cst -Wxor-used-as-pow -Wdangling -Widiomatic-parentheses -Wredundant-parens -Wlogical-not-parentheses -Wshift-op-parentheses -Wunguarded-availability -Wunguarded-availability-new -Wunicode-homoglyph -Wunicode-whitespace -Wunicode-zero-width -Wmemset-transposed-args -Wsuspicious-bzero -Wsuspicious-memaccess -Wnontrivial-memaccess -Wdynamic-class-memaccess -Wsizeof-array-div -Wsizeof-pointer-div -Wsizeof-pointer-memaccess -Wover-aligned -Wpacked -Walloca -Walloca-with-align-alignof -Wvla -Wzero-length-array -Wstring-compare -Wstring-concatenation -Wstring-plus-int -Wformat-pedantic -Wformat-type-confusion -Wfortify-source -Wheader-hygiene -Wcomma -Wkeyword-macro -Wlanguage-extension-token -Wextra-tokens -Wextra-semi-stmt -Wignored-qualifiers -Wextra-qualification -Wnonportable-include-path -Wnonportable-system-include-path -Wunneeded-member-function -Wunneeded-internal-declaration -Wunnamed-type-template-args -Wclass-varargs -Wpredefined-identifier-outside-function -Wduplicate-method-arg -Wmultichar -Wfour-char-constants -Wdate-time -Wnewline-eof -Wused-but-marked-unused -Winit-self -Wsign-promo -Wctor-dtor-privacy -Wpass-failed -Wstack-protector -Wlarge-by-value-copy -Wframe-larger-than=8192 -Werror -ffp-contract=off -fstack-protector-strong -ftrivial-auto-var-init=zero -fvisibility=hidden -fvisibility-inlines-hidden -fstrict-flex-arrays=3 -mbranch-protection=standard",
+      "numerics": {
+        "backend": "ACCELERATE",
+        "blas_integer_bits": 32,
+        "cpu_profile": "Apple M4 Max",
+        "lapack_integer_bits": 64,
+        "libraries": [
+          {
+            "build_id": "macos-26A434+accelerate-a697e7b9-8ff4-356c-a507-64b38af1ccaa+sdk-26A425",
+            "identity_kind": "apple-system",
+            "role": "blas_lapack",
+            "sha256": null
+          }
+        ],
+        "numpy_version": "2.5.2",
+        "threading": {
+          "implementation": "accelerate",
+          "num_threads": 12
+        }
+      },
+      "platform": {
+        "libc": {
+          "name": "libSystem",
+          "version": "26A434"
+        },
+        "machine": "aarch64",
+        "os_build": "26A434",
+        "python_soabi": "cpython-314-darwin",
+        "python_version": "3.14.3",
+        "system": "Darwin"
+      }
+    },
+    "extension_sha256": "d24e14ee28ff322fa4d752f20dfb3d0014ee8c41928afbb97e0893e4f6977cf0",
+    "identity_schema": 2,
+    "mujoco_library_sha256": "9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c",
+    "mujoco_version": "3.12.0",
+    "native_source_sha256": "ff0ca96339fc0a2c395510517a11eeee1a6be159943dd28056b08552153a316f",
+    "python_source_sha256": "4e9a065904c0b37eb89c477ef14a3ffc59865e6fd8b1e9c144c70a67d52f7c33",
+    "runtime_schema": 1
+  },
+  "fixture": "platform-recordings",
+  "generator": {
+    "command": "bike-research --backend native --physics-config examples/research/viewer_physics_welded.toml --scenario flat --duration 0.02 --seed 19 --record --diagnostic-model-limits --out <out>",
+    "commit": "068399dbb7444f54166fe9ae61a18b684c0cc4e3",
+    "host": {
+      "machine": "arm64",
+      "os_build": "27.0.0",
+      "python_soabi": "cpython-314-darwin",
+      "python_version": "3.14.3",
+      "system": "Darwin"
+    },
+    "packages": {
+      "duckdb": "1.5.6",
+      "mujoco": "3.12.0",
+      "numpy": "2.5.2",
+      "scipy": "1.17.0"
+    },
+    "worktree_dirty": true
+  },
+  "recording": {
+    "container_schema_version": 1,
+    "episodes": [
+      {
+        "complete_control_steps": 2,
+        "episode_id": 0,
+        "generation": 1,
+        "physical_rows": 16,
+        "replay_contract_version": 3,
+        "replay_eligible": true
+      }
+    ],
+    "files": {
+      "manifest.json": {
+        "bytes": 999,
+        "sha256": "2b528ba2175bec3ed7b649448462eb5d7eea69711b52d9c87e925f6e07b7ae37"
+      },
+      "run.duckdb": {
+        "bytes": 15216640,
+        "sha256": "a56970a6a2350c8669010d3ee2e1c4328927a70ca410d307f2b6ebe43f54ba6d"
+      },
+      "summary.md": {
+        "bytes": 69099,
+        "sha256": "c4e21e94dff9752de7c45d835669a6a1801321bec628a722d827e67718a732d3"
+      }
+    },
+    "replay_contract_version": 3,
+    "report_status": "complete",
+    "row_counts": {
+      "alias_catalog": 122,
+      "assets": 6,
+      "channel_control": 16,
+      "channel_drive": 16,
+      "channel_energy": 16,
+      "channel_mass": 16,
+      "channel_model_status": 16,
+      "channel_rider": 16,
+      "channel_sensors": 16,
+      "channel_suspension": 16,
+      "channel_tires": 16,
+      "commands_applied": 2,
+      "commands_requested": 2,
+      "coordinate_catalog": 52,
+      "episodes": 1,
+      "events": 8,
+      "field_catalog": 395,
+      "forces": 592,
+      "integration_states": 2,
+      "metrics": 20,
+      "observations": 3,
+      "physics": 16,
+      "recording_meta": 1,
+      "runs": 1,
+      "transitions": 2
+    },
+    "run_id": "1e8ea505-1752-4922-a1e1-4005ab9a63fc"
+  }
+}

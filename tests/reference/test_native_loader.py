@@ -95,14 +95,25 @@ def _copy_selected_extension(destination: Path) -> Path:
 
 def _selected_asan_runtime() -> Path:
     context = json.loads((selected_build(os.environ) / 'native_check_context.json').read_text())
+    # Prefer the runtime the build context records (T15): it was resolved by
+    # the configured driver's own -print-file-name at configure time. The
+    # compiler-id-named driver query below remains as a fallback for
+    # contexts written before the runtime record existed.
+    recorded = context.get('capabilities', {}).get('asan', {}).get('runtime')
+    if isinstance(recorded, str) and Path(recorded).is_file():
+        return Path(recorded).resolve()
     compiler = Path(context['compiler']['path'])
-    runtime_name = (
-        'libclang_rt.asan_osx_dynamic.dylib'
-        if sys.platform == 'darwin'
-        else f'libclang_rt.asan-{os.uname().machine}.so'
-    )
-    if sys.platform.startswith('linux') and 'clang' not in compiler.name:
+    compiler_id = context['compiler']['id']
+    if compiler_id in {'Clang', 'AppleClang'}:
+        runtime_name = (
+            'libclang_rt.asan_osx_dynamic.dylib'
+            if sys.platform == 'darwin'
+            else f'libclang_rt.asan-{os.uname().machine}.so'
+        )
+    elif compiler_id == 'GNU':
         runtime_name = 'libasan.so'
+    else:
+        raise AssertionError(f'unsupported compiler id for asan runtime: {compiler_id}')
     result = subprocess.run(
         [str(compiler), f'-print-file-name={runtime_name}'],
         text=True,
@@ -499,25 +510,70 @@ def test_native_profile_reporter_rejects_zero_native_items(selection: str) -> No
 
 
 @pytest.mark.parametrize('with_existing_preload', [False, True])
-def test_child_confirms_selected_asan_runtime_is_loaded(with_existing_preload: bool) -> None:
+def test_child_confirms_selected_asan_runtime_is_loaded(
+        with_existing_preload: bool, tmp_path: Path) -> None:
     runtime = _selected_asan_runtime()
     runtime_variable = 'DYLD_INSERT_LIBRARIES' if sys.platform == 'darwin' else 'LD_PRELOAD'
     unrelated_preload = '/usr/lib/libSystem.B.dylib' if sys.platform == 'darwin' else 'libc.so.6'
-    preload = (
-        f'{unrelated_preload}{os.pathsep}{runtime}' if with_existing_preload else str(runtime)
-    )
-    result = _run_child(
+    code = (
         "from native_loader import verify_sanitizer_runtime; "
-        "print(verify_sanitizer_runtime())",
-        _child_env(
-            {
-                'NATIVE_TEST_SANITIZER_RUNTIME': str(runtime),
-                runtime_variable: preload,
-                'ASAN_OPTIONS': 'detect_leaks=0',
-                'PYTHONMALLOC': 'malloc',
-            }
-        ),
+        "print(verify_sanitizer_runtime())"
     )
+    if with_existing_preload:
+        # The production wrapper preserves an existing preload AFTER the
+        # selected runtime — on ELF platforms ASan refuses to start unless
+        # its runtime is first, so only the wrapper's prepend order can run.
+        # That prepend only exists for a build whose recorded context has
+        # an enabled sanitizer lane, so clone the selected build's context
+        # into a scratch build directory with the ASan lane enabled and a
+        # CMakeCache that agrees — `run` rejects a cache/context mismatch.
+        asan_build = tmp_path / 'asan-build'
+        asan_build.mkdir()
+        context = json.loads(
+            (selected_build(os.environ)
+             / 'native_check_context.json').read_text())
+        context['capabilities']['asan'] = {
+            **context['capabilities']['asan'],
+            'requested': True,
+            'enabled': True,
+            'runtime': str(runtime),
+        }
+        (asan_build / 'native_check_context.json').write_text(
+            json.dumps(context))
+        (asan_build / 'CMakeCache.txt').write_text(
+            'NATIVE_SANITIZE:BOOL=ON\n')
+        result = _run_python_command(
+            [
+                'python',
+                'tools/native_runtime.py',
+                'run',
+                '--build',
+                str(asan_build),
+                '--',
+                'python',
+                '-c',
+                code,
+            ],
+            _child_env(
+                {
+                    runtime_variable: unrelated_preload,
+                    'ASAN_OPTIONS': 'detect_leaks=0',
+                    'PYTHONMALLOC': 'malloc',
+                }
+            ),
+        )
+    else:
+        result = _run_child(
+            code,
+            _child_env(
+                {
+                    'NATIVE_TEST_SANITIZER_RUNTIME': str(runtime),
+                    runtime_variable: str(runtime),
+                    'ASAN_OPTIONS': 'detect_leaks=0',
+                    'PYTHONMALLOC': 'malloc',
+                }
+            ),
+        )
 
     assert result.returncode == 0, result.stderr
     assert str(runtime) in result.stdout

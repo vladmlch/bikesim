@@ -1,0 +1,6 @@
+-- xcrun's default macOS SDK was unavailable: 
+CMake Error at CMakeLists.txt:119 (message):
+  No installed macOS SDK is compatible with compiler '/usr/bin/c++':
+
+
+-- Configuring incomplete, errors occurred!

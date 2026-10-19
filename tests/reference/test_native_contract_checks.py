@@ -6,11 +6,14 @@ import importlib.machinery
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
 
 import pytest
+
+from native_loader import selected_build
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -19,26 +22,60 @@ CONTRACT_TOOL = REPO_ROOT / 'tools' / 'check_native_contracts.py'
 
 
 def _run_uv_python(script: Path, arguments: list[str], environment: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    child_environment = environment.copy()
-    child_environment.setdefault('UV_CACHE_DIR', '/private/tmp/cpp-port-v4-uv')
     return subprocess.run(
-        ['uv', 'run', 'python', str(script), *arguments],
+        [sys.executable, str(script), *arguments],
         cwd=REPO_ROOT,
-        env=child_environment,
+        env=environment.copy(),
         text=True,
         capture_output=True,
         check=False,
     )
 
 
-def _write_fake_llvm_tools(directory: Path) -> tuple[Path, Path]:
+def _write_fake_compiler(directory: Path, name: str = 'fake-clang++') -> Path:
+    """A clang-family compiler stand-in for the coverage format probe.
+
+    ``--version`` identifies it as the LLVM family; a compile invocation
+    writes a control binary that emits a ``.profraw`` beside
+    ``LLVM_PROFILE_FILE`` — the observable contract the real instrumented
+    artifact satisfies.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    compiler = directory / name
+    compiler.write_text(
+        """#!/bin/sh
+set -eu
+for arg in "$@"; do
+  if [ "$arg" = "--version" ]; then
+    printf 'fake clang version 99.0.0\\n'
+    exit 0
+  fi
+done
+output=''
+previous=''
+for arg in "$@"; do
+  if [ "$previous" = "-o" ]; then output="$arg"; fi
+  previous="$arg"
+done
+if [ -n "$output" ]; then
+  printf '%s\\n' '#!/bin/sh' 'printf raw > "$(dirname "$LLVM_PROFILE_FILE")/control-$$.profraw"' > "$output"
+  chmod +x "$output"
+fi
+exit 0
+"""
+    )
+    compiler.chmod(0o755)
+    return compiler
+
+
+def _write_fake_llvm_tools(directory: Path, *, merge_rc: int = 0) -> tuple[Path, Path]:
     directory.mkdir(parents=True, exist_ok=True)
     profdata = directory / 'fake-llvm-profdata'
     profdata.write_text(
-        """#!/bin/sh
+        f"""#!/bin/sh
 set -eu
 if [ "$1" = "--version" ]; then
-  printf 'fake llvm-profdata 1\\n'
+  printf 'fake LLVM version 99.0.0\\n'
   exit 0
 fi
 if [ "$1" = "merge" ]; then
@@ -51,6 +88,10 @@ if [ "$1" = "merge" ]; then
     fi
     shift
   done
+  if [ "{merge_rc}" -ne 0 ]; then
+    printf 'fake llvm-profdata: incompatible profile format\\n' >&2
+    exit "{merge_rc}"
+  fi
   [ -n "$output" ] || exit 4
   printf 'merged profile\\n' > "$output"
   exit 0
@@ -65,7 +106,7 @@ exit 5
         """#!/bin/sh
 set -eu
 if [ "$1" = "--version" ]; then
-  printf 'fake llvm-cov 1\\n'
+  printf 'fake LLVM version 99.0.0\\n'
   exit 0
 fi
 if [ "$1" = "report" ]; then
@@ -75,7 +116,7 @@ if [ "$1" = "report" ]; then
   exit 0
 fi
 if [ "$1" = "export" ]; then
-  printf '{"data":[{"files":[{"filename":"coverage-control.cpp","summary":{"lines":{"count":4,"covered":3},"branches":{"count":2,"covered":1}}}]}]}\\n'
+  printf '%s\\n' '{"type":"llvm.coverage.json.export","version":"99.0.0","data":[{"files":[{"filename":"coverage-control.cpp","summary":{"lines":{"count":4,"covered":3},"branches":{"count":2,"covered":1}}}]}]}'
   exit 0
 fi
 exit 5
@@ -92,6 +133,9 @@ def _write_coverage_fixture(
     profile_count: int = 1,
     imported_extension: Path | None = None,
     native_test_count: int | None = 5,
+    compiler: Path | None = None,
+    provenance_text: str | None = None,
+    selected_build: Path | None = None,
 ) -> tuple[Path, Path, list[Path]]:
     build = tmp_path / 'custom coverage build'
     build.mkdir()
@@ -103,6 +147,14 @@ def _write_coverage_fixture(
     for extension in extensions:
         extension.write_bytes(b'extension fixture; never import')
 
+    # The coverage toolchain is qualified against the build's recorded
+    # compiler — the fixture records the fake-clang stand-in, which satisfies
+    # the format probe's observable contract.
+    compiler = compiler or _write_fake_compiler(tmp_path / 'fake-toolchain')
+    (build / 'native_check_context.json').write_text(
+        json.dumps({'compiler': {'path': str(compiler), 'id': 'Clang', 'version': '99.0.0'}})
+    )
+
     run_directory = build / 'native_coverage_runs' / 'run-control'
     profile_directory = run_directory / 'profiles'
     profile_directory.mkdir(parents=True)
@@ -110,16 +162,19 @@ def _write_coverage_fixture(
     for profile in profiles:
         profile.write_bytes(b'profile fixture')
 
-    provenance: dict[str, object] = {
-        'schema_version': 1,
-        'selected_build': str(build.resolve()),
-        'imported_extension': str(
-            imported_extension.resolve() if imported_extension is not None else extensions[0].resolve()
-        ) if extensions else str(imported_extension or (build / 'missing.so')),
-    }
-    if native_test_count is not None:
-        provenance['native_test_count'] = native_test_count
-    (run_directory / 'test_native_provenance.json').write_text(json.dumps(provenance))
+    if provenance_text is not None:
+        (run_directory / 'test_native_provenance.json').write_text(provenance_text)
+    else:
+        provenance: dict[str, object] = {
+            'schema_version': 1,
+            'selected_build': str((selected_build or build).resolve()),
+            'imported_extension': str(
+                imported_extension.resolve() if imported_extension is not None else extensions[0].resolve()
+            ) if extensions else str(imported_extension or (build / 'missing.so')),
+        }
+        if native_test_count is not None:
+            provenance['native_test_count'] = native_test_count
+        (run_directory / 'test_native_provenance.json').write_text(json.dumps(provenance))
     return build, run_directory, profiles
 
 
@@ -216,6 +271,79 @@ def test_coverage_requires_a_collected_native_test_count(tmp_path: Path) -> None
     assert 'native_test_count' in result.stderr
 
 
+def test_coverage_requires_zero_excluded_native_tests(tmp_path: Path) -> None:
+    build, run_directory, _ = _write_coverage_fixture(tmp_path, native_test_count=0)
+    fake_tools = _write_fake_llvm_tools(tmp_path / 'fake-llvm')
+
+    result = _run_coverage_control(build, run_directory, fake_tools)
+
+    assert result.returncode != 0
+    assert 'native_test_count' in result.stderr
+
+
+def test_coverage_rejects_malformed_provenance(tmp_path: Path) -> None:
+    build, run_directory, _ = _write_coverage_fixture(
+        tmp_path, provenance_text='{not json'
+    )
+    fake_tools = _write_fake_llvm_tools(tmp_path / 'fake-llvm')
+
+    result = _run_coverage_control(build, run_directory, fake_tools)
+
+    assert result.returncode != 0
+    assert 'malformed native test provenance' in result.stderr
+
+
+def test_coverage_rejects_a_provenance_for_a_different_build(tmp_path: Path) -> None:
+    other_build = tmp_path / 'other-build'
+    other_build.mkdir()
+    build, run_directory, _ = _write_coverage_fixture(
+        tmp_path, selected_build=other_build
+    )
+    fake_tools = _write_fake_llvm_tools(tmp_path / 'fake-llvm')
+
+    result = _run_coverage_control(build, run_directory, fake_tools)
+
+    assert result.returncode != 0
+    assert 'selected build' in result.stderr
+
+
+def test_coverage_failing_merge_tool_reports_command_and_log(tmp_path: Path) -> None:
+    """A resolved llvm-profdata that cannot merge is a qualification
+    failure — the error names the command, its status, and the retained
+    stderr log rather than yielding an empty report."""
+    build, run_directory, _ = _write_coverage_fixture(tmp_path)
+    fake_tools = _write_fake_llvm_tools(tmp_path / 'fake-llvm', merge_rc=7)
+
+    result = _run_coverage_control(build, run_directory, fake_tools)
+
+    assert result.returncode != 0
+    assert 'merge' in result.stderr
+    assert '7' in result.stderr
+    match = re.search(r'(?:logs|diagnostics) retained in (\S+)', result.stderr)
+    assert match, result.stderr
+    diagnostic_dir = Path(match.group(1))
+    stderr_log = next(diagnostic_dir.rglob('*merge*.stderr.log'))
+    assert 'incompatible profile format' in stderr_log.read_text()
+
+
+def test_coverage_records_tool_resolution_evidence(tmp_path: Path) -> None:
+    """The run's provenance carries the actual tool paths, versions, and the
+    format-probe evidence — never just 'coverage enabled'."""
+    build, run_directory, _ = _write_coverage_fixture(tmp_path)
+    fake_tools = _write_fake_llvm_tools(tmp_path / 'fake-llvm')
+
+    result = _run_coverage_control(build, run_directory, fake_tools)
+
+    assert result.returncode == 0, result.stderr
+    provenance = json.loads((run_directory / 'coverage_provenance.json').read_text())
+    tools = provenance['tool_resolution']
+    assert Path(tools['llvm_profdata']['path']) == fake_tools[0]
+    assert Path(tools['llvm_cov']['path']) == fake_tools[1]
+    assert tools['llvm_profdata']['version']
+    assert tools['llvm_cov']['version']
+    assert tools['format_probe']['format_probe_passed'] is True
+
+
 def _write_contract_fixture(tmp_path: Path) -> dict[str, Path]:
     repository = tmp_path / 'repo'
     native = repository / 'native'
@@ -267,6 +395,18 @@ def _write_contract_fixture(tmp_path: Path) -> dict[str, Path]:
         )
     )
 
+    # The fixture mirrors the real declared graph: engine consumers name
+    # Bike::MuJoCo, numerics consumers name Bike::Numerics, and the direct
+    # adapter harnesses deliberately carry no engine edge.
+    link_edges = {
+        'bike_native': ['Bike::MuJoCo', 'Bike::Numerics'],
+        'native_contract_tests': ['Bike::MuJoCo', 'Bike::Numerics'],
+        'native_distance_tests': ['Bike::MuJoCo', 'Bike::Numerics'],
+        'native_station_tests': ['Bike::MuJoCo', 'Bike::Numerics'],
+        'native_bench': ['Bike::MuJoCo'],
+        'native_platform_blas_tests': ['Bike::Numerics'],
+        'native_platform_lapack_tests': ['Bike::Numerics'],
+    }
     target_contexts = {
         target: {
             'configuration': 'fixture',
@@ -276,9 +416,9 @@ def _write_contract_fixture(tmp_path: Path) -> dict[str, Path]:
             'compile_definitions': [hardening_definition],
             'compile_options': [],
             'link_directories': [],
-            'link_libraries': [],
+            'link_libraries': link_edges[target],
         }
-        for target in ('bike_native', 'native_contract_tests')
+        for target in link_edges
     }
     context = {
         'schema_version': 1,
@@ -328,9 +468,17 @@ def _write_contract_fixture(tmp_path: Path) -> dict[str, Path]:
         )
     (build / 'compile_commands.json').write_text(json.dumps(compile_entries))
     (build / 'CMakeCache.txt').write_text('NATIVE_COVERAGE:BOOL=OFF\n')
-    (build / 'CTestTestfile.cmake').write_text(
-        'add_test([=[native_contract_tests]=] "native_contract_tests")\n'
-    )
+    ctest_lines = [
+        'add_test([=[native_contract_tests]=] "native_contract_tests")\n',
+        'add_test([=[native_distance_tests]=] "native_distance_tests")\n',
+        'add_test([=[native_station_tests]=] "native_station_tests")\n',
+        'add_test([=[native_platform_blas_tests]=] "native_platform_blas_tests")\n',
+        'add_test([=[native_platform_lapack_tests]=] "native_platform_lapack_tests")\n',
+        'add_test([=[native_bench_bare]=] "native_bench" "bare" "20" "5")\n',
+        'add_test([=[native_bench_glue]=] "native_bench" "glue" "10" "4")\n',
+        'add_test([=[native_bench_heavy]=] "native_bench" "heavy" "6" "3")\n',
+    ]
+    (build / 'CTestTestfile.cmake').write_text(''.join(ctest_lines))
     contract_binary = build / 'native_contract_tests'
     contract_binary.write_text(
         "#!/bin/sh\n"
@@ -417,7 +565,7 @@ def test_contract_checker_requires_manifested_ctest_contract_cases(tmp_path: Pat
     result = _run_contract_checker(fixture)
 
     assert result.returncode != 0
-    assert 'native_contract_tests is not registered with CTest' in result.stderr
+    assert 'CTest registration is incomplete' in result.stderr
 
 
 def test_contract_checker_rejects_empty_native_contract_case_registry(tmp_path: Path) -> None:
@@ -495,7 +643,7 @@ def test_contract_checker_rejects_missing_configured_hardening_definition(tmp_pa
     result = _run_contract_checker(fixture)
 
     assert result.returncode != 0
-    assert 'missing libc++ hardening definition' in result.stderr
+    assert 'missing stdlib hardening definition' in result.stderr
 
 
 def test_contract_checker_rejects_disabled_move_analysis(tmp_path: Path) -> None:
@@ -631,10 +779,25 @@ def test_contract_checker_parses_repository_folded_tidy_policy(tmp_path: Path) -
 
 
 def test_real_one_file_llvm_coverage_report(tmp_path: Path) -> None:
-    """Exercise real clang instrumentation, profile merging, and llvm-cov report output."""
-    assert sys.platform == 'darwin', 'native coverage is supported on the Apple toolchain'
-    context = json.loads((REPO_ROOT / 'native' / 'build' / 'native_check_context.json').read_text())
+    """Exercise real clang instrumentation, profile merging, and llvm-cov
+    report output with the toolchain's qualified coverage tools.
+
+    The selected build's compiler is the authority; its coverage tools are
+    resolved and format-probed through the same ``resolve_coverage_tools``
+    the coverage wrapper and CMake policy use — sibling toolchain first,
+    qualified PATH candidates, and the Darwin-only ``xcrun`` fallback. A
+    host whose selected compiler has no qualifying LLVM coverage toolchain
+    skips rather than faking a pass."""
+    from tools.native_toolchain import resolve_coverage_tools
+
+    context = json.loads(
+        (selected_build(os.environ) / 'native_check_context.json').read_text()
+    )
     compiler = Path(context['compiler']['path'])
+    try:
+        tools = resolve_coverage_tools(compiler, {})
+    except ValueError as error:
+        pytest.skip(f'selected compiler has no qualified LLVM coverage toolchain: {error}')
     source = tmp_path / 'coverage_probe.cpp'
     source.write_text(
         'extern "C" int coverage_probe(int value) {\n'
@@ -646,14 +809,17 @@ def test_real_one_file_llvm_coverage_report(tmp_path: Path) -> None:
     build = tmp_path / 'instrumented-build'
     build.mkdir()
     (build / 'CMakeCache.txt').write_text('NATIVE_COVERAGE:BOOL=ON\n')
+    (build / 'native_check_context.json').write_text(
+        json.dumps({'compiler': {'path': str(compiler)}})
+    )
+    sdk_flags = ['-isysroot', context['sdk']] if context.get('sdk') else []
     extension = build / f'bike_native{importlib.machinery.EXTENSION_SUFFIXES[0]}'
     compile_library = subprocess.run(
         [
-                str(compiler),
-                '-std=c++23',
-                '-isysroot',
-                context['sdk'],
-                '-dynamiclib',
+            str(compiler),
+            '-std=c++23',
+            *sdk_flags,
+            '-shared',
             '-fPIC',
             '-fprofile-instr-generate',
             '-fcoverage-mapping',
@@ -684,7 +850,7 @@ def test_real_one_file_llvm_coverage_report(tmp_path: Path) -> None:
     )
     executable = tmp_path / 'coverage_driver'
     compile_driver = subprocess.run(
-        [str(compiler), '-std=c++23', '-isysroot', context['sdk'], str(driver), '-o', str(executable)],
+        [str(compiler), '-std=c++23', *sdk_flags, str(driver), '-o', str(executable)],
         text=True,
         capture_output=True,
         check=False,
@@ -715,14 +881,6 @@ def test_real_one_file_llvm_coverage_report(tmp_path: Path) -> None:
             }
         )
     )
-    profdata = subprocess.run(
-        ['xcrun', '--find', 'llvm-profdata'], text=True, capture_output=True, check=False
-    )
-    cov = subprocess.run(
-        ['xcrun', '--find', 'llvm-cov'], text=True, capture_output=True, check=False
-    )
-    assert profdata.returncode == 0 and Path(profdata.stdout.strip()).is_file(), profdata.stderr
-    assert cov.returncode == 0 and Path(cov.stdout.strip()).is_file(), cov.stderr
     result = _run_uv_python(
         COVERAGE_TOOL,
         [
@@ -731,15 +889,16 @@ def test_real_one_file_llvm_coverage_report(tmp_path: Path) -> None:
             '--run-dir',
             str(run_directory),
             '--llvm-profdata',
-            profdata.stdout.strip(),
+            tools['llvm_profdata']['path'],
             '--llvm-cov',
-            cov.stdout.strip(),
+            tools['llvm_cov']['path'],
         ],
         os.environ.copy(),
     )
 
     assert result.returncode == 0, result.stderr
     provenance = json.loads((run_directory / 'coverage_provenance.json').read_text())
+    assert provenance['tool_resolution']['format_probe']['format_probe_passed'] is True
     report = Path(provenance['report_paths']['text'])
     assert 'coverage_probe.cpp' in report.read_text()
     assert 'TOTAL' in report.read_text()

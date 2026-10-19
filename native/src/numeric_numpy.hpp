@@ -16,11 +16,12 @@
 //   numeric::np_minimum           on __aarch64__ scalar_max_d lowers to
 //                                 the NEON fmax instruction
 //                                 (loops_minmax.dispatch.c.src:65-76):
-//                                 a NaN operand is returned unquieted
-//                                 (first operand wins if both are NaN),
-//                                 and a +0/-0 tie resolves to +0 for
-//                                 max, -0 for min — NOT the
-//                                 `(a >= b || isnan(a)) ? a : b`
+//                                 a signaling NaN is quieted and wins
+//                                 in either operand position, two NaNs
+//                                 of the same class resolve to the
+//                                 first operand, and a +0/-0 tie
+//                                 resolves to +0 for max, -0 for min —
+//                                 NOT the `(a >= b || isnan(a)) ? a : b`
 //                                 textbook expression.
 //   numeric::np_sign          — DOUBLE_sign generic loop
 //                                 (loops.c.src:1433-1442): +1/-1/+0,
@@ -43,11 +44,21 @@
 // -ffp-contract=off — plain `a*b + c` expressions stay two rounded
 // operations, while `std::fma` stays an explicit fused call.
 //
+// np.interp's interior expression `slope*(x - dx[j]) + dy[j]` is the
+// exception: which of the two forms the ORACLE computes depends on how
+// the NumPy wheel itself was compiled, not on this compiler. The
+// dependency probe measures the installed np.interp and
+// BikeNumerics.cmake projects the verdict as
+// BIKE_NUMPY_INTERP_CONTRACTED — numeric::np_interp_eval below selects
+// the measured form, and every interpolation mirror routes through it.
+// Failing to project is a compile error, never a silent default.
+//
 // T04 provider identity: this kernel set is part of the numeric surface
-// engine::Identity.numeric_provider reports ("accelerate" — the recorded
-// supplier of the platform BLAS/libm these ports sit beside). The "np_"
-// prefix names the bitwise NumPy oracle contract, not a Python runtime
-// dependency; no interpreter symbol is reachable from this header.
+// engine::Identity.numeric_provider reports. That name is per platform
+// (blas::provider_name: Accelerate on macOS, the NumPy-bundled OpenBLAS
+// on Linux), so nothing here assumes one provider. The "np_" prefix names
+// the bitwise NumPy oracle contract, not a Python runtime dependency; no
+// interpreter symbol is reachable from this header.
 #pragma once
 
 #include <algorithm>
@@ -60,31 +71,48 @@
 
 namespace numeric {
 
-    // np.maximum(a, b) — see header comment for the NEON fmaxnm
-    // contract. A NaN operand is returned with its payload intact but
-    // quieted (fmaxnm/fminnm set the quiet bit on a signaling NaN —
-    // verified against np.maximum on 2.5.2: snan 0x7ff0…01 ->
-    // 0x7ff8…01 in either argument position); when both are NaN the
-    // first operand wins.
+    // np.maximum(a, b) — see header comment for the NEON fmax
+    // contract. A signaling NaN is returned with its payload intact
+    // but quieted (fmax/fmin set the quiet bit — verified against
+    // np.maximum on 2.5.2: snan 0x7ff0…01 -> 0x7ff8…01 in either
+    // argument position). NaN-vs-NaN precedence follows the
+    // instruction: a signaling NaN wins over a quiet one regardless of
+    // position (np.minimum(0x7ff8…AA, 0x7ff0…01) -> 0x7ff8…01), while
+    // two NaNs of the same class resolve to the FIRST operand
+    // ((qnan_a, qnan_b) -> qnan_a, (snan_a, snan_b) -> quieted snan_a).
     [[nodiscard]] inline double np_quiet_nan(double x) noexcept {
         return std::bit_cast<double>(std::bit_cast<std::uint64_t>(x) |
                                      0x0008000000000000ull);
     }
 
+    // Signaling NaN: NaN exponent, quiet bit clear, nonzero payload.
+    [[nodiscard]] inline bool np_is_snan(double x) noexcept {
+        const std::uint64_t b = std::bit_cast<std::uint64_t>(x);
+        return (b & 0x7ff0000000000000ull) == 0x7ff0000000000000ull &&
+               (b & 0x0008000000000000ull) == 0 &&
+               (b & 0x0007ffffffffffffull) != 0;
+    }
+
     [[nodiscard]] inline double np_maximum(double a, double b) noexcept {
-        if (std::isnan(a)) return np_quiet_nan(a);
-        if (std::isnan(b)) return np_quiet_nan(b);
+        // sNaN quiets and wins in either operand position; a qNaN wins
+        // only when the other operand is not a sNaN.
+        if (np_is_snan(a)) return np_quiet_nan(a);
+        if (np_is_snan(b)) return np_quiet_nan(b);
+        if (std::isnan(a)) return a;
+        if (std::isnan(b)) return b;
         // Zero tie: max(+0,-0) = +0 either order; -0 only when both -0.
         if (a == 0.0 && b == 0.0)
             return std::signbit(a) && std::signbit(b) ? -0.0 : 0.0;
         return a > b ? a : b;
     }
 
-    // np.minimum(a, b) — the NEON fminnm twin: first NaN wins, -0.0 wins
-    // a zero tie.
+    // np.minimum(a, b) — the NEON fmin twin: same NaN precedence,
+    // -0.0 wins a zero tie.
     [[nodiscard]] inline double np_minimum(double a, double b) noexcept {
-        if (std::isnan(a)) return np_quiet_nan(a);
-        if (std::isnan(b)) return np_quiet_nan(b);
+        if (np_is_snan(a)) return np_quiet_nan(a);
+        if (np_is_snan(b)) return np_quiet_nan(b);
+        if (std::isnan(a)) return a;
+        if (std::isnan(b)) return b;
         if (a == 0.0 && b == 0.0)
             return std::signbit(a) || std::signbit(b) ? -0.0 : 0.0;
         return a < b ? a : b;
@@ -227,6 +255,91 @@ namespace numeric {
         return std::isnan(y) ? y : (y < hi ? y : hi);
     }
 
+#if !defined(BIKE_NUMPY_INTERP_CONTRACTED)
+#error "numeric_numpy.hpp requires BIKE_NUMPY_INTERP_CONTRACTED — BikeNumerics.cmake projects it from the measured numerics.interp.lowering record; there is no safe default"
+#endif
+
+#if !defined(BIKE_NUMPY_MUL_BROADCAST_ELEMENT_NAN)
+#error "numeric_numpy.hpp requires BIKE_NUMPY_MUL_BROADCAST_ELEMENT_NAN — BikeNumerics.cmake projects it from the measured numerics.multiply_broadcast.nan_winner record; there is no safe default"
+#endif
+
+    // np.multiply(broadcast_scalar, array) — one lane of a
+    // scalar-times-array ufunc call (`float * ndarray`,
+    // `np.multiply(scalar, arr)`). The result is `scalar * v` for
+    // every finite lane; a NaN lane follows the same AArch64
+    // precedence np_maximum documents above — an sNaN quiets and wins
+    // from either operand position, and two NaNs of the same class
+    // resolve to the FIRST fmul operand. Which source operand is first
+    // is a wheel-build property of the broadcast kernel:
+    //   AppleClang wheel (macOS): the scalar is operand 0 — the
+    //     scalar's NaN wins a same-class tie.
+    //   manylinux wheel (scipy-openblas, Linux): the contiguous array
+    //     lane is operand 0 — the element's NaN wins a same-class tie
+    //     (as `arr * float` also does on every wheel).
+    // The dependency probe measured numerics.multiply_broadcast.
+    // nan_winner; BikeNumerics.cmake projects the verdict — never
+    // assume it from the platform name. A scalar loop without this
+    // pinning silently inherits whatever operand order the native
+    // compiler happens to emit.
+    [[nodiscard]] inline double np_multiply_broadcast(
+            double scalar, double v) noexcept {
+#if BIKE_NUMPY_MUL_BROADCAST_ELEMENT_NAN
+        // operand 0 = array element, operand 1 = scalar.
+        if (np_is_snan(v)) return np_quiet_nan(v);
+        if (np_is_snan(scalar)) return np_quiet_nan(scalar);
+        if (std::isnan(v)) return v;
+        if (std::isnan(scalar)) return scalar;
+#else
+        // operand 0 = scalar, operand 1 = array element.
+        if (np_is_snan(scalar)) return np_quiet_nan(scalar);
+        if (np_is_snan(v)) return np_quiet_nan(v);
+        if (std::isnan(scalar)) return scalar;
+        if (std::isnan(v)) return v;
+#endif
+        return scalar * v;
+    }
+
+    // np.interp's interior expression slope*(x - dx[j]) + dy[j]
+    // (compiled_base.c:731/733) under THIS wheel's lowering:
+    //   "contracted" — the wheel compiler fused multiply+add into fmadd
+    //                  (one rounding); macOS AppleClang wheels measure
+    //                  this way.
+    //   "separate"   — the wheel kept two roundings; the Linux
+    //                  scipy-openblas GCC wheel measures this way.
+    // `offset` is the already-rounded (x - dx[j]) operand — only the
+    // multiply/add pair contracts in the C source. std::fma pins the
+    // fused form while -ffp-contract=off keeps the plain expression
+    // honest, so both branches are immune to this compiler's
+    // contraction flags.
+    [[nodiscard]] inline double np_interp_eval(double slope,
+                                               double offset,
+                                               double base) noexcept {
+#if BIKE_NUMPY_INTERP_CONTRACTED
+        return std::fma(slope, offset, base);
+#else
+        return slope * offset + base;
+#endif
+    }
+
+    // The full compiled_base.c segment evaluation: left-knot eval, then
+    // the right-endpoint retry after overflow cancellation, then the
+    // constant-segment fallback. One implementation for every interp
+    // mirror — the retry logic is never re-typed per call site.
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional (x,y) pairs mirror the knot endpoints
+    [[nodiscard]] inline double np_interp_segment(double slope, double x,
+                                                  double x0, double y0,
+                                                  double x1,
+                                                  double y1) noexcept {
+        double result = np_interp_eval(slope, x - x0, y0);
+        if (std::isnan(result)) {
+            result = np_interp_eval(slope, x - x1, y1);
+            if (std::isnan(result) && y0 == y1)
+                result = y0;
+        }
+        return result;
+    }
+    // NOLINTEND(bugprone-easily-swappable-parameters)
+
     // np.interp(x, np.arange(n), values, left=lval, right=rval) — one
     // query on the integer knot grid. arr_interp behavior:
     //   lenxp == 1         -> dedicated loop (compiled_base.c:671-682):
@@ -241,9 +354,11 @@ namespace numeric {
     //   x > n - 1          -> rval        (j == lenxp);
     //   j == n - 1         -> values[n-1] (last-knot special case);
     //   x exactly on a knot-> values[j]   (dx[j] == x_val shortcut);
-    //   otherwise          -> fma(slope, x - j, values[j]) with the
-    //                         forward-point NaN fallback — unreachable
-    //                         on finite `values` but kept verbatim.
+    //   otherwise          -> np_interp_segment(slope, x, j, values[j],
+    //                         j+1, values[j+1]) — the measured wheel
+    //                         lowering with the forward-point NaN
+    //                         fallback — unreachable on finite `values`
+    //                         but kept verbatim.
     [[nodiscard]] inline double np_interp_unit_grid(
             double x, std::span<const double> values, double lval,
             double rval) {
@@ -268,16 +383,13 @@ namespace numeric {
         const double x0 = static_cast<double>(j);
         if (x0 == x) return values[j];
         // Unit grid: dx[j+1] - dx[j] is exactly 1.0, so the slope is
-        // values[j+1] - values[j] verbatim (x/1.0 is IEEE-exact).
+        // values[j+1] - values[j] verbatim (x/1.0 is IEEE-exact). The
+        // slope*(x-knot)+y evaluation follows the measured wheel
+        // lowering through np_interp_segment.
         const double slope = values[j + 1] - values[j];
-        double out = std::fma(slope, x - x0, values[j]);
-        if (std::isnan(out)) {
-            const double x1 = static_cast<double>(j + 1);
-            out = std::fma(slope, x - x1, values[j + 1]);
-            if (std::isnan(out) && values[j] == values[j + 1])
-                out = values[j];
-        }
-        return out;
+        return np_interp_segment(slope, x, x0, values[j],
+                                 static_cast<double>(j + 1),
+                                 values[j + 1]);
     }
 
 } // namespace numeric

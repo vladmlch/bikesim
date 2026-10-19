@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "../cblas_abi.hpp"
+#include "../numeric_sum.hpp"
 
 namespace runtime {
 namespace sample_wire {
@@ -113,29 +114,13 @@ double dot(std::span<const double> a, std::span<const double> b) {
     return result;
 }
 
-// Contiguous float64 reduction: eight lanes, scalar tail, pairwise recursion.
-// NOLINTNEXTLINE(misc-no-recursion) bounded logarithmic reduction depth
+// Contiguous float64 np.sum: the shared numeric::numpy_sum — the
+// add-reduce 0.0 identity seeded over numpy's pairwise order (the
+// previous local copy missed the identity seed: an all-(-0.0) vector
+// returned -0.0 where np.sum returns +0.0, and an empty vector
+// returned -0.0 where np.sum([]) returns +0.0).
 double numpy_sum(std::span<const double> values) {
-    const std::size_t n = values.size();
-    if (n < 8) {
-        double result = -0.;
-        for (const double value : values) result += value;
-        return result;
-    }
-    if (n <= 128) {
-        std::array<double, 8> lanes{};
-        std::ranges::copy(values.first(8), lanes.begin());
-        std::size_t i = 8;
-        for (; i + 8 <= n; i += 8)
-            for (std::size_t j = 0; j < 8; ++j) lanes[j] += values[i + j];
-        double result = ((lanes[0] + lanes[1]) + (lanes[2] + lanes[3])) +
-                        ((lanes[4] + lanes[5]) + (lanes[6] + lanes[7]));
-        for (; i < n; ++i) result += values[i];
-        return result;
-    }
-    std::size_t half = n / 2;
-    half -= half % 8;
-    return numpy_sum(values.first(half)) + numpy_sum(values.subspan(half));
+    return numeric::numpy_sum(values);
 }
 
 } // namespace sample_wire

@@ -325,8 +325,15 @@ def ensure_macos_mjpython() -> None:
     is_mjpython = "mjpython" in sys.executable or os.environ.get("MUJOCO_MJPYTHON") == "1"
     if not is_mjpython:
         import shutil
-        mjpython_path = shutil.which("mjpython")
-        if mjpython_path:
+        previous_marker = os.environ.get("MUJOCO_MJPYTHON")
+        previous_fallback = os.environ.get("DYLD_FALLBACK_LIBRARY_PATH")
+        try:
+            mjpython_path = shutil.which("mjpython")
+            if not mjpython_path:
+                raise RuntimeError(
+                    "The macOS interactive viewer requires mjpython on PATH from "
+                    "the same Python environment as MuJoCo. Activate that environment "
+                    "or use its uv run entry point, then retry the viewer command.")
             # mjpython dlopens the interpreter by @rpath; venvs (uv, pyenv) keep
             # libpython in base_prefix/lib which is not on the default fallback
             # path, so the re-exec dies with 'Library not loaded' otherwise.
@@ -340,6 +347,19 @@ def ensure_macos_mjpython() -> None:
             print(f"[MuJoCo Stand] Re-launching under mjpython: {' '.join(cmd)}", flush=True)
             os.environ["MUJOCO_MJPYTHON"] = "1"
             os.execv(mjpython_path, cmd)
+        except BaseException:
+            # execv normally never returns. If lookup or re-exec fails, a caller
+            # may catch the error and retry: it must not appear to be mjpython.
+            sys._mjpython_checked = False
+            for name, previous in (
+                ("MUJOCO_MJPYTHON", previous_marker),
+                ("DYLD_FALLBACK_LIBRARY_PATH", previous_fallback),
+            ):
+                if previous is None:
+                    os.environ.pop(name, None)
+                else:
+                    os.environ[name] = previous
+            raise
 
 
 def run_interactive_playground(
@@ -349,9 +369,9 @@ def run_interactive_playground(
     """
     Launches the live interactive MuJoCo suspension test stand viewer.
     """
-    import mujoco.viewer
-
     ensure_macos_mjpython()
+
+    import mujoco.viewer
 
     pg = SuspensionPlayground(
         specs=specs,

@@ -68,7 +68,9 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeDependencies.cmake")
 # Numerics selection: BikeNumerics.cmake consumes the same schema-1 document,
 # generates numerics_symbols.hpp, and builds the selected CBLAS/LAPACK
 # backend TUs into bike_native_numerics (alias Bike::Numerics). The blas::
-# call face has no definitions without it.
+# call face has no definitions without it. This graph measures live, so it
+# selects LIVE; the Python-free root graph selects RECORD_ONLY.
+set(BIKE_NUMERICS_SOURCE LIVE)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeNumerics.cmake")
 
 # Portable linkage contract: engine/dynamic-loader edges, numerics-provider

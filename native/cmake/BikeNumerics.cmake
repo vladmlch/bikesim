@@ -10,9 +10,28 @@
 #             machine-specific values only: the NumPy install location
 #             (site_packages), the Darwin build_id, and the MuJoCo include.
 #
-# Before any fact is read, the live measurement is projected and compared with
-# the committed entry by tools/native_dependencies.py --check-numerics-record.
-# A missing or stale entry fails configure and names the regeneration command.
+# Every fact is read from the record in both modes. The modes differ in what
+# else they require, and the includer selects one explicitly:
+#
+#   BIKE_NUMERICS_SOURCE=LIVE         the legacy binding graph (cmake -S native).
+#       The live measurement is projected and compared with the committed entry
+#       by tools/native_dependencies.py --check-numerics-record. A missing or
+#       stale entry fails configure and names the regeneration command. Python
+#       is required for that verdict. Machine-specific values come from the
+#       probe document, and this mode creates the provider target and
+#       bike_native_numerics.
+#   BIKE_NUMERICS_SOURCE=RECORD_ONLY  the Python-free root graph (CMakeLists.txt).
+#       No probe, no interpreter and no machine-specific value. The platform key
+#       is derived from the host, and the entry it names must describe that same
+#       host. The record's structure and facts are checked exactly as in LIVE
+#       mode, but they are not compared with a measurement: the LIVE check run by
+#       the binding graph is what keeps the committed record current. This mode
+#       creates no provider target and no bike_native_numerics, because the root
+#       graph has no compiler-policy macro and no Python-free provider location.
+#       It exports the compile definitions the root needs. Only Darwin is
+#       qualified here: a Linux provider lives inside the NumPy install, and
+#       neither its location nor the libc family is known without a probe.
+#
 # The probe already ran the provider inside the selected interpreter, inspected
 # its export table, and compile/linked/ran a C control against the qualified
 # signatures. There is deliberately no find_package(BLAS) here: a generic BLAS
@@ -29,27 +48,30 @@
 #                                       shared object (Linux only)
 #
 # Prerequisites for the includer:
-#   BIKE_TARGET_SYSTEM            set by BikePlatform.cmake
-#   _native_dependencies_json     the live probe document, normally populated by
-#                                 BikeDependencies.cmake; it may also be
-#                                 file(READ) from a captured document
-#   Python_EXECUTABLE             the selected interpreter that runs the
-#                                 record check (stdlib only, no probe)
+#   BIKE_NUMERICS_SOURCE          LIVE or RECORD_ONLY; there is no default, so a
+#                                 forgotten selection fails configure
+#   BIKE_TARGET_SYSTEM            set by BikePlatform.cmake (LIVE), or by the root
+#                                 from CMAKE_HOST_SYSTEM_NAME (RECORD_ONLY)
+#   _native_dependencies_json     LIVE only: the live probe document, normally
+#                                 populated by BikeDependencies.cmake; it may
+#                                 also be file(READ) from a captured document
+#   Python_EXECUTABLE             LIVE only: the selected interpreter that runs
+#                                 the record check (stdlib only, no probe)
 #   BIKE_NUMERICS_RECORD          the committed record; defaults to
 #                                 native/numerics.lock.json, overridable so
 #                                 harnesses can supply a fixture record
 #
 # Exports consumed by the rest of the native build:
-#   Bike::Numerics                  ALIAS of bike_native_numerics — the
+#   Bike::Numerics                  LIVE only: ALIAS of bike_native_numerics — the
 #                                   typed CBLAS/LAPACK adapter static
 #                                   library (link this; the provider
 #                                   arrives via its PUBLIC usage
 #                                   requirements)
-#   Bike::NumericsProvider          IMPORTED target — INTERFACE on Darwin
-#                                   (-framework Accelerate) or SHARED with
-#                                   IMPORTED_LOCATION on Linux
-#   bike_native_numerics            STATIC target holding exactly the two
-#                                   resolved backend TUs
+#   Bike::NumericsProvider          LIVE only: IMPORTED target — INTERFACE on
+#                                   Darwin (-framework Accelerate) or SHARED
+#                                   with IMPORTED_LOCATION on Linux
+#   bike_native_numerics            LIVE only: STATIC target holding exactly
+#                                   the two resolved backend TUs
 #                                   (src/platform/blas_*.cpp +
 #                                   lapack_*.cpp); created only when CXX
 #                                   is enabled — record-only consumers
@@ -80,11 +102,24 @@ if(NOT DEFINED BIKE_TARGET_SYSTEM)
   message(FATAL_ERROR
     "BikeNumerics.cmake requires BIKE_TARGET_SYSTEM (see BikePlatform.cmake)")
 endif()
-if(NOT DEFINED _native_dependencies_json
-   OR "${_native_dependencies_json}" STREQUAL "")
+# The mode is never inferred, neither from the host nor from whether Python is
+# found: an includer that does not select one fails configure.
+if(NOT DEFINED BIKE_NUMERICS_SOURCE
+   OR NOT BIKE_NUMERICS_SOURCE MATCHES "^(LIVE|RECORD_ONLY)$")
   message(FATAL_ERROR
-    "BikeNumerics.cmake requires the schema-1 dependency document in "
-    "_native_dependencies_json (see BikeDependencies.cmake)")
+    "BikeNumerics.cmake requires BIKE_NUMERICS_SOURCE=LIVE (legacy graph, "
+    "live probe) or RECORD_ONLY (Python-free root graph); there is no default")
+endif()
+if(BIKE_NUMERICS_SOURCE STREQUAL "LIVE")
+  set(_numerics_is_live TRUE)
+  if(NOT DEFINED _native_dependencies_json
+     OR "${_native_dependencies_json}" STREQUAL "")
+    message(FATAL_ERROR
+      "BikeNumerics.cmake requires the schema-1 dependency document in "
+      "_native_dependencies_json (see BikeDependencies.cmake)")
+  endif()
+else()
+  set(_numerics_is_live FALSE)
 endif()
 
 set(BIKE_NUMERICS_BACKEND "AUTO" CACHE STRING
@@ -125,49 +160,71 @@ macro(_numerics_live_field _out_var)
   endif()
 endmacro()
 
-# The numerics member must be a populated record, not JSON null.
-string(JSON _numerics_type ERROR_VARIABLE _numerics_type_error
-  TYPE "${_native_dependencies_json}" numerics)
-if(_numerics_type_error OR NOT _numerics_type STREQUAL "OBJECT")
-  message(FATAL_ERROR
-    "dependency document has no qualified numerics record "
-    "(numerics=${_numerics_type}); re-run tools/native_dependencies.py "
-    "--python <selected interpreter> against the pinned environment")
-endif()
+if(_numerics_is_live)
+  # The numerics member must be a populated record, not JSON null.
+  string(JSON _numerics_type ERROR_VARIABLE _numerics_type_error
+    TYPE "${_native_dependencies_json}" numerics)
+  if(_numerics_type_error OR NOT _numerics_type STREQUAL "OBJECT")
+    message(FATAL_ERROR
+      "dependency document has no qualified numerics record "
+      "(numerics=${_numerics_type}); re-run tools/native_dependencies.py "
+      "--python <selected interpreter> against the pinned environment")
+  endif()
 
-# --------------------------------------------------------------------------
-# Live-versus-committed check. The probe document is written to the build
-# tree so the stdlib-only checker can read it; the checker projects it,
-# requires its platform entry to equal the committed one, and prints that
-# entry's key. Its exit status is the verdict: a missing or stale entry is a
-# configure error that carries the regeneration command.
-# --------------------------------------------------------------------------
-set(_numerics_probe_document "${CMAKE_CURRENT_BINARY_DIR}/bike_numerics/probe_document.json")
-file(WRITE "${_numerics_probe_document}" "${_native_dependencies_json}\n")
-set(_numerics_check_tool "${CMAKE_CURRENT_LIST_DIR}/../../tools/native_dependencies.py")
-set(_numerics_check_command
-  "${Python_EXECUTABLE} ${_numerics_check_tool} --check-numerics-record ${_numerics_record_file} --probe-document ${_numerics_probe_document}")
-execute_process(
-  COMMAND "${Python_EXECUTABLE}" "${_numerics_check_tool}"
-          --check-numerics-record "${_numerics_record_file}"
-          --probe-document "${_numerics_probe_document}"
-  RESULT_VARIABLE _numerics_check_result
-  OUTPUT_VARIABLE _native_numerics_record_key
-  ERROR_VARIABLE _numerics_check_error
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-# A verdict failure prints the checker's own message on stderr. A command that
-# cannot start (missing or non-executable interpreter) leaves stderr empty and
-# reports the reason in the result, so both fields and the command line are
-# named here.
-if(NOT _numerics_check_result EQUAL 0)
-  message(FATAL_ERROR
-    "numerics record check did not pass (result '${_numerics_check_result}') "
-    "running: ${_numerics_check_command}\n${_numerics_check_error}")
-endif()
-if(NOT _native_numerics_record_key MATCHES "^[a-z]+-[A-Za-z0-9_]+$")
-  message(FATAL_ERROR
-    "numerics record check returned an invalid platform key "
-    "'${_native_numerics_record_key}'")
+  # ------------------------------------------------------------------------
+  # Live-versus-committed check. The probe document is written to the build
+  # tree so the stdlib-only checker can read it; the checker projects it,
+  # requires its platform entry to equal the committed one, and prints that
+  # entry's key. Its exit status is the verdict: a missing or stale entry is a
+  # configure error that carries the regeneration command.
+  # ------------------------------------------------------------------------
+  set(_numerics_probe_document "${CMAKE_CURRENT_BINARY_DIR}/bike_numerics/probe_document.json")
+  file(WRITE "${_numerics_probe_document}" "${_native_dependencies_json}\n")
+  set(_numerics_check_tool "${CMAKE_CURRENT_LIST_DIR}/../../tools/native_dependencies.py")
+  set(_numerics_check_command
+    "${Python_EXECUTABLE} ${_numerics_check_tool} --check-numerics-record ${_numerics_record_file} --probe-document ${_numerics_probe_document}")
+  execute_process(
+    COMMAND "${Python_EXECUTABLE}" "${_numerics_check_tool}"
+            --check-numerics-record "${_numerics_record_file}"
+            --probe-document "${_numerics_probe_document}"
+    RESULT_VARIABLE _numerics_check_result
+    OUTPUT_VARIABLE _native_numerics_record_key
+    ERROR_VARIABLE _numerics_check_error
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  # A verdict failure prints the checker's own message on stderr. A command that
+  # cannot start (missing or non-executable interpreter) leaves stderr empty and
+  # reports the reason in the result, so both fields and the command line are
+  # named here.
+  if(NOT _numerics_check_result EQUAL 0)
+    message(FATAL_ERROR
+      "numerics record check did not pass (result '${_numerics_check_result}') "
+      "running: ${_numerics_check_command}\n${_numerics_check_error}")
+  endif()
+  if(NOT _native_numerics_record_key MATCHES "^[a-z]+-[A-Za-z0-9_]+$")
+    message(FATAL_ERROR
+      "numerics record check returned an invalid platform key "
+      "'${_native_numerics_record_key}'")
+  endif()
+else()
+  # The root graph has no probe, so the key is the host's platform identity,
+  # spelled the way tools/native_dependencies.py record_platform_key spells it
+  # (system.lower() + machine). The entry's own platform fields are checked
+  # against the host below, so a hand-edited key cannot select another entry.
+  # Only Darwin is qualified: a Linux key also needs the libc family, which
+  # configure cannot name without a probe.
+  if(NOT BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+    message(FATAL_ERROR
+      "record-only numerics (the Python-free root graph) is qualified for "
+      "Darwin only; ${BIKE_TARGET_SYSTEM} needs the libc family and the NumPy "
+      "install location, which configure cannot read without the live probe")
+  endif()
+  if(NOT EXISTS "${_numerics_record_file}")
+    message(FATAL_ERROR
+      "committed numerics record is missing: ${_numerics_record_file}")
+  endif()
+  string(TOLOWER "${BIKE_TARGET_SYSTEM}" _numerics_host_system)
+  set(_native_numerics_record_key
+    "${_numerics_host_system}-${CMAKE_HOST_SYSTEM_PROCESSOR}")
 endif()
 
 file(READ "${_numerics_record_file}" _numerics_record_json)
@@ -185,9 +242,31 @@ _numerics_record_field(_numerics_backend numerics backend)
 _numerics_record_field(_numerics_blas_bits numerics blas_integer_bits)
 _numerics_record_field(_numerics_lapack_bits numerics lapack_integer_bits)
 _numerics_record_field(_numerics_numpy_version numerics numpy_version)
-_numerics_live_field(_numerics_site_packages numerics site_packages)
-message(STATUS
-  "numerics record '${_native_numerics_record_key}' matches the live measurement")
+if(_numerics_is_live)
+  _numerics_live_field(_numerics_site_packages numerics site_packages)
+  message(STATUS
+    "numerics record '${_native_numerics_record_key}' matches the live measurement")
+else()
+  # Record-only: the entry must describe this host. The key was derived from
+  # these fields, so only a hand-edited record can differ; a Darwin entry must
+  # carry a null libc, because the record stores a libc family only on Linux.
+  _numerics_record_field(_numerics_record_system platform system)
+  _numerics_record_field(_numerics_record_machine platform machine)
+  string(JSON _numerics_record_libc_type ERROR_VARIABLE _numerics_json_error
+    TYPE "${_numerics_record_json}" records "${_native_numerics_record_key}" platform libc)
+  if(NOT "${_numerics_record_system}" STREQUAL "${BIKE_TARGET_SYSTEM}"
+     OR NOT "${_numerics_record_machine}" STREQUAL "${CMAKE_HOST_SYSTEM_PROCESSOR}"
+     OR NOT _numerics_record_libc_type STREQUAL "NULL")
+    message(FATAL_ERROR
+      "numerics record entry '${_native_numerics_record_key}' does not describe "
+      "this host (${BIKE_TARGET_SYSTEM}/${CMAKE_HOST_SYSTEM_PROCESSOR}): it names "
+      "${_numerics_record_system}/${_numerics_record_machine} with libc "
+      "${_numerics_record_libc_type} in ${_numerics_record_file}")
+  endif()
+  message(STATUS
+    "numerics record '${_native_numerics_record_key}' describes this host "
+    "(record-only: facts are not compared with a live measurement)")
+endif()
 
 # --------------------------------------------------------------------------
 # Backend resolution — AUTO binds the qualified profile for this platform;
@@ -221,6 +300,14 @@ if(NOT _numerics_backend STREQUAL _numerics_backend_expected)
     "record and the request describe different providers")
 endif()
 set(BIKE_NUMERICS_BACKEND_RESOLVED "${_numerics_backend}")
+# Record-only binds only the Darwin Accelerate profile. A NUMPY_OPENBLAS entry
+# needs the live NumPy install location to resolve its provider, and this mode
+# has none.
+if(NOT _numerics_is_live AND NOT _numerics_backend STREQUAL "ACCELERATE")
+  message(FATAL_ERROR
+    "record-only numerics binds only the qualified ACCELERATE profile; the "
+    "record names '${_numerics_backend}', which needs the live probe")
+endif()
 
 # --------------------------------------------------------------------------
 # Integer-width contract — the qualified profile per backend, checked from
@@ -363,7 +450,9 @@ message(STATUS
 # resolved against the live install location here. Darwin paths are absolute
 # system images and need no resolution. build_id is machine-specific and is
 # read from the live document at the same index; the check above guarantees
-# the two documents list the providers in the same order.
+# the two documents list the providers in the same order. RECORD_ONLY reads no
+# build_id: it binds the provider by identity kind, and a machine-specific
+# value has no committed source for the root graph.
 # --------------------------------------------------------------------------
 string(JSON _numerics_library_count ERROR_VARIABLE _numerics_json_error
   LENGTH "${_numerics_record_json}"
@@ -432,11 +521,13 @@ foreach(_i RANGE ${_numerics_library_last})
         "numerics provider '${_lib_path}' has identity '${_lib_kind}', "
         "not 'apple-system' — Darwin binds only the dyld-cache Accelerate")
     endif()
-    _numerics_live_field(_lib_build numerics library_paths ${_i} build_id)
-    if(_lib_build STREQUAL "")
-      message(FATAL_ERROR
-        "numerics provider '${_lib_path}' has an empty build_id — the "
-        "apple-system identity has no provider evidence")
+    if(_numerics_is_live)
+      _numerics_live_field(_lib_build numerics library_paths ${_i} build_id)
+      if(_lib_build STREQUAL "")
+        message(FATAL_ERROR
+          "numerics provider '${_lib_path}' has an empty build_id — the "
+          "apple-system identity has no provider evidence")
+      endif()
     endif()
     list(APPEND _native_numerics_provider_paths "${_lib_path}")
   endif()
@@ -455,17 +546,19 @@ endforeach()
 # framework link interface on Darwin, a SHARED import at the qualified
 # path on Linux. Runtime kernels never link it directly: the adapter
 # carries it through PUBLIC usage requirements. Nothing calls dlsym or
-# mutates provider threading here.
+# mutates provider threading here. RECORD_ONLY creates no provider target: the
+# root graph links the framework itself, and its Accelerate binding is the
+# later root-link task's decision.
 # --------------------------------------------------------------------------
 if(_numerics_backend STREQUAL "ACCELERATE")
   set(_numerics_provider "Accelerate.framework (apple-system)")
-  if(NOT TARGET Bike::NumericsProvider)
+endif()
+if(_numerics_is_live AND NOT TARGET Bike::NumericsProvider)
+  if(_numerics_backend STREQUAL "ACCELERATE")
     add_library(Bike::NumericsProvider INTERFACE IMPORTED GLOBAL)
     set_target_properties(Bike::NumericsProvider PROPERTIES
       INTERFACE_LINK_LIBRARIES "-framework Accelerate")
-  endif()
-else()
-  if(NOT TARGET Bike::NumericsProvider)
+  else()
     add_library(Bike::NumericsProvider SHARED IMPORTED GLOBAL)
     set_target_properties(Bike::NumericsProvider PROPERTIES
       IMPORTED_LOCATION "${_numerics_provider}")
@@ -509,7 +602,11 @@ set(_native_numerics_symbols_header
 # document — the blas backend TU reaches cblas_abi.hpp's mjtNum
 # assertion through it.
 # --------------------------------------------------------------------------
-if(NOT DEFINED _native_numerics_target_guard)
+if(NOT _numerics_is_live)
+  message(STATUS
+    "bike_native_numerics not created: RECORD_ONLY (the root graph binds no "
+    "adapter target)")
+elseif(NOT DEFINED _native_numerics_target_guard)
   set(_native_numerics_target_guard TRUE)
   if(CMAKE_CXX_COMPILER_LOADED)
     if(_numerics_backend STREQUAL "ACCELERATE")

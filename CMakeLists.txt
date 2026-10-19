@@ -58,6 +58,16 @@ if(APPLE)
   bike_verify_sdk_compat()
 endif()
 
+# Numerics facts come from the committed record alone (RECORD_ONLY: no probe,
+# no Python). BikeNumerics.cmake projects the BIKE_NUMPY_* compile definitions
+# that numeric_numpy.hpp requires at directory scope, so this must precede the
+# first target. BikePlatform.cmake is not included: its Apple SDK probe would
+# run a second SDK resolution beside bike_resolve_macos_sdk() above, so the
+# host dispatch value it would set is set here instead.
+set(BIKE_TARGET_SYSTEM "${CMAKE_HOST_SYSTEM_NAME}")
+set(BIKE_NUMERICS_SOURCE RECORD_ONLY)
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeNumerics.cmake")
+
 # Same libc++ hardening contract as the legacy binding build: EXTENSIVE by
 # default, FAST as an explicit comparison option — probed, not assumed.
 set(BIKE_LIBCPP_HARDENING "EXTENSIVE" CACHE STRING "libc++ hardening mode")
@@ -354,8 +364,11 @@ add_library(bike_rider_math STATIC
   "${_bike_native_dir}/src/rider/spindle_math.cpp")
 set_target_properties(bike_rider_math PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_target_strict_policy(bike_rider_math)
+# spindle_math.cpp reaches cblas_abi.hpp, which includes <mujoco/mujoco.h> for
+# the mjtNum assertion. The header comes from the locked .deps copy, like every
+# other first-party target's MuJoCo include.
 target_include_directories(bike_rider_math SYSTEM PRIVATE
-  "${_bike_native_dir}/src")
+  "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
 
 # bike_configuration: the T12 configuration boundary — the ported Python
 # dataclass records with declared defaults, every __post_init__/domain

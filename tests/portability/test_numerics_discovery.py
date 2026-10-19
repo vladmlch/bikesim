@@ -924,6 +924,7 @@ def _configure_scratch(
         "project(numerics_check NONE)\n"
         f'set(BIKE_TARGET_SYSTEM "{document["platform"]["system"]}")\n'
         f'set(Python_EXECUTABLE "{interpreter}")\n'
+        'set(BIKE_NUMERICS_SOURCE LIVE)\n'
         f'file(READ "{json_path}" _native_dependencies_json)\n'
         f'include("{NUMERICS_CMAKE}")\n'
         'message(STATUS "RESOLVED=${BIKE_NUMERICS_BACKEND_RESOLVED}")\n'
@@ -1109,6 +1110,167 @@ def test_bike_numerics_fails_configure_without_a_platform_entry(tmp_path):
     stderr = _squashed(result.stderr)
     assert "has no committed entry" in stderr
     assert "--write-numerics-record" in stderr
+
+
+# --------------------------------------------------------------------------
+# RECORD_ONLY (the Python-free root graph): facts from the record alone, with
+# no probe, no interpreter and no live value.
+# --------------------------------------------------------------------------
+
+
+def _record_only_document(tmp_path: Path) -> dict:
+    """A Darwin document whose machine is this host's, so the record key that
+    RECORD_ONLY derives from CMAKE_HOST_SYSTEM_PROCESSOR names its entry."""
+    document = _document_with_numerics(tmp_path, "Darwin")
+    document["platform"]["machine"] = platform.machine()
+    # The shared fixture is Linux-shaped; the Darwin probe reports no libc.
+    document["platform"]["libc"] = None
+    return document
+
+
+def _configure_record_only(
+    tmp_path: Path, document: dict, record: Path | None = None,
+    select_mode: bool = True,
+) -> subprocess.CompletedProcess:
+    """Configure BikeNumerics.cmake the way the root graph does: no
+    Python_EXECUTABLE and no dependency document. A logging python shim leads
+    PATH, so any interpreter spawn is recorded in tmp_path/python-calls.log and
+    exits 97, which fails configure if CMake ever runs it by name."""
+    cmake = shutil.which("cmake")
+    if cmake is None:
+        pytest.skip("cmake is not installed")
+    scratch = tmp_path / "record-only"
+    scratch.mkdir()
+    if record is None:
+        record = _write_record(tmp_path, document)
+    shims = tmp_path / "shims"
+    shims.mkdir()
+    shim_log = tmp_path / "python-calls.log"
+    for name in ("python", "python3"):
+        stub = shims / name
+        stub.write_text(
+            f'#!/bin/sh\necho "{name} $*" >> "{shim_log}"\nexit 97\n',
+            encoding="utf-8")
+        stub.chmod(0o755)
+    mode = "set(BIKE_NUMERICS_SOURCE RECORD_ONLY)\n" if select_mode else ""
+    (scratch / "CMakeLists.txt").write_text(
+        "cmake_minimum_required(VERSION 3.27)\n"
+        "project(numerics_record_only NONE)\n"
+        f'set(BIKE_TARGET_SYSTEM "{document["platform"]["system"]}")\n'
+        f"{mode}"
+        f'include("{NUMERICS_CMAKE}")\n'
+        'message(STATUS "RESOLVED=${BIKE_NUMERICS_BACKEND_RESOLVED}")\n'
+        "get_directory_property(_defs COMPILE_DEFINITIONS)\n"
+        'message(STATUS "DEFS=${_defs}")\n'
+    )
+    env = dict(os.environ)
+    env["PATH"] = os.pathsep.join([str(shims), env.get("PATH", "")])
+    return subprocess.run(
+        [cmake, "-S", str(scratch), "-B", str(tmp_path / "record-only-build"),
+         f"-DBIKE_NUMERICS_RECORD={record}"],
+        capture_output=True, text=True, timeout=300, env=env,
+    )
+
+
+def _edit_record(record: Path, edit) -> None:
+    """Apply ``edit`` to the single records[] entry of a fixture record."""
+    lock = json.loads(record.read_text(encoding="utf-8"))
+    edit(next(iter(lock["records"].values())))
+    record.write_text(json.dumps(lock), encoding="utf-8")
+
+
+def test_record_only_binds_the_committed_facts_without_python(tmp_path):
+    """The root configure reads the facts from the record, projects the two
+    BIKE_NUMPY_* definitions from them, and never starts an interpreter."""
+    document = _record_only_document(tmp_path)
+    record = _write_record(tmp_path, document)
+    result = _configure_record_only(tmp_path, document, record=record)
+    assert result.returncode == 0, result.stderr
+    assert "RESOLVED=ACCELERATE" in result.stdout
+    assert "bike_native_numerics not created: RECORD_ONLY" in result.stdout
+    entry = next(iter(json.loads(record.read_text(encoding="utf-8"))["records"].values()))
+    interp = 1 if entry["numerics"]["interp"]["lowering"] == "contracted" else 0
+    nan_element = 1 if entry["numerics"]["multiply_broadcast"]["nan_winner"] == "element" else 0
+    assert f"BIKE_NUMPY_INTERP_CONTRACTED={interp}" in result.stdout
+    assert f"BIKE_NUMPY_MUL_BROADCAST_ELEMENT_NAN={nan_element}" in result.stdout
+    assert not (tmp_path / "python-calls.log").exists(), (
+        "record-only configure started a python interpreter")
+
+
+def test_record_only_requires_an_explicit_mode(tmp_path):
+    """No mode is inferred: a root that forgets BIKE_NUMERICS_SOURCE fails
+    instead of falling back to a live verdict or to record-only."""
+    document = _record_only_document(tmp_path)
+    result = _configure_record_only(tmp_path, document, select_mode=False)
+    assert result.returncode != 0
+    assert "requires BIKE_NUMERICS_SOURCE=LIVE" in _squashed(result.stderr)
+
+
+def test_record_only_fails_closed_outside_darwin(tmp_path):
+    """A Linux key needs the libc family and the NumPy install location, which
+    configure cannot read without the probe, so record-only refuses it."""
+    document = _document_with_numerics(tmp_path, "Linux")
+    result = _configure_record_only(tmp_path, document)
+    assert result.returncode != 0
+    assert "qualified for Darwin only" in _squashed(result.stderr)
+
+
+def test_record_only_names_a_missing_platform_entry(tmp_path):
+    document = _record_only_document(tmp_path)
+    record = _write_record(tmp_path, document)
+    lock = json.loads(record.read_text(encoding="utf-8"))
+    lock["records"] = {}
+    record.write_text(json.dumps(lock), encoding="utf-8")
+    result = _configure_record_only(tmp_path, document, record=record)
+    assert result.returncode != 0
+    stderr = _squashed(result.stderr)
+    assert "committed numerics record has no entry" in stderr
+    assert "--write-numerics-record" in stderr
+
+
+def test_record_only_rejects_an_entry_that_describes_another_host(tmp_path):
+    """The key is derived from the host, so an entry whose own platform fields
+    name another machine can only come from a hand-edited record."""
+    document = _record_only_document(tmp_path)
+    record = _write_record(tmp_path, document)
+    _edit_record(
+        record,
+        lambda entry: entry["platform"].update(
+            machine=f"not-{platform.machine()}"))
+    result = _configure_record_only(tmp_path, document, record=record)
+    assert result.returncode != 0
+    assert "does not describe this host" in _squashed(result.stderr)
+
+
+def test_record_only_keeps_the_structural_guards(tmp_path):
+    """Record-only trusts no value without checks: the same CMake guards as
+    LIVE mode still reject an unqualified integer width."""
+    document = _record_only_document(tmp_path)
+    record = _write_record(tmp_path, document)
+
+    def widen_blas(entry):
+        entry["numerics"]["blas_integer_bits"] = 64
+
+    _edit_record(record, widen_blas)
+    result = _configure_record_only(tmp_path, document, record=record)
+    assert result.returncode != 0
+    assert "unqualified numerics integer ABI" in _squashed(result.stderr)
+
+
+def test_record_only_does_not_compare_with_a_measurement(tmp_path):
+    """Record-only takes the committed facts as they are. A flipped
+    interp.lowering configures here because nothing is measured in this mode;
+    the legacy graph's live check is the guard that rejects it."""
+    document = _record_only_document(tmp_path)
+    record = _write_record(tmp_path, document)
+
+    def flip_lowering(entry):
+        entry["numerics"]["interp"]["lowering"] = "separate"
+
+    _edit_record(record, flip_lowering)
+    result = _configure_record_only(tmp_path, document, record=record)
+    assert result.returncode == 0, result.stderr
+    assert "BIKE_NUMPY_INTERP_CONTRACTED=0" in result.stdout
 
 
 # --------------------------------------------------------------------------

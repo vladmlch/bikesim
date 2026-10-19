@@ -223,7 +223,7 @@ committed record, at the same index as the bound path. Only `build_id` and the
 bound real path come from the live side.
 | `python` section | live probe | BikeCheckContext.cmake (required `python` member) |
 | `provider_config`, `numpy_imports`, `threading`, `interp.queries` and `distinguishing`, `multiply_broadcast.lanes` and `distinguishing` | live probe | embedded verbatim in `native_check_context.json` (BikeCheckContext.cmake) |
-| `mujoco.include_dir` (never in the record) | live probe | BikeNumerics.cmake: include root of `bike_native_numerics` |
+| `mujoco.include_dir` (never in the record) | live probe (legacy graph); `.deps` (root graph) | BikeNumerics.cmake: include root of `bike_native_numerics` (LIVE only) |
 
 Configure-time check. The legacy graph (`cmake -S native`, Python present)
 measures live and passes the probe document to
@@ -231,8 +231,16 @@ measures live and passes the probe document to
 the document and requires it to equal the committed `records[<platform>]`
 entry in full: facts, NumPy version, and platform identity. A stale or missing
 entry fails configure and prints the regeneration command. The check needs
-Python, so only the legacy graph runs it; the Python-free root graph does not
-read the record yet.
+Python, so only the legacy graph runs it.
+
+The Python-free root graph (`CMakeLists.txt`) reads the same record in
+record-only mode (`BIKE_NUMERICS_SOURCE=RECORD_ONLY`): it runs no probe and no
+interpreter, derives the platform key from the host, and requires the entry to
+describe that host. It takes the facts without comparing them with a
+measurement, so the legacy graph's check is what keeps the committed record
+current. Record-only is qualified for Darwin. Linux root configure fails
+closed until the libc family and the NumPy provider location can be read
+without a probe.
 
 Regenerate the entry for the current platform with the pinned NumPy:
 

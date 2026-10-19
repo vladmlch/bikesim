@@ -15,11 +15,10 @@ cmake_minimum_required(VERSION 3.24)
 #   ctest --test-dir build/native-release --output-on-failure
 #
 # The legacy binding build stays where it was (cmake -S native -B ...): this
-# file only takes over when the repository ROOT is the -S directory. Setting
-# BIKE_BUILD_PYTHON_BINDINGS=ON reuses the existing native/ project as a
-# subdirectory so the optional extension is compiled from the same core
-# objects the standalone tests exercise; that transition mode still needs
-# the native dev group's Python+nanobind by design.
+# file only takes over when the repository ROOT is the -S directory. The
+# extension is built only from cmake -S native, which compiles the same core
+# objects the standalone tests exercise. BIKE_BUILD_PYTHON_BINDINGS=ON from
+# the root is refused by native/CMakeLists.txt (see the option below).
 
 # Modules only declare functions/macros — safe to include pre-project().
 # SDK resolution MUST precede project(): CMake runs its compiler link check
@@ -36,6 +35,11 @@ endif()
 
 project(bike_sim CXX)
 
+# Decision: ON is not a root build mode. The root's dependencies come from the
+# locked .deps tree and its numerics from the committed record; native/ still
+# resolves Python and its own dependency policy. Mixing the two in one configure
+# produced duplicate targets, so native/CMakeLists.txt fails closed instead of
+# adding the subdirectory. Keep the transition extension on cmake -S native.
 option(BIKE_BUILD_PYTHON_BINDINGS "Build the nanobind extension (requires the Python native dev group)" OFF)
 option(BIKE_BUILD_GUI "Enable the native GLFW viewer; headless recording/plots remain available when OFF" OFF)
 

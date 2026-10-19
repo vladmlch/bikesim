@@ -1,0 +1,82 @@
+{
+  "purpose": "Shared test vectors for the Accelerate apple-system build_id. The formula is spelled twice, in src/bike_sim/native/provider_build_id.py (Python) and in native/cmake/BikeProviderIdentity.cmake (bike_accelerate_build_id, CMake). Both must produce expected for every case, and both must reject every case whose expected is null. Edit a vector only with the formula, never on its own.",
+  "cases": [
+    {
+      "name": "measured_apple_silicon",
+      "macos_build": "26A434",
+      "accelerate_uuid": "a697e7b9-8ff4-356c-a507-64b38af1ccaa",
+      "sdk_build": "26A425",
+      "expected": "macos-26A434+accelerate-a697e7b9-8ff4-356c-a507-64b38af1ccaa+sdk-26A425"
+    },
+    {
+      "name": "other_macos_build",
+      "macos_build": "25E253",
+      "accelerate_uuid": "31104d4f-4a7e-3fa7-9e18-55937b2011f2",
+      "sdk_build": "25E245",
+      "expected": "macos-25E253+accelerate-31104d4f-4a7e-3fa7-9e18-55937b2011f2+sdk-25E245"
+    },
+    {
+      "name": "uuid_case_is_kept_verbatim",
+      "macos_build": "26A434",
+      "accelerate_uuid": "A697E7B9-8FF4-356C-A507-64B38AF1CCAA",
+      "sdk_build": "26A425",
+      "expected": "macos-26A434+accelerate-A697E7B9-8FF4-356C-A507-64B38AF1CCAA+sdk-26A425"
+    },
+    {
+      "name": "dots_and_dashes_are_part_of_a_token",
+      "macos_build": "26A434.1-beta",
+      "accelerate_uuid": "a697e7b9-8ff4-356c-a507-64b38af1ccaa",
+      "sdk_build": "26A425",
+      "expected": "macos-26A434.1-beta+accelerate-a697e7b9-8ff4-356c-a507-64b38af1ccaa+sdk-26A425"
+    },
+    {
+      "name": "empty_macos_build",
+      "macos_build": "",
+      "accelerate_uuid": "a697e7b9-8ff4-356c-a507-64b38af1ccaa",
+      "sdk_build": "26A425",
+      "expected": null
+    },
+    {
+      "name": "empty_uuid",
+      "macos_build": "26A434",
+      "accelerate_uuid": "",
+      "sdk_build": "26A425",
+      "expected": null
+    },
+    {
+      "name": "empty_sdk_build",
+      "macos_build": "26A434",
+      "accelerate_uuid": "a697e7b9-8ff4-356c-a507-64b38af1ccaa",
+      "sdk_build": "",
+      "expected": null
+    },
+    {
+      "name": "plus_separator_inside_a_component",
+      "macos_build": "26A+434",
+      "accelerate_uuid": "a697e7b9-8ff4-356c-a507-64b38af1ccaa",
+      "sdk_build": "26A425",
+      "expected": null
+    },
+    {
+      "name": "space_inside_a_component",
+      "macos_build": "26A 434",
+      "accelerate_uuid": "a697e7b9-8ff4-356c-a507-64b38af1ccaa",
+      "sdk_build": "26A425",
+      "expected": null
+    },
+    {
+      "name": "trailing_newline_from_unstripped_output",
+      "macos_build": "26A434\n",
+      "accelerate_uuid": "a697e7b9-8ff4-356c-a507-64b38af1ccaa",
+      "sdk_build": "26A425",
+      "expected": null
+    },
+    {
+      "name": "non_ascii_component",
+      "macos_build": "26A434é",
+      "accelerate_uuid": "a697e7b9-8ff4-356c-a507-64b38af1ccaa",
+      "sdk_build": "26A425",
+      "expected": null
+    }
+  ]
+}

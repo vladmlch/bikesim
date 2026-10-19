@@ -1644,6 +1644,24 @@ def _measure_accelerate_threads(np) -> dict:
     }
 
 
+def _accelerate_build_id(macos_build: str, uuid: str, sdk_build: str) -> str:
+    """The build_id formula, spelled once in Python in
+    src/bike_sim/native/provider_build_id.py. That module is loaded by path:
+    this checker is stdlib-only and must not import the bike_sim package,
+    whose __init__ pulls in numpy and mujoco."""
+    import importlib.util
+
+    module_path = (_SELF.parents[1] / "src" / "bike_sim" / "native"
+                   / "provider_build_id.py")
+    spec = importlib.util.spec_from_file_location(
+        "_bike_provider_build_id", module_path)
+    if spec is None or spec.loader is None:
+        raise ValueError(f"cannot load the build_id formula from {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.accelerate_build_id(macos_build, uuid, sdk_build)
+
+
 def _discover_numpy_provider_darwin(np, threadpoolctl, package: Path,
                                     site_packages: Path,
                                     build_dependencies: dict) -> dict:
@@ -1734,7 +1752,7 @@ def _discover_numpy_provider_darwin(np, threadpoolctl, package: Path,
             f"{umbrella} — the apple-system identity has no provider "
             "evidence"
         )
-    build_id = f"macos-{macos_build}+accelerate-{uuid}+sdk-{sdk_build}"
+    build_id = _accelerate_build_id(macos_build, uuid, sdk_build)
 
     threading = _measure_accelerate_threads(np)
     abi_check = _verify_abi_compile_link_run("ACCELERATE", symbols, None)

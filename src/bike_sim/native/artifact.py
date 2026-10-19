@@ -20,6 +20,8 @@ import sysconfig
 import tomllib
 from types import ModuleType
 
+from bike_sim.native.provider_build_id import accelerate_build_id
+
 SELECTOR_ENV = 'BIKE_NATIVE_BUILD_PATH'
 EXTENSION_MODULE = 'bike_native'
 
@@ -628,8 +630,7 @@ def _accelerate_numerics(numpy):
             'no provider evidence')
     sdk_build = _check_output(
         ['xcrun', '--sdk', 'macosx', '--show-sdk-build-version'])
-    build_id = (f'macos-{_darwin_os_build()}+accelerate-{uuid}'
-                f'+sdk-{sdk_build}')
+    build_id = accelerate_build_id(_darwin_os_build(), uuid, sdk_build)
     record = {'backend': 'ACCELERATE',
               'numpy_version': str(numpy.__version__),
               'blas_integer_bits': 32, 'lapack_integer_bits': 64,

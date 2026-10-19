@@ -25,6 +25,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MODULE = REPO_ROOT / "native" / "cmake" / "BikeProviderIdentity.cmake"
 NUMERICS_LOCK = REPO_ROOT / "native" / "numerics.lock.json"
+BUILD_ID_VECTORS = REPO_ROOT / "tests" / "fixtures" / "portability" / "build_id_vectors.json"
 
 ACCELERATE_DIR = "/System/Library/Frameworks/Accelerate.framework/Versions/A"
 BLAS_IMAGE = f"{ACCELERATE_DIR}/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib"
@@ -299,22 +300,87 @@ bike_provider_probe_loaded_images(_probe REQUIRED_VAR _required)
         result.stderr)
 
 
-@darwin_only
-def test_darwin_build_id_is_the_measured_formula(tmp_path):
-    """The root graph's build_id is macos-<sw_vers>+accelerate-<uuid>+sdk-<SDK
-    build>, the same formula tools/native_dependencies.py measures."""
-    macos = subprocess.run(["sw_vers", "-buildVersion"], capture_output=True,
-                           text=True, check=True).stdout.strip()
-    sdk = subprocess.run(["xcrun", "--sdk", "macosx", "--show-sdk-build-version"],
-                         capture_output=True, text=True, check=True).stdout.strip()
-    out = tmp_path / "build-id.txt"
-    result = _scratch_project(tmp_path, f"""
-bike_darwin_accelerate_build_id(_build_id UUID "{UMBRELLA_UUID}")
-file(WRITE "{out}" "${{_build_id}}")
+def _build_id_cases() -> list[dict]:
+    return json.loads(BUILD_ID_VECTORS.read_text(encoding="utf-8"))["cases"]
+
+
+def test_build_id_vectors_are_present_and_cover_both_outcomes():
+    """The shared vectors must keep both an accepted and a rejected case, or the
+    two spellings below could agree by never being asked anything hard."""
+    cases = _build_id_cases()
+    assert len({case["name"] for case in cases}) == len(cases)
+    assert any(case["expected"] is not None for case in cases)
+    assert any(case["expected"] is None for case in cases)
+
+
+@pytest.mark.parametrize("case", _build_id_cases(), ids=lambda case: case["name"])
+def test_python_build_id_matches_the_shared_vectors(case):
+    """The Python spelling (used by the probe checker and the runtime record)
+    returns the vector's expected string, or rejects the component."""
+    from bike_sim.native.provider_build_id import accelerate_build_id
+
+    arguments = (case["macos_build"], case["accelerate_uuid"], case["sdk_build"])
+    if case["expected"] is None:
+        with pytest.raises(ValueError, match="build_id component"):
+            accelerate_build_id(*arguments)
+    else:
+        assert accelerate_build_id(*arguments) == case["expected"]
+
+
+def test_cmake_build_id_matches_the_shared_vectors(tmp_path):
+    """The CMake spelling, run over the same vectors in one `cmake -P` script.
+    A rejected component must come back as the empty string, never a value."""
+    result_file = tmp_path / "cmake-build-id.txt"
+    result = _cmake(tmp_path, f"""
+file(READ "{BUILD_ID_VECTORS}" _vectors)
+string(JSON _count LENGTH "${{_vectors}}" cases)
+math(EXPR _last "${{_count}} - 1")
+set(_failures "")
+foreach(_i RANGE ${{_last}})
+  string(JSON _name GET "${{_vectors}}" cases ${{_i}} name)
+  string(JSON _macos GET "${{_vectors}}" cases ${{_i}} macos_build)
+  string(JSON _uuid GET "${{_vectors}}" cases ${{_i}} accelerate_uuid)
+  string(JSON _sdk GET "${{_vectors}}" cases ${{_i}} sdk_build)
+  string(JSON _expected_type TYPE "${{_vectors}}" cases ${{_i}} expected)
+  bike_accelerate_build_id(_actual
+    MACOS_BUILD "${{_macos}}" SDK_BUILD "${{_sdk}}" UUID "${{_uuid}}")
+  if(_expected_type STREQUAL "NULL")
+    if(NOT _actual STREQUAL "")
+      list(APPEND _failures "${{_name}}: rejected input produced '${{_actual}}'")
+    endif()
+  else()
+    string(JSON _expected GET "${{_vectors}}" cases ${{_i}} expected)
+    if(NOT _actual STREQUAL _expected)
+      list(APPEND _failures "${{_name}}: '${{_actual}}' != '${{_expected}}'")
+    endif()
+  endif()
+endforeach()
+file(WRITE "{result_file}" "count=${{_count}}\\nfailures=${{_failures}}\\n")
 """)
     assert result.returncode == 0, result.stderr
-    assert out.read_text(encoding="utf-8") == (
-        f"macos-{macos}+accelerate-{UMBRELLA_UUID}+sdk-{sdk}")
+    report = result_file.read_text(encoding="utf-8")
+    assert f"count={len(_build_id_cases())}\n" in report, report
+    assert "failures=\n" in report, report
+
+
+def test_the_build_id_spelling_has_one_home_per_language():
+    """The formula's literal separator sequence appears only in the two
+    spellings. A third copy in any consumer would escape the vectors."""
+    literal = "+accelerate-"
+    python_home = REPO_ROOT / "src" / "bike_sim" / "native" / "provider_build_id.py"
+    cmake_home = REPO_ROOT / "native" / "cmake" / "BikeProviderIdentity.cmake"
+    scanned = [
+        *sorted((REPO_ROOT / "src").rglob("*.py")),
+        *sorted((REPO_ROOT / "tools").rglob("*.py")),
+        *sorted((REPO_ROOT / "native" / "cmake").glob("*.cmake")),
+        *sorted((REPO_ROOT / "native").glob("CMakeLists.txt")),
+        REPO_ROOT / "CMakeLists.txt",
+    ]
+    homes = sorted(
+        path.relative_to(REPO_ROOT).as_posix() for path in scanned
+        if path.is_file() and literal in path.read_text(encoding="utf-8"))
+    assert homes == sorted(
+        path.relative_to(REPO_ROOT).as_posix() for path in (python_home, cmake_home)), homes
 
 
 def _real_environment_available() -> bool:

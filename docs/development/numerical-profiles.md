@@ -248,10 +248,13 @@ it runs a configure-time `try_run` instead (`native/cmake/BikeProviderIdentity.c
 `bike_provider_probe_loaded_images`). That run compiles
 `native/cmake/provider_identity_probe.cpp` with `native/src/runtime/provider_images.cpp`,
 the discovery code the runtime itself compiles, and links Accelerate. It
-reports the loaded provider images and their LC_UUIDs. The `build_id` formula
-(`macos-<sw_vers build>+accelerate-<umbrella LC_UUID>+sdk-<macOS SDK build>`)
-then comes from `sw_vers` and `xcrun`. A required image that is not loaded
-fails configure. Both graphs generate the declarations through the same
+reports the loaded provider images and their LC_UUIDs. The `build_id` is
+composed from those and from `sw_vers` and `xcrun` by
+`bike_accelerate_build_id`. The formula is spelled in two languages: CMake here,
+and Python in `src/bike_sim/native/provider_build_id.py`, which the legacy
+probe checker and the runtime record both use. Both spellings are pinned to
+`tests/fixtures/portability/build_id_vectors.json`. A required image that is
+not loaded fails configure. Both graphs generate the declarations through the same
 function, so the root's identity matches the legacy graph's on the same host.
 
 Regenerate the entry for the current platform with the pinned NumPy:

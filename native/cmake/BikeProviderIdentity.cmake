@@ -37,7 +37,8 @@
 #       discovery TU and linked against Accelerate.
 #   bike_provider_probe_image_uuid(<out> IMAGE <path> PROBE <text>)
 #   bike_darwin_accelerate_build_id(<out> UUID <uuid>)
-#       the build_id formula, from sw_vers and xcrun plus the probed LC_UUID.
+#       the build_id from sw_vers and xcrun plus the probed LC_UUID, composed by
+#       bike_accelerate_build_id(<out> MACOS_BUILD <m> SDK_BUILD <s> UUID <u>).
 #
 # Functions that locate native sources read the module directory captured here:
 # inside a function CMAKE_CURRENT_LIST_DIR names the file that called it.
@@ -274,17 +275,42 @@ function(_bike_identity_query out_var description)
   set(${out_var} "${_output}" PARENT_SCOPE)
 endfunction()
 
+# bike_accelerate_build_id(<out> MACOS_BUILD <m> SDK_BUILD <s> UUID <u>)
+#   The apple-system build_id, macos-<m>+accelerate-<u>+sdk-<s>. This is the
+#   CMake spelling of the formula; src/bike_sim/native/provider_build_id.py is
+#   the Python spelling, and both are pinned to
+#   tests/fixtures/portability/build_id_vectors.json. Each component must be a
+#   nonempty token of [A-Za-z0-9.-]. A malformed component sets <out> to the
+#   empty string, so the caller names the failure and the vectors can pin it.
+function(bike_accelerate_build_id out_var)
+  cmake_parse_arguments(PARSE_ARGV 1 _build "" "MACOS_BUILD;SDK_BUILD;UUID" "")
+  set(${out_var} "" PARENT_SCOPE)
+  foreach(_component IN ITEMS MACOS_BUILD SDK_BUILD UUID)
+    if(NOT "${_build_${_component}}" MATCHES "^[A-Za-z0-9.-]+$")
+      return()
+    endif()
+  endforeach()
+  set(${out_var}
+    "macos-${_build_MACOS_BUILD}+accelerate-${_build_UUID}+sdk-${_build_SDK_BUILD}"
+    PARENT_SCOPE)
+endfunction()
+
 # bike_darwin_accelerate_build_id(<out> UUID <uuid>)
-#   The apple-system build_id of the Accelerate profile, in the formula
-#   tools/native_dependencies.py measures: macos-<sw_vers build>+accelerate-
-#   <umbrella LC_UUID>+sdk-<macosx SDK build>.
+#   The root graph's build_id: the host's macOS build and SDK build (sw_vers,
+#   xcrun) with the probed umbrella LC_UUID, composed by bike_accelerate_build_id.
+#   A malformed component fails configure.
 function(bike_darwin_accelerate_build_id out_var)
-  cmake_parse_arguments(PARSE_ARGV 1 _build "" "UUID" "")
+  cmake_parse_arguments(PARSE_ARGV 1 _host "" "UUID" "")
   _bike_identity_query(_macos_build "macOS build"
     sw_vers -buildVersion)
   _bike_identity_query(_sdk_build "macOS SDK build"
     xcrun --sdk macosx --show-sdk-build-version)
-  set(${out_var}
-    "macos-${_macos_build}+accelerate-${_build_UUID}+sdk-${_sdk_build}"
-    PARENT_SCOPE)
+  bike_accelerate_build_id(_build
+    MACOS_BUILD "${_macos_build}" SDK_BUILD "${_sdk_build}" UUID "${_host_UUID}")
+  if(_build STREQUAL "")
+    message(FATAL_ERROR
+      "the Accelerate build_id components are malformed: macOS build "
+      "'${_macos_build}', SDK build '${_sdk_build}', LC_UUID '${_host_UUID}'")
+  endif()
+  set(${out_var} "${_build}" PARENT_SCOPE)
 endfunction()

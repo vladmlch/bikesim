@@ -36,6 +36,18 @@ if(_migration_oracle_manifest MATCHES "[\"'\\\\]")
     "oracle manifest path must not contain quotes or backslashes: ${_migration_oracle_manifest}")
 endif()
 
+# The raw Accelerate ILP64 framework edge is the standalone root graph's
+# numerics provider. The legacy graph consumes the typed numerics adapter,
+# whose provider carries the same framework (Darwin) or the wheel's OpenBLAS
+# (Linux) through the platform layer.
+function(bike_migration_link_numerics target)
+  if(BIKE_ROOT_BUILD)
+    target_link_libraries(${target} PRIVATE "-framework Accelerate")
+  else()
+    bike_link_numerics(${target})
+  endif()
+endfunction()
+
 # Standalone harness: stdlib-only plus the owned bike::io boundary (strict
 # JSON + SHA-256 for the T05 manifest layer) — no MuJoCo/Python/nanobind
 # includes. The support TU owns BIKE_FIXTURE_ROOT and BIKE_ORACLE_MANIFEST
@@ -158,8 +170,7 @@ else()
   target_include_directories(migration_T04 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
   target_link_libraries(migration_T04 PRIVATE bike_native_engine)
-  bike_rewrite_mujoco_load_name(migration_T04
-    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+  bike_fix_mujoco_install_name(migration_T04)
 endif()
 
 if(BUILD_TESTING)
@@ -272,8 +283,8 @@ endif()
 if(_native_contract_link_options)
   target_link_options(migration_T07 PRIVATE ${_native_contract_link_options})
 endif()
-target_link_libraries(migration_T07 PRIVATE bike_migration_test
-  "-framework Accelerate")
+target_link_libraries(migration_T07 PRIVATE bike_migration_test)
+bike_migration_link_numerics(migration_T07)
 if(BIKE_ROOT_BUILD)
   bike_target_strict_policy(migration_T07)
   target_include_directories(migration_T07 SYSTEM PRIVATE
@@ -287,8 +298,7 @@ else()
     "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
   target_link_libraries(migration_T07 PRIVATE
     bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_rewrite_mujoco_load_name(migration_T07
-    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+  bike_fix_mujoco_install_name(migration_T07)
 endif()
 
 if(BUILD_TESTING)
@@ -321,8 +331,8 @@ endif()
 if(_native_contract_link_options)
   target_link_options(migration_T08 PRIVATE ${_native_contract_link_options})
 endif()
-target_link_libraries(migration_T08 PRIVATE bike_migration_test
-  "-framework Accelerate")
+target_link_libraries(migration_T08 PRIVATE bike_migration_test)
+bike_migration_link_numerics(migration_T08)
 if(BIKE_ROOT_BUILD)
   bike_target_strict_policy(migration_T08)
   target_include_directories(migration_T08 SYSTEM PRIVATE
@@ -336,8 +346,7 @@ else()
     "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
   target_link_libraries(migration_T08 PRIVATE
     bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_rewrite_mujoco_load_name(migration_T08
-    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+  bike_fix_mujoco_install_name(migration_T08)
 endif()
 
 if(BUILD_TESTING)
@@ -394,8 +403,8 @@ endif()
 if(_native_contract_link_options)
   target_link_options(migration_T09 PRIVATE ${_native_contract_link_options})
 endif()
-target_link_libraries(migration_T09 PRIVATE bike_migration_test
-  "-framework Accelerate")
+target_link_libraries(migration_T09 PRIVATE bike_migration_test)
+bike_migration_link_numerics(migration_T09)
 if(BIKE_ROOT_BUILD)
   bike_target_strict_policy(migration_T09)
   target_include_directories(migration_T09 SYSTEM PRIVATE
@@ -409,8 +418,7 @@ else()
     "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
   target_link_libraries(migration_T09 PRIVATE
     bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_rewrite_mujoco_load_name(migration_T09
-    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+  bike_fix_mujoco_install_name(migration_T09)
 endif()
 
 if(BUILD_TESTING)
@@ -509,8 +517,8 @@ endif()
 if(_native_contract_link_options)
   target_link_options(migration_T10 PRIVATE ${_native_contract_link_options})
 endif()
-target_link_libraries(migration_T10 PRIVATE bike_migration_test
-  "-framework Accelerate")
+target_link_libraries(migration_T10 PRIVATE bike_migration_test)
+bike_migration_link_numerics(migration_T10)
 if(BIKE_ROOT_BUILD)
   bike_target_strict_policy(migration_T10)
   target_include_directories(migration_T10 SYSTEM PRIVATE
@@ -524,8 +532,7 @@ else()
     "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
   target_link_libraries(migration_T10 PRIVATE
     bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_rewrite_mujoco_load_name(migration_T10
-    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+  bike_fix_mujoco_install_name(migration_T10)
 endif()
 
 if(BUILD_TESTING)
@@ -558,8 +565,8 @@ endif()
 if(_native_contract_link_options)
   target_link_options(migration_T11 PRIVATE ${_native_contract_link_options})
 endif()
-target_link_libraries(migration_T11 PRIVATE bike_migration_test
-  "-framework Accelerate")
+target_link_libraries(migration_T11 PRIVATE bike_migration_test)
+bike_migration_link_numerics(migration_T11)
 if(BIKE_ROOT_BUILD)
   bike_target_strict_policy(migration_T11)
   target_include_directories(migration_T11 SYSTEM PRIVATE
@@ -573,8 +580,7 @@ else()
     "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
   target_link_libraries(migration_T11 PRIVATE
     bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_rewrite_mujoco_load_name(migration_T11
-    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+  bike_fix_mujoco_install_name(migration_T11)
 endif()
 
 if(BUILD_TESTING)
@@ -643,8 +649,8 @@ endif()
 if(_native_contract_link_options)
   target_link_options(migration_T15 PRIVATE ${_native_contract_link_options})
 endif()
-target_link_libraries(migration_T15 PRIVATE bike_migration_test
-  bike_model "-framework Accelerate")
+target_link_libraries(migration_T15 PRIVATE bike_migration_test bike_model)
+bike_migration_link_numerics(migration_T15)
 if(BIKE_ROOT_BUILD)
   bike_target_strict_policy(migration_T15)
   target_include_directories(migration_T15 SYSTEM PRIVATE
@@ -658,8 +664,7 @@ else()
     "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
   target_link_libraries(migration_T15 PRIVATE
     bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_rewrite_mujoco_load_name(migration_T15
-    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+  bike_fix_mujoco_install_name(migration_T15)
 endif()
 
 if(BUILD_TESTING)
@@ -679,7 +684,7 @@ foreach(_startup_task IN ITEMS 16 17 18 20 21 22 23 24 25)
     bike_rewrite_mujoco_load_name(${_startup_test}
       "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
   else()
-    bike_rewrite_mujoco_load_name(${_startup_test} "${MJ_DIR}/libmujoco.3.12.0.dylib")
+    bike_fix_mujoco_install_name(${_startup_test})
   endif()
   if(BUILD_TESTING)
     add_test(NAME ${_startup_test} COMMAND ${_startup_test})
@@ -708,7 +713,7 @@ foreach(_physics_task RANGE 26 37)
     bike_rewrite_mujoco_load_name(${_physics_test}
       "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
   else()
-    bike_rewrite_mujoco_load_name(${_physics_test} "${MJ_DIR}/libmujoco.3.12.0.dylib")
+    bike_fix_mujoco_install_name(${_physics_test})
   endif()
   if(BUILD_TESTING)
     if(_physics_task EQUAL 35)
@@ -741,7 +746,7 @@ if(BIKE_ROOT_BUILD)
   bike_rewrite_mujoco_load_name(migration_T30_native_contacts
     "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
 else()
-  bike_rewrite_mujoco_load_name(migration_T30_native_contacts "${MJ_DIR}/libmujoco.3.12.0.dylib")
+  bike_fix_mujoco_install_name(migration_T30_native_contacts)
 endif()
 if(BUILD_TESTING)
   add_test(NAME migration_T30_native_contacts COMMAND migration_T30_native_contacts)
@@ -788,8 +793,7 @@ foreach(_recording_task RANGE 38 51)
       bike_rewrite_mujoco_load_name(${_recording_test}
         "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
     else()
-      bike_rewrite_mujoco_load_name(${_recording_test}
-        "${MJ_DIR}/libmujoco.3.12.0.dylib")
+      bike_fix_mujoco_install_name(${_recording_test})
     endif()
   endif()
   if(BUILD_TESTING)

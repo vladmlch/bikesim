@@ -331,7 +331,32 @@ function(bike_write_check_context)
   set(_native_source_separator "")
   set(_native_target_contexts "{")
   set(_native_target_separator "")
+  # BUILDSYSTEM_TARGETS is scoped to this directory — targets created through
+  # add_subdirectory() (native/tests/migration) must be collected via
+  # SUBDIRECTORIES or their first-party translation units never enter the
+  # manifest while compile_commands.json still compiles them.
   get_property(_native_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+  get_property(_native_subdirectories DIRECTORY PROPERTY SUBDIRECTORIES)
+  foreach(_native_subdirectory IN LISTS _native_subdirectories)
+    get_property(_native_subdirectory_targets DIRECTORY "${_native_subdirectory}"
+      PROPERTY BUILDSYSTEM_TARGETS)
+    list(APPEND _native_targets ${_native_subdirectory_targets})
+  endforeach()
+  list(REMOVE_DUPLICATES _native_targets)
+  # Target property values are embedded verbatim (generator expressions expand
+  # later), so a quote or backslash in one would corrupt the JSON. Fail at
+  # configure time, naming the target and property, instead.
+  foreach(_native_target IN LISTS _native_targets)
+    foreach(_native_prop IN ITEMS INCLUDE_DIRECTORIES COMPILE_DEFINITIONS
+                                  COMPILE_OPTIONS LINK_DIRECTORIES LINK_LIBRARIES)
+      get_target_property(_native_prop_value "${_native_target}" ${_native_prop})
+      if(_native_prop_value AND _native_prop_value MATCHES "[\"\\\\]")
+        message(FATAL_ERROR
+          "CMake target ${_native_target} property ${_native_prop} contains a quote or backslash, "
+          "which the check-context JSON cannot carry: ${_native_prop_value}")
+      endif()
+    endforeach()
+  endforeach()
   foreach(_target IN LISTS _native_targets)
     get_target_property(_target_type "${_target}" TYPE)
     if(NOT _target_type MATCHES "^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY)$")
@@ -342,12 +367,15 @@ function(bike_write_check_context)
     if(NOT _target_sources OR _target_sources MATCHES "-NOTFOUND$")
       continue()
     endif()
+    # SOURCES entries are relative to the directory where the target was
+    # created — subdirectory targets need their own SOURCE_DIR.
+    get_target_property(_target_source_dir "${_target}" SOURCE_DIR)
     foreach(_source IN LISTS _target_sources)
       if(_source MATCHES "^\\$<")
         continue()
       endif()
       get_filename_component(_source_absolute "${_source}" ABSOLUTE
-        BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+        BASE_DIR "${_target_source_dir}")
       set(_source_is_first_party FALSE)
       foreach(_first_party_root IN LISTS _native_first_party_roots)
         if(NOT _source_is_first_party)

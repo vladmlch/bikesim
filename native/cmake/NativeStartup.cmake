@@ -53,7 +53,15 @@ function(bike_add_native_startup native_dir)
   add_library(bike_startup_runtime INTERFACE)
   target_link_libraries(bike_startup_runtime INTERFACE
     ${_startup_core} "$<TARGET_OBJECTS:${_startup_core}>"
-    ${_startup_engine} bike_rider_math "-framework Accelerate")
+    ${_startup_engine} bike_rider_math)
+  # The core objects call the typed blas:: face, so the legacy graph consumes
+  # the qualified numerics adapter (provider included). The standalone root
+  # graph has no adapter and keeps the raw framework edge.
+  if(BIKE_ROOT_BUILD)
+    target_link_libraries(bike_startup_runtime INTERFACE "-framework Accelerate")
+  else()
+    target_link_libraries(bike_startup_runtime INTERFACE Bike::Numerics)
+  endif()
 
   add_library(bike_terrain STATIC
     "${native_dir}/src/terrain/profile.cpp"
@@ -128,7 +136,11 @@ function(bike_add_native_startup native_dir)
   bike_add_physics_research("${native_dir}" "${_startup_core}")
   include("${native_dir}/cmake/RecordingApplication.cmake")
   bike_add_recording_application("${native_dir}" "${_startup_core}" "${_startup_mujoco}")
-  bike_rewrite_mujoco_load_name(bike-native-ride "${_startup_mujoco}")
+  if(BIKE_ROOT_BUILD)
+    bike_rewrite_mujoco_load_name(bike-native-ride "${_startup_mujoco}")
+  else()
+    bike_fix_mujoco_install_name(bike-native-ride)
+  endif()
   install(TARGETS bike-native-ride RUNTIME DESTINATION bin OPTIONAL)
   install(FILES "${native_dir}/src/numerics/SCIPY-LICENSE.txt"
     DESTINATION share/licenses/bike-native-ride)

@@ -27,11 +27,13 @@
 #include <utility>
 #include <variant>
 
+#include "bike_migration_paths.hpp"
+
 #ifndef BIKE_FIXTURE_ROOT
-#error "BIKE_FIXTURE_ROOT must be supplied as a compile definition"
+#error "BIKE_FIXTURE_ROOT must be supplied by the generated bike_migration_paths.hpp"
 #endif
 #ifndef BIKE_ORACLE_MANIFEST
-#error "BIKE_ORACLE_MANIFEST must be supplied as a compile definition"
+#error "BIKE_ORACLE_MANIFEST must be supplied by the generated bike_migration_paths.hpp"
 #endif
 
 namespace {

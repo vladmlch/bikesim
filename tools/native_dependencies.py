@@ -2115,6 +2115,29 @@ _RECORD_NUMERICS_KEYS = frozenset({
     "symbols", "library_paths", "interp", "multiply_broadcast",
 })
 _RECORD_LIBRARY_KEYS = frozenset({"path", "role", "identity_kind", "sha256"})
+# The libc family decides which NumPy wheel and provider a platform uses, so
+# it is a fact. Its version is not: a glibc point release does not change the
+# qualified provider, and committing it would make every libc update stale.
+_LIBC_FAMILIES = ("glibc", "musl")
+
+
+def libc_family(libc: str | None) -> str | None:
+    """The record's libc value for a probe ``platform.libc``.
+
+    ``"glibc 2.39"`` projects to ``"glibc"``; ``None`` (Darwin) stays ``None``.
+    An unknown family fails closed, because the record cannot say which
+    provider that platform would use.
+    """
+    if libc is None:
+        return None
+    words = libc.split()
+    family = words[0] if words else ""
+    if family not in _LIBC_FAMILIES:
+        raise ValueError(
+            f"unsupported libc {libc!r}; the record names one of "
+            f"{_LIBC_FAMILIES} or null"
+        )
+    return family
 
 
 def record_platform_key(document: dict) -> str:
@@ -2168,7 +2191,7 @@ def project_numerics_record(document: dict) -> dict:
         "platform": {
             "system": platform_section["system"],
             "machine": platform_section["machine"],
-            "libc": platform_section["libc"],
+            "libc": libc_family(platform_section["libc"]),
         },
         "numerics": {
             "backend": backend,
@@ -2221,8 +2244,11 @@ def validate_numerics_record_entry(key: str, entry: dict) -> dict:
             "its records key"
         )
     libc = platform_section["libc"]
-    if libc is not None and not isinstance(libc, str):
-        raise ValueError(f"{label} platform.libc must be a string or null")
+    if libc is not None and libc not in _LIBC_FAMILIES:
+        raise ValueError(
+            f"{label} platform.libc must be the libc family "
+            f"{_LIBC_FAMILIES} or null, found {libc!r}"
+        )
 
     numerics = _require_object(entry, "numerics")
     if set(numerics) != _RECORD_NUMERICS_KEYS:
@@ -2375,12 +2401,16 @@ def check_numerics_record(path: Path, document: dict) -> str:
     """
     document = validate_dependencies(document)
     key = record_platform_key(document)
-    lock = load_numerics_lock(path)
-    committed = lock["records"].get(key)
     hint = (
         "regenerate it with: tools/native_dependencies.py --python "
         f"{document['python']['executable']} --write-numerics-record {path}"
     )
+    try:
+        lock = load_numerics_lock(path)
+    except ValueError as exc:
+        # A missing or corrupt record is the same remedy as a stale one.
+        raise ValueError(f"{exc}; {hint}") from exc
+    committed = lock["records"].get(key)
     if committed is None:
         raise ValueError(
             f"numerics record '{key}' has no committed entry in {path}; {hint}"

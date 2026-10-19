@@ -66,6 +66,9 @@
 #   _native_numerics_symbols_header generated numerics_symbols.hpp path
 #   _native_numerics_record_key     the records[] key the check verified
 #                                   (e.g. darwin-arm64)
+#   _native_numerics_provider_paths the bound provider image per record entry,
+#                                   in record order: real path on Linux,
+#                                   system image on Darwin
 #   _native_numerics_interp_contracted  1 when the wheel contracts
 #                                   np.interp's slope*(x-dx)+dy into one
 #                                   fmadd, 0 when it rounds separately —
@@ -141,17 +144,25 @@ endif()
 # --------------------------------------------------------------------------
 set(_numerics_probe_document "${CMAKE_CURRENT_BINARY_DIR}/bike_numerics/probe_document.json")
 file(WRITE "${_numerics_probe_document}" "${_native_dependencies_json}\n")
+set(_numerics_check_tool "${CMAKE_CURRENT_LIST_DIR}/../../tools/native_dependencies.py")
+set(_numerics_check_command
+  "${Python_EXECUTABLE} ${_numerics_check_tool} --check-numerics-record ${_numerics_record_file} --probe-document ${_numerics_probe_document}")
 execute_process(
-  COMMAND "${Python_EXECUTABLE}"
-          "${CMAKE_CURRENT_LIST_DIR}/../../tools/native_dependencies.py"
+  COMMAND "${Python_EXECUTABLE}" "${_numerics_check_tool}"
           --check-numerics-record "${_numerics_record_file}"
           --probe-document "${_numerics_probe_document}"
   RESULT_VARIABLE _numerics_check_result
   OUTPUT_VARIABLE _native_numerics_record_key
   ERROR_VARIABLE _numerics_check_error
   OUTPUT_STRIP_TRAILING_WHITESPACE)
+# A verdict failure prints the checker's own message on stderr. A command that
+# cannot start (missing or non-executable interpreter) leaves stderr empty and
+# reports the reason in the result, so both fields and the command line are
+# named here.
 if(NOT _numerics_check_result EQUAL 0)
-  message(FATAL_ERROR "${_numerics_check_error}")
+  message(FATAL_ERROR
+    "numerics record check did not pass (result '${_numerics_check_result}') "
+    "running: ${_numerics_check_command}\n${_numerics_check_error}")
 endif()
 if(NOT _native_numerics_record_key MATCHES "^[a-z]+-[A-Za-z0-9_]+$")
   message(FATAL_ERROR
@@ -367,6 +378,10 @@ endif()
 math(EXPR _numerics_library_last "${_numerics_library_count} - 1")
 set(_numerics_roles "")
 set(_numerics_provider "")
+# The bound provider image per record entry, in record order: the real path
+# on Linux (what the runtime's loaded-image inspection reports), the system
+# image on Darwin. CMakeLists.txt's identity block reads this list.
+set(_native_numerics_provider_paths "")
 foreach(_i RANGE ${_numerics_library_last})
   _numerics_record_field(_lib_path numerics library_paths ${_i} path)
   _numerics_record_field(_lib_role numerics library_paths ${_i} role)
@@ -410,6 +425,7 @@ foreach(_i RANGE ${_numerics_library_last})
         "distribution '${_site_real}'")
     endif()
     set(_numerics_provider "${_lib_real}")
+    list(APPEND _native_numerics_provider_paths "${_lib_real}")
   else()
     if(NOT _lib_kind STREQUAL "apple-system")
       message(FATAL_ERROR
@@ -422,6 +438,7 @@ foreach(_i RANGE ${_numerics_library_last})
         "numerics provider '${_lib_path}' has an empty build_id — the "
         "apple-system identity has no provider evidence")
     endif()
+    list(APPEND _native_numerics_provider_paths "${_lib_path}")
   endif()
 endforeach()
 foreach(_role blas lapack)

@@ -649,42 +649,61 @@ _native_json_quote(_identity_compiler_version_json "${CMAKE_CXX_COMPILER_VERSION
 # with the provider images actually loaded (dl_iterate_phdr/_dyld inspection
 # in provenance.cpp); Python-side provenance cross-checks the two before any
 # native execution, so a substituted or drifted provider is a named failure
-# rather than silent bitwise drift. The values below are read back from the
-# same schema-1 dependency document BikeNumerics.cmake already qualified.
+# rather than silent bitwise drift. Each field has one source: the provider
+# image is the real path BikeNumerics.cmake bound; role, identity_kind and
+# sha256 are committed facts read from the record at the same index; build_id
+# is machine-specific and comes from the live probe document.
 set(_identity_required_images "")
-string(JSON _identity_library_count ERROR_VARIABLE _identity_json_error
-  LENGTH "${_native_dependencies_json}" numerics library_paths)
-if(_identity_json_error OR NOT _identity_library_count MATCHES "^[0-9]+$"
-   OR _identity_library_count LESS 1)
+list(LENGTH _native_numerics_provider_paths _identity_library_count)
+if(_identity_library_count LESS 1)
   message(FATAL_ERROR
-    "numerics provider identity is missing from the dependency document")
+    "numerics provider identity is missing: BikeNumerics bound no provider")
+endif()
+string(JSON _identity_record_count ERROR_VARIABLE _identity_json_error
+  LENGTH "${_numerics_record_json}"
+  records "${_native_numerics_record_key}" numerics library_paths)
+if(_identity_json_error OR NOT _identity_record_count EQUAL _identity_library_count)
+  message(FATAL_ERROR
+    "numerics record ${_native_numerics_record_key} lists "
+    "${_identity_record_count} providers, BikeNumerics bound "
+    "${_identity_library_count}")
 endif()
 math(EXPR _identity_library_last "${_identity_library_count} - 1")
 set(_identity_libraries_json "")
 foreach(_index RANGE ${_identity_library_last})
-  foreach(_field path role identity_kind)
+  list(GET _native_numerics_provider_paths ${_index} _identity_path)
+  _native_json_quote(_identity_path_json "${_identity_path}")
+  list(APPEND _identity_required_images "${_identity_path}")
+  foreach(_field role identity_kind)
     string(JSON _identity_member ERROR_VARIABLE _identity_json_error
-      GET "${_native_dependencies_json}" numerics library_paths ${_index} ${_field})
+      GET "${_numerics_record_json}" records "${_native_numerics_record_key}"
+      numerics library_paths ${_index} ${_field})
     if(_identity_json_error OR "${_identity_member}" MATCHES "-NOTFOUND$")
       message(FATAL_ERROR
-        "numerics provider ${_index} is missing '${_field}'")
+        "committed numerics record provider ${_index} is missing '${_field}'")
     endif()
     _native_json_quote(_identity_${_field}_json "${_identity_member}")
-    if(_field STREQUAL "path")
-      list(APPEND _identity_required_images "${_identity_member}")
-    endif()
   endforeach()
-  foreach(_field sha256 build_id)
-    string(JSON _identity_member_type TYPE "${_native_dependencies_json}"
-      numerics library_paths ${_index} ${_field})
-    if(_identity_member_type STREQUAL "STRING")
-      string(JSON _identity_member GET "${_native_dependencies_json}"
-        numerics library_paths ${_index} ${_field})
-      _native_json_quote(_identity_${_field}_json "${_identity_member}")
-    else()
-      set(_identity_${_field}_json "null")
-    endif()
-  endforeach()
+  string(JSON _identity_member_type TYPE "${_numerics_record_json}"
+    records "${_native_numerics_record_key}"
+    numerics library_paths ${_index} sha256)
+  if(_identity_member_type STREQUAL "STRING")
+    string(JSON _identity_member GET "${_numerics_record_json}"
+      records "${_native_numerics_record_key}"
+      numerics library_paths ${_index} sha256)
+    _native_json_quote(_identity_sha256_json "${_identity_member}")
+  else()
+    set(_identity_sha256_json "null")
+  endif()
+  string(JSON _identity_member_type TYPE "${_native_dependencies_json}"
+    numerics library_paths ${_index} build_id)
+  if(_identity_member_type STREQUAL "STRING")
+    string(JSON _identity_member GET "${_native_dependencies_json}"
+      numerics library_paths ${_index} build_id)
+    _native_json_quote(_identity_build_id_json "${_identity_member}")
+  else()
+    set(_identity_build_id_json "null")
+  endif()
   if(_index GREATER 0)
     string(APPEND _identity_libraries_json ",")
   endif()

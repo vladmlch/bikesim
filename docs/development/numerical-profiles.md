@@ -182,7 +182,12 @@ depend on the machine are committed in `native/numerics.lock.json`, one
 
 Content rule. An entry holds only:
 
-- `platform` (`system`, `machine`, `libc`), which also derives the key;
+- `platform` (`system`, `machine`, and `libc`), which also derives the key.
+  `libc` is the libc family, `glibc` or `musl`, or null on Darwin. The family
+  decides which NumPy wheel and provider a platform uses, so it is a fact. The
+  version (`glibc 2.39` versus `glibc 2.40`) is not committed: a point release
+  does not change the qualified provider, so it must not make the record
+  stale. A version-bearing `libc` in an entry fails the reader;
 - `numerics.numpy_version`, the staleness identity;
 - the facts BikeNumerics.cmake consumes that are identical on every machine
   of the platform: `backend`, `blas_integer_bits`, `lapack_integer_bits`,
@@ -196,7 +201,7 @@ relative to the NumPy site-packages root (for example `numpy.libs/...`), with
 the wheel-RECORD SHA-256 the probe already checks against the file.
 
 Not committed: the install location (`numerics.site_packages`), the `python`
-section, the macOS and SDK build identity and the Accelerate UUID, the
+section, the libc version (only the family is committed), the macOS and SDK build identity and the Accelerate UUID, the
 `library_paths[].build_id`, the ABI-check transcript, the interposition check,
 `numpy_imports`, the evidence counts (`interp.queries`, `interp.distinguishing`,
 `multiply_broadcast.lanes`, `multiply_broadcast.distinguishing`), threading, and
@@ -210,7 +215,12 @@ Where each value that is not in the record comes from at configure time:
 |---|---|---|
 | `numerics.site_packages` | live probe | BikeNumerics.cmake: resolves a Linux wheel-relative provider path; containment check |
 | `numerics.library_paths[].build_id` (Darwin) | live probe | BikeNumerics.cmake: apple-system identity must be non-empty |
-| `numerics.library_paths[].path` as absolute (Linux) | live probe | native/CMakeLists.txt runtime identity (`required_provider_images`) |
+| `numerics.library_paths[].build_id` (read by the runtime identity) | live probe | native/CMakeLists.txt runtime identity (`numerics_provider_policy_json`) |
+| `numerics.library_paths[].path` as the real bound image | BikeNumerics.cmake `_native_numerics_provider_paths` (Linux: the record's relative path joined to the live site-packages, then `REAL_PATH`; Darwin: the record's system image) | native/CMakeLists.txt runtime identity (`required_provider_images`) |
+
+The runtime identity reads `role`, `identity_kind` and `sha256` from the
+committed record, at the same index as the bound path. Only `build_id` and the
+bound real path come from the live side.
 | `python` section | live probe | BikeCheckContext.cmake (required `python` member) |
 | `provider_config`, `numpy_imports`, `threading`, `interp.queries` and `distinguishing`, `multiply_broadcast.lanes` and `distinguishing` | live probe | embedded verbatim in `native_check_context.json` (BikeCheckContext.cmake) |
 | `mujoco.include_dir` (never in the record) | live probe | BikeNumerics.cmake: include root of `bike_native_numerics` |

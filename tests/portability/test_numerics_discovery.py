@@ -17,6 +17,7 @@ import importlib.util
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -28,6 +29,7 @@ from tools.native_dependencies import (
     REQUIRED_NUMPY_VERSION,
     check_numerics_record,
     checked_symbol,
+    libc_family,
     load_numerics_lock,
     probe_dependencies,
     project_numerics_record,
@@ -897,12 +899,12 @@ def _squashed(text: str) -> str:
 
 def _configure_scratch(
     tmp_path: Path, document: dict, backend: str = "AUTO",
-    record: Path | None = None,
+    record: Path | None = None, python: str | None = None,
 ) -> subprocess.CompletedProcess:
     """Configure BikeNumerics.cmake against ``document`` and ``record``.
 
-    The check runs the selected interpreter (Python_EXECUTABLE), so the scratch
-    project sets it to this test's interpreter; the record defaults to one
+    The check runs ``python`` (Python_EXECUTABLE; default this test's
+    interpreter), so the scratch project names it; the record defaults to one
     projected from ``document`` so the live measurement and the record agree.
     """
     cmake = shutil.which("cmake")
@@ -912,6 +914,7 @@ def _configure_scratch(
     scratch.mkdir()
     if record is None:
         record = _write_record(tmp_path, document)
+    interpreter = python if python is not None else sys.executable
     doc = dict(document)
     doc["numerics"] = doc.get("numerics")
     json_path = tmp_path / "dependencies.json"
@@ -920,7 +923,7 @@ def _configure_scratch(
         "cmake_minimum_required(VERSION 3.27)\n"
         "project(numerics_check NONE)\n"
         f'set(BIKE_TARGET_SYSTEM "{document["platform"]["system"]}")\n'
-        f'set(Python_EXECUTABLE "{sys.executable}")\n'
+        f'set(Python_EXECUTABLE "{interpreter}")\n'
         f'file(READ "{json_path}" _native_dependencies_json)\n'
         f'include("{NUMERICS_CMAKE}")\n'
         'message(STATUS "RESOLVED=${BIKE_NUMERICS_BACKEND_RESOLVED}")\n'
@@ -985,22 +988,68 @@ def test_bike_numerics_rejects_a_backend_mismatch(tmp_path):
     assert "numerics" in result.stderr.lower() or "backend" in result.stderr.lower()
 
 
-def test_bike_numerics_rejects_an_unqualified_width(tmp_path):
+def _stub_checker(tmp_path: Path, key: str) -> str:
+    """An interpreter stand-in whose verdict is ``key`` (exit 0, no reading of
+    its arguments). It lets a test reach the CMake guards with data the real
+    checker would reject first: the guards read the committed record, so a
+    tampered record is what they must catch."""
+    stub = tmp_path / "stub-checker"
+    stub.write_text(f"#!/bin/sh\necho {key}\n", encoding="utf-8")
+    stub.chmod(0o755)
+    return str(stub)
+
+
+def test_bike_numerics_rejects_an_unqualified_live_width(tmp_path):
+    """The live probe's width is checked by the Python checker first, which
+    names the unqualified integer ABI before any CMake guard runs."""
     system = platform.system()
     document = _document_with_numerics(tmp_path, system)
     record = _write_record(tmp_path, document)
     document["numerics"]["blas_integer_bits"] = None
     result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0
+    assert "unqualified BLAS/LAPACK integer ABI" in _squashed(result.stderr)
 
 
-def test_bike_numerics_rejects_a_tampered_symbol(tmp_path):
+def test_bike_numerics_rejects_a_tampered_live_symbol(tmp_path):
     system = platform.system()
     document = _document_with_numerics(tmp_path, system)
     record = _write_record(tmp_path, document)
     document["numerics"]["symbols"]["ddot"] = 'ddot";execute_process(COMMAND rm -rf'
     result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0
+    assert "invalid exported numerical symbol identifier" in _squashed(result.stderr)
+
+
+def test_cmake_guard_rejects_an_unqualified_width_in_the_record(tmp_path):
+    """The check passes (stub verdict) but the committed record carries a
+    32-bit OpenBLAS width: the CMake width guard is what must reject it."""
+    document = _document_with_numerics(tmp_path, "Linux")
+    record = _write_record(tmp_path, document)
+    lock = json.loads(record.read_text(encoding="utf-8"))
+    entry = next(iter(lock["records"].values()))
+    entry["numerics"]["blas_integer_bits"] = 32
+    record.write_text(json.dumps(lock), encoding="utf-8")
+    stub = _stub_checker(tmp_path, "linux-aarch64")
+    result = _configure_scratch(tmp_path, document, record=record, python=stub)
+    assert result.returncode != 0, result.stdout
+    assert ("unqualified numerics integer ABI: blas_integer_bits='32' does not "
+            "match the qualified 64-bit profile for NUMPY_OPENBLAS"
+            in _squashed(result.stderr))
+
+
+def test_cmake_guard_rejects_a_tampered_symbol_in_the_record(tmp_path):
+    document = _document_with_numerics(tmp_path, "Linux")
+    record = _write_record(tmp_path, document)
+    lock = json.loads(record.read_text(encoding="utf-8"))
+    entry = next(iter(lock["records"].values()))
+    entry["numerics"]["symbols"]["ddot"] = 'ddot";execute_process(COMMAND rm -rf'
+    record.write_text(json.dumps(lock), encoding="utf-8")
+    stub = _stub_checker(tmp_path, "linux-aarch64")
+    result = _configure_scratch(tmp_path, document, record=record, python=stub)
+    assert result.returncode != 0, result.stdout
+    assert ("numerics symbol for 'ddot' is not a safe identifier"
+            in _squashed(result.stderr))
 
 
 def test_bike_numerics_rejects_a_missing_numerics_record(tmp_path):
@@ -1010,6 +1059,20 @@ def test_bike_numerics_rejects_a_missing_numerics_record(tmp_path):
     document["numerics"] = None
     result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0
+    assert "has no qualified numerics record" in _squashed(result.stderr)
+
+
+def test_bike_numerics_reports_a_non_spawnable_interpreter(tmp_path):
+    """A command that cannot start leaves stderr empty; the failure must still
+    name the interpreter, the command and the result, not an empty message."""
+    document = _document_with_numerics(tmp_path, platform.system())
+    missing = str(tmp_path / "no-such-python")
+    result = _configure_scratch(tmp_path, document, python=missing)
+    assert result.returncode != 0
+    stderr = _squashed(result.stderr)
+    assert "numerics record check did not pass" in stderr
+    assert f"{missing} " in stderr and "--check-numerics-record" in stderr
+    assert "result '" in stderr
 
 
 def test_bike_numerics_fails_configure_on_a_tampered_committed_fact(tmp_path):
@@ -1419,3 +1482,149 @@ def test_cli_numerics_check_does_not_combine_with_a_probe_run(tmp_path):
     )
     assert result.returncode == 2
     assert "does not combine" in result.stderr
+
+
+# --------------------------------------------------------------------------
+# Record identity: libc family, relocation, missing record, and the real
+# legacy graph (the committed record, a tampered copy, and the identity header).
+# --------------------------------------------------------------------------
+
+
+def test_libc_projection_keeps_the_family_not_the_version(tmp_path):
+    """The family decides the provider, so it is a fact; the version is not
+    committed, so a point release cannot make the record stale."""
+    entry = project_numerics_record(_document_with_numerics(tmp_path, "Linux"))
+    assert entry["platform"]["libc"] == "glibc"
+    assert libc_family(None) is None
+
+
+def test_unknown_libc_family_fails_closed():
+    with pytest.raises(ValueError, match="unsupported libc"):
+        libc_family("uclibc 1.0")
+
+
+def test_libc_version_change_with_identical_facts_is_accepted(tmp_path):
+    document = _document_with_numerics(tmp_path, "Linux")
+    lock = tmp_path / "numerics.lock.json"
+    write_numerics_record(lock, document)
+    patched = copy.deepcopy(document)
+    patched["platform"]["libc"] = "glibc 2.40"
+    assert check_numerics_record(lock, patched) == "linux-aarch64"
+
+
+def test_libc_family_change_is_rejected(tmp_path):
+    document = _document_with_numerics(tmp_path, "Linux")
+    lock = tmp_path / "numerics.lock.json"
+    write_numerics_record(lock, document)
+    patched = copy.deepcopy(document)
+    patched["platform"]["libc"] = "musl 1.2.5"
+    with pytest.raises(ValueError, match="entry.platform.libc") as caught:
+        check_numerics_record(lock, patched)
+    assert "committed 'glibc', live 'musl'" in str(caught.value)
+
+
+def test_record_rejects_a_libc_version_in_the_committed_entry(tmp_path):
+    entry = project_numerics_record(_document_with_numerics(tmp_path, "Linux"))
+    entry["platform"]["libc"] = "glibc 2.39"
+    with pytest.raises(ValueError, match="libc family"):
+        validate_numerics_record_entry("linux-aarch64", entry)
+
+
+def test_linux_record_is_accepted_after_relocating_site_packages(tmp_path):
+    """The record holds the provider relative to site-packages, so the same
+    wheel installed elsewhere, with the same bytes, passes the check."""
+    lock = tmp_path / "numerics.lock.json"
+    write_numerics_record(
+        lock, _document_with_numerics(tmp_path / "checkout-a", "Linux"))
+    moved = _document_with_numerics(tmp_path / "checkout-b", "Linux")
+    assert check_numerics_record(lock, moved) == "linux-aarch64"
+
+
+def test_check_names_the_regeneration_command_for_a_missing_record(tmp_path):
+    document = _document_with_numerics(tmp_path, "Linux")
+    missing = tmp_path / "absent.lock.json"
+    with pytest.raises(ValueError) as caught:
+        check_numerics_record(missing, document)
+    message = str(caught.value)
+    assert "unreadable" in message
+    assert (f"tools/native_dependencies.py --python {sys.executable} "
+            f"--write-numerics-record {missing}") in message
+
+
+def _configure_legacy(tmp_path: Path, record: Path) -> subprocess.CompletedProcess:
+    """Configure the real legacy graph (cmake -S native) into a fresh build dir.
+
+    The probe and find_package(Python) must use this test's interpreter, so
+    its bin directory leads PATH.
+    """
+    cmake = shutil.which("cmake")
+    if cmake is None:
+        pytest.skip("cmake is not installed")
+    env = dict(os.environ)
+    env["PATH"] = os.pathsep.join(
+        [str(Path(sys.executable).parent), env.get("PATH", "")])
+    return subprocess.run(
+        [cmake, "-S", str(REPO_ROOT / "native"),
+         "-B", str(tmp_path / "legacy-build"),
+         f"-DBIKE_NUMERICS_RECORD={record}"],
+        capture_output=True, text=True, timeout=900, env=env,
+    )
+
+
+def _committed_key_or_skip() -> str:
+    key = f"{platform.system().lower()}-{platform.machine()}"
+    if key not in load_numerics_lock(NUMERICS_LOCK)["records"]:
+        pytest.skip(f"no committed numerics record for '{key}' yet")
+    return key
+
+
+@pytest.mark.skipif(
+    not _real_environment_available(),
+    reason="legacy graph configure needs the pinned scientific environment",
+)
+def test_legacy_graph_configure_fails_on_a_tampered_committed_record(tmp_path):
+    key = _committed_key_or_skip()
+    lock = json.loads(NUMERICS_LOCK.read_text(encoding="utf-8"))
+    nan_winner = lock["records"][key]["numerics"]["multiply_broadcast"]
+    nan_winner["nan_winner"] = (
+        "element" if nan_winner["nan_winner"] == "scalar" else "scalar")
+    tampered = tmp_path / "numerics.lock.json"
+    tampered.write_text(json.dumps(lock), encoding="utf-8")
+    result = _configure_legacy(tmp_path, tampered)
+    assert result.returncode != 0, result.stdout
+    stderr = _squashed(result.stderr)
+    assert "is stale against the live measurement" in stderr
+    assert "entry.numerics.multiply_broadcast.nan_winner" in stderr
+    assert "--write-numerics-record" in stderr
+
+
+@pytest.mark.skipif(
+    not _real_environment_available(),
+    reason="legacy graph configure needs the pinned scientific environment",
+)
+def test_legacy_identity_header_takes_its_facts_from_the_record(tmp_path):
+    """The runtime identity's role, identity_kind and sha256 come from the
+    committed record; its path is the bound real path; build_id is live."""
+    key = _committed_key_or_skip()
+    result = _configure_legacy(tmp_path, NUMERICS_LOCK)
+    assert result.returncode == 0, result.stderr
+    headers = list((tmp_path / "legacy-build").rglob(
+        "research_build_identity.hpp"))
+    assert len(headers) == 1
+    text = headers[0].read_text(encoding="utf-8")
+    match = re.search(
+        r'numerics_provider_policy_json\[\] = R"identity\((.*?)\)identity"',
+        text)
+    assert match, "identity header has no provider policy"
+    policy = json.loads(match.group(1))
+    committed = load_numerics_lock(NUMERICS_LOCK)["records"][key]["numerics"]
+    assert policy["backend"] == committed["backend"]
+    assert len(policy["libraries"]) == len(committed["library_paths"])
+    for bound, recorded in zip(policy["libraries"], committed["library_paths"]):
+        assert bound["role"] == recorded["role"]
+        assert bound["identity_kind"] == recorded["identity_kind"]
+        assert bound["sha256"] == recorded["sha256"]
+        assert Path(bound["path"]).is_absolute()
+        if recorded["identity_kind"] == "apple-system":
+            assert bound["path"] == recorded["path"]
+            assert bound["build_id"]

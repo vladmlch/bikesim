@@ -90,7 +90,7 @@ struct RideSimulation::Impl {
     void follow_cranks() {
         if(!drive||!rider->active())return;
         const double phase=stepper->qpos()[drive->crank_qposadr()];
-        const double drop=options.setup.model.bike.crank_length/1000.*numeric::sin(phase);
+        const double drop=options.setup.model.bike.crank_length/1000.*numeric::math_sin(phase);
         rider->set_pedal_offsets(-drop,drop);
     }
     void suspension_forces() {

@@ -110,8 +110,9 @@ libm calls — matching `npy_sin`/`npy_cos` on that profile.
 The two oracle families are NOT interchangeable on Apple arm64 for
 non-finite input: CPython's `math.sin`/`math.cos` call libm directly,
 so a negative-NaN angle returns `+qNaN` where `np.sin` returns the
-sign-preserving `x - x`. Every same-operand sin/cos call site was
-audited against its Python mirror — `np.*` mirrors
+sign-preserving `x - x`. Every sin/cos call mirrored from Python, paired
+or lone, takes the family of its mirror (uniform rule, so each site is
+audited against its oracle directly) — `np.*` mirrors
 (`drivetrain/chain.cpp`'s `chain_center_gradient` normal,
 `writers/distributed_tire.cpp`, `pneumatic/geometry.cpp`, the debug
 binding) use `np_sin`/`np_cos`; `math.*` mirrors
@@ -119,9 +120,9 @@ binding) use `np_sin`/`np_cos`; `math.*` mirrors
 `rider_envelope.py`, `lean_limit.py`, scalar `rider_control.py` wraps,
 `wheelie.py` — i.e. the `rider/spindle_*.cpp` and
 `runtime/research_metrics.cpp` atan2 sites) use
-`math_sin`/`math_cos`. Lone calls with no fusion partner keep bare
-`std::sin`/`std::cos` (e.g. `research_metrics.cpp`'s lone
-`cos(road_pitch)`).
+`math_sin`/`math_cos` (`research_metrics.cpp`'s lone `cos(road_pitch)`
+included). Bare `std::sin`/`std::cos` remains only where no Python
+mirror exists: the viewer circle in `viz/geometry.cpp`.
 
 ### `np.interp` general table → `numeric::np_interp_segment` (`numeric_numpy.hpp`)
 

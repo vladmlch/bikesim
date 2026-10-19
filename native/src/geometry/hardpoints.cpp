@@ -5,7 +5,7 @@
 // Accelerate ILP64 ddot the oracle BLAS-resolves (verified bitwise on
 // 600,000 random norms), np.radians/np.degrees multiply by NumPy's
 // NPY_*_PI constants, np.clip runs the const-minmax scalar loop, and
-// sin/cos on the same operand go through numeric::cos/sin — the C++
+// sin/cos on the same operand go through numeric::np_cos/np_sin — the C++
 // optimizer would otherwise fuse the pair into one __sincos_stret
 // libcall whose components can differ from the standalone libm calls
 // the oracle makes by one ulp (see numeric_sincos.hpp).
@@ -55,7 +55,7 @@ SuspensionHardwareSpecs BikeSpecs::suspension() const {
 
 HeadtubePoints compute_headtube_points(const BikeSpecs &specs) {
     const double theta = detail::np_radians(specs.head_angle_deg);
-    const Vec3 u_steer{numeric::cos(theta), 0.0, -numeric::sin(theta)};
+    const Vec3 u_steer{numeric::np_cos(theta), 0.0, -numeric::np_sin(theta)};
 
     const Vec3 p11_top{specs.reach, 0.0, specs.stack};
     // p_ht_bot = p11_top + headtube_length * u_steer (elementwise).
@@ -69,7 +69,7 @@ HeadtubePoints compute_headtube_points(const BikeSpecs &specs) {
 Vec3 compute_front_axle(const BikeSpecs &specs) {
     const double theta = detail::np_radians(specs.head_angle_deg);
     const double tan_theta = std::tan(theta);
-    const double sin_theta = numeric::sin(theta);
+    const double sin_theta = numeric::np_sin(theta);
 
     const double x_axis =
             specs.reach + (specs.stack - specs.bb_drop) / tan_theta;
@@ -96,8 +96,8 @@ Vec3 compute_rear_axle(const BikeSpecs &specs, const Vec3 &front_axle) {
 TrailResult compute_trail(const BikeSpecs &specs) {
     const double theta = detail::np_radians(specs.head_angle_deg);
     const double tan_theta = std::tan(theta);
-    const double sin_theta = numeric::sin(theta);
-    const double cos_theta = numeric::cos(theta);
+    const double sin_theta = numeric::np_sin(theta);
+    const double cos_theta = numeric::np_cos(theta);
 
     const double ground_z = compute_ground_z(specs);
     const double x_g =

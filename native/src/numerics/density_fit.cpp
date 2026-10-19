@@ -2,6 +2,7 @@
 #include "dense.hpp"
 #include "nnls.hpp"
 #include "../numeric_sum.hpp"
+#include "../numeric_sincos.hpp"
 #include "../cblas_abi.hpp"
 #include "../tyre/station.hpp"
 #include <algorithm>
@@ -58,8 +59,8 @@ DensityResponse flat_load(std::span<const double> deflection,double radius,
     DensityResponse out{.force=std::vector<double>(deflection.size(),0.),.energy=std::vector<double>(deflection.size(),0.)};
     for(std::size_t i=0;i<deflection.size();++i) {
         std::vector<double> delta(static_cast<std::size_t>(count));
-        // This is a lone sin call, with no same-angle cosine to fuse.
-        for(std::size_t j=0;j<delta.size();++j)delta[j]=deflection[i]-radius*(1.+std::sin(stations.angles[j]+phase));
+        // Mirrors np.sin in distributed_tire.flat_load: the np_sin family.
+        for(std::size_t j=0;j<delta.size();++j)delta[j]=deflection[i]-radius*(1.+numeric::np_sin(stations.angles[j]+phase));
         const std::array<double,1> zero_rate{0.};
         const auto response=normal_station_response(delta,zero_rate,stations.weights,m);
         out.force[i]=numeric::numpy_pairwise_sum(response.force);out.energy[i]=numeric::numpy_pairwise_sum(response.energy);

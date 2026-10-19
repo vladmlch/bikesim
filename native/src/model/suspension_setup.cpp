@@ -14,6 +14,7 @@
 #include "../diag.hpp"
 #include "../rider/least_squares.hpp"
 #include "../writers/pyfloat.hpp"
+#include "../numeric_sincos.hpp"
 #include "checks.hpp"
 
 #include <algorithm>
@@ -1090,7 +1091,7 @@ SuspensionTuning compute_suspension_tuning_for_sag(
     const double theta = gd::np_radians(specs.head_angle_deg);
     const double target_fork_travel_m =
             (target_front_sag_pct / 100.0) * (specs.fork_travel / 1000.0);
-    const double f_fork_axial = f_front_vert * std::sin(theta);
+    const double f_fork_axial = f_front_vert * numeric::np_sin(theta);
     const double k_fork = f_fork_axial / target_fork_travel_m;
 
     const double m_sprung_front =
@@ -1112,12 +1113,12 @@ SuspensionTuning compute_suspension_tuning_for_sag(
             air_spring.compute_force_curve(101, std::nullopt, tokens);
     const double air_max_axial_force = air_curve.max_force_n;
     const double air_front_vert_max =
-            air_max_axial_force / std::sin(theta);
+            air_max_axial_force / numeric::np_sin(theta);
     const double air_front_g_bottom = air_front_vert_max / f_front_vert;
 
     const double f_fork_axial_max =
             k_fork * (specs.fork_travel / 1000.0);
-    const double f_front_vert_max = f_fork_axial_max / std::sin(theta);
+    const double f_front_vert_max = f_fork_axial_max / numeric::np_sin(theta);
     const double front_g_bottom = f_front_vert_max / f_front_vert;
 
     // ---- _compute_shock_tuning --------------------------------------

@@ -73,7 +73,7 @@ namespace spindle {
         if (depth >= 1.)
             throw std::invalid_argument(
                 "pedal torque ripple must be below one");
-        return mean * (1. + depth * std::cos(2. * phase));
+        return mean * (1. + depth * numeric::math_cos(2. * phase));
     }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror the Python API
@@ -208,7 +208,7 @@ namespace spindle {
 
     Vec2 leg_shares(double phase_rad) {
         const double downward =
-            std::cos(validation::finite(phase_rad, "crank phase"));
+            numeric::math_cos(validation::finite(phase_rad, "crank phase"));
         if (std::abs(downward) <= 1e-12)
             return {.5, .5};
         return downward > 0. ? Vec2{1., 0.} : Vec2{0., 1.};

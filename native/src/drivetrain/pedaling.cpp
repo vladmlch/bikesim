@@ -1,5 +1,6 @@
 #include "pedaling.hpp"
 #include "../engaged.hpp"
+#include "../numeric_sincos.hpp"
 #include <algorithm>
 #include <numbers>
 
@@ -9,7 +10,7 @@ namespace drivetrain {
         finite(phase_rad, "crank phase");
         nonnegative(ripple, "pedal ripple");
         if (ripple >= 1.) throw std::invalid_argument("pedal ripple");
-        return validation::derived(mean_nm * (1. - ripple * std::cos(validation::derived(2. * phase_rad, "human_crank_torque.phase"))), "human_crank_torque.torque");
+        return validation::derived(mean_nm * (1. - ripple * numeric::math_cos(validation::derived(2. * phase_rad, "human_crank_torque.phase"))), "human_crank_torque.torque");
     }
 
     void PedalingPolicy::set_state(PedalingSnapshot s) {

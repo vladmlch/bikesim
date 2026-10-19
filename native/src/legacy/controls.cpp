@@ -52,7 +52,7 @@ WheelSpin resolve_wheel_spin(const mjModel& m,std::string_view joint_name,std::s
 }
 double peak_shape(double depth) { return (1. - depth) + depth * (std::numbers::pi / 2.); }
 double ripple_shape(double phase, double depth) {
-    return (1. - depth) + depth * (std::numbers::pi / 2.) * std::abs(numeric::cos(phase));
+    return (1. - depth) + depth * (std::numbers::pi / 2.) * std::abs(numeric::math_cos(phase));
 }
 void DrivetrainSpecs::validate() const {
     if (chainring_teeth < 20 || cog_teeth < 9) throw std::invalid_argument("legacy drivetrain implausible gearing");

@@ -26,9 +26,9 @@ using Vec=std::array<double,3>;using Rot=std::array<double,9>;using Vector=std::
 constexpr double pi=std::numbers::pi;
 constexpr double pressure_blend_cosine=.15;
 double pressure_mean_scale() {
-    const double boundary=std::acos(pressure_blend_cosine),s=std::sin(boundary);
+    const double boundary=std::acos(pressure_blend_cosine),s=numeric::math_sin(boundary);
     const double third=2./3.-s+std::pow(s,3.)/3.;
-    const double fourth=3.*(pi/2.-boundary)/8.-std::sin(2.*boundary)/4.-std::sin(4.*boundary)/32.;
+    const double fourth=3.*(pi/2.-boundary)/8.-numeric::math_sin(2.*boundary)/4.-numeric::math_sin(4.*boundary)/32.;
     const double integral=s+3.*third/std::pow(pressure_blend_cosine,2.)
         -2.*fourth/std::pow(pressure_blend_cosine,3.);
     return pi/(2.*integral);
@@ -69,13 +69,13 @@ Vec feasible_pedal_force(const Vec& f,const Vec& n,double friction,double load) 
 PedalingRequests pedal_requests(double phase,double mean,double radius,const std::array<Vec,2>& normals,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     const std::array<double,2>& loads,double mu,double ripple,double preload,const std::array<bool,2>& preload_enabled) {
-    PedalingRequests out;const double fraction=std::clamp(.5+.5*numeric::cos(phase)/pressure_blend_cosine,0.,1.);
+    PedalingRequests out;const double fraction=std::clamp(.5+.5*numeric::math_cos(phase)/pressure_blend_cosine,0.,1.);
     out.weights={fraction*fraction*(3.-2.*fraction),0.};out.weights[1]=1.-out.weights[0];
-    const double total=mean*(1.+ripple*numeric::cos(2.*phase));
+    const double total=mean*(1.+ripple*numeric::math_cos(2.*phase));
     struct Geometry{double normal_moment,tangent_moment,ratio,capacity,compression_limit;};std::array<Geometry,2> geometry{};
     std::array<double,2> capacities{},targets{},active{};double recovery_torque=0.;
     for(std::size_t s=0;s<2;++s) {
-        const double p=phase+(s?pi:0.),lx=radius*numeric::cos(p),lz=-radius*numeric::sin(p);const auto& n=normals[s];
+        const double p=phase+(s?pi:0.),lx=radius*numeric::math_cos(p),lz=-radius*numeric::math_sin(p);const auto& n=normals[s];
         const double nm=lx*n[2]-lz*n[0],tm=lz*n[2]+lx*n[0],ratio=.8*mu*std::min(std::abs(tm)/radius,1.),capacity=nm+ratio*std::abs(tm);
         const double limit=nm<0.&&ratio>0.?mu*loads[s]/ratio:std::numeric_limits<double>::infinity();
         const double torque_limit=std::isinf(limit)?(nm>0.?std::numeric_limits<double>::infinity():std::abs(tm)*mu*loads[s]):nm*limit+std::abs(tm)*std::min(ratio*limit,mu*std::min(limit,loads[s]));
@@ -118,7 +118,7 @@ std::optional<Vec> recovery_goal(const ::rider::PedalRecoveryState& state,const 
 
 Force3 stance_force(double phase,double mean,double crank) {
     if(!std::isfinite(phase)||!std::isfinite(mean)||mean<0.||!std::isfinite(crank)||crank<=0.)throw std::invalid_argument("invalid stance force inputs");
-    const double fraction=std::clamp(numeric::cos(phase)/pressure_blend_cosine,0.,1.);
+    const double fraction=std::clamp(numeric::math_cos(phase)/pressure_blend_cosine,0.,1.);
     const double weight=fraction*fraction*(3.-2.*fraction)*pressure_mean_scale();
     return {0.,0.,-(mean/crank)*weight};
 }
@@ -128,7 +128,7 @@ Force3 feasible_pedal_force_request(const Force3& force,const Force3& normal,dou
 }
 double pedal_torque_waveform(double mean,double phase,double ripple) {
     if(!std::isfinite(mean)||mean<0.||!std::isfinite(phase)||!std::isfinite(ripple)||ripple<0.||ripple>=1.)throw std::invalid_argument("invalid pedal waveform inputs");
-    return mean*(1.+ripple*numeric::cos(2.*phase));
+    return mean*(1.+ripple*numeric::math_cos(2.*phase));
 }
 PedalingRequests pedaling_force_requests(double phase,double mean,double crank,const std::array<Force3,2>& normals,
     const std::array<double,2>& loads,double mu,double ripple,double preload,const std::array<bool,2>& sides) {
@@ -165,7 +165,7 @@ LegacyController::LegacyController(::rider::SpindleController& owner):c_(owner) 
     for(std::size_t s=0;s<2;++s) {
         const auto knee=s?c_.pose_.knee_rear:c_.pose_.knee_front,ankle=s?c_.pose_.ankle_rear:c_.pose_.ankle_front;
         const auto upper=sub(knee,c_.pose_.hip),lower=sub(ankle,knee);const double a0=std::atan2(upper[2],upper[0]),b0=std::atan2(lower[2],lower[0]);
-        legs_[s]={.upper=d::norm(upper),.lower=d::norm(lower),.a0=a0,.b0=b0,.branch=numeric::sin(b0-a0)>=0.?1:-1};
+        legs_[s]={.upper=d::norm(upper),.lower=d::norm(lower),.a0=a0,.b0=b0,.branch=numeric::math_sin(b0-a0)>=0.?1:-1};
         if(legs_[s].upper<=0.||legs_[s].lower<=0.)throw std::invalid_argument("legacy rider requires nondegenerate ankle geometry");
         sole_offsets_[s]=mv(rot(c_.target_data_->xmat,m.nbody,c_.pedal_bodies_[s]),sub(vec(c_.target_data_->site_xpos,m.nsite,c_.sole_sites_[s]),vec(c_.target_data_->xpos,m.nbody,c_.pedal_bodies_[s])),true);
     }
@@ -196,7 +196,7 @@ Vector LegacyController::targets(const mjData& data,std::size_t s,double depth,d
     const double h=leg.a0-ik.angles[0],k=(leg.b0-leg.a0)-ik.angles[1],pitch=std::atan2(-r[6],r[0]);
     const auto crank=rot(data.xmat,m.nbody,c_.crank_body_);const double phase=std::atan2(-crank[6],crank[0])+(s?pi:0.);
     // rider_program.py ankle rock: sin(phase), applied before ROM clipping.
-    Vector result{h,k,-pitch-h-k+cfg.pedal_ankle_amplitude_rad*numeric::sin(phase)};result.resize(c_.leg_joint_index_[s].size());
+    Vector result{h,k,-pitch-h-k+cfg.pedal_ankle_amplitude_rad*numeric::math_sin(phase)};result.resize(c_.leg_joint_index_[s].size());
     for(std::size_t j=0;j<result.size();++j) {
         const auto& joint=c_.joints_[c_.leg_joint_index_[s][j]];const double current=qpos[static_cast<std::size_t>(joint.qpos_adr)];result[j]=current+::spindle::wrap_angle(result[j]-current);
         if(const auto range=c_.joint_ranges_.find(joint.name);range!=c_.joint_ranges_.end()) {const double clipped=std::clamp(result[j],range->second[0],range->second[1]);if(clipped!=result[j])set(c_.saturated_ik_,side,true);result[j]=clipped;}
@@ -216,7 +216,7 @@ Vector LegacyController::upper_targets(const mjData& data,const ::rider::RiderPo
         else {grip=add(vec(data.xpos,m.nbody,c_.frame_body_),mv(frame,add(c_.pose_.grip,{0.,(s?1.:-1.)*bike::model::ARM_LATERAL_OFFSET_M,0.})));if(grip_force)grip=add(grip,mul(*grip_force,1./(2.*cfg.grip_k_n_m)));}
         Vec shoulder=vec(data.xpos,m.nbody,c_.upper_arm_bodies_[s]);Rot target_rotation=torso;
         if(cfg.grip_attachment=="connect"&&cfg.coupled_task_control) {
-            const double delta=::spindle::wrap_angle(torso_q-qpos[static_cast<std::size_t>(c_.joints_[c_.joint_index("rider_torso_hinge")].qpos_adr)]),co=numeric::cos(delta),si=numeric::sin(delta);const Rot turn{co,0.,si,0.,1.,0.,-si,0.,co};const auto hinge=vec(data.xanchor,m.njnt,c_.torso_joint_);shoulder=add(hinge,mv(turn,sub(shoulder,hinge)));
+            const double delta=::spindle::wrap_angle(torso_q-qpos[static_cast<std::size_t>(c_.joints_[c_.joint_index("rider_torso_hinge")].qpos_adr)]),co=numeric::math_cos(delta),si=numeric::math_sin(delta);const Rot turn{co,0.,si,0.,1.,0.,-si,0.,co};const auto hinge=vec(data.xanchor,m.njnt,c_.torso_joint_);shoulder=add(hinge,mv(turn,sub(shoulder,hinge)));
             for(std::size_t i=0;i<3;++i)for(std::size_t j=0;j<3;++j){target_rotation[3*i+j]=0.;for(std::size_t k=0;k<3;++k)target_rotation[3*i+j]+=turn[3*i+k]*torso[3*k+j];}
         }
         const auto goal=mv(target_rotation,sub(grip,shoulder),true);const auto ik=::spindle::two_link_ik({goal[0],goal[2]},c_.arm_upper_m_,c_.arm_lower_m_,c_.arm_branch_);saturated=saturated||ik.saturated;
@@ -319,7 +319,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const double pitch=std::clamp(cfg.posture_pitch_k_nm_rad*pitch_error+cfg.posture_pitch_d_nms_rad*(qvel[static_cast<std::size_t>(c_.frame_pitch_dof_)]-qvel[static_cast<std::size_t>(c_.rider_pitch_dof_)]),-cfg.posture_pitch_limit_nm,cfg.posture_pitch_limit_nm);
     const auto crank_rotation=rot(data.xmat,m.nbody,c_.crank_body_);const double phase=std::atan2(-crank_rotation[6],crank_rotation[0]);
     const bool coupled=cfg.coupled_task_control&&c_.welded()&&cfg.grip_attachment=="connect"&&cfg.saddle_attachment=="weld";
-    std::optional<double> crank_task;if(coupled&&command.mean_crank_torque_nm>0.)crank_task=command.mean_crank_torque_nm*(1.+cfg.pedal_torque_ripple*numeric::cos(2.*phase));
+    std::optional<double> crank_task;if(coupled&&command.mean_crank_torque_nm>0.)crank_task=command.mean_crank_torque_nm*(1.+cfg.pedal_torque_ripple*numeric::math_cos(2.*phase));
     double coast=0.;if(command.crank_target_phase_rad&&!steady){coast=std::clamp(cfg.coasting_brake_d_nm_s_rad*(command.crank_target_rate_rad_s-qvel[static_cast<std::size_t>(c_.crank_spin_dof_)]),-cfg.coasting_brake_limit_nm,cfg.coasting_brake_limit_nm);if(coupled&&!crank_task)crank_task=coast;}
     std::array<Vec,2> normals{};std::array<double,2> loads{};std::array<bool,2> recovered{};
     for(std::size_t s=0;s<2;++s){const auto g=c_.pedal_geoms_[s];normals[s]=::rider::upper_box_face(vec(data.geom_xpos,m.ngeom,g),rot(data.geom_xmat,m.ngeom,g),vec(m.geom_size,m.ngeom,g)).normal;loads[s]=c_.welded()?weight:std::max(estimates[s][0],0.);recovered[s]=get(c_.pedal_recovery_,s?"rear":"front").stage=="none";}
@@ -328,7 +328,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     for(std::size_t s=0;s<2;++s) {
         const double fraction=std::min(loads[s]/cfg.stance_blend_load_n,1.);blends[s]=fraction*fraction*(3.-2.*fraction);
         if(!recovered[s]){blends[s]=0.;requests.force[s]={};}
-        else if(command.mean_crank_torque_nm==0.){const double bp=phase+(s?pi:0.)+(coast<0.?pi:0.),f=std::clamp(numeric::cos(bp)/pressure_blend_cosine,0.,1.);requests.force[s]=feasible_pedal_force({0.,0.,-std::abs(coast)/c_.crank_length_m_*f*f*(3.-2.*f)},normals[s],cfg.support_mu,loads[s]);}
+        else if(command.mean_crank_torque_nm==0.){const double bp=phase+(s?pi:0.)+(coast<0.?pi:0.),f=std::clamp(numeric::math_cos(bp)/pressure_blend_cosine,0.,1.);requests.force[s]=feasible_pedal_force({0.,0.,-std::abs(coast)/c_.crank_length_m_*f*f*(3.-2.*f)},normals[s],cfg.support_mu,loads[s]);}
         else if(requests.weights[s]<.5){const Vec t{normals[s][2],0.,-normals[s][0]};const double cap=cfg.pedal_scrape_fraction*cfg.foot_mu*loads[s],part=d::dot(requests.force[s],t);requests.force[s]=add(requests.force[s],mul(t,std::clamp(part,-cap,cap)-part));}
     }
     const auto offset=command.posture.pelvis_offset_m.value_or(std::array<double,2>{});const Vec wanted=add(vec(data.xpos,m.nbody,c_.frame_body_),mv(frame,add(c_.pose_.hip,{offset[0],0.,offset[1]}))),actual=vec(data.xpos,m.nbody,c_.pelvis_body_);

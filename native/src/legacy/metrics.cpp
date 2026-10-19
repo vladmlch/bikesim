@@ -105,7 +105,7 @@ double sine_amplitude(Values signal,double frequency,double dt){
     if(signal.size()>static_cast<std::size_t>(std::numeric_limits<::rider::lapack_int>::max())||signal.size()>std::vector<double>().max_size()/2)
         throw std::length_error("bob fit sample count exceeds native solver range");
     std::vector<double> basis,centred;basis.reserve(signal.size()*2);centred.reserve(signal.size());
-    for(std::size_t i=0;i<signal.size();++i){const double angle=omega*(static_cast<double>(i)*dt);basis.push_back(numeric::cos(angle));basis.push_back(numeric::sin(angle));centred.push_back(signal[i]-average);}
+    for(std::size_t i=0;i<signal.size();++i){const double angle=omega*(static_cast<double>(i)*dt);basis.push_back(numeric::np_cos(angle));basis.push_back(numeric::np_sin(angle));centred.push_back(signal[i]-average);}
     const auto n=static_cast<::rider::lapack_int>(signal.size());::rider::LeastSquaresWorkspace solve(n,2,1);
     const auto result=solve.solve(basis,n,2,centred,1,std::numeric_limits<double>::epsilon()*static_cast<double>(std::max<::rider::lapack_int>(n,2)));
     return std::hypot(result.solution[0],result.solution[1]);

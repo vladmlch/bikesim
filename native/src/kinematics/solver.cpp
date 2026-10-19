@@ -111,8 +111,8 @@ HorstLinkageSolver::SolvedPivots
 HorstLinkageSolver::solve_pivots_(double theta_cs) const {
     // 1. Horst Pivot P2 on Circle(P0, L_cs) — np.cos/np.sin of one
     // operand: two independent libm calls (numeric_sincos anti-fusion).
-    const Vec3 p2{p0_[0] + l_cs_ * numeric::cos(theta_cs), 0.0,
-                  p0_[2] + l_cs_ * numeric::sin(theta_cs)};
+    const Vec3 p2{p0_[0] + l_cs_ * numeric::np_cos(theta_cs), 0.0,
+                  p0_[2] + l_cs_ * numeric::np_sin(theta_cs)};
     const Vec2 p2_xz{p2[0], p2[2]};
 
     // 2. Circle-Circle Intersection for P3:
@@ -125,8 +125,8 @@ HorstLinkageSolver::solve_pivots_(double theta_cs) const {
     const Vec2 v53{p3_xz[0] - p5_[0], p3_xz[1] - p5_[2]};
     const double n53 = gd::np_norm2(v53);
     const Vec2 u53{v53[0] / n53, v53[1] / n53};
-    const double cos_b = numeric::cos(beta_rocker_);
-    const double sin_b = numeric::sin(beta_rocker_);
+    const double cos_b = numeric::np_cos(beta_rocker_);
+    const double sin_b = numeric::np_sin(beta_rocker_);
     const Vec2 u54{cos_b * u53[0] - sin_b * u53[1],
                    sin_b * u53[0] + cos_b * u53[1]};
     const Vec2 p4_xz{p5_[0] + r_54_ * u54[0], p5_[2] + r_54_ * u54[1]};
@@ -135,15 +135,15 @@ HorstLinkageSolver::solve_pivots_(double theta_cs) const {
     const Vec2 v23{p3_xz[0] - p2_xz[0], p3_xz[1] - p2_xz[1]};
     const double n23 = gd::np_norm2(v23);
     const Vec2 u23{v23[0] / n23, v23[1] / n23};
-    const double cos_g = numeric::cos(gamma_ra_);
-    const double sin_g = numeric::sin(gamma_ra_);
+    const double cos_g = numeric::np_cos(gamma_ra_);
+    const double sin_g = numeric::np_sin(gamma_ra_);
     const Vec2 u21{cos_g * u23[0] - sin_g * u23[1],
                    sin_g * u23[0] + cos_g * u23[1]};
     const Vec2 p1_xz{p2_xz[0] + r_21_ * u21[0],
                      p2_xz[1] + r_21_ * u21[1]};
 
-    const double cos_g12 = numeric::cos(gamma_12_);
-    const double sin_g12 = numeric::sin(gamma_12_);
+    const double cos_g12 = numeric::np_cos(gamma_12_);
+    const double sin_g12 = numeric::np_sin(gamma_12_);
     const Vec2 u2_12{cos_g12 * u23[0] - sin_g12 * u23[1],
                      sin_g12 * u23[0] + cos_g12 * u23[1]};
     const Vec2 p12_xz{p2_xz[0] + r_2_12_ * u2_12[0],
@@ -236,8 +236,8 @@ double HorstLinkageSolver::instantaneous_lr_(
         double theta_cs, const Vec3 &p1, const Vec3 &p2, const Vec3 &p3,
         const Vec3 &p4, const Vec2 &u47) const {
     // v2 = [-l_cs * sin(th), l_cs * cos(th)] — same-operand pair.
-    const Vec2 v2{-l_cs_ * numeric::sin(theta_cs),
-                  l_cs_ * numeric::cos(theta_cs)};
+    const Vec2 v2{-l_cs_ * numeric::np_sin(theta_cs),
+                  l_cs_ * numeric::np_cos(theta_cs)};
 
     const Vec2 r23{p3[0] - p2[0], p3[2] - p2[2]};
     const Vec2 r53{p3[0] - p5_[0], p3[2] - p5_[2]};

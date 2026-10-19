@@ -14,9 +14,10 @@
 // hypot/atan2, `x ** y` reaches libm pow() via pyfloat::pow, builtin
 // sum() goes through numeric::PythonSum (CPython's Neumaier float
 // accumulator) for float items and a sequential fold for ndarray items,
-// and same-operand sin/cos pairs route through numeric::sin /
-// numeric::cos so the optimizer cannot fuse them into a __sincos_stret
-// the oracle never calls. saddle_path_apparent_mass's complex arithmetic
+// and each sin/cos call takes the numeric::np_* or math_* family of its
+// Python mirror (np.* or math.*), so the optimizer cannot fuse a same-angle
+// pair into a __sincos_stret the oracle never calls.
+// saddle_path_apparent_mass's complex arithmetic
 // reproduces CPython/NumPy complex multiply, divide (Smith's scaled
 // branch) and hypot-based absolute bitwise.
 #pragma once

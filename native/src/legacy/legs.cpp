@@ -72,7 +72,7 @@ void LegDrive::compute_into(const mjData& data, double torque, std::span<double>
         const auto previous = leg.previous.value_or(ref);
         const double own_phase = phase + (leg.chain.side == "front" ? 0. : std::numbers::pi);
         const double ft = model::crank_torque_share(own_phase,ripple_depth_) * mean / crank_length_;
-        const std::array<double,2> f{ft * -numeric::sin(own_phase),ft * -numeric::cos(own_phase)};
+        const std::array<double,2> f{ft * -numeric::math_sin(own_phase),ft * -numeric::math_cos(own_phase)};
         const auto jacobian = model::leg_jacobian(leg.chain,actual,pelvis);
         model::Vec3 tau{};
         std::array<double,6> matrix{};

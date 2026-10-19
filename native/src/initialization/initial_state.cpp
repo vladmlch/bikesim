@@ -14,6 +14,7 @@
 #include "../tyre/station.hpp"
 #include "../writers/drivetrain.hpp"
 #include "../writers/suspension.hpp"
+#include "../numeric_sincos.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -188,7 +189,7 @@ PhysicalInitialState PhysicalInitialState::project_stations(const SetupContext& 
         std::vector<double> old_xi(source_angles.angles.size());std::array<std::vector<double>,3> old_tangent;for(auto& v:old_tangent)v.resize(old_xi.size());
         for(std::size_t index=0;index<old_xi.size();++index){const auto prefix=std::format("{}.s{:03d}",wheel,index);old_xi[index]=lookup(prefix+".xi");for(std::size_t axis=0;axis<3;++axis)old_tangent[axis][index]=lookup(prefix+".tangent."+std::to_string(axis));}
         for(std::size_t index=0;index<target.angles.size();++index){const double angle=target.angles[index],shear=interp(angle,old_xi);std::array<double,3> tangent{};for(std::size_t axis=0;axis<3;++axis)tangent[axis]=interp(angle,old_tangent[axis]);const double norm=std::sqrt(tangent[0]*tangent[0]+tangent[1]*tangent[1]+tangent[2]*tangent[2]);
-            const double lx=radii[side]*std::cos(angle),lz=radii[side]*std::sin(angle);const double px=centers[3*g]+rotations[9*body]*lx+rotations[9*body+2]*lz,pz=centers[3*g+2]+rotations[9*body+6]*lx+rotations[9*body+8]*lz;
+            const double lx=radii[side]*numeric::np_cos(angle),lz=radii[side]*numeric::np_sin(angle);const double px=centers[3*g]+rotations[9*body]*lx+rotations[9*body+2]*lz,pz=centers[3*g+2]+rotations[9*body+6]*lx+rotations[9*body+8]*lz;
             if(pz>=height(context.physical.terrain_vertices(),px)&&shear==0.)continue;
             sides.push_back("[\""+wheel+"\", "+std::to_string(index)+"]");xi.push_back(shear);valid.push_back(norm>1e-12);for(double const v:tangent)tangents.push_back(norm>1e-12?v/norm:v);
         }

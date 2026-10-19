@@ -41,8 +41,8 @@ template<class T> auto make_nodes(const T& o) {
             smooth=std::fma(raw[left]+raw[right],weights[4-j],smooth);
         }
         double taper=1.;
-        if(x[i]<taper_len) taper=.5*(1.-numeric::cos(pi*x[i]/taper_len));
-        if(x[i]>o.section_length_m-taper_len) taper=.5*(1.-numeric::cos(pi*(o.section_length_m-x[i])/taper_len));
+        if(x[i]<taper_len) taper=.5*(1.-numeric::np_cos(pi*x[i]/taper_len));
+        if(x[i]>o.section_length_m-taper_len) taper=.5*(1.-numeric::np_cos(pi*(o.section_length_m-x[i])/taper_len));
         shaped[i]=smooth*taper; peak=std::max(peak,std::abs(shaped[i]));
     }
     if(peak>0.) for(double& value:shaped) value=value*(o.amplitude_m/peak);
@@ -133,7 +133,7 @@ std::vector<double> Obstacle::elevation(std::span<const double> points) const {
             const double half=s.width_m/2.;
             for(double const center:s.bump_centres_m()) for(std::size_t i=0;i<out.size();++i) {
                 const double d=std::abs(points[i]-center);
-                if(d<half) out[i]+=s.height_m*.5*(1.+numeric::cos(pi*d/half));
+                if(d<half) out[i]+=s.height_m*.5*(1.+numeric::np_cos(pi*d/half));
             }
         } else if constexpr(std::is_same_v<T,SteppedClimb>) {
             if(s.steps.empty() || length(s)<=0.) return out;
@@ -159,12 +159,12 @@ std::vector<double> Obstacle::elevation(std::span<const double> points) const {
                 const double x=points[i];
                 if constexpr(std::is_same_v<T,SquareEdge>) out[i]=s.height_m;
                 else if constexpr(std::is_same_v<T,Pothole>) out[i]=-s.depth_m;
-                else if constexpr(std::is_same_v<T,Washboard>) out[i]=s.amplitude_m*numeric::sin(2.*pi*x/s.wavelength_m);
-                else if constexpr(std::is_same_v<T,GOut>) out[i]=-s.depth_m*.5*(1.-numeric::cos(2.*pi*x/s.dip_length_m));
+                else if constexpr(std::is_same_v<T,Washboard>) out[i]=s.amplitude_m*numeric::np_sin(2.*pi*x/s.wavelength_m);
+                else if constexpr(std::is_same_v<T,GOut>) out[i]=-s.depth_m*.5*(1.-numeric::np_cos(2.*pi*x/s.dip_length_m));
                 else if constexpr(std::is_same_v<T,Drop>) { if(s.ramp_m>0.) out[i]=-s.height_m*(x/s.ramp_m); }
                 else if constexpr(std::is_same_v<T,Kicker>) { if(x<s.ramp_m) out[i]=s.height_m*(x/s.ramp_m); if(x>=s.ramp_m+s.gap_m) out[i]=-(x-(s.ramp_m+s.gap_m))*std::tan(detail::gd::np_radians(s.landing_angle_deg)); }
-                else if constexpr(std::is_same_v<T,Bump>) out[i]=s.height_m*.5*(1.-numeric::cos(2.*pi*x/s.bump_length_m));
-                else if constexpr(std::is_same_v<T,BowlPothole>) out[i]=-s.depth_m*.5*(1.-numeric::cos(2.*pi*x/s.hole_length_m));
+                else if constexpr(std::is_same_v<T,Bump>) out[i]=s.height_m*.5*(1.-numeric::np_cos(2.*pi*x/s.bump_length_m));
+                else if constexpr(std::is_same_v<T,BowlPothole>) out[i]=-s.depth_m*.5*(1.-numeric::np_cos(2.*pi*x/s.hole_length_m));
                 else if constexpr(std::is_same_v<T,TrapezoidBump>) {
                     double z=s.height_m;
                     if(s.ramp_m>0.) { if(x<s.ramp_m) z=s.height_m*(x/s.ramp_m); if(x>s.ramp_m+s.plateau_m) z=s.height_m*((length(s)-x)/s.ramp_m); }

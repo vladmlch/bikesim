@@ -21,6 +21,7 @@
 #include "configuration/wire_decode.hpp"
 #include "io/json.hpp"
 #include "platform/files.hpp"
+#include "../numeric_sincos.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -1530,7 +1531,7 @@ PedalIntent pedal_intent(double phase_rad, double cadence_rad_s,
         fail("invalid pedaling intent");
     return PedalIntent{.cadence_rad_s = cadence_rad_s,
                        .ankle_offset_rad =
-                           ankle_amplitude_rad * std::sin(phase_rad),
+                           ankle_amplitude_rad * numeric::math_sin(phase_rad),
                        .scrape_fraction = scrape_fraction};
 }
 

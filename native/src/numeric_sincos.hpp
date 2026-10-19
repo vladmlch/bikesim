@@ -36,13 +36,14 @@
 //     CPython calls libm directly; there is no `x - x` path, so a
 //     negative-NaN angle returns libm's +qNaN, matching CPython.
 //
-// Use the family matching the mirrored oracle: np_sin/np_cos where
-// Python calls np.sin/np.cos (same-operand pairs AND lone np.*
-// mirrors — the ufunc contract is the npy_* function), math_sin/
-// math_cos where Python calls math.sin/math.cos and the same angle
-// feeds both calls (the volatile read exists only to keep the
-// __sincos_stret fusion out — a lone math.* call keeps plain
-// std::sin/std::cos: CPython's math call is already a lone libm call).
+// Uniform rule: every sin/cos call mirrored from Python uses the explicit
+// family of its mirror, whether the call is paired or lone. np_sin/np_cos
+// where Python calls np.sin/np.cos (the ufunc contract is the npy_* function);
+// math_sin/math_cos where Python calls math.sin/math.cos (CPython calls libm
+// directly). A lone call gets the same family as a paired one, so each site
+// is audited against its oracle without a same-operand analysis. The
+// volatile read is harmless on a lone call: it only blocks the
+// __sincos_stret fusion, which a lone call cannot trigger.
 //
 // T04 provider identity: the calls resolve to the platform libm (libSystem
 // on macOS, glibc libm on Linux). The numeric provider that

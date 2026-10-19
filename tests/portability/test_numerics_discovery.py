@@ -25,6 +25,8 @@ from pathlib import Path
 
 import pytest
 
+from interpreter_shim import squashed
+
 from tools.native_dependencies import (
     REQUIRED_NUMPY_VERSION,
     check_numerics_record,
@@ -892,11 +894,6 @@ def _write_record(tmp_path: Path, document: dict) -> Path:
     return record
 
 
-def _squashed(text: str) -> str:
-    """CMake wraps FATAL_ERROR text at 80 columns; match on words, not lines."""
-    return " ".join(text.split())
-
-
 def _configure_scratch(
     tmp_path: Path, document: dict, backend: str = "AUTO",
     record: Path | None = None, python: str | None = None,
@@ -1009,7 +1006,7 @@ def test_bike_numerics_rejects_an_unqualified_live_width(tmp_path):
     document["numerics"]["blas_integer_bits"] = None
     result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0
-    assert "unqualified BLAS/LAPACK integer ABI" in _squashed(result.stderr)
+    assert "unqualified BLAS/LAPACK integer ABI" in squashed(result.stderr)
 
 
 def test_bike_numerics_rejects_a_tampered_live_symbol(tmp_path):
@@ -1019,7 +1016,7 @@ def test_bike_numerics_rejects_a_tampered_live_symbol(tmp_path):
     document["numerics"]["symbols"]["ddot"] = 'ddot";execute_process(COMMAND rm -rf'
     result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0
-    assert "invalid exported numerical symbol identifier" in _squashed(result.stderr)
+    assert "invalid exported numerical symbol identifier" in squashed(result.stderr)
 
 
 def test_cmake_guard_rejects_an_unqualified_width_in_the_record(tmp_path):
@@ -1036,7 +1033,7 @@ def test_cmake_guard_rejects_an_unqualified_width_in_the_record(tmp_path):
     assert result.returncode != 0, result.stdout
     assert ("unqualified numerics integer ABI: blas_integer_bits='32' does not "
             "match the qualified 64-bit profile for NUMPY_OPENBLAS"
-            in _squashed(result.stderr))
+            in squashed(result.stderr))
 
 
 def test_cmake_guard_rejects_a_tampered_symbol_in_the_record(tmp_path):
@@ -1050,7 +1047,7 @@ def test_cmake_guard_rejects_a_tampered_symbol_in_the_record(tmp_path):
     result = _configure_scratch(tmp_path, document, record=record, python=stub)
     assert result.returncode != 0, result.stdout
     assert ("numerics symbol for 'ddot' is not a safe identifier"
-            in _squashed(result.stderr))
+            in squashed(result.stderr))
 
 
 def test_bike_numerics_rejects_a_missing_numerics_record(tmp_path):
@@ -1060,7 +1057,7 @@ def test_bike_numerics_rejects_a_missing_numerics_record(tmp_path):
     document["numerics"] = None
     result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0
-    assert "has no qualified numerics record" in _squashed(result.stderr)
+    assert "has no qualified numerics record" in squashed(result.stderr)
 
 
 def test_bike_numerics_reports_a_non_spawnable_interpreter(tmp_path):
@@ -1070,7 +1067,7 @@ def test_bike_numerics_reports_a_non_spawnable_interpreter(tmp_path):
     missing = str(tmp_path / "no-such-python")
     result = _configure_scratch(tmp_path, document, python=missing)
     assert result.returncode != 0
-    stderr = _squashed(result.stderr)
+    stderr = squashed(result.stderr)
     assert "numerics record check did not pass" in stderr
     assert f"{missing} " in stderr and "--check-numerics-record" in stderr
     assert "result '" in stderr
@@ -1090,7 +1087,7 @@ def test_bike_numerics_fails_configure_on_a_tampered_committed_fact(tmp_path):
     record.write_text(json.dumps(lock), encoding="utf-8")
     result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0, result.stdout
-    stderr = _squashed(result.stderr)
+    stderr = squashed(result.stderr)
     assert "is stale against the live measurement" in stderr
     assert "interp.lowering" in stderr
     assert "--write-numerics-record" in stderr
@@ -1107,7 +1104,7 @@ def test_bike_numerics_fails_configure_without_a_platform_entry(tmp_path):
     record.write_text(json.dumps(lock), encoding="utf-8")
     result = _configure_scratch(tmp_path, document, record=record)
     assert result.returncode != 0, result.stdout
-    stderr = _squashed(result.stderr)
+    stderr = squashed(result.stderr)
     assert "has no committed entry" in stderr
     assert "--write-numerics-record" in stderr
 
@@ -1187,7 +1184,7 @@ def test_record_only_binds_the_committed_facts_without_python(tmp_path):
     result = _configure_record_only(tmp_path, document, record=record)
     assert result.returncode == 0, result.stderr
     assert "RESOLVED=ACCELERATE" in result.stdout
-    assert "bike_native_numerics not created: RECORD_ONLY" in result.stdout
+    assert "bike_native_numerics not created: CXX is not enabled" in result.stdout
     entry = next(iter(json.loads(record.read_text(encoding="utf-8"))["records"].values()))
     interp = 1 if entry["numerics"]["interp"]["lowering"] == "contracted" else 0
     nan_element = 1 if entry["numerics"]["multiply_broadcast"]["nan_winner"] == "element" else 0
@@ -1203,7 +1200,7 @@ def test_record_only_requires_an_explicit_mode(tmp_path):
     document = _record_only_document(tmp_path)
     result = _configure_record_only(tmp_path, document, select_mode=False)
     assert result.returncode != 0
-    assert "requires BIKE_NUMERICS_SOURCE=LIVE" in _squashed(result.stderr)
+    assert "requires BIKE_NUMERICS_SOURCE=LIVE" in squashed(result.stderr)
 
 
 def test_record_only_fails_closed_outside_darwin(tmp_path):
@@ -1212,7 +1209,7 @@ def test_record_only_fails_closed_outside_darwin(tmp_path):
     document = _document_with_numerics(tmp_path, "Linux")
     result = _configure_record_only(tmp_path, document)
     assert result.returncode != 0
-    assert "qualified for Darwin only" in _squashed(result.stderr)
+    assert "qualified for Darwin only" in squashed(result.stderr)
 
 
 def test_record_only_names_a_missing_platform_entry(tmp_path):
@@ -1223,7 +1220,7 @@ def test_record_only_names_a_missing_platform_entry(tmp_path):
     record.write_text(json.dumps(lock), encoding="utf-8")
     result = _configure_record_only(tmp_path, document, record=record)
     assert result.returncode != 0
-    stderr = _squashed(result.stderr)
+    stderr = squashed(result.stderr)
     assert "committed numerics record has no entry" in stderr
     assert "--write-numerics-record" in stderr
 
@@ -1239,7 +1236,7 @@ def test_record_only_rejects_an_entry_that_describes_another_host(tmp_path):
             machine=f"not-{platform.machine()}"))
     result = _configure_record_only(tmp_path, document, record=record)
     assert result.returncode != 0
-    assert "does not describe this host" in _squashed(result.stderr)
+    assert "does not describe this host" in squashed(result.stderr)
 
 
 def test_record_only_keeps_the_structural_guards(tmp_path):
@@ -1254,7 +1251,7 @@ def test_record_only_keeps_the_structural_guards(tmp_path):
     _edit_record(record, widen_blas)
     result = _configure_record_only(tmp_path, document, record=record)
     assert result.returncode != 0
-    assert "unqualified numerics integer ABI" in _squashed(result.stderr)
+    assert "unqualified numerics integer ABI" in squashed(result.stderr)
 
 
 def test_record_only_does_not_compare_with_a_measurement(tmp_path):
@@ -1754,7 +1751,7 @@ def test_legacy_graph_configure_fails_on_a_tampered_committed_record(tmp_path):
     tampered.write_text(json.dumps(lock), encoding="utf-8")
     result = _configure_legacy(tmp_path, tampered)
     assert result.returncode != 0, result.stdout
-    stderr = _squashed(result.stderr)
+    stderr = squashed(result.stderr)
     assert "is stale against the live measurement" in stderr
     assert "entry.numerics.multiply_broadcast.nan_winner" in stderr
     assert "--write-numerics-record" in stderr

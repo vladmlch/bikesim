@@ -14,7 +14,6 @@ runs after project() and before any numerics step, so it runs on every host.
 """
 from __future__ import annotations
 
-import os
 import re
 import shutil
 import subprocess
@@ -22,6 +21,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from interpreter_shim import interpreter_shim_env, squashed
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CMAKE = shutil.which("cmake")
@@ -29,9 +29,6 @@ CMAKE = shutil.which("cmake")
 pytestmark = pytest.mark.skipif(CMAKE is None, reason="cmake executable unavailable")
 
 CONFIGURE_TIMEOUT = 900
-# Every interpreter name a PATH lookup can resolve, plus uv. Each stub records
-# its call and exits 97, so a configure that starts one fails and leaves a record.
-INTERPRETER_NAMES = ("python", "python3", "python3.13", "python3.14", "python3.15", "uv")
 CROSS_REFUSAL = "Cross-compilation is not supported by this native-build workflow"
 BINDINGS_REFUSAL = "is not wired to the cmake/Bike*.cmake platform layer yet"
 
@@ -53,33 +50,9 @@ def _configure_root(build: Path, *, bindings: str = "OFF", extra: tuple[str, ...
         env=env, capture_output=True, text=True, timeout=CONFIGURE_TIMEOUT)
 
 
-def _squashed(text: str) -> str:
-    """CMake wraps long messages at 80 columns; compare the words, not the lines."""
-    return " ".join(text.split())
-
-
-def _interpreter_shim(tmp_path: Path) -> tuple[dict[str, str], Path]:
-    """An environment whose PATH starts with logging stubs for every interpreter.
-
-    The stubs come before the system directories, so a PATH lookup by name lands
-    on a stub. The returned log is the evidence; it exists only if something ran.
-    """
-    bin_dir = tmp_path / "interpreter-shim"
-    bin_dir.mkdir()
-    calls = tmp_path / "interpreter-calls.log"
-    for name in INTERPRETER_NAMES:
-        stub = bin_dir / name
-        stub.write_text(f'#!/bin/sh\necho "{name} $*" >> "{calls}"\nexit 97\n',
-                        encoding="utf-8")
-        stub.chmod(0o755)
-    env = dict(os.environ)
-    env["PATH"] = os.pathsep.join([str(bin_dir), "/usr/bin", "/bin"])
-    return env, calls
-
-
 def test_interpreter_shim_records_a_spawn_by_name(tmp_path: Path) -> None:
     """Control: the shim records a PATH spawn, so the zero-call assertion below can fail."""
-    env, calls = _interpreter_shim(tmp_path)
+    env, calls = interpreter_shim_env(tmp_path)
     script = tmp_path / "spawn.cmake"
     script.write_text(
         "execute_process(COMMAND python3 -c pass RESULT_VARIABLE rc)\n"
@@ -99,7 +72,7 @@ def test_root_configure_starts_no_interpreter(tmp_path: Path) -> None:
     The cache check also covers a Python lookup that resolves through an absolute
     framework path and so would bypass the PATH stubs.
     """
-    env, calls = _interpreter_shim(tmp_path)
+    env, calls = interpreter_shim_env(tmp_path)
     build = tmp_path / "root-build"
     result = _configure_root(build, env=env)
     assert result.returncode == 0, result.stdout + result.stderr
@@ -118,7 +91,7 @@ def test_root_refuses_a_cross_compiling_toolchain(tmp_path: Path) -> None:
     result = _configure_root(tmp_path / "root-build", extra=("-DCMAKE_SYSTEM_NAME=Windows",))
     output = result.stdout + result.stderr
     assert result.returncode != 0, output
-    assert CROSS_REFUSAL in _squashed(output), output
+    assert CROSS_REFUSAL in squashed(output), output
     assert "BikeHostTarget.cmake" in output, output
     assert "Configuring done" not in output, output
 
@@ -135,4 +108,4 @@ def test_root_fails_closed_on_python_bindings(tmp_path: Path) -> None:
     result = _configure_root(tmp_path / "root-build", bindings="ON")
     output = result.stdout + result.stderr
     assert result.returncode != 0, output
-    assert BINDINGS_REFUSAL in _squashed(output), output
+    assert BINDINGS_REFUSAL in squashed(output), output

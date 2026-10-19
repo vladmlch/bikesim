@@ -22,6 +22,8 @@ from pathlib import Path
 
 import pytest
 
+from interpreter_shim import interpreter_shim_env, squashed
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MODULE = REPO_ROOT / "native" / "cmake" / "BikeProviderIdentity.cmake"
 NUMERICS_LOCK = REPO_ROOT / "native" / "numerics.lock.json"
@@ -54,11 +56,6 @@ def _cmake(tmp_path: Path, body: str) -> subprocess.CompletedProcess:
     script.write_text(f'include("{MODULE}")\n{body}\n', encoding="utf-8")
     return subprocess.run(
         [cmake, "-P", str(script)], capture_output=True, text=True, timeout=300)
-
-
-def _squashed(text: str) -> str:
-    """CMake wraps FATAL_ERROR text; match on words, not lines."""
-    return " ".join(text.split())
 
 
 def _accelerate_record() -> dict:
@@ -143,7 +140,7 @@ bike_provider_probe_image_uuid(_uuid IMAGE "{UMBRELLA_IMAGE}"
   PROBE {_cmake_quote(f"{BLAS_IMAGE}\t{BLAS_UUID}\n")})
 """)
     assert result.returncode != 0
-    assert "did not report the required image" in _squashed(result.stderr)
+    assert "did not report the required image" in squashed(result.stderr)
 
 
 def test_probe_text_fails_for_an_image_without_an_lc_uuid(tmp_path):
@@ -154,7 +151,7 @@ bike_provider_probe_image_uuid(_uuid IMAGE "{UMBRELLA_IMAGE}"
   PROBE {_cmake_quote(f"{UMBRELLA_IMAGE}\t-\n")})
 """)
     assert result.returncode != 0
-    assert "has no LC_UUID" in _squashed(result.stderr)
+    assert "has no LC_UUID" in squashed(result.stderr)
 
 
 @pytest.mark.parametrize("uuid", [
@@ -168,7 +165,7 @@ bike_provider_probe_image_uuid(_uuid IMAGE "{UMBRELLA_IMAGE}"
   PROBE {_cmake_quote(f"{UMBRELLA_IMAGE}\t{uuid}\n")})
 """)
     assert result.returncode != 0
-    assert "malformed LC_UUID" in _squashed(result.stderr)
+    assert "malformed LC_UUID" in squashed(result.stderr)
 
 
 def test_declarations_reproduce_the_accelerate_identity(tmp_path):
@@ -227,7 +224,7 @@ bike_provider_identity_declarations(_decl
   PROVIDER_PATHS_VAR _paths BUILD_IDS_VAR _ids)
 """)
     assert result.returncode != 0
-    assert "has 1 build ids for 2 bound providers" in _squashed(result.stderr)
+    assert "has 1 build ids for 2 bound providers" in squashed(result.stderr)
 
 
 def test_declarations_reject_a_record_that_lists_other_providers(tmp_path):
@@ -245,7 +242,7 @@ bike_provider_identity_declarations(_decl
   PROVIDER_PATHS_VAR _paths BUILD_IDS_VAR _ids)
 """)
     assert result.returncode != 0
-    assert "lists 1 providers, BikeNumerics bound 2" in _squashed(result.stderr)
+    assert "lists 1 providers, BikeNumerics bound 2" in squashed(result.stderr)
 
 
 def _scratch_project(tmp_path: Path, body: str) -> subprocess.CompletedProcess:
@@ -296,7 +293,7 @@ set(_required "{missing}")
 bike_provider_probe_loaded_images(_probe REQUIRED_VAR _required)
 """)
     assert result.returncode != 0
-    assert f"qualified numerics provider image is not loaded: {missing}" in _squashed(
+    assert f"qualified numerics provider image is not loaded: {missing}" in squashed(
         result.stderr)
 
 
@@ -403,18 +400,7 @@ def _configure_root_without_python(tmp_path: Path) -> Path:
         pytest.skip("cmake and ninja are required for the root configure")
     if not (REPO_ROOT / ".deps").is_dir():
         pytest.skip("the locked .deps tree is not acquired")
-    bin_dir = tmp_path / "nopy-bin"
-    bin_dir.mkdir()
-    for tool in (cmake, ninja):
-        (bin_dir / Path(tool).name).symlink_to(tool)
-    calls = tmp_path / "python-calls.log"
-    for name in ("python", "python3", "python3.13", "python3.14", "python3.15", "uv"):
-        stub = bin_dir / name
-        stub.write_text(f'#!/bin/sh\necho "{name} $*" >> "{calls}"\nexit 97\n',
-                        encoding="utf-8")
-        stub.chmod(0o755)
-    env = dict(os.environ)
-    env["PATH"] = os.pathsep.join([str(bin_dir), "/usr/bin", "/bin"])
+    env, calls = interpreter_shim_env(tmp_path, tools=(cmake, ninja))
     build = tmp_path / "root-build"
     result = subprocess.run(
         [cmake, "-S", str(REPO_ROOT), "-B", str(build), "-G", "Ninja",

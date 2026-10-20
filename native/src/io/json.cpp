@@ -4,7 +4,7 @@
 // survive verbatim (no binary64 round-trip), UTF-8 source validation,
 // explicit duplicate-key rejection and a nesting bound. Codec: the
 // bike_recording.json.v1 tag scheme ported from the source authority
-// src/bike_sim/recording/json_codec.py:1-126, mirroring CPython 3.14
+// src/bike_sim/recording/json_codec.py:1-126, mirroring CPython 3.13
 // semantics for strict base64 (Modules/binascii.c), Decimal(str)
 // canonicalization, datetime/date/time fromisoformat+isoformat and
 // timedelta normalization.
@@ -854,11 +854,12 @@ std::string decimal_from_number_lexeme(std::string_view lexeme) {
 }
 
 // ---------------------------------------------------------------------------
-// ISO 8601 date/time/datetime — ports of CPython 3.14 _pydatetime's
-// _find_isoformat_datetime_separator, _parse_isoformat_date,
-// _parse_hh_mm_ss_ff and _parse_isoformat_time plus the matching
+// ISO 8601 date/time/datetime — ports of CPython 3.13 _datetimemodule's
+// _find_isoformat_datetime_separator, parse_isoformat_date,
+// parse_hh_mm_ss_ff and parse_isoformat_time plus the matching
 // isoformat() renderings. Accept/reject behavior mirrors the C accelerator
-// (strict ASCII digits; 'T24:00' wraps to the next day).
+// (strict ASCII digits; 'T24:00' is rejected by the hour range check —
+// the 3.14 next-day wrap is not implemented).
 
 constexpr std::array<int, 13> kDaysInMonth{0,  31, 28, 31, 30, 31, 30,
                                            31, 31, 30, 31, 30, 31};
@@ -990,44 +991,62 @@ struct IsoTime {
     // nanoseconds offset from UTC; null when the input had no zone.
     bool has_offset = false;
     long long offset_us = 0;
-    bool became_next_day = false;
-    bool error_from_components = false;
 };
 
-// _parse_hh_mm_ss_ff — HH[:?MM[:?SS[{.,}fff[fff]]]]
-bool parse_hh_mm_ss_ff(std::string_view text, std::array<int, 4> &comps) {
+// parse_hh_mm_ss_ff — HH[:?MM[:?SS[{.,}fff[fff]]]] (CPython 3.13
+// Modules/_datetimemodule.c:994-1062). Returns 0 on success at
+// end-of-input, 1 when a non-NUL character remains (the caller tolerates
+// that only when a timezone marker follows), -3 on a failed time
+// component and -4 on a malformed time separator — the same rv
+// convention as the C routine.
+int parse_hh_mm_ss_ff(std::string_view text, std::array<int, 4> &comps) {
     comps = {0, 0, 0, 0};
     std::size_t pos = 0;
     bool has_sep = false;
     for (int comp = 0; comp < 3; ++comp) {
-        if (text.size() - pos < 2) return false;
+        if (text.size() - pos < 2) return -3;
         if (!digits_at(text, pos, 2, comps[static_cast<std::size_t>(comp)]))
-            return false;
+            return -3;
         pos += 2;
-        const char next = pos < text.size() ? text[pos] : '\0';
-        if (comp == 0) has_sep = next == ':';
-        if (next == '\0' || comp >= 2) break;
-        if (has_sep && next != ':') return false;
-        pos += has_sep ? 1 : 0;
-    }
-    if (pos < text.size()) {
-        if (text[pos] != '.' && text[pos] != ',') return false;
-        ++pos;
-        if (pos >= text.size()) return false;
-        for (std::size_t i = pos; i < text.size(); ++i)
-            if (!ascii_digit(text[i])) return false;
-        const std::size_t remainder = text.size() - pos;
-        const std::size_t take = remainder >= 6 ? 6 : remainder;
-        int micro = 0;
-        if (!digits_at(text, pos, take, micro)) return false;
-        if (take < 6) {
-            static constexpr std::array<int, 6> kFractionCorrection{
-                0, 100000, 10000, 1000, 100, 10};
-            micro *= kFractionCorrection[take];
+        const char c = pos < text.size() ? text[pos] : '\0';
+        ++pos;  // consume c like C's *(p++); may step one past the end
+        if (comp == 0) has_sep = c == ':';
+        // 3.13 checks the decimal mark FIRST: '.',',' after any component
+        // (hour, minute or second) breaks into the fraction tail, so
+        // '12.5' -> 12:00:00.500000 and '12:34,5' -> 12:34:00.500000.
+        if (c == '.' || c == ',') {
+            if (pos >= text.size()) return -3;  // mark not followed by a digit
+            break;
+        } else if (pos >= text.size()) {
+            return c != '\0';
+        } else if (has_sep && c == ':') {
+            // At comp == 2 the loop simply ends, so a ':' after the
+            // seconds falls into fraction parsing ('12:34:56:78' ->
+            // 12:34:56.780000) — accepted, unlike the 3.14 -4 reject.
+            continue;
+        } else if (!has_sep) {
+            --pos;
+        } else {
+            return -4;  // malformed time separator
         }
-        comps[3] = micro;
     }
-    return true;
+    // Fractional component: the first min(remainder, 6) digits scale to
+    // microseconds, surplus digits are skipped, and only NUL/end
+    // terminates the tail (mirrors "while (is_digit(*p)) ++p; return
+    // *p != '\0'").
+    const std::size_t take =
+        std::min(text.size() - pos, static_cast<std::size_t>(6));
+    int micro = 0;
+    if (!digits_at(text, pos, take, micro)) return -3;
+    if (take < 6) {
+        static constexpr std::array<int, 6> kFractionCorrection{
+            0, 100000, 10000, 1000, 100, 10};
+        micro *= kFractionCorrection[take];
+    }
+    pos += take;
+    while (pos < text.size() && ascii_digit(text[pos])) ++pos;
+    comps[3] = micro;
+    return pos < text.size() && text[pos] != '\0';
 }
 
 // _parse_isoformat_time — HH[:MM[:SS[.ffffff]]][{+|-|Z}offset]
@@ -1046,19 +1065,14 @@ bool parse_iso_time(std::string_view text, IsoTime &out) {
     const std::string_view timestr =
         tz_pos > 0 ? text.substr(0, tz_pos - 1) : text;
     std::array<int, 4> comps{};
-    if (!parse_hh_mm_ss_ff(timestr, comps)) return false;
+    const int rv = parse_hh_mm_ss_ff(timestr, comps);
+    if (rv < 0) return false;
     out.hour = comps[0];
     out.minute = comps[1];
     out.second = comps[2];
     out.micro = comps[3];
-    if (out.hour == 24) {
-        if (out.minute == 0 && out.second == 0 && out.micro == 0) {
-            out.hour = 0;
-            out.became_next_day = true;
-        } else {
-            out.error_from_components = true;
-        }
-    }
+    // No 3.13 hour-24 special case: '24:xx' parses here and the callers'
+    // field check rejects it ("hour must be in 0..23"-class).
     if (tz_pos == text.size() && text.back() == 'Z') {
         out.has_offset = true;
         out.offset_us = 0;
@@ -1069,7 +1083,7 @@ bool parse_iso_time(std::string_view text, IsoTime &out) {
             sign_char == 'Z')
             return false;
         std::array<int, 4> tz_comps{};
-        if (!parse_hh_mm_ss_ff(tzstr, tz_comps)) return false;
+        if (parse_hh_mm_ss_ff(tzstr, tz_comps) != 0) return false;
         if (tz_comps[0] == 0 && tz_comps[1] == 0 && tz_comps[2] == 0 &&
             tz_comps[3] == 0) {
             out.has_offset = true;
@@ -1085,6 +1099,10 @@ bool parse_iso_time(std::string_view text, IsoTime &out) {
             out.has_offset = true;
             out.offset_us = sign_char == '-' ? -offset : offset;
         }
+    } else if (rv != 0) {
+        // Characters remain after the time component and there is no
+        // timezone marker to explain them — parse_isoformat_time's -5.
+        return false;
     }
     return true;
 }
@@ -1163,8 +1181,10 @@ std::string cps_to_utf8(std::span<const char32_t> cps) {
     return out;
 }
 
-// datetime.fromisoformat — full CPython port including the date-only,
-// week-date, next-day-wrap and timezone paths.
+// datetime.fromisoformat — full CPython 3.13 port including the
+// date-only, week-date and timezone paths. '24:xx' time components parse
+// and are then rejected by valid_time_fields (the 3.13 "hour must be in
+// 0..23" path); 3.14's next-day wrap does not exist here.
 bool parse_iso_datetime(std::string_view text, IsoDateTime &out) {
     std::vector<char32_t> cps;
     if (!decode_cps(text, cps) || cps.size() < 7) return false;
@@ -1186,23 +1206,6 @@ bool parse_iso_datetime(std::string_view text, IsoDateTime &out) {
         const std::string tstr =
             cps_to_utf8(all.subspan(sep_index + 1));
         if (!parse_iso_time(tstr, time)) return false;
-        if (time.error_from_components) return false;
-        if (time.became_next_day) {
-            // Wrap to the next day only when the parsed components were
-            // already a valid date (CPython's day-overflow rule).
-            if (date.month <= 12 &&
-                date.day <= days_in_month(date.year, date.month)) {
-                ++date.day;
-                if (date.day > days_in_month(date.year, date.month)) {
-                    date.day = 1;
-                    ++date.month;
-                    if (date.month > 12) {
-                        date.month = 1;
-                        ++date.year;
-                    }
-                }
-            }
-        }
     }
     if (!valid_date_fields(date) || !valid_time_fields(time)) return false;
     out.date = date;
@@ -1216,7 +1219,6 @@ bool parse_iso_time_field(std::string_view text, IsoTime &out) {
     std::string_view body = text;
     if (!body.empty() && body.front() == 'T') body.remove_prefix(1);
     if (!parse_iso_time(body, out)) return false;
-    if (out.error_from_components) return false;
     return valid_time_fields(out);
 }
 

@@ -1,6 +1,6 @@
 // test_t05.cpp — strict lossless data/JSON boundary regressions (task T05).
 // Covers the owned cold-path Value tree, lexeme-preserving parse/serialize,
-// the bike_recording.json.v1 tag codec (CPython 3.14 semantics for
+// the bike_recording.json.v1 tag codec (CPython 3.13 semantics for
 // Decimal/date/time/datetime/timedelta/base64), the shared SHA-256 and the
 // strict oracle-manifest/provenance layer — mirroring
 // tests/reference/test_recording_values.py and json_codec.py's domains.
@@ -463,9 +463,6 @@ void checks_recording() {
         R"({"$bike_recording":"datetime","value":"2000-01-0190304"})",
         R"({"$bike_recording":"datetime","value":"2000-01-01T03:04:00"})");
     tag_round_trip(
-        R"({"$bike_recording":"datetime","value":"2000-01-01T24:00"})",
-        R"({"$bike_recording":"datetime","value":"2000-01-02T00:00:00"})");
-    tag_round_trip(
         R"({"$bike_recording":"datetime","value":"2000-W01-1"})",
         R"({"$bike_recording":"datetime","value":"2000-01-03T00:00:00"})");
     tag_round_trip(
@@ -505,6 +502,7 @@ void checks_recording() {
     tag_invalid(R"({"$bike_recording":"datetime","value":"2000-02-30"})");
     tag_invalid(R"({"$bike_recording":"datetime","value":"2001-02-29T00:00"})");
     tag_invalid(R"({"$bike_recording":"datetime","value":"2000-01-01T25:00"})");
+    tag_invalid(R"({"$bike_recording":"datetime","value":"2000-01-01T24:00"})");
     tag_invalid(R"({"$bike_recording":"datetime","value":"2000-01-01T24:01"})");
     tag_invalid(R"({"$bike_recording":"datetime","value":"9999-12-31T24:00"})");
     tag_invalid(R"({"$bike_recording":"datetime","value":"2000-0102"})");
@@ -570,10 +568,16 @@ void checks_recording() {
     tag_round_trip(
         R"({"$bike_recording":"time","value":"12:34:56.1234567891"})",
         R"({"$bike_recording":"time","value":"12:34:56.123456"})");
-    tag_round_trip(R"({"$bike_recording":"time","value":"24:00"})",
-                   R"({"$bike_recording":"time","value":"00:00:00"})");
-    tag_round_trip(R"({"$bike_recording":"time","value":"T24:00"})",
-                   R"({"$bike_recording":"time","value":"00:00:00"})");
+    // CPython 3.13 accepts a decimal mark after any component and a ':'
+    // after the seconds (both spill into the fraction); 3.14 rejects them.
+    tag_round_trip(R"({"$bike_recording":"time","value":"12.5"})",
+                   R"({"$bike_recording":"time","value":"12:00:00.500000"})");
+    tag_round_trip(R"({"$bike_recording":"time","value":"12:34.5"})",
+                   R"({"$bike_recording":"time","value":"12:34:00.500000"})");
+    tag_round_trip(R"({"$bike_recording":"time","value":"1234.5"})",
+                   R"({"$bike_recording":"time","value":"12:34:00.500000"})");
+    tag_round_trip(R"({"$bike_recording":"time","value":"12:34:56:78"})",
+                   R"({"$bike_recording":"time","value":"12:34:56.780000"})");
     tag_round_trip(
         R"({"$bike_recording":"time","value":"12:34:56.0000005"})",
         R"({"$bike_recording":"time","value":"12:34:56"})");
@@ -591,11 +595,20 @@ void checks_recording() {
     tag_round_trip(
         R"({"$bike_recording":"time","value":"12:34:56+01:30:15.5"})",
         R"({"$bike_recording":"time","value":"12:34:56+01:30:15.500000"})");
+    tag_round_trip(
+        R"({"$bike_recording":"time","value":"12:34:56+01:30.5"})",
+        R"({"$bike_recording":"time","value":"12:34:56+01:30:00.500000"})");
+    tag_round_trip(
+        R"({"$bike_recording":"time","value":"12:34:56+01.5"})",
+        R"({"$bike_recording":"time","value":"12:34:56+01:00:00.500000"})");
     tag_round_trip(R"({"$bike_recording":"time","value":"12:34:56-01"})",
                    R"({"$bike_recording":"time","value":"12:34:56-01:00"})");
     tag_round_trip(
         R"({"$bike_recording":"time","value":"12:34:56+23:59:59.9"})",
         R"({"$bike_recording":"time","value":"12:34:56+23:59:59.900000"})");
+    tag_invalid(R"({"$bike_recording":"time","value":"24:00"})");
+    tag_invalid(R"({"$bike_recording":"time","value":"T24:00"})");
+    tag_invalid(R"({"$bike_recording":"time","value":"24:00:00.5"})");
     tag_invalid(R"({"$bike_recording":"time","value":"x12:34"})");
     tag_invalid(R"({"$bike_recording":"time","value":" 12:34"})");
     tag_invalid(R"({"$bike_recording":"time","value":"t12:34"})");
@@ -610,21 +623,15 @@ void checks_recording() {
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:5"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:567"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:56:"})");
-    tag_invalid(R"({"$bike_recording":"time","value":"12:34:56:78"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:56."})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:56.x"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:56.5x"})");
-    tag_invalid(R"({"$bike_recording":"time","value":"12.5"})");
-    tag_invalid(R"({"$bike_recording":"time","value":"12:34.5"})");
-    tag_invalid(R"({"$bike_recording":"time","value":"1234.5"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:56+24:00"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:56+013"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:56+01305"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:56+013:05"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:56Zx"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:34:56z"})");
-    tag_invalid(R"({"$bike_recording":"time","value":"12:34:56+01:30.5"})");
-    tag_invalid(R"({"$bike_recording":"time","value":"12:34:56+01.5"})");
     tag_invalid(R"({"$bike_recording":"time","value":"1234:56"})");
     tag_invalid(R"({"$bike_recording":"time","value":"12:3456"})");
     tag_invalid(R"({"$bike_recording":"time","value":"25:00"})");

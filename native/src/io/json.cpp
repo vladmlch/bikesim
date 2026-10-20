@@ -1814,6 +1814,11 @@ Value parse_json(std::string_view source) {
     const auto result = reader.Parse<kFlags>(stream, handler);
     if (!result) {
         if (!handler.failure.empty()) fail_parse(handler.failure);
+        // Error positions are the RapidJSON scanner's byte offsets, not
+        // CPython JSONDecodeError positions — no end/end-1 mirroring is
+        // carried (W1.2x item 9: the 3.13-vs-3.14 py_scanstring offset
+        // difference has no ported surface; the C accelerator reports
+        // the control character's own index in both versions anyway).
         fail_parse("invalid JSON at offset " +
                    std::to_string(result.Offset()) + ": " +
                    rapidjson::GetParseError_En(result.Code()));

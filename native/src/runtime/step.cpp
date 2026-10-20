@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <bit>
 #include <cmath>
+#include <functional>
 #include <ranges>
 #include <stdexcept>
 
@@ -1103,6 +1104,22 @@ PhysicalStep::PhysicalStep(
                 patch_working_capacity_[i] = bound;
             }
         }
+    } else {
+        // native_reference emits at most one patch per (wheel geom,
+        // terrain geom) contact row — mjMAXCONPAIR bounds a geom pair's
+        // rows, and terrain_ids lists the resolved terrain geoms
+        // ("terrain", "catch_plane"). The same construction-sized
+        // discipline covers the no-writer route so its resistance
+        // staging never regrows on the hot path.
+        const std::size_t bound =
+            contact_query_.terrain_ids.size() *
+            static_cast<std::size_t>(mjMAXCONPAIR);
+        for (std::size_t i = 0; i < 2; ++i) {
+            patch_loads_[i].reserve(bound);
+            // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) contiguous bool buffer — vector<bool> is a bitset
+            patch_working_[i] = std::make_unique<bool[]>(bound);
+            patch_working_capacity_[i] = bound;
+        }
     }
     const std::size_t nv = static_cast<std::size_t>(m->nv);
     component_out_.assign(nv, 0.);
@@ -1304,11 +1321,10 @@ PhysicalStep::apply_forces_body(
                 stepper_->tire_writer().probe_compute_into(d, dt, component_out_);
             accumulator_.add("tires", component_out_);
         }
-        // OPEN FINDING F3: when the tire writer is absent the oracle still
-        // evaluates resistance from the solved contact snapshots
-        // (physical_runtime.py:385-387 — `self.tire is None`). This port
-        // runs resistance only inside the tire-writer path, so the
-        // native_reference route drops aerodynamic/rolling losses.
+        // The applied backend feeds resistance its post-compute
+        // committed snapshots (physical_runtime.py:313-316 —
+        // `self.tire.snapshots`/`probe_snapshots`); the native_reference
+        // route's call sits after the final _contacts refresh below.
         if (active && stepper_->has_tire()) {
             // The resistance input reads the POST-compute committed
             // state — snapshots_committed() is the same publication gate
@@ -1325,45 +1341,7 @@ PhysicalStep::apply_forces_body(
             const std::array<TireSnapshot, 2> &snaps =
                 advance ? tires.snapshot_storage()
                         : tires.probe_snapshot_storage();
-            std::array<TireSideInput, 2> side_input{};
-            for (std::size_t i = 0; i < 2; ++i) {
-                const TireSnapshot &snap = snaps[i];
-                const auto *patches =
-                    committed ? &snap.patches : nullptr;
-                const std::size_t n =
-                    patches != nullptr ? patches->size() : 0;
-                patch_loads_[i].assign(n, 0.);
-                if (n > patch_working_capacity_[i]) {
-                    // Defensive regrowth only — construction sized the
-                    // buffer to the writer's patch bound, so this can
-                    // never trip on a valid snapshot.
-                    // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) contiguous bool buffer — vector<bool> is a bitset
-                    patch_working_[i] = std::make_unique<bool[]>(n);
-                    patch_working_capacity_[i] = n;
-                }
-                const std::span<bool> working{
-                    std::views::counted(patch_working_[i].get(),
-                                        static_cast<std::ptrdiff_t>(n))};
-                for (std::size_t p = 0; p < n; ++p) {
-                    patch_loads_[i][p] = (*patches)[p].normal_load_n;
-                    working[p] = (*patches)[p].working_surface;
-                }
-                side_input[i] = {
-                    .patch_loads = std::span<const double>(
-                        std::views::counted(patch_loads_[i].data(),
-                                            static_cast<std::ptrdiff_t>(n))),
-                    .patch_working = working,
-                    .effective_radius_m =
-                        committed ? snap.effective_radius_m : 0.};
-            }
-            const std::span<const std::string_view> res_names =
-                stepper_->resistance().component_names();
-            stepper_->resistance().components_into(
-                d, side_input[0], side_input[1],
-                std::span{resistance_views_}.first(res_names.size()));
-            for (std::size_t i = 0; i < res_names.size(); ++i)
-                accumulator_.add(res_names[i],
-                                 resistance_views_[i].values);
+            add_resistance(d, snaps[0], snaps[1], committed);
         }
         if (stepper_->has_rider_forces() &&
             stepper_->rider_forces().active()) {
@@ -1435,10 +1413,14 @@ PhysicalStep::apply_forces_body(
                     d, command, advance,
                     advance && !initializing_ ? control_clock_.period_s : dt,
                     !active, stepper_->rider_contacts().state().enabled,
-                    // OPEN FINDING F5: pedal_recovery — the oracle passes
-                    // cfg.seated_climb.enabled (physical_runtime.py:367);
-                    // this port passes the active-tick flag instead.
-                    active && !initializing_);
+                    // pedal_recovery is the config switch verbatim —
+                    // cfg.seated_climb.enabled (physical_runtime.py:367),
+                    // decoded into StepConfig.intent via the projected
+                    // rider_intent document. It is deliberately NOT
+                    // gated on active/initializing: the oracle passes the
+                    // flag into every compute, including the init ticks
+                    // where recovery geometry is first observed.
+                    config_.intent.enabled);
                 if (advance) {
                     control_clock_.hold(torques);
                     if (!initializing_)
@@ -1456,6 +1438,14 @@ PhysicalStep::apply_forces_body(
         snapshot_acc_inputs(m, d);
         const RuntimeContacts contacts =
             refresh_contacts(false, std::nullopt, active && advance);
+        // physical_runtime.py:385-387 — `self.tire is None` still runs
+        // resistance, on the engine-contact snapshots _contacts just
+        // published into snapshots_ (always present, so the publication
+        // gate is true). The components land before the final
+        // qfrc_applied copy at :395.
+        if (active && !stepper_->has_tire())
+            add_resistance(d, engaged(snapshots_[0]),
+                           engaged(snapshots_[1]), /*committed=*/true);
         if (stepper_->has_cruise()) {
             // sim.cruise.torque_nm = 0. — the oracle clears the scalar
             // unconditionally before the ideal_speed_control write below.
@@ -1465,19 +1455,82 @@ PhysicalStep::apply_forces_body(
         }
         if (active &&
             stepper_->drive().config().drive_mode == "ideal_speed_control") {
-            // OPEN FINDING F2: capabilities.cpp admits this drive mode and
-            // the oracle calls cruise.compute() here
-            // (physical_runtime.py:389-394, braking suppresses positive
-            // torque). The cruise-controller port is pending, so the
-            // branch intentionally commands zero torque for now.
+            // physical_runtime.py:390-394 — the oracle's positional
+            // `contacts` argument unrolls to rear_in_contact plus the
+            // defaulted traction_limited=False; controller_grounded is
+            // the filtered gate. compute() itself commits the PI state
+            // (torque_nm/integral_mps_s/engaged); a braking demand then
+            // cancels a positive torque and clears the scalar a second
+            // time. cruise()/drive() are the require_* accessors — an
+            // ideal_speed_control model without a cruise config is a
+            // construction error the named logic_error reports, the
+            // same contract drive() already carries in this branch.
+            double torque = stepper_->cruise().compute(
+                d, contacts.rear_in_contact(), false,
+                contacts.rear_controller_grounded);
+            if ((front > 0. || rear > 0.) && torque > 0.) {
+                torque = 0.;
+                CruiseState cs = stepper_->cruise().state();
+                cs.torque_nm = 0.;
+                stepper_->cruise().set_state(cs);
+            }
             wbuf(d->ctrl, m->nu)[static_cast<std::size_t>(
-                drive_ctrl_adr_)] = 0.;
+                drive_ctrl_adr_)] = torque;
         }
         const auto final_total = accumulator_.total();
         std::ranges::copy(final_total,
                           wbuf(d->qfrc_applied, m->nv).begin());
         return contacts;
     }
+}
+
+// The per-side flatten of compute_components' TireSideInput: loads and
+// working flags are strided off the patch structs into contiguous
+// scratch (patch_loads_/patch_working_ — construction-sized, with the
+// regrowth guard kept as the defensive invariant), then the writer's
+// views fold into accumulator_ under their serialized names.
+void PhysicalStep::add_resistance(const mjData *d,
+                                  const TireSnapshot &front,
+                                  const TireSnapshot &rear,
+                                  bool committed) {
+    const std::array<std::reference_wrapper<const TireSnapshot>, 2> snaps{
+        front, rear};
+    std::array<TireSideInput, 2> side_input{};
+    for (std::size_t i = 0; i < 2; ++i) {
+        const TireSnapshot &snap = snaps[i].get();
+        const auto *patches = committed ? &snap.patches : nullptr;
+        const std::size_t n = patches != nullptr ? patches->size() : 0;
+        patch_loads_[i].assign(n, 0.);
+        if (n > patch_working_capacity_[i]) {
+            // Defensive regrowth only — construction sized the buffer
+            // to the per-wheel patch bound, so this can never trip on
+            // a valid snapshot.
+            // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) contiguous bool buffer — vector<bool> is a bitset
+            patch_working_[i] = std::make_unique<bool[]>(n);
+            patch_working_capacity_[i] = n;
+        }
+        const std::span<bool> working{
+            std::views::counted(patch_working_[i].get(),
+                                static_cast<std::ptrdiff_t>(n))};
+        for (std::size_t p = 0; p < n; ++p) {
+            patch_loads_[i][p] = (*patches)[p].normal_load_n;
+            working[p] = (*patches)[p].working_surface;
+        }
+        side_input[i] = {
+            .patch_loads = std::span<const double>(
+                std::views::counted(patch_loads_[i].data(),
+                                    static_cast<std::ptrdiff_t>(n))),
+            .patch_working = working,
+            .effective_radius_m =
+                committed ? snap.effective_radius_m : 0.};
+    }
+    const std::span<const std::string_view> res_names =
+        stepper_->resistance().component_names();
+    stepper_->resistance().components_into(
+        d, side_input[0], side_input[1],
+        std::span{resistance_views_}.first(res_names.size()));
+    for (std::size_t i = 0; i < res_names.size(); ++i)
+        accumulator_.add(res_names[i], resistance_views_[i].values);
 }
 
 // ---- _advance_physics (physical_runtime.py:561-700) --------------------

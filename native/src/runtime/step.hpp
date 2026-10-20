@@ -302,6 +302,19 @@ private:
     refresh_contacts(bool final, std::optional<double> time_s,
                      bool update_grounded, std::span<const double> qvel = {});
 
+    // The shared resistance stage — physical_runtime.py:315 reads the
+    // applied backend's post-compute snapshots while :386 reads the
+    // native_reference pair _contacts just published. Both flatten into
+    // patch_loads_/patch_working_ before components_into so the spans
+    // stay contiguous, then fold into accumulator_ in
+    // compute_components' insertion order. `committed` is the oracle's
+    // snapshots publication gate (tire.snapshots/probe_snapshots exist
+    // only after a first committed/probe evaluation); the
+    // native_reference pair is always published, so that call site
+    // passes true.
+    void add_resistance(const mjData *d, const TireSnapshot &front,
+                        const TireSnapshot &rear, bool committed);
+
     // _rollback_brake_demand — the hill-hold reflex. `control` nullopt
     // means the apply_forces default (no explicit control).
     [[nodiscard]] double

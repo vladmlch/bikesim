@@ -51,7 +51,7 @@ io::Value TelemetryProvider::compute(const mjModel& m,const mjData& d,double tar
         {"v_fork_mps",real(vf)},{"v_shock_mps",real(vs)},{"fork_force_n",real(ff.total_n)},{"fork_damper_n",real(ff.damper_n)},{"fork_k_n_mm",real(air_.compute_instantaneous_stiffness(fork))},{"shock_force_n",real(sf.total_n)},{"shock_damper_n",real(sf.damper_n)},
         {"fork_air_psi",real(air_.gauge_pressure_psi())},{"fork_tokens",integer(air_.num_tokens())},{"fork_hsc",integer(fd.hsc_clicks)},{"fork_lsc",integer(fd.lsc_clicks)},{"fork_reb",integer(fd.rebound_clicks)},
         {"shock_hsc",integer(sd.hsc_clicks)},{"shock_lsc",integer(sd.lsc_clicks)},{"shock_reb",integer(sd.rebound_clicks)},{"shock_hbo",integer(sd.hbo_clicks)},{"shock_lockout",Value{sd.lockout_firm}},
-        {"damper_preset",text(presets.at(static_cast<std::size_t>(suspension_.current_preset)))},{"p3_residual_mm",real(residual)},{"total_mass_kg",real(mass.total())},{"cg_x_mm",real((com[0]-bb[0])*1000.)},{"cg_z_mm",real((com[2]-bb[2])*1000.)},
+        {"damper_preset",text(presets.at(static_cast<std::size_t>(suspension_.current_preset)))},{"p3_residual_mm",real(residual)},{"total_mass_kg",real(mass)},{"cg_x_mm",real((com[0]-bb[0])*1000.)},{"cg_z_mm",real((com[2]-bb[2])*1000.)},
         {"front_load_pct",real(front_pct)},{"rear_load_pct",real(rear_pct)},{"front_load_n",real(weight*(front_pct/100.))},{"rear_load_n",real(weight*(rear_pct/100.))}}};
 }
 NATIVE_DIAG_POP

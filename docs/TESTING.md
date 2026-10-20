@@ -547,7 +547,7 @@ retain Python's expression order. The tire writer and downstream rider writer us
 same typed `contactlaw::normal_contact` and `contactlaw::brush_step`; the tire
 calculation and finite/passivity guards are preserved by literal extraction.
 
-CPython 3.14's `math.hypot` uses exact products, compensated accumulation, and
+CPython 3.13 and 3.14 (identical) `math.hypot` uses exact products, compensated accumulation, and
 a square-root differential correction. The typed port follows that algorithm
 for both two-coordinate contact distances and three-coordinate distances.
 System two-argument `hypot` differs by one ULP for the corner delta

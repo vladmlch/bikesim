@@ -1,4 +1,4 @@
-// numeric_norm.hpp — CPython 3.14.3 Modules/mathmodule.c vector_norm,
+// numeric_norm.hpp — CPython 3.13 and 3.14 (identical) Modules/mathmodule.c vector_norm,
 // extracted verbatim in operation order and shared by the ports whose
 // oracle is `math.hypot` (NOT the numpy `np.linalg.norm` → BLAS contract
 // — those call sites keep their own sqrt(ddot(v,v)) form by design).

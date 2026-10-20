@@ -52,32 +52,54 @@ namespace bike::configuration::detail {
     return std::string(text);
 }
 
-// repr() of a str — the single-quote spelling CPython emits inside
+// repr() of a str — the single-quote spelling CPython 3.13 emits inside
 // f"...{value!r}" and error text (float/int conversion diagnostics).
+// Non-ASCII runs are decoded as UTF-8 so that codepoints only printable
+// under the Unicode-16.0 tables take 3.13's non-printable escape
+// (io/detail::kUnicode16OnlyPrintable); other multi-byte sequences and
+// malformed bytes pass through verbatim — the same pass-through the
+// pre-existing implementation had for codepoints both versions agree on.
 [[nodiscard]] inline std::string py_repr_str(std::string_view text) {
     const bool has_sq = text.find('\'') != std::string_view::npos;
     const bool has_dq = text.find('"') != std::string_view::npos;
     const char quote = (has_sq && !has_dq) ? '"' : '\'';
     std::string out;
     out.push_back(quote);
-    for (const char ch : text) {
+    for (std::size_t i = 0; i < text.size();) {
+        const char ch = text[i];
         const unsigned char u = static_cast<unsigned char>(ch);
-        if (ch == '\\')
-            out += "\\\\";
-        else if (ch == quote)
-            out += std::string("\\") + quote;
-        else if (ch == '\n')
-            out += "\\n";
-        else if (ch == '\r')
-            out += "\\r";
-        else if (ch == '\t')
-            out += "\\t";
-        else if (u < 0x20 || u == 0x7f) {
-            char buf[5];
-            std::snprintf(buf, sizeof buf, "\\x%02x", u);
-            out += buf;
-        } else
-            out.push_back(ch);
+        if (u < 0x80) {
+            if (ch == '\\')
+                out += "\\\\";
+            else if (ch == quote)
+                out += std::string("\\") + quote;
+            else if (ch == '\n')
+                out += "\\n";
+            else if (ch == '\r')
+                out += "\\r";
+            else if (ch == '\t')
+                out += "\\t";
+            else if (u < 0x20 || u == 0x7f) {
+                char buf[5];
+                std::snprintf(buf, sizeof buf, "\\x%02x", u);
+                out += buf;
+            } else
+                out.push_back(ch);
+            ++i;
+            continue;
+        }
+        std::size_t pos = i;
+        const char32_t cp = io::detail::utf8_decode_one(text, pos);
+        if (cp >= 0) {
+            if (io::detail::unicode16_only_printable(cp))
+                io::detail::repr_escape_nonprintable(out, cp);
+            else
+                out.append(text, i, pos - i);
+            i = pos;
+        } else {
+            out.push_back(ch); // malformed UTF-8: no CPython analogue
+            ++i;
+        }
     }
     out.push_back(quote);
     return out;

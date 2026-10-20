@@ -82,12 +82,29 @@ namespace gd = bike::geometry::detail;
 // "could not convert string to float: 'repr'".
 [[nodiscard]] std::string py_str_repr(std::string_view s) {
     // repr() for the token domain the attribute parser accepts:
-    // single-quoted, backslash/quote escapes; control/non-ASCII bytes
-    // render through \xNN the way CPython's repr does.
+    // single-quoted, backslash/quote escapes; control bytes render
+    // through \xNN, and non-ASCII codepoints take CPython 3.13's
+    // printability — Unicode-16-only codepoints are unassigned there,
+    // so repr escapes them (io::detail::kUnicode16OnlyPrintable).
     std::string out = "'";
     static constexpr std::string_view kHex = "0123456789abcdef";
-    for (const char raw_c: s) {
-        const auto c = static_cast<unsigned char>(raw_c);
+    for (std::size_t i = 0; i < s.size();) {
+        const auto c = static_cast<unsigned char>(s[i]);
+        if (c >= 0x80) {
+            std::size_t pos = i;
+            const char32_t cp = bike::io::detail::utf8_decode_one(s, pos);
+            if (cp >= 0) {
+                if (bike::io::detail::unicode16_only_printable(cp))
+                    bike::io::detail::repr_escape_nonprintable(out, cp);
+                else
+                    out.append(s, i, pos - i);
+                i = pos;
+            } else {
+                out.push_back(s[i]); // malformed UTF-8: no CPython analogue
+                ++i;
+            }
+            continue;
+        }
         switch (c) {
             case '\\': out += "\\\\"; break;
             case '\'': out += "\\'"; break;
@@ -103,6 +120,7 @@ namespace gd = bike::geometry::detail;
                     out.push_back(static_cast<char>(c));
                 }
         }
+        ++i;
     }
     out.push_back('\'');
     return out;

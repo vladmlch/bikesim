@@ -29,12 +29,14 @@
 //                           reserved key)
 #pragma once
 
+#include <array>
 #include <charconv>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -84,6 +86,99 @@ inline const Value *find_member(const Value::Object &object,
 }
 
 namespace detail {
+
+// Codepoints that are printable under CPython 3.14's Unicode 16.0.0
+// tables but unassigned — hence non-printable — under 3.13's Unicode
+// 15.1.0 (UNIDATA_VERSION in each tree's Modules/unicodedata_db.h).
+// Derived by decoding both Objects/unicodetype_db.h index1/index2/
+// TypeRecord tries and diffing the PRINTABLE_MASK bit over every
+// codepoint: 5185 codepoints in the 48 ranges below. str repr() under
+// 3.13 must escape them (\xhh/\uxxxx/\Uxxxxxxxx, Py_hexdigits
+// lowercase); 3.14 copies them verbatim.
+inline constexpr std::array<std::pair<char32_t, char32_t>, 48>
+    kUnicode16OnlyPrintable{{
+        {0x00897u, 0x00897u}, {0x01b4eu, 0x01b4fu}, {0x01b7fu, 0x01b7fu},
+        {0x01c89u, 0x01c8au}, {0x02427u, 0x02429u}, {0x031e4u, 0x031e5u},
+        {0x0a7cbu, 0x0a7cdu}, {0x0a7dau, 0x0a7dcu}, {0x105c0u, 0x105f3u},
+        {0x10d40u, 0x10d65u}, {0x10d69u, 0x10d85u}, {0x10d8eu, 0x10d8fu},
+        {0x10ec2u, 0x10ec4u}, {0x10efcu, 0x10efcu}, {0x11380u, 0x11389u},
+        {0x1138bu, 0x1138bu}, {0x1138eu, 0x1138eu}, {0x11390u, 0x113b5u},
+        {0x113b7u, 0x113c0u}, {0x113c2u, 0x113c2u}, {0x113c5u, 0x113c5u},
+        {0x113c7u, 0x113cau}, {0x113ccu, 0x113d5u}, {0x113d7u, 0x113d8u},
+        {0x113e1u, 0x113e2u}, {0x116d0u, 0x116e3u}, {0x11bc0u, 0x11be1u},
+        {0x11bf0u, 0x11bf9u}, {0x11f5au, 0x11f5au}, {0x13460u, 0x143fau},
+        {0x16100u, 0x16139u}, {0x16d40u, 0x16d79u}, {0x18cffu, 0x18cffu},
+        {0x1cc00u, 0x1ccf9u}, {0x1cd00u, 0x1ceb3u}, {0x1e5d0u, 0x1e5fau},
+        {0x1e5ffu, 0x1e5ffu}, {0x1f8b2u, 0x1f8bbu}, {0x1f8c0u, 0x1f8c1u},
+        {0x1fa89u, 0x1fa89u}, {0x1fa8fu, 0x1fa8fu}, {0x1fabeu, 0x1fabeu},
+        {0x1fac6u, 0x1fac6u}, {0x1fadcu, 0x1fadcu}, {0x1fadfu, 0x1fadfu},
+        {0x1fae9u, 0x1fae9u}, {0x1fbcbu, 0x1fbefu},
+    }};
+
+[[nodiscard]] inline bool unicode16_only_printable(char32_t cp) {
+    const auto it = std::ranges::lower_bound(
+        kUnicode16OnlyPrintable, cp, {},
+        [](const auto &range) { return range.second; });
+    return it != kUnicode16OnlyPrintable.end() && cp >= it->first;
+}
+
+// repr() of one codepoint that 3.13 marks non-printable: CPython
+// unicode_repr's \xhh/\uxxxx/\Uxxxxxxxx escapes (lowercase
+// Py_hexdigits). Only called after unicode16_only_printable(cp).
+inline void repr_escape_nonprintable(std::string &out, char32_t cp) {
+    static constexpr std::string_view kHex = "0123456789abcdef";
+    out.push_back('\\');
+    if (cp <= 0xffu) {
+        out.push_back('x');
+        out.push_back(kHex[(cp >> 4U) & 0xfU]);
+        out.push_back(kHex[cp & 0xfU]);
+    } else if (cp <= 0xffffu) {
+        out.push_back('u');
+        for (int shift = 12; shift >= 0; shift -= 4)
+            out.push_back(kHex[(cp >> shift) & 0xfU]);
+    } else {
+        out.push_back('U');
+        for (int shift = 28; shift >= 0; shift -= 4)
+            out.push_back(kHex[(cp >> shift) & 0xfU]);
+    }
+}
+
+// Decodes one UTF-8 codepoint from `text` at `pos`; on success returns
+// the codepoint and advances `pos` past the sequence, on a malformed
+// sequence returns -1 and leaves `pos` unchanged.
+[[nodiscard]] inline char32_t
+utf8_decode_one(std::string_view text, std::size_t &pos) noexcept {
+    const auto byte = [&text](std::size_t i) {
+        return static_cast<unsigned char>(text[i]);
+    };
+    const unsigned char lead = byte(pos);
+    char32_t cp = 0;
+    std::size_t len = 0;
+    if (lead < 0x80) {
+        cp = lead;
+        len = 1;
+    } else if (lead >= 0xc2 && lead <= 0xdf) {
+        cp = lead & 0x1fU;
+        len = 2;
+    } else if (lead >= 0xe0 && lead <= 0xef) {
+        cp = lead & 0x0fU;
+        len = 3;
+    } else if (lead >= 0xf0 && lead <= 0xf4) {
+        cp = lead & 0x07U;
+        len = 4;
+    } else {
+        return -1;
+    }
+    if (pos + len > text.size()) return -1;
+    for (std::size_t k = 1; k < len; ++k) {
+        const unsigned char cont = byte(pos + k);
+        if ((cont & 0xc0U) != 0x80U) return -1;
+        cp = (cp << 6U) | (cont & 0x3fU);
+    }
+    pos += len;
+    return static_cast<char32_t>(cp);
+}
+
     [[noreturn]] inline void kind_error(std::string_view api,
                                         std::string_view field,
                                         std::string_view expected) {

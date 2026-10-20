@@ -13,6 +13,7 @@
 #include "rider_geometry.hpp"
 
 #include "../diag.hpp"
+#include "../io/value.hpp" // io::detail Unicode-16 printability helpers
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
 #include "../writers/pyfloat.hpp"
@@ -75,11 +76,29 @@ using bike::model::checks::scalar;
     const char quote = (has_single && !has_double) ? '"' : '\'';
     std::string out(1, quote);
     static constexpr std::string_view kHex = "0123456789abcdef";
-    for (const char raw_c: s) {
-        const auto c = static_cast<unsigned char>(raw_c);
+    for (std::size_t i = 0; i < s.size();) {
+        const auto c = static_cast<unsigned char>(s[i]);
         if (c == static_cast<unsigned char>(quote) || c == '\\') {
             out.push_back('\\');
             out.push_back(static_cast<char>(c));
+            ++i;
+            continue;
+        }
+        if (c >= 0x80) {
+            // CPython 3.13 printability: Unicode-16-only codepoints are
+            // unassigned there, so repr escapes them.
+            std::size_t pos = i;
+            const char32_t cp = bike::io::detail::utf8_decode_one(s, pos);
+            if (cp >= 0) {
+                if (bike::io::detail::unicode16_only_printable(cp))
+                    bike::io::detail::repr_escape_nonprintable(out, cp);
+                else
+                    out.append(s, i, pos - i);
+                i = pos;
+            } else {
+                out.push_back(s[i]); // malformed UTF-8: no CPython analogue
+                ++i;
+            }
             continue;
         }
         switch (c) {
@@ -95,6 +114,7 @@ using bike::model::checks::scalar;
                     out.push_back(static_cast<char>(c));
                 }
         }
+        ++i;
     }
     out.push_back(quote);
     return out;

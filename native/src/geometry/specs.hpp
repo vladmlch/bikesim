@@ -457,6 +457,18 @@ namespace detail {
         return out;
     }
 
+    // CPython 3.13.16's dtoa entry points clamp the format precision
+    // (gh-158446): PyOS_double_to_string and _PyOS_ascii_formatd raise
+    // ValueError "precision too big" when |precision| exceeds
+    // DOUBLE_TO_STRING_PRECISION_MAX == INT_MAX - 1024. CPython 3.14.3
+    // has no such check — the clamp is part of the 3.13 oracle's
+    // observable behaviour, so it is mirrored at this boundary.
+    inline void check_format_precision(int precision) {
+        if (precision > std::numeric_limits<int>::max() - 1024 ||
+            precision < -(std::numeric_limits<int>::max() - 1024))
+            throw std::invalid_argument("precision too big");
+    }
+
     // Python '{:g}' / '{:.Ng}' format — std::to_chars general-with-
     // precision is specified to produce the same digit sequence as
     // printf '%.*g' (correctly rounded P significant digits, trailing
@@ -464,6 +476,7 @@ namespace detail {
     // which is CPython's 'g' rendering; NaN -> "nan", inf -> "inf",
     // -0.0 -> "-0".
     [[nodiscard]] inline std::string py_g(double x, int precision = 6) {
+        check_format_precision(precision);
         if (std::isnan(x)) return "nan";
         if (std::isinf(x)) return x < 0.0 ? "-inf" : "inf";
         std::array<char, 128> buf{};
@@ -477,6 +490,7 @@ namespace detail {
     // (dyadic inputs cannot land exactly on a decimal tie, so the
     // correctly rounded rendering is unique).
     [[nodiscard]] inline std::string py_fixed(double x, int precision) {
+        check_format_precision(precision);
         if (std::isnan(x)) return "nan";
         if (std::isinf(x)) return x < 0.0 ? "-inf" : "inf";
         std::array<char, 256> buf{};

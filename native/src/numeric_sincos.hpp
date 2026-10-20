@@ -35,6 +35,13 @@
 //   numeric::math_sin / math_cos — the math.sin / math.cos contract.
 //     CPython calls libm directly; there is no `x - x` path, so a
 //     negative-NaN angle returns libm's +qNaN, matching CPython.
+//     Error-text note (W1.2x): CPython 3.14 raises
+//     "expected a finite input, got %s" for nonfinite sin/cos/tan and
+//     "expected a nonnegative input, got %s" for negative sqrt, where
+//     3.13 raises the bare "math domain error". No error text is
+//     mirrored here — these wrappers are noexcept libm calls and every
+//     ported call site validates its angle upstream, so the divergence
+//     is unreachable in the ported domain and no change is needed.
 //
 // Uniform rule: every sin/cos call mirrored from Python uses the explicit
 // family of its mirror, whether the call is paired or lone. np_sin/np_cos

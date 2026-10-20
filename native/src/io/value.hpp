@@ -143,9 +143,15 @@ inline void repr_escape_nonprintable(std::string &out, char32_t cp) {
     }
 }
 
+// utf8_decode_one's malformed-sequence sentinel, spelled as a named
+// constant: char32_t is unsigned, so comparing a returned codepoint
+// against the literal -1 (or any `cp >= 0` check) is wrong — the
+// sentinel must be named to be tested.
+inline constexpr char32_t kInvalidCodepoint = static_cast<char32_t>(-1);
+
 // Decodes one UTF-8 codepoint from `text` at `pos`; on success returns
 // the codepoint and advances `pos` past the sequence, on a malformed
-// sequence returns -1 and leaves `pos` unchanged.
+// sequence returns kInvalidCodepoint and leaves `pos` unchanged.
 [[nodiscard]] inline char32_t
 utf8_decode_one(std::string_view text, std::size_t &pos) noexcept {
     const auto byte = [&text](std::size_t i) {
@@ -167,12 +173,12 @@ utf8_decode_one(std::string_view text, std::size_t &pos) noexcept {
         cp = lead & 0x07U;
         len = 4;
     } else {
-        return -1;
+        return kInvalidCodepoint;
     }
-    if (pos + len > text.size()) return -1;
+    if (pos + len > text.size()) return kInvalidCodepoint;
     for (std::size_t k = 1; k < len; ++k) {
         const unsigned char cont = byte(pos + k);
-        if ((cont & 0xc0U) != 0x80U) return -1;
+        if ((cont & 0xc0U) != 0x80U) return kInvalidCodepoint;
         cp = (cp << 6U) | (cont & 0x3fU);
     }
     pos += len;

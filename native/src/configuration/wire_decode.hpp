@@ -90,7 +90,7 @@ namespace bike::configuration::detail {
         }
         std::size_t pos = i;
         const char32_t cp = io::detail::utf8_decode_one(text, pos);
-        if (cp >= 0) {
+        if (cp != io::detail::kInvalidCodepoint) {
             if (io::detail::unicode16_only_printable(cp))
                 io::detail::repr_escape_nonprintable(out, cp);
             else

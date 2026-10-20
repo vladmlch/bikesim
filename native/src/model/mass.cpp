@@ -93,7 +93,7 @@ namespace gd = bike::geometry::detail;
         if (c >= 0x80) {
             std::size_t pos = i;
             const char32_t cp = bike::io::detail::utf8_decode_one(s, pos);
-            if (cp >= 0) {
+            if (cp != bike::io::detail::kInvalidCodepoint) {
                 if (bike::io::detail::unicode16_only_printable(cp))
                     bike::io::detail::repr_escape_nonprintable(out, cp);
                 else

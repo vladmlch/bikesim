@@ -140,7 +140,7 @@ def _foreign_system(record):
         context['platform'] = dict(
             libc={'name': 'glibc', 'version': '2.39'},
             machine=platform_record['machine'], os_build='#1 SMP',
-            python_soabi='cpython-314-aarch64-linux-gnu',
+            python_soabi='cpython-313-aarch64-linux-gnu',
             python_version=platform_record['python_version'], system='Linux')
         context['numerics'] = dict(
             backend='NUMPY_OPENBLAS', blas_integer_bits=64, lapack_integer_bits=64,
@@ -153,7 +153,7 @@ def _foreign_system(record):
         context['platform'] = dict(
             libc={'name': 'libSystem', 'version': '1'},
             machine=platform_record['machine'], os_build='1',
-            python_soabi='cpython-314-darwin',
+            python_soabi='cpython-313-darwin',
             python_version=platform_record['python_version'], system='Darwin')
         context['numerics'] = dict(
             backend='ACCELERATE', blas_integer_bits=32, lapack_integer_bits=64,

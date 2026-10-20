@@ -71,7 +71,7 @@ def target():
 @pytest.fixture
 def environment(target, monkeypatch):
     # Make the fixture independent of the test runner's OS and Python patch.
-    monkeypatch.setattr(bundle, '_host_identity', lambda: ('Darwin', 'arm64', '3.14'))
+    monkeypatch.setattr(bundle, '_host_identity', lambda: ('Darwin', 'arm64', '3.13'))
     return bundle.marker_environment(target)
 
 

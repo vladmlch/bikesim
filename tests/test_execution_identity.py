@@ -36,8 +36,8 @@ def legacy_native():
 def platform_darwin():
     return {"system": "Darwin", "machine": "aarch64",
             "libc": {"name": "libSystem", "version": "26A434"},
-            "os_build": "26A434", "python_version": "3.14.3",
-            "python_soabi": "cpython-314-darwin"}
+            "os_build": "26A434", "python_version": "3.13.16",
+            "python_soabi": "cpython-313-darwin"}
 
 
 def platform_linux():

@@ -1284,8 +1284,8 @@ def _measured_darwin_document(tmp_path: Path) -> dict:
     the live probe emits, so the projection is exercised against them."""
     document = _fixture_document(tmp_path)
     document["platform"] = {"system": "Darwin", "machine": "arm64", "libc": None}
-    document["python"]["version"] = "3.14.3"
-    document["python"]["soabi"] = "cpython-314-darwin"
+    document["python"]["version"] = "3.13.16"
+    document["python"]["soabi"] = "cpython-313-darwin"
     numerics = _accelerate_record(tmp_path)
     numerics["provider_config"] = {
         "macos_version": "27.0.1",
@@ -1296,7 +1296,7 @@ def _measured_darwin_document(tmp_path: Path) -> dict:
         "accelerate_uuid": "a697e7b98ff4356ca50764b38af1ccaa",
         "accelerate_images": [ACCELERATE_BLAS_IMAGE, ACCELERATE_LAPACK_IMAGE],
         "thread_measure": {"baseline_threads": 2, "peak_threads": 6},
-        "wheel": {"tags": ["cp314-cp314-macosx_14_0_arm64"]},
+        "wheel": {"tags": ["cp313-cp313-macosx_14_0_arm64"]},
         "numpy_show_config": {"Build Dependencies": {}},
         "numpy_show_runtime": f"uname(node='{HOST_SENTINEL}')",
         "abi_check": {
@@ -1410,7 +1410,7 @@ def test_numerics_lock_rejects_host_state_smuggled_into_a_record(tmp_path):
 
 def test_numerics_lock_rejects_a_python_or_site_packages_section(tmp_path):
     entry = project_numerics_record(_measured_darwin_document(tmp_path))
-    smuggled_python = dict(entry, python={"version": "3.14.3", "soabi": "x"})
+    smuggled_python = dict(entry, python={"version": "3.13.16", "soabi": "x"})
     with pytest.raises(ValueError, match="exactly platform and numerics"):
         validate_numerics_record_entry("darwin-arm64", smuggled_python)
     entry["numerics"]["site_packages"] = "/Users/someone/.venv/site-packages"

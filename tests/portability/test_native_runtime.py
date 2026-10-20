@@ -1191,11 +1191,9 @@ def test_selected_asan_extension_loads_in_a_fresh_process(tmp_path: Path) -> Non
     build = Path(os.environ["NATIVE_TEST_BUILD_PATH"])
     artifacts = [
         candidate for suffix in (
-            ".so", ".cpython-313-darwin.so", ".cpython-314-darwin.so",
+            ".so", ".cpython-313-darwin.so",
             ".cpython-313-aarch64-linux-gnu.so",
-            ".cpython-314-aarch64-linux-gnu.so",
             ".cpython-313-x86_64-linux-gnu.so",
-            ".cpython-314-x86_64-linux-gnu.so",
         )
         if (candidate := build / f"bike_native{suffix}").is_file()
     ]
@@ -1286,11 +1284,9 @@ def test_selected_rtsan_extension_loads_in_a_fresh_process() -> None:
     build = Path(os.environ["NATIVE_TEST_BUILD_PATH"])
     artifacts = [
         candidate for suffix in (
-            ".so", ".cpython-313-darwin.so", ".cpython-314-darwin.so",
+            ".so", ".cpython-313-darwin.so",
             ".cpython-313-aarch64-linux-gnu.so",
-            ".cpython-314-aarch64-linux-gnu.so",
             ".cpython-313-x86_64-linux-gnu.so",
-            ".cpython-314-x86_64-linux-gnu.so",
         )
         if (candidate := build / f"bike_native{suffix}").is_file()
     ]

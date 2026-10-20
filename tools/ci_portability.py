@@ -238,7 +238,7 @@ _lane(
 )
 _lane(
     name="macos-appleclang-release", system="Darwin", machines=("arm64",),
-    kind="native", profile="native", config="Release", python_minor="3.14",
+    kind="native", profile="native", config="Release", python_minor="3.13",
     compiler=ToolSpec("AppleClang clang++", _APPLECLANG), cmake_defines=(),
     required_tools=_DARWIN_ANALYSIS_TOOLS,
     runner="macos-15", trusted=False, provision="brew",
@@ -254,7 +254,7 @@ _lane(
 )
 _lane(
     name="macos-asan", system="Darwin", machines=("arm64",),
-    kind="native", profile="native", config="Debug", python_minor="3.14",
+    kind="native", profile="native", config="Debug", python_minor="3.13",
     compiler=ToolSpec("AppleClang clang++", _APPLECLANG),
     cmake_defines=("-DNATIVE_SANITIZE=ON",),
     required_tools=_DARWIN_ANALYSIS_TOOLS,
@@ -275,7 +275,7 @@ _lane(
 )
 _lane(
     name="macos-rtsan", system="Darwin", machines=("arm64",),
-    kind="native", profile="native", config="Release", python_minor="3.14",
+    kind="native", profile="native", config="Release", python_minor="3.13",
     compiler=ToolSpec("brew LLVM clang++ (RTSan)", _DARWIN_BREW_CLANG),
     cmake_defines=("-DNATIVE_RTSAN=ON",),
     required_tools=_DARWIN_ANALYSIS_TOOLS,
@@ -294,7 +294,7 @@ _lane(
 )
 _lane(
     name="macos-coverage", system="Darwin", machines=("arm64",),
-    kind="coverage", profile=None, config=None, python_minor="3.14",
+    kind="coverage", profile=None, config=None, python_minor="3.13",
     compiler=ToolSpec("clang++", ("clang++",)), cmake_defines=(),
     required_tools=_DARWIN_ANALYSIS_TOOLS + _DARWIN_COVERAGE_TOOLS,
     runner="macos-15", trusted=False, provision="brew",
@@ -312,7 +312,7 @@ _lane(
 )
 _lane(
     name="macos-full", system="Darwin", machines=("arm64",),
-    kind="native", profile="full", config="Release", python_minor="3.14",
+    kind="native", profile="full", config="Release", python_minor="3.13",
     compiler=ToolSpec("AppleClang clang++", _APPLECLANG), cmake_defines=(),
     required_tools=_DARWIN_ANALYSIS_TOOLS,
     runner="macos-15", trusted=False, provision="brew",
@@ -331,7 +331,7 @@ _lane(
 )
 _lane(
     name="macos-release", system="Darwin", machines=("arm64",),
-    kind="native", profile="native", config="Release", python_minor="3.14",
+    kind="native", profile="native", config="Release", python_minor="3.13",
     compiler=ToolSpec("AppleClang clang++", _APPLECLANG), cmake_defines=(),
     required_tools=_DARWIN_ANALYSIS_TOOLS,
     runner="self-hosted/macos/bike-qualified", trusted=True, provision=None,
@@ -350,7 +350,7 @@ _lane(
 )
 _lane(
     name="macos-offline", system="Darwin", machines=("arm64",),
-    kind="offline", profile=None, config=None, python_minor="3.14",
+    kind="offline", profile=None, config=None, python_minor="3.13",
     compiler=None, cmake_defines=(), required_tools=_OFFLINE_TOOLS,
     runner="self-hosted/macos/bike-qualified", trusted=True, provision=None,
     offline_target="host",
@@ -370,7 +370,7 @@ _lane(
 )
 _lane(
     name="macos-manual-gui", system="Darwin", machines=("arm64",),
-    kind="native", profile="native", config="Release", python_minor="3.14",
+    kind="native", profile="native", config="Release", python_minor="3.13",
     compiler=ToolSpec("AppleClang clang++", _APPLECLANG), cmake_defines=(),
     required_tools=_DARWIN_ANALYSIS_TOOLS,
     runner="self-hosted/macos/bike-qualified", trusted=True, provision=None,

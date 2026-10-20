@@ -286,7 +286,7 @@ recorded source/runtime/native-artifact execution identity against the current
 environment before constructing a plant, and rejects on the first differing
 field rather than attempting a close-enough reconstruction. A recording
 produced on one platform — macOS arm64 + Accelerate + the
-`cpython-314-darwin` artifact, for example — is not expected to pass checked
+`cpython-313-darwin` artifact, for example — is not expected to pass checked
 replay under Linux aarch64 + OpenBLAS ILP64 + the `aarch64-linux-gnu`
 artifact; that rejection is the identity gate working, not a defect. The
 qualified lanes are recorded in

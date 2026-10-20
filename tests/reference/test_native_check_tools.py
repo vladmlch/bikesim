@@ -1815,7 +1815,7 @@ def test_clang_tidy_move_suppression_is_limited_to_nanobind_origin(
     build, expected = write_fixture(tmp_path)
     source = next(iter(expected))
     third_party = (
-        "/venv/lib/python3.14/site-packages/nanobind/include/nanobind/stl/detail/nb_array.h:34:17: "
+        "/venv/lib/python3.13/site-packages/nanobind/include/nanobind/stl/detail/nb_array.h:34:17: "
         "warning: Method called on moved-from object 'value' of type 'std::array' "
         "[clang-analyzer-cplusplus.Move]"
     )

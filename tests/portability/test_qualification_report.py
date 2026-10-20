@@ -36,7 +36,7 @@ _DARWIN_ENV = {
     "release": "25.0.0",
     "version": "Darwin Kernel Version 25.0.0",
     "platform": "macOS-26.0-arm64-arm-64bit",
-    "python_version": "3.14.0",
+    "python_version": "3.13.16",
     "python_implementation": "CPython",
     "compiler_id": "AppleClang",
     "compiler_version": "21.0.0",

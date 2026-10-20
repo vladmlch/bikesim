@@ -3,7 +3,7 @@
 // Stribeck helper from terrain/surface.py.
 //
 // CPython/NumPy lowering decisions (each verified against CPython
-// 3.14.3 / numpy 2.5.2 on this platform):
+// 3.13.16 / numpy 2.5.2 on this platform):
 //
 //   math.isfinite / math.isinf     -> std::isfinite / std::isinf
 //   abs(float) / np.abs            -> std::fabs

@@ -19,7 +19,7 @@ namespace pyfloat {
     }
 
     // CPython `float ** float` — the complete float_pow special-case
-    // ladder (Objects/floatobject.c:708-824, v3.14.0) wrapped around the
+    // ladder (Objects/floatobject.c:719-836, v3.13.16) wrapped around the
     // opaque libm call above, so a port site behaves like Python's `**`
     // for every input, not just the finite-positive-base fast path:
     //

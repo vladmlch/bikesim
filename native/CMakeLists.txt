@@ -82,21 +82,13 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeLinkage.cmake")
 
 # Header-only and SDK roots that the platform probe does not cover (RapidJSON,
 # tomlplusplus, DuckDB, the lock) come from the repository's locked .deps tree.
-# Same defaults the standalone root graph uses, anchored at this source tree.
-# A missing tree is a configure-time acquisition failure, never a fallback.
-get_filename_component(BIKE_MODULE_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
-if(DEFINED BIKE_DEPENDENCY_ROOT)
-  get_filename_component(BIKE_DEPENDENCY_ROOT "${BIKE_DEPENDENCY_ROOT}" ABSOLUTE)
-else()
-  set(BIKE_DEPENDENCY_ROOT "${BIKE_MODULE_REPO_ROOT}/.deps" CACHE PATH
-    "Explicitly acquired native dependency root (.deps)")
-endif()
-if(DEFINED BIKE_DEPENDENCY_LOCK)
-  get_filename_component(BIKE_DEPENDENCY_LOCK "${BIKE_DEPENDENCY_LOCK}" ABSOLUTE)
-else()
-  set(BIKE_DEPENDENCY_LOCK "${BIKE_MODULE_REPO_ROOT}/native/dependencies.lock.json" CACHE FILEPATH
-    "Checked dependency lock for the native build")
-endif()
+# BikeDependencyLock.cmake owns the shared defaults (BIKE_MODULE_REPO_ROOT,
+# BIKE_DEPENDENCY_ROOT, BIKE_DEPENDENCY_LOCK) — the same ones the standalone
+# root graph uses — plus the sha256-checked bike_dependencies_resolve() the
+# Python-free lane calls. This graph needs only the defaults for its lock
+# reads below; a missing tree is a configure-time acquisition failure, never
+# a fallback.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeDependencyLock.cmake")
 
 # Shared first-party target policy: C++23 without extensions, PIC for the
 # extension link, the compiler policy applied directly, and the include surface

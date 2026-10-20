@@ -315,9 +315,15 @@ const std::string *member_string(const Value::Object &object,
 }
 
 // ---------------------------------------------------------------------------
-// Strict base64 — port of CPython 3.14 Modules/binascii.c
+// Strict base64 — port of CPython 3.13 Modules/binascii.c
 // binascii_a2b_base64_impl(strict_mode=1), which is what
-// base64.b64decode(value, validate=True) runs.
+// base64.b64decode(value, validate=True) runs. CPython 3.14 rewrote
+// the loop (padding_started flag, goto-done early exit, excess-data
+// check at padding completion) but the strict-mode accept/output
+// behaviour — including every error message selection — is equivalent;
+// this implementation deliberately keeps the 3.13 pads-counting shape
+// and its "Excess data after padding"/"Discontinuous padding not
+// allowed" choice point at the next non-'=' character.
 
 int b64_digit(char c) {
     if (c >= 'A' && c <= 'Z') return c - 'A';

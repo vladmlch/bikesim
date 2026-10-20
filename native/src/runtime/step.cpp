@@ -43,6 +43,11 @@ namespace {
 // is the whole path — no PyLong-addend naive steps are reachable. This
 // local accumulator updates `c` unconditionally like both CPython
 // versions do (the finite-guard variant lives in numeric_sum.hpp).
+// total() also folds `sum + c` unconditionally where CPython gates the
+// compensation on `if (c && Py_IS_FINITE(c))` — a difference reachable
+// only once `c` goes non-finite, which requires the running sum itself
+// to have overflowed; every site here feeds finite physical values, so
+// the missing gate is unobservable in the ported domain.
 
 struct NeumaierSum {
     double sum = 0., c = 0.;

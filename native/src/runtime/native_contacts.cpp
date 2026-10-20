@@ -27,6 +27,8 @@ double effective_radius(const TireSnapshot &snapshot) {
     if (snapshot.patches.empty()) return 0.;
     const bool loaded = std::ranges::any_of(snapshot.patches,
         [](const TirePatch &patch) { return patch.normal_load_n > 0.; });
+    // contact_state.py sums float items only (patch fields or the 1.
+    // literal, float products) — the compensated float branch is exact.
     numeric::PythonSum terms, weights;
     for (const auto &patch : snapshot.patches) {
         const double weight = loaded ? patch.normal_load_n : 1.;
@@ -43,6 +45,7 @@ double slip(const TireSnapshot &snapshot) {
     if (snapshot.patches.empty()) return 0.;
     const bool loaded = std::ranges::any_of(snapshot.patches,
         [](const TirePatch &patch) { return patch.normal_load_n > 0.; });
+    // Same float-only generator shape as effective_radius above.
     numeric::PythonSum numerator, denominator;
     for (const auto &patch : snapshot.patches) {
         const double weight = loaded ? patch.normal_load_n : 1.;
@@ -53,6 +56,7 @@ double slip(const TireSnapshot &snapshot) {
 }
 
 bool road_loaded(const TireSnapshot &snapshot) {
+    // sum(patch.normal_load_n ...) — float items only.
     numeric::PythonSum total;
     for (const auto &patch : snapshot.patches)
         if (patch.working_surface) total.add(patch.normal_load_n);

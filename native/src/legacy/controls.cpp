@@ -247,6 +247,8 @@ TireSnapshot legacy_tyre_snapshot(const mjModel& m,const mjData& d,int geom,cons
     TireSnapshot out;out.time_s=d.time;out.interval_id=interval;out.backend="legacy_pneumatic";out.geometric_contact=!outputs.airborne;
     const auto id=static_cast<std::size_t>(geom);const int body=std::views::counted(m.geom_bodyid,m.ngeom)[id];
     std::ranges::copy(std::views::counted(d.geom_xpos,3*m.ngeom).subspan(3*id,3),out.wheel_axis_m.begin());
+    // contact_state.py's effective_radius sums: float items only (patch
+    // fields and float products) — the compensated float branch is exact.
     numeric::PythonSum weighted_drop,weights;
     for(const auto& p:outputs.patches()){
         if(!(p.normal_load_n>0.))throw std::invalid_argument("legacy tyre patch requires positive normal load");

@@ -20,7 +20,9 @@ double optional_number(const WireObject &v, std::string_view key, double fallbac
 }
 Wire opt(std::optional<double> v) { return v ? Wire(*v) : Wire(nullptr); }
 // wheelie.py's load() is builtin sum() over the terrain patches — CPython
-// 3.12+ Neumaier compensated summation, not a naive fold.
+// 3.13 Neumaier compensated summation, not a naive fold. The items are
+// explicit float(p['normal_load_n']) conversions, so the compensated
+// float branch is the oracle's whole path.
 double load(const WireObject &wheel) {
     numeric::PythonSum result;
     for (const auto &patch : array(required(wheel, "patches"))) {

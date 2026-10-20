@@ -86,7 +86,7 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
     context.equilibrium->total_vertical_force_n=0.;
     for(std::size_t side=0;side<2;++side){
         const auto& snap=physical.snapshots_[side];if(!snap)throw std::invalid_argument("settled model lacks a wheel contact snapshot");
-        numeric::PythonSum normal,vertical;for(const auto& p:snap->patches){normal.add(p.normal_load_n);vertical.add(p.native_world_force_n ? (p.native_world_force_n.value())[2] : p.normal_load_n*p.normal[2]-p.tangent_force_n*p.normal[0]);}
+        numeric::PythonSum normal,vertical;for(const auto& p:snap->patches){normal.add(p.normal_load_n);vertical.add(p.native_world_force_n ? (p.native_world_force_n.value())[2] : p.normal_load_n*p.normal[2]-p.tangent_force_n*p.normal[0]);}// every addend is a float patch field or float product — exact under CPython's float branch
         if(side==0)context.equilibrium->static_front_load_n=normal.total();
         else context.equilibrium->static_rear_load_n=normal.total();
         context.equilibrium->total_vertical_force_n+=vertical.total();
@@ -112,6 +112,8 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
     if(stepper.has_rider_contacts())stepper.mutate([&]{(void)stepper.rider_contacts_settle(std::nullopt,false,nullptr);});
     stepper.mutate([&]{
         auto [mass,elastic,total]=physical.energy_state();numeric::PythonSum sum;
+        // sum(elastic.values()): stored_terms entries are Python floats —
+        // the compensated float branch is the oracle's whole path.
         for(const auto& [name,value]:elastic){(void)name;sum.add(std::get<double>(value.value));}
         physical.energy_.initial_energy_j=total;physical.energy_.energy_scale_j=std::max(1.,mass.kinetic_energy_j+sum.total());
         physical.energy_.initial_battery_j=stepper.drive().state().battery.energy_j;physical.energy_.mechanical_energy_j=total;physical.energy_.elastic_energy_j=std::move(elastic);physical.energy_.residual_j=0.;

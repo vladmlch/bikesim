@@ -1,11 +1,27 @@
 // numeric_sum.hpp — the two reduction orders the ported oracles use.
 //
-// CPython builtin sum() on floats (3.12+, Python/bltinmodule.c
-// builtin_sum_impl) is a Neumaier compensated loop: the compensation
-// term updates only while the running total stays finite; the running
-// total itself always takes the naive step. Verified bitwise against
-// CPython 3.14.3 on 200000 adversarial vectors (plus inf/nan/signed-zero
-// edges).
+// CPython 3.13 builtin sum() on float items (Python/bltinmodule.c
+// builtin_sum_impl's PyFloat_CheckExact fast path) is a Neumaier
+// compensated loop; the running total itself always takes the naive
+// step. Items that are not exact floats take different 3.13 paths:
+// PyLong items that fit a long get a naive `f_result += (double)value`
+// (3.14 compensates them and adds a complex fast path — a real
+// divergence only reachable from generators that can yield int or
+// complex items), and float subclasses such as np.float64 fall back to
+// the generic PyNumber_Add loop (plain sequential adds — see
+// legacy/telemetry.cpp's body_mass site, which must NOT use PythonSum).
+// Every ported call site below feeds Python floats only.
+//
+// PythonSum::add updates the compensation term only while the running
+// total stays finite — a local guard with no upstream counterpart (both
+// 3.13 and 3.14 update unconditionally and gate `c` only at fold-out).
+// The guard is observationally equivalent: once t is non-finite the
+// running sum never returns to finite, so a poisoned `c` is unreachable
+// at the `if (c && Py_IS_FINITE(c))` fold-out in either version. The
+// float-item path is line-equivalent between 3.13 and 3.14; verified
+// bitwise against CPython 3.14.3 on 200000 adversarial vectors (plus
+// inf/nan/signed-zero edges) — equally valid for 3.13's identical
+// float branch.
 //
 // np.sum / ndarray.sum on contiguous float64 is numpy's pairwise_sum
 // (numpy/_core/src/umath/loops.c.src): a sequential fold for n < 8, an

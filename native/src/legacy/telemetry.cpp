@@ -32,12 +32,18 @@ io::Value TelemetryProvider::compute(const mjModel& m,const mjData& d,double tar
     SuspensionController const controller(specs_,air_,suspension_);const auto ff=controller.compute_fork_force(fork,vf),sf=controller.compute_shock_force(shock,vs);
     const auto site=[&](int id){std::array<double,3> result{};if(id>=0)std::ranges::copy(std::views::counted(d.site_xpos,3*m.nsite).subspan(3U*static_cast<std::size_t>(id),3),result.begin());return result;};
     double residual=0.;if(h.p3_ss>=0&&h.p3_rocker>=0){const auto a=site(h.p3_ss),b=site(h.p3_rocker);const std::array delta{a[0]-b[0],a[1]-b[1],a[2]-b[2]};residual=geometry::detail::np_norm3(delta)*1000.;}
-    const int frame=mj_name2id(&m,mjOBJ_BODY,"frame"),root=std::max(0,frame);numeric::PythonSum mass;
-    for(double const x:std::views::counted(m.body_mass,m.nbody).subspan(static_cast<std::size_t>(root)))mass.add(x);
+    const int frame=mj_name2id(&m,mjOBJ_BODY,"frame"),root=std::max(0,frame);
+    // sum(model.body_mass[frame:]) — model.body_mass is a numpy float64
+    // array, so the items are np.float64: never PyFloat_CheckExact, and
+    // builtin sum() falls back to the generic PyNumber_Add loop — plain
+    // sequential adds in both CPython 3.13 and 3.14 (rider_control.py:661
+    // documents the same rule). A compensated PythonSum would not match.
+    double mass=0.;
+    for(double const x:std::views::counted(m.body_mass,m.nbody).subspan(static_cast<std::size_t>(root)))mass+=x;
     const auto com=std::views::counted(d.subtree_com,3*m.nbody).subspan(3U*static_cast<std::size_t>(root),3);
     const auto bb=site(h.bb);
     const double front_x=h.pfa>=0?site(h.pfa)[0]:.833,rear_x=h.pra>=0?site(h.pra)[0]:-.448,base=std::max(.5,front_x-rear_x);
-    const double front_pct=std::clamp((com[0]-rear_x)/base*100.,0.,100.),rear_pct=100.-front_pct,weight=mass.total()*9.81;
+    const double front_pct=std::clamp((com[0]-rear_x)/base*100.,0.,100.),rear_pct=100.-front_pct,weight=mass*9.81;
     const auto& fd=suspension_.fork_damper;const auto& sd=suspension_.shock_damper;
     const std::array<std::string_view,5> presets{"BASE","PLUSH","ENDURO","PARK","CUSTOM"};
     return Value{Object{{"speed_kmh",real(0.)},{"speed_mps",real(0.)},{"pos_x_m",real(0.)},{"camera_mode",text(camera=="3d"?"3D Isometric Chase":"2D Side Tracking")},{"camera_mode_id",text(camera=="3d"?"3d":"2d")},{"rider_active",Value{rider}},

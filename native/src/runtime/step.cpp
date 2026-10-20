@@ -36,8 +36,13 @@ namespace {
 // ---- numeric helpers --------------------------------------------------
 // `a @ b` lowers to BLAS ddot — the same entry point numpy dispatches to
 // on this platform (cblas_abi.hpp documents the bitwise contract).
-// `sum()` over floats is CPython's Neumaier loop; `np.sum`/`ndarray.sum`
-// uses numpy's pairwise block order, ported verbatim below.
+// `sum()` over floats is CPython 3.13's Neumaier loop; `np.sum`/`ndarray.sum`
+// uses numpy's pairwise block order, ported verbatim below. Every
+// NeumaierSum site in this TU feeds Python floats only (patch fields,
+// float products, wire_scalars), so CPython's compensated float branch
+// is the whole path — no PyLong-addend naive steps are reachable. This
+// local accumulator updates `c` unconditionally like both CPython
+// versions do (the finite-guard variant lives in numeric_sum.hpp).
 
 struct NeumaierSum {
     double sum = 0., c = 0.;

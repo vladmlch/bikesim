@@ -265,7 +265,9 @@ namespace spindle {
         // crank_split.py:63 — builtin sum() over the clipped dict values:
         // CPython's Neumaier loop, not a sequential fold. The scale factor
         // inherits the reduction rounding, so a naive += lands the bound
-        // torques one ulp off whenever the budget binds.
+        // torques one ulp off whenever the budget binds. Every item is
+        // max(float_product, 0.) — a Python float — so the compensated
+        // float branch is the oracle's whole path.
         numeric::PythonSum positive;
         for (std::size_t i = 0; i < result.size(); ++i)
             positive.add(std::max(result[i] * velocities[i], 0.));

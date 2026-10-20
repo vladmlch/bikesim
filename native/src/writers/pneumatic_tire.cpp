@@ -155,7 +155,8 @@ namespace {
     // WheelContactSnapshot.effective_radius_m (contact_state.py:172-181):
     // the load-weighted mean contact drop; unit weights when every patch
     // is unloaded; 0 when there is no patch. numeric::PythonSum is the
-    // builtin sum() Neumaier loop.
+    // builtin sum() Neumaier loop; every item is a float patch field,
+    // the 1.0 literal, or a float product — the float branch is exact.
     double effective_radius(const std::vector<TirePatch> &patches,
                             const Vec3 &axis) {
         if (patches.empty())
@@ -1004,6 +1005,8 @@ void PneumaticTireWriter::evaluate_wheels(
                                               hits.delta_m));
         const double shear_energy = shear_energy_j(tyre);
         const std::size_t patch_count = outputs.patch_count;
+        // sum over float patch fields — the compensated float branch is
+        // the oracle's whole path for every PythonSum in this site.
         numeric::PythonSum brush_power;
         for (const biketyre::TyrePatchOutput &patch: outputs.patches())
             brush_power.add(patch.dissipated_power_w);

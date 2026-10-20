@@ -14,10 +14,14 @@
 //   a @ b            == cblas_ddot(n, a, 1, b, 1)
 //   A(3,nv) @ x      == cblas_dgemv(RowMajor, NoTrans, 3, nv, 1, A, nv, ...)
 //   A.T @ x (F-view) == cblas_dgemv(RowMajor, Trans,    3, nv, 1, A, nv, ...)
-// `sum()` over floats is CPython 3.12+'s Neumaier compensated summation
-// (Python/bltinmodule.c builtin_sum_impl, isfinite-guarded) — replicated
-// below; elementwise ops keep IEEE per-element semantics under any SIMD
-// numpy may use, so scalar loops stay bitwise-correct.
+// `sum()` over floats is CPython 3.13's Neumaier compensated summation
+// (Python/bltinmodule.c builtin_sum_impl, PyFloat_CheckExact fast path)
+// — replicated below; elementwise ops keep IEEE per-element semantics
+// under any SIMD numpy may use, so scalar loops stay bitwise-correct.
+// The ported sites feed Python floats only, so no PyLong-addend naive
+// steps are reachable; the isfinite guard on `c` is a local equivalent
+// of the unconditional upstream update (a poisoned compensation is
+// unreachable once t is non-finite — see numeric_sum.hpp).
 #include "resistance.hpp"
 #include "../cblas_abi.hpp"
 #include "../config_validation.hpp"
@@ -36,8 +40,10 @@
 #include <utility>
 
 namespace {
-    // CPython builtin sum() on floats (3.12+): Neumaier compensated summation.
-    // The compensation term updates only while the running total stays finite;
+    // CPython 3.13 builtin sum() on float items: Neumaier compensated
+    // summation. The compensation term updates only while the running
+    // total stays finite — a local guard, observationally equivalent to
+    // CPython's unconditional update (numeric_sum.hpp has the proof);
     // f_result itself always takes the naive step. An empty/fully-filtered
     // iterable yields 0 — same value this returns (int 0 vs 0.0 compare equal
     // in the `Fn > 0` gate).

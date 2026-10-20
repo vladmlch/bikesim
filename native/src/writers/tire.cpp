@@ -83,12 +83,15 @@ namespace {
         return blas::ddot(model_access::kXYZ, a.data(), 1, b.data(), 1);
     }
 
-    // CPython builtin sum() on floats: Neumaier compensated summation — see
-    // writers/resistance.cpp for the derivation. `sum(iterable)` with no
+    // CPython 3.13 builtin sum() on float items: Neumaier compensated
+    // summation — see writers/resistance.cpp for the derivation.
+    // `sum(iterable)` with no
     // explicit start seeds int 0 (compares equal to 0.0 downstream). The
     // accumulator form exists so loops that produced a scratch vector just
     // to reduce it can feed the same per-element sequence inline — the
-    // operation order, and therefore the rounding, is unchanged.
+    // operation order, and therefore the rounding, is unchanged. Every
+    // ported site in this TU feeds float patch fields or the 1.0 literal,
+    // so no PyLong-addend naive steps are reachable.
     struct NeumaierSum {
         void add(double x) {
             const double t = f_result + x;

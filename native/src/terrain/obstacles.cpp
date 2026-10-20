@@ -60,6 +60,12 @@ template<class T> double length(const T& s) {
     else if constexpr(std::is_same_v<T,TrapezoidBump>) return 2.*s.ramp_m+s.plateau_m;
     else {
         if(s.steps.empty()) return 0.;
+        // sum(length for _, length in self.steps): the qualified presets
+        // use float literals, so the compensated float branch is exact.
+        // A hand-written Python config could mix int step lengths (3.13
+        // adds those via naive +=); the C++ steps are std::array<double,2>
+        // so the item-kind distinction is already erased — residual edge
+        // documented in the W1.2x report.
         numeric::PythonSum total; for(const auto& step:s.steps) total.add(step[1]);
         return total.total()+static_cast<double>(s.steps.size())*s.transition_m;
     }

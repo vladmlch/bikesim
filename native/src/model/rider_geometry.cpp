@@ -250,7 +250,8 @@ void validate_rider_body(const RiderBody &body) {
 }
 
 double RiderBody::mass() const {
-    // sum(g.mass for g in geoms) — builtin float accumulation.
+    // sum(g.mass for g in geoms) — builtin float accumulation; all
+    // items are float fields, so the compensated branch is exact.
     numeric::PythonSum total;
     for (const RiderGeom &g: geoms) total.add(g.mass);
     return total.total();
@@ -314,7 +315,8 @@ const RiderBody &SeatedPose::body(std::string_view name) const {
 
 double SeatedPose::total_mass_kg() const {
     // float(sum(body masses) + sum(chain segment sums)) — two builtin
-    // float accumulations combined with a plain add.
+    // float accumulations combined with a plain add; every item is a
+    // float field or float sum, so both take the compensated branch.
     numeric::PythonSum body_total;
     for (const RiderBody &b: bodies) body_total.add(b.mass());
     numeric::PythonSum chain_total;
@@ -1105,6 +1107,8 @@ SegmentMasses segment_masses(double total_kg, double helmet_kg) {
             result.emplace_back(std::string(segment) + "_" +
                                         std::string(side),
                                 f(segment) * body);
+    // sum over float products (f(segment) * body) — float items only,
+    // so the compensated float branch is the oracle's whole path.
     numeric::PythonSum total_check;
     for (const auto &[name, value]: result) total_check.add(value);
     if (!checks::np_isclose_scalar(total_check.total(), total, 0.0,

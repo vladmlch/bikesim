@@ -1256,6 +1256,8 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
     // sum() over the Python generator is CPython's Neumaier loop —
     // front hip, front knee, rear hip, rear knee in dict order — so the
     // terms must neither regroup per side nor accumulate naively.
+    // Every item is a float product, so the compensated float branch
+    // is exact (rider_control.py's jac/final values are floats).
     numeric::PythonSum projected_acc;
     for (const auto side : kSides) {
         const auto s = side_index(side);

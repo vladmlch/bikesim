@@ -336,6 +336,8 @@ WheelInertia wheel_body_inertia(
               component.mass_fraction > 0))
             throw std::invalid_argument("invalid wheel mass fractions");
     { // math.isclose(sum(fractions), 1.0, rel_tol=0, abs_tol=1e-12)
+        // Every item is a WheelComponent.mass_fraction float — the
+        // compensated float branch is the oracle's whole path.
         numeric::PythonSum fractions;
         for (const WheelComponent &component: components)
             fractions.add(component.mass_fraction);
@@ -426,7 +428,8 @@ void assign_component_mass(std::span<XmlGeomElement> geoms,
             return !std::isfinite(w) || w < 0;
         }))
         throw std::invalid_argument("component has no valid mass weights");
-    // sum(weights) — builtin float accumulation.
+    // sum(weights) — builtin float accumulation; the Python list holds
+    // only floats, so the compensated float branch is exact.
     numeric::PythonSum denom;
     for (const double w: weights) denom.add(w);
     const double denominator = denom.total();
@@ -483,7 +486,8 @@ BikeMassSpecs::component_provenance() const {
 }
 
 double BikeMassSpecs::total_bike_mass() const {
-    // sum(component_masses.values()) — builtin float accumulation.
+    // sum(component_masses.values()) — builtin float accumulation; the
+    // dict values are float fields, so the compensated branch is exact.
     numeric::PythonSum total;
     for (const ComponentField &field: kComponentFields)
         total.add(this->*field.member);

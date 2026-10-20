@@ -24,6 +24,8 @@ RiderSignals signals_from_sample(const runtime::SamplePtr& sample) {
         return normal ? number(*normal) : 0.;
     };
     out.saddle_load_n = load("saddle");
+    // sum(... .get('normal_load_n', 0.) ...): float dict values plus a
+    // float literal default — every item is a Python float.
     numeric::PythonSum pedal_load;
     pedal_load.add(load("front_pedal")); pedal_load.add(load("rear_pedal"));
     out.pedal_load_n = pedal_load.total();

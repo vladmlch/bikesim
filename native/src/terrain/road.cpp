@@ -7,6 +7,11 @@
 namespace bike::terrain {
 namespace {
 void check_weights(const Weights& values,std::span<const std::string_view> allowed,std::string_view name){
+    // sum(weights.values()) gates `sum <= 0.0`: qualified configs use
+    // float weights so the compensated branch is exact; int literals are
+    // erased to double at as_double() decode, and within the physical
+    // weight domain (small non-negative values) naive/compensated cannot
+    // flip the ≤0 comparison — residual edge noted in the W1.2x report.
     numeric::PythonSum sum;
     for(const auto& [key,value]:values){if(std::ranges::find(allowed,key)==allowed.end())throw std::invalid_argument(std::string(name)+": unknown shape '"+key+"'");detail::nonnegative(value,name);sum.add(value);}
     if(values.empty()||sum.total()<=0.)throw std::invalid_argument(std::string(name)+": weights must include at least one positive entry");

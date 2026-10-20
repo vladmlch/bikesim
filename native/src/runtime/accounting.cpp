@@ -121,7 +121,10 @@ std::vector<std::string> interval_violations(const RawStep &raw,
     return errors;
 }
 
-// CPython sum of a float generator uses compensation. Source names form a
+// CPython sum of a float generator uses compensation; this site's items
+// are explicit float()*dt products, so the compensated float branch is
+// the oracle's whole path (no PyLong-addend naive steps reachable).
+// Source names form a
 // fixed set; its iteration order has no physical meaning, unlike force folds.
 double external_work(const RawStep &raw, double dt_s) {
     double sum = 0., correction = 0.;

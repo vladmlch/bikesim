@@ -42,6 +42,9 @@ std::vector<Obstacle> TrackSpec::sorted_obstacles() const {
     auto out=obstacles;std::ranges::stable_sort(out,[](const auto& a,const auto& b){return a.start_m()<b.start_m();});return out;
 }
 double TrackSpec::datum_shift_m() const {
+    // sum(o.datum_shift_m ...) — the oracle's items are the float returns
+    // of each obstacle's length/shift property, so the compensated float
+    // branch is exact.
     numeric::PythonSum total;for(const auto& o:obstacles)total.add(o.datum_shift_m());
     return total.total()+(grade_profile?grade_profile->elevation(length_m):0.);
 }

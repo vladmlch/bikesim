@@ -12,7 +12,7 @@
 // detail::np_interp (arr_interp semantics incl. the lenxp==1 branch),
 // np.linalg.solve via the _dgesv$NEWLAPACK$ILP64 entry point the
 // oracle's _umath_linalg imports (verified bitwise on 150,000 random
-// 2x2 systems), and same-operand sin/cos pairs via numeric::sin/cos to
+// 2x2 systems), and same-operand sin/cos pairs via numeric::np_sin/np_cos to
 // keep them two separate libm calls. brentq keeps the source's
 // convergence expression and bracket constants (theta_cs_0 - 0.70,
 // theta_cs_0 + 0.10, xtol=1e-12) verbatim.

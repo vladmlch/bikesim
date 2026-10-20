@@ -6,9 +6,10 @@
 // kernels bitwise: multiply = {fma(ar,br,-(ai*bi)), fma(ar,bi,ai*br)}
 // (the ARM64 NEON simd_cmul_f64 lane form the oracle's contiguous
 // complex128 loop reaches), divide = the scalar Smith-scaled
-// CDOUBLE_divide body, absolute = npy_cabs == hypot(re, im). Same-angle
-// sin/cos pairs route through numeric::sin/cos so the optimizer cannot
-// merge them into a __sincos_stret the oracle never calls.
+// CDOUBLE_divide body, absolute = npy_cabs == hypot(re, im). Every sin/cos
+// call takes the numeric::np_* or math_* family of its Python mirror (np.*
+// or math.*), so the optimizer cannot merge a same-angle pair into a
+// __sincos_stret the oracle never calls.
 #include "rider_geometry.hpp"
 
 #include "../diag.hpp"
@@ -479,8 +480,8 @@ double pitch_xz(const Vec3 &vec) {
 Vec3 pedal_spindle_pos(double phase_rad, double lateral_y_m,
                        double crank_len_m) {
     // cos/sin share the phase operand — keep two separate libm calls.
-    return {crank_len_m * numeric::cos(phase_rad), lateral_y_m,
-            -crank_len_m * numeric::sin(phase_rad)};
+    return {crank_len_m * numeric::math_cos(phase_rad), lateral_y_m,
+            -crank_len_m * numeric::math_sin(phase_rad)};
 }
 
 std::pair<Vec3, Vec3> solve_leg_joints(
@@ -518,13 +519,13 @@ LegFkResult fk_leg(const LegChain &chain, const Vec3 &qpos,
     const Vec3 hip = v_add(chain.hip, {0.0, 0.0, pelvis_z_m});
     const double p_t = chain.pitch0_thigh_rad + qpos[0];
     const Vec3 knee =
-            v_add(hip, {chain.thigh_len_m * numeric::cos(p_t), 0.0,
-                        chain.thigh_len_m * -numeric::sin(p_t)});
+            v_add(hip, {chain.thigh_len_m * numeric::math_cos(p_t), 0.0,
+                        chain.thigh_len_m * -numeric::math_sin(p_t)});
     const double p_s =
             chain.pitch0_shank_rad + qpos[0] + qpos[1];
     const Vec3 ankle =
-            v_add(knee, {chain.shank_len_m * numeric::cos(p_s), 0.0,
-                         chain.shank_len_m * -numeric::sin(p_s)});
+            v_add(knee, {chain.shank_len_m * numeric::math_cos(p_s), 0.0,
+                         chain.shank_len_m * -numeric::math_sin(p_s)});
     // qpos.sum() — the 3-element pairwise lane (-0.0 seed + fold).
     const double p_f =
             chain.pitch0_foot_rad +
@@ -532,8 +533,8 @@ LegFkResult fk_leg(const LegChain &chain, const Vec3 &qpos,
                     std::span<const double>(qpos.data(), qpos.size()));
     const double foot_len = gd::np_norm3(v_sub(chain.pedal, chain.ankle));
     const Vec3 pedal_pt =
-            v_add(ankle, {foot_len * numeric::cos(p_f), 0.0,
-                          foot_len * -numeric::sin(p_f)});
+            v_add(ankle, {foot_len * numeric::math_cos(p_f), 0.0,
+                          foot_len * -numeric::math_sin(p_f)});
     return LegFkResult{.knee = knee, .ankle = ankle,
                        .pedal_pt = pedal_pt};
 }
@@ -554,7 +555,7 @@ Mat32 leg_jacobian(const LegChain &chain, const Vec3 &qpos,
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
 double crank_torque_share(double phase_rad, double depth) {
     // max(0.0, cos(phase)) — Python max returns cos only when cos > 0.
-    const double c = std::cos(phase_rad);
+    const double c = numeric::math_cos(phase_rad);
     return 0.5 * (1.0 - depth) +
            depth * (M_PI / 2.0) * (c > 0.0 ? c : 0.0);
 }
@@ -670,7 +671,7 @@ SeatedPose solve_seated_pose(const BikeSpecs &specs,
     const double elbow_rad = gd::np_radians(ELBOW_FLEXION_DEG);
     const double arm_chord =
             std::sqrt(l_ua * l_ua + l_fa * l_fa +
-                      2.0 * l_ua * l_fa * std::cos(elbow_rad));
+                      2.0 * l_ua * l_fa * numeric::math_cos(elbow_rad));
     const double arm_reach =
             arm_chord + GRIP_FROM_WRIST_FRACTION * l_hand;
     Vec3 shoulder;

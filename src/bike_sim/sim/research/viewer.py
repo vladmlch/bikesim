@@ -20,6 +20,7 @@ def make_ride_session(track, args, rider, *, capture_mode='legacy'):
         duration_s=90. if args.duration is None else args.duration,
         control_period_s=args.control_period, actuator_delay_s=args.actuator_delay,
         seed=0 if args.seed is None else args.seed, record_decimation=args.decimate,
+        async_telemetry=getattr(args, 'async_telemetry', False),
         stop_on_model_violation=getattr(args, 'resolved_check_policy', None) == 'strict'
             if getattr(args, 'resolved_check_policy', None) is not None else args.headless)
     sensors = SensorConfig(sample_period_s=args.sensor_period, latency_s=args.sensor_delay)
@@ -91,9 +92,6 @@ def run_research_viewer(session, output_dir, *, time_scale=1, record=None, captu
     env = session.env
     enabled = getattr(env, 'capture_mode', 'legacy') == 'full' if record is None else bool(record)
     launch = getattr(env, 'recording_run', None)
-    if launch is None:
-        launch = ResearchRun(env, output_dir, enabled=enabled, mode='research_viewer', capture=capture)
-        launch.attach(session)
     keys = SimpleQueue()
     primary = None
     saved = False
@@ -108,6 +106,9 @@ def run_research_viewer(session, output_dir, *, time_scale=1, record=None, captu
             saved = True
 
     try:
+        if launch is None:
+            launch = ResearchRun(env, output_dir, enabled=enabled, mode='research_viewer', capture=capture)
+            launch.attach(session)
         import mujoco.viewer
         from bike_sim.sim.playback import PlaybackClock, COMPUTE_SLICE_S, RENDER_INTERVAL_S, speed_key
         from bike_sim.sim.ride.physical_view import environment_snapshot, present_view
@@ -198,8 +199,12 @@ def run_research_viewer(session, output_dir, *, time_scale=1, record=None, captu
         return episode_exit_code(env)
     except BaseException as error:
         primary = error
-        if not launch.finalization_attempted:
-            launch.finish(primary=error, stop=True)
+        if launch is not None and not launch.finalization_attempted:
+            try:
+                launch.finish(primary=error, stop=True)
+            except BaseException as cleanup:
+                if cleanup is not error:
+                    error.add_note(f'research finalization failed: {type(cleanup).__name__}: {cleanup}')
         raise
     finally:
         close_environment(env, primary)
@@ -228,7 +233,11 @@ def run_ride_research(track, args, rider):
     except BaseException as error:
         primary = error
         if not launch.finalization_attempted:
-            launch.finish(primary=error, stop=True)
+            try:
+                launch.finish(primary=error, stop=True)
+            except BaseException as cleanup:
+                if cleanup is not error:
+                    error.add_note(f'research finalization failed: {type(cleanup).__name__}: {cleanup}')
         raise
     finally:
         close_environment(session.env, primary)

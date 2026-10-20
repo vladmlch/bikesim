@@ -1,10 +1,10 @@
-"""Off-path period publication: a spawned process evaluates closes.
+"""Off-path period publication: a separate process evaluates closes.
 
 PhysicalRuntime accumulates RawStep payloads for one control period, then
 publishes them through publish_close — pure data work (attachment wrenches,
 effort channels, ledger bookkeeping, sample assembly) that never touches live
 mjData. That makes it movable: this module runs the same publish_close inside
-a spawned worker, so the stepping loop only serializes raws and applies
+a platform-selected worker, so the stepping loop only serializes raws and applies
 results at the next step boundary.
 
 Semantics: identical code on identical data, applied one step later. Runs
@@ -16,9 +16,9 @@ observe one-period-older observations under a slow worker.
 Wire protocol (parent -> worker), all payloads pickled explicitly so a
 serialization failure is a normal error on the stepping path, never a silent
 drop inside the queue feeder thread:
-  ('context', ctx_dict)  -- rebuild worker-side close state
+  ('context', None, bytes) -- rebuild worker-side close state
   ('close', seq, bytes)  -- pickled raws for one drained period
-  ('stop',)              -- terminate
+  ('stop', None, None)   -- terminate
 Worker -> parent:
   ('ok', seq, result_dict)  -- fields to replay onto the runtime
   ('err', seq, (type_name, message))
@@ -26,6 +26,7 @@ Worker -> parent:
 from __future__ import annotations
 
 import pickle
+import platform
 import queue as _queue
 from collections import deque
 from types import MappingProxyType, SimpleNamespace
@@ -172,6 +173,37 @@ class AsyncWorkerLost(Exception):
     """Transport-level failure: worker died or answered out of order."""
 
 
+class AsyncPublicationError(RuntimeError):
+    """Publication failed after a prefix that the parent still must apply once."""
+
+    def __init__(self, message, completed_results):
+        super().__init__(message)
+        self.completed_results = tuple(completed_results)
+
+
+def _worker_start_method(system: str) -> str:
+    """Linux must not inherit scientific-library locks; retain Darwin's baseline."""
+    return 'fork' if system == 'Darwin' else 'spawn'
+
+
+def _close_queues(queues):
+    # Closing discards work; owners drain explicitly before this boundary when
+    # they need publication. Never wait for a feeder whose reader was killed.
+    primary = None
+    for index, channel in enumerate(queues):
+        for operation in ('cancel_join_thread', 'close'):
+            try:
+                getattr(channel, operation)()
+            except BaseException as error:
+                if primary is None:
+                    primary = error
+                elif error is not primary:
+                    primary.add_note(f'async queue {index} {operation} failed: '
+                                     f'{type(error).__name__}: {error}')
+    if primary is not None:
+        raise primary
+
+
 _WORKER_IMPORTS = (
     'bike_sim.sim.ride.period_buffer',
     'bike_sim.sim.ride.model_status',
@@ -191,27 +223,44 @@ _WORKER_IMPORTS = (
 class AsyncCloseRunner:
     """Parent-side handle: submit drained periods, collect applied results.
 
-    Fork, not spawn: a spawned interpreter re-imports ``__main__``, which
-    re-executes console-script entry points that lack an ``__main__`` guard
-    (uv wrappers) or hangs on non-module mains. A forked worker inherits the
-    parent's module table, does pure numpy/pickle work, and never touches
-    mujoco or Objective-C, which is the safe fork pattern on macOS.
+    Linux uses spawn after scientific imports. Darwin retains its existing
+    fork route until a separately qualified launcher migration. Every entry
+    point must guard its main function; no launch failure falls back to fork.
     """
 
-    def __init__(self):
+    def __init__(self, *, start_method: str | None = None):
         import importlib
+        import multiprocessing as mp
+        method = _worker_start_method(platform.system()) if start_method is None else start_method
+        available = mp.get_all_start_methods()
+        if not isinstance(method, str) or method not in available:
+            raise ValueError(f'unsupported async close start_method {method!r}; '
+                             f'available methods: {available}')
         for name in _WORKER_IMPORTS:
             importlib.import_module(name)
-        from multiprocessing import get_context
-        ctx = get_context('fork')
-        self._in_q = ctx.Queue()
-        self._out_q = ctx.Queue()
-        self._proc = ctx.Process(target=_close_worker_main,
-                                 args=(self._in_q, self._out_q), daemon=True)
-        self._proc.start()
+        ctx = mp.get_context(method)
         self._seq = 0
         self._pending = deque()  # (seq, raws) submitted but not yet applied
         self._closed = False
+        queues = []
+        self._proc = None
+        try:
+            self._in_q = ctx.Queue()
+            queues.append(self._in_q)
+            self._out_q = ctx.Queue()
+            queues.append(self._out_q)
+            self._proc = ctx.Process(target=_close_worker_main,
+                                     args=(self._in_q, self._out_q), daemon=True)
+            self._proc.start()
+        except BaseException as error:
+            try:
+                if self._proc is not None and self._proc.pid is not None:
+                    self.close()
+                else:
+                    _close_queues(queues)
+            except BaseException as cleanup:
+                error.add_note(f'async startup cleanup failed: {type(cleanup).__name__}: {cleanup}')
+            raise
 
     def send_context(self, ctx):
         self._in_q.put(('context', None, pickle.dumps(ctx)))
@@ -232,7 +281,7 @@ class AsyncCloseRunner:
         replay the still-pending periods on the synchronous path.
         """
         results = []
-        while self._pending:
+        while len(results) < len(self._pending):
             if not block and self._out_q.empty():
                 break
             self._check_alive()
@@ -243,18 +292,24 @@ class AsyncCloseRunner:
                 if block:
                     continue
                 break
-            pending_seq = self._pending[0][0]
+            pending_seq = self._pending[len(results)][0]
             if seq != pending_seq:
                 raise AsyncWorkerLost(
                     f'async close out of order: expected {pending_seq}, got {seq}')
-            self._pending.popleft()
+            if status not in ('ok', 'err'):
+                raise AsyncWorkerLost(f'async close invalid result status: {status!r}')
             if status == 'err':
                 # The episode aborts on this error; later queued periods would
                 # never be applied, so they do not keep the runner busy.
                 self._pending.clear()
                 type_name, message = payload
-                raise RuntimeError(f'async close worker failed: {type_name}: {message}')
+                raise AsyncPublicationError(
+                    f'async close worker failed: {type_name}: {message}', results)
             results.append(payload)
+        # No caller has applied these results yet. If a later response in the
+        # same batch fails, keep the entire unacknowledged batch for replay.
+        for _ in results:
+            self._pending.popleft()
         return results
 
     def _check_alive(self):
@@ -265,7 +320,13 @@ class AsyncCloseRunner:
 
     def drain(self, apply):
         """Block until all pending results are consumed; apply each."""
-        for result in self.collect(block=True):
+        try:
+            results = self.collect(block=True)
+        except AsyncPublicationError as error:
+            for result in error.completed_results:
+                apply(result)
+            raise
+        for result in results:
             apply(result)
 
     def detach_pending(self):
@@ -278,12 +339,44 @@ class AsyncCloseRunner:
         if self._closed:
             return
         self._closed = True
+        primary = None
+
+        def remember(error):
+            nonlocal primary
+            if primary is None:
+                primary = error
+            elif error is not primary:
+                primary.add_note(f'async worker cleanup also failed: '
+                                 f'{type(error).__name__}: {error}')
+
         try:
-            self._in_q.put(('stop', None, None))
-        except Exception:
-            pass
-        self._proc.join(timeout=2.)
-        if self._proc.is_alive():
-            self._proc.terminate()
-        self._in_q.close()
-        self._out_q.close()
+            try:
+                self._in_q.put(('stop', None, None))
+            except Exception:
+                pass
+            self._proc.join(timeout=2.)
+        except BaseException as error:
+            remember(error)
+        try:
+            for stop in (self._proc.terminate, self._proc.kill):
+                if not self._proc.is_alive():
+                    break
+                try:
+                    stop()
+                except BaseException as error:
+                    remember(error)
+                try:
+                    self._proc.join(timeout=2.)
+                except BaseException as error:
+                    remember(error)
+            if self._proc.is_alive():
+                remember(AsyncWorkerLost('async close worker did not exit after kill'))
+        except BaseException as error:
+            remember(error)
+        finally:
+            try:
+                _close_queues((self._in_q, self._out_q))
+            except BaseException as error:
+                remember(error)
+        if primary is not None:
+            raise primary

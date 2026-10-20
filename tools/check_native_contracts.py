@@ -27,6 +27,9 @@ _SUPPORT_TEST_MODULES = {
     'test_native_check_tools.py',
     'test_native_contract_checks.py',
     'test_native_loader.py',
+    # Platform linkage/build-context controls inspect configured binaries
+    # directly; they never import the extension under test.
+    'test_native_platform_linkage.py',
 }
 
 
@@ -117,8 +120,31 @@ def _validate_language_and_hardening(context: dict[str, Any], sources: dict[str,
     supported = hardening.get('supported')
     if not isinstance(supported, bool):
         raise ContractError('native libc++ hardening support must be boolean')
+
+    # The required per-target definition follows the selected standard
+    # library, not the platform name: libc++ carries its hardening mode,
+    # libstdc++ carries _GLIBCXX_ASSERTIONS. The schema-2 stdlib record is
+    # the authoritative source; the legacy libcpp_hardening record must
+    # agree with it where both exist.
+    stdlib = context.get('stdlib')
+    stdlib_name = stdlib.get('name') if isinstance(stdlib, dict) else None
     required_definition = None
-    if supported:
+    if stdlib_name == 'libstdc++':
+        required_definition = '_GLIBCXX_ASSERTIONS'
+        if supported or mode != 'NOT_APPLICABLE':
+            raise ContractError(
+                'libstdc++ stdlib record disagrees with the libc++ hardening record'
+            )
+    elif stdlib_name == 'libc++':
+        stdlib_mode = stdlib.get('hardening', {}).get('mode')
+        if stdlib_mode not in {'EXTENSIVE', 'FAST'}:
+            raise ContractError(f'unsupported configured libc++ hardening mode: {stdlib_mode!r}')
+        if not supported or mode != stdlib_mode:
+            raise ContractError(
+                'libc++ stdlib record disagrees with the libc++ hardening record'
+            )
+        required_definition = f'_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_{stdlib_mode}'
+    elif supported:
         if mode not in {'EXTENSIVE', 'FAST'}:
             raise ContractError(f'unsupported configured libc++ hardening mode: {mode!r}')
         required_definition = f'_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_{mode}'
@@ -137,10 +163,100 @@ def _validate_language_and_hardening(context: dict[str, Any], sources: dict[str,
         if not isinstance(definitions, list):
             violations.append(f'{target}: compile definitions are malformed')
         elif required_definition is not None and required_definition not in definitions:
-            violations.append(f'{target}: missing libc++ hardening definition {required_definition}')
+            violations.append(f'{target}: missing stdlib hardening definition {required_definition}')
     if violations:
         raise ContractError('; '.join(violations))
-    return {'targets': sorted(targets), 'cxx_standard': 23, 'extensions': False, 'hardening_mode': mode}
+    return {
+        'targets': sorted(targets),
+        'cxx_standard': 23,
+        'extensions': False,
+        'hardening_mode': mode,
+        'stdlib': stdlib_name,
+        'required_definition': required_definition,
+    }
+
+
+# The declared linkage contract for the first-party target graph. Engine
+# consumers must name Bike::MuJoCo in their link interface; numerics
+# consumers must name Bike::Numerics. On Linux the dynamic-loader library
+# is a literal 'dl' edge on every engine consumer — the recorded target
+# context must show the edge rather than relying on transitive resolution.
+_ENGINE_CONSUMERS = {
+    'bike_native',
+    'native_contract_tests',
+    'native_distance_tests',
+    'native_station_tests',
+    'native_bench',
+}
+_NUMERICS_CONSUMERS = {
+    'bike_native',
+    'native_contract_tests',
+    'native_distance_tests',
+    'native_station_tests',
+    'native_platform_blas_tests',
+    'native_platform_lapack_tests',
+}
+# Direct adapter harnesses deliberately link ONLY Bike::Numerics — they
+# prove the adapter/provider boundary carries no engine dependency.
+_NUMERICS_ONLY_TARGETS = {
+    'native_platform_blas_tests',
+    'native_platform_lapack_tests',
+}
+_EXPECTED_CTEST_EXECUTABLES = {
+    'native_contract_tests',
+    'native_distance_tests',
+    'native_station_tests',
+    'native_platform_blas_tests',
+    'native_platform_lapack_tests',
+}
+
+
+def _validate_platform_target_graph(context: dict[str, Any], sources: dict[str, Any]) -> dict[str, Any]:
+    """Assert the recorded link contexts match the declared target graph."""
+    target_contexts = context.get('target_contexts')
+    entries = sources.get('sources')
+    if not isinstance(target_contexts, dict) or not isinstance(entries, list):
+        raise ContractError('native target context or source manifest is missing')
+    manifest_targets = {
+        entry.get('target') for entry in entries if isinstance(entry, dict)
+    }
+    violations: list[str] = []
+    for target in sorted(t for t in manifest_targets if isinstance(t, str)):
+        target_context = target_contexts.get(target)
+        if not isinstance(target_context, dict):
+            violations.append(f'{target}: no configured target context')
+            continue
+        link_libraries = target_context.get('link_libraries')
+        if not isinstance(link_libraries, list):
+            violations.append(f'{target}: link_libraries context is malformed')
+            continue
+        if target in _ENGINE_CONSUMERS and 'Bike::MuJoCo' not in link_libraries:
+            violations.append(f'{target}: does not link Bike::MuJoCo')
+        if target in _NUMERICS_CONSUMERS and 'Bike::Numerics' not in link_libraries:
+            violations.append(f'{target}: does not link Bike::Numerics')
+        if target in _NUMERICS_ONLY_TARGETS and 'Bike::MuJoCo' in link_libraries:
+            violations.append(f'{target}: adapter harness must not link the engine image')
+        platform_system = (
+            context.get('platform', {}).get('system')
+            if isinstance(context.get('platform'), dict)
+            else 'Darwin'
+        )
+        if (
+            platform_system == 'Linux'
+            and target in _ENGINE_CONSUMERS
+            and 'dl' not in link_libraries
+        ):
+            violations.append(f'{target}: missing the dynamic-loader library edge')
+    for expected in sorted(_EXPECTED_CTEST_EXECUTABLES):
+        if expected not in target_contexts:
+            violations.append(f'{expected}: CTest executable missing from target contexts')
+    if violations:
+        raise ContractError('; '.join(violations))
+    return {
+        'targets': sorted(t for t in manifest_targets if isinstance(t, str)),
+        'engine_consumers': sorted(_ENGINE_CONSUMERS),
+        'numerics_consumers': sorted(_NUMERICS_CONSUMERS),
+    }
 
 
 def _validate_tidy_policy(repo_root: Path) -> dict[str, Any]:
@@ -307,18 +423,39 @@ def _run_contract_case(executable: Path, arguments: list[str], label: str, build
     return result
 
 
+_CTEST_REQUIRED_TESTS = (
+    'native_contract_tests',
+    'native_distance_tests',
+    'native_station_tests',
+    'native_platform_blas_tests',
+    'native_platform_lapack_tests',
+    'native_bench_bare',
+    'native_bench_glue',
+    'native_bench_heavy',
+)
+
+
 def _validate_ctest_contracts(build: Path) -> dict[str, Any]:
     ctest_file = build / 'CTestTestfile.cmake'
     try:
         ctest_contents = ctest_file.read_text()
     except OSError as error:
         raise ContractError(f'cannot read CTest registration file {ctest_file}: {error}') from error
-    registration = re.compile(
-        r'add_test\([^\n)]*native_contract_tests[^\n)]*native_contract_tests[^\n)]*\)',
-        re.IGNORECASE,
-    )
-    if registration.search(ctest_contents) is None:
-        raise ContractError('native_contract_tests is not registered with CTest')
+    # CTestTestfile.cmake serializes the legacy signature:
+    #   add_test("<name>" "<command>" ["<arg>" ...])
+    registered = {
+        match.group(1)
+        for match in re.finditer(
+            r'add_test\(\s*(?:"|\[=\[)?([A-Za-z0-9_]+)', ctest_contents
+        )
+    }
+    missing = [
+        name for name in _CTEST_REQUIRED_TESTS if name not in registered
+    ]
+    if missing:
+        raise ContractError(
+            'CTest registration is incomplete; missing: ' + ', '.join(missing)
+        )
 
     executable = _contract_executable(build)
     listed = _run_contract_case(executable, ['--list'], 'case-list', build)
@@ -459,6 +596,10 @@ def check_native_contracts(build: Path, repo_root: Path, environment: dict[str, 
     checks['loader_provenance'] = {
         'status': 'passed',
         'provenance': _validate_provenance(build, extension, environment),
+    }
+    checks['platform_target_graph'] = {
+        'status': 'passed',
+        **_validate_platform_target_graph(context, sources),
     }
     checks['iso_language_mode_and_hardening'] = {
         'status': 'passed',

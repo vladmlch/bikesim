@@ -72,12 +72,12 @@ void LegDrive::compute_into(const mjData& data, double torque, std::span<double>
         const auto previous = leg.previous.value_or(ref);
         const double own_phase = phase + (leg.chain.side == "front" ? 0. : std::numbers::pi);
         const double ft = model::crank_torque_share(own_phase,ripple_depth_) * mean / crank_length_;
-        const std::array<double,2> f{ft * -numeric::sin(own_phase),ft * -numeric::cos(own_phase)};
+        const std::array<double,2> f{ft * -numeric::math_sin(own_phase),ft * -numeric::math_cos(own_phase)};
         const auto jacobian = model::leg_jacobian(leg.chain,actual,pelvis);
         model::Vec3 tau{};
         std::array<double,6> matrix{};
         for (std::size_t i = 0; i < 3; ++i) { matrix[2*i] = jacobian[i][0]; matrix[2*i+1] = jacobian[i][1]; }
-        blas::cblas_dgemv(static_cast<int>(blas::Order::row_major),static_cast<int>(blas::Transpose::no),
+        blas::dgemv(blas::Order::row_major,blas::Transpose::no,
             3,2,1.,matrix.data(),2,f.data(),1,0.,tau.data(),1);
         for (std::size_t i = 0; i < 3; ++i) {
             tau[i] += kp[i] * (ref[i]-actual[i]) + kd[i] * ((ref[i]-previous[i])/dt-rates[i]);
@@ -86,7 +86,7 @@ void LegDrive::compute_into(const mjData& data, double torque, std::span<double>
             force[leg.v[i]] = tau[i];
         }
         references[side] = ref;
-        magnitudes[side] = std::sqrt(blas::cblas_ddot(2,f.data(),1,f.data(),1));
+        magnitudes[side] = std::sqrt(blas::ddot(2,f.data(),1,f.data(),1));
     }
     for (std::size_t side = 0; side < legs_.size(); ++side) legs_[side].previous = references[side];
     pedal_force_ = magnitudes;

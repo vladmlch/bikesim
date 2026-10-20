@@ -4,7 +4,8 @@
 // NumPy lowering decisions (each verified against numpy 2.5.2 on this
 // platform; see the task-8 report for the evidence):
 //
-//   np.sum(a)                       -> numeric::numpy_pairwise_sum
+//   np.sum(a)                       -> numeric::numpy_sum (np.sum reduce
+//                                      identity over pairwise order)
 //   np.dot(a, b)                    -> blas::ddot (Accelerate CBLAS;
 //                                    same contract as the other ported
 //                                    kernels — contiguous f64 rows)
@@ -14,6 +15,12 @@
 //   np.exp(scalar)                  -> std::exp (DOUBLE_exp lowers to
 //                                    npy_exp -> libm exp on aarch64;
 //                                    the SIMD path is AVX512-only)
+//   float * ndarray (broadcast mul) -> numeric::np_multiply_broadcast —
+//                                    dual-NaN lanes resolve to the
+//                                    wheel-measured fmul operand 0
+//                                    (BIKE_NUMPY_MUL_BROADCAST_ELEMENT_
+//                                    NAN); finite lanes are the plain
+//                                    product
 //   np.hypot(dx, dz)                -> std::hypot (npy_hypot -> libm
 //                                    hypot; NOT biketyre::py_hypot —
 //                                    that is CPython math.hypot's
@@ -191,8 +198,16 @@ namespace biketyre {
         advect_material_into(maxwell_force_n_, omega_radps, dt_s,
                              dtheta_rad, advect_scratch_);
         const double decay = std::exp(-dt_s / relaxation_s);
+        // `float * ndarray` lowers to np.multiply(decay, advected):
+        // the wheel's broadcast kernel picks its own fmul operand 0
+        // (array lane on manylinux, scalar on the AppleClang wheel), so
+        // a dual-NaN lane resolves differently per wheel — the NaN
+        // winner is projected through BIKE_NUMPY_MUL_BROADCAST_ELEMENT_
+        // NAN, measured by the dependency probe, inside
+        // numeric::np_multiply_broadcast.
         for (std::size_t i = 0; i < n_rays_; ++i)
-            maxwell_force_n_[i] = decay * advect_scratch_[i];
+            maxwell_force_n_[i] = numeric::np_multiply_broadcast(
+                    decay, advect_scratch_[i]);
     }
 
     void CarcassState::assign(const CarcassState &source) {
@@ -271,7 +286,7 @@ namespace biketyre {
                     std::max(rim_event_peak_load_n_, vertical_load_n);
             rim_event_peak_force_n_ =
                     std::max(rim_event_peak_force_n_,
-                             numeric::numpy_pairwise_sum(rim_force_n));
+                             numeric::numpy_sum(rim_force_n));
             rim_event_energy_j_ =
                     std::max(rim_event_energy_j_, energy_j);
             return std::nullopt;
@@ -508,10 +523,10 @@ namespace biketyre {
         out.force_z_n =
                 -blas::ddot(n_i32, out.total_element_force_n.data(), 1,
                             ring.uz().data(), 1);
-        out.normal_load_n = numeric::numpy_pairwise_sum(
+        out.normal_load_n = numeric::numpy_sum(
                 out.total_element_force_n);
         out.rim_energy_j =
-                0.5 * numeric::numpy_pairwise_sum(rim_energy_term);
+                0.5 * numeric::numpy_sum(rim_energy_term);
 
         // carcass.py:293-296 — contact patches and scaled lengths.
         out.patch_count =

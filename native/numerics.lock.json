@@ -1,0 +1,45 @@
+{
+  "purpose": "Committed per-platform numerics facts for the native build, measured with the pinned NumPy by tools/native_dependencies.py. Each records[] entry holds only facts identical on every machine of that platform, plus the NumPy version as the staleness identity. Regenerate with --write-numerics-record; do not hand-edit.",
+  "records": {
+    "darwin-arm64": {
+      "numerics": {
+        "backend": "ACCELERATE",
+        "blas_integer_bits": 32,
+        "interp": {
+          "lowering": "contracted"
+        },
+        "lapack_integer_bits": 64,
+        "library_paths": [
+          {
+            "identity_kind": "apple-system",
+            "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib",
+            "role": "blas",
+            "sha256": null
+          },
+          {
+            "identity_kind": "apple-system",
+            "path": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLAPACK.dylib",
+            "role": "lapack",
+            "sha256": null
+          }
+        ],
+        "multiply_broadcast": {
+          "nan_winner": "scalar"
+        },
+        "numpy_version": "2.5.2",
+        "symbols": {
+          "ddot": "cblas_ddot",
+          "dgelsd": "dgelsd$NEWLAPACK$ILP64",
+          "dgemm": "cblas_dgemm",
+          "dgemv": "cblas_dgemv"
+        }
+      },
+      "platform": {
+        "libc": null,
+        "machine": "arm64",
+        "system": "Darwin"
+      }
+    }
+  },
+  "schema_version": 1
+}

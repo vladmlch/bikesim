@@ -63,6 +63,159 @@
       "reason": "clang-tidy reports the same CSA false positive at PyTuple_GET_ITEM in nb_types.h:1583; PyTupleObject.ob_item is a single-element declaration whose storage is variably allocated per tuple length, and the seq_iterator only reads indices below the tuple size.",
       "reproducer": "uv run cmake --build native/build --target check_tidy; clang-analyzer-security.ArrayBound at nanobind/nb_types.h:1583 reached via tuple iteration in native/src/runtime/runtime_binding.cpp owned_copy",
       "remove_when": "Remove when clang-tidy no longer emits this exact ArrayBound diagnostic at nb_types.h:1583 for tuple iteration, or nanobind stops indexing ob_item through NB_TUPLE_GET_ITEM."
+    },
+    {
+      "checker": "core.CallAndMessage",
+      "origin": "(?:^|/)src/drivetrain/drive_binding\\.cpp$",
+      "message": "Called C++ object pointer is uninitialized",
+      "tool_version": "18.1.3",
+      "reason": "Clang 18 CSA cannot model std::visit over the telemetry variant: it reports the freshly constructed nb::dict receiver inside the visitor lambda as an uninitialized object pointer at drive_binding.cpp:46 and :48. The variant `v` is bound to a live telemetry entry and `d` is a fully constructed nb::dict; the pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_analyzer; core.CallAndMessage at native/src/drivetrain/drive_binding.cpp:46 and :48 inside the std::visit dict writer",
+      "remove_when": "Remove when the Linux analyzer toolchain reaches a release that stops emitting this std::visit false positive for the dict writer."
+    },
+    {
+      "checker": "core.CallAndMessage",
+      "origin": "(?:^|/)src/rider/rider_contact_binding\\.cpp$",
+      "message": "1st function call argument is an uninitialized value",
+      "tool_version": "18.1.3",
+      "reason": "Clang 18 CSA treats the nanobind handle argument `raw` at rider_contact_binding.cpp:1056 as uninitialized when it is passed into state_from_dict; nb::handle is always populated by nanobind's dispatcher before the lambda runs. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_analyzer; core.CallAndMessage at native/src/rider/rider_contact_binding.cpp:1056 in set_rider_contacts_state",
+      "remove_when": "Remove when the Linux analyzer toolchain stops flagging nanobind handle arguments as uninitialized at this site."
+    },
+    {
+      "checker": "core.CallAndMessage",
+      "origin": "(?:^|/)tests/test_contracts\\.cpp$",
+      "message": "1st function call argument is an uninitialized value",
+      "tool_version": "18.1.3",
+      "reason": "Clang 18 CSA loses track of the structured bindings `gearing`/`shifting` captured by the lambda at test_contracts.cpp:615 and reports the CadenceShifter constructor argument as uninitialized; both bindings reference fully constructed valid_*_config() pairs. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_analyzer; core.CallAndMessage at native/tests/test_contracts.cpp:615 in the CadenceShifter domain-parity case",
+      "remove_when": "Remove when the Linux analyzer toolchain models structured-binding lambda captures without this false positive."
+    },
+    {
+      "checker": "cplusplus.Move",
+      "origin": "(?:^|/)nanobind/include/nanobind/stl/detail/nb_array\\.h$",
+      "message": "Method called on moved-from object 'value' of type 'std::array'",
+      "tool_version": "18.1.3",
+      "reason": "Same CSA false positive as the pinned LLVM 23 record: the reusable fixed-size nanobind array caster is reported as moved-from at nb_array.h:34 while its from_python loop overwrites every std::array element before extracting the completed value. Emitted by the Ubuntu LLVM 18.1.3 analyzer used on Linux.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_analyzer; cplusplus.Move at nanobind/stl/detail/nb_array.h:34 reached from native/src/rider/contact_binding.cpp:33",
+      "remove_when": "Remove when the Linux analyzer toolchain no longer emits this exact nb_array.h:34 diagnostic for the contact_binding.cpp matrix conversion."
+    },
+    {
+      "checker": "clang-analyzer-core.CallAndMessage",
+      "origin": "(?:^|/)src/drivetrain/drive_binding\\.cpp$",
+      "message": "Called C++ object pointer is uninitialized",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 reports the same CSA false positive as the analyzer pass: the freshly constructed nb::dict receiver inside the std::visit visitor lambda is flagged as an uninitialized object pointer at drive_binding.cpp:46 and :48. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; clang-analyzer-core.CallAndMessage at native/src/drivetrain/drive_binding.cpp:46 and :48 inside the std::visit dict writer",
+      "remove_when": "Remove when the Linux clang-tidy toolchain stops emitting this std::visit false positive for the dict writer."
+    },
+    {
+      "checker": "clang-analyzer-core.CallAndMessage",
+      "origin": "(?:^|/)src/rider/rider_contact_binding\\.cpp$",
+      "message": "1st function call argument is an uninitialized value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 treats the nanobind handle argument `raw` at rider_contact_binding.cpp:1056 as uninitialized when it is passed into state_from_dict; nb::handle is always populated by nanobind's dispatcher before the lambda runs. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; clang-analyzer-core.CallAndMessage at native/src/rider/rider_contact_binding.cpp:1056 in set_rider_contacts_state",
+      "remove_when": "Remove when the Linux clang-tidy toolchain stops flagging nanobind handle arguments as uninitialized at this site."
+    },
+    {
+      "checker": "clang-analyzer-core.CallAndMessage",
+      "origin": "(?:^|/)tests/test_contracts\\.cpp$",
+      "message": "1st function call argument is an uninitialized value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 loses track of the structured bindings `gearing`/`shifting` captured by the lambda at test_contracts.cpp:615 and reports the CadenceShifter constructor argument as uninitialized; both bindings reference fully constructed valid_*_config() pairs. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; clang-analyzer-core.CallAndMessage at native/tests/test_contracts.cpp:615 in the CadenceShifter domain-parity case",
+      "remove_when": "Remove when the Linux clang-tidy toolchain models structured-binding lambda captures without this false positive."
+    },
+    {
+      "checker": "clang-analyzer-cplusplus.Move",
+      "origin": "(?:^|/)nanobind/include/nanobind/stl/detail/nb_array\\.h$",
+      "message": "Method called on moved-from object 'value' of type 'std::array'",
+      "tool_version": "18.1.3",
+      "reason": "Same clang-tidy CSA false positive as the pinned LLVM 23 record: the reusable fixed-size nanobind array caster is reported as moved-from at nb_array.h:34 while its from_python loop overwrites every std::array element before extraction. Emitted by Ubuntu LLVM 18.1.3 clang-tidy on Linux.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; clang-analyzer-cplusplus.Move at nanobind/stl/detail/nb_array.h:34 reached from native/src/rider/contact_binding.cpp:33",
+      "remove_when": "Remove when the Linux clang-tidy toolchain no longer emits this exact nb_array.h:34 diagnostic for the contact_binding.cpp matrix conversion."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/drivetrain/transmission\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model the ternary-guarded optional at transmission.cpp:319: `update.state.boundary` is assigned an engaged value by the preceding conditional expression before `update.range[1] = *update.state.boundary` dereferences it. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/drivetrain/transmission.cpp:319",
+      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes the assignment-guarded optional access at this site."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/runtime/research\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model the conditional-expression guard at research.cpp:438: `episode_->last_requested->as_wire(true)` is only evaluated when `episode_->last_requested` tests engaged. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/runtime/research.cpp:438 in last_requested()",
+      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes this ternary-guarded optional access."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/writers/distributed_tire\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 flags `(*state.tangent)[k]` at distributed_tire.cpp:408 even though the access is inside `if (state.tangent.has_value())`, the canonical has_value guard. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/writers/distributed_tire.cpp:408 in the leaf-tangent writer",
+      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes this has_value-guarded optional access."
+    },
+    {
+      "checker": "misc-no-recursion",
+      "origin": "(?:^|/)include/c\\+\\+/[0-9]+/variant$",
+      "message": "is within a recursive call chain",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 misc-no-recursion cannot model std::visit dispatch through libstdc++'s std::variant internals and reports the libstdc++ variant operators themselves as recursive; the recursion through the recursive Wire variant is data-bounded and terminates. The pinned LLVM 23 baseline does not emit these diagnostics.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-no-recursion at include/c++/13/variant:591 and :667 from every TU visiting runtime::Wire",
+      "remove_when": "Remove when the Linux clang-tidy toolchain stops attributing std::visit recursion to libstdc++ variant internals."
+    },
+    {
+      "checker": "misc-no-recursion",
+      "origin": "(?:^|/)src/runtime/control\\.hpp$",
+      "message": "is within a recursive call chain",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 misc-no-recursion reports runtime::Wire and its operator= at control.hpp:41 as recursive because the Wire variant legitimately nests std::vector<Wire> reached through std::visit; the recursion is data-bounded and terminates. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-no-recursion at native/src/runtime/control.hpp:41 across Wire-visiting translation units",
+      "remove_when": "Remove when the Linux clang-tidy toolchain handles the data-bounded Wire variant recursion without this diagnostic."
+    },
+    {
+      "checker": "misc-no-recursion",
+      "origin": "(?:^|/)src/runtime/samples_binding\\.cpp$",
+      "message": "is within a recursive call chain",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 misc-no-recursion flags wire_object_to_python at samples_binding.cpp:23 and its std::visit lambdas at :32 for the data-bounded recursion over the recursive Wire variant; every recursion level consumes a smaller Wire subtree. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-no-recursion at native/src/runtime/samples_binding.cpp:23 and :32",
+      "remove_when": "Remove when the Linux clang-tidy toolchain handles the Wire writer recursion without this diagnostic."
+    },
+    {
+      "checker": "cplusplus.NewDelete",
+      "origin": "(?:^|/)tests/sanitizer_control\\.cpp$",
+      "message": "Use of memory after it is released",
+      "tool_version": "23.1.2",
+      "reason": "The read through `escaped[index]` at sanitizer_control.cpp:49 is the intentional injected defect of the T15 use-after-free control: the translation unit exists to prove the real ASan heap-use-after-free diagnostic fires in a fresh subprocess under the selected runtime. The defect must stay a true positive, so the analyzer record is suppressed in the manifest rather than NOLINT-ed, and the runtime control remains load-bearing evidence.",
+      "reproducer": "cmake --build native/build --target check_analyzer; cplusplus.NewDelete at native/tests/sanitizer_control.cpp:49 in use_after_free_control",
+      "remove_when": "Remove if the use-after-free control is deleted or rewritten so the escaped-pointer read no longer follows unique_ptr::reset."
+    },
+    {
+      "checker": "cplusplus.NewDelete",
+      "origin": "(?:^|/)tests/sanitizer_control\\.cpp$",
+      "message": "Use of memory after it is freed",
+      "tool_version": "18.1.3",
+      "reason": "Same intentional T15 defect as the pinned LLVM 23 record: `escaped[index]` at sanitizer_control.cpp:49 reads storage after unique_ptr::reset to produce the heap-use-after-free the ASan control subprocess must observe. The Ubuntu LLVM 18.1.3 analyzer on Linux emits the same diagnostic with 'freed' wording where LLVM 23 says 'released'.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_analyzer; cplusplus.NewDelete at native/tests/sanitizer_control.cpp:49 in use_after_free_control",
+      "remove_when": "Remove if the use-after-free control is deleted or rewritten so the escaped-pointer read no longer follows unique_ptr::reset."
+    },
+    {
+      "checker": "misc-const-correctness",
+      "origin": "(?:^|/)tests/test_platform_lapack\\.cpp$",
+      "message": "variable 'lwork' of type 'integer'",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 misc-const-correctness misses that `lwork` escapes by address into the Fortran-style numeric_backend::dgelsd out-parameter at test_platform_lapack.cpp:66, :97, and :241; declaring it const would not compile. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-const-correctness at native/tests/test_platform_lapack.cpp:66, :97, and :241 for the dgelsd lwork out-parameter",
+      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes the address-taken out-parameter escape at these sites."
     }
   ]
 }

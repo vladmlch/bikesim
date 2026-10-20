@@ -23,6 +23,7 @@
 #include "../model_access.hpp"
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
+#include "spindle_linalg.hpp"
 
 namespace rider {
 namespace {
@@ -86,59 +87,12 @@ NATIVE_DIAG_POP
     return {p[0], p[1], p[2]};
 }
 
-// (R^T v) restricted to the planar (x, z) coordinates. The oracle's
-// `R.T @ v` dispatches to Accelerate's transposed dgemv, whose column dot
-// accumulates forward through fma — a plain mul-add chain is one ulp off
-// on ~30% of random operands (verified: 60000/60000 matches for
-// acc = fma(a_i, v_i, acc) starting at a0*v0). std::fma pins that
-// rounding; the row-dot M @ v kernel (mat_vec) stays sequential.
-[[nodiscard]] Vec2 mat_t_vec_xz(const std::array<double, 9> &r,
-                                const Vec3 &v) {
-    return {std::fma(r[6], v[2],
-                     std::fma(r[3], v[1], r[0] * v[0])),
-            std::fma(r[8], v[2],
-                     std::fma(r[5], v[1], r[2] * v[0]))};
-}
-
-[[nodiscard]] Vec3 mat_vec(const std::array<double, 9> &r, const Vec3 &v) {
-    return {r[0] * v[0] + r[1] * v[1] + r[2] * v[2],
-            r[3] * v[0] + r[4] * v[1] + r[5] * v[2],
-            r[6] * v[0] + r[7] * v[1] + r[8] * v[2]};
-}
-
-// r = lhs @ rhs (row-major). numpy's `A @ B` dispatches to Accelerate's
-// dgemm, whose inner products accumulate forward through fma — same
-// kernel semantics as mat_t_vec_xz above (verified 180000/180000 on
-// random 3x3 operands). std::fma pins that rounding elementwise.
-// Mat3-sized returns are the designed interface; the flag's useful half
-// (by-value parameters) stays enabled.
-NATIVE_DIAG_PUSH
-NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
-[[nodiscard]] std::array<double, 9> mat_mul(const std::array<double, 9> &lhs,
-                                            const std::array<double, 9> &rhs) {
-    std::array<double, 9> out{};
-    for (std::size_t i = 0; i < 3; ++i)
-        for (std::size_t j = 0; j < 3; ++j)
-            out[i * 3 + j] = std::fma(
-                    lhs[i * 3 + 2], rhs[6 + j],
-                    std::fma(lhs[i * 3 + 1], rhs[3 + j],
-                             lhs[i * 3] * rhs[j]));
-    return out;
-}
-NATIVE_DIAG_POP
-
 [[nodiscard]] Vec3 vec_sub(const Vec3 &a, const Vec3 &b) {
     return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
 }
 
 [[nodiscard]] Vec3 vec_add(const Vec3 &a, const Vec3 &b) {
     return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
-}
-
-// np.linalg.norm on a float64 3-vector is sqrt(dot(v,v)) — a left-to-right
-// multiply-add, not std::hypot's scaled algorithm.
-[[nodiscard]] double norm3(const Vec3 &v) {
-    return std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
 
 [[nodiscard]] Vec2 xz(const std::array<double, 3> &v) {
@@ -317,14 +271,13 @@ double lean_limit_rad(
                      xz(pose.elbow)[1] - xz(pose.shoulder)[1]};
     const Vec2 lower{xz(pose.grip)[0] - xz(pose.elbow)[0],
                      xz(pose.grip)[1] - xz(pose.elbow)[1]};
-    // np.linalg.norm(2-vec) is sqrt(x*x+z*z), left-to-right — not hypot.
-    const double arm_upper =
-        std::sqrt(upper[0] * upper[0] + upper[1] * upper[1]);
-    const double arm_lower =
-        std::sqrt(lower[0] * lower[0] + lower[1] * lower[1]);
+    // np.linalg.norm(2-vec) — the production 1-D norm mirror
+    // (sqrt(v.dot(v))).
+    const double arm_upper = np_norm(upper);
+    const double arm_lower = np_norm(lower);
     const double upper0 = std::atan2(upper[1], upper[0]);
     const double lower0 = std::atan2(lower[1], lower[0]);
-    const int branch = std::sin(lower0 - upper0) >= 0. ? 1 : -1;
+    const int branch = numeric::math_sin(lower0 - upper0) >= 0. ? 1 : -1;
     const Vec2 crank{(pose.pedal_front[0] + pose.pedal_rear[0]) / 2.,
                      (pose.pedal_front[2] + pose.pedal_rear[2]) / 2.};
     std::array<double, 2> hips_at_tdc{};
@@ -348,13 +301,16 @@ double lean_limit_rad(
     };
     const Vec2 grip_xz = xz(pose.grip);
     const auto feasible = [&](double lean) {
-        const double c = numeric::cos(lean), s = numeric::sin(lean);
-        const Vec2 shoulder{hip[0] + c * trunk[0] + s * trunk[1],
-                            hip[1] - s * trunk[0] + c * trunk[1]};
+        const double c = numeric::math_cos(lean), s = numeric::math_sin(lean);
+        // shoulder = hip + rotation @ trunk through NumPy's C-order
+        // (2,2) row matvec dispatch.
+        const Mat2 rotation{c, s, -s, c};
+        const Vec2 mv = mat_vec2(rotation, trunk);
+        const Vec2 shoulder{hip[0] + mv[0], hip[1] + mv[1]};
         const Vec2 goal{grip_xz[0] - shoulder[0],
                         grip_xz[1] - shoulder[1]};
-        const Vec2 arm_goal{c * goal[0] - s * goal[1],
-                            s * goal[0] + c * goal[1]};
+        // arm_goal = rotation.T @ goal.
+        const Vec2 arm_goal = mat_t_vec2(rotation, goal);
         const auto ik =
             spindle::two_link_ik(arm_goal, arm_upper, arm_lower, branch);
         if (ik.saturated || !within("rider_torso_hinge", lean))
@@ -605,22 +561,22 @@ void SpindleController::resolve_model_layout(
     const Vec3 trunk = vec_sub(pose_.shoulder, pose_.hip);
     const Vec3 upper = vec_sub(pose_.elbow, pose_.shoulder);
     const Vec3 lower = vec_sub(pose_.grip, pose_.elbow);
-    arm_upper_m_ = norm3(upper);
-    arm_lower_m_ = norm3(lower);
+    arm_upper_m_ = np_norm(upper);
+    arm_lower_m_ = np_norm(lower);
     arm_upper_angle0_ = std::atan2(upper[2], upper[0]);
     arm_lower_angle0_ = std::atan2(lower[2], lower[0]);
     arm_branch_ =
-        std::sin(arm_lower_angle0_ - arm_upper_angle0_) >= 0. ? 1 : -1;
+        numeric::math_sin(arm_lower_angle0_ - arm_upper_angle0_) >= 0. ? 1 : -1;
     {
         const Vec2 goal{xz(vec_sub(pose_.grip, pose_.hip))};
         const double reach =
             (arm_upper_m_ + arm_lower_m_) * config_.arm_reach_fraction;
         const auto first =
-            spindle::two_link_ik(goal, norm3(trunk), reach, -1);
+            spindle::two_link_ik(goal, np_norm(trunk), reach, -1);
         const auto second =
-            spindle::two_link_ik(goal, norm3(trunk), reach, 1);
+            spindle::two_link_ik(goal, np_norm(trunk), reach, 1);
         const auto &neutral =
-            std::sin(first.angles[0]) >= std::sin(second.angles[0])
+            numeric::math_sin(first.angles[0]) >= numeric::math_sin(second.angles[0])
                 ? first
                 : second;
         neutral_torso_saturated_ = neutral.saturated;
@@ -723,9 +679,9 @@ SpindleController::upper_targets(const mjData *data,
         model_access::readonly_buffer(data->qpos, model_->nq,
                                       "qpos")[static_cast<std::size_t>(
             joints_[joint_index("rider_torso_hinge")].qpos_adr)];
-    delta = std::atan2(numeric::sin(delta), numeric::cos(delta));
+    delta = std::atan2(numeric::math_sin(delta), numeric::math_cos(delta));
     if (config_.legacy && config_.legacy->grip_attachment == "spring") delta = 0.;
-    const double cd = numeric::cos(delta), sd = numeric::sin(delta);
+    const double cd = numeric::math_cos(delta), sd = numeric::math_sin(delta);
     const std::array<double, 9> rot{cd, 0., sd, 0., 1., 0., -sd, 0., cd};
     const Vec3 hinge = joint_anchor(model_, data, torso_joint_);
     const auto torso_r = mat_mul(rot, torso_r_actual);
@@ -761,8 +717,8 @@ SpindleController::upper_targets(const mjData *data,
     for (auto &[name, target] : targets) {
         const double current = qpos[static_cast<std::size_t>(
             joints_[joint_index(name)].qpos_adr)];
-        target = current + std::atan2(numeric::sin(target - current),
-                                      numeric::cos(target - current));
+        target = current + std::atan2(numeric::math_sin(target - current),
+                                      numeric::math_cos(target - current));
         const auto range = joint_ranges_.find(name);
         if (range != joint_ranges_.end()) {
             const auto [lo, hi] = range->second;
@@ -1098,7 +1054,7 @@ SpindleController::finalize_effort(mjData *data,
     for (std::size_t i = 0; i < n; ++i)
         positive_terms[i] = std::max(result[i] * speeds[i], 0.);
     const double positive_power =
-        numeric::numpy_pairwise_sum(positive_terms);
+        numeric::numpy_sum(positive_terms);
     const double passive_power = blas::ddot(
         static_cast<int>(n), passive.data(), 1, speeds.data(), 1);
     bool saturated = false;
@@ -1176,16 +1132,12 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
     } else {
         const auto frame_r = body_mat(model_, data, frame_body_);
         const auto pelvis_r = body_mat(model_, data, pelvis_body_);
-        // relative_R = frame_R.T @ pelvis_R — the oracle's dgemm inner
-        // products accumulate forward through fma (mat_mul above).
-        const double rel02 =
-                std::fma(frame_r[6], pelvis_r[8],
-                         std::fma(frame_r[3], pelvis_r[5],
-                                  frame_r[0] * pelvis_r[2]));
-        const double rel00 =
-                std::fma(frame_r[6], pelvis_r[6],
-                         std::fma(frame_r[3], pelvis_r[3],
-                                  frame_r[0] * pelvis_r[0]));
+        // relative_R = frame_R.T @ pelvis_R through the shared
+        // Trans-NoTrans matmul mirror; only lanes (0,2) and (0,0)
+        // feed atan2.
+        const Mat3 relative_r = mat_t_mul(frame_r, pelvis_r);
+        const double rel02 = relative_r[2];
+        const double rel00 = relative_r[0];
         const double pelvis_pitch = std::atan2(rel02, rel00);
         const Vec3 crank_world = joint_anchor(model_, data, crank_joint_);
         std::array<Vec2, 2> spindles{};

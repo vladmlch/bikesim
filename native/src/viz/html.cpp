@@ -1,5 +1,6 @@
 #include "plot_internal.hpp"
 #include "../platform/provenance.hpp"
+#include "bike_viz_paths.hpp"
 #include <fstream>
 #include <mutex>
 #include <sstream>

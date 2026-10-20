@@ -296,6 +296,7 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
     summary = None
     journal = None
     preview = None
+    primary = None
 
     def seal_episode(reason):
         nonlocal summary
@@ -514,6 +515,7 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
                      "use `uv run --with plotly`)")
         return physical_exit_code(summary['outcome']['reason'], summary)
     except BaseException as error:
+        primary = error
         # Ctrl-C is an operator action, not a simulation failure — it
         # seals under the same reason the headless path uses, and it is
         # not recorded as a driver failure.
@@ -542,4 +544,9 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
             error.add_note('operator interrupt deferred during recording cleanup')
         raise
     finally:
-        driver.close()
+        try:
+            driver.close()
+        except BaseException as cleanup:
+            if primary is None:
+                raise
+            primary.add_note(f'physical close failed: {type(cleanup).__name__}: {cleanup}')

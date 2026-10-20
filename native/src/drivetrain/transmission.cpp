@@ -506,7 +506,7 @@ namespace drivetrain {
                 tension_terms_.push_back(ef[i]);
                 selected = true;
             }
-        const double tension = numeric::numpy_pairwise_sum(tension_terms_);
+        const double tension = numeric::numpy_sum(tension_terms_);
         if (selected)
             mj_mulJacTVec(model_, d, force_.data(), multipliers_.data());
         solved.force = force_;

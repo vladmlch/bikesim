@@ -27,6 +27,23 @@ changes. Separately exercise macOS windows and measure one warm-up plus three
 runs per backend with `tools/measure_realtime.py`. A fake window is not a GUI
 acceptance check, and a measurement report is not a numerical parity result.
 
+## Platform support
+
+The dated status block above is the 2026-10-10 macOS record. Current
+measured development lanes and per-platform setup are documented in
+[development/linux.md](development/linux.md),
+[development/macos.md](development/macos.md) and
+[development/troubleshooting.md](development/troubleshooting.md): macOS
+arm64 (`native/build`, CPython 3.14.3) and Linux aarch64 in the Ubuntu
+24.04 container (`native/build-linux-clang`, CPython 3.13.16). On Linux the
+environment is a Linux-native venv selected with
+`UV_PROJECT_ENVIRONMENT` — never the copied macOS `.venv` — and
+`CMAKE_OSX_SYSROOT` is rejected as an Apple-only option. Everywhere,
+`NATIVE_TEST_BUILD_PATH` (tests) and `BIKE_NATIVE_BUILD_PATH`
+(applications) name the same absolute selected build directory. The sweep
+and profile semantics below are platform-independent; tool *resolution*
+differs per lane and is described where it matters.
+
 ## Upstream verification commands
 
 Run these commands from the repository root:
@@ -114,6 +131,19 @@ For a direct native test invocation, select the build in the same way:
 ```bash
 NATIVE_TEST_BUILD_PATH="$PWD/native/build" uv run python -m pytest tests/reference/test_native_suspension.py -q
 ```
+
+## Standalone root build
+
+`cmake -S . -B build/native-release` is the Python-free graph. Only the Darwin
+host is qualified: its configure reads the committed numerics record.
+`tests/portability/test_root_configure.py` checks two things on that configure.
+No interpreter reachable by name on `PATH` is spawned, and none is recorded in
+the CMake cache. An absolute-path spawn is not caught. A cross-compiling
+toolchain (`-DCMAKE_SYSTEM_NAME=Windows`) is refused by the root's own include
+chain. `BIKE_BUILD_PYTHON_BINDINGS=ON` is not a root mode: the root routes it
+into `native/CMakeLists.txt`, which refuses it, so the nanobind extension is
+built only with `cmake -S native`, which keeps its own Python discovery and
+dependency policy.
 
 ## Static analysis and sanitizer builds
 
@@ -239,8 +269,11 @@ and the empty build type. Read the current compiler, SDK, run ID, and measured
 values in `native/build/native_check_summaries/context.json`; these local
 measurements are evidence for the selected toolchain, not a performance floor.
 
-`check_analyzer` and `check_tidy` use the keg-only brew LLVM
-(`/opt/homebrew/opt/llvm/bin`) — Apple clang lacks several checkers. The
+`check_analyzer` and `check_tidy` need a full LLVM toolchain, not AppleClang:
+on the qualified macOS arm64 host they resolve to the keg-only brew LLVM
+(`/opt/homebrew/opt/llvm/bin`, discovered per machine via `brew --prefix
+llvm`), and on the qualified Linux aarch64 lane to the distro clang-18
+tools. Missing tools are an error, not a skip. The
 analyzer's alpha pass prints findings without failing; they are unstable by
 upstream contract, so review them when they appear instead of gating on them.
 `check_odr` compiles every TU with `-flto` and merges with `-Wodr` — the only
@@ -260,17 +293,31 @@ NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native
 ```
 
 The sanitizer set is `address,undefined,local-bounds,float-cast-overflow`
-with `-fno-sanitize-recover=all`. The launcher reads the compiler from the
-selected build's cache, resolves its ASan runtime, then injects it into CTest
-and the Python process after `uv` starts. It also sets `PYTHONMALLOC=malloc`
-and the documented ASan options in those child processes. Before importing the
-extension, the loader checks the selected runtime's actual dyld image list (or
-`/proc/self/maps` on Linux); an environment variable alone does not count as
-runtime evidence.
+with `-fno-sanitize-recover=all` on clang lanes and the `address,undefined`
+core on GCC. Every instrumented consumer (CTest, the selected-extension
+import, the contract target, pytest) runs through
+`tools/native_runtime.py run --build <build> -- <argv>`: the helper loads
+the build's validated schema-2 context, cross-checks it against the
+CMakeCache selections, and injects the sanitizer runtime the *recorded*
+compiler identity selected — `capabilities.asan.runtime` was resolved by
+the configured driver's own `-print-file-name` at configure time and a
+clean instrumented control already ran under it. The runtime is prepended
+to `DYLD_INSERT_LIBRARIES` (Darwin) or `LD_PRELOAD` (Linux), preserving an
+existing value; ASan lanes also set `PYTHONMALLOC=malloc` and append
+`detect_leaks=0:detect_stack_use_after_return=1` to `ASAN_OPTIONS`. A
+stale context, an ASan+RTSan build, or an unresolvable/wrong-architecture
+runtime fails the runner instead of executing uninstrumented. Before
+importing the extension, the loader checks the selected runtime's actual
+dyld image list (or `/proc/self/maps` on Linux); an environment variable
+alone does not count as runtime evidence.
 
 RTSan (`-fsanitize=realtime`) verifies the marked hot path never allocates or
 locks — the mechanical half of the allocation-free tick requirement. It needs
-the brew clang (Apple clang rejects the flag):
+a separately qualified LLVM toolchain: the measured macOS lane uses the brew
+clang (Apple clang rejects the flag), and on Linux the Ubuntu 24.04 default
+clang-18 lacks the realtime runtime too — select an LLVM >= 20 `clang++`
+explicitly, and configure fails closed rather than silently skipping the
+lane:
 
 ```bash
 cmake -S native -B native/build/rtsan \
@@ -299,19 +346,31 @@ against that absolute build, and writes artifacts under a unique
 nonempty `.profraw` files and reports against the exact extension recorded by
 the loader. `coverage_provenance.json` records the selected build, imported and
 reported object, collected native test count, profile count, LLVM tool versions,
-merged profile, and text/JSON report paths. Logs remain in the run directory
-when configuration, tests, or reporting fails. On macOS the wrapper resolves
-the matching Xcode tools through `xcrun`; set `LLVM_PROFDATA` and `LLVM_COV` to
-executable paths to select another compatible pair.
+the tool-resolution/format-probe evidence (`tool_resolution`), merged profile,
+and text/JSON report paths. Logs remain in the run directory when
+configuration, tests, or reporting fails.
 
-Coverage finalization is also available directly for an existing run:
+The `llvm-profdata`/`llvm-cov` pair is resolved through the shared toolchain
+helper (`tools/native_toolchain.py coverage-tools`) and qualified by a real
+instrumented control — compile with `-fprofile-instr-generate
+-fcoverage-mapping`, run under a fresh `LLVM_PROFILE_FILE`, merge, export —
+against the compiler recorded in the build context. Resolution order is:
+explicit `LLVM_PROFDATA`/`LLVM_COV` overrides (an invalid override is an
+error, not a fallback), a sibling beside the configured compiler, a PATH
+candidate, and — on macOS only — `xcrun --find` for the Xcode toolchain.
+Linux never invokes `xcrun`. A `NATIVE_COVERAGE=ON` configure rejects a
+non-clang compiler, a compiler that fails the instrumentation flag probe,
+and a tool pair that cannot merge/export the control profile; mismatched
+tools fail with the command diagnostics rather than an empty report.
+
+Coverage finalization is also available directly for an existing run (tools
+are resolved the same way; `--llvm-profdata`/`--llvm-cov` pin explicit
+overrides):
 
 ```bash
 uv run python tools/native_coverage.py \
   --build native/build/coverage \
-  --run-dir native/build/coverage/native_coverage_runs/run.ID \
-  --llvm-profdata "$(xcrun --find llvm-profdata)" \
-  --llvm-cov "$(xcrun --find llvm-cov)"
+  --run-dir native/build/coverage/native_coverage_runs/run.ID
 ```
 
 V4 verification snapshot (2026-10-06): the regular native profile passed with
@@ -1266,15 +1325,15 @@ uv run cmake --build native/build/rtsan -j4
 NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native
 ```
 
-**macOS launcher caveat:** `DYLD_INSERT_LIBRARIES` does not survive the
-`uv run` process chain — the runtime lands in the `uv` launcher, not the
-spawned interpreter — so `load_native()`'s `verify_sanitizer_runtime()`
-correctly rejects the pytest leg of
-`NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native` with
-"selected sanitizer runtime is not loaded in this Python process". The
-contract-binary leg is unaffected (`native_contract_tests` links
-`-fsanitize=realtime` itself). To run the Python suite against the
-instrumented extension, invoke the venv interpreter directly:
+**macOS launcher caveat (resolved):** `DYLD_INSERT_LIBRARIES` does not
+survive a `uv run` process chain if set in the caller's environment — the
+runtime lands in the `uv` launcher, not the spawned interpreter.
+`tools/run_tests.sh` therefore never exports it: every instrumented leg
+runs through `tools/native_runtime.py run --build <build> -- <argv>`,
+which injects the recorded runtime into the child's environment at exec
+time, so the variable reaches the process that actually loads the images
+and `load_native()`'s `verify_sanitizer_runtime()` sees the runtime
+mapped. Invoking the venv interpreter directly still works the same way:
 
 ```bash
 DYLD_INSERT_LIBRARIES=/opt/homebrew/opt/llvm/lib/clang/23/lib/darwin/libclang_rt.rtsan_osx_dynamic.dylib \

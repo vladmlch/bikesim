@@ -785,6 +785,10 @@ class PhysicalRuntime:
             raise ValueError('recording retention must be off, full or legacy')
         self.recording_retention = mode
 
+    def has_pending_close(self):
+        """flush() still owes work: unpublished raws or a live async close."""
+        return bool(self._buffer._raws) or self._async_close is not None
+
     def flush(self):
         """Evaluate the trailing partial period before termination or reset."""
         if self._buffer._raws:
@@ -815,7 +819,7 @@ class PhysicalRuntime:
             self.reference_monitor.accept(time_s,violations)
 
     def set_async_close(self, enabled: bool) -> None:
-        """Move period evaluation and sample assembly to a spawned process.
+        """Move period evaluation and sample assembly to a separate process.
 
         Publication is deferred by up to one physics step: samples, energy and
         diagnostics appear when the worker's result is applied at the next
@@ -833,10 +837,51 @@ class PhysicalRuntime:
             self._async_close = AsyncCloseRunner()
             self._async_ctx_dirty = True
         elif not enabled and self._async_close is not None:
-            self._async_close.drain(self._apply_close_result)
-            self._async_close.close()
+            try:
+                self._async_close.drain(self._apply_close_result)
+            except BaseException as error:
+                self._close_async_worker(primary=error)
+                raise
+            else:
+                self._close_async_worker()
+
+    def _close_async_worker(self, *, primary=None):
+        """Release process resources without publishing or advancing anything."""
+        runner = self._async_close
+        try:
+            if runner is not None:
+                runner.close()
+        except BaseException as error:
+            if primary is None:
+                raise
+            primary.add_note(f'async close cleanup failed: {type(error).__name__}: {error}')
+        finally:
             self._async_close = None
             self._async_ctx_dirty = False
+
+    def _replay_async_periods(self, periods):
+        """Recover queued periods without hiding earlier published samples.
+
+        publish_close replaces the per-period sample tuple and constraint map.
+        Keep the whole publication window visible, as _apply_close_result does,
+        while running each period's original accounting and monitor once. A
+        strict rejection happens after publication, so its owned prefix must
+        remain visible even when recovery exits through that exception.
+        """
+        completed = tuple(self.completed_samples)
+        constraints = dict(self.interval_constraints) if completed else {}
+        for raws in periods:
+            # A failure before publish_close installs its rows must not make
+            # the preceding period look like newly published work again.
+            self.completed_samples = ()
+            self.interval_constraints = {}
+            try:
+                self._publish_and_accept(raws)
+            finally:
+                completed += tuple(self.completed_samples)
+                constraints.update(self.interval_constraints)
+                self.completed_samples = completed
+                self.interval_constraints = constraints
 
     def _async_context(self):
         """Snapshot of everything publish_close reads beyond the raws."""
@@ -868,19 +913,25 @@ class PhysicalRuntime:
 
     def _async_submit(self, raws):
         runner = self._async_close
-        if self._async_ctx_dirty:
-            self._async_ctx_dirty = False
-            runner.send_context(self._async_context())
         try:
+            if self._async_ctx_dirty:
+                runner.send_context(self._async_context())
+                self._async_ctx_dirty = False
             runner.submit(raws)
         except Exception as exc:
             # Serialization failures must not lose the period: fall back to
             # synchronous publication and disable the worker for good.
             import sys
             print(f'[bike] async close disabled: {exc}', file=sys.stderr)
-            runner.close()
-            self._async_close = None
-            self._publish_and_accept(raws)
+            pending = runner.detach_pending()
+            # submit serializes before registering, but retain ownership even
+            # if a later registration operation itself raised.
+            if not pending or pending[-1] is not raws:
+                pending.append(raws)
+            try:
+                self._close_async_worker()
+            finally:
+                self._replay_async_periods(pending)
 
     def _apply_close_result(self, result):
         """Replay a worker-computed close onto this runtime, in order."""
@@ -912,10 +963,18 @@ class PhysicalRuntime:
         runner = self._async_close
         if runner is None:
             return False
+        from bike_sim.sim.ride.async_close import AsyncPublicationError, AsyncWorkerLost
         try:
             results = runner.collect(block=block)
+        except AsyncPublicationError as exc:
+            # A worker publication error is not transport loss. Apply only
+            # the already successful prefix, once, and propagate the error.
+            if exc.completed_results:
+                self.interval_constraints = {}
+            for result in exc.completed_results:
+                self._apply_close_result(result)
+            raise
         except Exception as exc:
-            from bike_sim.sim.ride.async_close import AsyncWorkerLost
             if not isinstance(exc, (AsyncWorkerLost, EOFError, OSError)):
                 # Worker-side publication errors propagate like a synchronous
                 # close would; only transport loss triggers the replay below.
@@ -926,10 +985,10 @@ class PhysicalRuntime:
             print('[bike] async close worker lost; replaying periods synchronously',
                   file=sys.stderr)
             pending = runner.detach_pending()
-            runner.close()
-            self._async_close = None
-            for raws in pending:
-                self._publish_and_accept(raws)
+            try:
+                self._close_async_worker()
+            finally:
+                self._replay_async_periods(pending)
             return bool(pending)
         applied = False
         if results:

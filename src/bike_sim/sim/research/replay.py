@@ -189,9 +189,15 @@ def _rebuild(path, summary, manifest, *, initial=None, vertices=None, capture_mo
     _check_runtime(summary)
     backend = 'python' if manifest['schema_version'] == 1 else manifest['execution']['backend']
     if manifest["schema_version"] >= 2:
+        # Checked-replay gate: an identity mismatch — including a legacy
+        # recording's missing identity_schema/context fields — fails here,
+        # before any simulator construction or physics advance.
         from bike_sim.native.artifact import execution_provenance
-        if execution_provenance(backend) != manifest["execution"]:
-            raise ValueError("replay execution identity differs from this runtime")
+        from bike_sim.native.execution_identity import (
+            require_execution_compatible,
+        )
+        require_execution_compatible(manifest["execution"],
+                                     execution_provenance(backend))
     data = deepcopy(summary["resolved_config"])
     for key, filename in (("joint_envelope", ENVELOPE_FILE), ("joint_strength", STRENGTH_FILE)):
         declared = data["physics"]["articulated"].get(key+"_path")

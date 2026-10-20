@@ -1,126 +1,125 @@
-cmake_minimum_required(VERSION 3.24)
-# Shared toolchain policy with the standalone root build (T03): SDK probing
-# (behind APPLE, explicit-SDK failures retained), libc++ hardening detection
-# and the strict-flag/sanitizer policy applied to every first-party target.
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerPolicy.cmake")
-# The mach-o load-name rewrite helper lives in the dependency module; the
-# legacy build still resolves MuJoCo through the pinned wheel (MJ_DIR below)
-# and only reuses the helper — it never consumes .deps.
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Dependencies.cmake")
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Provenance.cmake")
+cmake_minimum_required(VERSION 3.27)
+# Legacy transition build (cmake -S native -B <dir>): the nanobind extension,
+# its Python-free contract core, the sweep harnesses and the migration tests.
+#
+# Platform layer first (cmake/Bike*.cmake, the base of this graph): host/SDK
+# dispatch before project(), compiler/stdlib policy, the schema-1 dependency
+# probe (MuJoCo, nanobind, Python), the qualified numerics provider, portable
+# linkage and the schema-2 check context. HEAD's functional targets (io,
+# configuration, geometry, kinematics, random, model, platform, startup, app,
+# research and recording) are carried on that base. The repository-root
+# standalone graph keeps its own wiring (CMakeLists.txt, BIKE_ROOT_BUILD).
 
-# CMake performs its compiler link check during project(), so resolve a
-# default SDK before that call — behind APPLE, never replacing an SDK or
-# compiler supplied by the caller. When this file is add_subdirectory'd into
-# the standalone root build (BIKE_ROOT_BUILD), the parent already resolved
-# and verified the SDK; this build inherits the resolved path.
-if(APPLE AND CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  bike_resolve_macos_sdk()
-elseif(APPLE)
-  set(_native_sdk_source "inherited")
-  set(_native_sdk_requested "${CMAKE_OSX_SYSROOT}")
-  if(IS_DIRECTORY "${CMAKE_OSX_SYSROOT}")
-    get_filename_component(_native_sdk_path "${CMAKE_OSX_SYSROOT}" REALPATH)
-  else()
-    set(_native_sdk_path "${CMAKE_OSX_SYSROOT}")
-  endif()
-else()
-  set(_native_sdk_source "not_applicable")
-  set(_native_sdk_requested "")
-  set(_native_sdk_path "")
+if(BIKE_ROOT_BUILD)
+  # The root graph with BIKE_BUILD_PYTHON_BINDINGS=ON would add this directory
+  # after the root already resolved .deps. That mode is not migrated to the
+  # platform layer yet; fail closed instead of mixing two dependency policies.
+  message(FATAL_ERROR
+    "BIKE_BUILD_PYTHON_BINDINGS=ON from the repository root is not wired to "
+    "the cmake/Bike*.cmake platform layer yet; configure the legacy extension "
+    "graph with cmake -S native instead")
 endif()
 
+# Host/SDK dispatch must precede project(): CMake runs its compiler link check
+# there, so an SDK a compiler defaults to is resolved first (Apple only).
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikePlatform.cmake")
+
 project(bike_native CXX)
+# A manually supplied CMAKE_SYSTEM_NAME (even one equal to the host name)
+# makes CMake flag this build as cross-compiling; reject it now that the
+# toolchain detection has run.
+if(CMAKE_CROSSCOMPILING)
+  message(FATAL_ERROR "Cross-compilation is not supported by this native-build workflow")
+endif()
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(BIKE_LIBCPP_HARDENING "EXTENSIVE" CACHE STRING "libc++ hardening mode")
-set_property(CACHE BIKE_LIBCPP_HARDENING PROPERTY STRINGS EXTENSIVE FAST)
-if(NOT BIKE_LIBCPP_HARDENING STREQUAL "EXTENSIVE" AND NOT BIKE_LIBCPP_HARDENING STREQUAL "FAST")
-  message(FATAL_ERROR "BIKE_LIBCPP_HARDENING must be EXTENSIVE or FAST, got '${BIKE_LIBCPP_HARDENING}'")
+# Compiler/architecture/standard-library policy — resolved once here and
+# applied DIRECTLY to every first-party target via bike_apply_native_policy().
+# The module declares NATIVE_SANITIZE/NATIVE_RTSAN/NATIVE_COVERAGE and
+# BIKE_LIBCPP_HARDENING, rejects the ASan+RTSan combination at configure
+# time, probes every flag it emits, and writes bike_policy_report.json.
+# Include before BikeNumerics.cmake — its bike_native_numerics target fails
+# configuration if the policy is not loaded first.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeCompilerPolicy.cmake")
+
+# The compiler identification check above is not enough on Apple hosts:
+# compile a source that includes an SDK header with the selected compiler and
+# sysroot. The probe is Apple-only; Linux has no Availability.h.
+if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+  bike_verify_apple_sdk_compatibility()
 endif()
 
-if(APPLE)
-  # The compiler identification check is not enough: compile a source that
-  # includes an SDK header with the selected compiler and sysroot.
-  bike_verify_sdk_compat()
-endif()
-
-# Instrumentation options shared with the standalone root build; the shared
-# policy function consumes them per target (docs in CompilerPolicy.cmake).
-# RTSan requires the BREW clang — Apple clang 21 lacks the sanitizer:
-#   cmake -S native -B native/build/rtsan \
-#     -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DNATIVE_RTSAN=ON
-# and run native tests with the rtsan dylib in DYLD_INSERT_LIBRARIES.
-# NATIVE_COVERAGE pairs with tools/native_coverage.sh.
-option(NATIVE_SANITIZE "ASan+UBSan build" OFF)
-option(NATIVE_RTSAN "RealtimeSanitizer build (brew clang only)" OFF)
-option(NATIVE_COVERAGE "llvm-cov instrumented build" OFF)
-
-# Resolve the interpreter first so mujoco/nanobind paths below are queried from
+# Resolve the interpreter first so tools/native_dependencies.py is probed by
 # the SAME python we compile against (uv run exposes .venv via VIRTUAL_ENV).
 find_package(Python 3.13 REQUIRED COMPONENTS Interpreter Development.Module)
+# test_contracts.cpp spawns std::thread — portable C++ threads go through
+# the platform threads interface, not an assumed-integrated libc.
+find_package(Threads REQUIRED)
 
-execute_process(COMMAND "${Python_EXECUTABLE}" -c "import mujoco; print(mujoco.__version__)"
-  RESULT_VARIABLE _native_mujoco_version_result
-  OUTPUT_VARIABLE _native_mujoco_version
-  ERROR_VARIABLE _native_mujoco_version_error
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(NOT _native_mujoco_version_result EQUAL 0 OR NOT _native_mujoco_version STREQUAL "3.12.0")
-  message(FATAL_ERROR
-    "bike_native requires the pinned MuJoCo 3.12.0 error ABI; configured Python '${Python_EXECUTABLE}' found '${_native_mujoco_version}': ${_native_mujoco_version_error}")
+# Dependency discovery: BikeDependencies.cmake runs the probe inside the
+# selected interpreter, validates the schema-1 document it returns, then
+# creates the imported Bike::MuJoCo target plus MJ_DIR/_native_mujoco_library
+# and the nanobind/python include roots consumed below.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeDependencies.cmake")
+
+# Numerics selection: BikeNumerics.cmake consumes the same schema-1 document,
+# generates numerics_symbols.hpp, and builds the selected CBLAS/LAPACK
+# backend TUs into bike_native_numerics (alias Bike::Numerics). The blas::
+# call face has no definitions without it. This graph measures live, so it
+# selects LIVE; the Python-free root graph selects RECORD_ONLY.
+set(BIKE_NUMERICS_SOURCE LIVE)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeNumerics.cmake")
+
+# Portable linkage contract: engine/dynamic-loader edges, numerics-provider
+# linkage, per-platform runtime search paths (BUILD_RPATH on Linux — never
+# environment rescue), and the Darwin MuJoCo install-name rewrite. Helpers
+# live in cmake/BikeLinkage.cmake; every binary below calls the ones its
+# dependency usage declares.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeLinkage.cmake")
+
+# Header-only and SDK roots that the platform probe does not cover (RapidJSON,
+# tomlplusplus, DuckDB, the lock) come from the repository's locked .deps tree.
+# Same defaults the standalone root graph uses, anchored at this source tree.
+# A missing tree is a configure-time acquisition failure, never a fallback.
+get_filename_component(BIKE_MODULE_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
+if(DEFINED BIKE_DEPENDENCY_ROOT)
+  get_filename_component(BIKE_DEPENDENCY_ROOT "${BIKE_DEPENDENCY_ROOT}" ABSOLUTE)
+else()
+  set(BIKE_DEPENDENCY_ROOT "${BIKE_MODULE_REPO_ROOT}/.deps" CACHE PATH
+    "Explicitly acquired native dependency root (.deps)")
+endif()
+if(DEFINED BIKE_DEPENDENCY_LOCK)
+  get_filename_component(BIKE_DEPENDENCY_LOCK "${BIKE_DEPENDENCY_LOCK}" ABSOLUTE)
+else()
+  set(BIKE_DEPENDENCY_LOCK "${BIKE_MODULE_REPO_ROOT}/native/dependencies.lock.json" CACHE FILEPATH
+    "Checked dependency lock for the native build")
 endif()
 
-execute_process(COMMAND "${Python_EXECUTABLE}" -c "import mujoco,os;print(os.path.dirname(mujoco.__file__))"
-  OUTPUT_VARIABLE MJ_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-execute_process(COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
-  OUTPUT_VARIABLE NB_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
-find_package(nanobind CONFIG REQUIRED)
+# Shared first-party target policy: C++23 without extensions, PIC for the
+# extension link, the compiler policy applied directly, and the include surface
+# the standalone-header sweep compiles every first-party header under. The
+# include mirror widens the probe context only — it is not a dependency edge.
+function(bike_apply_native_graph_policy target)
+  set_target_properties(${target} PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    CXX_STANDARD 23
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF)
+  bike_apply_native_policy(${target})
+  if(_native_contract_include_directories)
+    target_include_directories(${target} SYSTEM PRIVATE
+      ${_native_contract_include_directories})
+  endif()
+  target_include_directories(${target} SYSTEM PRIVATE
+    "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+endfunction()
 
-# The stock 3.12.0 Python binding uses these private TLS functions. Check both
-# declarations and linked symbols against the installed wheel before building
-# any target that could otherwise fall back to MuJoCo's process-exiting handler.
-include(CheckCXXSourceCompiles)
-set(CMAKE_REQUIRED_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/src" "${MJ_DIR}/include")
-set(CMAKE_REQUIRED_LIBRARIES "${MJ_DIR}/libmujoco.3.12.0.dylib")
-unset(BIKE_MUJOCO_ERROR_ABI_312 CACHE)
-check_cxx_source_compiles([=[
-#include "engine_abi_312.hpp"
-int main() {
-  mjfLogHandler previous = _mjPRIVATE_setTlsLogHandler(nullptr);
-  (void) _mjPRIVATE_setTlsLogHandler(previous);
-  void (*volatile raw_data)(mjData**, const mjModel*) = &mj_makeRawData;
-  return _mjPRIVATE_getGlobalLogHandler() == nullptr || raw_data == nullptr;
-}
-]=] BIKE_MUJOCO_ERROR_ABI_312)
-unset(CMAKE_REQUIRED_INCLUDES)
-unset(CMAKE_REQUIRED_LIBRARIES)
-if(NOT BIKE_MUJOCO_ERROR_ABI_312)
-  message(FATAL_ERROR "MuJoCo 3.12.0 private TLS error-handler ABI is unavailable for ${Python_EXECUTABLE}")
-endif()
-
-# Resolve standalone third-party header roots before adding the direct-contract
-# targets; their header sweep compiles every first-party native/src header.
-execute_process(
-  COMMAND "${Python_EXECUTABLE}" -m nanobind --include_dir
-  RESULT_VARIABLE _native_nb_include_result
-  OUTPUT_VARIABLE _native_nb_include
-  ERROR_VARIABLE _native_nb_include_error
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(NOT _native_nb_include_result EQUAL 0 OR NOT IS_DIRECTORY "${_native_nb_include}")
-  message(FATAL_ERROR "Cannot resolve nanobind include directory: ${_native_nb_include_error}")
-endif()
-get_filename_component(_native_nb_package "${_native_nb_include}/.." REALPATH)
-get_filename_component(_native_robin_include "${_native_nb_package}/ext/robin_map/include" REALPATH)
-get_filename_component(_native_python_include "${Python_INCLUDE_DIRS}" REALPATH)
-
-# The header sweep (tools/native_checks.py --kind headers) compiles each
-# first-party header as a standalone TU under every target context of its
-# root, so all first-party targets share one include surface. Declaring it
-# once here keeps the sweep's matrix honest as new dep-bound headers land.
+# Dependency-root include surface shared by the whole graph. The header sweep
+# (native/tools checks --kind headers) compiles each first-party header under
+# every target context of its root, so all first-party targets share it.
 file(READ "${BIKE_DEPENDENCY_LOCK}" _native_dependency_lock_json)
 string(JSON _native_duckdb_include GET "${_native_dependency_lock_json}"
   dependencies duckdb extracted_root)
@@ -138,35 +137,13 @@ include_directories(SYSTEM
   "${_native_robin_include}"
   "${_native_duckdb_include}")
 
-bike_detect_libcpp_hardening()
-set(_native_libcpp_hardening_supported "${BIKE_LIBCPP_HARDENING_SUPPORTED}")
-set(_native_libcpp_hardening_mode "${BIKE_LIBCPP_HARDENING_EFFECTIVE}")
-
 # NB_SUPPRESS_WARNINGS: nanobind/Python headers land as SYSTEM includes —
 # third-party TU internals stay outside our warning contract.
 # PROTECT_STACK: nanobind otherwise appends -fno-stack-protector in Release
-# configs, which would silently nullify -fstack-protector-strong below.
-# stepper.cpp and writers/rider_contacts.cpp moved into the shared
-# Python-free core TU set (T07): the extension picks them up through the
-# ${_native_core_lib} link edge like the writer bodies. Only adapter-side
-# translation units — nanobind parsing, boxing, the foreign-callback
-# recognizer — remain listed on the module.
-# T09 moved the owned-ride pure TUs into the shared core set below:
-# runtime/{step,accounting,period_buffer,presentation,status,static_brake,
-# bootstrap,bootstrap_io,runtime}.cpp and rider/{intent,
-# spindle_controller}.cpp reach the module through the same ${_native_core_lib}
-# link edge as the writers — only adapter TUs (nanobind parsing, boxing,
-# the research wrapper and probes) remain listed here.
-# T10 does the same for the research core: runtime/{sensors,programs,
-# research_metrics,recording,research,research_io}.cpp are pure TUs — the
-# research adapter keeps only research_binding.cpp's nanobind parsing and
-# boxing here.
-# T11 moves the remaining encoder/provenance cores into the shared pure
-# set: runtime/encode.cpp (plan parse + per-kind emitters over retained
-# PhysicalSampleData) and runtime/provenance.cpp (RuntimeIdentity) are
-# pure TUs. The module keeps only encode_binding.cpp — the held-GIL
-# plan materializer, Piece/row boxing and bind_provenance registration —
-# plus samples_binding.cpp's object face.
+# configs, which would silently nullify -fstack-protector-strong.
+# The Python-free core TUs live in bike_native_contract_core below; the
+# extension keeps only the adapter TUs (nanobind parsing, boxing, the
+# foreign-callback recognizer, the held-GIL materializer).
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/binding.cpp
   src/drivetrain/policy_binding.cpp
@@ -184,11 +161,8 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
 
 set_target_properties(bike_native PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 
-# Strict flags are PRIVATE to our TUs: nanobind's own static-lib sources are
-# not expected to survive this warning set under -Werror.
-# -ffp-contract=off: clang's default (on) fuses mul+add into FMA on arm64 —
-# one rounding instead of two, breaking bitwise parity with the Python
-# oracle, whose interpreter rounds every operation separately.
+# Compile-time provider identity of the numerics record, and the research
+# build identity compiled into runtime/provenance.cpp (see below).
 if(CMAKE_CONFIGURATION_TYPES)
   set(_research_identity_configuration "$<CONFIG>")
 else()
@@ -196,44 +170,43 @@ else()
 endif()
 target_include_directories(bike_native PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/research_identity/${_research_identity_configuration}")
-# Strict flags are PRIVATE to our TUs: nanobind's own static-lib sources are
-# not expected to survive this warning set under -Werror. The shared policy
-# (warnings-as-errors, stack protection, hardening define, -O2 under Release,
-# disabled FP contraction, optional sanitizer/RTSan/coverage) is identical
-# to the standalone root build's per-target policy.
-bike_target_strict_policy(bike_native)
-target_include_directories(bike_native SYSTEM PRIVATE "${MJ_DIR}/include")
-# -headerpad_max_install_names is attached by bike_rewrite_mujoco_load_name
-# below — every rewritten binary reserves the padding by construction.
+# The full compiler/architecture/standard-library policy — warning list,
+# required numerical/safety flags (-ffp-contract=off keeps bitwise parity with
+# the Python oracle), Release -O2, libc++ hardening / _FORTIFY_SOURCE, the
+# -headerpad_max_install_names link option, and the sanitizer/RTSan/coverage
+# instrumentation — is applied DIRECTLY to each first-party target.
+bike_apply_native_policy(bike_native)
+# BIKE_MUJOCO_COMPAT_INCLUDE (BikeDependencies.cmake) precedes the real
+# mujoco include dir only when the toolchain cannot parse mjsan.h under
+# the sanitizer lane — it carries a generated attribute-compatible
+# shadow header, never a forked copy.
+target_include_directories(bike_native SYSTEM PRIVATE
+  ${BIKE_MUJOCO_COMPAT_INCLUDE} "${MJ_DIR}/include")
 
-# Share Python-free core code with direct native contract tests: the
-# drivetrain/policy TUs plus the owning writer cores (suspension, brake,
-# resistance, rider_forces, tire) whose warm-core entries the R1 contract
-# cases exercise, plus the pneumatic geometry kernel the same single-TU
-# convention keeps linkable for later writer work. The object is compiled
-# once with the extension's complete
-# warning, hardening, sanitizer, and coverage context, and remains PIC for
-# module linkage. The contract binary links these objects directly, so each
-# TU keeps exactly one translation unit across all targets (the ODR sweep
-# links every selected TU into a single image). bike_native picks them up
-# through the existing target_link_libraries edge below — same
-# COMPILE_OPTIONS, including -ffp-contract=off, as when they were listed on
-# the module itself.
-#
-# In the standalone root build (BIKE_ROOT_BUILD) the parent already compiled
-# the same TU set as bike_core/bike_engine and owns the direct test
-# executables: the extension links those identical objects, so the optional
-# extension and the standalone tests exercise the same core objects for
-# differential tests.
+# The captured context is the extension's effective compile/link state
+# (policy plus nanobind's own options) and its shared include surface
+# (research identity, MuJoCo, Python). Every target below mirrors it, so it is
+# captured before the first of them is created.
 get_target_property(_native_contract_compile_options bike_native COMPILE_OPTIONS)
 get_target_property(_native_contract_compile_definitions bike_native COMPILE_DEFINITIONS)
 get_target_property(_native_contract_include_directories bike_native INCLUDE_DIRECTORIES)
 get_target_property(_native_contract_link_options bike_native LINK_OPTIONS)
+if(TARGET bike_native_numerics)
+  # bike_native_numerics received bike_apply_native_policy inside
+  # BikeNumerics.cmake; only the shared include roots still mirror here.
+  if(_native_contract_include_directories)
+    target_include_directories(bike_native_numerics SYSTEM PRIVATE
+      ${_native_contract_include_directories})
+  endif()
+  target_include_directories(bike_native_numerics SYSTEM PRIVATE
+    "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+endif()
 
-if(BIKE_ROOT_BUILD)
-  set(_native_core_lib bike_core)
-  set(_native_engine_lib bike_engine)
-else()
+# Python-free core TU set shared by the extension and the direct contract
+# tests: each TU is compiled exactly once (the ODR sweep relocatable-links
+# every selected TU into a single image) and linked through the one
+# target_link_libraries edge below. It is PIC for module linkage and carries
+# the same policy context as the extension (-ffp-contract=off included).
 add_library(bike_native_contract_core OBJECT src/stepper.cpp
   src/writer_config.cpp src/drivetrain/pedaling.cpp
   src/drivetrain/chain.cpp src/drivetrain/transmission.cpp
@@ -261,35 +234,18 @@ add_library(bike_native_contract_core OBJECT src/stepper.cpp
   src/runtime/research_metrics.cpp src/runtime/recording.cpp
   src/runtime/research.cpp src/runtime/research_io.cpp
   src/runtime/encode.cpp src/runtime/provenance.cpp
+  src/runtime/provider_images.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
   src/writers/resistance.cpp src/writers/rider_forces.cpp
   src/writers/tire_common.cpp src/writers/tire.cpp
   src/writers/distributed_tire.cpp src/writers/pneumatic_tire.cpp
   src/writers/rider_contacts.cpp)
-set_target_properties(bike_native_contract_core PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_native_contract_core PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_native_contract_core PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_include_directories)
-  target_include_directories(bike_native_contract_core SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(bike_native_contract_core SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-set(_native_core_lib bike_native_contract_core)
+bike_apply_native_graph_policy(bike_native_contract_core)
 
-# T05 owned cold-path boundary — the identical io/*.cpp TUs the standalone
-# root build compiles as bike_io, here in the legacy warning/hardening
-# context. This graph does not resolve .deps imported targets, so the pinned
-# RapidJSON include is anchored at BIKE_DEPENDENCY_ROOT directly; a missing
-# tree is a configure-time acquisition failure, never a fallback.
+
+# T05 owned cold-path boundary: strict lossless JSON parse/serialize plus the
+# recording-tag codec on the pinned RapidJSON headers, and the shared FIPS
+# 180-4 SHA-256 that bike_native_engine uses for its engine-image digest.
 set(_native_rapidjson_include
   "${BIKE_DEPENDENCY_ROOT}/rapidjson-24b5e7a/include")
 if(NOT IS_DIRECTORY "${_native_rapidjson_include}")
@@ -298,68 +254,28 @@ if(NOT IS_DIRECTORY "${_native_rapidjson_include}")
 endif()
 add_library(bike_io STATIC src/io/json.cpp src/io/hash.cpp
   src/io/value.hpp src/io/json.hpp src/io/hash.hpp)
-set_target_properties(bike_io PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_io PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_io PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_graph_policy(bike_io)
 target_include_directories(bike_io SYSTEM PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src" "${_native_rapidjson_include}")
-# The standalone-header sweep compiles every first-party header under
-# native/src in every target context that owns a native/src translation
-# unit, so bike_io's compile context must resolve the shared include
-# surface (MuJoCo/nanobind/Python/robin) even though the io translation
-# units include none of it — include paths widen the probe context, they
-# are not a dependency of the shipped objects.
-if(_native_contract_include_directories)
-  target_include_directories(bike_io SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(bike_io SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
 
-# T06 bounded OS boundary — the identical platform/*.cpp TUs the standalone
-# root build compiles as bike_platform, here in the legacy warning/hardening
-# context. Its only first-party edge is bike_io's shared SHA-256; it carries
-# no physics execution callbacks.
+# T06 bounded OS boundary: RAII file handles, exclusive no-follow creation,
+# argv subprocesses, the deferred-SIGINT shield and the build/image identity
+# block. Its only first-party edge is bike_io's shared SHA-256.
 add_library(bike_platform STATIC
   src/platform/files.cpp src/platform/process.cpp
   src/platform/signals.cpp src/platform/provenance.cpp
   src/platform/files.hpp src/platform/process.hpp
   src/platform/signals.hpp src/platform/provenance.hpp)
-set_target_properties(bike_platform PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_platform PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_platform PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_graph_policy(bike_platform)
 target_include_directories(bike_platform SYSTEM PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src")
-if(_native_contract_include_directories)
-  target_include_directories(bike_platform SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-# Same sweep widening as bike_io: every first-party header compiles in each
-# owning target context.
-target_include_directories(bike_platform SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
 target_link_libraries(bike_platform PRIVATE bike_io)
 
-# Track-B build identity, same convention as the standalone root graph and
-# research_build_identity.hpp: compiler/flags/SDK + the checked dependency
-# lock + the T00 source manifest hashed at configure and compiled in. This
-# graph IS the transition extension, so the packaging axis records bindings.
+# Track-B build identity for bike_platform, same convention as the standalone
+# root graph and research_build_identity.hpp: compiler/flags/SDK, the checked
+# dependency lock and the first-party source manifest are hashed at configure
+# and compiled in. This graph IS the transition extension, so the packaging
+# axis records bindings.
 if(NOT EXISTS "${BIKE_MODULE_REPO_ROOT}/migration/source-manifest.json")
   message(FATAL_ERROR
     "platform build identity requires migration/source-manifest.json")
@@ -388,9 +304,8 @@ string(APPEND _native_platform_flags
 # COMPILE_DEFINITIONS are part of the effective flag surface too — the
 # contract definitions (_LIBCPP_HARDENING_MODE/_FORTIFY_SOURCE) change the
 # generated code, so two builds differing only in BIKE_LIBCPP_HARDENING must
-# not record an identical identity. Map each stored definition back to its
-# -D spelling; generator-expression entries still resolve per configuration
-# inside file(GENERATE)'s target context.
+# not record an identical identity. Generator-expression entries still resolve
+# per configuration inside file(GENERATE)'s target context.
 get_target_property(_native_platform_definitions bike_platform
   COMPILE_DEFINITIONS)
 if(_native_platform_definitions)
@@ -409,13 +324,9 @@ file(GENERATE
 target_include_directories(bike_platform PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/platform_identity/${_native_platform_identity_config}")
 
-# T12 configuration boundary — the identical configuration/*.cpp TUs the
-# standalone root build compiles as bike_configuration, here in the legacy
-# warning/hardening context. The JSON profile loaders read bounded regular
-# files through bike_platform; the schema/wire surfaces only touch bike_io.
-# Pinned tomlplusplus include for the T13 loader — same dependency-root
-# anchoring as RapidJSON; a missing tree is a configure-time acquisition
-# failure, never a fallback.
+# T12 configuration boundary: the ported configuration records, validators and
+# the schema/wire surfaces. The JSON profile loaders read bounded regular files
+# through bike_platform; the schema/wire surfaces only touch bike_io.
 set(_native_tomlplusplus_include
   "${BIKE_DEPENDENCY_ROOT}/tomlplusplus-3.4.0/include")
 if(NOT IS_DIRECTORY "${_native_tomlplusplus_include}")
@@ -430,305 +341,135 @@ add_library(bike_configuration STATIC
   src/configuration/model_config.hpp
   src/configuration/physical_config.hpp src/configuration/rider_spec.hpp
   src/configuration/suspension_spec.hpp src/configuration/wire_decode.hpp)
-set_target_properties(bike_configuration PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_configuration PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_configuration PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_graph_policy(bike_configuration)
 target_include_directories(bike_configuration SYSTEM PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src" "${_native_rapidjson_include}"
   "${_native_tomlplusplus_include}")
-# Same sweep widening as bike_io/bike_platform: every first-party header
-# under native/src compiles in each owning target's context.
-if(_native_contract_include_directories)
-  target_include_directories(bike_configuration SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(bike_configuration SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
 target_link_libraries(bike_configuration PRIVATE bike_io bike_platform
   bike_rider_math)
 
-# bike_rider_math: the pure spindle rider-math TU in the legacy
-# warning/hardening context — the same bike_rider_math library the
-# standalone root graph defines. The extension resolves its spindle symbols
-# through this link edge instead of compiling the source on the module, and
-# bike_configuration links the same objects for the rider_envelope /
-# joint_strength helpers rider_spec.hpp re-exports. One library keeps the
-# TU in a single compile-database entry: the ODR sweep relocatable-links
-# every selected TU into one image, so a second compile would collide.
+# bike_rider_math: the pure spindle rider-math TU — one library per graph,
+# so the ODR sweep sees a single compile-database entry for it. The extension
+# and bike_configuration both resolve its symbols through this link edge.
 add_library(bike_rider_math STATIC src/rider/spindle_math.cpp)
-set_target_properties(bike_rider_math PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_rider_math PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_rider_math PRIVATE ${_native_contract_compile_definitions})
-endif()
-target_include_directories(bike_rider_math SYSTEM PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/src")
-# Same sweep widening as bike_io/bike_platform: every first-party header
-# under native/src compiles in each owning target's context.
-if(_native_contract_include_directories)
-  target_include_directories(bike_rider_math SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(bike_rider_math SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+bike_apply_native_graph_policy(bike_rider_math)
+# spindle_math.cpp's np_norm reaches the blas:: face (ddot), so the adapter
+# is part of this library's interface, like bike_native_engine's.
+target_link_libraries(bike_rider_math PUBLIC Bike::Numerics)
 
-# T14 geometry boundary — the identical geometry/*.cpp TUs the standalone
-# root build compiles as bike_geometry, here in the legacy
-# warning/hardening context. PUBLIC Accelerate: specs.hpp's
-# detail::np_dot/np_norm declare the same Accelerate ILP64 CBLAS entry
-# points the oracle's numpy resolves — every consumer's final link needs
-# the framework.
+# T14 geometry boundary: the identical geometry/*.cpp TUs as the root graph.
+# These TUs still call the raw Accelerate ILP64 CBLAS/LAPACK entry points
+# (specs.hpp detail::np_dot/np_norm); the port's provider target carries the
+# Apple framework on Darwin. Linux has no such provider and these TUs are not
+# qualified there yet (see the report's raw-Accelerate note).
 add_library(bike_geometry STATIC
   src/geometry/specs.hpp src/geometry/hardpoints.cpp
   src/geometry/cockpit.cpp src/geometry/validation.cpp)
-set_target_properties(bike_geometry PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_geometry PRIVATE ${_native_contract_compile_options})
+bike_apply_native_graph_policy(bike_geometry)
+if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+  target_link_libraries(bike_geometry PUBLIC Bike::NumericsProvider)
 endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_geometry PRIVATE ${_native_contract_compile_definitions})
-endif()
-target_include_directories(bike_geometry SYSTEM PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/src")
-# Same sweep widening as bike_io/bike_platform: every first-party header
-# under native/src compiles in each owning target's context.
-if(_native_contract_include_directories)
-  target_include_directories(bike_geometry SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(bike_geometry SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-target_link_libraries(bike_geometry PUBLIC "-framework Accelerate")
 
-# T14 Horst-link boundary — the identical kinematics/*.cpp TUs the
-# standalone root build compiles as bike_kinematics, here in the legacy
-# warning/hardening context. curves.cpp's 2x2 np.linalg.solve reaches
-# Accelerate's ILP64 dgesv; the bike_geometry edge supplies the
-# hardpoint/specs declarations and the transitive framework edge.
+# T14 Horst-link boundary: curves.cpp's 2x2 np.linalg.solve reaches Accelerate's
+# ILP64 dgesv; the bike_geometry edge supplies the transitive provider.
 add_library(bike_kinematics STATIC
   src/kinematics/linkage_math.hpp src/kinematics/linkage_math.cpp
   src/kinematics/solver.hpp src/kinematics/solver.cpp
   src/kinematics/curves.cpp)
-set_target_properties(bike_kinematics PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_kinematics PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_kinematics PRIVATE ${_native_contract_compile_definitions})
-endif()
-target_include_directories(bike_kinematics SYSTEM PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/src")
-if(_native_contract_include_directories)
-  target_include_directories(bike_kinematics SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(bike_kinematics SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+bike_apply_native_graph_policy(bike_kinematics)
 target_link_libraries(bike_kinematics PUBLIC bike_geometry)
 
-# T19 seeded-random boundary — the identical random/*.cpp TUs the
-# standalone root build compiles as bike_random, here in the legacy
-# warning/hardening context. The boundary carries no third-party or
-# Python dependency: numpy_compat.hpp reuses only first-party record
-# headers (configuration/rider_spec.hpp, rider/rider_posture.hpp).
+# T19 seeded-random boundary: no third-party or Python dependency.
 add_library(bike_random STATIC
   src/random/numpy_compat.hpp src/random/numpy_compat.cpp
   src/random/seed_sequence.cpp src/random/distributions.cpp
   src/random/noise_tape.cpp)
-set_target_properties(bike_random PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
+bike_apply_native_graph_policy(bike_random)
 
-# T15 model boundary — the identical model/*.cpp TUs the standalone root
-# build compiles as bike_model, here in the legacy warning/hardening
-# context. mass.cpp's compiled-model reads only inspect mjModel/mjData
-# fields (the MuJoCo include edge is compile-only — no libmujoco symbols
-# are called) and suspension_setup.cpp's LeastSquaresWorkspace symbols
-# resolve at the consumer's final link (the migration executable
-# supplies them through bike_native_contract_core), so the archive stays
-# lean. The PUBLIC kinematics/configuration edges carry the solver and
-# rider-spec records the public headers expose plus the transitive
-# Accelerate framework edge.
+# T15 model boundary: mass.cpp's compiled-model reads inspect mjModel/mjData
+# fields (the MuJoCo include edge is compile-only), and the Accelerate provider
+# arrives transitively through bike_kinematics -> bike_geometry.
 add_library(bike_model STATIC
   src/model/checks.hpp src/model/mass.hpp src/model/mass.cpp
   src/model/rider_geometry.hpp src/model/rider_geometry.cpp
   src/model/suspension_setup.hpp src/model/suspension_setup.cpp)
-set_target_properties(bike_model PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_random PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_random PRIVATE ${_native_contract_compile_definitions})
-endif()
-target_include_directories(bike_random SYSTEM PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/src")
-# Same sweep widening as bike_io/bike_platform: every first-party header
-# under native/src compiles in each owning target's context.
-if(_native_contract_include_directories)
-  target_include_directories(bike_random SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(bike_random SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-
-if(_native_contract_compile_options)
-  target_compile_options(bike_model PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_model PRIVATE ${_native_contract_compile_definitions})
-endif()
-target_include_directories(bike_model SYSTEM PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/src")
-if(_native_contract_include_directories)
-  target_include_directories(bike_model SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(bike_model SYSTEM PRIVATE
-  "${MJ_DIR}/include"
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+bike_apply_native_graph_policy(bike_model)
 target_link_libraries(bike_model PUBLIC bike_kinematics bike_configuration)
 
 # The pinned error interceptor is compiled once and shared by the extension,
-# direct C++ contracts, and the later native benchmark target. Its
-# engine-image digest uses the shared bike::io::Sha256 — no private copy.
+# direct C++ contracts, and the native benchmark target. Its engine-image
+# digest uses the shared bike::io::Sha256 — no private copy.
 add_library(bike_native_engine STATIC src/engine_call.cpp)
-set_target_properties(bike_native_engine PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_native_engine PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_native_engine PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_include_directories)
-  target_include_directories(bike_native_engine SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(bike_native_engine SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-target_link_libraries(bike_native_engine PUBLIC "${MJ_DIR}/libmujoco.3.12.0.dylib" bike_io)
-set(_native_engine_lib bike_native_engine)
+bike_apply_native_graph_policy(bike_native_engine)
+# The engine image and the platform dynamic-loader library are part of the
+# engine library's interface — every consumer links its objects. engine_call.cpp
+# reports the numerics provider through blas::provider_name, so the typed
+# adapter is part of the same interface: every consumer of this library gets it.
+bike_link_engine(bike_native_engine PUBLIC)
+target_link_libraries(bike_native_engine PUBLIC bike_io Bike::Numerics)
+
+# The module links the shared core objects, the engine image, the pure
+# spindle math and the typed numerics adapter used by the blas:: call face in
+# resistance/tire/etc. The Darwin install-name rewrite makes `import
+# bike_native` work before mujoco is loaded.
+target_link_libraries(bike_native PRIVATE
+  bike_native_contract_core bike_native_engine bike_rider_math)
+bike_link_engine(bike_native)
+bike_link_numerics(bike_native)
+bike_fix_mujoco_install_name(bike_native)
 
 # allocation_faults.cpp overrides the test binary's throwing allocation
 # operators — it must never land in a shipped target, so it reaches the
 # executable as an injected object, not through the shared contract core.
 # The single OBJECT compile lives in tests/migration (shared with
-# migration_T07 in both graphs); TARGET_OBJECTS resolves at generate
-# time, so the later add_subdirectory definition is fine.
+# migration_T07); TARGET_OBJECTS resolves at generate time, so the later
+# add_subdirectory definition is fine.
 add_executable(native_contract_tests tests/test_contracts.cpp
   $<TARGET_OBJECTS:bike_test_allocation_faults>)
-set_target_properties(native_contract_tests PROPERTIES
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(native_contract_tests PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(native_contract_tests PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_include_directories)
-  target_include_directories(native_contract_tests SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(native_contract_tests SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-if(_native_contract_link_options)
-  target_link_options(native_contract_tests PRIVATE ${_native_contract_link_options})
-endif()
-target_link_libraries(native_contract_tests PRIVATE bike_native_contract_core bike_native_engine
-  bike_rider_math)
-# chain.cpp's GeometryWorkspace resolves CBLAS through Apple Accelerate, the
-# same BLAS provider bike_native links.
-target_link_libraries(native_contract_tests PRIVATE "-framework Accelerate")
-bike_rewrite_mujoco_load_name(native_contract_tests "${MJ_DIR}/libmujoco.3.12.0.dylib")
+bike_apply_native_graph_policy(native_contract_tests)
+target_link_libraries(native_contract_tests PRIVATE
+  bike_native_contract_core bike_native_engine bike_rider_math Threads::Threads)
+# chain.cpp's GeometryWorkspace resolves CBLAS through the typed adapter —
+# Bike::Numerics carries the qualified provider transitively (Accelerate
+# here, the scipy-openblas wheel .so on Linux).
+bike_link_engine(native_contract_tests)
+bike_link_numerics(native_contract_tests)
+bike_fix_mujoco_install_name(native_contract_tests)
 
 # tyre/distance.cpp (SignedProfile) contract cases — same build context as
 # native_contract_tests, without the allocation-fault override TU.
 add_executable(native_distance_tests tests/test_distance.cpp)
-set_target_properties(native_distance_tests PROPERTIES
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(native_distance_tests PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(native_distance_tests PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_include_directories)
-  target_include_directories(native_distance_tests SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(native_distance_tests SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-if(_native_contract_link_options)
-  target_link_options(native_distance_tests PRIVATE ${_native_contract_link_options})
-endif()
-target_link_libraries(native_distance_tests PRIVATE bike_native_contract_core bike_native_engine
-  bike_rider_math)
-# tyre/distance.cpp resolves CBLAS through Apple Accelerate, the same BLAS
-# provider bike_native links.
-target_link_libraries(native_distance_tests PRIVATE "-framework Accelerate")
-bike_rewrite_mujoco_load_name(native_distance_tests "${MJ_DIR}/libmujoco.3.12.0.dylib")
+bike_apply_native_graph_policy(native_distance_tests)
+target_link_libraries(native_distance_tests PRIVATE
+  bike_native_contract_core bike_native_engine bike_rider_math)
+bike_link_engine(native_distance_tests)
+bike_link_numerics(native_distance_tests)
+bike_fix_mujoco_install_name(native_distance_tests)
 
 # tyre/station.cpp (scalar station law) contract cases — same build context
 # as native_distance_tests.
 add_executable(native_station_tests tests/test_station.cpp)
-set_target_properties(native_station_tests PROPERTIES
-  CXX_STANDARD 23
-  CXX_STANDARD_REQUIRED ON
-  CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(native_station_tests PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(native_station_tests PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_include_directories)
-  target_include_directories(native_station_tests SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-target_include_directories(native_station_tests SYSTEM PRIVATE
-  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-if(_native_contract_link_options)
-  target_link_options(native_station_tests PRIVATE ${_native_contract_link_options})
-endif()
-target_link_libraries(native_station_tests PRIVATE bike_native_contract_core bike_native_engine
-  bike_rider_math)
-target_link_libraries(native_station_tests PRIVATE "-framework Accelerate")
-bike_rewrite_mujoco_load_name(native_station_tests "${MJ_DIR}/libmujoco.3.12.0.dylib")
+bike_apply_native_graph_policy(native_station_tests)
+target_link_libraries(native_station_tests PRIVATE
+  bike_native_contract_core bike_native_engine bike_rider_math)
+bike_link_engine(native_station_tests)
+bike_link_numerics(native_station_tests)
+bike_fix_mujoco_install_name(native_station_tests)
+
+# tests/test_platform_blas.cpp — the standalone CBLAS adapter harness. It
+# calls only blas:: wrappers and std headers, so Bike::Numerics alone
+# supplies the backend definitions plus the qualified provider link.
+add_executable(native_platform_blas_tests tests/test_platform_blas.cpp)
+bike_apply_native_graph_policy(native_platform_blas_tests)
+bike_link_numerics(native_platform_blas_tests)
+
+# tests/test_platform_lapack.cpp — the standalone LAPACK adapter harness.
+# It calls only numeric_backend::dgelsd and std headers, so
+# Bike::Numerics alone supplies the backend definition plus the
+# qualified provider link.
+add_executable(native_platform_lapack_tests tests/test_platform_lapack.cpp)
+bike_apply_native_graph_policy(native_platform_lapack_tests)
+bike_link_numerics(native_platform_lapack_tests)
 
 # Prototype native benchmark (native-safety runtime plan task R2). The TU
 # lives outside native/, so its directory joins the first-party source roots
@@ -741,46 +482,55 @@ get_filename_component(_native_bench_dir
 if(NOT IS_DIRECTORY "${_native_bench_dir}")
   message(FATAL_ERROR "proto_native_bench directory is missing: ${_native_bench_dir}")
 endif()
+set(_native_first_party_roots "${CMAKE_CURRENT_SOURCE_DIR}" "${_native_bench_dir}")
 
 add_executable(native_bench
   "${_native_bench_dir}/bench.cpp" "${_native_bench_dir}/state_format.hpp")
-set_target_properties(native_bench PROPERTIES
+bike_apply_native_graph_policy(native_bench)
+target_link_libraries(native_bench PRIVATE bike_native_engine)
+bike_link_engine(native_bench)
+bike_fix_mujoco_install_name(native_bench)
+
+# native/tests/sanitizer_control.cpp — the T15 runtime control: compiled
+# with the selected lane's real instrumentation through the same policy
+# application as every other first-party target. CTest runs only its
+# clean mode; the use-after-free mode is exercised by
+# tests/portability/test_native_runtime.py in a subprocess, where the
+# fatal ASan report is the expected outcome (a loader error or unrelated
+# crash is not accepted as a sanitizer result).
+add_executable(native_sanitizer_control tests/sanitizer_control.cpp)
+set_target_properties(native_sanitizer_control PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(native_bench PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(native_bench PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_include_directories)
-  target_include_directories(native_bench SYSTEM PRIVATE
-    ${_native_contract_include_directories})
-endif()
-if(_native_contract_link_options)
-  target_link_options(native_bench PRIVATE ${_native_contract_link_options})
-endif()
-target_link_libraries(native_bench PRIVATE bike_native_engine)
-bike_rewrite_mujoco_load_name(native_bench "${MJ_DIR}/libmujoco.3.12.0.dylib")
-endif()
-# bike_rider_math carries the pure spindle math the extension used to
-# compile on the module — one TU per graph, shared with bike_configuration.
-target_link_libraries(bike_native PRIVATE ${_native_core_lib} ${_native_engine_lib}
-  bike_rider_math)
+bike_apply_native_policy(native_sanitizer_control)
 
-get_filename_component(_native_bench_dir
-  "${CMAKE_CURRENT_SOURCE_DIR}/../tools/proto_native_bench" ABSOLUTE)
-if(NOT IS_DIRECTORY "${_native_bench_dir}")
-  message(FATAL_ERROR "proto_native_bench directory is missing: ${_native_bench_dir}")
-endif()
-set(_native_first_party_roots "${CMAKE_CURRENT_SOURCE_DIR}" "${_native_bench_dir}")
+# native/tests/rtsan_control.cpp — the T16 realtime-sanitizer control pair:
+# the default mode is a valid nonblocking arithmetic kernel (clean under an
+# instrumented build and under every ordinary build), and the
+# `forbidden-allocation` mode is the intentional violation the configure-time
+# qualification (BikeCompilerPolicy.cmake) and the subprocess controls in
+# tests/reference/test_native_check_tools.py require to die with the real
+# RealtimeSanitizer diagnostic.
+add_executable(native_rtsan_control tests/rtsan_control.cpp)
+set_target_properties(native_rtsan_control PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+bike_apply_native_policy(native_rtsan_control)
 
 include(CTest)
-if(BUILD_TESTING AND NOT BIKE_ROOT_BUILD)
+if(BUILD_TESTING)
   add_test(NAME native_contract_tests COMMAND native_contract_tests)
   add_test(NAME native_distance_tests COMMAND native_distance_tests)
   add_test(NAME native_station_tests COMMAND native_station_tests)
+  add_test(NAME native_platform_blas_tests COMMAND native_platform_blas_tests)
+  add_test(NAME native_platform_lapack_tests COMMAND native_platform_lapack_tests)
+  add_test(NAME native_sanitizer_control COMMAND native_sanitizer_control)
+  # Only the clean mode runs under CTest — the forbidden-allocation mode
+  # must die with the sanitizer report, so it is exercised by the
+  # configure-time qualification and the pytest subprocess controls.
+  add_test(NAME native_rtsan_control COMMAND native_rtsan_control)
   add_test(NAME native_bench_bare
     COMMAND native_bench bare 20 5
             --artifacts "${_native_bench_dir}/artifacts")
@@ -792,291 +542,68 @@ if(BUILD_TESTING AND NOT BIKE_ROOT_BUILD)
             --artifacts "${_native_bench_dir}/artifacts")
 endif()
 
+# Startup graph (T16–T25) and the physics/research/recording applications.
+# Their targets reuse the captured _native_contract_* context above and the
+# portable linkage helpers; they are declared here, never compiled at configure.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Provenance.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/NativeStartup.cmake")
+bike_add_native_startup("${CMAKE_CURRENT_SOURCE_DIR}")
+
 # Migration contract-test harness and per-task regressions (T02): one
 # executable and one CTest name per task under native/tests/migration. The
 # subdirectory inherits this scope's _native_contract_* context and the
-# BUILD_TESTING gate from include(CTest) above. In the standalone root build
-# the parent already registered the harness (same subdir, same names), so it
-# is only added in the standalone legacy configure.
-if(NOT BIKE_ROOT_BUILD)
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/NativeStartup.cmake")
-  bike_add_native_startup("${CMAKE_CURRENT_SOURCE_DIR}")
-  add_subdirectory(tests/migration)
-endif()
+# BUILD_TESTING gate from include(CTest) above.
+add_subdirectory(tests/migration)
 
 add_custom_target(check_native_contracts
-  COMMAND uv run --frozen --group native python "${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_native_contracts.py"
-          --build "${CMAKE_CURRENT_BINARY_DIR}"
+  COMMAND uv run --frozen --group native python "${CMAKE_SOURCE_DIR}/../tools/check_native_contracts.py"
+          --build "${CMAKE_BINARY_DIR}"
   COMMENT "native structural contract checks"
   VERBATIM)
 
-if(BIKE_ROOT_BUILD)
-  # In the standalone root build the extension resolves the locked .deps
-  # library (byte-identical to the wheel copy verified above) so no venv
-  # path enters the produced binary's load commands.
-  target_link_libraries(bike_native PRIVATE bike::mujoco)
-else()
-  target_link_libraries(bike_native PRIVATE "${MJ_DIR}/libmujoco.3.12.0.dylib")
-endif()
-
-# The resistance writer calls the legacy CBLAS symbols numpy's `@`/`np.dot`
-# resolve to on this platform (numpy's BLAS is Apple Accelerate — see
-# writers/resistance.cpp). The symbols stay exported; only the SDK headers
-# deprecate them, so the TU declares the prototypes itself.
-target_link_libraries(bike_native PRIVATE "-framework Accelerate")
-
-# The dylib's install name (@rpath/mujoco.framework/...) is unresolvable on
-# its own — the wheel ships the dylib flat under mujoco/, with no framework
-# directory to anchor the @rpath. Rewrite the recorded name to the absolute
-# path so `import bike_native` works even before mujoco is loaded.
-# (-headerpad_max_install_names above reserves room for the longer name.)
-if(BIKE_ROOT_BUILD)
-  bike_rewrite_mujoco_load_name(bike_native "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
-else()
-  bike_rewrite_mujoco_load_name(bike_native "${MJ_DIR}/libmujoco.3.12.0.dylib")
-endif()
-
 # Multi-compiler sweep: same TU set through GCC's frontend, warnings-as-errors.
 add_custom_target(check_frontends
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_native_frontends.sh
-          "${CMAKE_CURRENT_BINARY_DIR}"
-          "${CMAKE_CURRENT_SOURCE_DIR}/src" "${MJ_DIR}/include"
+  COMMAND ${CMAKE_SOURCE_DIR}/../tools/check_native_frontends.sh
+          "${CMAKE_BINARY_DIR}"
+          "${CMAKE_SOURCE_DIR}/src" "${MJ_DIR}/include"
   COMMENT "gcc -fsyntax-only sweep (second frontend)")
 
 # clang-tidy sweep: LLVM static-analysis lint over the same TU set, configured
 # by native/.clang-tidy and driven by compile_commands.json.
 add_custom_target(check_tidy
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_native_tidy.sh
-          "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  COMMAND ${CMAKE_SOURCE_DIR}/../tools/check_native_tidy.sh
+          "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/src"
   COMMENT "clang-tidy sweep (LLVM linter)")
 
 # Clang Static Analyzer sweep: path-sensitive per-TU analysis — deeper than
 # the clang-analyzer-* subset inside tidy. Needs the brew clang.
 add_custom_target(check_analyzer
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_analyzer.sh
-          "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  COMMAND ${CMAKE_SOURCE_DIR}/../tools/check_analyzer.sh
+          "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/src"
   COMMENT "clang static analyzer sweep (path-sensitive)")
 
 # cppcheck sweep: a third analyzer engine with different coverage; suppressions
 # for this tree are documented in the script header.
 add_custom_target(check_cppcheck
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_cppcheck.sh
-          "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  COMMAND ${CMAKE_SOURCE_DIR}/../tools/check_cppcheck.sh
+          "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/src"
           "${Python_EXECUTABLE}"
   COMMENT "cppcheck sweep (third analyzer engine)")
 
 # ODR sweep: -fsyntax-only sees no cross-TU type conflicts — -flto -Wodr at
 # link time does.
 add_custom_target(check_odr
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_odr.sh
-          "${CMAKE_CURRENT_BINARY_DIR}"
-          "${CMAKE_CURRENT_SOURCE_DIR}/src" "${MJ_DIR}/include"
+  COMMAND ${CMAKE_SOURCE_DIR}/../tools/check_odr.sh
+          "${CMAKE_BINARY_DIR}"
+          "${CMAKE_SOURCE_DIR}/src" "${MJ_DIR}/include"
           "${Python_EXECUTABLE}"
   COMMENT "gcc -flto -Wodr sweep (cross-TU type conflicts)")
 
 # shellcheck over tools/*.sh — same everything-is-an-error contract.
 add_custom_target(check_scripts
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_scripts.sh
-          "${CMAKE_CURRENT_SOURCE_DIR}/../tools"
+  COMMAND ${CMAKE_SOURCE_DIR}/../tools/check_scripts.sh
+          "${CMAKE_SOURCE_DIR}/../tools"
   COMMENT "shellcheck sweep (tools/*.sh)")
-
-# Emit the source and environment contract from the configured build graph.
-# Wrappers consume these files instead of independently globbing src/.
-function(_native_json_quote output value)
-  string(REPLACE "\\" "\\\\" _escaped "${value}")
-  string(REPLACE "\"" "\\\"" _escaped "${_escaped}")
-  string(REPLACE "\n" "\\n" _escaped "${_escaped}")
-  string(REPLACE "\r" "\\r" _escaped "${_escaped}")
-  set(${output} "\"${_escaped}\"" PARENT_SCOPE)
-endfunction()
-
-function(_native_json_array output)
-  set(_json "[")
-  set(_separator "")
-  foreach(_value IN LISTS ARGN)
-    _native_json_quote(_quoted "${_value}")
-    string(APPEND _json "${_separator}${_quoted}")
-    set(_separator ",")
-  endforeach()
-  string(APPEND _json "]")
-  set(${output} "${_json}" PARENT_SCOPE)
-endfunction()
-
-get_filename_component(_native_mujoco_library "${MJ_DIR}/libmujoco.3.12.0.dylib" REALPATH)
-
-set(_native_required_includes
-  "${CMAKE_CURRENT_SOURCE_DIR}/src"
-  "${_native_python_include}"
-  "${_native_nb_include}"
-  "${_native_robin_include}"
-  "${MJ_DIR}/include")
-set(_native_required_files
-  "${CMAKE_CURRENT_SOURCE_DIR}/analysis_suppressions.json"
-  "${_native_python_include}/Python.h"
-  "${_native_nb_include}/nanobind/nanobind.h"
-  "${_native_robin_include}/tsl/robin_map.h"
-  "${MJ_DIR}/include/mujoco/mujoco.h"
-  "${_native_mujoco_library}")
-foreach(_required_path IN LISTS _native_required_includes _native_required_files)
-  if(NOT EXISTS "${_required_path}")
-    message(FATAL_ERROR "Required native check dependency is missing: ${_required_path}")
-  endif()
-endforeach()
-
-if(CMAKE_BUILD_TYPE)
-  set(_native_configuration "${CMAKE_BUILD_TYPE}")
-else()
-  set(_native_configuration "default")
-endif()
-
-set(_native_source_entries "[")
-set(_native_source_separator "")
-set(_native_target_contexts "{")
-set(_native_target_separator "")
-get_property(_native_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
-# BUILDSYSTEM_TARGETS is scoped to this directory — targets created through
-# add_subdirectory() (native/tests/migration) must be collected via
-# SUBDIRECTORIES or their first-party translation units never enter the
-# manifest while compile_commands.json still compiles them.
-get_property(_native_subdirectories DIRECTORY PROPERTY SUBDIRECTORIES)
-foreach(_native_subdirectory IN LISTS _native_subdirectories)
-  get_property(_native_subdirectory_targets DIRECTORY "${_native_subdirectory}"
-    PROPERTY BUILDSYSTEM_TARGETS)
-  list(APPEND _native_targets ${_native_subdirectory_targets})
-endforeach()
-list(REMOVE_DUPLICATES _native_targets)
-foreach(_target IN LISTS _native_targets)
-  get_target_property(_target_type "${_target}" TYPE)
-  if(NOT _target_type MATCHES "^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY)$")
-    continue()
-  endif()
-
-  get_target_property(_target_sources "${_target}" SOURCES)
-  if(NOT _target_sources OR _target_sources MATCHES "-NOTFOUND$")
-    continue()
-  endif()
-  # SOURCES entries are relative to the directory where the target was
-  # created — subdir targets (native/tests/migration) need their own
-  # SOURCE_DIR, not this scope's CMAKE_CURRENT_SOURCE_DIR.
-  get_target_property(_target_source_dir "${_target}" SOURCE_DIR)
-  foreach(_source IN LISTS _target_sources)
-    if(_source MATCHES "^\\$<")
-      continue()
-    endif()
-    get_filename_component(_source_absolute "${_source}" ABSOLUTE BASE_DIR "${_target_source_dir}")
-    set(_source_is_first_party FALSE)
-    foreach(_first_party_root IN LISTS _native_first_party_roots)
-      if(NOT _source_is_first_party)
-        cmake_path(IS_PREFIX _first_party_root "${_source_absolute}" NORMALIZE _source_is_first_party)
-      endif()
-    endforeach()
-    if(NOT _source_is_first_party OR NOT _source_absolute MATCHES "\\.(cpp|cc|cxx|C)$")
-      continue()
-    endif()
-    get_filename_component(_source_path "${_source_absolute}" REALPATH)
-    if(NOT EXISTS "${_source_path}")
-      message(FATAL_ERROR "CMake target ${_target} has a missing first-party source: ${_source_path}")
-    endif()
-    _native_json_quote(_source_json "${_source_path}")
-    _native_json_quote(_target_json "${_target}")
-    set(_source_context "${_target}:${_native_configuration}")
-    _native_json_quote(_source_context_json "${_source_context}")
-    string(APPEND _native_source_entries
-      "${_native_source_separator}{\"path\":${_source_json},\"target\":${_target_json},\"context\":${_source_context_json}}")
-    set(_native_source_separator ",")
-  endforeach()
-
-  get_target_property(_target_includes "${_target}" INCLUDE_DIRECTORIES)
-  get_target_property(_target_definitions "${_target}" COMPILE_DEFINITIONS)
-  get_target_property(_target_options "${_target}" COMPILE_OPTIONS)
-  get_target_property(_target_link_dirs "${_target}" LINK_DIRECTORIES)
-  get_target_property(_target_link_libs "${_target}" LINK_LIBRARIES)
-  get_target_property(_target_standard "${_target}" CXX_STANDARD)
-  get_target_property(_target_extensions "${_target}" CXX_EXTENSIONS)
-  foreach(_target_property _target_includes _target_definitions _target_options _target_link_dirs _target_link_libs)
-    if(NOT ${_target_property} OR "${${_target_property}}" MATCHES "-NOTFOUND$")
-      set(${_target_property} "")
-    endif()
-  endforeach()
-  if(NOT _target_standard OR _target_standard MATCHES "-NOTFOUND$")
-    set(_target_standard "${CMAKE_CXX_STANDARD}")
-  endif()
-  if(NOT DEFINED _target_extensions OR _target_extensions MATCHES "-NOTFOUND$")
-    set(_target_extensions "${CMAKE_CXX_EXTENSIONS}")
-  endif()
-  if(_target_extensions)
-    set(_target_extensions_json "true")
-  else()
-    set(_target_extensions_json "false")
-  endif()
-  set(_resolved_target_includes "")
-  foreach(_include IN LISTS _target_includes)
-    if(_include MATCHES "^\\$<")
-      list(APPEND _resolved_target_includes "${_include}")
-    else()
-      get_filename_component(_include_absolute "${_include}" ABSOLUTE BASE_DIR "${_target_source_dir}")
-      list(APPEND _resolved_target_includes "${_include_absolute}")
-    endif()
-  endforeach()
-  _native_json_array(_target_includes_json ${_resolved_target_includes})
-  _native_json_array(_target_definitions_json ${_target_definitions})
-  _native_json_array(_target_options_json ${_target_options})
-  _native_json_array(_target_link_dirs_json ${_target_link_dirs})
-  _native_json_array(_target_link_libs_json ${_target_link_libs})
-  _native_json_quote(_target_name_json "${_target}")
-  string(APPEND _native_target_contexts
-    "${_native_target_separator}${_target_name_json}:{\"configuration\":\"${_native_configuration}\",\"cxx_standard\":${_target_standard},\"cxx_extensions\":${_target_extensions_json},\"include_directories\":${_target_includes_json},\"compile_definitions\":${_target_definitions_json},\"compile_options\":${_target_options_json},\"link_directories\":${_target_link_dirs_json},\"link_libraries\":${_target_link_libs_json}}")
-  set(_native_target_separator ",")
-endforeach()
-string(APPEND _native_source_entries "]")
-string(APPEND _native_target_contexts "}")
-if(_native_source_separator STREQUAL "")
-  message(FATAL_ERROR "No first-party C++ translation units were found in configured CMake targets")
-endif()
-
-# First-party roots: native/ first (source_roots[0]'s parent is the
-# repository in tools/native_checks.py), then the proto_native_bench tree so
-# bench.cpp's target context lands in the same manifest and sweep contract.
-_native_json_array(_native_source_roots_json ${_native_first_party_roots})
-_native_json_quote(_native_compiler_path_json "${CMAKE_CXX_COMPILER}")
-_native_json_quote(_native_compiler_id_json "${CMAKE_CXX_COMPILER_ID}")
-_native_json_quote(_native_compiler_version_json "${CMAKE_CXX_COMPILER_VERSION}")
-_native_json_array(_native_compiler_launcher_json ${CMAKE_CXX_COMPILER_LAUNCHER})
-_native_json_quote(_native_sdk_json "${_native_sdk_path}")
-_native_json_quote(_native_sdk_requested_json "${_native_sdk_requested}")
-_native_json_quote(_native_sdk_source_json "${_native_sdk_source}")
-_native_json_quote(_native_suppressions_manifest_json "${CMAKE_CURRENT_SOURCE_DIR}/analysis_suppressions.json")
-_native_json_quote(_native_python_json "${Python_EXECUTABLE}")
-_native_json_array(_native_include_paths_json ${_native_required_includes})
-_native_json_array(_native_library_paths_json "${_native_mujoco_library}" "${_native_sdk_path}/System/Library/Frameworks/Accelerate.framework")
-_native_json_array(_native_required_files_json ${_native_required_files})
-if(_native_libcpp_hardening_supported)
-  set(_native_libcpp_hardening_supported_json "true")
-else()
-  set(_native_libcpp_hardening_supported_json "false")
-endif()
-_native_json_quote(_native_libcpp_hardening_mode_json "${_native_libcpp_hardening_mode}")
-_native_json_quote(_native_libcpp_hardening_requested_json "${BIKE_LIBCPP_HARDENING}")
-set(_native_libcpp_hardening_json
-  "{\"supported\":${_native_libcpp_hardening_supported_json},\"mode\":${_native_libcpp_hardening_mode_json},\"requested_mode\":${_native_libcpp_hardening_requested_json}}")
-
-set(_native_tool_defaults "{\"tidy\":\"/opt/homebrew/opt/llvm/bin/clang-tidy\",\"analyzer\":\"/opt/homebrew/opt/llvm/bin/clang++\",\"cppcheck\":\"cppcheck\",\"gxx\":\"g++-16\"}")
-set(_native_tool_overrides "{")
-set(_native_tool_separator "")
-foreach(_tool_override CLANG_TIDY ANALYZER_CLANG CPPCHECK GXX)
-  if(DEFINED ENV{${_tool_override}} AND NOT "$ENV{${_tool_override}}" STREQUAL "")
-    _native_json_quote(_tool_name_json "${_tool_override}")
-    _native_json_quote(_tool_value_json "$ENV{${_tool_override}}")
-    string(APPEND _native_tool_overrides "${_native_tool_separator}${_tool_name_json}:${_tool_value_json}")
-    set(_native_tool_separator ",")
-  endif()
-endforeach()
-string(APPEND _native_tool_overrides "}")
-
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/native_sources.json"
-  "{\"schema_version\":1,\"first_party_roots\":${_native_source_roots_json},\"sources\":${_native_source_entries}}\n")
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/native_check_context.json"
-  "{\"schema_version\":1,\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"sdk\":${_native_sdk_json},\"sdk_requested\":${_native_sdk_requested_json},\"sdk_source\":${_native_sdk_source_json},\"libcpp_hardening\":${_native_libcpp_hardening_json},\"analysis_suppressions_manifest\":${_native_suppressions_manifest_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")
 
 # Track B identity is compiled into the extension. It is not read from an
 # editable build-context JSON at runtime. Source-list and source-content changes
@@ -1114,6 +641,57 @@ endforeach()
 string(APPEND _research_effective_flags
   " $<JOIN:$<TARGET_GENEX_EVAL:bike_native,$<TARGET_PROPERTY:bike_native,COMPILE_OPTIONS>>, >")
 _native_json_quote(_research_effective_flags_json "${_research_effective_flags}")
+# The identity header serializes the compiler identity itself — quote it at
+# directory scope here; the check-context writer's own quoted variables only
+# exist inside bike_write_check_context() below and cannot be referenced.
+_native_json_quote(_identity_compiler_id_json "${CMAKE_CXX_COMPILER_ID}")
+_native_json_quote(_identity_compiler_version_json "${CMAKE_CXX_COMPILER_VERSION}")
+
+# Compile-time numerical provider identity — the qualified selection baked into
+# the binary. The extension's runtime_identity() returns the policy declared
+# here together with the provider images actually loaded (provider_images.cpp
+# inspection, read in provenance.cpp); Python-side provenance cross-checks the
+# two before any native execution, so a substituted or drifted provider is a
+# named failure rather than silent bitwise drift. The declarations come from
+# BikeProviderIdentity.cmake, which the Python-free root graph also uses. This
+# graph's build_id is machine-specific and comes from the live probe document;
+# the root graph derives it from its configure-time probe instead.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeProviderIdentity.cmake")
+set(_identity_build_ids "")
+list(LENGTH _native_numerics_provider_paths _identity_library_count)
+if(_identity_library_count GREATER 0)
+  math(EXPR _identity_library_last "${_identity_library_count} - 1")
+  foreach(_index RANGE ${_identity_library_last})
+    string(JSON _identity_build_type TYPE "${_native_dependencies_json}"
+      numerics library_paths ${_index} build_id)
+    set(_identity_build_id "<none>")
+    if(_identity_build_type STREQUAL "STRING")
+      string(JSON _identity_build_id GET "${_native_dependencies_json}"
+        numerics library_paths ${_index} build_id)
+    endif()
+    list(APPEND _identity_build_ids "${_identity_build_id}")
+  endforeach()
+endif()
+bike_provider_identity_declarations(_identity_declarations
+  RECORD_VAR _numerics_record_json
+  RECORD_KEY "${_native_numerics_record_key}"
+  BACKEND "${BIKE_NUMERICS_BACKEND_RESOLVED}"
+  BLAS_BITS "${_native_numerics_blas_bits}"
+  LAPACK_BITS "${_native_numerics_lapack_bits}"
+  PROVIDER_PATHS_VAR _native_numerics_provider_paths
+  BUILD_IDS_VAR _identity_build_ids)
+
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/research_identity/$<CONFIG>/research_build_identity.hpp"
-  CONTENT "// Generated by CMake for this configuration; do not edit.\n#pragma once\nnamespace runtime::build_identity {\ninline constexpr const char native_source_sha256[] = \"${_research_identity_sha256}\";\ninline constexpr const char context_json[] = R\"identity({\"build_type\":\"$<IF:$<BOOL:$<CONFIG>>,$<CONFIG>,default>\",\"compiler_id\":${_native_compiler_id_json},\"compiler_version\":${_native_compiler_version_json},\"numerical_flags\":${_research_effective_flags_json}})identity\";\n}\n"
+  CONTENT "// Generated by CMake for this configuration; do not edit.\n#pragma once\nnamespace runtime::build_identity {\ninline constexpr const char native_source_sha256[] = \"${_research_identity_sha256}\";\ninline constexpr const char context_json[] = R\"identity({\"build_type\":\"$<IF:$<BOOL:$<CONFIG>>,$<CONFIG>,default>\",\"compiler_id\":${_identity_compiler_id_json},\"compiler_version\":${_identity_compiler_version_json},\"numerical_flags\":${_research_effective_flags_json}})identity\";\n${_identity_declarations}}\n"
   TARGET bike_native)
+
+# Emit the source and environment contract from the configured build graph.
+# BikeCheckContext.cmake writes the schema-1 native_sources.json manifest
+# the sweeps consume and the schema-2 native_check_context.json build
+# context — per-configuration, generator-expression-expanded, emitted here
+# because every first-party target must already exist when the target
+# scan runs. (_native_json_quote/_native_json_array come from
+# BikeCompilerPolicy.cmake; _native_mujoco_library from
+# BikeDependencies.cmake.)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeCheckContext.cmake")
+bike_write_check_context()

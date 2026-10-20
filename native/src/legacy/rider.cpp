@@ -85,9 +85,9 @@ MechanicalEnergy mechanical_energy_terms(const mjModel& model, mjData& data, dou
     if (!engine::invoke([](void* raw) noexcept { auto const& c = *static_cast<Call*>(raw); mj_fullM(c.m,c.d,c.result); },&call,error)) engine::throw_failure(error);
     for (std::size_t i = 0; i < n; ++i) left[i] = .5 * std::views::counted(data.qvel,model.nv)[i];
     std::vector<double> mv(n);
-    if (n) blas::cblas_dgemv(static_cast<int>(blas::Order::row_major),static_cast<int>(blas::Transpose::yes),
+    if (n) blas::dgemv(blas::Order::row_major,blas::Transpose::yes,
         static_cast<int>(n),static_cast<int>(n),1.,mass.data(),static_cast<int>(n),left.data(),1,0.,mv.data(),1);
-    const double kinetic = n ? blas::cblas_ddot(static_cast<int>(n),mv.data(),1,data.qvel,1) : 0.;
+    const double kinetic = n ? blas::ddot(static_cast<int>(n),mv.data(),1,data.qvel,1) : 0.;
     const auto masses = std::views::counted(model.body_mass,model.nbody), positions = std::views::counted(data.xipos,3*model.nbody);
     std::vector<double> gravitational_terms(positions.size());
     for (std::size_t b = 0; b < masses.size(); ++b)

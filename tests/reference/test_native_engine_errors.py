@@ -41,6 +41,11 @@ def invalid_solver_model(tmp_path: Path) -> Path:
 
 def run_child(script: str, *arguments: str) -> subprocess.CompletedProcess[str]:
     environment = os.environ.copy()
+    # The child must select the gate's artifact explicitly: without an
+    # application selector it falls back to the native/build/release default.
+    selected = environment.get('NATIVE_TEST_BUILD_PATH')
+    if selected is not None:
+        environment.setdefault('BIKE_NATIVE_BUILD_PATH', selected)
     environment['PYTHONPATH'] = os.pathsep.join(
         [str(REFERENCE_ROOT), environment.get('PYTHONPATH', '')]
     )
@@ -864,4 +869,9 @@ def test_configure_rejects_unsupported_installed_mujoco_version(tmp_path: Path) 
         timeout=60,
     )
     assert configured.returncode != 0
-    assert 'requires the pinned MuJoCo 3.12.0 error ABI' in configured.stdout + configured.stderr
+    # Since T05 the child probe itself rejects a wrong-version MuJoCo before
+    # emitting a document; the configure failure carries that named probe
+    # error verbatim rather than the CMake-side pin check (which survives
+    # as defense-in-depth for a probe that reports the wrong version).
+    assert 'requires MuJoCo 3.12.0' in configured.stdout + configured.stderr
+    assert '3.15.0' in configured.stdout + configured.stderr

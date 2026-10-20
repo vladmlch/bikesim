@@ -324,6 +324,27 @@ void bind_provenance(nanobind::module_ &module) {
         result["build_context_json"] =
             nanobind::str(identity.build_context_json.c_str(),
                           identity.build_context_json.size());
+        // The qualified provider policy (compile-time) and the provider
+        // images actually loaded into this process (runtime). The Python
+        // side cross-checks the two before native execution. Boxed here,
+        // not in runtime_identity(): the pure record stays interpreter-free
+        // and a missing provider image cannot fail every identity reader.
+        const std::string policy = numerics_provider_policy_json();
+        result["provider_policy_json"] =
+            nanobind::str(policy.c_str(), policy.size());
+        nanobind::list images;
+        for (const ProviderImage &image : provider_images()) {
+            nanobind::dict entry;
+            entry["path"] = nanobind::str(image.path.c_str(),
+                                          image.path.size());
+            if (image.macho_uuid)
+                entry["macho_uuid"] = nanobind::str(
+                    image.macho_uuid->c_str(), image.macho_uuid->size());
+            else
+                entry["macho_uuid"] = nanobind::none();
+            images.append(std::move(entry));
+        }
+        result["numerics_provider_images"] = std::move(images);
         return result;
     });
 }

@@ -514,7 +514,7 @@ namespace biketyre {
                             carcass.material_rate_mps[i],
                     0.0);
         const double carcass_loss_w =
-                numeric::numpy_pairwise_sum(loss_scratch_);
+                numeric::numpy_sum(loss_scratch_);
 
         for (std::size_t k = 0; k < carcass.patch_count; ++k) {
             const auto [start_i, stop_i] = carcass.contact_patches[k];
@@ -561,7 +561,7 @@ namespace biketyre {
             // model.py:301-309 — force-weighted centroid and mean
             // deflection; weight_sum is the pairwise reduce.
             const double weight_sum =
-                    numeric::numpy_pairwise_sum(element_force_n);
+                    numeric::numpy_sum(element_force_n);
             const std::array<double, 3> centroid_world_m{
                     blas::ddot(wn, element_force_n.data(), 1,
                                hits.road_x_m.subspan(start_u, w)

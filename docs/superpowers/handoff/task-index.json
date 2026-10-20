@@ -1,0 +1,560 @@
+{
+  "schema_version": 1,
+  "created": "2026-10-14",
+  "scope": "planning index with static wave-1 T18/T20/T23 and wave-2 T19/T24 implementation updates; other task statuses are retained historical planning data, not a new assessment",
+  "source_archive_sha256": "cd44e1ad291c887e8cf91303b153ccc9c016284b341b6db4efbdb8f059e4fecc",
+  "implementation_update": {
+    "date": "2026-10-17",
+    "source_archive_sha256": "02019e39506ffce411b2c0ba4c680e45984dce9e991c727a5aea62b7c072d090",
+    "tasks": [
+      "T18",
+      "T20",
+      "T23"
+    ],
+    "verification": "not_run_by_user_instruction",
+    "report": "docs/superpowers/handoff/reports/2026-10-17-wave-1.md",
+    "prior_work": "User reports T01-T17 and parity fix through bc67bca complete; not re-executed or reconstructed from this export"
+  },
+  "wave_2_update": {
+    "date": "2026-10-17",
+    "source_archive_sha256": "c060db0efb50f80520688c2d6ef1c363a14c4460aa1556bd55e2f86b60b0298b",
+    "source_repomix_sha256": "265fb6eefae6137cd55bfdbd1a18f82844aecd074aae729530faa7184f3c2054",
+    "tasks": [
+      "T19",
+      "T24"
+    ],
+    "verification": "not_run_by_user_instruction",
+    "review": "independent_static_review_complete",
+    "report": "docs/superpowers/handoff/reports/2026-10-17-wave-2.md",
+    "missing_inputs": "Original Git history/modes, uv.lock, required binary benchmark assets and exact supplemental tool wheels/lock are unavailable in this export; no substitute inputs or qualification claims were created"
+  },
+  "required_reading": [
+    "START-HERE.md",
+    "docs/superpowers/specs/2026-10-14-linux-macos-portability-design.md",
+    "docs/superpowers/audits/2026-10-14-linux-macos-source-audit.md",
+    "docs/superpowers/plans/2026-10-14-linux-macos-master.md"
+  ],
+  "tasks": [
+    {
+      "id": "T01",
+      "title": "Recover the real checkout and freeze a truthful platform baseline",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-01-environment.md",
+      "owner": "integration",
+      "depends_on": [],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Create `tools/portability_baseline.py`, `tests/portability/test_baseline.py`, and `docs/superpowers/audits/2026-10-14-linux-macos-baseline.md`. Recover, do not blindly overwrite, `uv.lock`, `.python-version`, `.github/`, and the linked native-safety documents from the real repository.",
+      "interfaces": "Produce `collect_baseline(root: Path) -> dict` and CLI `uv run --frozen --group native --no-sync python tools/portability_baseline.py --output PATH`. JSON has `schema_version=1`, `git`, `python`, `platform`, `packages`, `numpy_config`, `tools`, and `missing_inputs`. Collection never installs packages.",
+      "review_gate": "Both the extracted-snapshot limitation and the actual checkout/environment identity are recorded. No historical macOS claim is presented as newly measured."
+    },
+    {
+      "id": "T02",
+      "title": "Make native dependency resolution consistent and qualify wheels",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-01-environment.md",
+      "owner": "environment",
+      "depends_on": [
+        "T01"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Modify `pyproject.toml`, the recovered `uv.lock`, and `src/bike_sim/native/artifact.py::required_dependencies/check_dependencies`; create `tests/portability/test_dependency_policy.py` and `docs/development/dependency-matrix.md`.",
+      "interfaces": "Native scientific profile has an exact MuJoCo pin and an exact baseline NumPy pin. Existing `required_dependencies() -> dict[str,str]` continues to return the direct exact native pins. New tooling dependency `threadpoolctl>=3.6` is used only for provider discovery/diagnostics, not physics.",
+      "review_gate": "No unreviewed scientific upgrade or lower macOS support floor. Both required Python lanes resolve; a package missing from a target blocks that target qualification with an exact resolver report."
+    },
+    {
+      "id": "T03",
+      "title": "Add a cross-platform explicit development driver",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-01-environment.md",
+      "owner": "environment",
+      "depends_on": [
+        "T01",
+        "T02"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Create `tools/dev.py`, `tests/portability/test_dev_commands.py`; modify `README.md` only to reference the new development command entry point.",
+      "interfaces": "Produce `build_commands(root: Path, build: Path, config: str, compiler: str|None) -> list[list[str]]` and the bootstrap/configure/build/doctor/test CLI described by the spec. Existing run_tests.sh remains the implementation of profile verification.",
+      "review_gate": "No hidden compile or lock mutation, correct subprocess exit propagation, and no duplicated test-profile logic. The documentation distinguishes unit-tested orchestration from later native integration qualification."
+    },
+    {
+      "id": "T04",
+      "title": "Isolate pre-project Apple SDK discovery and preserve every macOS control",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-02-native-build.md",
+      "owner": "native-build",
+      "depends_on": [
+        "T01",
+        "T03"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Modify `native/CMakeLists.txt:1-156`; create `native/cmake/BikePlatform.cmake`, `native/cmake/BikeAppleSDK.cmake`, `tests/portability/test_cmake_platform.py`.",
+      "interfaces": "BikePlatform.cmake sets `BIKE_TARGET_SYSTEM` to Darwin or Linux for native builds. BikeAppleSDK.cmake retains `_native_sdk_path`, `_native_sdk_requested`, `_native_sdk_source` for the existing Apple consumer contract; Linux sets empty internal values and emits null/not-applicable in JSON later.",
+      "review_gate": "Linux module configure invokes no Apple tool. macOS keeps explicit-request and fallback semantics; a mere successful default configure is insufficient."
+    },
+    {
+      "id": "T05",
+      "title": "Discover the selected Python dependencies and MuJoCo shared library",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-02-native-build.md",
+      "owner": "native-build",
+      "depends_on": [
+        "T02",
+        "T03",
+        "T04"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Create `tools/native_dependencies.py`, `native/cmake/BikeDependencies.cmake`, `tests/portability/test_native_dependencies.py`; modify the dependency section of `native/CMakeLists.txt:158-215`.",
+      "interfaces": "Produce probe_dependencies(python: Path) -> dict and validate_dependencies(value: dict) -> dict as specified. BikeDependencies.cmake creates `Bike::MuJoCo` with IMPORTED_LOCATION and INTERFACE_INCLUDE_DIRECTORIES, and exposes `_native_mujoco_library` for manifests and existing consumers.",
+      "review_gate": "One interpreter, one exact engine image, explicit process failures, and all existing error ABI symbols verified on Linux and macOS."
+    },
+    {
+      "id": "T06",
+      "title": "Qualify the actual NumPy BLAS/LAPACK provider and integer ABI",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-02-native-build.md",
+      "owner": "numerics",
+      "depends_on": [
+        "T02",
+        "T05"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Extend `tools/native_dependencies.py`; create `tests/portability/test_numerics_discovery.py`, `native/cmake/BikeNumerics.cmake`, `docs/development/numerical-profiles.md`.",
+      "interfaces": "Produce the exact `numerics` record in dependency schema 1; add `discover_numpy_provider() -> dict`, executed inside the selected interpreter child. Consume `BIKE_NUMERICS_BACKEND`; output provider paths, exported symbol map and separate BLAS/LAPACK integer widths.",
+      "review_gate": "Actual provider and integer widths are proven; no system-BLAS substitution, guessed function call, or unrecorded dispatch/threading assumption."
+    },
+    {
+      "id": "T07",
+      "title": "Introduce typed dual-platform CBLAS adapters without changing callers",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-02-native-build.md",
+      "owner": "numerics",
+      "depends_on": [
+        "T06"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Modify `native/src/cblas_abi.hpp` and `native/src/binding.cpp`; create `native/src/platform/blas_accelerate.cpp`, `native/src/platform/blas_numpy_openblas.cpp`, `native/src/platform/numerics_symbols.hpp.in`, `native/tests/test_platform_blas.cpp`, `tests/reference/test_native_platform_blas.py`; extend BikeNumerics.cmake.",
+      "interfaces": "Retain `blas::Order`, `blas::Transpose`, `double blas::ddot(int,const double*,int,const double*,int) noexcept` and current dgemv/dgemm signatures. Produce `bike_native_numerics` static target and alias `Bike::Numerics`. Backend integer widths are private, not leaked to callers.",
+      "review_gate": "All existing wrapper signatures remain compatible, every foreign integer argument has the right width, macOS symbols are unchanged, and actual callers use the tested adapter."
+    },
+    {
+      "id": "T08",
+      "title": "Isolate DGELSD and preserve least-squares workspace semantics",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-02-native-build.md",
+      "owner": "numerics",
+      "depends_on": [
+        "T06",
+        "T07"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Modify `native/src/rider/least_squares.cpp:49-75,202-268`, `least_squares.hpp`; create `native/src/platform/lapack.hpp`, `lapack_accelerate.cpp`, `lapack_numpy_openblas.cpp`, `native/tests/test_platform_lapack.cpp`; extend `tests/reference/test_native_attachment_wrench.py`.",
+      "interfaces": "Keep rider::lapack_int=int64_t and LeastSquaresWorkspace public API. Add `numeric_backend::dgelsd` with all existing 14 pointer arguments using int64_t integer storage. Both backend translation units implement exactly that signature.",
+      "review_gate": "Correct ABI and workspace sizes; exact local NumPy outputs; unchanged exceptions/rank/residual semantics; no alternative mathematical solver or broad tolerance."
+    },
+    {
+      "id": "T09",
+      "title": "Make compiler, architecture and standard-library policies explicit",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-02-native-build.md",
+      "owner": "native-build",
+      "depends_on": [
+        "T04",
+        "T05"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Modify `native/CMakeLists.txt:129-156,218-263,318-456,490-554`; create `native/cmake/BikeCompilerPolicy.cmake`, `tests/portability/test_compiler_policy.py`.",
+      "interfaces": "Produce `bike_apply_native_policy(target)` applying direct compile/link options and definitions. Record selected required flags, supported optional warning flags, omitted warnings with reasons, compiler family, target architecture, standard-library identity and hardening in the build context.",
+      "review_gate": "Equivalent strict policy is measurable in actual target commands. Unknown warnings are not build failures; unsupported required safety/numerics features are not hidden."
+    },
+    {
+      "id": "T10",
+      "title": "Integrate portable linkage, RPATH and the complete native target graph",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-02-native-build.md",
+      "owner": "native-build",
+      "depends_on": [
+        "T05",
+        "T07",
+        "T08",
+        "T09",
+        "T13"
+      ],
+      "integration_group": "native-graph-context",
+      "status": "verified",
+      "files": "Modify `native/CMakeLists.txt:470-977`; create `native/cmake/BikeLinkage.cmake`, `tests/reference/test_native_platform_linkage.py`; update target registration for native/tests/test_platform_blas.cpp and test_platform_lapack.cpp.",
+      "interfaces": "Consume Bike::MuJoCo, Bike::Numerics and bike_apply_native_policy. Produce all existing targets unchanged in name, plus `native_platform_blas_tests` and `native_platform_lapack_tests`. Expose the same build artifact locations to application/test loaders.",
+      "review_gate": "All final targets configure/link/run on each required host; no unresolved private symbols, duplicate TU ownership, Apple-only Linux command, or environment-variable workaround."
+    },
+    {
+      "id": "T11",
+      "title": "Qualify every platform-sensitive numerical lowering against the local oracle",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-03-numerics.md",
+      "owner": "numerics",
+      "depends_on": [
+        "T10"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Modify `native/src/numeric_numpy.hpp`, `native/src/numeric_norm.hpp`, `native/src/numeric_sincos.hpp`, `native/src/numeric_sum.hpp`, `native/src/binding.cpp`, and only the demonstrated call sites in `native/src/pneumatic/carcass.cpp` or other failing kernels. Create `tools/numeric_portability_probe.py`, `tests/reference/test_native_numeric_portability.py`, and `docs/agents/native-numerical-profiles.md`. Create `native/src/platform/numpy_math_linux.hpp` and `.cpp` only for lowerings that need a Linux implementation; include them in T10 source ownership and policy. Preserve `tests/reference/_bits.py` and the meaning of `tests/reference/conftest.py::_pin_oracle_kernels`.",
+      "interfaces": "Consume T06 verified provider metadata and T07/T08 adapters. Retain `_debug_pneumatic_math(xs, ys) -> dict[tanh: ndarray, hypot: ndarray]`. Add debug-only `_debug_numeric_contract(name: str, xs: array, ys: array) -> ndarray` with names `python_hypot`, `minimum`, `maximum`, `sum`, `sin`, `cos`; each invokes the same existing production helper/call sequence used by its documented Python counterpart, not an alternative diagnostic implementation. Produce probe JSON schema 1 with `environment`, `operation`, `input_uint64`, `expected_uint64`, `actual_uint64`, `first_mismatch`, and `classification`.",
+      "review_gate": "Linux matches its local pinned reference at all existing exact boundaries; macOS retains its original backend/results. No broad skips, tolerances, CPU-feature suppression, changed production oracle, or implicit Python fallback conceals a mismatch."
+    },
+    {
+      "id": "T12",
+      "title": "Version numerical provenance and give replay precise incompatibility errors",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-03-numerics.md",
+      "owner": "runtime",
+      "depends_on": [
+        "T06",
+        "T10",
+        "T11"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Create `src/bike_sim/native/execution_identity.py` and `tests/test_execution_identity.py`. Modify `src/bike_sim/native/artifact.py`, `native/src/runtime/provenance.cpp`, `native/CMakeLists.txt:942-977` (the existing inline `file(GENERATE)` that produces research_build_identity.hpp), `src/bike_sim/sim/research/replay.py`, `src/bike_sim/sim/research/replay_session.py`, and `src/bike_sim/native/research.py`. Extend existing recording/replay identity tests without changing recording table schemas.",
+      "interfaces": "Produce `validate_execution_identity(value: object) -> dict`, `execution_identity_differences(recorded: dict, current: dict) -> list[str]`, and `require_execution_compatible(recorded: dict, current: dict) -> None`. Keep public `artifact.validate_execution` as a delegating compatibility entry point. New execution top-level fields equal legacy EXECUTION_FIELDS plus integer `identity_schema=2`; `runtime_schema` stays 1. Native build_context retains its four strings and adds `platform` and `numerics`. New Python identities use build_context containing only `platform` and `numerics`; legacy Python build_context remains null.",
+      "review_gate": "Existing recordings remain readable; checked replay never silently accepts unknown numerical identity. New Python and native records describe the actual environment. Runtime/recording schema numbers and physics semantics are unchanged."
+    },
+    {
+      "id": "T13",
+      "title": "Version build context without weakening source and toolchain validation",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-04-development-tools.md",
+      "owner": "native-build",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T06",
+        "T09"
+      ],
+      "integration_group": "native-graph-context",
+      "status": "verified",
+      "files": "Modify `native/CMakeLists.txt`, `tools/native_checks.py`, `tools/check_native_contracts.py`, and `tests/reference/test_native_check_tools.py`. Create `native/cmake/BikeCheckContext.cmake` for context generation after target creation. Update existing fixtures in `tests/reference/test_native_check_tools.py` rather than removing their malformed-context cases.",
+      "interfaces": "Keep `load_context(build: Path) -> dict` and `load_entries(build: Path, expected: set[Path]) -> list[dict]`. Add `validate_platform_context(context: dict) -> dict`. Produce native_check_context schema_version=2, retaining compiler/include/library/required-file/source-root/tool/target fields and adding `platform`, `sysroot`, `stdlib`, `numerics`, `policy`, and `capabilities`. native_sources.json remains schema_version=1 unless its actual structure changes.",
+      "review_gate": "Linux uses a truthful no-Apple-SDK context; every former compiler/source/library/flag negative control remains active. The context writer and reader are compatible in the same integration commit."
+    },
+    {
+      "id": "T14",
+      "title": "Discover analysis tools and preserve real negative controls on both systems",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-04-development-tools.md",
+      "owner": "development-tools",
+      "depends_on": [
+        "T10",
+        "T13"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Create `tools/native_toolchain.py` and `tests/portability/test_native_toolchain.py`. Modify `tools/native_checks.py`, `native/cmake/BikeCheckContext.cmake`, `native/CMakeLists.txt`, `native/.clangd`, `tests/reference/test_native_check_tools.py`, and the existing `tools/check_native_frontends.sh`, `tools/check_native_tidy.sh`, `tools/check_analyzer.sh`, `tools/check_cppcheck.sh`, `tools/check_odr.sh` wrappers only if their forwarding behavior requires it.",
+      "interfaces": "Produce `resolve_tool(name: str, override: str | None, candidates: list[str]) -> Path` and `inspect_tool(path: Path) -> dict`. Preserve CLANG_TIDY, ANALYZER_CLANG, CPPCHECK and GXX environment overrides. Resolve each tool by explicit override, compatible configured-compiler sibling, then PATH; Darwin may additionally use its existing Homebrew/Xcode discovery. Invalid explicit overrides fail rather than falling through.",
+      "review_gate": "All required analysis lanes run against the real selected configuration with nonzero source counts and functioning negative controls. Unsupported tools do not become successful skips."
+    },
+    {
+      "id": "T15",
+      "title": "Load compiler-matched sanitizer runtimes and preserve instrumentation failures",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-04-development-tools.md",
+      "owner": "development-tools",
+      "depends_on": [
+        "T09",
+        "T10",
+        "T13",
+        "T14"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Create `tools/native_runtime.py`, `tests/portability/test_native_runtime.py`, and `native/tests/sanitizer_control.cpp`. Modify `tools/run_tests.sh`, `native/CMakeLists.txt`, `native/cmake/BikeCompilerPolicy.cmake` (T09), `native/cmake/BikeCheckContext.cmake`, and existing sanitizer tests in `tests/reference/test_native_check_tools.py`.",
+      "interfaces": "Produce `runtime_environment(context: dict, environ: dict[str,str]) -> dict[str,str]` returning the complete subprocess environment; CLI `python tools/native_runtime.py run --build PATH -- COMMAND [ARGUMENTS]` runs an argv array, propagates exit status and does not print secrets. Context capabilities record sanitizer compiler ID, target, resolved runtime, requested/enabled flags and probe evidence. Preserve NATIVE_SANITIZE and the current NATIVE_TEST_SANITIZER_RUNTIME evidence variable.",
+      "review_gate": "Instrumentation is active, the intended negative control is detected, clean native tests remain clean, and both platform preload paths retain existing behavior. GCC is not treated as Clang by filename."
+    },
+    {
+      "id": "T16",
+      "title": "Qualify RTSan explicitly and keep realtime contracts intact",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-04-development-tools.md",
+      "owner": "development-tools",
+      "depends_on": [
+        "T15"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Modify `native/src/rtsan.hpp`, `native/CMakeLists.txt`, `native/cmake/BikeCompilerPolicy.cmake`, `native/cmake/BikeCheckContext.cmake`, `tools/native_runtime.py`, and `tests/portability/test_native_runtime.py`. Add `native/tests/rtsan_control.cpp` and a subprocess control test in `tests/reference/test_native_check_tools.py`. Keep existing BIKE_NONBLOCKING call sites and native/tests/test_contracts.cpp realtime cases.",
+      "interfaces": "Consume NATIVE_RTSAN and T15 runtime execution. Produce capability record `{requested: bool, supported: bool, enabled: bool, runtime: absolute path|null, evidence: object}`. Requested-but-unsupported is a configure error; unrequested unsupported is explicitly unavailable, not tested. BIKE_NONBLOCKING remains the one annotation macro.",
+      "review_gate": "Realtime annotations are demonstrably active in qualified builds, requested unsupported builds fail, and no hot-path safety contract was removed to make Linux pass."
+    },
+    {
+      "id": "T17",
+      "title": "Generate coverage with matching LLVM tools and selected-artifact provenance",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-04-development-tools.md",
+      "owner": "development-tools",
+      "depends_on": [
+        "T14",
+        "T15"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Modify `tools/native_coverage.sh`, `tools/native_coverage.py`, `tools/native_toolchain.py`, `native/CMakeLists.txt`, `native/cmake/BikeCompilerPolicy.cmake`, and existing coverage tests in `tests/reference/test_native_check_tools.py`. Create `tests/portability/test_native_coverage_tools.py` for discovery/capability tests.",
+      "interfaces": "Preserve `bash tools/native_coverage.sh [build_dir]`, LLVM_PROFDATA and LLVM_COV overrides, per-run directories and test_native_provenance.json. Add `resolve_coverage_tools(compiler: Path, overrides: dict[str,str]) -> dict` to native_toolchain.py, returning actual tool paths/versions and a successful format compatibility probe.",
+      "review_gate": "Coverage measures the selected instrumented artifact and real executed tests using compatible tools on both platforms; unsupported configurations are explicit failures when requested."
+    },
+    {
+      "id": "T18",
+      "title": "Prove headless operation does not require a display or initialize rendering",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-05-runtime.md",
+      "owner": "runtime",
+      "depends_on": [
+        "T03",
+        "T10",
+        "T11",
+        "T12"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "report": "docs/superpowers/handoff/reports/2026-10-17-T18.md",
+      "verification": "not_run_by_user_instruction",
+      "files": "Create `tests/portability/test_headless_imports.py` and `tests/reference/test_native_linux_headless.py`. Modify only offending eager imports/calls in `src/bike_sim/cli/ride.py`, `src/bike_sim/cli/research.py`, `src/bike_sim/sim/ride/physical_driver.py`, `src/bike_sim/sim/research/configuration.py`, and viewer modules if the new tests demonstrate a rendering side effect.",
+      "interfaces": "Keep all existing CLI arguments, backend defaults and environment constructors. Headless construction/stepping/recording must not call glfw.init, glfw.create_window, mujoco.viewer.launch_passive or mujoco.Renderer. Importing MuJoCo itself is permitted; requiring a window/context is not. No new default MUJOCO_GL value is introduced.",
+      "review_gate": "Both backends perform actual valid fixture steps without rendering initialization. Strict invalid scenarios remain invalid and are reported accurately; no offscreen backend is made mandatory."
+    },
+    {
+      "id": "T19",
+      "title": "Preserve mjpython and qualify real Linux desktop viewers",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-05-runtime.md",
+      "owner": "runtime",
+      "depends_on": [
+        "T18"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "verification": "not_run_by_user_instruction",
+      "report": "docs/superpowers/handoff/reports/2026-10-17-T19.md",
+      "files": "Create `tests/portability/test_viewer_launch_platform.py` and `docs/development/viewer-platform-acceptance.md`. Modify `src/bike_sim/sim/playground.py::ensure_macos_mjpython`, `src/bike_sim/sim/ride/viewer.py`, `src/bike_sim/sim/ride/playback_viewer.py`, `src/bike_sim/sim/research/viewer.py`, `src/bike_sim/sim/research/replay_viewer.py`, and CLI viewer branches only where a failing launch/cleanup test requires a change.",
+      "interfaces": "Keep ensure_macos_mjpython() -> None and all existing call sites. Darwin preserves one-time re-exec, MUJOCO_MJPYTHON and DYLD_FALLBACK_LIBRARY_PATH handling. Linux returns without mjpython lookup/re-exec. Viewers retain independent render model/data, owning snapshots, key controls and requested/achieved time-scale separation.",
+      "review_gate": "The existing macOS launch and visualization behavior remains functional; Linux X11 and separately tested XWayland paths have real evidence. Pacing changes never modify simulation time integration."
+    },
+    {
+      "id": "T20",
+      "title": "Make worker selection portable and qualify asynchronous process startup",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-05-runtime.md",
+      "owner": "runtime",
+      "depends_on": [
+        "T03",
+        "T11"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "report": "docs/superpowers/handoff/reports/2026-10-17-T20.md",
+      "verification": "not_run_by_user_instruction",
+      "files": "Modify `src/bike_sim/cli/batch.py`, `src/bike_sim/sim/ride/async_close.py`, and affected CLI module guards only if needed. Create `tests/portability/test_worker_platform.py`; extend `tests/test_async_close.py` and existing batch tests. Add `tests/portability/worker_entry_probe.py` as a guarded subprocess helper, not a production entry point.",
+      "interfaces": "Keep _performance_cores() -> int. Add private `_worker_start_method(system: str) -> str` returning `spawn` for Linux and the retained baseline method for Darwin until its separately qualified migration. AsyncCloseRunner accepts keyword-only `start_method: str | None = None` for explicit tests; no public CLI default changes other than the Linux path. Preserve queue protocol, sequence numbering, publication-error behavior and close semantics.",
+      "review_gate": "Linux never executes the Apple CPU query or silently falls back to unsafe fork. Actual entry points start/stop workers correctly. Existing macOS behavior and asynchronous publication semantics remain covered."
+    },
+    {
+      "id": "T21",
+      "title": "Qualify final-only recording and error lifecycle on both platforms",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-05-runtime.md",
+      "owner": "runtime",
+      "depends_on": [
+        "T12",
+        "T18",
+        "T19",
+        "T20"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Extend `tests/reference/test_native_recording_lifecycle.py`, `tests/reference/test_native_recording_retention.py`, `tests/reference/test_native_encode_columns.py`, `tests/reference/test_native_research_recording.py`, `tests/reference/test_native_ride_frontend.py`, and `tests/reference/test_native_research_frontend.py`. Create `tests/reference/test_native_platform_recording.py`. Modify `src/bike_sim/recording/`, `src/bike_sim/sim/research/recording_lifecycle.py`, `src/bike_sim/recording/capture.py` only where a reproduced OS-specific failure requires it; physical-ride recording uses this capture path and its existing driver/viewer glue, not a sim/ride/recording_lifecycle.py module.",
+      "interfaces": "Keep --record as the sole opt-in, --out as location only, native requirement for ordinary new recordings, exclusive final directory, run.duckdb/manifest.json/summary.md publication and existing typed source ownership. New execution identity is T12 v2. No schema-table, physics or recording-retention policy change is authorized.",
+      "review_gate": "No automatic recording, lost intervals, premature publication, overwritten run, or altered validity semantics. Real native recording finalizes and can be read on both platforms."
+    },
+    {
+      "id": "T22",
+      "title": "Separate portable recording inspection and playback from checked physical replay",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-05-runtime.md",
+      "owner": "runtime",
+      "depends_on": [
+        "T12",
+        "T21"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "files": "Create `tests/test_recording_platform_compatibility.py` and `tests/reference/test_native_platform_replay.py`; extend `tests/reference/test_native_replay_recording_v3.py` and `tests/reference/test_native_replay_session.py`. Modify `src/bike_sim/cli/replay.py`, `src/bike_sim/cli/recording.py`, `src/bike_sim/recording/replay_input.py`, `src/bike_sim/sim/research/playback.py`, `src/bike_sim/sim/research/replay.py`, and `src/bike_sim/sim/research/replay_session.py` only to preserve this explicit distinction. Store fixture manifests in `tests/fixtures/platform-recordings/` with actual generated data handled under the existing fixture policy.",
+      "interfaces": "Preserve bike-recording overview/fields/events/window/sql/export/compare. Preserve bike-replay RECORDING [--episode ID], --viewer for checked replay, --view for visual playback, and --view --dry-run for headless non-simulating playback. Use T12 require_execution_compatible before checked stepping. Analysis/playback never reports that physical replay was verified.",
+      "review_gate": "Portable data can be inspected without a native binary; supported recorded-state playback works across hosts. Checked replay remains strict and explains incompatibility before stepping. No command mislabels playback as verification."
+    },
+    {
+      "id": "T23",
+      "title": "Make source-first installation and native loader diagnostics explicit",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-06-delivery.md",
+      "owner": "environment",
+      "depends_on": [
+        "T03",
+        "T10",
+        "T12"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "report": "docs/superpowers/handoff/reports/2026-10-17-T23.md",
+      "verification": "not_run_by_user_instruction",
+      "files": "Modify `src/bike_sim/native/artifact.py`, `tools/dev.py`, `tests/reference/native_loader.py`, and existing native loader tests. Create `tests/portability/test_install_modes.py` and `docs/development/install-modes.md`. Keep `pyproject.toml` setuptools packaging and existing console scripts unless an actual entry-point defect is demonstrated.",
+      "interfaces": "Keep BIKE_NATIVE_BUILD_PATH and NATIVE_TEST_BUILD_PATH absolute-path contracts. Preserve load_native_extension(build_dir: Path | None = None) and no compilation on import. Source-first editable installs are the supported native delivery mode. A standalone py3-none-any wheel remains Python-only unless the caller explicitly provides a matching source/build installation under the documented native route.",
+      "review_gate": "Native selection stays strict and non-building; source/editable use works on both hosts; wheel-only limitations and stale ABI/library errors are accurate and actionable."
+    },
+    {
+      "id": "T24",
+      "title": "Build manifest-driven offline source bundles for each qualified target",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-06-delivery.md",
+      "owner": "delivery",
+      "depends_on": [
+        "T02",
+        "T23"
+      ],
+      "integration_group": null,
+      "status": "verified",
+      "verification": "not_run_by_user_instruction",
+      "report": "docs/superpowers/handoff/reports/2026-10-17-T24.md",
+      "files": "Create `tools/offline_bundle.py` and `tests/portability/test_offline_bundle.py`. Modify `tools/make_offline_bundle.sh`, `tools/check_offline_sources.py`, `packaging/OFFLINE_README_full.md`, and `packaging/OFFLINE_README_slim.md`. Preserve the existing full/slim bundle concepts and original Linux cp313 bundle naming when using the legacy defaults.",
+      "interfaces": "Produce `validate_bundle_manifest(value: object) -> dict`, `include_source_path(path: PurePosixPath) -> bool`, and CLI `python tools/offline_bundle.py --target host|linux-x86_64|macos-arm64 --python MAJOR.MINOR --mode full|slim --native --output PATH`. An explicitly requested native target must match the build host for this iteration. Existing no-argument shell invocation retains its documented legacy Linux full+slim behavior; new native-capable bundles require the explicit --native path and are labeled accordingly.",
+      "review_gate": "Every bundle states its true capabilities and platform/ABI; native source is complete, dependency closure is frozen, and host artifacts cannot leak into another platform package."
+    },
+    {
+      "id": "T25",
+      "title": "Install full and slim bundles offline with local native compilation",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-06-delivery.md",
+      "owner": "delivery",
+      "depends_on": [
+        "T10",
+        "T11",
+        "T14",
+        "T21",
+        "T24"
+      ],
+      "integration_group": null,
+      "status": "in_progress",
+      "files": "Modify `packaging/install_full.sh`, `packaging/install_slim.sh`, `tools/install_offline.py`, `tools/install_offline.sh`, and `tools/dev.py` offline bootstrap path. Create `tests/portability/test_offline_install.py` and `tests/portability/offline_install_probe.py`. Keep legacy manifest-less Python-only bundle installation behavior isolated from the new schema-1 native bundle path.",
+      "interfaces": "Consume T24 manifest and wheel hashes; keep existing optional install_dir arguments. A native install creates/uses the source project environment, syncs frozen native+dev groups offline, configures/builds locally and runs doctor. Full/slim share manifest validation and error reporting. Unknown target, hash mismatch, missing compiler/wheel or unqualified external scientific stack fails before claiming success.",
+      "review_gate": "Fresh network-blocked installation compiles and runs the target native artifact without hidden caches/downloads. Slim validates the exact imported scientific provider. Legacy Python-only bundles remain honestly labeled."
+    },
+    {
+      "id": "T26",
+      "title": "Document supported workflows and remove machine-specific development references",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-06-delivery.md",
+      "owner": "delivery",
+      "depends_on": [
+        "T14",
+        "T15",
+        "T16",
+        "T17",
+        "T19",
+        "T20",
+        "T22",
+        "T23",
+        "T25"
+      ],
+      "integration_group": null,
+      "status": "in_progress",
+      "files": "Modify `README.md`, `AGENTS.md`, `docs/TESTING.md`, `docs/RIDE.md`, `docs/RECORDING.md`, `docs/agents/native-engineering.md`, `native/.clangd`, and packaging offline READMEs. Create `docs/development/linux.md`, `docs/development/macos.md`, `docs/development/troubleshooting.md`, and `tests/portability/test_development_docs.py`. Preserve historical audit statements with their dates.",
+      "interfaces": "Document tools/dev.py, selected build environment variables, tool overrides, supported platform matrix, optional versus required capabilities, native/Python install modes, offline prerequisites and replay identity behavior. Replace hard-coded developer-specific /Users reference-source locations with NUMPY_SOURCE_ROOT and MUJOCO_SOURCE_ROOT or a documented `.work/reference-sources/` convention; never require those sources for ordinary runtime import.",
+      "review_gate": "A new developer can follow either platform guide without private filesystem assumptions. macOS remains first-class, native prerequisites are explicit, and unsupported/unverified capabilities are not advertised as passing."
+    },
+    {
+      "id": "T27",
+      "title": "Preserve test profile meaning and compare failures by exact provenance",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-07-validation.md",
+      "owner": "integration",
+      "depends_on": [
+        "T11",
+        "T12",
+        "T13",
+        "T14",
+        "T15",
+        "T16",
+        "T17",
+        "T18",
+        "T19",
+        "T20",
+        "T21",
+        "T22",
+        "T23",
+        "T25"
+      ],
+      "integration_group": null,
+      "status": "in_progress",
+      "files": "Create `tools/portability_qualification.py`, `tests/portability/test_qualification_report.py`, and `docs/development/portability-test-matrix.md`. Modify `tools/run_tests.sh`, `tests/reference/native_test_reporter.py`, and `tests/reference/native_loader.py` only to add truthful platform evidence or correct selection defects. Keep `tests/reference/_bits.py` and oracle-pinning behavior intact.",
+      "interfaces": "Produce `classify_result(current: dict, baseline: dict | None) -> dict` with status pass|baseline_unchanged|fail and raw command/exit/failure evidence. CLI `python tools/portability_qualification.py --profile quick|native|full --build PATH --output PATH [--baseline PATH]` executes the existing runner, never a weakened replacement. Baseline comparison requires matching qualified platform/environment and exact test IDs/signatures.",
+      "review_gate": "Every required test is executed against the selected artifact; new failures/skips cannot hide behind historical macOS baselines, empty collections or a Python fallback."
+    },
+    {
+      "id": "T28",
+      "title": "Add mandatory Linux and macOS CI without replacing existing workflows",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-07-validation.md",
+      "owner": "integration",
+      "depends_on": [
+        "T26",
+        "T27"
+      ],
+      "integration_group": null,
+      "status": "in_progress",
+      "files": "Create or extend `.github/workflows/portability.yml` after recovering actual workflows in T01. Create `tools/ci_portability.py`, `docs/development/toolchain-matrix.json`, and `tests/portability/test_ci_lanes.py`. Reuse existing artifact upload/cache/provisioning actions when their pinned versions meet the requirements; do not delete existing macOS jobs.",
+      "interfaces": "Produce `lane_commands(lane: str, root: Path) -> list[list[str]]` and CLI `python3 tools/ci_portability.py --lane NAME`. Lanes are linux-clang-release, linux-gcc-debug, macos-appleclang-release, linux-asan, macos-asan, linux-rtsan, macos-rtsan, linux-coverage, macos-coverage, linux-full, macos-full, and trusted release/offline/manual lanes. The matrix file contains exact qualified tool/interpreter/provider versions and runner requirements measured in T01-T17.",
+      "review_gate": "Both OSes have real required checks and uploaded evidence, exact toolchains are recorded, no mandatory lane uses continue-on-error, and trusted desktop runners cannot execute untrusted PR code."
+    },
+    {
+      "id": "T29",
+      "title": "Rehearse real desktop, performance, and offline release workflows",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-07-validation.md",
+      "owner": "integration",
+      "depends_on": [
+        "T19",
+        "T20",
+        "T21",
+        "T22",
+        "T25",
+        "T27",
+        "T28"
+      ],
+      "integration_group": null,
+      "status": "blocked",
+      "files": "Create `docs/superpowers/audits/2026-10-14-linux-macos-release-rehearsal.md` and `tests/portability/test_performance_evidence.py`. Modify `src/bike_sim/sim/realtime_measurement.py`, `tools/measure_realtime.py` and `tools/recording_finalize_bench.py` only to include new platform/provider provenance or the explicit reporting classification below. Reuse T19 GUI and T25 offline harnesses.",
+      "interfaces": "Keep existing measure_realtime CLI and benchmark semantics. Produce `steady_state_evidence(run: dict, minimum_simulated_time_s: float) -> dict` in src/bike_sim/sim/realtime_measurement.py; it consumes the existing measure_run result and returns status=eligible|diagnostic plus a stable reasons list. This is an additional claim-classification field, not a replacement for measured_ok, valid_prefix or compare_runs. Reports include requested duration, actual simulated duration, step count, outcome/first failure, startup/warmup/steady-state/finalization timing and full execution identity. Comparisons are same-hardware before/after; cross-machine differences remain descriptive.",
+      "review_gate": "Release claims are supported by real host/application/offline evidence. Invalid prefixes, changed workloads or foreign-hardware timings are never presented as steady-state performance success."
+    },
+    {
+      "id": "T30",
+      "title": "Close every requirement with evidence and perform a no-regression release review",
+      "plan": "docs/superpowers/plans/2026-10-14-linux-macos-07-validation.md",
+      "owner": "integration",
+      "depends_on": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T08",
+        "T09",
+        "T10",
+        "T11",
+        "T12",
+        "T13",
+        "T14",
+        "T15",
+        "T16",
+        "T17",
+        "T18",
+        "T19",
+        "T20",
+        "T21",
+        "T22",
+        "T23",
+        "T24",
+        "T25",
+        "T26",
+        "T27",
+        "T28",
+        "T29"
+      ],
+      "integration_group": null,
+      "status": "not_started",
+      "files": "Create `docs/superpowers/audits/2026-10-14-linux-macos-acceptance.md` and `tests/portability/test_release_gate.py`. Extend `tools/portability_qualification.py` with release aggregation. Update current support documentation only after its corresponding gate passes.",
+      "interfaces": "Produce `evaluate_release(records: list[dict], requirements: dict) -> dict` and CLI `python tools/portability_qualification.py --release --evidence DIR --output PATH`. Report status pass|blocked, required missing/failed rows and exact evidence links. Every input record binds source commit, platform/profile, command, raw exit, counts, artifact identity and evidence hashes.",
+      "review_gate": "The release has evidence for both platforms and every required capability, with historical exceptions explicit and unchanged. No unrun platform, GUI, numerical or offline test is reported as successful."
+    }
+  ],
+  "parent_update": "2026-10-18: statuses reconciled to executed evidence. T01-T24 verified by review agents plus macOS and Linux-container gates (build, 9 static sweeps, CTest 10/10, native contracts, full pytest). T21/T22 verified green on macOS with Linux child-process propagation fixes. T25/T26/T27/T28 delegated and running. T29 blocked on a live x86_64/GUI host. T30 pending final gate."
+}

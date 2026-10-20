@@ -99,7 +99,7 @@ void Playground::step_at(double now){
     std::scoped_lock const lock(p.mutex);
     p.live();
     while(!p.pending_keys.empty()){const int key=p.pending_keys.front();p.pending_keys.pop_front();(void)handle_key(key,now);}
-    double rear=p.rear_mm,fork=p.fork_mm;if(p.auto_sweep){const double phase=(numeric::sin(2.*std::numbers::pi*p.sweep_frequency*(now-p.sweep_start)-std::numbers::pi/2.)+1.)/2.;rear=phase*180.;fork=phase*180.;}
+    double rear=p.rear_mm,fork=p.fork_mm;if(p.auto_sweep){const double phase=(numeric::np_sin(2.*std::numbers::pi*p.sweep_frequency*(now-p.sweep_start)-std::numbers::pi/2.)+1.)/2.;rear=phase*180.;fork=phase*180.;}
     try{apply_stand_targets(*p.state->model,*p.state->data,p.solver,p.state->rear_actuator,p.state->fork_actuator,rear,fork);p.rear_mm=rear;p.fork_mm=fork;engine::step(p.state->model.get(),p.state->data.get());}
     catch(const engine::EngineFailure&){p.state->poisoned=true;throw;}
 }

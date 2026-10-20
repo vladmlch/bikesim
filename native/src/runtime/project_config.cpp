@@ -394,8 +394,8 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
                 upper[i] = p.shoulder[i] - p.elbow[i];
                 lower[i] = p.elbow[i] - p.grip[i];
             }
-            const double reach = std::sqrt(blas::cblas_ddot(3, upper.data(), 1, upper.data(), 1)) +
-                                 std::sqrt(blas::cblas_ddot(3, lower.data(), 1, lower.data(), 1));
+            const double reach = std::sqrt(blas::ddot(3, upper.data(), 1, upper.data(), 1)) +
+                                 std::sqrt(blas::ddot(3, lower.data(), 1, lower.data(), 1));
             Value contacts{Object{{"arm_reach_m", real(reach)}}};
             auto const fields = select(field(document, "articulated"), {
                 "saddle_patch_half_length_m", "pedal_patch_half_length_m", "support_pad_radius_m",

@@ -49,7 +49,7 @@ double quasistatic_front_load(double mass,double wheelbase,double forward,double
     for(double const value:{forward,road_pitch,acceleration})if(!std::isfinite(value))throw std::invalid_argument("quasistatic input must be finite");
     // Observation only. A negative estimate remains signed; it never enters
     // applied forces or controller observations.
-    return mass*(gravity*numeric::cos(road_pitch)*forward-height*(acceleration+gravity*numeric::sin(road_pitch)))/wheelbase;
+    return mass*(gravity*numeric::math_cos(road_pitch)*forward-height*(acceleration+gravity*numeric::math_sin(road_pitch)))/wheelbase;
 }
 void TruthGeometry::validate(std::size_t nq, std::size_t nv) const {
     if (x.size() < 2 || x.size() != z.size()) throw std::invalid_argument("research terrain requires equal x/z arrays");
@@ -94,10 +94,10 @@ WheelieTruth research_truth(const PhysicalSampleData &s, const TruthGeometry &g)
     t.time_s = s.time_s;
     t.axle_pitch_rad = std::atan2(number(f[2]) - number(r[2]), dx);
     t.road_pitch_rad = std::atan2(zf - zr, dx);
-    const double normal_z = std::max(std::abs(numeric::cos(t.road_pitch_rad)), 1e-6);
+    const double normal_z = std::max(std::abs(numeric::math_cos(t.road_pitch_rad)), 1e-6);
     const double supported = std::atan2((zf - zr) + (g.front_radius - g.rear_radius) / normal_z, dx);
     const double difference = t.axle_pitch_rad - supported;
-    t.relative_pitch_rad = std::atan2(numeric::sin(difference), numeric::cos(difference));
+    t.relative_pitch_rad = std::atan2(numeric::math_sin(difference), numeric::math_cos(difference));
     std::optional<biketyre::ProfileQuery> profile;
     const auto clearance=[&](const WireObject& wheel,const WireArray& center,double radius){
         const auto* penetration=find(wheel,"penetration_m");

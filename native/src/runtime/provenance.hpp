@@ -6,7 +6,10 @@
 // directly without a Python round-trip.
 #pragma once
 
+#include "provider_images.hpp"
+
 #include <string>
+#include <vector>
 
 namespace runtime {
 
@@ -21,5 +24,17 @@ struct RuntimeIdentity {
 // Throws std::runtime_error when the loaded MuJoCo library cannot be
 // identified — the same failure the module binding surfaced.
 [[nodiscard]] RuntimeIdentity runtime_identity();
+
+// The qualified provider policy the build was configured with (JSON text,
+// compile-time constant).
+[[nodiscard]] std::string numerics_provider_policy_json();
+
+// The provider images actually loaded into this process, checked against the
+// configure-time list. Loader inspection: identity boundaries only, never
+// inside a step loop. Kept out of runtime_identity() so that a missing
+// provider image cannot make every identity consumer fail. Throws
+// std::runtime_error when a required image is not loaded or the platform
+// cannot inspect loaded images.
+[[nodiscard]] std::vector<ProviderImage> provider_images();
 
 } // namespace runtime

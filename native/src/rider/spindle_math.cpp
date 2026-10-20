@@ -4,8 +4,10 @@
 #include "spindle_math.hpp"
 
 #include "../numeric_norm.hpp"
+#include "../numeric_numpy.hpp"
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
+#include "spindle_linalg.hpp"
 
 #include <numbers>
 
@@ -17,19 +19,18 @@ namespace spindle {
             validation::finite(v[1], name);
         }
 
-        // np.linalg.norm on a length-2 float64 vector is sqrt(x0*x0+x1*x1)
-        // evaluated as a plain multiply-add — not std::hypot's scaled
-        // algorithm, which can differ in the last ulp.
+        // np.linalg.norm on a float64 vector — the shared production
+        // 1-D mirror (sqrt(v.dot(v))), not std::hypot's scaled algorithm.
         [[nodiscard]] double norm2(Vec2 v) {
-            return std::sqrt(v[0] * v[0] + v[1] * v[1]);
+            return rider::np_norm(v);
         }
 
         // np.interp over a strictly increasing knot table: clamped at the
-        // ends, slope*(x-xp0)+fp0 inside. The multiply/add must stay a
-        // literal fma — this NumPy wheel contracts np_interp's
-        // slope*(x-dx[j])+dy[j] on arm64 (same compiled_base.c mirror as
-        // tyre/profile.cpp and drivetrain/motor.cpp), so a plain
-        // mul+add lands one ULP off on a fraction of interior queries.
+        // ends, slope*(x-xp0)+fp0 inside. The multiply/add follows the
+        // wheel's measured lowering — contracted on the macOS wheel,
+        // separate on the Linux wheel — through the shared
+        // numeric::np_interp_segment (same compiled_base.c mirror as
+        // tyre/profile.cpp and drivetrain/motor.cpp).
         [[nodiscard]] double interp(std::span<const double> xp,
                                     std::span<const double> fp, double x) {
             if (x <= xp[0])
@@ -42,15 +43,9 @@ namespace spindle {
                 ++hi;
             const double slope =
                 (fp[hi] - fp[hi - 1]) / (xp[hi] - xp[hi - 1]);
-            double result = std::fma(slope, x - xp[hi - 1], fp[hi - 1]);
-            // np_interp retries from the right endpoint after overflow
-            // cancellation, then falls back to a constant-segment value.
-            if (std::isnan(result)) {
-                result = std::fma(slope, x - xp[hi], fp[hi]);
-                if (std::isnan(result) && fp[hi - 1] == fp[hi])
-                    result = fp[hi - 1];
-            }
-            return result;
+            return numeric::np_interp_segment(slope, x, xp[hi - 1],
+                                              fp[hi - 1], xp[hi],
+                                              fp[hi]);
         }
     } // namespace
 
@@ -78,7 +73,7 @@ namespace spindle {
         if (depth >= 1.)
             throw std::invalid_argument(
                 "pedal torque ripple must be below one");
-        return mean * (1. + depth * std::cos(2. * phase));
+        return mean * (1. + depth * numeric::math_cos(2. * phase));
     }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror the Python API
@@ -105,8 +100,8 @@ namespace spindle {
             std::min(std::max((d * d - a * a - b * b) / (2 * a * b), -1.), 1.);
         const double knee = elbow_sign * std::acos(cosine);
         const double hip =
-            direction - std::atan2(b * numeric::sin(knee),
-                                   a + b * numeric::cos(knee));
+            direction - std::atan2(b * numeric::math_sin(knee),
+                                   a + b * numeric::math_cos(knee));
         return {.angles = {hip, knee}, .saturated = saturated};
     }
 
@@ -144,13 +139,13 @@ namespace spindle {
         if (sign != -1. && sign != 1.)
             throw std::invalid_argument(
                 "leg side sign must be plus or minus one");
-        return {crank_xz[0] + sign * radius * numeric::cos(phase),
-                crank_xz[1] - sign * radius * numeric::sin(phase)};
+        return {crank_xz[0] + sign * radius * numeric::math_cos(phase),
+                crank_xz[1] - sign * radius * numeric::math_sin(phase)};
     }
 
     double wrap_angle(double angle_rad) {
-        return std::atan2(numeric::sin(angle_rad),
-                          numeric::cos(angle_rad));
+        return std::atan2(numeric::math_sin(angle_rad),
+                          numeric::math_cos(angle_rad));
     }
 
     Vec2 leg_joint_q(const LegLoopGeometry &geometry, Vec2 hip_xz,
@@ -213,7 +208,7 @@ namespace spindle {
 
     Vec2 leg_shares(double phase_rad) {
         const double downward =
-            std::cos(validation::finite(phase_rad, "crank phase"));
+            numeric::math_cos(validation::finite(phase_rad, "crank phase"));
         if (std::abs(downward) <= 1e-12)
             return {.5, .5};
         return downward > 0. ? Vec2{1., 0.} : Vec2{0., 1.};
@@ -328,7 +323,7 @@ namespace spindle {
         for (std::size_t i = 0; i < result.size(); ++i)
             if (result[i] * velocity[i] > 0)
                 products.push_back(result[i] * velocity[i]);
-        const double power = numeric::numpy_pairwise_sum(products);
+        const double power = numeric::numpy_sum(products);
         if (power > limit_w) {
             const double scale = limit_w / power;
             for (std::size_t i = 0; i < result.size(); ++i)
@@ -488,7 +483,7 @@ namespace spindle {
                 "coordinate");
         const double value =
             envelope.neutral_anatomical_rad + envelope.direction * joint_q;
-        return std::atan2(numeric::sin(value), numeric::cos(value));
+        return std::atan2(numeric::math_sin(value), numeric::math_cos(value));
     }
 
 } // namespace spindle

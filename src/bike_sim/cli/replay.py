@@ -39,10 +39,16 @@ def main(argv=None):
             parser.error(f'--fps must be positive, got {args.fps}')
         try:
             from bike_sim.sim.research.playback import load_playback
-            playback = load_playback(args.recording)
-        except (ValueError, OSError) as exc:
+            playback = load_playback(args.recording, episode_id=args.episode)
+        except (ValueError, RuntimeError, OSError, KeyError, TypeError, ImportError) as exc:
             print(f'REPLAY ERROR: {exc}', file=sys.stderr)
+            for note in getattr(exc, '__notes__', ()):
+                print(f'  {note}', file=sys.stderr)
             return 1
+        # Recorded-state playback is portable inspection, not verification:
+        # it never claims the episode was physically replayed.
+        print('unverified recorded playback; use default or --viewer for checked replay',
+              file=sys.stderr)
         if args.dry_run:
             from bike_sim.sim.ride.playback_viewer import run_playback_dry_run
             return run_playback_dry_run(playback, fps=args.fps)
@@ -64,6 +70,8 @@ def main(argv=None):
         return 0
     except (ValueError, RuntimeError, ArithmeticError, OSError, KeyError, TypeError, ImportError) as exc:
         print(f'REPLAY ERROR: {exc}', file=sys.stderr)
+        for note in getattr(exc, '__notes__', ()):
+            print(f'  {note}', file=sys.stderr)
         return 1
 
 

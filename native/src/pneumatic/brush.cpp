@@ -55,7 +55,8 @@
 //                                     unquieted — verified bitwise
 //                                     against numpy 2.5.2
 //   np.where(c, a, b)              -> the ternary (elementwise select)
-//   np.sum(a)                      -> numeric::numpy_pairwise_sum
+//   np.sum(a)                      -> numeric::numpy_sum (np.sum reduce
+//                                      identity over pairwise order)
 //   np.all / np.any / .any()       -> first-false / first-true scans
 //   np.isfinite(a) / a < 0.0       -> std::isfinite / <
 //   np.asarray(x, float)           -> the contiguous f64 input span
@@ -311,7 +312,7 @@ namespace biketyre {
                     "nonnegative; dt must be positive");
 
         const double total_load_n =
-                numeric::numpy_pairwise_sum(normal_loads_n);
+                numeric::numpy_sum(normal_loads_n);
         const double mu = surface_mu(surface, std::fabs(v_s_mps));
         if (total_load_n <= 0.0 || half_length_m <= 0.0) {
             // brush.py:213-215 — the zero-load path DOES mutate:
@@ -406,7 +407,7 @@ namespace biketyre {
 
         // brush.py:270 — self.bristle_deflection_m[:] = updated.
         std::ranges::copy(updated_, bristle_deflection_m_.begin());
-        return {.force_n = numeric::numpy_pairwise_sum(force_n_),
+        return {.force_n = numeric::numpy_sum(force_n_),
                 .fully_sliding = fully_sliding,
                 .friction_coefficient = mu};
     }

@@ -70,7 +70,7 @@ biketyre::RoadProfile build_road_profile(const terrain::TrackSpec& track,
 std::optional<double> first_crossing_reference(double theta,double cx,double cz,double radius,const biketyre::RoadProfile& road,std::size_t samples){
     if(samples==0)return std::nullopt;
     for(double const value:{theta,cx,cz,radius})if(!std::isfinite(value))throw std::invalid_argument("ray reference inputs must be finite");
-    const double ux=numeric::sin(theta),uz=-numeric::cos(theta);
+    const double ux=numeric::np_sin(theta),uz=-numeric::np_cos(theta);
     const auto below=[&](double s){return cz+s*uz<=road.height_at(cx+s*ux);};
     const auto grid=geometry::detail::np_linspace(0.,radius,samples);
     for(std::size_t k=0;k<grid.size();++k)if(below(grid[k])){if(k==0)return 0.;double a=grid[k-1],b=grid[k];

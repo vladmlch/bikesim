@@ -1178,10 +1178,13 @@ int run_context_checks(const fs::path &build) {
 
 namespace {
 
-constexpr std::array<std::string_view, 3> kSupportTestModules{
+// Mirrors _SUPPORT_TEST_MODULES in tools/check_native_contracts.py: support
+// modules that are not extension tests, exempt from the loader rule.
+constexpr std::array<std::string_view, 4> kSupportTestModules{
     "test_native_check_tools.py",
     "test_native_contract_checks.py",
     "test_native_loader.py",
+    "test_native_platform_linkage.py",
 };
 
 Value read_contract_json(const fs::path &path, const std::string &label) {

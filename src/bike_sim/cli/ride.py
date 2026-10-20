@@ -190,7 +190,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--duration", type=float, default=None, metavar="S", help="physical run duration; permits stationary rigs")
     parser.add_argument('--research', action='store_true', help='accounted policy loop in viewer or headless mode')
     parser.add_argument('--async-telemetry', action='store_true',
-                        help='publish period telemetry from a spawned worker process; the viewer '
+                        help='publish period telemetry from a separate worker process; the viewer '
                              'step path then pays only serialization. Policy loops that read '
                              'physical.sample between steps may see one-period-older data')
     parser.add_argument('--policy', help='motor policy factory, module:factory')

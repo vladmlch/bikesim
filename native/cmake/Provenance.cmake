@@ -258,8 +258,8 @@ file(MAKE_DIRECTORY "${_t03_badver}/_archives")
 execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_directory
   "${BIKE_DEP_ROOT}/mujoco-3.12.0" "${_t03_badver}/mujoco-3.12.0")
 execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink
-  "${BIKE_DEP_ROOT}/_archives/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl"
-  "${_t03_badver}/_archives/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl")
+  "${BIKE_DEP_ROOT}/_archives/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl"
+  "${_t03_badver}/_archives/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl")
 file(WRITE "${_t03_badver}/mujoco-3.12.0/BIKE_VERSION" "3.99.0\n")
 _t03_configure(_t03_badver_rc _t03_badver_log "${_t03_work}/cfg-badver"
   "${_t03_badver}" "${_t03_work}/lock-mujoco.json")
@@ -275,8 +275,8 @@ file(MAKE_DIRECTORY "${_t03_tampered}/_archives")
 execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_directory
   "${BIKE_DEP_ROOT}/mujoco-3.12.0" "${_t03_tampered}/mujoco-3.12.0")
 execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink
-  "${BIKE_DEP_ROOT}/_archives/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl"
-  "${_t03_tampered}/_archives/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl")
+  "${BIKE_DEP_ROOT}/_archives/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl"
+  "${_t03_tampered}/_archives/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl")
 file(APPEND "${_t03_tampered}/mujoco-3.12.0/lib/libmujoco.3.12.0.dylib" "\n")
 _t03_configure(_t03_tamper_rc _t03_tamper_log "${_t03_work}/cfg-tampered"
   "${_t03_tampered}" "${_t03_work}/lock-mujoco.json")
@@ -298,8 +298,8 @@ execute_process(COMMAND "${CMAKE_COMMAND}" -E copy
 execute_process(COMMAND "${CMAKE_COMMAND}" -E copy
   "${BIKE_DEP_ROOT}/mujoco-3.12.0/LICENSES_THIRD_PARTY.md" "${_t03_noabi}/mujoco-3.12.0/LICENSES_THIRD_PARTY.md")
 execute_process(COMMAND "${CMAKE_COMMAND}" -E create_symlink
-  "${BIKE_DEP_ROOT}/_archives/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl"
-  "${_t03_noabi}/_archives/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl")
+  "${BIKE_DEP_ROOT}/_archives/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl"
+  "${_t03_noabi}/_archives/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl")
 # The stub exports only the version symbol so the 3.12.0 probe passes and
 # the TLS-ABI probe is the check that must fail.
 file(WRITE "${_t03_work}/stub.cpp"

@@ -11,10 +11,10 @@
       "purpose": "Physics engine SDK: C headers plus the shared library pinned for the private TLS error-handler ABI (_mjPRIVATE_setTlsLogHandler / _mjPRIVATE_getGlobalLogHandler / mj_makeRawData).",
       "acquisition": {
         "kind": "pypi-wheel-extract",
-        "url": "https://files.pythonhosted.org/packages/d1/ac/57bec36f4c345f8bb87dc7788982677c20578bdddc6b1d879c413bc073ff/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl",
-        "archive": "_archives/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl",
-        "archive_sha256": "3e353625f3fc2c3c8147ceddb2dcda3597bfd08c1d001ef0637a2080cd49cf77",
-        "pin_source": "uv.lock mujoco==3.12.0 cp314 macosx_11_0_arm64 wheel hash (verified identical to the downloaded artifact and to the installed .venv copy: libmujoco.3.12.0.dylib sha256 9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c matches the wheel-extracted dylib byte for byte)",
+        "url": "https://files.pythonhosted.org/packages/5d/ce/571060e86b1eacf0b13e1b6bff607bede9d16685bb891cf08e60a5288aae/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl",
+        "archive": "_archives/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl",
+        "archive_sha256": "5122a5affff0f592d088a89226360fe86a000b737cac6370ff5e5b552f20bc81",
+        "pin_source": "uv.lock mujoco==3.12.0 cp313 macosx_11_0_arm64 wheel hash (verified identical to the downloaded artifact and to the installed .venv copy: libmujoco.3.12.0.dylib sha256 9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c matches the wheel-extracted dylib byte for byte)",
         "note": "The wheel is only the transport for the already-pinned MuJoCo binaries; no Python interpreter, package or wheel directory enters the build closure."
       },
       "extracted_root": "mujoco-3.12.0",

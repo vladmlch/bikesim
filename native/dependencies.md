@@ -53,7 +53,7 @@ Concrete artifact notes:
 
 | dep | version | source | layout after extraction |
 |---|---|---|---|
-| mujoco | 3.12.0 | `files.pythonhosted.org/…/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl` | unzip the wheel; copy `mujoco/include/` and `mujoco/libmujoco.3.12.0.dylib` → `lib/`; `LICENSE`, `LICENSES_THIRD_PARTY.md` |
+| mujoco | 3.12.0 | `files.pythonhosted.org/…/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl` | unzip the wheel; copy `mujoco/include/` and `mujoco/libmujoco.3.12.0.dylib` → `lib/`; `LICENSE`, `LICENSES_THIRD_PARTY.md` |
 | duckdb | 1.5.6 | `github.com/duckdb/duckdb/releases/download/v1.5.6/libduckdb-osx-universal.zip` | `libduckdb.dylib` → `lib/`; `duckdb.h`, `duckdb.hpp` → `include/`; `LICENSE` |
 | tomlplusplus | 3.4.0 | `github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz` | keep `include/` + `LICENSE` |
 | rapidjson | 24b5e7a8…7102f | `github.com/Tencent/rapidjson/archive/24b5e7a8b27f42fa16b96fc70aade9106cf7102f.tar.gz` | keep `include/` + `LICENSE` |

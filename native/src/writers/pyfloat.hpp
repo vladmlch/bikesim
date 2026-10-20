@@ -64,7 +64,11 @@ namespace pyfloat {
         bool negate_result = false;
         if (iv == 0.0) {
             if (iw < 0.0)
-                throw std::domain_error("zero to a negative power");
+                // CPython 3.13 float_pow raises ZeroDivisionError with
+                // this spelling; 3.14 shortened it to
+                // "zero to a negative power".
+                throw std::domain_error(
+                        "0.0 cannot be raised to a negative power");
             return std::fmod(std::fabs(iw), 2.0) == 1.0 ? iv : 0.0;
         }
         if (iv < 0.0) {

@@ -3,7 +3,7 @@ name = "bike-sim"
 version = "0.3.0"
 description = "Bicycle suspension kinematics solver and MuJoCo simulation model generator"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<3.14"
 dependencies = [
     "numpy>=1.24.0",
     "matplotlib>=3.7.0",

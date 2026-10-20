@@ -19,7 +19,10 @@
 // pair into a __sincos_stret the oracle never calls.
 // saddle_path_apparent_mass's complex arithmetic
 // reproduces CPython/NumPy complex multiply, divide (Smith's scaled
-// branch) and hypot-based absolute bitwise.
+// branch) and hypot-based absolute bitwise. The lone CPython-side call
+// (_Py_c_prod on `2j * np.pi`) is finite-domain, so CPython 3.13 and
+// 3.14 compute it identically — the 3.14 Annex-G infinity/NaN recovery
+// branches never trigger, and no recovery logic is mirrored in the C++.
 #pragma once
 
 #include <array>

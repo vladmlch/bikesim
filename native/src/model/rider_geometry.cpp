@@ -1020,7 +1020,12 @@ saddle_path_apparent_mass(const SeatedPose &pose,
     out.reserve(frequencies_hz.size());
     for (const double f: frequencies_hz) {
         // s = 2j * np.pi * f — CPython complex*float then the complex
-        // multiply ufunc per element.
+        // multiply ufunc per element. The CPython step is _Py_c_prod,
+        // which gained Annex-G nan-recovery in 3.14; 3.13 is the naive
+        // {ac-bd, ad+bc} schoolbook. The divergence is unreachable here:
+        // (0+2j)*pi can only yield the finite (0, 2*pi), so both versions
+        // compute the same scalar — and every later op is a NumPy ufunc
+        // lane, not a CPython complex path, in either case.
         const Cpx s = cmul(Cpx{.re = 0.0, .im = 2.0 * M_PI},
                            Cpx{.re = f, .im = 0.0});
         const Cpx z1 = cadd(Cpx{.re = k1, .im = 0.0},

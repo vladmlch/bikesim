@@ -146,3 +146,10 @@ function(bike_verify_apple_sdk_compatibility)
       "Configured C++ compiler '${CMAKE_CXX_COMPILER}' is incompatible with SDK '${CMAKE_OSX_SYSROOT}':\n${_native_sdk_probe_output}")
   endif()
 endfunction()
+
+# bike_verify_sdk_compat — the standalone root graph's spelling of the same
+# post-project() probe. Kept as a thin alias so the shared-modules swap needs
+# no call-site rename; there is never a second probe.
+function(bike_verify_sdk_compat)
+  bike_verify_apple_sdk_compatibility()
+endfunction()

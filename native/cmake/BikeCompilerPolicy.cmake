@@ -1378,6 +1378,39 @@ function(bike_apply_native_policy target)
 endfunction()
 
 # --------------------------------------------------------------------------
+# Name bridges for the merged single-policy graph (merge ruling D6):
+# bike_apply_native_policy is the single compiler-policy entry point for
+# BOTH build graphs. The standalone root graph's HEAD-era spellings are
+# kept here as thin aliases so the module swap in W2.3 is wiring-only and
+# emitted schema-1 names stay identical.
+# --------------------------------------------------------------------------
+
+# The root graph's policy entry point — also the name BIKE_NUMERICS_APPLY_POLICY
+# may carry. A function alias, never a second flag list.
+function(bike_target_strict_policy target)
+  bike_apply_native_policy("${target}")
+endfunction()
+
+# The root graph calls bike_detect_libcpp_hardening() after project() to
+# populate these names in the caller's scope; this module probes at include()
+# time, so the bridge re-exports the already-measured results with zero
+# re-probing — the same contract Checks.cmake's emitted "libcpp_hardening"
+# record reads.
+function(bike_detect_libcpp_hardening)
+  set(BIKE_LIBCPP_HARDENING_SUPPORTED ${_native_libcpp_hardening_supported}
+    PARENT_SCOPE)
+  set(BIKE_LIBCPP_HARDENING_EFFECTIVE "${_native_libcpp_hardening_mode}"
+    PARENT_SCOPE)
+endfunction()
+
+# Directory-scope aliases as well: HEAD's bike_detect_libcpp_hardening()
+# exported these names for consumers in the same directory scope; keeping
+# them bound here means a caller that never invokes the detection function
+# still reads the resolved values.
+set(BIKE_LIBCPP_HARDENING_SUPPORTED ${_native_libcpp_hardening_supported})
+set(BIKE_LIBCPP_HARDENING_EFFECTIVE "${_native_libcpp_hardening_mode}")
+
+# --------------------------------------------------------------------------
 # The recorded policy — consumed by the portability fixture and embedded
 # verbatim as compiler_policy inside native_check_context.json.
 # --------------------------------------------------------------------------

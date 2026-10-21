@@ -676,3 +676,91 @@ run. Direct one-TU clang-tidy is not a claim that the full sweep passed.
 Review item 5 owns full-project/phase verification. No phase status or
 plan checkbox advances here. `native/numerics.lock.json` is unchanged,
 SHA-256 `19f542e9a581ef5b47379ab1420b6104f5bac72cf270860421c5ae5acd0539bc`.
+
+## Review item 4 — safe golden directory pulls (2026-10-21)
+
+Base `e78ccec`, branch `impl/python-free-cpp`. The shared capture procedure's
+`tools/linux/container.sh pull tests/fixtures/golden/linux-aarch64` previously
+failed because the driver required `test -f` and rejected directory destinations.
+The focused wrapper regression reproduced the legitimate initial directory
+rejection before implementation (`/bin/bash tools/linux/test_container_pull.sh`,
+exit 1: `FAIL: legitimate golden directory rejected`).
+
+Pull now accepts regular files and complete directory trees at the exact selected
+checkout-relative path. Repeated directory pulls merge recursively and overwrite
+matching files, retaining unrelated destination entries and siblings without an
+extra basename level. Hidden files, names with spaces and executable file modes
+survive. All operands transfer into host staging and validate before publication;
+merged replacements retain originals until publication succeeds, with rollback on
+publication failure. Exact duplicate operands remain accepted; parent/child
+operands must be requested separately. File/directory conflicts are rejected.
+The source and destination must remain unchanged during the pull: this is not a
+crash-atomic snapshot. Disk space includes staged source, merged tree and original
+backups. A rollback failure reports and retains the backup staging directory.
+
+The source is checked before Docker transfer and the staged copy checked again:
+source symlink parents, symlink/special entries, excluded environment/build
+subtrees (including empty build directories) are rejected. Existing destination
+counterparts and their parents must not be symlinks or incompatible types.
+Unrelated destination symlinks are preserved by physical copying, never followed.
+No container environment, physics, dependency version, numerics lock, golden
+capture or simulator episode changed.
+
+Final focused commands, all exit 0:
+
+```bash
+/bin/bash -n tools/linux/container.sh tools/linux/test_container_pull.sh
+shellcheck tools/linux/container.sh tools/linux/test_container_pull.sh
+/bin/bash tools/linux/test_container_pull.sh
+git diff --check
+/bin/bash -n /tmp/task-4-real-pull-smoke.sh
+shellcheck /tmp/task-4-real-pull-smoke.sh
+/bin/bash /tmp/task-4-real-pull-smoke.sh
+```
+
+Syntax/ShellCheck/diff checks emit no diagnostics. The committed shell regression
+reports `PASS: 37 pull regression cases`: original directory behavior, recursive
+and repeated merges, exact basename, hidden/spaced names, executable files,
+duplicated file operands, empty directories, eight invalid path forms, six
+excluded path examples, missing source, ownership, source root/parent/nested
+symlinks, special source/destination entries, excluded subtrees including empty
+build directories, destination root/parent/nested symlinks, partial copy failure,
+post-copy validation, prevalidation of all operands, type conflicts, and two
+publication rollback cases. The injected Docker copy exit 41 and publication exit
+42 propagate unchanged while preserving original host data.
+
+The real smoke script uses a unique `.pull-smoke-task4.XXXXXXXX` subtree under this
+checkout and the same `/src/` subtree in the existing container. It exercises three
+initial operands (directory, executable file, empty directory), repeats the
+directory pull with an updated file, verifies local-only and sibling files,
+then rejects missing source, source symlink and nested destination symlink while
+checking existing data. Final output:
+
+```text
+container.sh: missing, symlink or special pull source: .pull-smoke-task4.LDxXLs0f/missing
+container.sh: symlink or special pull entry: .pull-smoke-task4.LDxXLs0f/artifacts/link
+container.sh: symlink destination: .pull-smoke-task4.LDxXLs0f/artifacts/nested dir
+PASS: real Docker initial/repeat directory, file mode, empty directory, hidden/spaced entries, exact basename, sibling preservation; missing source, source symlink, nested destination symlink rejected
+```
+
+Both scratch subtrees were removed by that script. No image/up/sync was called.
+Before and after smoke, `docker container inspect --format '{{.State.Status}}
+{{.Image}} {{json .Mounts}} {{index .Config.Labels "bike.checkout"}}'
+bike-dev-python-free-cpp-numerics` reports running, image
+`sha256:959091e9b453461be335eb31edadc63e36269b827755994f6b54d3796703ca69`,
+mounts `[]`, and ownership by this exact checkout. Host: Darwin arm64,
+`/bin/bash` 3.2.57(1), ShellCheck 0.11.0. Docker client/server 29.8.2; container
+Linux aarch64, Bash 5.2.21(1). No compiler was invoked. The first unprivileged
+Docker inspect failed with socket permission denied (exit 1); the approved
+escalated retry and all actual smoke transfers succeeded. An initial fixture
+setup run also failed ownership because macOS temporary paths needed physical
+canonicalization; it was corrected before the valid RED run and is not RED
+evidence. Additional tests exposed an empty-build exclusion gap and duplicate
+file-operand compatibility regression during implementation; both were fixed
+before final verification.
+
+Verification is deliberately limited to the focused shell checks, fixture and
+actual transfers. Review item 5 owns project profiles/phase verification: no
+native/full gate, broad sweep, CMake, build, CTest or pytest was run. No phase
+checkbox advances. Detailed RED/GREEN and self-review are in
+`.superpowers/sdd/2026-10-21-sincos-golden-pull/task-4-report.md`.

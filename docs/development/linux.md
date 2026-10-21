@@ -92,6 +92,20 @@ Available commands: image, up, sync, venv, configure, build, failures,
 ctest, exec, pull, gate, down. The driver retains the failing Ninja exit code
 through tee. The failures command prints the failed-command count and
 returns an error for an absent log; ctest rejects an empty test selection.
+`pull PATH...` accepts files or whole directories, including
+`pull tests/fixtures/golden/linux-aarch64`. Each path lands at that exact
+checkout-relative location on initial and repeated pulls. Directory pulls
+merge recursively: matching files are overwritten, unrelated destination
+entries remain, and hidden files, spaces and executable modes are preserved.
+Source trees must contain only regular files/directories outside the driver's
+environment/build exclusions. Symlink parents, copied symlink/special entries,
+destination symlink counterparts and file/directory conflicts are rejected.
+All operands are staged and validated before publication; failed transfers
+leave existing content intact, and publication errors restore backups. Use
+nonoverlapping paths (exact duplicates are accepted), keep source/destination
+trees unchanged during the pull, and allow disk space for the staged merge
+and original backups. This is not a crash-atomic snapshot; if rollback itself
+fails, the driver reports and retains its backup directory for recovery.
 No automatic cleanup removes old containers.
 After changing the Dockerfile, rebuilding the image does not replace an
 existing container. Use an explicit `down`, then `sync` and `venv` to create

@@ -11,7 +11,7 @@
 # failures NAME                 count failed commands in the last build log
 # ctest NAME [ARG...]            run CTest in /build/NAME
 # exec CMD...                   run a command from /src
-# pull PATH...                  copy selected files from /src to this checkout
+# pull PATH...                  merge selected files/directories from /src
 # gate PROFILE                  run the shared quick|native|full test profile
 # down                          explicitly remove this checkout's container
 set -euo pipefail
@@ -69,6 +69,132 @@ source_path() {
             return 1 ;;
     esac
     return 0
+}
+
+# Validate every copied entry, including dotfiles, without following symlinks.
+# Also used inside the container, with source_path supplied as a shell function.
+pull_tree() {
+    local root="$1" rel="$2" entry suffix
+    [[ ! -L "$root" && ( -f "$root" || -d "$root" ) ]] || {
+        printf 'container.sh: missing, symlink or special pull source: %s\n' "$rel" >&2
+        return 2
+    }
+    find "$root" -print0 > "$3"
+    while IFS= read -r -d '' entry; do
+        suffix="${entry#"$root"}"
+        source_path "$rel$suffix" || {
+            printf 'container.sh: excluded pull entry: %s\n' "$rel$suffix" >&2
+            return 2
+        }
+        # A trailing slash also applies build*/__pycache__ exclusions to
+        # empty directories, which have no child for find to expose.
+        if [[ -d "$entry" ]] && ! source_path "$rel$suffix/"; then
+            printf 'container.sh: excluded pull directory: %s\n' "$rel$suffix" >&2
+            return 2
+        fi
+        [[ ! -L "$entry" && ( -f "$entry" || -d "$entry" ) ]] || {
+            printf 'container.sh: symlink or special pull entry: %s\n' "$rel$suffix" >&2
+            return 2
+        }
+    done < "$3"
+}
+
+pull_cleanup() {
+    local status=$? index destination backup rollback_failed=0
+    trap - EXIT
+    if [[ "$pull_committed" == 0 ]]; then
+        for ((index=pull_started-1; index>=0; index--)); do
+            destination="$repo_root/${pull_paths[index]}"
+            backup="$pull_stage/$index/backup"
+            if [[ -e "$backup" ]]; then
+                rm -rf -- "$destination" && mv -- "$backup" "$destination" || rollback_failed=1
+            elif [[ "${pull_existed[index]}" == 0 ]]; then
+                rm -rf -- "$destination" || rollback_failed=1
+            fi
+        done
+    fi
+    if [[ "$rollback_failed" == 1 ]]; then
+        printf 'container.sh: rollback failed; backups retained in %s\n' "$pull_stage" >&2
+        exit 2
+    fi
+    rm -rf -- "$pull_stage"
+    exit "$status"
+}
+
+pull_paths_from_container() {
+    local rel previous index=0 entry suffix destination ready parent
+    pull_paths=() pull_existed=() pull_started=0 pull_committed=0
+    pull_stage="$(mktemp -d "$repo_root/.bike-linux-pull.XXXXXXXX")"
+    trap pull_cleanup EXIT
+    for rel in "$@"; do
+        relative_path "$rel"
+        source_path "$rel" || die "not a source destination: $rel"
+        # Overlapping operands would invalidate the prepared merge/rollback.
+        for previous in ${pull_paths[@]+"${pull_paths[@]}"}; do
+            [[ "$rel" != "$previous" ]] || continue 2
+            [[ "$rel" != "$previous/"* && "$previous" != "$rel/"* ]] ||
+                die "overlapping pull paths: $previous and $rel"
+        done
+        require_checkout_parents "$rel"
+        destination="$repo_root/$rel"
+        [[ ! -L "$destination" ]] || die "symlink destination: $rel"
+        mkdir -- "$pull_stage/$index"
+        # Reject source symlink parents before Docker can resolve them. The
+        # selected tree is checked both before transfer and after staging.
+        # shellcheck disable=SC2016  # This script runs in the container.
+        in_container bash -c "$(declare -f source_path pull_tree)"'
+            set -euo pipefail
+            parent="/src/$1"
+            while :; do
+                [[ ! -L "$parent" ]] || { printf "container.sh: source symlink parent: %s\n" "$parent" >&2; exit 2; }
+                [[ "$parent" != /src ]] || break
+                parent="${parent%/*}"
+            done
+            list="$(mktemp /tmp/bike-pull-entries.XXXXXXXX)"
+            trap '\''rm -f -- "$list"'\'' EXIT
+            pull_tree "/src/$1" "$1" "$list"
+        ' pull "$rel"
+        docker cp "$name:/src/$rel" "$pull_stage/$index/incoming"
+        pull_tree "$pull_stage/$index/incoming" "$rel" "$pull_stage/$index/entries"
+        # Existing counterparts must have compatible types and real parents.
+        # Unrelated destination entries remain in the merged tree unchanged.
+        while IFS= read -r -d '' entry; do
+            suffix="${entry#"$pull_stage/$index/incoming"}"
+            parent="$destination$suffix"
+            [[ ! -L "$parent" ]] || die "symlink destination: $rel$suffix"
+            if [[ -e "$parent" ]]; then
+                [[ ( -d "$entry" && -d "$parent" ) || ( -f "$entry" && -f "$parent" ) ]] ||
+                    die "incompatible destination type: $rel$suffix"
+            fi
+        done < "$pull_stage/$index/entries"
+        ready="$pull_stage/$index/ready"
+        if [[ -e "$destination" ]]; then
+            pull_existed+=(1)
+            cp -pPR -- "$destination" "$ready"
+            if [[ -d "$ready" ]]; then
+                cp -pPR -- "$pull_stage/$index/incoming/." "$ready/"
+            else
+                cp -pP -- "$pull_stage/$index/incoming" "$ready"
+            fi
+        else
+            pull_existed+=(0)
+            mv -- "$pull_stage/$index/incoming" "$ready"
+        fi
+        pull_paths+=("$rel")
+        index=$((index + 1))
+    done
+    # All transfers and merges succeeded. Publish by rename, retaining each
+    # original until every operand is installed; EXIT rolls back on failure.
+    for ((index=0; index<${#pull_paths[@]}; index++)); do
+        destination="$repo_root/${pull_paths[index]}"
+        mkdir -p -- "$(dirname -- "$destination")"
+        pull_started=$((index + 1))
+        if [[ "${pull_existed[index]}" == 1 ]]; then
+            mv -- "$destination" "$pull_stage/$index/backup"
+        fi
+        mv -- "$pull_stage/$index/ready" "$destination"
+    done
+    pull_committed=1
 }
 
 [[ $# -ge 1 ]] ||
@@ -215,19 +341,7 @@ case "$cmd" in
         ;;
     pull)
         [[ $# -ge 1 ]] || die "usage: pull PATH..."
-        for rel in "$@"; do
-            relative_path "$rel"
-            source_path "$rel" || die "not a source-file destination: $rel"
-            # Refuse host symlink parents: docker cp must stay in this checkout.
-            require_checkout_parents "$rel"
-            [[ ! -L "$repo_root/$rel" ]] || die "symlink destination: $rel"
-            [[ ! -e "$repo_root/$rel" || -f "$repo_root/$rel" ]] ||
-                die "destination is not a regular file: $rel"
-            in_container test -f "/src/$rel"
-            in_container test ! -L "/src/$rel"
-            mkdir -p -- "$repo_root/$(dirname -- "$rel")"
-            docker cp "$name:/src/$rel" "$repo_root/$rel"
-        done
+        pull_paths_from_container "$@"
         ;;
     gate)
         [[ $# -eq 1 ]] || die "usage: gate quick|native|full"

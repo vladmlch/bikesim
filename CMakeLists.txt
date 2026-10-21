@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.27)
 
 # Standalone repository-root build (migration task T03).
 #
@@ -20,20 +20,17 @@ cmake_minimum_required(VERSION 3.24)
 # objects the standalone tests exercise. BIKE_BUILD_PYTHON_BINDINGS=ON from
 # the root is refused by native/CMakeLists.txt (see the option below).
 
-# Modules only declare functions/macros — safe to include pre-project().
-# SDK resolution MUST precede project(): CMake runs its compiler link check
-# inside project(), so an incompatible ambient SDK must be replaced (or an
-# incompatible explicit SDK rejected with the module's precise diagnostic)
-# before that check runs — identical ordering to the legacy native build.
-include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/CompilerPolicy.cmake")
-include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Dependencies.cmake")
+# Both build entry points share host/SDK dispatch before project(): the
+# compiler link check must see the selected Apple SDK, and Linux must never
+# enter Apple discovery. Dependency acquisition stays explicit and offline.
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikePlatform.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeDependencyLock.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Provenance.cmake")
 
-if(APPLE)
-  bike_resolve_macos_sdk()
-endif()
-
 project(bike_sim CXX)
+if(CMAKE_CROSSCOMPILING)
+  message(FATAL_ERROR "Cross-compilation is not supported by this native-build workflow")
+endif()
 
 # ON is not a root build mode. The root's dependencies come from the locked
 # .deps tree and its numerics from the committed record; native/ resolves
@@ -55,50 +52,28 @@ endif()
 get_filename_component(BIKE_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
 set(BIKE_ROOT_BUILD ON)
 
+# The platform policy owns hardening, instrumentation and every first-party
+# target's compiler/linker flags, just as it does in the binding graph.
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeCompilerPolicy.cmake")
+if(APPLE)
+  bike_verify_apple_sdk_compatibility()
+endif()
+
 # Acquisition + verification gate: missing/tampered/wrong-version .deps is a
 # configure-time failure before any first-party target can build.
 bike_dependencies_resolve()
 
-if(APPLE)
-  bike_verify_sdk_compat()
-endif()
-
-# The host dispatch and its cross-compilation refusal come from BikeHostTarget.cmake,
-# the same function BikePlatform.cmake uses. It runs after project(), where
-# CMAKE_SYSTEM_NAME is the target system CMake actually configured, including
-# a toolchain-file cross setting that is not visible before project().
-# BikePlatform.cmake is not included: its Apple SDK probe would run a second
-# SDK resolution beside bike_resolve_macos_sdk() above.
-include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeHostTarget.cmake")
-bike_host_target_system(BIKE_TARGET_SYSTEM)
-
-# Same libc++ hardening contract as the legacy binding build: EXTENSIVE by
-# default, FAST as an explicit comparison option — probed, not assumed.
-set(BIKE_LIBCPP_HARDENING "EXTENSIVE" CACHE STRING "libc++ hardening mode")
-set_property(CACHE BIKE_LIBCPP_HARDENING PROPERTY STRINGS EXTENSIVE FAST)
-if(NOT BIKE_LIBCPP_HARDENING STREQUAL "EXTENSIVE" AND NOT BIKE_LIBCPP_HARDENING STREQUAL "FAST")
-  message(FATAL_ERROR "BIKE_LIBCPP_HARDENING must be EXTENSIVE or FAST, got '${BIKE_LIBCPP_HARDENING}'")
-endif()
-bike_detect_libcpp_hardening()
-
-# Same instrumentation knobs the legacy build exposes; the shared policy
-# consumes them per target.
-option(NATIVE_SANITIZE "ASan+UBSan build" OFF)
-option(NATIVE_RTSAN "RealtimeSanitizer build (brew clang only)" OFF)
-option(NATIVE_COVERAGE "llvm-cov instrumented build" OFF)
-
 # Numerics facts come from the committed record alone (RECORD_ONLY: no probe,
 # no Python). BikeNumerics.cmake projects the BIKE_NUMPY_* compile definitions
 # that numeric_numpy.hpp requires at directory scope, so it must precede the
-# first target. It also creates the Accelerate backend (bike_native_numerics),
-# whose strict policy reads the hardening and instrumentation state above, so it
-# follows them. The backend's policy is bike_target_strict_policy: this root
-# graph's first-party policy until it moves onto BikeCompilerPolicy.cmake.
+# first target. It creates the platform's typed numerics backend with the
+# shared compiler policy already available.
 # The MuJoCo include root is the locked .deps copy, as for every root target.
 set(BIKE_NUMERICS_SOURCE RECORD_ONLY)
 set(BIKE_NUMERICS_MUJOCO_INCLUDE "${BIKE_DEP_mujoco_ROOT}/include")
-set(BIKE_NUMERICS_APPLY_POLICY bike_target_strict_policy)
+set(BIKE_NUMERICS_APPLY_POLICY bike_apply_native_policy)
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeNumerics.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeLinkage.cmake")
 
 include(CTest)
 
@@ -195,7 +170,7 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/writers/pneumatic_tire.cpp"
   "${_bike_native_dir}/src/writers/rider_contacts.cpp")
 set_target_properties(bike_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
-bike_target_strict_policy(bike_core)
+bike_apply_native_policy(bike_core)
 target_include_directories(bike_core SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include"
   "${BIKE_DEP_rapidjson_ROOT}/include" "${BIKE_DEP_tomlplusplus_ROOT}/include"
@@ -262,30 +237,38 @@ set(_runtime_compiler_version_json "\"${_runtime_compiler_version_json}\"")
 
 # Numerics provider identity (numerics_provider_policy_json and
 # required_provider_images), generated by the same function the legacy graph
-# uses. The legacy graph takes build_id from its live probe document; this graph
-# has none, so it probes the loaded provider images at configure time. The probe
-# compiles the runtime's own discovery TU, and the Darwin build_id is composed by
-# bike_accelerate_build_id from that probe plus sw_vers and xcrun. That is the
-# CMake spelling of the formula; the Python spelling is pinned to it by the
-# shared vectors in tests/fixtures/portability/build_id_vectors.json. No Python
-# runs here.
+# uses. The legacy graph takes build_id from its live probe document. On Darwin,
+# this graph probes the loaded system images through the runtime's discovery TU
+# and composes the Accelerate build_id from that probe, sw_vers and xcrun. The
+# Python spelling is pinned to it by the shared vectors in
+# tests/fixtures/portability/build_id_vectors.json. Linux uses the committed
+# file hashes and null build IDs. No Python runs in either root branch.
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeProviderIdentity.cmake")
 bike_provider_identity_required_images(_root_identity_required
   BACKEND "${BIKE_NUMERICS_BACKEND_RESOLVED}"
   PROVIDER_PATHS_VAR _native_numerics_provider_paths)
-bike_provider_probe_loaded_images(_root_identity_probe
-  REQUIRED_VAR _root_identity_required)
-bike_provider_probe_image_uuid(_root_identity_uuid
-  IMAGE "${BIKE_ACCELERATE_UMBRELLA_IMAGE}"
-  PROBE "${_root_identity_probe}")
-bike_darwin_accelerate_build_id(_root_identity_build_id
-  UUID "${_root_identity_uuid}")
-# The Accelerate profile's providers are all apple-system images that share the
-# umbrella's build_id, so every bound provider gets the same value.
 set(_root_identity_build_ids "")
-foreach(_root_identity_provider IN LISTS _native_numerics_provider_paths)
-  list(APPEND _root_identity_build_ids "${_root_identity_build_id}")
-endforeach()
+if(BIKE_NUMERICS_BACKEND_RESOLVED STREQUAL "ACCELERATE")
+  bike_provider_probe_loaded_images(_root_identity_probe
+    REQUIRED_VAR _root_identity_required)
+  bike_provider_probe_image_uuid(_root_identity_uuid
+    IMAGE "${BIKE_ACCELERATE_UMBRELLA_IMAGE}"
+    PROBE "${_root_identity_probe}")
+  bike_darwin_accelerate_build_id(_root_identity_build_id
+    UUID "${_root_identity_uuid}")
+  # Apple system images share the umbrella's measured build identity.
+  foreach(_root_identity_provider IN LISTS _native_numerics_provider_paths)
+    list(APPEND _root_identity_build_ids "${_root_identity_build_id}")
+  endforeach()
+elseif(BIKE_NUMERICS_BACKEND_RESOLVED STREQUAL "NUMPY_OPENBLAS")
+  # File identities use the verified record SHA-256. They have no Apple
+  # build ID; the shared emitter turns this nonempty list marker into null.
+  foreach(_root_identity_provider IN LISTS _native_numerics_provider_paths)
+    list(APPEND _root_identity_build_ids "<none>")
+  endforeach()
+else()
+  message(FATAL_ERROR "Unsupported numerics identity backend: ${BIKE_NUMERICS_BACKEND_RESOLVED}")
+endif()
 bike_provider_identity_declarations(_root_identity_declarations
   RECORD_VAR _numerics_record_json
   RECORD_KEY "${_native_numerics_record_key}"
@@ -315,7 +298,7 @@ add_library(bike_io STATIC
   "${_bike_native_dir}/src/io/json.hpp"
   "${_bike_native_dir}/src/io/hash.hpp")
 set_target_properties(bike_io PROPERTIES POSITION_INDEPENDENT_CODE ON)
-bike_target_strict_policy(bike_io)
+bike_apply_native_policy(bike_io)
 target_include_directories(bike_io SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_rapidjson_ROOT}/include")
 
@@ -335,10 +318,24 @@ add_library(bike_platform STATIC
   "${_bike_native_dir}/src/platform/signals.hpp"
   "${_bike_native_dir}/src/platform/provenance.hpp")
 set_target_properties(bike_platform PROPERTIES POSITION_INDEPENDENT_CODE ON)
-bike_target_strict_policy(bike_platform)
+bike_apply_native_policy(bike_platform)
 target_include_directories(bike_platform SYSTEM PRIVATE
   "${_bike_native_dir}/src")
-target_link_libraries(bike_platform PRIVATE bike_io)
+target_link_libraries(bike_platform PRIVATE bike_io ${CMAKE_DL_LIBS})
+
+if(BIKE_TARGET_SYSTEM STREQUAL "Linux")
+  # Root-only distribution identity: an installed provider may move from
+  # the locked build tree into the executable's adjacent lib directory, but
+  # its recorded content hash and exact loaded-image identity must match.
+  add_library(bike_installed_provider STATIC
+    "${_bike_native_dir}/src/runtime/installed_provider.cpp")
+  set_target_properties(bike_installed_provider PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  bike_apply_native_policy(bike_installed_provider)
+  target_include_directories(bike_installed_provider SYSTEM PRIVATE "${_bike_native_dir}/src")
+  target_link_libraries(bike_installed_provider PUBLIC bike_platform bike_io)
+  target_link_libraries(bike_core PUBLIC bike_installed_provider)
+  target_compile_definitions(bike_core PRIVATE BIKE_ROOT_INSTALL_NUMERICS=1)
+endif()
 
 # Track-B build identity for bike_platform — identical convention to
 # research_build_identity.hpp: the configured compiler/flags/SDK, the checked
@@ -372,7 +369,7 @@ endforeach()
 string(APPEND _platform_effective_flags
   " $<JOIN:$<TARGET_GENEX_EVAL:bike_platform,$<TARGET_PROPERTY:bike_platform,COMPILE_OPTIONS>>, >")
 # COMPILE_DEFINITIONS are part of the effective flag surface too — the
-# hardening/fortify defines bike_target_strict_policy applies change the
+# hardening/fortify defines bike_apply_native_policy applies change the
 # generated code, so two builds differing only in BIKE_LIBCPP_HARDENING must
 # not record an identical identity. Map each stored definition back to its
 # -D spelling; generator-expression entries still resolve per configuration
@@ -417,7 +414,7 @@ target_include_directories(bike_platform PRIVATE
 add_library(bike_rider_math STATIC
   "${_bike_native_dir}/src/rider/spindle_math.cpp")
 set_target_properties(bike_rider_math PROPERTIES POSITION_INDEPENDENT_CODE ON)
-bike_target_strict_policy(bike_rider_math)
+bike_apply_native_policy(bike_rider_math)
 # spindle_math.cpp reaches cblas_abi.hpp, which includes <mujoco/mujoco.h> for
 # the mjtNum assertion. The header comes from the locked .deps copy, like every
 # other first-party target's MuJoCo include.
@@ -447,7 +444,7 @@ add_library(bike_configuration STATIC
   "${_bike_native_dir}/src/configuration/suspension_spec.hpp"
   "${_bike_native_dir}/src/configuration/wire_decode.hpp")
 set_target_properties(bike_configuration PROPERTIES POSITION_INDEPENDENT_CODE ON)
-bike_target_strict_policy(bike_configuration)
+bike_apply_native_policy(bike_configuration)
 target_include_directories(bike_configuration SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_rapidjson_ROOT}/include")
 target_link_libraries(bike_configuration PRIVATE bike_io bike_platform
@@ -467,7 +464,7 @@ add_library(bike_geometry STATIC
   "${_bike_native_dir}/src/geometry/cockpit.cpp"
   "${_bike_native_dir}/src/geometry/validation.cpp")
 set_target_properties(bike_geometry PROPERTIES POSITION_INDEPENDENT_CODE ON)
-bike_target_strict_policy(bike_geometry)
+bike_apply_native_policy(bike_geometry)
 target_include_directories(bike_geometry SYSTEM PRIVATE
   "${_bike_native_dir}/src")
 target_link_libraries(bike_geometry PUBLIC Bike::Numerics)
@@ -486,7 +483,7 @@ add_library(bike_kinematics STATIC
   "${_bike_native_dir}/src/kinematics/solver.cpp"
   "${_bike_native_dir}/src/kinematics/curves.cpp")
 set_target_properties(bike_kinematics PROPERTIES POSITION_INDEPENDENT_CODE ON)
-bike_target_strict_policy(bike_kinematics)
+bike_apply_native_policy(bike_kinematics)
 target_include_directories(bike_kinematics SYSTEM PRIVATE
   "${_bike_native_dir}/src")
 target_link_libraries(bike_kinematics PUBLIC bike_geometry PRIVATE Bike::Numerics)
@@ -508,7 +505,7 @@ add_library(bike_random STATIC
   "${_bike_native_dir}/src/random/distributions.cpp"
   "${_bike_native_dir}/src/random/noise_tape.cpp")
 set_target_properties(bike_random PROPERTIES POSITION_INDEPENDENT_CODE ON)
-bike_target_strict_policy(bike_random)
+bike_apply_native_policy(bike_random)
 target_include_directories(bike_random SYSTEM PRIVATE
   "${_bike_native_dir}/src")
 
@@ -534,7 +531,7 @@ add_library(bike_model STATIC
   "${_bike_native_dir}/src/model/suspension_setup.hpp"
   "${_bike_native_dir}/src/model/suspension_setup.cpp")
 set_target_properties(bike_model PROPERTIES POSITION_INDEPENDENT_CODE ON)
-bike_target_strict_policy(bike_model)
+bike_apply_native_policy(bike_model)
 target_include_directories(bike_model SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
 target_link_libraries(bike_model PUBLIC bike_kinematics bike_configuration PRIVATE Bike::Numerics)
@@ -543,12 +540,12 @@ target_link_libraries(bike_model PUBLIC bike_kinematics bike_configuration PRIVA
 # extension (identical source/context to the legacy bike_native_engine).
 add_library(bike_engine STATIC "${_bike_native_dir}/src/engine_call.cpp")
 set_target_properties(bike_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
-bike_target_strict_policy(bike_engine)
+bike_apply_native_policy(bike_engine)
 target_include_directories(bike_engine SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
 # engine_call.cpp reports the numerics provider through blas::provider_name, so
 # the typed adapter is part of this library's interface, as in the legacy graph.
-target_link_libraries(bike_engine PUBLIC bike::mujoco bike_io Bike::Numerics)
+target_link_libraries(bike_engine PUBLIC bike::mujoco bike_io Bike::Numerics ${CMAKE_DL_LIBS})
 
 include("${_bike_native_dir}/cmake/NativeStartup.cmake")
 bike_add_native_startup("${_bike_native_dir}")
@@ -562,34 +559,34 @@ if(NOT BIKE_BUILD_PYTHON_BINDINGS)
   add_executable(native_bench
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench/bench.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench/state_format.hpp")
-  bike_target_strict_policy(native_bench)
+  bike_apply_native_policy(native_bench)
   target_include_directories(native_bench SYSTEM PRIVATE
     "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
   target_link_libraries(native_bench PRIVATE bike_engine)
   bike_rewrite_mujoco_load_name(native_bench
-    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+    "${BIKE_DEP_mujoco_LIBRARY}")
 endif()
 
 if(BUILD_TESTING)
   # tyre/distance.cpp SignedProfile + tyre/station.cpp scalar station law:
   # the produced-command contract's focused executable pair.
   add_executable(native_distance_tests "${_bike_native_tests_dir}/test_distance.cpp")
-  bike_target_strict_policy(native_distance_tests)
+  bike_apply_native_policy(native_distance_tests)
   target_include_directories(native_distance_tests SYSTEM PRIVATE
     "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
   target_link_libraries(native_distance_tests PRIVATE bike_core bike_engine
     bike_rider_math)
   bike_rewrite_mujoco_load_name(native_distance_tests
-    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+    "${BIKE_DEP_mujoco_LIBRARY}")
 
   add_executable(native_station_tests "${_bike_native_tests_dir}/test_station.cpp")
-  bike_target_strict_policy(native_station_tests)
+  bike_apply_native_policy(native_station_tests)
   target_include_directories(native_station_tests SYSTEM PRIVATE
     "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
   target_link_libraries(native_station_tests PRIVATE bike_core bike_engine
     bike_rider_math)
   bike_rewrite_mujoco_load_name(native_station_tests
-    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+    "${BIKE_DEP_mujoco_LIBRARY}")
 
   add_test(NAME native_distance_tests COMMAND native_distance_tests)
   add_test(NAME native_station_tests COMMAND native_station_tests)
@@ -600,6 +597,17 @@ endif()
 # after the native executables exist: the migration_T03 build target depends
 # on them.
 add_subdirectory(native/tests/migration)
+
+if(BUILD_TESTING AND TARGET bike_installed_provider)
+  add_executable(native_installed_provider_tests
+    "${_bike_native_tests_dir}/test_installed_provider.cpp")
+  bike_apply_native_policy(native_installed_provider_tests)
+  target_include_directories(native_installed_provider_tests SYSTEM PRIVATE
+    "${_bike_native_dir}/src" "${_bike_native_tests_dir}/support")
+  target_link_libraries(native_installed_provider_tests PRIVATE
+    bike_installed_provider bike_migration_test)
+  add_test(NAME native_installed_provider_tests COMMAND native_installed_provider_tests)
+endif()
 
 # ---------------------------------------------------------------------------
 # BIKE_BUILD_PYTHON_BINDINGS=ON routes into native/, which refuses it when
@@ -614,18 +622,42 @@ endif()
 
 # ---------------------------------------------------------------------------
 # Install + provenance: the install tree is self-contained — binaries +
-# locked dependency dylibs + the provenance manifest.
+# locked runtime libraries + the provenance manifest.
 if(BUILD_TESTING)
   install(TARGETS native_distance_tests native_station_tests
-    RUNTIME DESTINATION bin)
+    RUNTIME DESTINATION bin OPTIONAL)
+  bike_install_relocate_mujoco(native_distance_tests)
+  bike_install_relocate_mujoco(native_station_tests)
 endif()
-install(FILES "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib"
+install(FILES "${BIKE_DEP_mujoco_LIBRARY}"
   DESTINATION lib)
+bike_install_relocate_mujoco_library()
+if(BIKE_TARGET_SYSTEM STREQUAL "Linux")
+  # The wheel's OpenBLAS image needs its pinned libgfortran companion in
+  # the same directory ($ORIGIN). The lock reader verifies every image.
+  if(NOT BIKE_DEP_numpy_openblas_LIBRARIES)
+    message(FATAL_ERROR "The Linux install requires the locked NumPy OpenBLAS runtime libraries")
+  endif()
+  install(FILES ${BIKE_DEP_numpy_openblas_LIBRARIES} DESTINATION lib)
+endif()
 bike_write_dependency_provenance("${CMAKE_BINARY_DIR}/dependency_provenance.json")
 install(FILES "${CMAKE_BINARY_DIR}/dependency_provenance.json"
   DESTINATION share/bike_sim)
 install(FILES "${BIKE_DEPENDENCY_LOCK}" DESTINATION share/bike_sim
   RENAME dependencies.lock.json)
+
+if(BUILD_TESTING)
+  add_test(NAME install_smoke COMMAND "${CMAKE_COMMAND}"
+    "-DBUILD_DIR=${CMAKE_BINARY_DIR}"
+    "-DSCRATCH_DIR=${CMAKE_BINARY_DIR}/install_smoke"
+    "-DDEPENDENCY_ROOT=${BIKE_DEPENDENCY_ROOT}"
+    "-DINSTALL_CONFIG=$<CONFIG>"
+    "-DBIKE_TARGET_SYSTEM=${BIKE_TARGET_SYSTEM}"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/native/tests/install/install_smoke.cmake")
+  # The smoke builds the complete selected graph before exercising install;
+  # no other CTest may use that same build tree while it is doing so.
+  set_tests_properties(install_smoke PROPERTIES RUN_SERIAL TRUE)
+endif()
 
 # ---------------------------------------------------------------------------
 # Produced check orchestration (T56): bike-native-checks/bike-python-audit

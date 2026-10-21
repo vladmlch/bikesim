@@ -122,6 +122,11 @@ std::unique_ptr<ResolvedRide> resolve_ride(Arguments args, bool settling) {
     const bool physical = physics->physics_mode == "physical";
     if (args.has("time_scale") && (args.flag("headless") || !physical || args.flag("preview")))
         throw ArgumentError("--time-scale requires an interactive physical or research run");
+    if (args.flag("close_on_finish")) {
+        if (settling || args.flag("headless") || !physical || args.flag("preview"))
+            throw ArgumentError("--close-on-finish requires an interactive physical or research run");
+        if (!args.has("duration")) throw ArgumentError("--close-on-finish requires --duration");
+    }
     if (!args.has("time_scale")) args.set("time_scale", "1");
     if (args.present("backend") && !physical) throw ArgumentError("--backend native requires physical or research mode");
     if (experiment && (!physical || (args.text("drive") != "crank_effort" && args.text("drive") != "articulated_effort")))

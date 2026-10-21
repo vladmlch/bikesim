@@ -1,5 +1,6 @@
 #include "application.hpp"
 #include "physical_capture.hpp"
+#include "viewer_options.hpp"
 #include "../app/prepare.hpp"
 #include "../configuration/load.hpp"
 #include "../initialization/sag_fit.hpp"
@@ -192,7 +193,7 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
             hooks.pause=[&](bool paused){(void)journal->emit(paused?"pause":"resume",wall(),runtime->snapshot().step);};
             hooks.reset=[&]{seal("reset");runtime->reset();++episode_id;sealed=false;reason.clear();episode_started=platform::monotonic_seconds();journal=std::make_unique<recording::EpisodeJournal>(capture,episode_id);(void)journal->emit("episode_started",wall(),0);};
             hooks.stop=[&]{if(reason.empty())reason="viewer_closed";};
-            viewer::ViewerOptions options;options.timestep_s=dt;options.time_scale=static_cast<unsigned>(args.integer("time_scale",1));options.duration_s=args.optional_real("duration");
+            const auto options=ride_viewer_options(args,dt);
             (void)viewer::run(std::move(hooks),runtime->model_image(),options);
             if(reason.empty())reason="viewer_closed";
         }

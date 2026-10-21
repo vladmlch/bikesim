@@ -225,3 +225,84 @@ measurement output; neither is a frozen per-platform acceptance table.
 Then follow the existing plan's focused regressions, Checkpoint 1-A,
 Checkpoint 1-B and final Phase 1 gates. Record exact source/image
 identities, commands, exits and failing cases before closing findings.
+
+## Phase 2 source implementation — 2026-10-21 (execution prohibited)
+
+Source: the user-supplied Repomix ZIP, SHA-256
+`db0b8be6eac8a6e7abea6d4a000f11023532af770ec19d5cb9426d83a14f7ddb`.
+The archive restored 1,997 text files and included the Phase-1 source
+work and its open prerequisites recorded above. It contains no usable
+Git branch history for the prescribed merge/commit/push sequence.
+
+The user explicitly required that nothing be compiled or run. No
+project configure, build, CTest, pytest, checker, ShellCheck, container,
+application, viewer or numerical probe was executed. Filesystem edits,
+archive extraction, byte/hash inspection and source comparisons are the
+only verification evidence from this session. No runtime exit codes,
+test counts or platform qualification are added.
+
+### Source coverage
+
+| Tasks | Source result | Open evidence |
+|---|---|---|
+| 2.01–2.02 | Shared dependency/platform/compiler-policy layers now drive the root graph. Root consumers use resolved shared-library paths; the policy is applied directly. | Darwin provenance/load-name parity and effective compiler-flag comparison. |
+| 2.03a–2.03b | One schema-2 emitter serves both graphs. Root-only metadata and null Python fields have strict validation. The two unused legacy modules are deleted. | T56, binding-context parity, sweeps and regenerated build identities. |
+| 2.04–2.05 | Schema-2 platform selection, locked Linux aarch64 artifacts, explicit acquisition and a narrow Docker acquire stage. Container initialization preserves existing dependency trees. | Actual acquisition/image provisioning and platform configure gates. |
+| 2.06–2.07 | Linux RECORD_ONLY maps measured records to locked providers with glibc/hash/containment checks. Root provider declarations avoid Darwin-only probes. Linux T03 loader checks and root integration are prepared. | Real record regeneration and the first Linux root configure/build/CTest. |
+| 2.08 | Relative installed rpaths, installed-only Darwin load-name/signature handling, Linux provider/runtime-library installation, moved-prefix smoke and strict root installed-provider identity. | Both-platform install smoke, T03 partial installs and native runtime verification. |
+| 2.09–2.10 | Complete GLFW tree and X11 selection; native-only `--close-on-finish` for physical/research viewers; T47 definitions and bounded Xvfb script. | GUI builds and smoke. Desktop viewer acceptance remains separate. |
+| 2.11 | The existing common gate runner is exposed through the container with explicit Clang/environment selection and wrong-compiler cache refusal. | L3 Linux, actual counts/failing IDs, qualification and repository publication. |
+
+The detailed decisions, source-level compiler-policy comparison,
+regression inventory and remaining requirements are in
+[`cpp-linux-phase2-source-review.md`](cpp-linux-phase2-source-review.md).
+
+### Dependency byte evidence
+
+All eight selected Linux archives and all 17 selected required-file
+hashes were checked against their bytes. Exact source URLs and identities
+are committed in `native/dependencies.lock.json`; acquisition details are
+in `native/dependencies.md`. Original Darwin pins are preserved. The
+GLFW archive hash is unchanged; its top-level and `src/` CMake files are
+now pinned and the whole source tree is retained.
+
+Static ELF inspection established that the selected OpenBLAS image
+requires its wheel's renamed libgfortran companion. Both are pinned and
+installed together; neither was executed. Archive inspection also led to
+the RapidJSON `license.txt` to `LICENSE` mapping and deterministic DuckDB
+MIT-license extraction. These byte checks do not establish ABI or runtime
+qualification. The acquisition script and Dockerfile were not run.
+
+### Review decisions and preservation
+
+- The actual context validators require only a numerics object and a
+  nonempty backend. No additional nullable numerics fields or invented
+  probe evidence were needed. Binding validation remains strict.
+- The root migration numerics helper now uses the shared target on every
+  platform; it no longer adds a raw Darwin framework edge on Linux.
+- Installed-only Darwin signature repair is defined defensively after
+  verification; no launch failure or measured signing requirement is
+  claimed. Full `@rpath` names use one CMake substitution field.
+- Linux installed-provider fallback is root-only, uses exact adjacent
+  files and recorded hashes, and then checks real loaded-image membership.
+  It addresses the identity API rather than asserting an unobserved CLI
+  failure. Binding and configure-probe identity rules are unchanged.
+- Both actual viewer launch consumers receive the new option. Research
+  retains its runtime-owned duration. Nonzero GUI diagnostic and timeout
+  statuses are propagated without an unmeasured success exception.
+- Stale Linux-refusal numerics tests and Darwin-only root-test host guards
+  were updated. The lane explicitly includes Make for generator-unspecified
+  CMake fixtures as well as Ninja. All regression definitions are unrun.
+- `native/numerics.lock.json`, `migration/cli-contracts.json`, the original
+  completion plan, captured oracle/source manifests, historical baselines
+  and viewer acceptance records retain their supplied content.
+
+The numerics lock still contains the old four-operation Darwin record
+and no Linux entry. Its real Phase-1 regeneration is a prerequisite;
+it was not hand-edited to make an unrun configure appear acceptable.
+The missing Task 1.03 branch payload remains an inherited prerequisite.
+
+No task/checkpoint checkbox was changed. **Checkpoint 2-A and L3 Linux
+(end of Phase 2) were not run and remain open.** No commit, push or new
+qualified lane is claimed. The source delivery is ready for review and
+the existing plan's execution gates when execution is authorized.

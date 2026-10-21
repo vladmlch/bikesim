@@ -102,7 +102,7 @@ loaded_provider_images_impl(const std::vector<std::string> &required_images) {
     }
     for (const std::string &required : required_images) {
         if (std::ranges::find(loaded_names, required) == loaded_names.end())
-            throw std::runtime_error(
+            throw ProviderImageMismatch(
                 "qualified numerics provider image is not loaded: " + required);
     }
     return images;
@@ -134,8 +134,11 @@ loaded_provider_images_impl(const std::vector<std::string> &required_images) {
         std::error_code error;
         const std::filesystem::path expected =
             std::filesystem::canonical(required, error);
-        if (error || std::ranges::find(loaded, expected) == loaded.end())
+        if (error && error != std::errc::no_such_file_or_directory && error != std::errc::not_a_directory)
             throw std::runtime_error(
+                "qualified numerics provider image is not loaded: " + required);
+        if (error || std::ranges::find(loaded, expected) == loaded.end())
+            throw ProviderImageMismatch(
                 "qualified numerics provider image is not loaded: " + required);
         // ELF images carry no LC_UUID; the canonical path is their identity.
         images.push_back({.path = expected.string(), .macho_uuid = std::nullopt});
@@ -161,6 +164,8 @@ loaded_provider_images_impl(const std::vector<std::string> &required_images) {
 #endif
 
 } // namespace
+
+ProviderImageMismatch::~ProviderImageMismatch() = default;
 
 std::vector<ProviderImage>
 loaded_provider_images(const std::vector<std::string> &required) {

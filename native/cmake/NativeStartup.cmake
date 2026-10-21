@@ -8,7 +8,7 @@ function(bike_startup_target_policy target native_dir)
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
   if(BIKE_ROOT_BUILD)
-    bike_target_strict_policy(${target})
+    bike_apply_native_policy(${target})
     target_include_directories(${target} SYSTEM PRIVATE
       "${native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include"
       "${BIKE_DEP_eigen_ROOT}" "${BIKE_DEP_rapidjson_ROOT}/include"
@@ -40,7 +40,7 @@ function(bike_add_native_startup native_dir)
   if(BIKE_ROOT_BUILD)
     set(_startup_core bike_core)
     set(_startup_engine bike_engine)
-    set(_startup_mujoco "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+    set(_startup_mujoco "${BIKE_DEP_mujoco_LIBRARY}")
   else()
     set(_startup_core bike_native_contract_core)
     set(_startup_engine bike_native_engine)
@@ -138,6 +138,9 @@ function(bike_add_native_startup native_dir)
     bike_fix_mujoco_install_name(bike-native-ride)
   endif()
   install(TARGETS bike-native-ride RUNTIME DESTINATION bin OPTIONAL)
+  if(BIKE_ROOT_BUILD)
+    bike_install_relocate_mujoco(bike-native-ride)
+  endif()
   install(FILES "${native_dir}/src/numerics/SCIPY-LICENSE.txt"
     DESTINATION share/licenses/bike-native-ride)
   # Keep shipped TOML and relative rider assets together after relocation.

@@ -15,11 +15,14 @@
 #   sdk/sdk_requested/sdk_source
 #                 Darwin Apple SDK record; null + "not-applicable" on Linux
 #   stdlib        {name, version, hardening:{mode, effective}}
-#   numerics      the dependency probe's validated numerics record, verbatim
+#   numerics      binding graph: the validated live probe record, verbatim;
+#                 root graph: committed facts with resolved provider paths
 #   policy        {required_flags, accepted_warnings, rejected_warnings[]}
 #   capabilities  {asan, rtsan, coverage, frontend_tools} measured records
 #   python        the selected dependency probe's executable/version/SOABI
-#                 and include directory (additive installation diagnostics)
+#                 and include directory, or null in a Python-free root build
+#   cmake, dependency_root, dependency_lock, configure_source_dir
+#                 existing paths for root-build reconfigure controls only
 #   source_directory, build_directory
 #                 original absolute CMake roots, to diagnose copied caches
 #   plus the retained schema-1 fields: compiler, compiler_policy,
@@ -53,17 +56,82 @@ function(_ctx_emit_list out_var target prop)
 endfunction()
 
 function(bike_write_check_context)
-  foreach(_required_var
+  cmake_parse_arguments(CTX "" "NATIVE_DIR" "" ${ARGN})
+  if(CTX_UNPARSED_ARGUMENTS OR CTX_KEYWORDS_MISSING_VALUES)
+    message(FATAL_ERROR
+      "bike_write_check_context accepts only NATIVE_DIR <native source directory>")
+  endif()
+  if(DEFINED CTX_NATIVE_DIR)
+    get_filename_component(_ctx_native_dir "${CTX_NATIVE_DIR}" ABSOLUTE)
+  else()
+    # The binding graph calls from native/; retain its existing path spelling.
+    set(_ctx_native_dir "${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
+  if(NOT IS_DIRECTORY "${_ctx_native_dir}/src")
+    message(FATAL_ERROR
+      "bike_write_check_context: invalid native source directory '${_ctx_native_dir}'")
+  endif()
+
+  set(_ctx_required_vars BIKE_POLICY_REPORT_JSON BIKE_POLICY_REQUIRED_FLAGS
+    BIKE_STDLIB_IDENTITY BIKE_STDLIB_VERSION)
+  if(BIKE_ROOT_BUILD)
+    list(APPEND _ctx_required_vars
+      BIKE_DEPENDENCY_ROOT BIKE_DEPENDENCY_LOCK BIKE_DEP_mujoco_ROOT
+      BIKE_DEP_mujoco_LIBRARY BIKE_DEP_rapidjson_ROOT BIKE_DEP_tomlplusplus_ROOT
+      BIKE_DEP_eigen_ROOT BIKE_DEP_duckdb_ROOT _numerics_record_json
+      _native_numerics_record_key _native_numerics_provider_paths)
+  else()
+    list(APPEND _ctx_required_vars
       _native_first_party_roots _native_mujoco_library MJ_DIR
       _native_dependencies_json _native_python_include _native_nb_include
-      _native_robin_include BIKE_POLICY_REPORT_JSON
-      BIKE_POLICY_REQUIRED_FLAGS BIKE_STDLIB_IDENTITY BIKE_STDLIB_VERSION)
+      _native_robin_include)
+  endif()
+  foreach(_required_var IN LISTS _ctx_required_vars)
     if(NOT DEFINED ${_required_var})
       message(FATAL_ERROR
         "bike_write_check_context: '${_required_var}' is undefined — the "
         "dependency/numerics/policy modules must run before context emission")
     endif()
   endforeach()
+
+  if(BIKE_ROOT_BUILD)
+    set(_native_first_party_roots "${_ctx_native_dir}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench")
+    set(MJ_DIR "${BIKE_DEP_mujoco_ROOT}")
+    get_filename_component(_native_mujoco_library
+      "${BIKE_DEP_mujoco_LIBRARY}" REALPATH)
+
+    # BikeNumerics has already validated the selected record and the images it
+    # binds. Preserve those facts and substitute only the resolved paths, in
+    # record order. An extracted NumPy provider is not a Python installation:
+    # do not manufacture site_packages, imports, ABI transcripts or evidence.
+    string(JSON _ctx_root_numerics ERROR_VARIABLE _ctx_record_error
+      GET "${_numerics_record_json}" records "${_native_numerics_record_key}" numerics)
+    if(_ctx_record_error)
+      message(FATAL_ERROR
+        "Cannot project the selected numerics record: ${_ctx_record_error}")
+    endif()
+    string(JSON _ctx_provider_count LENGTH "${_ctx_root_numerics}" library_paths)
+    list(LENGTH _native_numerics_provider_paths _ctx_resolved_provider_count)
+    if(_ctx_provider_count LESS 1 OR
+       NOT _ctx_provider_count EQUAL _ctx_resolved_provider_count)
+      message(FATAL_ERROR
+        "Numerics context provider count differs from the bound record")
+    endif()
+    math(EXPR _ctx_provider_last "${_ctx_provider_count} - 1")
+    foreach(_ctx_index RANGE ${_ctx_provider_last})
+      list(GET _native_numerics_provider_paths ${_ctx_index} _ctx_provider_path)
+      if(NOT IS_ABSOLUTE "${_ctx_provider_path}")
+        message(FATAL_ERROR
+          "Numerics context provider is not absolute: '${_ctx_provider_path}'")
+      endif()
+      _native_json_quote(_ctx_provider_path_json "${_ctx_provider_path}")
+      string(JSON _ctx_root_numerics SET "${_ctx_root_numerics}"
+        library_paths ${_ctx_index} path "${_ctx_provider_path_json}")
+    endforeach()
+    set(_native_dependencies_json
+      "{\"numerics\":${_ctx_root_numerics},\"python\":null}")
+  endif()
 
   # ---------------------------------------------------------------
   # Platform + sysroot + SDK records.
@@ -127,12 +195,11 @@ function(bike_write_check_context)
     "{\"name\":${_ctx_stdlib_name_json},\"version\":${_ctx_stdlib_version_json},\"hardening\":{\"mode\":${_ctx_stdlib_mode_json},\"effective\":true}}")
 
   # ---------------------------------------------------------------
-  # Numerics — embed the LIVE probe document's numerics object verbatim, not
-  # the committed record: the committed entry omits the machine-specific
-  # fields (install location, build ids, ABI transcript, evidence counts)
-  # that check-context readers expect, and its Linux provider paths are
-  # relative. The live object carries absolute provider paths; it is a
-  # build-only record and never enters the persisted runtime identity.
+  # Numerics — the binding document remains verbatim; the root projection
+  # above contains committed facts plus the absolute paths BikeNumerics bound.
+  # Both check-context readers validate an object with a nonempty backend;
+  # detailed ABI/provider validation belongs to the dependency/numerics layer.
+  # No machine-specific probe field is invented or relaxed for either graph.
   # ---------------------------------------------------------------
   string(JSON _ctx_numerics_json ERROR_VARIABLE _ctx_numerics_error
     GET "${_native_dependencies_json}" numerics)
@@ -281,19 +348,34 @@ function(bike_write_check_context)
   # ---------------------------------------------------------------
   # Dependency path lists (existence-validated at emission).
   # ---------------------------------------------------------------
-  set(_native_required_includes
-    "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${_native_python_include}"
-    "${_native_nb_include}"
-    "${_native_robin_include}"
-    "${MJ_DIR}/include")
-  set(_native_required_files
-    "${CMAKE_CURRENT_SOURCE_DIR}/analysis_suppressions.json"
-    "${_native_python_include}/Python.h"
-    "${_native_nb_include}/nanobind/nanobind.h"
-    "${_native_robin_include}/tsl/robin_map.h"
-    "${MJ_DIR}/include/mujoco/mujoco.h"
-    "${_native_mujoco_library}")
+  if(BIKE_ROOT_BUILD)
+    set(_native_required_includes
+      "${_ctx_native_dir}/src"
+      "${MJ_DIR}/include"
+      "${BIKE_DEP_rapidjson_ROOT}/include"
+      "${BIKE_DEP_tomlplusplus_ROOT}/include"
+      "${BIKE_DEP_eigen_ROOT}"
+      "${BIKE_DEP_duckdb_ROOT}/include")
+    set(_native_required_files
+      "${_ctx_native_dir}/analysis_suppressions.json"
+      "${MJ_DIR}/include/mujoco/mujoco.h"
+      "${_native_mujoco_library}"
+      "${BIKE_DEP_rapidjson_ROOT}/include/rapidjson/document.h")
+  else()
+    set(_native_required_includes
+      "${_ctx_native_dir}/src"
+      "${_native_python_include}"
+      "${_native_nb_include}"
+      "${_native_robin_include}"
+      "${MJ_DIR}/include")
+    set(_native_required_files
+      "${_ctx_native_dir}/analysis_suppressions.json"
+      "${_native_python_include}/Python.h"
+      "${_native_nb_include}/nanobind/nanobind.h"
+      "${_native_robin_include}/tsl/robin_map.h"
+      "${MJ_DIR}/include/mujoco/mujoco.h"
+      "${_native_mujoco_library}")
+  endif()
   foreach(_required_path IN LISTS _native_required_includes _native_required_files)
     if(NOT EXISTS "${_required_path}")
       message(FATAL_ERROR
@@ -454,8 +536,12 @@ function(bike_write_check_context)
   _native_json_quote(_native_compiler_version_json "${CMAKE_CXX_COMPILER_VERSION}")
   _native_json_array(_native_compiler_launcher_json ${CMAKE_CXX_COMPILER_LAUNCHER})
   _native_json_quote(_native_suppressions_manifest_json
-    "${CMAKE_CURRENT_SOURCE_DIR}/analysis_suppressions.json")
-  _native_json_quote(_native_python_json "${Python_EXECUTABLE}")
+    "${_ctx_native_dir}/analysis_suppressions.json")
+  if(BIKE_ROOT_BUILD)
+    set(_native_python_json "null")
+  else()
+    _native_json_quote(_native_python_json "${Python_EXECUTABLE}")
+  endif()
   # Retain python_executable for all existing readers. The richer record is
   # additive within schema 2; doctor can request reconfiguration when an old
   # context lacks it, without making old contexts invalid for sweep readers.
@@ -495,6 +581,26 @@ function(bike_write_check_context)
   endforeach()
   string(APPEND _native_tool_overrides "}")
 
+  set(_ctx_root_fields "")
+  if(BIKE_ROOT_BUILD)
+    foreach(_ctx_directory "${BIKE_DEPENDENCY_ROOT}" "${CMAKE_CURRENT_SOURCE_DIR}")
+      if(NOT IS_DIRECTORY "${_ctx_directory}")
+        message(FATAL_ERROR "Root check-context directory is missing: ${_ctx_directory}")
+      endif()
+    endforeach()
+    foreach(_ctx_file "${CMAKE_COMMAND}" "${BIKE_DEPENDENCY_LOCK}")
+      if(NOT EXISTS "${_ctx_file}" OR IS_DIRECTORY "${_ctx_file}")
+        message(FATAL_ERROR "Root check-context file is missing: ${_ctx_file}")
+      endif()
+    endforeach()
+    _native_json_quote(_ctx_cmake_json "${CMAKE_COMMAND}")
+    _native_json_quote(_ctx_dependency_root_json "${BIKE_DEPENDENCY_ROOT}")
+    _native_json_quote(_ctx_dependency_lock_json "${BIKE_DEPENDENCY_LOCK}")
+    _native_json_quote(_ctx_configure_source_json "${CMAKE_CURRENT_SOURCE_DIR}")
+    set(_ctx_root_fields
+      ",\"cmake\":${_ctx_cmake_json},\"dependency_root\":${_ctx_dependency_root_json},\"dependency_lock\":${_ctx_dependency_lock_json},\"configure_source_dir\":${_ctx_configure_source_json}")
+  endif()
+
   # ---------------------------------------------------------------
   # Write the manifest (schema-1, configure-time constants) and the
   # schema-2 context (generate-time per-config expansion).
@@ -503,7 +609,7 @@ function(bike_write_check_context)
     "{\"schema_version\":1,\"first_party_roots\":${_native_source_roots_json},\"sources\":${_native_source_entries}}\n")
 
   set(_ctx_content
-    "{\"schema_version\":2,\"platform\":${_ctx_platform_json},\"sysroot\":${_ctx_sysroot_json},\"stdlib\":${_ctx_stdlib_json},\"numerics\":${_ctx_numerics_json},\"policy\":${_ctx_policy_json},\"capabilities\":${_ctx_capabilities_json},\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"compiler_policy\":${BIKE_POLICY_REPORT_JSON},\"sdk\":${_ctx_sdk_json},\"sdk_requested\":${_ctx_sdk_requested_json},\"sdk_source\":${_ctx_sdk_source_json},\"libcpp_hardening\":${_native_libcpp_hardening_json},\"analysis_suppressions_manifest\":${_native_suppressions_manifest_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"python\":${_ctx_python_json},\"source_directory\":${_ctx_source_directory_json},\"build_directory\":${_ctx_build_directory_json},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")
+    "{\"schema_version\":2,\"platform\":${_ctx_platform_json},\"sysroot\":${_ctx_sysroot_json},\"stdlib\":${_ctx_stdlib_json},\"numerics\":${_ctx_numerics_json},\"policy\":${_ctx_policy_json},\"capabilities\":${_ctx_capabilities_json},\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"compiler_policy\":${BIKE_POLICY_REPORT_JSON},\"sdk\":${_ctx_sdk_json},\"sdk_requested\":${_ctx_sdk_requested_json},\"sdk_source\":${_ctx_sdk_source_json},\"libcpp_hardening\":${_native_libcpp_hardening_json},\"analysis_suppressions_manifest\":${_native_suppressions_manifest_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"python\":${_ctx_python_json},\"source_directory\":${_ctx_source_directory_json},\"build_directory\":${_ctx_build_directory_json}${_ctx_root_fields},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")
 
   if(CMAKE_CONFIGURATION_TYPES)
     # Multi-config generators cannot share one compile_commands.json; emit

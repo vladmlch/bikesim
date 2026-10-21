@@ -4,7 +4,7 @@ Active instructions for developing bike-sim on Linux. The sibling
 [macOS guide](macos.md) covers the Darwin toolchain; shared failure
 diagnosis lives in [troubleshooting.md](troubleshooting.md).
 
-Qualified lane (measured 2026-10-17/18, this worktree):
+Historical qualified lane (measured 2026-10-17/18, before the completion changes below):
 
 | Component | Qualified value |
 |---|---|
@@ -16,9 +16,10 @@ Qualified lane (measured 2026-10-17/18, this worktree):
 | Numerics | `NUMPY_OPENBLAS` — the ILP64 OpenBLAS bundled inside the pinned NumPy 2.5.2 wheel (BLAS 64-bit / LAPACK 64-bit) |
 | Gate evidence | All static-analysis sweeps and headers/diagnostic/context controls green on both compiler lanes; CTest 10/10; native+golden pytest ~3,221 items (see limits below) |
 
-Recorded limits, not qualifications: **Ubuntu 24.04 x86_64** — the
-spec's release-blocking lane — has no real host yet (wheel availability was
-cross-probed only). Desktop GUI sessions on X11/XWayland are pending real
+Recorded limits, not qualifications: **Ubuntu 24.04 x86_64** has no real
+host evidence (wheel availability was cross-probed only). Decision D10 in
+the C++ + Linux completion plan makes Linux **aarch64** the required lane;
+x86_64 is optional, not qualified and not advertised. Desktop GUI sessions on X11/XWayland are pending real
 acceptance ([viewer-platform-acceptance.md](viewer-platform-acceptance.md)).
 The measured Linux pytest run reported `3221 passed, 3 failed` with the
 retained failures
@@ -88,7 +89,7 @@ Archive staging and rsync preserve unchanged mtimes for incremental builds.
 An unstaged deletion of a tracked file must be staged before sync.
 
 Available commands: image, up, sync, venv, configure, build, failures,
-ctest, exec, pull, down. The driver retains the failing Ninja exit code
+ctest, exec, pull, gate, down. The driver retains the failing Ninja exit code
 through tee. The failures command prints the failed-command count and
 returns an error for an absent log; ctest rejects an empty test selection.
 No automatic cleanup removes old containers.
@@ -97,8 +98,81 @@ existing container. Use an explicit `down`, then `sync` and `venv` to create
 and provision a replacement; `down` removes that container's build trees.
 
 During Phase 1, Linux configures the binding graph only. The root graph
-and its C++ checker are qualified in Phase 2. Use the Python checker
-invocations listed in Task 1.19 for Linux sweeps before that point.
+and its C++ checker have their qualification gate in Phase 2. Until that
+gate passes, use the Python checker invocations listed in Task 1.19 for
+Linux binding sweeps.
+
+### Python-free root graph: Phase 2 source implementation
+
+The 2026-10-21 Phase 2 changes use the same `BikePlatform`,
+`BikeCompilerPolicy`, schema-2 dependency-lock selection and check-context
+emitter as the binding graph. This session did not configure, build or run
+either graph. The historical counts above do not qualify these changes,
+and the Repomix input contains no Git objects from which to report a new
+`impl/python-free-cpp` commit. See
+[`migration/cpp-linux-completion-evidence.md`](../../migration/cpp-linux-completion-evidence.md)
+for the source handoff and open checkpoints.
+
+The image command stages only the Dockerfile, acquisition helper and
+dependency lock. Its explicit acquisition stage verifies the selected
+Linux archives and extracted files before placing them in `/opt/bike-deps`.
+The final image supplies `/src/.deps` independently of the host checkout.
+Configuration itself performs no downloads and never substitutes a system
+OpenBLAS. The selected NumPy wheel's OpenBLAS and `libgfortran` companion
+are locked and installed together.
+
+Before configuring, finish Phase 1's real per-platform numerics probes.
+The supplied `native/numerics.lock.json` still contains the old Darwin
+four-operation record, whereas the validator now requires eight
+operations and a measured Linux entry. Source-only changes deliberately
+do not replace that generated evidence with guessed values.
+
+When those prerequisites are ready and execution is authorized:
+
+~~~sh
+tools/linux/container.sh image
+tools/linux/container.sh sync
+tools/linux/container.sh venv
+tools/linux/container.sh configure root-clang root -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18 -DBIKE_BUILD_GUI=OFF
+tools/linux/container.sh build root-clang
+tools/linux/container.sh ctest root-clang -j8
+tools/linux/container.sh exec /build/root-clang/bin/bike-native-checks --kind context --build /build/root-clang
+tools/linux/container.sh exec tools/run_native_checks.sh /build/root-clang
+tools/linux/container.sh exec tools/run_native_checks.sh /build/native-clang
+~~~
+
+`install_smoke` builds the full root graph, installs it, moves the prefix,
+inspects the binaries and libraries, and runs all 11 installed commands
+with `--help` and scrubbed loader environment variables. It checks
+`$ORIGIN/../lib` on Linux and `@loader_path/../lib` on macOS. Its checks do
+not qualify simulation behavior or desktop rendering. Focused T03 builds
+retain optional executable installs.
+
+For the GUI lane, the complete locked GLFW tree builds with X11 enabled
+and Wayland disabled:
+
+~~~sh
+tools/linux/container.sh configure root-gui root -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18 -DBIKE_BUILD_GUI=ON
+tools/linux/container.sh build root-gui
+tools/linux/container.sh exec tools/linux/gui_smoke.sh /build/root-gui
+~~~
+
+The smoke uses software GL and Xvfb, requests one simulated second, and
+limits wall time to 120 seconds plus ten seconds for forced cleanup. It
+propagates diagnostic exits and timeouts. It never closes a row in
+[`viewer-platform-acceptance.md`](viewer-platform-acceptance.md).
+`bike-ride --close-on-finish` requires `--duration` and an interactive
+physical or research run; without the flag the terminal window still
+stays open as before.
+
+The final Linux gate is `tools/linux/container.sh gate native`. It runs
+the existing `tools/run_tests.sh native` profile, with the binding tree at
+`/build/native-clang`, the produced checker tree at
+`/src/build/native-release`, and the environment at `/opt/bike-venv`.
+Fresh trees use Clang 18. An existing cache for a different compiler is
+rejected without deleting it; move that build directory aside and
+configure the correct lane. `sync` preserves the root gate's build tree.
+Checkpoint 2-A, L3, measured failure counts and the push remain pending.
 
 ## Frozen environment
 

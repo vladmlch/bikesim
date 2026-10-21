@@ -1,7 +1,7 @@
 # BikeDependencyLock.cmake — checked .deps/ dependency resolution shared by
 # both native build graphs (the Python-free standalone root build and the
-# legacy extension build). This is the Bike*-platform-layer home of the lane
-# that used to live in native/cmake/Dependencies.cmake.
+# legacy extension build). The shared schema-2 reader selects artifact facts
+# by the same platform key as the numerics record.
 #
 # .deps/ is populated ONLY by explicit acquisition before configure. This
 # module performs no network calls and executes no interpreter: it reads
@@ -82,6 +82,177 @@ function(_bike_sha256 out path)
   set(${out} "${_digest}" PARENT_SCOPE)
 endfunction()
 
+function(bike_dependency_lock_read out_json)
+  if(NOT EXISTS "${BIKE_DEPENDENCY_LOCK}")
+    _bike_dep_fatal("(lock)" "dependency lock file is missing: ${BIKE_DEPENDENCY_LOCK}")
+  endif()
+  file(READ "${BIKE_DEPENDENCY_LOCK}" _lock_json)
+  string(JSON _schema ERROR_VARIABLE _schema_error GET "${_lock_json}" schema_version)
+  string(JSON _schema_type ERROR_VARIABLE _schema_type_error TYPE "${_lock_json}" schema_version)
+  if(_schema_error OR _schema_type_error OR NOT _schema_type STREQUAL "NUMBER" OR NOT _schema STREQUAL "2")
+    _bike_dep_fatal("(lock)"
+      "unsupported lock schema_version '${_schema}' in ${BIKE_DEPENDENCY_LOCK}")
+  endif()
+  set(${out_json} "${_lock_json}" PARENT_SCOPE)
+endfunction()
+
+# Resolve one platform at a time. Common metadata stays at dependency level;
+# the selected object's acquisition/required_files replace those fields. A
+# literal null means not required, while a missing/invalid key fails closed.
+# No archive or tree belonging only to another platform is inspected.
+function(bike_dependency_lock_select lock_json dep out_entry out_required)
+  string(JSON _schema ERROR_VARIABLE _error GET "${lock_json}" schema_version)
+  string(JSON _schema_type ERROR_VARIABLE _type_error TYPE "${lock_json}" schema_version)
+  if(_error OR _type_error OR NOT _schema_type STREQUAL "NUMBER" OR NOT _schema STREQUAL "2")
+    _bike_dep_fatal("(lock)" "unsupported lock schema_version '${_schema}'")
+  endif()
+  string(JSON _entry_type ERROR_VARIABLE _error TYPE "${lock_json}" dependencies "${dep}")
+  if(_error OR NOT _entry_type STREQUAL "OBJECT")
+    _bike_dep_fatal("${dep}" "lock dependency must be an object")
+  endif()
+  string(JSON _entry GET "${lock_json}" dependencies "${dep}")
+  string(JSON _platforms_type ERROR_VARIABLE _no_platforms TYPE "${_entry}" platforms)
+  if(NOT _no_platforms)
+    if(NOT _platforms_type STREQUAL "OBJECT")
+      _bike_dep_fatal("${dep}" "lock platforms must be an object")
+    endif()
+    if(NOT BIKE_TARGET_SYSTEM OR NOT CMAKE_HOST_SYSTEM_PROCESSOR)
+      _bike_dep_fatal("${dep}" "platform selection requires BikePlatform and host processor detection")
+    endif()
+    string(TOLOWER "${BIKE_TARGET_SYSTEM}" _system)
+    set(_key "${_system}-${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    string(JSON _selected_type ERROR_VARIABLE _missing TYPE "${_entry}" platforms "${_key}")
+    if(_missing)
+      message(FATAL_ERROR "dependency '${dep}' has no lock entry for platform '${_key}'")
+    endif()
+    if(_selected_type STREQUAL "NULL")
+      set(${out_entry} "" PARENT_SCOPE)
+      set(${out_required} FALSE PARENT_SCOPE)
+      return()
+    endif()
+    if(NOT _selected_type STREQUAL "OBJECT")
+      _bike_dep_fatal("${dep}" "lock entry for platform '${_key}' must be an object or null")
+    endif()
+    string(JSON _selected GET "${_entry}" platforms "${_key}")
+    string(JSON _entry REMOVE "${_entry}" platforms)
+    # Only artifact facts vary by platform. Identity and layout remain common.
+    foreach(_field acquisition required_files)
+      string(JSON _field_type ERROR_VARIABLE _field_error TYPE "${_selected}" "${_field}")
+      if(_field_error OR NOT _field_type STREQUAL "OBJECT")
+        _bike_dep_fatal("${dep}" "platform '${_key}' must record ${_field} as an object")
+      endif()
+      string(JSON _value GET "${_selected}" "${_field}")
+      string(JSON _entry SET "${_entry}" "${_field}" "${_value}")
+    endforeach()
+  endif()
+  set(${out_entry} "${_entry}" PARENT_SCOPE)
+  set(${out_required} TRUE PARENT_SCOPE)
+endfunction()
+
+# Shared-library names come from the selected, hash-verified artifact facts.
+# Returns all images for install (OpenBLAS includes its wheel's libgfortran).
+function(_bike_dep_entry_libraries entry out_members)
+  string(JSON _count LENGTH "${entry}" required_files)
+  set(_members "")
+  if(_count GREATER 0)
+    math(EXPR _last "${_count} - 1")
+    foreach(_index RANGE 0 ${_last})
+      string(JSON _member MEMBER "${entry}" required_files ${_index})
+      if(_member MATCHES "^lib/lib[^/]+\\.(dylib|so)(\\.[0-9]+)*$")
+        list(APPEND _members "${_member}")
+      endif()
+    endforeach()
+  endif()
+  set(${out_members} "${_members}" PARENT_SCOPE)
+endfunction()
+
+# Verify one selected dependency without importing targets or probing an ABI.
+# Used by the binding graph for the same DuckDB/GLFW artifact contract.
+function(bike_dependency_lock_verify lock_json dep out_root)
+  bike_dependency_lock_select("${lock_json}" "${dep}" _dep_entry _required)
+  if(NOT _required)
+    set(${out_root} "" PARENT_SCOPE)
+    return()
+  endif()
+  set(_dep "${dep}")
+  string(JSON _dep_version GET "${_dep_entry}" version)
+  string(JSON _dep_license GET "${_dep_entry}" license)
+  string(JSON _dep_root_rel GET "${_dep_entry}" extracted_root)
+  string(JSON _dep_archive GET "${_dep_entry}" acquisition archive)
+  string(JSON _dep_archive_sha GET "${_dep_entry}" acquisition archive_sha256)
+
+  set(_dep_dir "${BIKE_DEPENDENCY_ROOT}/${_dep_root_rel}")
+  if(NOT IS_DIRECTORY "${_dep_dir}")
+    _bike_dep_fatal("${_dep}"
+      "extracted dependency root is missing: ${_dep_dir}")
+  endif()
+
+  # Version identity: the acquired tree declares the same version the lock
+  # requires. An invalid version fails here, before any application build.
+  # The marker is BIKE_VERSION, not VERSION: on case-insensitive filesystems
+  # a VERSION file at an include-root (Eigen) would shadow libc++'s
+  # <version> header.
+  set(_dep_version_file "${_dep_dir}/BIKE_VERSION")
+  if(NOT EXISTS "${_dep_version_file}")
+    _bike_dep_fatal("${_dep}"
+      "BIKE_VERSION marker is missing: ${_dep_version_file}")
+  endif()
+  file(READ "${_dep_version_file}" _dep_actual_version)
+  string(STRIP "${_dep_actual_version}" _dep_actual_version)
+  if(NOT _dep_actual_version STREQUAL "${_dep_version}")
+    _bike_dep_fatal("${_dep}"
+      "lock requires version '${_dep_version}' but the dependency root provides '${_dep_actual_version}' (${_dep_version_file})")
+  endif()
+
+  # License provenance: every recorded license file must exist.
+  string(JSON _dep_license_count LENGTH "${_dep_entry}" license_files)
+  if(NOT _dep_license_count GREATER 0)
+    _bike_dep_fatal("${_dep}" "lock records no license_files")
+  endif()
+  math(EXPR _dep_license_last "${_dep_license_count} - 1")
+  foreach(_lic_index RANGE 0 ${_dep_license_last})
+    string(JSON _dep_license_file GET "${_dep_entry}" license_files ${_lic_index})
+    if(NOT EXISTS "${BIKE_DEPENDENCY_ROOT}/${_dep_license_file}")
+      _bike_dep_fatal("${_dep}"
+        "recorded license file is missing: ${BIKE_DEPENDENCY_ROOT}/${_dep_license_file}")
+    endif()
+  endforeach()
+
+  # Acquired-archive integrity.
+  set(_dep_archive_path "${BIKE_DEPENDENCY_ROOT}/${_dep_archive}")
+  if(NOT EXISTS "${_dep_archive_path}")
+    _bike_dep_fatal("${_dep}"
+      "recorded archive is missing: ${_dep_archive_path}")
+  endif()
+  _bike_sha256(_dep_archive_actual "${_dep_archive_path}")
+  if(NOT _dep_archive_actual STREQUAL "${_dep_archive_sha}")
+    _bike_dep_fatal("${_dep}"
+      "archive sha256 mismatch for ${_dep_archive}: lock requires ${_dep_archive_sha}, acquired ${_dep_archive_actual}")
+  endif()
+
+  # Consumed-file integrity.
+  string(JSON _dep_file_count LENGTH "${_dep_entry}" required_files)
+  if(NOT _dep_file_count GREATER 0)
+    _bike_dep_fatal("${_dep}" "lock records no required_files")
+  endif()
+  math(EXPR _dep_file_last "${_dep_file_count} - 1")
+  foreach(_file_index RANGE 0 ${_dep_file_last})
+    string(JSON _dep_file MEMBER "${_dep_entry}" required_files ${_file_index})
+    string(JSON _dep_file_sha GET "${_dep_entry}" required_files "${_dep_file}")
+    set(_dep_file_path "${_dep_dir}/${_dep_file}")
+    if(NOT EXISTS "${_dep_file_path}")
+      _bike_dep_fatal("${_dep}"
+        "required file is missing: ${_dep_file_path}")
+    endif()
+    _bike_sha256(_dep_file_actual "${_dep_file_path}")
+    if(NOT _dep_file_actual STREQUAL "${_dep_file_sha}")
+      _bike_dep_fatal("${_dep}"
+        "sha256 mismatch for ${_dep_file}: lock requires ${_dep_file_sha}, acquired ${_dep_file_actual}")
+    endif()
+  endforeach()
+  set(${out_root} "${_dep_dir}" PARENT_SCOPE)
+endfunction()
+
 # _bike_dep_locked_library(<lock-json> <dep> <out-var>) — the sha256-verified
 # shared library under the dependency's extracted root, selected from the
 # lock's required_files member names (^lib/lib*.dylib, ^lib/lib*.so[.ver]).
@@ -91,7 +262,11 @@ endfunction()
 # library imported here. Zero or several library members in the record is a
 # lock-schema violation, reported through the acquisition-failure channel.
 function(_bike_dep_locked_library lock_json dep out_var)
-  string(JSON _lib_file_count LENGTH "${lock_json}" dependencies ${dep} required_files)
+  bike_dependency_lock_select("${lock_json}" "${dep}" _entry _required)
+  if(NOT _required)
+    _bike_dep_fatal("${dep}" "dependency is not required on the selected platform")
+  endif()
+  string(JSON _lib_file_count LENGTH "${_entry}" required_files)
   if(NOT _lib_file_count GREATER 0)
     _bike_dep_fatal("${dep}"
       "lock records no required_files for the dependency")
@@ -99,8 +274,7 @@ function(_bike_dep_locked_library lock_json dep out_var)
   math(EXPR _lib_file_last "${_lib_file_count} - 1")
   set(_lib_found "")
   foreach(_lib_index RANGE 0 ${_lib_file_last})
-    string(JSON _lib_member MEMBER "${lock_json}" dependencies ${dep}
-      required_files ${_lib_index})
+    string(JSON _lib_member MEMBER "${_entry}" required_files ${_lib_index})
     if(_lib_member MATCHES "^lib/lib[^/]+\\.(dylib|so)(\\.[0-9]+)*$")
       if(NOT _lib_found STREQUAL "")
         _bike_dep_fatal("${dep}"
@@ -126,12 +300,7 @@ function(bike_dependencies_resolve)
       "dependency lock file is missing: ${BIKE_DEPENDENCY_LOCK}")
   endif()
 
-  file(READ "${BIKE_DEPENDENCY_LOCK}" _dep_lock_json)
-  string(JSON _dep_lock_schema GET "${_dep_lock_json}" schema_version)
-  if(NOT _dep_lock_schema EQUAL 1)
-    _bike_dep_fatal("(lock)"
-      "unsupported lock schema_version '${_dep_lock_schema}' in ${BIKE_DEPENDENCY_LOCK}")
-  endif()
+  bike_dependency_lock_read(_dep_lock_json)
 
   string(JSON _dep_count LENGTH "${_dep_lock_json}" dependencies)
   if(_dep_count EQUAL 0)
@@ -143,81 +312,40 @@ function(bike_dependencies_resolve)
   set(_dep_provenance_fragments "")
   foreach(_dep_index RANGE 0 ${_dep_last})
     string(JSON _dep MEMBER "${_dep_lock_json}" dependencies ${_dep_index})
-    string(JSON _dep_version GET "${_dep_lock_json}" dependencies ${_dep} version)
-    string(JSON _dep_license GET "${_dep_lock_json}" dependencies ${_dep} license)
-    string(JSON _dep_root_rel GET "${_dep_lock_json}" dependencies ${_dep} extracted_root)
-    string(JSON _dep_archive GET "${_dep_lock_json}" dependencies ${_dep} acquisition archive)
-    string(JSON _dep_archive_sha GET "${_dep_lock_json}" dependencies ${_dep} acquisition archive_sha256)
-
-    set(_dep_dir "${BIKE_DEPENDENCY_ROOT}/${_dep_root_rel}")
-    if(NOT IS_DIRECTORY "${_dep_dir}")
-      _bike_dep_fatal("${_dep}"
-        "extracted dependency root is missing: ${_dep_dir}")
+    bike_dependency_lock_select("${_dep_lock_json}" "${_dep}" _dep_entry _dep_required)
+    if(NOT _dep_required)
+      continue()
     endif()
-
-    # Version identity: the acquired tree declares the same version the lock
-    # requires. An invalid version fails here, before any application build.
-    # The marker is BIKE_VERSION, not VERSION: on case-insensitive filesystems
-    # a VERSION file at an include-root (Eigen) would shadow libc++'s
-    # <version> header.
-    set(_dep_version_file "${_dep_dir}/BIKE_VERSION")
-    if(NOT EXISTS "${_dep_version_file}")
-      _bike_dep_fatal("${_dep}"
-        "BIKE_VERSION marker is missing: ${_dep_version_file}")
-    endif()
-    file(READ "${_dep_version_file}" _dep_actual_version)
-    string(STRIP "${_dep_actual_version}" _dep_actual_version)
-    if(NOT _dep_actual_version STREQUAL "${_dep_version}")
-      _bike_dep_fatal("${_dep}"
-        "lock requires version '${_dep_version}' but the dependency root provides '${_dep_actual_version}' (${_dep_version_file})")
-    endif()
-
-    # License provenance: every recorded license file must exist.
-    string(JSON _dep_license_count LENGTH "${_dep_lock_json}" dependencies ${_dep} license_files)
-    math(EXPR _dep_license_last "${_dep_license_count} - 1")
-    foreach(_lic_index RANGE 0 ${_dep_license_last})
-      string(JSON _dep_license_file GET "${_dep_lock_json}" dependencies ${_dep} license_files ${_lic_index})
-      if(NOT EXISTS "${BIKE_DEPENDENCY_ROOT}/${_dep_license_file}")
-        _bike_dep_fatal("${_dep}"
-          "recorded license file is missing: ${BIKE_DEPENDENCY_ROOT}/${_dep_license_file}")
-      endif()
-    endforeach()
-
-    # Acquired-archive integrity.
-    set(_dep_archive_path "${BIKE_DEPENDENCY_ROOT}/${_dep_archive}")
-    if(NOT EXISTS "${_dep_archive_path}")
-      _bike_dep_fatal("${_dep}"
-        "recorded archive is missing: ${_dep_archive_path}")
-    endif()
-    _bike_sha256(_dep_archive_actual "${_dep_archive_path}")
-    if(NOT _dep_archive_actual STREQUAL "${_dep_archive_sha}")
-      _bike_dep_fatal("${_dep}"
-        "archive sha256 mismatch for ${_dep_archive}: lock requires ${_dep_archive_sha}, acquired ${_dep_archive_actual}")
-    endif()
-
-    # Consumed-file integrity.
-    string(JSON _dep_file_count LENGTH "${_dep_lock_json}" dependencies ${_dep} required_files)
-    math(EXPR _dep_file_last "${_dep_file_count} - 1")
-    foreach(_file_index RANGE 0 ${_dep_file_last})
-      string(JSON _dep_file MEMBER "${_dep_lock_json}" dependencies ${_dep} required_files ${_file_index})
-      string(JSON _dep_file_sha GET "${_dep_lock_json}" dependencies ${_dep} required_files "${_dep_file}")
-      set(_dep_file_path "${_dep_dir}/${_dep_file}")
-      if(NOT EXISTS "${_dep_file_path}")
-        _bike_dep_fatal("${_dep}"
-          "required file is missing: ${_dep_file_path}")
-      endif()
-      _bike_sha256(_dep_file_actual "${_dep_file_path}")
-      if(NOT _dep_file_actual STREQUAL "${_dep_file_sha}")
-        _bike_dep_fatal("${_dep}"
-          "sha256 mismatch for ${_dep_file}: lock requires ${_dep_file_sha}, acquired ${_dep_file_actual}")
-      endif()
-    endforeach()
+    bike_dependency_lock_verify("${_dep_lock_json}" "${_dep}" _dep_dir)
+    string(JSON _dep_version GET "${_dep_entry}" version)
+    string(JSON _dep_license GET "${_dep_entry}" license)
+    string(JSON _dep_archive GET "${_dep_entry}" acquisition archive)
+    string(JSON _dep_archive_sha GET "${_dep_entry}" acquisition archive_sha256)
 
     list(APPEND _dep_names "${_dep}")
     # Both scopes: the loop below consumes ${BIKE_DEP_<name>_ROOT} here while
     # first-party targets read it in the calling directory scope.
     set(BIKE_DEP_${_dep}_ROOT "${_dep_dir}")
     set(BIKE_DEP_${_dep}_ROOT "${_dep_dir}" PARENT_SCOPE)
+    _bike_dep_entry_libraries("${_dep_entry}" _dep_library_members)
+    set(_dep_libraries "")
+    set(_dep_numpy_provider "")
+    foreach(_member IN LISTS _dep_library_members)
+      list(APPEND _dep_libraries "${_dep_dir}/${_member}")
+      if(_dep STREQUAL "numpy_openblas" AND _member MATCHES "^lib/libscipy_openblas64_[^/]+\\.so$")
+        if(NOT _dep_numpy_provider STREQUAL "")
+          _bike_dep_fatal("${_dep}" "lock records multiple scipy-openblas providers")
+        endif()
+        set(_dep_numpy_provider "${_dep_dir}/${_member}")
+      endif()
+    endforeach()
+    if(_dep STREQUAL "numpy_openblas")
+      if(_dep_numpy_provider STREQUAL "")
+        _bike_dep_fatal("${_dep}" "lock records no scipy-openblas provider")
+      endif()
+      set(BIKE_DEP_numpy_openblas_LIBRARY "${_dep_numpy_provider}" PARENT_SCOPE)
+    endif()
+    set(BIKE_DEP_${_dep}_LIBRARIES "${_dep_libraries}" PARENT_SCOPE)
     list(APPEND _dep_provenance_fragments
       "\"${_dep}\":{\"version\":\"${_dep_version}\",\"license\":\"${_dep_license}\",\"root\":\"${_dep_dir}\",\"archive\":\"${_dep_archive}\",\"archive_sha256\":\"${_dep_archive_sha}\"}")
     message(STATUS "dependency ${_dep} ${_dep_version} -> ${_dep_dir} (sha256 verified, ${_dep_license})")
@@ -231,49 +359,41 @@ function(bike_dependencies_resolve)
   # lib/libduckdb.dylib; Linux entries pin their .so spellings — so the
   # imported targets below carry no per-platform filename assumption.
   foreach(_binary_dep mujoco duckdb)
-    list(FIND _dep_names "${_binary_dep}" _dep_member_index)
-    if(_dep_member_index EQUAL -1)
-      _bike_dep_fatal("${_binary_dep}"
-        "lock file declares no '${_binary_dep}' dependency")
+    if(NOT _binary_dep IN_LIST _dep_names)
+      continue()
     endif()
+    _bike_dep_locked_library("${_dep_lock_json}" "${_binary_dep}" _library_rel)
+    set(_library "${BIKE_DEP_${_binary_dep}_ROOT}/${_library_rel}")
+    set(BIKE_DEP_${_binary_dep}_LIBRARY "${_library}")
+    set(BIKE_DEP_${_binary_dep}_LIBRARY "${_library}" PARENT_SCOPE)
+    add_library(bike::${_binary_dep} SHARED IMPORTED GLOBAL)
+    set_target_properties(bike::${_binary_dep} PROPERTIES
+      IMPORTED_LOCATION "${_library}"
+      INTERFACE_INCLUDE_DIRECTORIES "${BIKE_DEP_${_binary_dep}_ROOT}/include")
   endforeach()
-  _bike_dep_locked_library("${_dep_lock_json}" mujoco _dep_mujoco_library_rel)
-  _bike_dep_locked_library("${_dep_lock_json}" duckdb _dep_duckdb_library_rel)
-  set(BIKE_DEP_mujoco_LIBRARY "${BIKE_DEP_mujoco_ROOT}/${_dep_mujoco_library_rel}")
-  set(BIKE_DEP_duckdb_LIBRARY "${BIKE_DEP_duckdb_ROOT}/${_dep_duckdb_library_rel}")
-  set(BIKE_DEP_mujoco_LIBRARY "${BIKE_DEP_mujoco_LIBRARY}" PARENT_SCOPE)
-  set(BIKE_DEP_duckdb_LIBRARY "${BIKE_DEP_duckdb_LIBRARY}" PARENT_SCOPE)
 
-  # Imported targets ---------------------------------------------------------
-  add_library(bike::mujoco SHARED IMPORTED GLOBAL)
-  set_target_properties(bike::mujoco PROPERTIES
-    IMPORTED_LOCATION "${BIKE_DEP_mujoco_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${BIKE_DEP_mujoco_ROOT}/include")
+  foreach(_header_dep tomlplusplus rapidjson eigen glfw cairo)
+    if(NOT _header_dep IN_LIST _dep_names)
+      continue()
+    endif()
+    set(_target "bike::${_header_dep}")
+    set(_include "${BIKE_DEP_${_header_dep}_ROOT}/include")
+    if(_header_dep STREQUAL "eigen")
+      set(_include "${BIKE_DEP_eigen_ROOT}")
+    elseif(_header_dep STREQUAL "glfw")
+      set(_target bike::glfw_headers)
+    elseif(_header_dep STREQUAL "cairo")
+      set(_target bike::cairo_headers)
+      set(_include "${BIKE_DEP_cairo_ROOT}/src")
+    endif()
+    add_library(${_target} INTERFACE IMPORTED GLOBAL)
+    set_target_properties(${_target} PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${_include}")
+  endforeach()
 
-  add_library(bike::duckdb SHARED IMPORTED GLOBAL)
-  set_target_properties(bike::duckdb PROPERTIES
-    IMPORTED_LOCATION "${BIKE_DEP_duckdb_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${BIKE_DEP_duckdb_ROOT}/include")
-
-  add_library(bike::tomlplusplus INTERFACE IMPORTED GLOBAL)
-  set_target_properties(bike::tomlplusplus PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${BIKE_DEP_tomlplusplus_ROOT}/include")
-
-  add_library(bike::rapidjson INTERFACE IMPORTED GLOBAL)
-  set_target_properties(bike::rapidjson PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${BIKE_DEP_rapidjson_ROOT}/include")
-
-  add_library(bike::eigen INTERFACE IMPORTED GLOBAL)
-  set_target_properties(bike::eigen PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${BIKE_DEP_eigen_ROOT}")
-
-  add_library(bike::glfw_headers INTERFACE IMPORTED GLOBAL)
-  set_target_properties(bike::glfw_headers PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${BIKE_DEP_glfw_ROOT}/include")
-
-  add_library(bike::cairo_headers INTERFACE IMPORTED GLOBAL)
-  set_target_properties(bike::cairo_headers PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${BIKE_DEP_cairo_ROOT}/src")
+  if(NOT TARGET bike::mujoco)
+    return()
+  endif()
 
   # Pinned MuJoCo identity: 3.12.0 headers (mjVERSION_HEADER 312) and the
   # private TLS error-handler ABI must exist before any application target is

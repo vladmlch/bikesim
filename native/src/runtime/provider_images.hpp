@@ -6,10 +6,24 @@
 #pragma once
 
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace runtime {
+
+// A qualified path is absent from the actual loader image set. Distinct
+// from unavailable inspection, filesystem failures and allocation errors,
+// so the root install fallback can catch only this expected mismatch.
+class ProviderImageMismatch : public std::runtime_error {
+public:
+    using std::runtime_error::runtime_error;
+    ~ProviderImageMismatch() override;
+    ProviderImageMismatch(const ProviderImageMismatch&) = default;
+    ProviderImageMismatch& operator=(const ProviderImageMismatch&) = default;
+    ProviderImageMismatch(ProviderImageMismatch&&) = default;
+    ProviderImageMismatch& operator=(ProviderImageMismatch&&) = default;
+};
 
 // One loaded numerics-provider image the qualified build requires.
 // macho_uuid is the LC_UUID on Mach-O hosts; ELF hosts identify an image by

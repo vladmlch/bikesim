@@ -7,6 +7,10 @@
 #include "provenance.hpp"
 #include "provider_images.hpp"
 #include "research_build_identity.hpp"
+#if defined(__linux__) && defined(BIKE_ROOT_INSTALL_NUMERICS) && BIKE_ROOT_INSTALL_NUMERICS
+#include "installed_provider.hpp"
+#include "../platform/provenance.hpp"
+#endif
 #include <dlfcn.h>
 #include <stdexcept>
 #include <string>
@@ -14,10 +18,6 @@
 #include <mujoco/mujoco.h>
 
 namespace runtime {
-
-std::string numerics_provider_policy_json() {
-    return &build_identity::numerics_provider_policy_json[0];
-}
 
 namespace {
 
@@ -38,10 +38,42 @@ std::vector<std::string> required_provider_images() {
     return names;
 }
 
+#if defined(__linux__) && defined(BIKE_ROOT_INSTALL_NUMERICS) && BIKE_ROOT_INSTALL_NUMERICS
+InstalledProviderIdentity current_provider_identity() {
+    InstalledProviderIdentity identity{&build_identity::numerics_provider_policy_json[0], required_provider_images()};
+    try {
+        // A developer build keeps its original strict image identity.
+        (void)loaded_provider_images(identity.required_images);
+        return identity;
+    } catch (const ProviderImageMismatch&) {
+        // Only a missing qualified path permits an installed-layout lookup.
+        // Unavailable inspection and allocation failures must propagate.
+        auto installed = installed_provider_identity(identity.policy_json, identity.required_images,
+            bike::platform::executable_path());
+        // Matching bytes on disk are necessary but insufficient: the exact
+        // validated adjacent files must also be the images the process loaded.
+        (void)loaded_provider_images(installed.required_images);
+        return installed;
+    }
+}
+#endif
+
 } // namespace
 
+std::string numerics_provider_policy_json() {
+#if defined(__linux__) && defined(BIKE_ROOT_INSTALL_NUMERICS) && BIKE_ROOT_INSTALL_NUMERICS
+    return current_provider_identity().policy_json;
+#else
+    return &build_identity::numerics_provider_policy_json[0];
+#endif
+}
+
 std::vector<ProviderImage> provider_images() {
+#if defined(__linux__) && defined(BIKE_ROOT_INSTALL_NUMERICS) && BIKE_ROOT_INSTALL_NUMERICS
+    return loaded_provider_images(current_provider_identity().required_images);
+#else
     return loaded_provider_images(required_provider_images());
+#endif
 }
 
 RuntimeIdentity runtime_identity() {

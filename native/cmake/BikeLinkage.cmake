@@ -49,8 +49,7 @@
 #   rewrite; identical no-op on Linux.
 #
 # Prerequisites for the includer:
-#   BIKE_TARGET_SYSTEM        set by BikePlatform.cmake (legacy graph) or by
-#                             the root graph's bike_host_target_system call
+#   BIKE_TARGET_SYSTEM        set by BikePlatform.cmake in both graphs
 #   Bike::MuJoCo / MJ_DIR /
 #   _native_mujoco_library    set by BikeDependencies.cmake — required only
 #                             by bike_link_engine and by the no-argument
@@ -138,6 +137,9 @@ endfunction()
 if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
   find_program(BIKE_INSTALL_NAME_TOOL NAMES install_name_tool REQUIRED)
   find_program(BIKE_OTOOL NAMES otool REQUIRED)
+  if(BIKE_ROOT_BUILD)
+    find_program(BIKE_CODESIGN NAMES codesign REQUIRED)
+  endif()
 endif()
 
 # _bike_mujoco_recorded_install_name(<library> <out-var>): the install name
@@ -238,4 +240,71 @@ function(bike_rewrite_mujoco_load_name target library)
   endif()
   target_link_options(${target} PRIVATE -headerpad_max_install_names)
   bike_fix_mujoco_install_name("${target}" "${library}")
+endfunction()
+
+# Root distribution helpers. Set install properties without changing any
+# build-tree search paths or the absolute Darwin build-time MuJoCo rewrite.
+# Call after install(TARGETS ... OPTIONAL): an unbuilt executable is allowed
+# to be absent during the focused T03 install.
+function(bike_install_relocate_mujoco target)
+  if(NOT TARGET "${target}")
+    message(FATAL_ERROR "bike_install_relocate_mujoco: unknown target '${target}'")
+  endif()
+  get_target_property(_bike_install_type "${target}" TYPE)
+  if(NOT _bike_install_type STREQUAL "EXECUTABLE")
+    message(FATAL_ERROR "bike_install_relocate_mujoco requires an executable: ${target}")
+  endif()
+  set_target_properties(${target} PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH FALSE
+    BUILD_WITH_INSTALL_RPATH FALSE)
+  if(BIKE_TARGET_SYSTEM STREQUAL "Linux")
+    set_target_properties(${target} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+  elseif(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+    set_target_properties(${target} PROPERTIES INSTALL_RPATH "@loader_path/../lib")
+    get_filename_component(_bike_install_mujoco_name "${BIKE_DEP_mujoco_LIBRARY}" NAME)
+    set(_bike_install_new_name "@rpath/${_bike_install_mujoco_name}")
+    set(_bike_install_script "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/BikeDarwinRelocateInstall.cmake")
+    # @ONLY preserves install-time CMAKE_INSTALL_PREFIX and DESTDIR. The
+    # target-file-name generator expression also respects OUTPUT_NAME and
+    # configuration-specific executable names.
+    set(_bike_install_code [=[
+set(BIKE_BINARY "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/$<TARGET_FILE_NAME:@target@>")
+if(EXISTS "${BIKE_BINARY}")
+  set(BIKE_OTOOL "@BIKE_OTOOL@")
+  set(BIKE_INSTALL_NAME_TOOL "@BIKE_INSTALL_NAME_TOOL@")
+  set(BIKE_CODESIGN "@BIKE_CODESIGN@")
+  set(BIKE_OLD_NAME "@BIKE_DEP_mujoco_LIBRARY@")
+  set(BIKE_NEW_NAME "@_bike_install_new_name@")
+  set(BIKE_RELOCATE_LIBRARY FALSE)
+  include("@_bike_install_script@")
+endif()
+]=])
+    string(CONFIGURE "${_bike_install_code}" _bike_install_code @ONLY)
+    install(CODE "${_bike_install_code}")
+  else()
+    message(FATAL_ERROR "Unsupported install platform: ${BIKE_TARGET_SYSTEM}")
+  endif()
+endfunction()
+
+# The imported engine itself has an upstream framework-style ID on Darwin.
+# Change the installed copy's ID after install(FILES), never the locked input.
+function(bike_install_relocate_mujoco_library)
+  if(NOT BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+    return()
+  endif()
+  get_filename_component(_bike_install_mujoco_name "${BIKE_DEP_mujoco_LIBRARY}" NAME)
+  set(_bike_install_new_name "@rpath/${_bike_install_mujoco_name}")
+  set(_bike_install_script "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/BikeDarwinRelocateInstall.cmake")
+  set(_bike_install_code [=[
+set(BIKE_BINARY "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/@_bike_install_mujoco_name@")
+set(BIKE_OTOOL "@BIKE_OTOOL@")
+set(BIKE_INSTALL_NAME_TOOL "@BIKE_INSTALL_NAME_TOOL@")
+set(BIKE_CODESIGN "@BIKE_CODESIGN@")
+set(BIKE_OLD_NAME "@BIKE_DEP_mujoco_LIBRARY@")
+set(BIKE_NEW_NAME "@_bike_install_new_name@")
+set(BIKE_RELOCATE_LIBRARY TRUE)
+include("@_bike_install_script@")
+]=])
+  string(CONFIGURE "${_bike_install_code}" _bike_install_code @ONLY)
+  install(CODE "${_bike_install_code}")
 endfunction()

@@ -25,12 +25,15 @@ struct RuntimeIdentity {
 // identified — the same failure the module binding surfaced.
 [[nodiscard]] RuntimeIdentity runtime_identity();
 
-// The qualified provider policy the build was configured with (JSON text,
-// compile-time constant).
+// The qualified provider policy the build was configured with (JSON text).
+// The Linux root build may substitute exact adjacent installed paths after
+// verifying their committed SHA-256 and actual loader membership. All other
+// contexts return the compile-time constant unchanged.
 [[nodiscard]] std::string numerics_provider_policy_json();
 
 // The provider images actually loaded into this process, checked against the
-// configure-time list. Loader inspection: identity boundaries only, never
+// configure-time list (or the verified Linux root install paths). Loader
+// inspection: identity boundaries only, never
 // inside a step loop. Kept out of runtime_identity() so that a missing
 // provider image cannot make every identity consumer fail. Throws
 // std::runtime_error when a required image is not loaded or the platform

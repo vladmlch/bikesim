@@ -1,5 +1,6 @@
 #include "application.hpp"
 #include "physical_capture.hpp"
+#include "viewer_options.hpp"
 #include "../io/json.hpp"
 #include "../platform/provenance.hpp"
 #include "../platform/signals.hpp"
@@ -74,10 +75,7 @@ std::string error_text(const std::exception_ptr& failure) {
         if (session) research::drain_active(*session); else research::drain_active(environment);
     };
     if (interactive) {
-        viewer::ViewerOptions options;
-        options.mode = viewer::Mode::research; options.title = "bike-ride research";
-        options.timestep_s = environment.configuration().timestep_s;
-        options.time_scale = static_cast<unsigned>(args.integer("time_scale", 1));
+        const auto options = ride_viewer_options(args, environment.configuration().timestep_s, viewer::Mode::research);
         if (session) {
             viewer::LifecycleHooks lifecycle;
             lifecycle.close_requested = [&] { if (interrupt.deferred()) interrupted = true; return interrupted; };

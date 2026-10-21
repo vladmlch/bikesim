@@ -206,6 +206,35 @@ bool is_string_array(const Value *value) {
     });
 }
 
+// Only a complete, usable root-build record can opt out of the binding
+// interpreter contract. A stray/null dependency_root must not turn a stale
+// binding context into a valid Python-free one.
+bool validate_root_context(Value &context) {
+    if (member(context, "dependency_root") == nullptr) {
+        for (const std::string_view field :
+             {"cmake", "dependency_lock", "configure_source_dir"}) {
+            if (member(context, field) != nullptr)
+                throw CheckError("native check root metadata requires dependency_root");
+        }
+        return false;
+    }
+    for (const std::string_view field :
+         {"dependency_root", "dependency_lock", "configure_source_dir", "cmake"}) {
+        const Value *value = member(context, field);
+        const std::string label = "root context " + std::string(field);
+        const fs::path path = require_existing_path(
+            value != nullptr ? *value : Value{}, label, field == "cmake",
+            field == "cmake");
+        const bool directory = field == "dependency_root" || field == "configure_source_dir";
+        std::error_code ec;
+        if (directory ? !fs::is_directory(path, ec) : !fs::is_regular_file(path, ec))
+            throw CheckError(label + (directory ? " is not a directory: " : " is not a file: ") +
+                             path.string());
+        set_member(context, std::string(field), vstr(path.string()));
+    }
+    return true;
+}
+
 // The legacy schema cannot express Linux's no-SDK build. Keep its Darwin
 // checks unchanged, and reuse them for schema 2's Darwin branch.
 void validate_sdk(Value &context, const std::string &system, bool schema_two) {
@@ -437,19 +466,28 @@ Value load_context(const fs::path &build) {
         "configured C++ compiler", true, true);
     set_member(*compiler, "path", vstr(compiler_path.string()));
 
-    {
-        const Value *python = member(context, "python_executable");
-        if (python != nullptr && !io::is_null(*python)) {
-            // Bindings-era contexts carry a configured interpreter; validate
-            // it without resolving the venv symlink to its base interpreter.
-            // The Python-free core context may carry explicit null.
-            const fs::path python_path = require_existing_path(
-                *python, "configured Python executable", true, true);
-            set_member(context, "python_executable",
-                       vstr(python_path.string()));
-        } else {
-            set_member(context, "python_executable", vnull());
+    const bool root_context = validate_root_context(context);
+    const Value *python = member(context, "python_executable");
+    if (root_context) {
+        if (python == nullptr || !io::is_null(*python))
+            throw CheckError("Python-free root context must record python_executable: null");
+        if (schema_text == "2") {
+            const Value *identity = member(context, "python");
+            if (identity == nullptr || !io::is_null(*identity))
+                throw CheckError("Python-free root context must record python: null");
         }
+    } else {
+        // Preserve the oracle's required binding interpreter and its venv
+        // symlink spelling. Explicit null belongs only to a validated root.
+        const fs::path python_path = require_existing_path(
+            python != nullptr ? *python : Value{},
+            "configured Python executable", true, true);
+        set_member(context, "python_executable", vstr(python_path.string()));
+        const Value *identity = member(context, "python");
+        // Older binding contexts may omit the additive identity record;
+        // when present it cannot borrow the root graph's null exception.
+        if (identity != nullptr && !is_object(identity))
+            throw CheckError("binding native check context python must be an object");
     }
 
     const std::string system = schema_text == "2" ? validate_platform_record(context) : "Darwin";

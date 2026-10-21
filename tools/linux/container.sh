@@ -12,6 +12,7 @@
 # ctest NAME [ARG...]            run CTest in /build/NAME
 # exec CMD...                   run a command from /src
 # pull PATH...                  copy selected files from /src to this checkout
+# gate PROFILE                  run the shared quick|native|full test profile
 # down                          explicitly remove this checkout's container
 set -euo pipefail
 
@@ -71,7 +72,7 @@ source_path() {
 }
 
 [[ $# -ge 1 ]] ||
-    die "usage: container.sh <image|up|sync|venv|configure|build|failures|ctest|exec|pull|down> ..."
+    die "usage: container.sh <image|up|sync|venv|configure|build|failures|ctest|exec|pull|gate|down> ..."
 [[ "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] ||
     die "invalid container name; set BIKE_LINUX_CONTAINER"
 cmd="$1"
@@ -80,8 +81,16 @@ shift
 case "$cmd" in
     image)
         [[ $# -eq 0 ]] || die "usage: image"
+        # Supply exactly the acquisition recipe and its pinned lock. A full
+        # checkout context would upload host dependency/build/venv trees to
+        # Docker before COPY selection could exclude them.
+        image_stage="$(mktemp -d "${TMPDIR:-/tmp}/bike-linux-image.XXXXXXXX")"
+        trap 'rm -rf -- "$image_stage"' EXIT
+        cp -- "$repo_root/tools/linux/Dockerfile" "$image_stage/Dockerfile"
+        cp -- "$repo_root/tools/linux/acquire_deps.sh" "$image_stage/acquire_deps.sh"
+        cp -- "$repo_root/native/dependencies.lock.json" "$image_stage/dependencies.lock.json"
         docker build --platform linux/arm64 -t "$image" \
-            -f "$repo_root/tools/linux/Dockerfile" "$repo_root/tools/linux"
+            -f "$image_stage/Dockerfile" "$image_stage"
         ;;
     up)
         [[ $# -eq 0 ]] || die "usage: up"
@@ -91,6 +100,27 @@ case "$cmd" in
         fi
         require_container_owner
         docker start "$name" >/dev/null
+        # Provision this container from its own acquired Linux artifacts.
+        # A source sync must never copy a Darwin .deps tree over this one.
+        # shellcheck disable=SC2016  # Paths and stage variables belong to the container.
+        in_container bash -c '
+            set -euo pipefail
+            mkdir -p /src /build
+            if [[ -L /src/.deps || ( -e /src/.deps && ! -d /src/.deps ) ]]; then
+                printf "container.sh: /src/.deps must be a real directory\n" >&2
+                exit 2
+            fi
+            if [[ ! -d /src/.deps ]]; then
+                if [[ ! -d /opt/bike-deps ]]; then
+                    printf "container.sh: image lacks acquired Linux dependencies; rebuild the image and explicitly recreate this checkout container\n" >&2
+                    exit 2
+                fi
+                deps_stage="$(mktemp -d /src/.bike-deps-stage.XXXXXXXX)"
+                trap '\''rm -rf -- "$deps_stage"'\'' EXIT
+                cp -a /opt/bike-deps/. "$deps_stage/"
+                mv -- "$deps_stage" /src/.deps
+            fi
+        '
         ;;
     sync)
         [[ $# -eq 0 ]] || die "usage: sync"
@@ -198,6 +228,36 @@ case "$cmd" in
             mkdir -p -- "$repo_root/$(dirname -- "$rel")"
             docker cp "$name:/src/$rel" "$repo_root/$rel"
         done
+        ;;
+    gate)
+        [[ $# -eq 1 ]] || die "usage: gate quick|native|full"
+        case "$1" in
+            quick|native|full) ;;
+            *) die "usage: gate quick|native|full" ;;
+        esac
+        # CXX only selects a compiler for a fresh tree. Refuse a stale GCC
+        # cache instead of deleting it or silently running the wrong lane.
+        # The selected binding tree is likewise owned by the Clang lane.
+        # shellcheck disable=SC2016  # Positionals and cache paths belong to the container shell.
+        in_container bash -c '
+            set -euo pipefail
+            export CXX=/usr/bin/clang++-18
+            export NATIVE_TEST_BUILD_PATH=/build/native-clang
+            export UV_PROJECT_ENVIRONMENT=/opt/bike-venv
+            if [[ "$1" != quick ]]; then
+                for cache in /src/build/native-release/CMakeCache.txt /build/native-clang/CMakeCache.txt; do
+                    [[ -f "$cache" ]] || continue
+                    compiler="$(sed -n "s/^CMAKE_CXX_COMPILER:[^=]*=//p" "$cache")"
+                    # clang and clang++ can resolve to the same executable;
+                    # argv[0] still selects different driver behavior.
+                    if [[ "$compiler" != "$CXX" ]]; then
+                        printf "gate: %s was not configured with %s; move that build directory aside and configure a fresh Clang tree before retrying\n" "$cache" "$CXX" >&2
+                        exit 2
+                    fi
+                done
+            fi
+            exec bash tools/run_tests.sh "$1"
+        ' gate "$1"
         ;;
     down)
         [[ $# -eq 0 ]] || die "usage: down"

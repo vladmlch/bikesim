@@ -99,6 +99,37 @@ foreach(_required_file "${_ctx}" "${_sources}" "${_ccdb}")
   endif()
 endforeach()
 file(READ "${_ctx}" _context_json)
+string(JSON _root_schema GET "${_context_json}" schema_version)
+if(NOT _root_schema STREQUAL "2")
+  set(_failures
+    "${_failures}\n  t56_root_context_schema: root graph emits schema ${_root_schema}, expected 2")
+endif()
+foreach(_python_field python python_executable)
+  string(JSON _python_type ERROR_VARIABLE _python_error TYPE
+    "${_context_json}" ${_python_field})
+  if(_python_error OR NOT _python_type STREQUAL "NULL")
+    set(_failures
+      "${_failures}\n  t56_root_python: ${_python_field} must be explicit null")
+  endif()
+endforeach()
+string(JSON _native_root GET "${_context_json}" source_roots 0)
+if(NOT _native_root STREQUAL "${REPO_ROOT}/native")
+  set(_failures
+    "${_failures}\n  t56_root_native_dir: first source root is '${_native_root}'")
+endif()
+string(JSON _provider_count LENGTH "${_context_json}" numerics library_paths)
+if(_provider_count LESS 1)
+  set(_failures "${_failures}\n  t56_root_providers: no numerical provider recorded")
+else()
+  math(EXPR _provider_last "${_provider_count} - 1")
+  foreach(_index RANGE ${_provider_last})
+    string(JSON _provider GET "${_context_json}" numerics library_paths ${_index} path)
+    if(NOT IS_ABSOLUTE "${_provider}")
+      set(_failures
+        "${_failures}\n  t56_root_provider_path: '${_provider}' is not resolved")
+    endif()
+  endforeach()
+endif()
 
 # malformed context
 set(_fixture "${SCRATCH_DIR}/ctx-malformed")
@@ -148,30 +179,9 @@ run_case(t56_ctx_missing_required EXPECT_EXIT FAIL
 cmake_host_system_information(RESULT _t56_machine QUERY OS_PLATFORM)
 set(_t56_system "${CMAKE_HOST_SYSTEM_NAME}")
 function(t56_schema2 out_var)
-  set(_json "${_context_json}")
-  string(JSON _json SET "${_json}" schema_version "2")
-  string(JSON _json SET "${_json}" platform
-    "{\"system\":\"${_t56_system}\",\"host_system\":\"${_t56_system}\",\"machine\":\"${_t56_machine}\",\"pointer_bits\":64}")
-  if(_t56_system STREQUAL "Darwin")
-    string(JSON _sdk GET "${_json}" sdk)
-    string(JSON _json SET "${_json}" sysroot "\"${_sdk}\"")
-    string(JSON _json SET "${_json}" stdlib
-      "{\"name\":\"libc++\",\"version\":\"1\",\"hardening\":{\"mode\":\"EXTENSIVE\",\"effective\":true}}")
-  else()
-    string(JSON _json SET "${_json}" sysroot "null")
-    string(JSON _json SET "${_json}" sdk "null")
-    string(JSON _json SET "${_json}" sdk_requested "null")
-    string(JSON _json SET "${_json}" sdk_source "\"not-applicable\"")
-    string(JSON _json SET "${_json}" stdlib
-      "{\"name\":\"libstdc++\",\"version\":\"13\",\"hardening\":{\"mode\":\"ASSERTIONS\",\"effective\":true}}")
-  endif()
-  string(JSON _json SET "${_json}" numerics "{\"backend\":\"TEST\"}")
-  string(JSON _json SET "${_json}" policy
-    "{\"required_flags\":[],\"accepted_warnings\":[],\"rejected_warnings\":[]}")
-  set(_sanitizer "{\"requested\":false,\"supported\":false,\"enabled\":false,\"runtime\":null,\"compiler_id\":\"Clang\",\"target\":null,\"evidence\":{\"probe\":\"fixture\"}}")
-  string(JSON _json SET "${_json}" capabilities
-    "{\"asan\":${_sanitizer},\"rtsan\":${_sanitizer},\"coverage\":{\"requested\":false,\"supported\":false,\"enabled\":false,\"runtime\":null,\"evidence\":{\"probe\":\"fixture\"}},\"frontend_tools\":{}}")
-  set(${out_var} "${_json}" PARENT_SCOPE)
+  # The real root graph now emits schema 2; mutate truthful copies rather
+  # than replacing its platform, policy or provider record with fixtures.
+  set(${out_var} "${_context_json}" PARENT_SCOPE)
 endfunction()
 
 function(t56_ctx_case name json)
@@ -185,6 +195,78 @@ t56_schema2(_s2)
 t56_ctx_case(ctx-schema2-host "${_s2}")
 run_case(t56_ctx_schema2_host EXPECT_EXIT 0
   COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+
+# Root metadata is an all-or-nothing path-validated contract, not a marker
+# that lets a malformed binding context discard its interpreter.
+foreach(_field dependency_root dependency_lock configure_source_dir cmake)
+  string(JSON _bad SET "${_s2}" ${_field} "null")
+  t56_ctx_case(ctx-root-null-${_field} "${_bad}")
+  run_case(t56_ctx_root_null_${_field} EXPECT_EXIT FAIL
+    EXPECT_STDERR "root context ${_field} is missing or is not a path"
+    COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+  string(JSON _bad SET "${_s2}" ${_field} "\"/nonexistent/root-context/${_field}\"")
+  t56_ctx_case(ctx-root-missing-${_field} "${_bad}")
+  run_case(t56_ctx_root_missing_${_field} EXPECT_EXIT FAIL
+    EXPECT_STDERR "missing root context ${_field}"
+    COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+endforeach()
+string(JSON _bad REMOVE "${_s2}" dependency_root)
+t56_ctx_case(ctx-root-without-dependency-root "${_bad}")
+run_case(t56_ctx_root_without_dependency_root EXPECT_EXIT FAIL
+  EXPECT_STDERR "native check root metadata requires dependency_root"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+string(JSON _bad SET "${_s2}" dependency_root "\"${REPO_ROOT}/CMakeLists.txt\"")
+t56_ctx_case(ctx-root-directory-is-file "${_bad}")
+run_case(t56_ctx_root_directory_is_file EXPECT_EXIT FAIL
+  EXPECT_STDERR "root context dependency_root is not a directory"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+string(JSON _bad SET "${_s2}" dependency_lock "\"${REPO_ROOT}\"")
+t56_ctx_case(ctx-root-lock-is-directory "${_bad}")
+run_case(t56_ctx_root_lock_is_directory EXPECT_EXIT FAIL
+  EXPECT_STDERR "root context dependency_lock is not a file"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+foreach(_field python python_executable)
+  string(JSON _bad REMOVE "${_s2}" ${_field})
+  t56_ctx_case(ctx-root-missing-${_field} "${_bad}")
+  run_case(t56_ctx_root_missing_${_field} EXPECT_EXIT FAIL
+    EXPECT_STDERR "Python-free root context must record ${_field}: null"
+    COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+  string(JSON _bad SET "${_s2}" ${_field} "\"${CMAKE_COMMAND}\"")
+  t56_ctx_case(ctx-root-nonnull-${_field} "${_bad}")
+  run_case(t56_ctx_root_nonnull_${_field} EXPECT_EXIT FAIL
+    EXPECT_STDERR "Python-free root context must record ${_field}: null"
+    COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+endforeach()
+
+# CMake is only an existing executable-path fixture here. --validate-only
+# does not launch it or claim that it is an actual Python interpreter.
+set(_binding_context "${_s2}")
+foreach(_field dependency_root dependency_lock configure_source_dir cmake)
+  string(JSON _binding_context REMOVE "${_binding_context}" ${_field})
+endforeach()
+string(JSON _binding_context SET "${_binding_context}" python_executable
+  "\"${CMAKE_COMMAND}\"")
+string(JSON _binding_context SET "${_binding_context}" python
+  "{\"executable\":\"${CMAKE_COMMAND}\"}")
+t56_ctx_case(ctx-binding-metadata "${_binding_context}")
+run_case(t56_ctx_binding_metadata EXPECT_EXIT 0
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+string(JSON _bad SET "${_binding_context}" python_executable "null")
+t56_ctx_case(ctx-binding-null-interpreter "${_bad}")
+run_case(t56_ctx_binding_null_interpreter EXPECT_EXIT FAIL
+  EXPECT_STDERR "configured Python executable is missing or is not a path"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+string(JSON _bad REMOVE "${_binding_context}" python_executable)
+t56_ctx_case(ctx-binding-missing-interpreter "${_bad}")
+run_case(t56_ctx_binding_missing_interpreter EXPECT_EXIT FAIL
+  EXPECT_STDERR "configured Python executable is missing or is not a path"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+string(JSON _bad SET "${_binding_context}" python "null")
+t56_ctx_case(ctx-binding-null-identity "${_bad}")
+run_case(t56_ctx_binding_null_identity EXPECT_EXIT FAIL
+  EXPECT_STDERR "binding native check context python must be an object"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+
 if(_t56_system STREQUAL "Darwin")
   string(JSON _s1 SET "${_s2}" schema_version "1")
   t56_ctx_case(ctx-schema1-darwin "${_s1}")
@@ -257,7 +339,8 @@ run_case(t56_ctx_schema2_policy EXPECT_EXIT FAIL
   COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
 
 foreach(_capability asan rtsan coverage)
-  string(JSON _bad SET "${_s2}" capabilities ${_capability} enabled "true")
+  string(JSON _bad SET "${_s2}" capabilities ${_capability} supported "false")
+  string(JSON _bad SET "${_bad}" capabilities ${_capability} enabled "true")
   t56_ctx_case(ctx-schema2-${_capability}-unsupported "${_bad}")
   run_case(t56_ctx_schema2_${_capability}_unsupported EXPECT_EXIT FAIL
     EXPECT_STDERR "native check context capability ${_capability} is enabled without support evidence"
@@ -452,8 +535,7 @@ run_case(t56_contracts_default_root EXPECT_EXIT 0
 # build with no produced extension must fail closed rather than pass
 set(_fixture "${SCRATCH_DIR}/contracts-stale-extension")
 file(MAKE_DIRECTORY "${_fixture}")
-string(JSON _mutated SET "${_context_json}" python_executable "\"${CMAKE_COMMAND}\"")
-file(WRITE "${_fixture}/native_check_context.json" "${_mutated}")
+file(WRITE "${_fixture}/native_check_context.json" "${_binding_context}")
 file(COPY "${_sources}" DESTINATION "${_fixture}")
 file(COPY "${_ccdb}" DESTINATION "${_fixture}")
 run_case(t56_contracts_stale_extension EXPECT_EXIT FAIL

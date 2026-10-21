@@ -232,10 +232,10 @@ struct SuppressionFilter {
 // ---- context / manifest / compile database ---------------------------------
 
 // Ports load_context(): strict validation of every documented field; paths
-// are canonicalized in place. The standalone context may carry
-// "python_executable": null (or omit it) — the Python-free core does not
-// require an interpreter; when a string is present it must be an executable
-// file, exactly as the oracle requires.
+// are canonicalized in place. A complete, path-validated standalone record
+// carries "python_executable": null (and "python": null in schema 2).
+// Binding contexts require the configured executable exactly as the oracle
+// does; missing/null root metadata cannot relax that requirement.
 [[nodiscard]] Value load_context(const fs::path &build);
 // Schema 2 records a Linux sysroot separately from the Darwin SDK;
 // schema 1 falls back to its SDK. Null admits no forwarded sysroot flag.

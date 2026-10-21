@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pytest
 
-from interpreter_shim import squashed
+from interpreter_shim import INTERPRETER_NAMES, squashed
 
 from tools.native_dependencies import (
     REQUIRED_NUMPY_VERSION,
@@ -1017,7 +1017,7 @@ def test_bike_numerics_resolves_auto_backend_from_the_probe(tmp_path):
 def test_bike_numerics_resolves_a_wheel_relative_provider_on_linux(tmp_path):
     """The record stores the Linux provider relative to site-packages and
     BikeNumerics resolves it against the live install. The scratch project is
-    record-only (no CXX), so the Linux branch runs on a macOS host too."""
+    metadata-only (no CXX), so the Linux branch runs on a macOS host too."""
     document = _document_with_numerics(tmp_path, "Linux")
     record = _write_record(tmp_path, document)
     stored = json.loads(record.read_text(encoding="utf-8"))
@@ -1179,14 +1179,35 @@ def _record_only_document(tmp_path: Path) -> dict:
     return document
 
 
+def _linux_record_only_fixture(tmp_path: Path) -> tuple[dict, Path, Path, Path]:
+    """Synthetic record and acquired-tree bytes for the CMake metadata boundary.
+
+    The NONE project cannot link or execute this fixture image. The test
+    supplies the dependency resolver's root/library outputs directly; real
+    archive verification and ABI qualification have separate gates.
+    """
+    document = _document_with_numerics(tmp_path, "Linux")
+    document["platform"]["machine"] = platform.machine()
+    record = _write_record(tmp_path, document)
+    live_provider = Path(document["numerics"]["library_paths"][0]["path"])
+    dependency_root = tmp_path / ".deps" / "numpy-openblas-fixture"
+    provider = dependency_root / "lib" / live_provider.name
+    provider.parent.mkdir(parents=True)
+    shutil.copyfile(live_provider, provider)
+    return document, record, dependency_root, provider
+
+
 def _configure_record_only(
     tmp_path: Path, document: dict, record: Path | None = None,
-    select_mode: bool = True,
+    select_mode: bool = True, *, target_glibc: bool | None = None,
+    dependency_root: Path | None = None, provider_library: Path | None = None,
 ) -> subprocess.CompletedProcess:
     """Configure BikeNumerics.cmake the way the root graph does: no
-    Python_EXECUTABLE and no dependency document. A logging python shim leads
-    PATH, so any interpreter spawn is recorded in tmp_path/python-calls.log and
-    exits 97, which fails configure if CMake ever runs it by name."""
+    Python_EXECUTABLE and no dependency document. Logging interpreter/uv shims
+    lead PATH, so any such spawn is recorded in tmp_path/python-calls.log and
+    exits 97. Linux inputs stand in for the compiler policy's glibc result and
+    the dependency resolver's verified provider paths; there are no defaults.
+    """
     cmake = shutil.which("cmake")
     if cmake is None:
         pytest.skip("cmake is not installed")
@@ -1197,22 +1218,37 @@ def _configure_record_only(
     shims = tmp_path / "shims"
     shims.mkdir()
     shim_log = tmp_path / "python-calls.log"
-    for name in ("python", "python3"):
+    for name in INTERPRETER_NAMES:
         stub = shims / name
         stub.write_text(
             f'#!/bin/sh\necho "{name} $*" >> "{shim_log}"\nexit 97\n',
             encoding="utf-8")
         stub.chmod(0o755)
     mode = "set(BIKE_NUMERICS_SOURCE RECORD_ONLY)\n" if select_mode else ""
+    linux_inputs = ""
+    if target_glibc is not None:
+        glibc_value = "ON" if target_glibc else "OFF"
+        linux_inputs += f"set(BIKE_TARGET_GLIBC {glibc_value})\n"
+    if dependency_root is not None:
+        linux_inputs += f'set(BIKE_DEP_numpy_openblas_ROOT "{dependency_root}")\n'
+    if provider_library is not None:
+        linux_inputs += f'set(BIKE_DEP_numpy_openblas_LIBRARY "{provider_library}")\n'
     (scratch / "CMakeLists.txt").write_text(
         "cmake_minimum_required(VERSION 3.27)\n"
         "project(numerics_record_only NONE)\n"
         f'set(BIKE_TARGET_SYSTEM "{document["platform"]["system"]}")\n'
         f"{mode}"
+        f"{linux_inputs}"
         f'include("{NUMERICS_CMAKE}")\n'
         'message(STATUS "RESOLVED=${BIKE_NUMERICS_BACKEND_RESOLVED}")\n'
         "get_directory_property(_defs COMPILE_DEFINITIONS)\n"
         'message(STATUS "DEFS=${_defs}")\n'
+        "get_target_property(_provider_type Bike::NumericsProvider TYPE)\n"
+        'message(STATUS "PROVIDER_TYPE=${_provider_type}")\n'
+        'if(_provider_type STREQUAL "SHARED_LIBRARY")\n'
+        "  get_target_property(_provider_path Bike::NumericsProvider IMPORTED_LOCATION)\n"
+        '  message(STATUS "PROVIDER_PATH=${_provider_path}")\n'
+        "endif()\n"
     )
     env = dict(os.environ)
     env["PATH"] = os.pathsep.join([str(shims), env.get("PATH", "")])
@@ -1257,13 +1293,92 @@ def test_record_only_requires_an_explicit_mode(tmp_path):
     assert "requires BIKE_NUMERICS_SOURCE=LIVE" in squashed(result.stderr)
 
 
-def test_record_only_fails_closed_outside_darwin(tmp_path):
-    """A Linux key needs the libc family and the NumPy install location, which
-    configure cannot read without the probe, so record-only refuses it."""
-    document = _document_with_numerics(tmp_path, "Linux")
-    result = _configure_record_only(tmp_path, document)
+@pytest.mark.parametrize("symlinked_root", [False, True])
+def test_record_only_linux_binds_acquired_provider_without_python(tmp_path, symlinked_root):
+    """The root consumes acquired bytes and recorded macros with no live tree.
+
+    An operator-selected dependency root may itself be a symlink;
+    containment is checked relative to its canonical target.
+    """
+    document, record, dependency_root, provider = _linux_record_only_fixture(tmp_path)
+    if symlinked_root:
+        acquired_root = tmp_path / "acquired-provider"
+        dependency_root.rename(acquired_root)
+        dependency_root.symlink_to(acquired_root, target_is_directory=True)
+    shutil.rmtree(document["numerics"]["site_packages"])
+    result = _configure_record_only(
+        tmp_path, document, record=record, target_glibc=True,
+        dependency_root=dependency_root, provider_library=provider)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "RESOLVED=NUMPY_OPENBLAS" in result.stdout
+    assert "PROVIDER_TYPE=SHARED_LIBRARY" in result.stdout
+    assert f"PROVIDER_PATH={provider.resolve()}" in result.stdout
+    assert "bike_native_numerics not created: CXX is not enabled" in result.stdout
+    assert "BIKE_NUMPY_INTERP_CONTRACTED=0" in result.stdout
+    assert "BIKE_NUMPY_MUL_BROADCAST_ELEMENT_NAN=1" in result.stdout
+    header = (tmp_path / "record-only-build" / "bike_numerics" /
+              "numerics_symbols.hpp").read_text(encoding="utf-8")
+    assert '#define BIKE_NUMERICS_BACKEND "NUMPY_OPENBLAS"' in header
+    assert "#define BIKE_NUMERICS_BLAS_BITS 64" in header
+    assert "#define BIKE_NUMERICS_LAPACK_BITS 64" in header
+    for operation, symbol in OPENBLAS_SYMBOLS.items():
+        assert f'#define BIKE_NUMERICS_SYM_{operation.upper()} "{symbol}"' in header
+    assert not (tmp_path / "python-calls.log").exists(), (
+        "record-only configure started an interpreter or uv")
+
+
+@pytest.mark.parametrize("missing", ["root", "library"])
+def test_record_only_linux_requires_the_acquired_provider(tmp_path, missing):
+    """An available live fixture cannot substitute for a missing .deps image."""
+    document, record, dependency_root, provider = _linux_record_only_fixture(tmp_path)
+    if missing == "root":
+        shutil.rmtree(dependency_root)
+    else:
+        provider.unlink()
+    result = _configure_record_only(
+        tmp_path, document, record=record, target_glibc=True,
+        dependency_root=dependency_root, provider_library=provider)
+    assert result.returncode != 0, result.stdout
+    assert ("record-only NUMPY_OPENBLAS requires the lock-verified Linux "
+            "numpy_openblas dependency" in squashed(result.stderr))
+
+
+@pytest.mark.parametrize("record_libc, target_glibc", [
+    ("glibc", False), ("musl", True), (None, True),
+])
+def test_record_only_linux_requires_matching_glibc(tmp_path, record_libc, target_glibc):
+    document, record, dependency_root, provider = _linux_record_only_fixture(tmp_path)
+    _edit_record(record, lambda entry: entry["platform"].update(libc=record_libc))
+    result = _configure_record_only(
+        tmp_path, document, record=record, target_glibc=target_glibc,
+        dependency_root=dependency_root, provider_library=provider)
+    assert result.returncode != 0, result.stdout
+    stderr = squashed(result.stderr)
+    assert "numerics record libc" in stderr
+    assert "does not match the host (glibc probe:" in stderr
+
+
+def test_record_only_linux_rejects_changed_provider_bytes(tmp_path):
+    document, record, dependency_root, provider = _linux_record_only_fixture(tmp_path)
+    provider.write_bytes(b"changed fixture provider")
+    result = _configure_record_only(
+        tmp_path, document, record=record, target_glibc=True,
+        dependency_root=dependency_root, provider_library=provider)
+    assert result.returncode != 0, result.stdout
+    assert "numerics provider SHA-256 differs" in squashed(result.stderr)
+
+
+def test_record_only_linux_rejects_an_escaping_provider_symlink(tmp_path):
+    """Identical bytes outside the acquired root must still fail containment."""
+    document, record, dependency_root, provider = _linux_record_only_fixture(tmp_path)
+    outside = tmp_path / provider.name
+    provider.rename(outside)
+    provider.symlink_to(outside)
+    result = _configure_record_only(
+        tmp_path, document, record=record, target_glibc=True,
+        dependency_root=dependency_root, provider_library=provider)
     assert result.returncode != 0
-    assert "qualified for Darwin only" in squashed(result.stderr)
+    assert "outside the selected NumPy provider root" in squashed(result.stderr)
 
 
 def test_record_only_names_a_missing_platform_entry(tmp_path):

@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "purpose": "Checked dependency lock for the standalone Python-free native build (task T03). .deps/ is populated only by explicit acquisition before configure; configure, build and install make no network calls and run no dependency code-generation Python. Every entry records the real verified SHA-256 of the acquired archive plus the consumed files, the license, and the exact version/commit identity.",
   "dependency_root": ".deps",
   "archive_directory": "_archives",
@@ -7,46 +7,89 @@
     "mujoco": {
       "version": "3.12.0",
       "license": "Apache-2.0",
-      "license_files": ["mujoco-3.12.0/LICENSE", "mujoco-3.12.0/LICENSES_THIRD_PARTY.md"],
+      "license_files": [
+        "mujoco-3.12.0/LICENSE",
+        "mujoco-3.12.0/LICENSES_THIRD_PARTY.md"
+      ],
       "purpose": "Physics engine SDK: C headers plus the shared library pinned for the private TLS error-handler ABI (_mjPRIVATE_setTlsLogHandler / _mjPRIVATE_getGlobalLogHandler / mj_makeRawData).",
-      "acquisition": {
-        "kind": "pypi-wheel-extract",
-        "url": "https://files.pythonhosted.org/packages/5d/ce/571060e86b1eacf0b13e1b6bff607bede9d16685bb891cf08e60a5288aae/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl",
-        "archive": "_archives/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl",
-        "archive_sha256": "5122a5affff0f592d088a89226360fe86a000b737cac6370ff5e5b552f20bc81",
-        "pin_source": "uv.lock mujoco==3.12.0 cp313 macosx_11_0_arm64 wheel hash (verified identical to the downloaded artifact and to the installed .venv copy: libmujoco.3.12.0.dylib sha256 9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c matches the wheel-extracted dylib byte for byte)",
-        "note": "The wheel is only the transport for the already-pinned MuJoCo binaries; no Python interpreter, package or wheel directory enters the build closure."
-      },
       "extracted_root": "mujoco-3.12.0",
-      "required_files": {
-        "include/mujoco/mujoco.h": "c7378e471cb951f4ff4bd4801139be41495a3df82c5ae643c4134ded850fb7ef",
-        "lib/libmujoco.3.12.0.dylib": "9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c"
+      "platforms": {
+        "darwin-arm64": {
+          "acquisition": {
+            "kind": "pypi-wheel-extract",
+            "url": "https://files.pythonhosted.org/packages/5d/ce/571060e86b1eacf0b13e1b6bff607bede9d16685bb891cf08e60a5288aae/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl",
+            "archive": "_archives/mujoco-3.12.0-cp313-cp313-macosx_11_0_arm64.whl",
+            "archive_sha256": "5122a5affff0f592d088a89226360fe86a000b737cac6370ff5e5b552f20bc81",
+            "pin_source": "uv.lock mujoco==3.12.0 cp313 macosx_11_0_arm64 wheel hash (verified identical to the downloaded artifact and to the installed .venv copy: libmujoco.3.12.0.dylib sha256 9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c matches the wheel-extracted dylib byte for byte)",
+            "note": "The wheel is only the transport for the already-pinned MuJoCo binaries; no Python interpreter, package or wheel directory enters the build closure."
+          },
+          "required_files": {
+            "include/mujoco/mujoco.h": "c7378e471cb951f4ff4bd4801139be41495a3df82c5ae643c4134ded850fb7ef",
+            "lib/libmujoco.3.12.0.dylib": "9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c"
+          }
+        },
+        "linux-aarch64": {
+          "acquisition": {
+            "kind": "pypi-wheel-extract",
+            "url": "https://files.pythonhosted.org/packages/56/48/b1e477dc1caec78074ace77d3597f5768a6a1c11a258d7f214473f564b51/mujoco-3.12.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+            "archive": "_archives/mujoco-3.12.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+            "archive_sha256": "267c3fc36b5a0536073557760e36c464da2ad9a744b047893db73fe273931ad1",
+            "pin_source": "uv.lock mujoco==3.12.0 cp313 manylinux aarch64; archive and selected members measured 2026-10-21 without executing them"
+          },
+          "required_files": {
+            "include/mujoco/mujoco.h": "c7378e471cb951f4ff4bd4801139be41495a3df82c5ae643c4134ded850fb7ef",
+            "lib/libmujoco.so.3.12.0": "ddc46a81d9acfdd3afec7ac4723350a1a5e21ac5ce774ab7e904921f20c3a36d"
+          }
+        }
       }
     },
     "duckdb": {
       "version": "1.5.6",
       "license": "MIT",
-      "license_files": ["duckdb-1.5.6/LICENSE"],
+      "license_files": [
+        "duckdb-1.5.6/LICENSE"
+      ],
       "purpose": "DuckDB C API SDK (headers + shared library) for the native recording/replay publication path; pinned to match the input snapshot's duckdb==1.5.6.",
-      "acquisition": {
-        "kind": "github-release",
-        "url": "https://github.com/duckdb/duckdb/releases/download/v1.5.6/libduckdb-osx-universal.zip",
-        "archive": "_archives/libduckdb-osx-universal-1.5.6.zip",
-        "archive_sha256": "e0bc007d9b0094c0970ac1847a8601d10aad07cbd2910ce586ec810f77b638d6",
-        "pin_source": "GitHub release tag v1.5.6 'DuckDB v1.5.6 Bugfix Release'; embedded DUCKDB_SOURCE_ID 069cc9f9b5 and DUCKDB_VERSION v1.5.6 in duckdb.hpp",
-        "note": "The PyPI duckdb wheel statically links the engine into _duckdb.so and ships no C SDK, so the native SDK comes from the upstream release; its embedded version macros identify the artifact."
-      },
       "extracted_root": "duckdb-1.5.6",
-      "required_files": {
-        "include/duckdb.h": "e85f70155b5948c8575e59f66e60d43575cec8b252293534c9e8598eb313a293",
-        "include/duckdb.hpp": "5110331647a2ec48752c4a27064235fdca8a7d8c201e9a8202752a7202b2be01",
-        "lib/libduckdb.dylib": "75a519cb914ae36ca22cff0995a8a2e8c9a46990b8c0a479514f741a0d93f344"
+      "platforms": {
+        "darwin-arm64": {
+          "acquisition": {
+            "kind": "github-release",
+            "url": "https://github.com/duckdb/duckdb/releases/download/v1.5.6/libduckdb-osx-universal.zip",
+            "archive": "_archives/libduckdb-osx-universal-1.5.6.zip",
+            "archive_sha256": "e0bc007d9b0094c0970ac1847a8601d10aad07cbd2910ce586ec810f77b638d6",
+            "pin_source": "GitHub release tag v1.5.6 'DuckDB v1.5.6 Bugfix Release'; embedded DUCKDB_SOURCE_ID 069cc9f9b5 and DUCKDB_VERSION v1.5.6 in duckdb.hpp",
+            "note": "The PyPI duckdb wheel statically links the engine into _duckdb.so and ships no C SDK, so the native SDK comes from the upstream release; its embedded version macros identify the artifact."
+          },
+          "required_files": {
+            "include/duckdb.h": "e85f70155b5948c8575e59f66e60d43575cec8b252293534c9e8598eb313a293",
+            "include/duckdb.hpp": "5110331647a2ec48752c4a27064235fdca8a7d8c201e9a8202752a7202b2be01",
+            "lib/libduckdb.dylib": "75a519cb914ae36ca22cff0995a8a2e8c9a46990b8c0a479514f741a0d93f344"
+          }
+        },
+        "linux-aarch64": {
+          "acquisition": {
+            "kind": "github-release",
+            "url": "https://github.com/duckdb/duckdb/releases/download/v1.5.6/libduckdb-linux-arm64.zip",
+            "archive": "_archives/libduckdb-linux-arm64-1.5.6.zip",
+            "archive_sha256": "b72ed9f05003f5e9d2015f7ceada6416b377d9dd33169cdde3c9e33897856eee",
+            "pin_source": "GitHub release v1.5.6 API names libduckdb-linux-arm64.zip (glibc, not musl); archive digest matches published SHA-256; headers and library measured 2026-10-21"
+          },
+          "required_files": {
+            "include/duckdb.h": "e85f70155b5948c8575e59f66e60d43575cec8b252293534c9e8598eb313a293",
+            "include/duckdb.hpp": "5110331647a2ec48752c4a27064235fdca8a7d8c201e9a8202752a7202b2be01",
+            "lib/libduckdb.so": "23686593dba4ec22c6e581bb1c843b3964e84c4bc4d0063d8b4daddd2e20e30a",
+            "LICENSE": "7e17fd31249fa875cb3b1c5e05c6c3e99b75509f6a2804ca176c217834de1dcb"
+          }
+        }
       }
     },
     "tomlplusplus": {
       "version": "3.4.0",
       "license": "MIT",
-      "license_files": ["tomlplusplus-3.4.0/LICENSE"],
+      "license_files": [
+        "tomlplusplus-3.4.0/LICENSE"
+      ],
       "purpose": "Header-only TOML parser for configuration/request/track file loading (T13+).",
       "acquisition": {
         "kind": "git-tag-archive",
@@ -63,7 +106,9 @@
     "rapidjson": {
       "version": "24b5e7a8b27f42fa16b96fc70aade9106cf7102f",
       "license": "MIT",
-      "license_files": ["rapidjson-24b5e7a/LICENSE"],
+      "license_files": [
+        "rapidjson-24b5e7a/LICENSE"
+      ],
       "purpose": "Header-only JSON SAX/DOM parser; kParseNumbersAsStringsFlag exposes exact number lexemes for the lossless codec boundary (T05).",
       "acquisition": {
         "kind": "git-commit-archive",
@@ -81,7 +126,9 @@
     "glfw": {
       "version": "3.4",
       "license": "Zlib",
-      "license_files": ["glfw-3.4/LICENSE.md"],
+      "license_files": [
+        "glfw-3.4/LICENSE.md"
+      ],
       "purpose": "Window/context/event layer for the MuJoCo passive-viewer GUI path (T48+); its upstream build is CMake-native (no Python).",
       "acquisition": {
         "kind": "github-release",
@@ -92,13 +139,19 @@
       },
       "extracted_root": "glfw-3.4",
       "required_files": {
-        "include/GLFW/glfw3.h": "aa370985f6b493bbe0358a36ab49f5780a6397c0209c6d98a62143dea595b73c"
+        "include/GLFW/glfw3.h": "aa370985f6b493bbe0358a36ab49f5780a6397c0209c6d98a62143dea595b73c",
+        "CMakeLists.txt": "9febf64a1d8cabfdb77c8cd5812232c65f58b8ad96271ef2975bde5058bdc344",
+        "src/CMakeLists.txt": "2cb9fd73457e14a751f12fac3556c576fcffb54e25c462b5aeb7fe76d4d94aae"
       }
     },
     "cairo": {
       "version": "1.18.4",
       "license": "LGPL-2.1-only OR MPL-1.1",
-      "license_files": ["cairo-1.18.4/COPYING", "cairo-1.18.4/COPYING-LGPL-2.1", "cairo-1.18.4/COPYING-MPL-1.1"],
+      "license_files": [
+        "cairo-1.18.4/COPYING",
+        "cairo-1.18.4/COPYING-LGPL-2.1",
+        "cairo-1.18.4/COPYING-MPL-1.1"
+      ],
       "purpose": "Pinned native raster backend for PNG plot output (T50). Upstream build tooling (meson) needs Python, so the qualified workflow consumes a verified binary SDK rather than an upstream source build; the source archive is locked here for provenance and header access pending SDK acquisition (T50/T59).",
       "acquisition": {
         "kind": "upstream-release",
@@ -115,7 +168,9 @@
     "eigen": {
       "version": "3.4.0",
       "license": "MPL-2.0",
-      "license_files": ["eigen-3.4.0/COPYING.MPL2"],
+      "license_files": [
+        "eigen-3.4.0/COPYING.MPL2"
+      ],
       "purpose": "Header-only dense linear algebra (decompositions) for the bounded least-squares, allocation and rider-dynamics solver ports (T23/T28/T29); native math support locked at T03.",
       "acquisition": {
         "kind": "git-tag-archive",
@@ -127,6 +182,32 @@
       "extracted_root": "eigen-3.4.0",
       "required_files": {
         "Eigen/Dense": "5325c9d4d693e504ee012c5275ad4b10b135a701cbd87c14466d2ea21ea22ee5"
+      }
+    },
+    "numpy_openblas": {
+      "version": "2.5.2",
+      "license": "BSD-3-Clause AND BSD-3-Clause-Open-MPI AND (GPL-3.0-or-later WITH GCC-exception-3.1)",
+      "license_files": [
+        "numpy-openblas-2.5.2/LICENSE.txt"
+      ],
+      "purpose": "The pinned NumPy wheel scipy-openblas ILP64 provider and its bundled libgfortran runtime. The Python-free Linux graph uses the same provider bytes as the oracle; no system OpenBLAS substitution is permitted.",
+      "extracted_root": "numpy-openblas-2.5.2",
+      "platforms": {
+        "darwin-arm64": null,
+        "linux-aarch64": {
+          "acquisition": {
+            "kind": "pypi-wheel-extract",
+            "url": "https://files.pythonhosted.org/packages/29/f1/2a64a307d92c5d98f5255a4014eb43bb6103ee477087b61ecae44a3aa9b9/numpy-2.5.2-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+            "archive": "_archives/numpy-2.5.2-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+            "archive_sha256": "0aadf13b60048d501e05fa699efaf7734e2494f3498a4c2a5521d822640324f3",
+            "pin_source": "uv.lock numpy==2.5.2 cp313 manylinux aarch64; archive and two bundled shared images measured 2026-10-21; static ELF inspection records OpenBLAS DT_NEEDED libgfortran and $ORIGIN RPATH"
+          },
+          "required_files": {
+            "lib/libscipy_openblas64_-bb25d554.so": "5dafca6786e1e366f29ff5e57a6b3beb66a4a02cadf899f51b38fa9fb22c5798",
+            "lib/libgfortran-e1b7dfc8-d8198c01.so.5.0.0": "25899a29a06d3f2927021b4823d858558839fea0e7e759eedb8926fd0a339ea4",
+            "LICENSE.txt": "4860083caa0de2ac3292ca98bd074bd8f45d8b32624e37b1e70a240bff61e488"
+          }
+        }
       }
     }
   }

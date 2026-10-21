@@ -26,13 +26,11 @@
 #       host. The record's structure and facts are checked exactly as in LIVE
 #       mode, but they are not compared with a measurement: the LIVE check run by
 #       the binding graph is what keeps the committed record current. It exports
-#       the compile definitions the root needs and binds the Darwin Accelerate
-#       profile exactly as LIVE does: Bike::NumericsProvider and
-#       bike_native_numerics are created. Accelerate is an apple-system framework,
-#       so its location needs no probe. The includer supplies the two inputs the
-#       live probe would otherwise provide (see Prerequisites). Only Darwin is
-#       qualified here: a Linux provider lives inside the NumPy install, and
-#       neither its location nor the libc family is known without a probe.
+#       the compile definitions and the same provider target as LIVE. Darwin
+#       binds the apple-system Accelerate framework. Linux binds the locked
+#       wheel provider under BIKE_DEP_numpy_openblas_ROOT; BikeCompilerPolicy's
+#       glibc probe supplies the libc family without an interpreter. ABI facts
+#       still require the committed record produced by the real oracle probe.
 #
 # The probe already ran the provider inside the selected interpreter, inspected
 # its export table, and compile/linked/ran a C control against the qualified
@@ -52,8 +50,7 @@
 # Prerequisites for the includer:
 #   BIKE_NUMERICS_SOURCE          LIVE or RECORD_ONLY; there is no default, so a
 #                                 forgotten selection fails configure
-#   BIKE_TARGET_SYSTEM            set by BikePlatform.cmake (LIVE), or by the root
-#                                 from CMAKE_HOST_SYSTEM_NAME (RECORD_ONLY)
+#   BIKE_TARGET_SYSTEM            set by BikePlatform.cmake in both graphs
 #   _native_dependencies_json     LIVE only: the live probe document, normally
 #                                 populated by BikeDependencies.cmake; it may
 #                                 also be file(READ) from a captured document
@@ -65,11 +62,12 @@
 #   BIKE_NUMERICS_MUJOCO_INCLUDE  RECORD_ONLY only: the MuJoCo include root for
 #                                 the backend TUs (cblas_abi.hpp includes
 #                                 mujoco.h). LIVE takes it from the probe.
+#   BIKE_DEP_numpy_openblas_ROOT / BIKE_DEP_numpy_openblas_LIBRARY
+#                                 Linux RECORD_ONLY: verified by the dependency
+#                                 lock resolver, never a site-packages path.
 #   BIKE_NUMERICS_APPLY_POLICY    optional: the policy function applied to
 #                                 bike_native_numerics. Default
-#                                 bike_apply_native_policy (BikeCompilerPolicy);
-#                                 the root graph sets bike_target_strict_policy
-#                                 until it moves onto BikeCompilerPolicy.
+#                                 bike_apply_native_policy (BikeCompilerPolicy).
 #
 # Exports consumed by the rest of the native build:
 #   Bike::Numerics                  ALIAS of bike_native_numerics — the
@@ -79,8 +77,8 @@
 #                                   requirements). LIVE and RECORD_ONLY.
 #   Bike::NumericsProvider          IMPORTED target — INTERFACE on
 #                                   Darwin (-framework Accelerate) or SHARED
-#                                   with IMPORTED_LOCATION on Linux (LIVE only).
-#                                   LIVE and RECORD_ONLY (Darwin).
+#                                   with IMPORTED_LOCATION on Linux.
+#                                   LIVE and RECORD_ONLY.
 #   bike_native_numerics            STATIC target holding exactly
 #                                   the two resolved backend TUs
 #                                   (src/platform/blas_*.cpp +
@@ -225,14 +223,6 @@ else()
   # spelled the way tools/native_dependencies.py record_platform_key spells it
   # (system.lower() + machine). The entry's own platform fields are checked
   # against the host below, so a hand-edited key cannot select another entry.
-  # Only Darwin is qualified: a Linux key also needs the libc family, which
-  # configure cannot name without a probe.
-  if(NOT BIKE_TARGET_SYSTEM STREQUAL "Darwin")
-    message(FATAL_ERROR
-      "record-only numerics (the Python-free root graph) is qualified for "
-      "Darwin only; ${BIKE_TARGET_SYSTEM} needs the libc family and the NumPy "
-      "install location, which configure cannot read without the live probe")
-  endif()
   if(NOT EXISTS "${_numerics_record_file}")
     message(FATAL_ERROR
       "committed numerics record is missing: ${_numerics_record_file}")
@@ -270,13 +260,23 @@ else()
   string(JSON _numerics_record_libc_type ERROR_VARIABLE _numerics_json_error
     TYPE "${_numerics_record_json}" records "${_native_numerics_record_key}" platform libc)
   if(NOT "${_numerics_record_system}" STREQUAL "${BIKE_TARGET_SYSTEM}"
-     OR NOT "${_numerics_record_machine}" STREQUAL "${CMAKE_HOST_SYSTEM_PROCESSOR}"
-     OR NOT _numerics_record_libc_type STREQUAL "NULL")
+     OR NOT "${_numerics_record_machine}" STREQUAL "${CMAKE_HOST_SYSTEM_PROCESSOR}")
     message(FATAL_ERROR
       "numerics record entry '${_native_numerics_record_key}' does not describe "
       "this host (${BIKE_TARGET_SYSTEM}/${CMAKE_HOST_SYSTEM_PROCESSOR}): it names "
       "${_numerics_record_system}/${_numerics_record_machine} with libc "
       "${_numerics_record_libc_type} in ${_numerics_record_file}")
+  endif()
+  if(BIKE_TARGET_SYSTEM STREQUAL "Linux")
+    _numerics_record_field(_numerics_record_libc platform libc)
+    if(NOT _numerics_record_libc_type STREQUAL "STRING"
+       OR NOT _numerics_record_libc STREQUAL "glibc" OR NOT BIKE_TARGET_GLIBC)
+      message(FATAL_ERROR
+        "numerics record libc '${_numerics_record_libc}' does not match the host "
+        "(glibc probe: ${BIKE_TARGET_GLIBC}); musl is not qualified")
+    endif()
+  elseif(NOT _numerics_record_libc_type STREQUAL "NULL")
+    message(FATAL_ERROR "Darwin numerics record platform.libc must be null")
   endif()
   message(STATUS
     "numerics record '${_native_numerics_record_key}' describes this host "
@@ -315,13 +315,13 @@ if(NOT _numerics_backend STREQUAL _numerics_backend_expected)
     "record and the request describe different providers")
 endif()
 set(BIKE_NUMERICS_BACKEND_RESOLVED "${_numerics_backend}")
-# Record-only binds only the Darwin Accelerate profile. A NUMPY_OPENBLAS entry
-# needs the live NumPy install location to resolve its provider, and this mode
-# has none.
-if(NOT _numerics_is_live AND NOT _numerics_backend STREQUAL "ACCELERATE")
-  message(FATAL_ERROR
-    "record-only numerics binds only the qualified ACCELERATE profile; the "
-    "record names '${_numerics_backend}', which needs the live probe")
+if(NOT _numerics_is_live AND _numerics_backend STREQUAL "NUMPY_OPENBLAS")
+  if(NOT BIKE_TARGET_SYSTEM STREQUAL "Linux"
+     OR NOT IS_DIRECTORY "${BIKE_DEP_numpy_openblas_ROOT}"
+     OR NOT EXISTS "${BIKE_DEP_numpy_openblas_LIBRARY}")
+    message(FATAL_ERROR
+      "record-only NUMPY_OPENBLAS requires the lock-verified Linux numpy_openblas dependency")
+  endif()
 endif()
 
 # --------------------------------------------------------------------------
@@ -474,8 +474,9 @@ message(STATUS
 # must exist inside the recorded site-packages and carry its SHA-256;
 # Accelerate entries carry the apple-system identity with a real build id
 # (dyld-cache images have no file to hash).
-# The record stores Linux providers relative to site-packages, so they are
-# resolved against the live install location here. Darwin paths are absolute
+# The record stores Linux providers relative to site-packages. LIVE resolves
+# them there; RECORD_ONLY maps numpy.libs/<file> to the lock's lib/<file>.
+# Both modes check containment and the recorded SHA-256. Darwin paths are absolute
 # system images and need no resolution. build_id is machine-specific and is
 # read from the live document at the same index; the check above guarantees
 # the two documents list the providers in the same order. RECORD_ONLY reads no
@@ -505,7 +506,21 @@ foreach(_i RANGE ${_numerics_library_last})
   _numerics_record_field(_lib_kind numerics library_paths ${_i} identity_kind)
   list(APPEND _numerics_roles "${_lib_role}")
   if(_numerics_backend STREQUAL "NUMPY_OPENBLAS")
-    set(_lib_path "${_numerics_site_packages}/${_lib_path}")
+    if(_numerics_is_live)
+      set(_numerics_provider_root "${_numerics_site_packages}")
+      set(_lib_path "${_numerics_site_packages}/${_lib_path}")
+    else()
+      if(NOT _lib_path MATCHES "^numpy\\.libs/[^/]+$")
+        message(FATAL_ERROR "record-only NumPy provider path must be numpy.libs/<file>: '${_lib_path}'")
+      endif()
+      get_filename_component(_provider_name "${_lib_path}" NAME)
+      set(_numerics_provider_root "${BIKE_DEP_numpy_openblas_ROOT}")
+      set(_lib_path "${BIKE_DEP_numpy_openblas_ROOT}/lib/${_provider_name}")
+      if(NOT _lib_path STREQUAL "${BIKE_DEP_numpy_openblas_LIBRARY}")
+        message(FATAL_ERROR
+          "numerics provider '${_lib_path}' differs from the locked scipy-openblas image '${BIKE_DEP_numpy_openblas_LIBRARY}'")
+      endif()
+    endif()
   endif()
   if(NOT IS_ABSOLUTE "${_lib_path}")
     message(FATAL_ERROR
@@ -528,18 +543,22 @@ foreach(_i RANGE ${_numerics_library_last})
     endif()
     if(NOT EXISTS "${_lib_path}")
       message(FATAL_ERROR
-        "numerics provider does not exist: '${_lib_path}' — re-run the "
-        "dependency probe against the selected interpreter")
+        "numerics provider does not exist: '${_lib_path}' — acquire the pinned "
+        "dependency for this graph before configuring")
     endif()
-    # The provider must live inside the recorded NumPy install, so a
-    # system libblas.so can never be substituted by path.
+    file(SHA256 "${_lib_path}" _lib_actual_sha)
+    if(NOT _lib_actual_sha STREQUAL _lib_sha)
+      message(FATAL_ERROR
+        "numerics provider SHA-256 differs for '${_lib_path}': record ${_lib_sha}, file ${_lib_actual_sha}")
+    endif()
+    # A system libblas.so can never be substituted by path in either mode.
     file(REAL_PATH "${_lib_path}" _lib_real)
-    file(REAL_PATH "${_numerics_site_packages}" _site_real)
+    file(REAL_PATH "${_numerics_provider_root}" _site_real)
     file(RELATIVE_PATH _lib_rel "${_site_real}" "${_lib_real}")
     if(_lib_rel MATCHES "^\\.\\.")
       message(FATAL_ERROR
-        "numerics provider '${_lib_real}' is outside the installed NumPy "
-        "distribution '${_site_real}'")
+        "numerics provider '${_lib_real}' is outside the selected NumPy "
+        "provider root '${_site_real}'")
     endif()
     set(_numerics_provider "${_lib_real}")
     list(APPEND _native_numerics_provider_paths "${_lib_real}")
@@ -574,10 +593,8 @@ endforeach()
 # framework link interface on Darwin, a SHARED import at the qualified
 # path on Linux. Runtime kernels never link it directly: the adapter
 # carries it through PUBLIC usage requirements. Nothing calls dlsym or
-# mutates provider threading here. RECORD_ONLY creates the same target for the
-# Darwin Accelerate profile: the framework is an apple-system image, so no probe
-# is needed to name it. Linux is refused above in RECORD_ONLY, so the SHARED
-# branch below is LIVE-only in practice.
+# mutates provider threading here. Both modes use these same imported-target
+# branches; Linux RECORD_ONLY has already resolved and verified its .deps image.
 # --------------------------------------------------------------------------
 if(_numerics_backend STREQUAL "ACCELERATE")
   set(_numerics_provider "Accelerate.framework (apple-system)")

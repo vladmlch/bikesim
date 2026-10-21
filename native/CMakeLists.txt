@@ -112,9 +112,13 @@ endfunction()
 # Dependency-root include surface shared by the whole graph. The header sweep
 # (native/tools checks --kind headers) compiles each first-party header under
 # every target context of its root, so all first-party targets share it.
-file(READ "${BIKE_DEPENDENCY_LOCK}" _native_dependency_lock_json)
-string(JSON _native_duckdb_include GET "${_native_dependency_lock_json}"
-  dependencies duckdb extracted_root)
+bike_dependency_lock_read(_native_dependency_lock_json)
+bike_dependency_lock_select("${_native_dependency_lock_json}" duckdb
+  _native_duckdb_entry _native_duckdb_required)
+if(NOT _native_duckdb_required)
+  message(FATAL_ERROR "The binding graph requires a DuckDB SDK for the selected platform")
+endif()
+string(JSON _native_duckdb_include GET "${_native_duckdb_entry}" extracted_root)
 set(_native_duckdb_include "${BIKE_DEPENDENCY_ROOT}/${_native_duckdb_include}/include")
 if(NOT IS_DIRECTORY "${_native_duckdb_include}")
   message(FATAL_ERROR

@@ -1,6 +1,7 @@
 #include "support/migration_test.hpp"
 #include "cli/application.hpp"
 #include "cli/physical_capture.hpp"
+#include "cli/viewer_options.hpp"
 #include "io/hash.hpp"
 #include "io/npy.hpp"
 #include "platform/argv.hpp"
@@ -11,6 +12,7 @@
 #include <array>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -18,6 +20,44 @@ namespace {
 bike::cli::Arguments parse(std::string_view name, std::initializer_list<std::string_view> input) {
     const auto arguments = std::vector<std::string_view>(input);
     return bike::cli::parse_arguments(name, std::span<const std::string_view>(arguments));
+}
+void rejected_close_on_finish(std::initializer_list<std::string_view> input, std::string_view message) {
+    bool rejected = false;
+    try {
+        (void)bike::cli::resolve_ride(parse("bike-ride", input));
+    } catch (const bike::cli::ArgumentError& error) {
+        rejected = true;
+        bt::require(std::string_view(error.what()).find(message) != std::string_view::npos,
+            "close-on-finish reports the violated CLI contract");
+    }
+    bt::require(rejected, "invalid close-on-finish request throws ArgumentError");
+}
+void close_on_finish_contract() {
+    using namespace bike::cli;
+    rejected_close_on_finish({"--physics", "physical", "--close-on-finish"},
+        "--close-on-finish requires --duration");
+    constexpr std::string_view interactive = "--close-on-finish requires an interactive physical or research run";
+    rejected_close_on_finish({"--physics", "physical", "--duration", "1", "--headless", "--close-on-finish"}, interactive);
+    rejected_close_on_finish({"--physics", "physical", "--duration", "1", "--preview", "--close-on-finish"}, interactive);
+    rejected_close_on_finish({"--physics", "legacy", "--duration", "1", "--close-on-finish"}, interactive);
+    bt::invalid([] { (void)parse("bike-ride", {"--close-on-finish=true"}); });
+    bt::invalid([] { (void)resolve_ride(parse("bike-ride", {"--physics", "physical", "--duration", "0", "--close-on-finish"})); });
+    const auto physical = resolve_ride(parse("bike-ride", {"--physics", "physical", "--duration", "1", "--close-on-finish"}));
+    const auto physical_options = ride_viewer_options(physical->arguments, .00125);
+    bt::require(physical_options.close_on_terminal && physical_options.duration_s == std::optional<double>(1.) &&
+        physical_options.mode == bike::viewer::Mode::physical,
+        "physical launch receives automatic terminal closure and its duration");
+    const auto research = resolve_ride(parse("bike-ride", {"--physics", "physical", "--drive", "crank_effort",
+        "--research", "--duration", "1", "--close-on-finish"}));
+    const auto research_options = ride_viewer_options(research->arguments, .00125, bike::viewer::Mode::research);
+    bt::require(research_options.close_on_terminal && !research_options.duration_s &&
+        research_options.mode == bike::viewer::Mode::research,
+        "research launch closes at its runtime-owned terminal boundary without a second duration cap");
+    const auto held = resolve_ride(parse("bike-ride", {"--physics", "physical", "--duration", "1"}));
+    bt::require(!held->arguments.flag("close_on_finish") && !ride_viewer_options(held->arguments, .00125).close_on_terminal,
+        "interactive terminal hold remains the default");
+    bt::require(help_text("bike-ride").find("--close-on-finish") != std::string::npos,
+        "native ride help advertises close-on-finish");
 }
 void compiled_capture() {
     using namespace runtime::setupvalue;
@@ -78,6 +118,7 @@ int main(int argc, char** argv) {
         bt::invalid([] { (void)parse("bike-research", {"--duration", "nan"}); });
         bt::invalid([] { (void)resolve_ride(parse("bike-ride", {"--record"})); });
         bt::invalid([] { (void)resolve_ride(parse("bike-ride", {"--physics", "physical", "--headless", "--time-scale", "2", "--duration", ".1"})); });
+        close_on_finish_contract();
         // Real command dispatch is registered for later execution. No simulator
         // is constructed by help, including the standalone analyst executable.
         bt::require(argc == 2, "command directory is supplied by CTest");

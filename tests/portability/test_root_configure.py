@@ -7,13 +7,14 @@ include chain refuses a foreign toolchain, and whether BIKE_BUILD_PYTHON_BINDING
 fails closed. These tests configure the repository root, so they pin what a
 developer or CI lane executes.
 
-The root qualifies only the Darwin host profile (BikeNumerics RECORD_ONLY fails
-closed elsewhere), so the successful configure and the bindings guard, which
-comes after the numerics step, are Darwin-only. The cross-compilation refusal
-runs after project() and before any numerics step, so it runs on every host.
+The successful configure and the bindings guard cover the supported Darwin
+arm64 and Linux aarch64 root profiles, using the acquired dependency tree and
+that platform's committed numerics record. Foreign-system dispatch is refused
+before project(), before any compiler or numerics probe can run.
 """
 from __future__ import annotations
 
+import platform
 import re
 import shutil
 import subprocess
@@ -25,6 +26,10 @@ from interpreter_shim import interpreter_shim_env, squashed
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CMAKE = shutil.which("cmake")
+ROOT_HOST_SUPPORTED = (
+    (sys.platform == "darwin" and platform.machine() == "arm64") or
+    (sys.platform == "linux" and platform.machine() == "aarch64")
+)
 
 pytestmark = pytest.mark.skipif(CMAKE is None, reason="cmake executable unavailable")
 
@@ -64,8 +69,8 @@ def test_interpreter_shim_records_a_spawn_by_name(tmp_path: Path) -> None:
     assert calls.read_text(encoding="utf-8") == "python3 -c pass\n"
 
 
-@pytest.mark.skipif(sys.platform != "darwin",
-                    reason="the root graph qualifies only the Darwin host profile")
+@pytest.mark.skipif(not ROOT_HOST_SUPPORTED,
+                    reason="the root lane requires Darwin arm64 or Linux aarch64")
 def test_root_configure_starts_no_interpreter(tmp_path: Path) -> None:
     """The real root configure succeeds with no interpreter reachable and records none.
 
@@ -85,8 +90,8 @@ def test_root_configure_starts_no_interpreter(tmp_path: Path) -> None:
 def test_root_refuses_a_cross_compiling_toolchain(tmp_path: Path) -> None:
     """A foreign CMAKE_SYSTEM_NAME is refused by the root's own include chain.
 
-    The refusal comes from BikeHostTarget.cmake, which the root includes after
-    project(), and configure stops before "Configuring done".
+    The refusal comes from BikeHostTarget.cmake through the root's pre-project
+    BikePlatform dispatch, and configure stops before "Configuring done".
     """
     result = _configure_root(tmp_path / "root-build", extra=("-DCMAKE_SYSTEM_NAME=Windows",))
     output = result.stdout + result.stderr
@@ -96,8 +101,8 @@ def test_root_refuses_a_cross_compiling_toolchain(tmp_path: Path) -> None:
     assert "Configuring done" not in output, output
 
 
-@pytest.mark.skipif(sys.platform != "darwin",
-                    reason="the bindings guard is reached only after the Darwin-only numerics step")
+@pytest.mark.skipif(not ROOT_HOST_SUPPORTED,
+                    reason="the root lane requires Darwin arm64 or Linux aarch64")
 def test_root_fails_closed_on_python_bindings(tmp_path: Path) -> None:
     """BIKE_BUILD_PYTHON_BINDINGS=ON from the root is refused by native/CMakeLists.txt.
 

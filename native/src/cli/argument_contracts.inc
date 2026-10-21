@@ -1,4 +1,5 @@
-// Static source/captured-parser contracts; no Python build generator.
+// Static source/captured-parser contracts plus documented native-only flags;
+// no Python build generator. The frozen Python migration contract is separate.
 static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
   "bike-sim": {
     "options": [
@@ -571,6 +572,18 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
       },
       {
         "names": [
+          "--close-on-finish"
+        ],
+        "dest": "close_on_finish",
+        "default": false,
+        "type": "str",
+        "choices": null,
+        "flag": true,
+        "required": false,
+        "positional": false
+      },
+      {
+        "names": [
           "--time-scale"
         ],
         "dest": "time_scale",
@@ -823,7 +836,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
         "positional": false
       }
     ],
-    "help": ""
+    "help": "usage: bike-ride [-h] [options]\n\nNative bicycle simulator.\n  --close-on-finish  Close an interactive physical/research viewer when the run finishes (requires --duration).\n"
   },
   "bike-settle": {
     "options": [

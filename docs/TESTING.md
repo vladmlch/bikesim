@@ -800,14 +800,10 @@ by about `8.72e-5 J`; the planar-arm model lacked
 40,000 steps with residual `0.197922`. Rider-weld load checks measured about
 632 N against a 785 N rider weight.
 
-The 24 failing node IDs, identical in the baseline and current full run, are:
+The 17 failing node IDs, identical in the baseline and current full run, are:
 
 - `tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque`
-- `tests/reference/test_coupled_rider_task.py::test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step`
-- `tests/reference/test_coupled_rider_task.py::test_tissue_damping_does_not_eat_the_muscle_budget`
 - `tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget`
-- `tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms`
-- `tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush`
 - `tests/reference/test_planar_arms.py::test_compiled_topology_has_two_arms_and_two_grip_sites`
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_flat_reaches_25_kmh_within_10_s`
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_motor_follows_the_rider_through_a_shift_without_an_extra_cut`
@@ -815,9 +811,6 @@ The 24 failing node IDs, identical in the baseline and current full run, are:
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_savage_is_ridden_to_the_end`
 - `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]`
 - `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_extreme.toml]`
-- `tests/reference/test_rider_allocation.py::test_healthy_step_allocates_a_feasible_command`
-- `tests/reference/test_rider_allocation.py::test_allocated_wrenches_close_the_rider_dynamics`
-- `tests/reference/test_rider_allocation.py::test_infeasible_intent_keeps_the_physical_bounds`
 - `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[20.0]`
 - `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[40.0]`
 - `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]`

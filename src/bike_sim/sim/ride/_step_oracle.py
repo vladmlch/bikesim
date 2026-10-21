@@ -33,7 +33,6 @@ from bike_sim.sim.ride.physical_observations import (
     constraint_components, sensor_channels, numerical_constraint_powers,
 )
 from bike_sim.sim.ride.physical_energy import mass_observations
-from bike_sim.sim.ride.rider_intent import RiderIntentResolver, signals_from_channels
 from bike_sim.physics.seated_climb import SeatedClimbSignals
 
 
@@ -97,8 +96,6 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
         if self.rider_control.allocation_diagnostics.get('invalid_controller'):
             self.step_violations+=('rider_controller.infeasible',)
     sensors = sensor_channels(self, qvel=v)
-    if self.cfg.seated_climb.enabled:
-        self.rider_intent_signals = signals_from_channels(sensors)
     components.update(actuator_components(m,d))
     if self.rider_control is not None:
         passive=np.zeros(m.nv)
@@ -125,6 +122,11 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
         {'shock_solver_limit':shock_limit,**self.brake.solved_components(m,d)})
     sim.contacts,self.snapshots=self._contacts(final=True,time_s=t,qvel=v)
     tires=tire_channels(self,self.snapshots,qvel=v)
+    # Mirror _advance_physics: proprioceptive wheel loads reach the posture
+    # program's delayed load-share trim, so the signals update follows the
+    # contact solve and carries the tire channels, not the sensor row alone.
+    if self.cfg.seated_climb.enabled:
+        self.update_rider_intent_signals(sensors,tires)
     loss_step=self._loss_increment(components,v,dt)
     self.loss_j+=loss_step
     external_names={'external','rear_drive','road_rolling','aerodynamic','native_contact'}
@@ -199,6 +201,14 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
               'rider_ik_saturation':{} if self.rider_control is None else self.rider_control.saturated_ik,
               'rider_support_targets':{} if self.rider_control is None else self.rider_control.support_diagnostics,
               'contact_crash_cause':contact_crash}
+    # Same published telemetry keys as _advance_physics: every interval carries
+    # the balance observation and the rider joint torque/capacity mirrors.
+    channels['rider_balance']=self._balance_channel(front,rear,braking=braking,
+        rider_enabled=control.rider_enabled)
+    if self.rider_control is not None:
+        channels['rider_joint_torques']=dict(self.rider_control.joint_torques_nm)
+        channels['rider_joint_capacity_nm']=dict(self.rider_control.joint_capacity_nm)
+        channels['rider_lean_limit_rad']=self.rider_control.lean_limit_rad
     self.model_status.observe(sim.steps,t,channels)
     channels['model_status']=self.model_status.as_dict()
     # Preserve original scalar-channel snapshotting after P4 transfers runtime

@@ -40,12 +40,24 @@ def test_crank_task_coordinate_is_appended_and_weighted():
 
 
 def _environment(tmp_path, duration_s):
-    """Welded profile with the experimental coupled task control and 0.5 N.m.s/rad tissue damping."""
+    """Fully welded profile with the experimental coupled task control and 0.5 N.m.s/rad tissue damping.
+
+    The shared profile moved to the pinned plant (spindle/pin/connect) in
+    835a48c and gained a ``joint_passive_damping_nms_rad = 0.0`` row.  The
+    coupled crank-task coordinate only exists for a fully welded rider
+    (``coupled_task_control`` AND weld pedals AND weld saddle AND connected
+    grips), so the test restores the weld attachments and rewrites the
+    damping row in place rather than duplicating the key."""
     from bike_sim.cli import research as research_cli
     text = WELDED.read_text()
     for name in ('joint_envelope_path', 'joint_strength_path'):
         text = text.replace(f'{name} = "', f'{name} = "{WELDED.parent}/')
-    text = text.replace('[articulated]\n', '[articulated]\ncoupled_task_control = true\njoint_passive_damping_nms_rad = 0.5\n')
+    text = (text.replace('pedal_attachment = "spindle"', 'pedal_attachment = "weld"')
+                .replace('saddle_attachment = "pin"', 'saddle_attachment = "weld"')
+                .replace('grip_attachment = "connect"', 'grip_attachment = "weld"')
+                .replace('joint_passive_damping_nms_rad = 0.0',
+                         'joint_passive_damping_nms_rad = 0.5'))
+    text = text.replace('[articulated]\n', '[articulated]\ncoupled_task_control = true\n')
     config = tmp_path/'physics.toml'
     config.write_text(text)
     track = tmp_path/'track.toml'

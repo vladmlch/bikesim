@@ -185,7 +185,12 @@ def test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms(tmp_pa
     # cold equilibrium solve can leave a different allocator warm-start iterate.
     env.reset()
     initial_branch = runtime.rider_control._last_branch
-    initial_solution = runtime.rider_control._last_solution.copy()
+    # The weld allocator caches a warm-start iterate; the closed-form spindle
+    # controller on this pinned plant has no QP, so the probe of "identical
+    # settled controller memory" is the persistent activation filter state.
+    initial_solution = (None if runtime.rider_control._last_solution is None
+                        else runtime.rider_control._last_solution.copy())
+    initial_active = runtime.rider_control.active_state.copy()
     runtime.set_measurement_decimation(1)
     commands = [RideControl(motor_torque_nm=0., human_torque_nm=0. if i < 20 else 5.)
                 for i in range(60)]
@@ -195,7 +200,11 @@ def test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms(tmp_pa
         expected.append(runtime.sample)
     env.reset()
     assert runtime.rider_control._last_branch == initial_branch
-    np.testing.assert_array_equal(runtime.rider_control._last_solution, initial_solution)
+    if initial_solution is None:
+        assert runtime.rider_control._last_solution is None
+    else:
+        np.testing.assert_array_equal(runtime.rider_control._last_solution, initial_solution)
+    np.testing.assert_array_equal(runtime.rider_control.active_state, initial_active)
     runtime.set_measurement_decimation(1)
     actual = []
     for i, command in enumerate(commands):

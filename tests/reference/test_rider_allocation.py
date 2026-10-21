@@ -465,8 +465,30 @@ def test_real_grip_problem_changes_from_remembered_pull_to_press():
     assert branch == remembered and cold.feasible
     np.testing.assert_allclose(second.solution, cold.solution, atol=1e-7)
 
-def _environment(tmp_path, config=WELDED):
+def _welded_config(tmp_path):
+    """Variant of the shared welded-rider profile with the original
+    weld/weld/weld attachments restored.
+
+    These tests assert contracts of the LP response allocator, which only
+    runs for a fully welded rider (``rider_control.compute`` routes to the
+    closed-form law whenever ``pedal_attachment == 'spindle'``).  The shared
+    profile moved to the pinned plant (spindle/pin/connect) in 835a48c, so
+    the tests pin the configuration they were written against; the welded
+    path stays live code reachable through the attachment enums."""
+    text = WELDED.read_text()
+    for name in ('joint_envelope_path', 'joint_strength_path'):
+        text = text.replace(f'{name} = "', f'{name} = "{WELDED.parent}/')
+    text = (text.replace('pedal_attachment = "spindle"', 'pedal_attachment = "weld"')
+                .replace('saddle_attachment = "pin"', 'saddle_attachment = "weld"')
+                .replace('grip_attachment = "connect"', 'grip_attachment = "weld"'))
+    path = tmp_path / 'physics_welded.toml'
+    path.write_text(text)
+    return path
+
+
+def _environment(tmp_path, config=None):
     from bike_sim.cli import research as research_cli
+    config = _welded_config(tmp_path) if config is None else config
     track = tmp_path / 'track.toml'
     track.write_text('name = "probe"\nlength_m = 30.0\nsurface = "hardpack"\n'
                      'grade_profile = { knots = [[0.0, 0.0], [30.0, 0.0]] }\n')
@@ -553,7 +575,9 @@ def test_allocated_wrenches_close_the_rider_dynamics(tmp_path):
     envelope = controller.envelope_forces(model, data)[0]
     known[controller._envelope_dof_adrs] += envelope[controller._envelope_dof_adrs]
     hinge = np.asarray([controller.joints[n][1] for n in controller.joints])
-    known[hinge] -= controller.config.joint_kd_nms_rad*data.qvel[hinge]
+    # Tissue damping lands in dof_damping via passive_damping_nms_rad (the
+    # joint_passive_damping_nms_rad override when set, else joint_kd).
+    known[hinge] -= controller.config.passive_damping_nms_rad*data.qvel[hinge]
     b_torque = np.zeros(model.nv)
     for index, name in enumerate(controller.joints):
         b_torque[controller.joints[name][1]] += tau[index]

@@ -954,3 +954,411 @@ File inspection, JSON/AST inventory and patch applicability are file operations;
 they are not execution of the project. The export manifest records exactly those
 checks and the limitations of reconstruction. Apply the patch to a matching real
 checkout to retain its original history, binary artifacts and existing file modes.
+
+## 2026-10-21 — Task 3.05: Rider allocation family (5 of 7 fixed, 2 stopped on physics rule)
+
+Scope: macOS baseline nodes in `test_rider_allocation.py` (3),
+`test_coupled_rider_task.py` (2), `test_closed_form_rider.py` (1),
+`test_joint_strength.py` (1).
+
+### Reproduction (macOS, before fix)
+
+```
+PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH="$PWD/native/build" \
+  uv run --frozen --group native python -m pytest -q \
+  tests/reference/test_rider_allocation.py \
+  tests/reference/test_coupled_rider_task.py \
+  tests/reference/test_closed_form_rider.py \
+  tests/reference/test_joint_strength.py
+→ 7 failed, 66 passed (44.07 s), exit 1
+```
+
+Signatures identical to `migration/baseline-full.log` (stale-failure family,
+not a fresh regression): `KeyError: 'feasible'`,
+`AttributeError: '_alloc_attachments'`, `TOMLDecodeError` duplicate key,
+motor-on fraction 0.5875 < 0.8, elbow strength violations.
+
+### Root cause — one shared cause, two distinct fix classes
+
+All seven trace to commit `835a48c` ("feat: closed-form seated rider control
+on the pinned plant"), which repurposed `examples/research/viewer_physics_welded.toml`
+from a fully welded rider (`pedal/saddle/grip = weld/weld/weld`) to the pinned
+plant (`spindle/pin/connect`) and added the closed-form `compute()` path.
+`ArticulatedRiderController.compute` dispatches on `self.spindle`
+(`rider_control.py:758`); `_allocation_setup`/`_alloc_attachments` and the
+`'feasible'`/`'solution_*'` diagnostics exist only on the welded LP path
+(`rider_control.py:399`, `1240`, `1331`; `rider_response_allocation.py`).
+
+**Class A — stale fixture profile (test-side fix, 5 nodes).** The allocation
+and coupled-task tests assert contracts of the welded LP response allocator,
+which remains live code reachable through the attachment enums
+(`builder.py:345-388` still emits `weld_foot_*`/`weld_saddle`/`connect_grip_*`;
+`grip 'weld'` migrates to `'connect'` at `physical_config.py:470`). The tests
+referenced the shared profile after its semantics changed. Checks:
+
+- [reproduced] Under a generated weld/weld/weld variant of the profile the
+  full diagnostic contract returns: `feasible=True`,
+  `invalid_controller=False`, all `solution_*` keys, populated
+  `_alloc_attachments`; coupled run `checked=42` (bar ≥20) worst rel err
+  2.95e-11 (bar 1e-3); tissue damping passive 170.1 W < 0.3×899.0 W;
+  `test_command_does_not_read_solved_reactions` bitwise identical (0.0);
+  `test_infeasible_intent` feasible with all torques inside bounds.
+- [source-supported] `coupled = cfg.coupled_task_control and self.welded and
+  self.welded_grip and cfg.saddle_attachment == 'weld'`
+  (`rider_control.py:912`) — unreachable under the pinned profile.
+- [source-supported] `test_coupled_rider_task._environment` inserted a second
+  `joint_passive_damping_nms_rad` key (the TOML gained `= 0.0` in 835a48c) →
+  `TOMLDecodeError`.
+- [reproduced] `test_allocated_wrenches_close_the_rider_dynamics` then failed
+  on its own reconstruction: it subtracted `joint_kd_nms_rad*qvel` while the
+  profile's actual `dof_damping` is `passive_damping_nms_rad` (= 0.0 under
+  the fixture; residual equalled the phantom term, max 32.35).
+
+**Class B — physical-model behaviour on the shipped path (STOP RULE, 2 nodes).**
+
+`test_flat_launch_delivers_crank_torque` (measured, 6 s flat launch, late
+window t>2 s, 400 rows): `mean(human)=14.92 Nm` (bar ≥10 ✓),
+`mean(motor>0)=0.5875` (bar ≥0.8 ✗), `vmax=5.37 m/s` (bar ≥4.17 ✓),
+`allocation_invalid` all false ✓. The `connect_foot_*` torque sensor reads
+delivered crank torque with dead zones below the 4 Nm `engage_torque_nm`
+gate for ~40 % of late samples (clusters of ~0.2–0.3 s at ~103 rpm cadence);
+delivery does not track the commanded `crank_task` (task 24.5→sensed 2.4;
+task 3.4→sensed 46.4). The era audit
+`docs/superpowers/audits/2026-10-04-realistic-pedelec-drive.md` records the
+same signature as "an unresolved new delivery regression" — a known physical
+gap of the closed-form leg law, not a test or sensor defect.
+
+`test_stepped_effort_respects_strength_and_the_power_budget` (measured):
+`rider_positive_power_w` ≤ 450 ✓, `rider_passive_power_w`=0 ✓, but
+`rider_strength_violations=('rider_elbow_left','rider_elbow_right')` from env
+step 28 (sim.steps 232). At control tick 228 the elbow velocity was
++2.74 rad/s *against* the −34.63 Nm held command (eccentric → cap 43.24,
+`limit_torques` correctly unclipped, `saturated=False`); held across the
+4-step period, velocity reversed to −1.62 (concentric → cap 22.64) and
+−3.05 (cap 14.89), so `solved_effort` records delivered-over-capacity at the
+later interval-start states. Under a welded variant the same 200-step
+scenario produces zero violations (the LP allocates different torques). Any
+fix is a model or contract decision: margin the closed-form law against
+within-period capacity change, re-clip held torques per interval, re-scope
+the diagnostic to the command state, or re-scope the test to the welded path.
+
+### Fix applied (Class A, test files only; no assertions weakened)
+
+- `tests/reference/test_rider_allocation.py`: added `_welded_config(tmp_path)`
+  producing the weld/weld/weld variant (absolute asset paths) and defaulted
+  `_environment` to it; corrected the dynamics reconstruction to
+  `config.passive_damping_nms_rad` (the parameter that actually lands in
+  `dof_damping`; `joint_kd` was only correct before the override key existed).
+- `tests/reference/test_coupled_rider_task.py`: `_environment` now rewrites
+  the existing `joint_passive_damping_nms_rad` row to 0.5 (was: duplicate
+  key → TOMLDecodeError), injects `coupled_task_control = true`, and restores
+  weld/weld/weld attachments so the coupled path engages.
+
+Written argument for test-side fix: the tested subject (the welded LP
+allocator contract) is unchanged live code; only the shared fixture profile
+was repurposed. Pinning the welded configuration restores the intended code
+path with every original assertion intact, and the `passive_damping_nms_rad`
+correction makes the test's own dynamics reconstruction name the real
+parameter — the assertion (residual ≈ 0) is unchanged.
+
+### Verification
+
+```
+same pytest command after fix → 2 failed, 71 passed (30.59 s), exit 1
+remaining: test_flat_launch_delivers_crank_torque (0.5875 < 0.8),
+           test_stepped_effort… (rider_elbow_left/right)   [STOP RULE]
+```
+
+macOS baseline list in `docs/TESTING.md` updated 24 → 19 (anchor phrases
+preserved). Linux container `bike-dev-python-free-cpp` does not exist on this
+machine (only the unrelated `bike-dev-python-free-cpp-numerics` lane), so the
+container verification named by the task could not run; the fixed nodes are
+Python-oracle environment tests whose behaviour is platform-independent, and
+the container lane is expected to reproduce the same result.
+
+### Pending user decision (physics stop rule)
+
+1. `test_flat_launch_delivers_crank_torque`: fix the closed-form law's
+   crank-torque delivery (control-law change), re-express the ≥0.8 motor-on
+   bar with a written physical argument, or triage `drop` — per the
+   stopped-task states.
+2. `test_stepped_effort_respects_strength_and_the_power_budget`: margin or
+   re-clip inside the closed-form law / control clock, re-scope
+   `rider_strength_violations` to the command state, or pin the test to the
+   welded variant like Class A. Measured values above.
+
+## 2026-10-22 — Task 3.06: Seated pedalling and posture (0 of 5 fixed, all 5 stopped on physics rule)
+
+Nodes (macOS baseline):
+- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[20.0]`, `[40.0]`, `[60.0]`
+- `tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock`
+- `tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only`
+
+### Reproduction (macOS)
+
+```bash
+PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH="$PWD/native/build" \
+uv run --frozen --group native python -m pytest -q \
+  tests/reference/test_seated_pedaling_cycle.py \
+  tests/reference/test_seated_posture_program.py
+# → 5 failed, 20 passed in 10.32 s, exit 1
+# 4 pedaling nodes: InvalidReferenceRun at t=0.005: ('energy.constraint_work',)
+# posture node:     InvalidReferenceRun at t=0.003: ('rider_strength.rider_elbow_left',
+#                                                   'rider_strength.rider_elbow_right')
+```
+
+The same five IDs fail in `migration/baseline-full.log` — baseline, not new.
+
+### Dead-spot crank-freeze hint: checked, ruled out (reproduced + source-supported)
+
+The plan hinted at `motor_clutch` opening near crank-vertical with legs
+stalling and coast hysteresis toggling ~4/s. It cannot explain these nodes:
+`viewer_physics_welded.toml` sets `motor_clutch = false` (line 32), so no
+clutch exists in these runs, and every failure fires at t=0.003–0.005 —
+the first strict period close — before the crank has turned a measurable
+fraction of a revolution. The tests never reach their crank/coast
+assertions; the failing item is the strict reference monitor at startup.
+
+### Root cause — startup transient violates two per-step monitor contracts (reproduced)
+
+Both failure classes reproduce inside the first control period(s) of a
+*correctly settled* run (`sim.equilibrium['residual_qacc']` = 0.0217 flat /
+0.035 on grade, `cache_hit` — i.e., the equilibrium solve converged).
+
+**(A) `energy.constraint_work` (4 pedaling nodes).**
+`period_buffer.publish_close` accumulates `rt.constraint_absolute_j` =
+Σ|efc·Jv|·dt over all constraint rows and asserts
+`absolute ≤ max(1e-8, 0.01·source_positive_j)` at every period close
+(`energy_ledger.constraint_work_ok`, `period_buffer.py:250-259`).
+
+Measured at the first close (t=0.005, flat, human 20 Nm):
+- `constraint_absolute_j` = **4.478 mJ**; budget = 0.272 mJ
+- `source_positive_j` = 27.15 mJ (all muscle; motor 0)
+- Ratio ≈ **16.5 %** of source work — 16× over the 1 % budget.
+
+The dominant rows are the soft equality constraints doing real spring work
+during the settle→run transition: `connect_foot_front/rear` (equality 2/3),
+`connect_saddle` (4), grip welds (5/6), suspension closure (0/1) and
+`tendon_limit:0` (`ideal_mid_drive_freehub`). With `solref` time constants
+~2.5 ms these are spring-dampers, not rigid joints; the episode's initial
+state carries small residual constraint deflections and the episode command
+(`human_torque_nm` 20–60 Nm, posture servo) re-loads the weld chain, so the
+welds exchange ~1 W while `source_positive` is still ramping from zero. The
+cumulative-integral form of the check is structurally strictest at t=0 —
+absolute constraint work has a floor from the settle residual while the
+source integral is ≈0. In diagnostic mode the run does not recover: the
+posture servo oscillation grows (elbows reach ±3.1 rad/s,
+qacc ≈ ±993 rad/s² at t=0.075) and the episode is stopped by
+`numerical_quality` at t=0.075 with `residual_j` = 1.757 J,
+`constraint_work_ratio` = 0.058 — the residual growth is partly a
+f·v_in bookkeeping undercount (≈½·F·a·dt² per step uncounted during
+intra-step acceleration), which is itself measured, not a proved
+conservation defect.
+
+**(B) `rider_strength.rider_elbow_*` (posture node).**
+`compute()` (spindle path) clips each joint torque to the Hill
+`directional_capacity` at the *tick instant* via `limit_torques`
+(rider_control.py:823/827 + `finalize_effort` rider_effort.py:44-45), then
+`control_clock.hold()` holds it for `steps_per_period` physics steps
+(10 × 0.5 ms here). `_effort_observations` evaluates `strength_violations`
+at *every* raw's recorded incoming state — a stricter contract than the
+controller implements.
+
+Measured (18 % grade env, dt=0.0005):
+- tick-0 held elbow command = **−23.34 Nm**, legal at v=0 (cap 40.35)
+- elbow accelerates ≈ −370 rad/s per step under the held torque;
+  capacity derates concentrically: v=−1.78 → cap 21.62 < 23.34 →
+  first violation at raw5 (t=0.003), growing to cap 14.78 at v=−3.10
+- the command is a PD+bias posture servo term
+  (`kp·err − kd·v + qfrc_bias`; kp=600, kd=15): the settle converged under
+  `control=None` (default upright posture) while the episode's
+  seated-climb program resolves `torso_lean_rad=0.01` at t=0, which
+  shifts the arm-chain IK target (`_upper_targets`) by ≈ −0.036 rad at the
+  elbow → the −23 Nm bracing kick.
+
+Same mechanism previously stop-ruled for
+`test_stepped_effort_respects_strength_and_the_power_budget` (Task 3.05
+section above): a held command legal at its tick becomes illegal as the
+joint speed evolves within the period.
+
+### Checks (≥2 independent, labelled)
+
+1. **reproduced**: strict-mode failures at t=0.005 / t=0.003 with the exact
+   violation keys above; identical set in `migration/baseline-full.log`.
+2. **reproduced**: instrumented per-raw capacity/torque/speed table —
+   `rider_strength` fires only once |v| derates the concentric capacity
+   below the held |torque|; the pedaling nodes' `constraint_absolute_j` is
+   dominated by weld/connect rows during the settle transient.
+3. **source-supported**: the monitor contract is per-raw
+   (`_effort_observations`, period_buffer.py:170) while the enforcement is
+   per-tick (`limit_torques` + `control_clock.hold`), rider_control.py:369.
+4. **internal-precondition**: equilibrium solve converged
+   (residual_qacc 0.022–0.035 ≤ 0.05 tol) under `steady_state` forces with
+   the *default* `RideControl()` — not the episode's resolved posture/effort.
+5. **unresolved**: whether the growing servo oscillation (±3 rad/s elbows,
+   `numerical_quality` stop at 75 ms) reflects an intended underdamped
+   posture servo or a missing rate/velocity limit — a model question; the
+   whip is real dynamics, not a bookkeeping artifact (though ~2 J of the
+   reported residual is f·v_in undercount during whip acceleration).
+
+### Physics stop rule — invoked; no fix applied
+
+Every remedy is a physical-model or contract/threshold decision, so per the
+shared rule this task records measured values and asks the user. Candidate
+decisions:
+
+1. **Settle under the resolved initial control** — run
+   `solve_physical_equilibrium` (or a post-settle re-equilibration) with the
+   episode's actual first `RideControl` (posture program output, human
+   effort ramp). Removes the settle→run command mismatch for both classes.
+   *Model change* (physical initial condition).
+2. **Per-interval envelope enforcement** — re-clip the held torque against
+   `directional_capacity` at each physics step (or shorten the control
+   period / rate-limit posture-induced joint torque). *Controller model
+   change*; affects `rider_control.compute`/`finalize_effort` and is
+   mirrored in the C++ port (check scope vs Task 3.05-owned files —
+   `rider_response_allocation.py` is untouched here).
+3. **Constraint-work accounting** — track weld/connect spring deflection as
+   a `stored_terms` elastic channel and/or exempt it from
+   `constraint_absolute_j`; or grow the 1 % integral budget /
+   source-positive floor at startup. *Ledger/threshold change*.
+4. **Test-scope change** — start the strict budgets after a declared
+   settle window, or re-scope `rider_strength` to tick states. *Threshold
+   change* — needs the written physical argument and user approval.
+5. **drop** — triage in `test-port-map.json` if the startup transient is
+   accepted as out-of-scope for the strict monitor.
+
+### Verification status
+
+- macOS: reproduction above; **no code or threshold changed**, so the
+  targeted command still reports 5 failed / 20 passed.
+- Linux lane: `tools/linux/container.sh sync` → `docker: Unable to find
+  image 'bike-dev-linux:24.04'`, exit 125. No `bike-dev-python-free-cpp`
+  container exists on this machine (only the unrelated
+  `bike-dev-python-free-cpp-numerics` lane). Lane unavailable — recorded,
+  not blocking.
+- `docs/TESTING.md`: unchanged — the five nodes remain listed; the
+  macOS baseline count stays at 19 under
+  `failing node IDs, identical in the baseline`.
+
+## 2026-10-22 — Task 3.08: Period buffer (both nodes fixed)
+
+Nodes: `tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms`
+and `::test_runtime_batch_matches_preserved_scalar_step_and_flush`.
+
+### Reproduction
+
+```
+PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH="$PWD/native/build" \
+  uv run --frozen --group native python -m pytest -q tests/reference/test_period_buffer.py
+```
+Before the fix: 2 failed / 8 passed — `AttributeError: 'NoneType' object has
+no attribute 'copy'` at the `_last_solution` probe (test line 188), and
+`0.44856197998153463 == 0.4486492160970741 ± 1e-9` on the energy channel
+(bitwise-identical to `migration/baseline-full.log`).
+
+### Root cause (single source commit `835a48c`, two stacked defects)
+
+`835a48c` ("closed-form seated rider control on the pinned plant") changed
+the pinned plant and production `_advance_physics` without updating either
+the test's allocator probe or the preserved scalar oracle `_step_oracle.py`.
+
+1. **`_last_solution` probe vs the spindle controller** — the commit flipped
+   `examples/research/viewer_physics_welded.toml` `pedal_attachment` weld →
+   spindle. Under `self.spindle`, `compute` takes the closed-form path
+   (`rider_control.py:758`) and never reaches `allocate` /
+   `_select_allocation_branch` — the only writers of `_last_branch` /
+   `_last_solution` (rider_control.py:1556-1557). `reset_activation`
+   (rider_control.py:624-626) therefore leaves both `None` permanently, and
+   the test's unconditional `.copy()` raised. The probe's real contract —
+   "both paths see identical settled controller memory" — survives: under
+   the closed-form controller the persistent mutable state is the
+   activation filter `active_state` (`reset_activation` clears it;
+   `reset()` repopulates it from the last `effort_diagnostics`).
+
+2. **Scalar oracle dropped the tire-load signal** — the same commit moved
+   production's per-step intent-signal update to
+   `update_rider_intent_signals(sensors, tires)` after `tire_channels`
+   (physical_runtime.py:701-703), while the oracle kept the stale
+   `signals_from_channels(sensors)` with no `tires` key
+   (`_step_oracle.py:100-101`). `signals_from_channels` then yields
+   `front_load_share=None` (rider_intent.py:14-16). Once the posture
+   program's `trim_dead_time_s = 0.2 s` elapses, the batch path's
+   `_delayed_load_share` stays numeric and `trim_rad` keeps integrating,
+   while the oracle's samples deque drains to `None` entries and its
+   `trim_rad` freezes (rider_program.py:109-116). The differing
+   `RiderPosture.torso_lean_rad` produces different rider muscle torques.
+
+3. **Oracle missing published channel keys** — `5374cc7` plus `835a48c`
+   added `rider_balance`, `rider_joint_torques`, `rider_joint_capacity_nm`
+   and `rider_lean_limit_rad` to `_advance_physics` raw channels
+   (physical_runtime.py:742-747); the oracle's `channels` dict never
+   gained them, so the `set(decimated[-1].channels) ==
+   set(expected[-1].channels)` line could never pass.
+
+### Checks (≥2 independent, labelled)
+
+1. **reproduced**: instrumented probe — `compute` invoked 2× per reset
+   (both `advance=False`), `allocate`/`_select_allocation_branch` invoked
+   0×, `_last_branch`/`_last_solution` `None` after `make_environment` and
+   after `env.reset()`; `c.spindle is True`.
+2. **source-supported**: `git show 835a48c` carries the weld→spindle flip
+   in the test's config and the
+   `signals_from_channels(sensors)` → `update_rider_intent_signals(sensors,
+   tires)` move in `_advance_physics`; `_step_oracle.py` untouched since
+   `d93e06c`. `git log -S 'rider_joint_torques'` / `-S 'rider_balance'`
+   date the channel keys to `835a48c`/`5374cc7`, again production-only.
+3. **reproduced**: per-interval diff of the two paths — every energy field
+   bitwise-equal through interval 419; first divergence at interval 420
+   (t = 0.2105 s) with `qpos`/`qvel` still bitwise identical
+   (`max|Δ| = 0.0`), `muscle_signed_j` off by +5.49e-3 J,
+   `constraint_absolute_j` by −8.72e-5 J, `muscle_positive_j` equal.
+   420 is exactly one intent tick after the 0.2 s trim dead-time boundary
+   (step 400): the oracle's `_load_samples` head `(0.01, None)` pops at the
+   k = 21 update and `_delayed_load_share` goes `None`, freezing
+   `trim_rad`, while production integrates one more
+   `lean_trim_gain_rad_s*(0.30 − share)*dt` increment.
+4. **internal-precondition**: `active_state` after two consecutive
+   `env.reset()` calls is bitwise identical (probe), and `rider_intent`'s
+   `state_dict()` round-trips equal — the closed-form controller's
+   settled-cache analogue is deterministic across resets.
+
+### Fix
+
+- `src/bike_sim/sim/ride/_step_oracle.py`: mirror production — call
+  `self.update_rider_intent_signals(sensors, tires)` after the
+  `tire_channels` row (dropping the stale no-tires `signals_from_channels`
+  call and its dead `rider_intent` import); add `rider_balance` via
+  `self._balance_channel(front, rear, braking=braking,
+  rider_enabled=control.rider_enabled)` and the three
+  `rider_joint_*`/`rider_lean_limit_rad` keys under the same
+  `rider_control is not None` guard as `_advance_physics`. The oracle is a
+  preserved-scalar reference for the period-buffer contract tests only;
+  production arithmetic is untouched (no macOS numeric change).
+- `tests/reference/test_period_buffer.py`: the warm-start probe now
+  tolerates the allocator-less controller — `_last_solution` is captured
+  `None`-safely, the post-reset assertion requires `None → None`
+  (and array equality when a weld allocator populates it again), and
+  `active_state` is pinned bitwise across the two resets so the
+  "identical settled-cache reset" check stays non-vacuous under the
+  closed-form controller.
+
+### Verification
+
+```
+PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH="$PWD/native/build" \
+  uv run --frozen --group native python -m pytest -q tests/reference/test_period_buffer.py
+→ 10 passed, 6 warnings in ~21 s   (exit 0, macOS arm64)
+```
+
+All 10 nodes pass, including the pre-existing energy.constraint_work
+`RuntimeWarning` at t = 0.005 s that both paths report identically.
+
+- `docs/TESTING.md`: the two node IDs removed from the macOS baseline
+  block; count updated 19 → 17; anchor sentence
+  `failing node IDs, identical in the baseline` and the following `## `
+  heading kept verbatim.
+- Linux lane: no `bike-dev-python-free-cpp` container exists on this
+  machine — container verification skipped per the task instruction.
+- Physics stop rule: not invoked — both causes are oracle/test
+  instrumentation drift, not physical-model choices.

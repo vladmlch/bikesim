@@ -29,15 +29,56 @@
         "numpy_version": "2.5.2",
         "symbols": {
           "ddot": "cblas_ddot",
+          "ddot_ilp64": "cblas_ddot$NEWLAPACK$ILP64",
           "dgelsd": "dgelsd$NEWLAPACK$ILP64",
           "dgemm": "cblas_dgemm",
-          "dgemv": "cblas_dgemv"
+          "dgemv": "cblas_dgemv",
+          "dgesv": "dgesv$NEWLAPACK$ILP64",
+          "dsyevd": "dsyevd$NEWLAPACK$ILP64",
+          "zdotu_sub": "cblas_zdotu_sub$NEWLAPACK$ILP64"
         }
       },
       "platform": {
         "libc": null,
         "machine": "arm64",
         "system": "Darwin"
+      }
+    },
+    "linux-aarch64": {
+      "numerics": {
+        "backend": "NUMPY_OPENBLAS",
+        "blas_integer_bits": 64,
+        "interp": {
+          "lowering": "separate"
+        },
+        "lapack_integer_bits": 64,
+        "library_paths": [
+          {
+            "identity_kind": "file",
+            "path": "numpy.libs/libscipy_openblas64_-bb25d554.so",
+            "role": "blas_lapack",
+            "sha256": "5dafca6786e1e366f29ff5e57a6b3beb66a4a02cadf899f51b38fa9fb22c5798"
+          }
+        ],
+        "multiply_broadcast": {
+          "nan_winner": "element"
+        },
+        "numpy_version": "2.5.2",
+        "symbols": {
+          "ddot": "scipy_cblas_ddot64_",
+          "ddot_ilp64": "scipy_cblas_ddot64_",
+          "dgelsd": "scipy_dgelsd_64_",
+          "dgemm": "scipy_cblas_dgemm64_",
+          "dgemv": "scipy_cblas_dgemv64_",
+          "dgesv": "scipy_dgesv_64_",
+          "dsyevd": "scipy_dsyevd_64_",
+          "zdotu_sub": "scipy_cblas_zdotu_sub64_"
+        }
+      },
+      "platform": {
+        "libc": "glibc",
+        "machine": "aarch64",
+        "system": "Linux"
       }
     }
   },

@@ -420,3 +420,91 @@ No project build, pytest/CTest suite, research calculation or L1/L2/L3
 gate is run for this source/history integration. Task 1.03's build/checker
 verification and the phase checkpoints remain open. The 22 research Python
 files and OD-1 are unchanged; no extra Python file is introduced here.
+
+## 2026-10-21 — Task 1.10 measured numerics-record regeneration
+
+Source revision: `cb057ef` (the actual Task-1.03 merge).
+Generator `tools/native_dependencies.py` SHA-256:
+`0204c0543ba6213224b7d84766e7d50e593c1cb665a3a5dcf97f22e69a6ff226`.
+The user's follow-up request to perform items 1 and 2 authorized the
+numerics probes needed for regeneration. No simulation, project test
+suite, CMake configure or full gate was run.
+
+### Measurement identities and outcomes
+
+| Fact | macOS arm64 | Linux aarch64 |
+|---|---|---|
+| Interpreter | CPython 3.13.12, existing checkout `.venv` | CPython 3.13.16, image-owned `/opt/bike-venv` |
+| NumPy / MuJoCo | 2.5.2 / 3.12.0 | 2.5.2 / 3.12.0 |
+| Provider | Accelerate; macOS build 26A434, SDK build 26A425 | NumPy scipy-openblas ILP64; glibc 2.39 |
+| ABI-control compiler | Apple clang 21.0.0 (clang-2100.3.34.2) | Ubuntu GCC 13.3.0 |
+| ABI compile and link/run | pass / pass | pass / pass |
+| NumPy interpolation | contracted, 1511 distinguishing queries / 4096 | separate, 1470 / 4096 |
+| Broadcast NaN winner | scalar, 64 distinguishing lanes | element, 64 distinguishing lanes |
+| SciPy interposition | checked, stable (SciPy 1.17.0) | checked, stable (SciPy 1.17.0) |
+
+Both ABI controls reported:
+
+```text
+BIKE-ABI-OK ddot=32 dgemv=[10 26 42] dgemm=[4 5;10 11] ddot_ilp64=32 zdotu_sub=[-18 92] dgesv=[1 2] dsyevd=[1 3] dgelsd_rank=1 x=[0.6 1.2]
+```
+
+Docker Desktop was initially stopped. `open -a Docker` exited 1 (application
+not found); opening the outer and inner application paths also exited 1
+with `kLSNoExecutableErr`. `docker desktop start` subsequently exited 0
+and the daemon became available. No installation/settings repair was made.
+An existing image was reused for this measurement only:
+`bike-linux-image:port`, image ID
+`sha256:959091e9b453461be335eb31edadc63e36269b827755994f6b54d3796703ca69`,
+architecture `arm64`, OS `linux`. A new container
+`bike-dev-python-free-cpp-numerics` has no bind mounts; only the current
+generator and generated macOS record were copied into it. Existing
+containers and worktrees were retained. This is not qualification of the
+new `tools/linux/Dockerfile` recipe.
+
+### Commands and record checks
+
+The first macOS attempt with `--python .venv/bin/python3` exited 1:
+`selected interpreter must be an absolute path`. The successful commands
+use the absolute interpreter. An initial container invocation with bare
+`uv` exited 127 because image PATH lacks its directory; subsequent commands
+use `/root/.local/bin/uv`.
+
+All commands in this block exited 0:
+
+```sh
+uv run --frozen --no-sync --group native python tools/native_dependencies.py --python "$PWD/.venv/bin/python3" --output /private/tmp/bike-numerics-darwin-measured.json
+uv run --frozen --no-sync --group native python tools/native_dependencies.py --python "$PWD/.venv/bin/python3" --write-numerics-record /private/tmp/bike-numerics-regenerated.lock.json
+docker exec bike-dev-python-free-cpp-numerics /root/.local/bin/uv run --no-project --no-sync --python /opt/bike-venv/bin/python3 python tools/native_dependencies.py --python /opt/bike-venv/bin/python3 --output /src/linux-numerics-probe.json
+docker exec bike-dev-python-free-cpp-numerics /root/.local/bin/uv run --no-project --python /opt/bike-venv/bin/python3 python tools/native_dependencies.py --python /opt/bike-venv/bin/python3 --write-numerics-record /src/native/numerics.lock.json
+uv run --frozen --no-sync --group native python tools/native_dependencies.py --check-numerics-record native/numerics.lock.json --probe-document /private/tmp/bike-numerics-darwin-measured.json
+docker exec bike-dev-python-free-cpp-numerics /root/.local/bin/uv run --no-project --python /opt/bike-venv/bin/python3 python tools/native_dependencies.py --check-numerics-record native/numerics.lock.json --probe-document /src/linux-numerics-probe.json
+```
+
+The existing four-operation lock was rejected against the real macOS probe
+(exit 1, expected): `numerics.symbols must map exactly ('ddot', 'dgemv',
+'dgemm', 'dgelsd', 'dgesv', 'dsyevd', 'ddot_ilp64', 'zdotu_sub')`.
+The regenerated combined lock passes the same check, printing
+`darwin-arm64` on macOS and `linux-aarch64` in the container.
+
+The tool generated a fresh macOS file at the temporary path, then the
+Linux writer preserved that entry and appended its measured record. The
+combined generated file was copied back without hand-editing. JSON
+comparison proves every pre-existing Darwin fact is unchanged after
+removing only the four newly added symbol fields. The Linux record has
+eight symbols, BLAS/LAPACK widths 64/64 and exactly the planned provider
+SHA-256 `5dafca6786e1e366f29ff5e57a6b3beb66a4a02cadf899f51b38fa9fb22c5798`.
+
+Generated `native/numerics.lock.json` SHA-256:
+`19f542e9a581ef5b47379ab1420b6104f5bac72cf270860421c5ae5acd0539bc`.
+Full machine-specific probe documents remain in ignored local evidence:
+
+- `.work/evidence/numerics-2026-10-21/darwin-arm64.json`, SHA-256
+  `b2124b4e70d181ed3499219d9e34f4e212e8d337be9fc5cd49c7f942f57ee517`;
+- `.work/evidence/numerics-2026-10-21/linux-aarch64.json`, SHA-256
+  `7b7913529dd7409012f9a1cd1291094e02b900a5b6d453c0eedf0943454ea358`.
+
+Task 1.10's record-generation requirement is fulfilled. Its portability
+pytest/build/configure checks, Task 1.03's L1 checks and all phase
+checkpoints remain open; no task checkbox or qualification status is
+advanced by these successful numerics controls alone.

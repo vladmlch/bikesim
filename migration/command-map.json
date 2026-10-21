@@ -1,5 +1,5 @@
 {
-  "source": "pyproject.toml [project.scripts]",
+  "source": "pyproject.toml [project.scripts] plus explicit completion-plan native tool replacements",
   "entries": [
     {
       "command": "bike-sim",
@@ -231,7 +231,114 @@
         "installed no-Python execution"
       ],
       "status": "review"
+    },
+    {
+      "command": "bike-recording golden freeze",
+      "source_path": "tools/golden_episode.py",
+      "entry_symbol": "capture_episode",
+      "owner_task": "T53",
+      "parser_contract_acquisition": "T01; source inspection only in current session",
+      "native_targets": [
+        "native/src/golden/capture.cpp",
+        "native/src/golden/episode.cpp",
+        "native/src/cli/recording_golden.cpp",
+        "native/tests/reference/test_golden_episode_tool.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "source defaults, per-module options and invalid combinations",
+        "representative successful invocation",
+        "two-platform source-oracle and native comparison",
+        "installed no-Python execution"
+      ],
+      "status": "source_implemented_pending_qualification",
+      "completion_task": "3.03",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ],
+      "verification": "Not compiled, configured or executed in this session"
+    },
+    {
+      "command": "bike-recording golden compare",
+      "source_path": "tools/episode_compare.py",
+      "entry_symbol": "main",
+      "owner_task": "T53",
+      "parser_contract_acquisition": "T01; source inspection only in current session",
+      "native_targets": [
+        "native/src/golden/episode.cpp",
+        "native/src/cli/recording_golden.cpp",
+        "native/tests/reference/test_golden_episode_codec.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "source defaults, per-module options and invalid combinations",
+        "representative successful invocation",
+        "two-platform source-oracle and native comparison",
+        "installed no-Python execution"
+      ],
+      "status": "source_implemented_pending_qualification",
+      "completion_task": "3.03",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ],
+      "verification": "Not compiled, configured or executed in this session"
+    },
+    {
+      "command": "bike-measure-realtime",
+      "source_path": "tools/measure_realtime.py",
+      "entry_symbol": "main",
+      "owner_task": "T53",
+      "parser_contract_acquisition": "T01; source inspection only in current session",
+      "native_targets": [
+        "native/src/tools/measure_realtime_main.cpp",
+        "native/src/runtime/realtime_measurement.cpp",
+        "native/src/runtime/realtime_driver.cpp",
+        "native/src/runtime/realtime_options.cpp",
+        "native/src/runtime/realtime_command.cpp",
+        "native/src/runtime/realtime_provenance.cpp",
+        "native/src/runtime/realtime_report.cpp",
+        "native/tests/reference/test_measure_realtime.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "source defaults, per-module options and invalid combinations",
+        "representative successful invocation",
+        "two-platform source-oracle and native comparison",
+        "installed no-Python execution"
+      ],
+      "status": "source_implemented_pending_qualification",
+      "completion_task": "3.04",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ],
+      "verification": "Not compiled, configured or executed in this session"
+    },
+    {
+      "command": "bike-validate",
+      "source_path": "src/bike_sim/validation/benchmarks.py",
+      "entry_symbol": "main and explicit registry of module public operations",
+      "owner_task": "T54",
+      "parser_contract_acquisition": "T01; source inspection only in current session",
+      "native_targets": [
+        "native/src/validation/registry.cpp",
+        "native/src/validation/acceptance.cpp",
+        "native/src/tools/validate_main.cpp",
+        "native/tests/migration/test_t54.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "source defaults, per-module options and invalid combinations",
+        "representative successful invocation",
+        "two-platform source-oracle and native comparison",
+        "installed no-Python execution"
+      ],
+      "status": "partial_source_implementation",
+      "completion_task": "3.40",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ],
+      "verification": "Not compiled, configured or executed in this session"
     }
   ],
-  "status": "planned; parser/default details must be captured in T01"
+  "status": "Original parser/default acquisition still open; Phase-3 native source additions do not establish CLI or platform qualification"
 }

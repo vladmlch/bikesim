@@ -1,0 +1,666 @@
+{
+  "date": "2026-10-21",
+  "source_plan": "docs/superpowers/plans/2026-10-20-cpp-linux-completion.md",
+  "phase": 3,
+  "phase_complete": false,
+  "work_scope": "Source implementation tranche; both unimplemented source batches and mandatory runtime gates remain",
+  "user_constraint": "No compilation or project execution; applies to compiler probes, configure, tests, applications, containers and project scripts",
+  "verification": {
+    "compiler_invoked": false,
+    "syntax_only_compile": false,
+    "cmake_configured": false,
+    "pytest_collected_or_run": false,
+    "ctest_run": false,
+    "applications_or_simulations_run": false,
+    "docker_run": false,
+    "sanitizer_coverage_or_packages_run": false,
+    "new_oracle_payloads_generated": false,
+    "l1_l2_l3_closed": false
+  },
+  "static_inventory": {
+    "baseline_test_functions": 2369,
+    "initial_map_records": 1611,
+    "previously_unmapped_functions": 758,
+    "new_capture_hook_functions": 12,
+    "current_test_functions_and_methods": 2381,
+    "top_level_functions": 2365,
+    "class_methods": 16,
+    "baseline_python_files": 532,
+    "initial_removal_rows": 459,
+    "previously_missing_removal_rows": 73,
+    "new_python_sources": 3,
+    "current_removal_rows": 535,
+    "test_dispositions": {
+      "planned": 2105,
+      "port": 183,
+      "drop": 35,
+      "golden": 58
+    },
+    "validation_source_modules": 30,
+    "validation_source_statuses": {
+      "full": 12,
+      "partial": 18
+    }
+  },
+  "source_task_statuses": {
+    "source_implemented": 13,
+    "needs_execution_to_diagnose": 6,
+    "partial_source": 11,
+    "not_implemented": 23
+  },
+  "od1": {
+    "decision": "Existing plan default: delete_with_python after future qualification and preservation of outputs/provenance",
+    "research_python_files": 22,
+    "files_deleted": 0
+  },
+  "reconstruction_limits": [
+    "Repomix omits binary payloads and original Git objects",
+    "Original branch ancestry cannot be independently verified from this text export",
+    "EOF/executable metadata are not reliable Git-blob evidence; final export records normalization",
+    "Static function counts are not collected pytest node counts"
+  ],
+  "records": [
+    {
+      "task": "3.01",
+      "title": "Golden capture hook (Python) + golden readers and reference-test registration (C++)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "Opt-in Python capture and strict C++ sidecar/payload readers, explicit shapes and CTest helper; captures and execution missing.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-golden-review.md"
+      ]
+    },
+    {
+      "task": "3.02",
+      "title": "Complete the test-port map",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "Complete supplied-text inventory, qualified class names, all Python ledger rows and nine binding-graph source mappings; actual CTest collection and checkout blob verification unavailable.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.03",
+      "title": "`bike-recording golden freeze|compare` (replaces `tools/golden_episode.py` + `tools/episode_compare.py`)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "Native episode capture/save/load/compare and recording CLI, all nine original episode regression functions (ten cases), independent live force observation and explicit Python capture recipe; real two-platform pinned artifacts and execution absent.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-golden-review.md",
+        "migration/cpp-linux-phase3-episode-ports.md"
+      ]
+    },
+    {
+      "task": "3.04",
+      "title": "`bike-measure-realtime` (replaces `tools/measure_realtime.py` + `src/bike_sim/sim/realtime_measurement.py`)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "Whole-boundary realtime library/CLI, report/comparability/provenance, real-driver timeout semantics and native regression sources; no measured RTF.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-realtime-review.md"
+      ]
+    },
+    {
+      "task": "3.05",
+      "title": "Rider allocation family",
+      "source_status": "needs_execution_to_diagnose",
+      "scope_and_remaining_work": "Historical baseline requires reproduction and measured diagnosis; current user prohibits execution. No new physics, tolerance or acceptance change is claimed.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.06",
+      "title": "Seated pedalling and posture",
+      "source_status": "needs_execution_to_diagnose",
+      "scope_and_remaining_work": "Historical baseline requires reproduction and measured diagnosis; current user prohibits execution. No new physics, tolerance or acceptance change is claimed.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.07",
+      "title": "Rider welds and planar arms",
+      "source_status": "needs_execution_to_diagnose",
+      "scope_and_remaining_work": "Historical baseline requires reproduction and measured diagnosis; current user prohibits execution. No new physics, tolerance or acceptance change is claimed.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.08",
+      "title": "Period buffer",
+      "source_status": "needs_execution_to_diagnose",
+      "scope_and_remaining_work": "Historical baseline requires reproduction and measured diagnosis; current user prohibits execution. No new physics, tolerance or acceptance change is claimed.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.09",
+      "title": "Realistic pedelec acceptance",
+      "source_status": "needs_execution_to_diagnose",
+      "scope_and_remaining_work": "Historical baseline requires reproduction and measured diagnosis; current user prohibits execution. No new physics, tolerance or acceptance change is claimed.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.10",
+      "title": "Realtime gate",
+      "source_status": "needs_execution_to_diagnose",
+      "scope_and_remaining_work": "Historical baseline requires reproduction and measured diagnosis; current user prohibits execution. No new physics, tolerance or acceptance change is claimed.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.11",
+      "title": "Linux-only failures",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "Permission-denied source test no longer skips as root; isolated unprivileged child runs the original assertions. Two fatal-engine baseline failures remain undiagnosed; no Linux reproduction.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.12a",
+      "title": "pneumatic tyre: brush, carcass, geometry (`tyre`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.12b",
+      "title": "pneumatic tyre: model, tire, wire (`tyre`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.12c",
+      "title": "pneumatic tyre config and forces (`tyre`)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "All 29 source functions have named successors; 28 direct ports and one two-tier golden function; no platform artifacts acquired.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-pneumatic-ports.md"
+      ]
+    },
+    {
+      "task": "3.13",
+      "title": "tyre and terrain (`terrain`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.14a",
+      "title": "rider contacts and contact math (`rider`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.14b",
+      "title": "rider forces, attachment wrench, contact safety (`rider`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.15",
+      "title": "rider control (`rider`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.16",
+      "title": "rider allocation and dynamics (`rider`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.17",
+      "title": "seated topology and welds (`rider`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.18",
+      "title": "drivetrain core (`drive`)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "All 69 source functions across drivetrain, policies, clone and topology have reviewed native successors; FFI-only subassertions documented; goldens and execution missing.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-drive-ports.md"
+      ]
+    },
+    {
+      "task": "3.19",
+      "title": "drive policies and pedalling (`drive`)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "All 60 source functions across six drive-policy/pedalling files have native successors; original momentum stands retained; no physical result verified.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-drive-ports.md"
+      ]
+    },
+    {
+      "task": "3.20",
+      "title": "brakes, cruise, suspension, clocks (`runtime`)",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "28 of 66 original functions/methods have source successors: static brake5, native clocks13, control clock3, playback7. Remaining cruise24, brake resistance5, suspension4, stepper1, tire clocks3, solved-effort control clock1 not ported.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.21a",
+      "title": "numeric completion (`numerics`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.21b",
+      "title": "numeric domains, Numba kernels (`numerics`)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "Ten numeric-domain functions plus four portable kernel error/geometry functions; four randomized Numba-twin functions scheduled for qualified deletion with native arithmetic backstops.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.22a",
+      "title": "encode columns (`recording`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.22b",
+      "title": "recorder/HUD columns, period buffer (`recording`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.23",
+      "title": "monitors, energy, acceptance (`physics`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.24a",
+      "title": "native benchmark (`episode`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.24b",
+      "title": "golden episodes, ride CLI (`episode`)",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "Episode regression successors and two divergence-tool drop decisions; eleven ride-backend CLI functions not ported. Episode review names exact source coverage and required artifacts.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-golden-review.md",
+        "migration/cpp-linux-phase3-episode-ports.md"
+      ]
+    },
+    {
+      "task": "3.25",
+      "title": "runtime step, commands, ownership, bootstrap (`runtime`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.26",
+      "title": "runtime config, accounting, rollout, performance contract (`runtime`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.27",
+      "title": "state bundles (`state`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.28",
+      "title": "atomicity and input contracts (`contracts`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.29a",
+      "title": "engine errors, loader (`checks`)",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "Three native loader executable contracts preserved;17 extension-loader/reporter/preload functions have Python-only drop decisions.24 native engine-error functions remain planned.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.29b",
+      "title": "contract checks, check tools (`checks`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.30",
+      "title": "native recording lifecycle (`recording`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.31",
+      "title": "recording catalog, CLI, analysis (`recording`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.32",
+      "title": "replay and view (`replay`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.33a",
+      "title": "native research (`research`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.33b",
+      "title": "research capture, frontend, lifecycle, sweep (`research`)",
+      "source_status": "not_implemented",
+      "scope_and_remaining_work": "Native per-function source migration for this batch remains outstanding. Existing migration contracts elsewhere are not counted as a complete successor without per-function review.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.34",
+      "title": "frontends, realtime, async, batch (`frontend`)",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "All7 realtime-measurement and6 report source functions ported, plus new native CLI/timeout controls. Other frontend/async/batch/realtime-gate functions remain planned.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-realtime-review.md"
+      ]
+    },
+    {
+      "task": "3.35",
+      "title": "platform files (`platform`)",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "Twelve Python capture-hook functions have justified future-drop decisions; Linux permission-test source fixed. Remaining platform-file native ports are still planned.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.36",
+      "title": "portability tooling tests (`portability`)",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "Sixteen performance-evidence source functions ported. Other portability functions remain planned; direct CMake/ABI/provider contracts must not be blanket-dropped with Python tools.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ]
+    },
+    {
+      "task": "3.37",
+      "title": "Tyre calibration, curve and characterization",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "Native tire/material/curve/dataset APIs and tire-fixture regression sources; multidimensional holdout and boundary coercion gaps remain, plus absent platform captures.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-validation-review.md"
+      ]
+    },
+    {
+      "task": "3.38",
+      "title": "Contact and load rigs",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "Real contact/load/environment/suspension source stands; custom material surface, exact shock_total and numerical lowering gaps remain; no measured convergence.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-validation-review.md"
+      ]
+    },
+    {
+      "task": "3.39",
+      "title": "Plant and rider rigs",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "Real plant/rider/momentum/replay source stands; immutable interval observation differs from source repeated sample reads. Source semantics and captures remain to reconcile.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-validation-review.md"
+      ]
+    },
+    {
+      "task": "3.40",
+      "title": "Benchmarks, acceptance, evidence and `bike-validate`",
+      "source_status": "partial_source",
+      "scope_and_remaining_work": "Explicit native registry, all41 benchmark cases, evidence/release functions, bike-validate and migration_T54 source; process workers and subordinate validation gaps remain. No release, calibration or benchmark qualified.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-validation-review.md"
+      ]
+    },
+    {
+      "task": "3.41",
+      "title": "Root `CMakePresets.json` (replaces `tools/dev.py` configure/build/test)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "Root CMake configure/build/test presets and development command documentation; no configure or lane verification.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-tooling-review.md"
+      ]
+    },
+    {
+      "task": "3.42",
+      "title": "Sanitizer and RTSan lanes for the root graph (replaces `tools/native_runtime.py` preload logic)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "Root clean/negative sanitizer and RTSan controls plus runtime-link integration; no instrumentation result.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-tooling-review.md"
+      ]
+    },
+    {
+      "task": "3.43",
+      "title": "Coverage target (replaces `tools/native_coverage.py` / `.sh`)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "CMake-native LLVM coverage resolution/merge/export/smoke source; no configure-time probe, test run or coverage report produced.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-tooling-review.md"
+      ]
+    },
+    {
+      "task": "3.44",
+      "title": "CPack distributions (replaces the `offline_*` tools, D20)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "CPack binary/source recipes, exact dependency-archive staging, offline extractor and package checks; no package or offline rebuild executed.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-tooling-review.md"
+      ]
+    },
+    {
+      "task": "3.45",
+      "title": "CI on presets and the release checklist (replaces `ci_portability.py`, `portability_qualification.py`)",
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "Preset-based CI source and native release checklist; no CI lane, release or manual GUI acceptance performed.",
+      "phase_task_complete": false,
+      "verification": "not_performed_in_this_session",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/cpp-linux-phase3-tooling-review.md"
+      ]
+    }
+  ]
+}

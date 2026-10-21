@@ -1,0 +1,279 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 27,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "_root",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "${sourceDir}/native/cmake/presets/${hostSystemName}.cmake",
+      "condition": {
+        "type": "anyOf",
+        "conditions": [
+          {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Darwin"
+          },
+          {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Linux"
+          }
+        ]
+      },
+      "cacheVariables": {
+        "BIKE_BUILD_PYTHON_BINDINGS": "OFF",
+        "BIKE_DEPENDENCY_ROOT": "${sourceDir}/.deps",
+        "BIKE_BUILD_GUI": "OFF",
+        "BUILD_TESTING": "ON",
+        "CMAKE_BUILD_TYPE": "Release",
+        "NATIVE_SANITIZE": "OFF",
+        "NATIVE_RTSAN": "OFF",
+        "NATIVE_COVERAGE": "OFF"
+      }
+    },
+    {
+      "name": "release",
+      "inherits": "_root",
+      "binaryDir": "${sourceDir}/build/native-release"
+    },
+    {
+      "name": "debug",
+      "inherits": "_root",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BIKE_PRESET_GNU": "ON"
+      }
+    },
+    {
+      "name": "gui",
+      "inherits": "_root",
+      "cacheVariables": {
+        "BIKE_BUILD_GUI": "ON"
+      }
+    },
+    {
+      "name": "asan",
+      "inherits": "_root",
+      "cacheVariables": {
+        "NATIVE_SANITIZE": "ON"
+      }
+    },
+    {
+      "name": "rtsan",
+      "inherits": "_root",
+      "cacheVariables": {
+        "NATIVE_RTSAN": "ON",
+        "BIKE_PRESET_RTSAN": "ON"
+      }
+    },
+    {
+      "name": "coverage",
+      "inherits": "_root",
+      "cacheVariables": {
+        "NATIVE_COVERAGE": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "gui",
+      "configurePreset": "gui"
+    },
+    {
+      "name": "asan",
+      "configurePreset": "asan"
+    },
+    {
+      "name": "rtsan",
+      "configurePreset": "rtsan"
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage"
+    },
+    {
+      "name": "coverage-report",
+      "configurePreset": "coverage",
+      "targets": [
+        "coverage"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "_tests",
+      "hidden": true,
+      "output": {
+        "outputOnFailure": true,
+        "outputJUnitFile": "${sourceDir}/build/${presetName}/ctest-junit.xml"
+      },
+      "execution": {
+        "jobs": 8,
+        "noTestsAction": "error"
+      },
+      "filter": {
+        "exclude": {
+          "label": "slow|audit|package"
+        }
+      }
+    },
+    {
+      "name": "release",
+      "inherits": "_tests",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true,
+        "outputJUnitFile": "${sourceDir}/build/native-release/ctest-junit.xml"
+      }
+    },
+    {
+      "name": "debug",
+      "inherits": "_tests",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "gui",
+      "inherits": "_tests",
+      "configurePreset": "gui"
+    },
+    {
+      "name": "asan",
+      "inherits": "_tests",
+      "configurePreset": "asan"
+    },
+    {
+      "name": "rtsan",
+      "inherits": "_tests",
+      "configurePreset": "rtsan"
+    },
+    {
+      "name": "coverage",
+      "inherits": "_tests",
+      "configurePreset": "coverage",
+      "filter": {
+        "exclude": {
+          "label": "slow|audit|package|coverage"
+        }
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "release"
+        },
+        {
+          "type": "build",
+          "name": "release"
+        },
+        {
+          "type": "test",
+          "name": "release"
+        }
+      ]
+    },
+    {
+      "name": "debug",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "debug"
+        },
+        {
+          "type": "build",
+          "name": "debug"
+        },
+        {
+          "type": "test",
+          "name": "debug"
+        }
+      ]
+    },
+    {
+      "name": "gui",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "gui"
+        },
+        {
+          "type": "build",
+          "name": "gui"
+        },
+        {
+          "type": "test",
+          "name": "gui"
+        }
+      ]
+    },
+    {
+      "name": "asan",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "asan"
+        },
+        {
+          "type": "build",
+          "name": "asan"
+        },
+        {
+          "type": "test",
+          "name": "asan"
+        }
+      ]
+    },
+    {
+      "name": "rtsan",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "rtsan"
+        },
+        {
+          "type": "build",
+          "name": "rtsan"
+        },
+        {
+          "type": "test",
+          "name": "rtsan"
+        }
+      ]
+    },
+    {
+      "name": "coverage",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "coverage"
+        },
+        {
+          "type": "build",
+          "name": "coverage"
+        },
+        {
+          "type": "build",
+          "name": "coverage-report"
+        }
+      ]
+    }
+  ]
+}

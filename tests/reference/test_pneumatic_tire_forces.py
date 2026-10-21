@@ -3,6 +3,7 @@
 import numpy as np
 import mujoco
 import pytest
+import _golden
 
 from bike_sim.physics.physical_config import PneumaticTireConfig, TireBackendConfig
 from bike_sim.physics.tyre import FRONT_TYRE, REAR_TYRE, TIERS
@@ -441,29 +442,44 @@ def test_oracle_parity_with_xfrc_writer(tier):
             mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, 'front_wheel_spin')]
         d.qvel[spin] = 2.0
         mujoco.mj_forward(m, d)
-    for _ in range(4):
+    for step in range(4):
         legacy.apply(model_l, data_l)
         qfrc = tire.compute_qfrc(model, data, dt)
         expected = np.zeros(model.nv)
         for side in ('front', 'rear'):
             a, b = tire.states[side], getattr(legacy, f'{side}_tyre')
+            prefix = f'step.{step}.{side}'
             for leaf in ('delta_prev_m', 'elastic_prev_n', 'maxwell_force_n'):
+                _golden.record(getattr(b.carcass_state, leaf), f'{prefix}.{leaf}')
                 np.testing.assert_array_equal(getattr(a.carcass_state, leaf),
                                               getattr(b.carcass_state, leaf))
+            _golden.record(float(b.carcass_state.initialized), f'{prefix}.initialized')
             assert a.carcass_state.initialized == b.carcass_state.initialized
+            _golden.record(np.asarray(sorted(b._patch_states), dtype=np.int64).reshape(-1, 2),
+                           f'{prefix}.patch_keys')
             assert set(a._patch_states) == set(b._patch_states)
-            for key, state in a._patch_states.items():
+            # Capture ordering must not depend on a dictionary's history.
+            for key, state in sorted(a._patch_states.items()):
+                patch_label = f'{prefix}.patch.{key[0]}.{key[1]}'
+                _golden.record(float(b._patch_states[key].kappa_prime),
+                               f'{patch_label}.kappa_prime')
                 assert state.kappa_prime == b._patch_states[key].kappa_prime
                 if state.detailed is not None:
+                    _golden.record(b._patch_states[key].detailed.bristle_deflection_m,
+                                   f'{patch_label}.bristle_deflection_m')
                     np.testing.assert_array_equal(
                         state.detailed.bristle_deflection_m,
                         b._patch_states[key].detailed.bristle_deflection_m)
-            for pa, pb in zip(a.last_outputs.patches, b.last_outputs.patches):
+            _golden.record(float(len(b.last_outputs.patches)), f'{prefix}.output_patch_count')
+            for patch_index, (pa, pb) in enumerate(zip(a.last_outputs.patches, b.last_outputs.patches)):
+                _golden.record(pb.force_world_n, f'{prefix}.output.{patch_index}.force_world_n')
                 np.testing.assert_array_equal(pa.force_world_n, pb.force_world_n)
+                _golden.record(float(pb.slip_speed_mps), f'{prefix}.output.{patch_index}.slip_speed_mps')
                 assert pa.slip_speed_mps == pb.slip_speed_mps
                 jp, _ = point_jacobian(model, data, tire.bodies[side],
                                        pa.centroid_world_m)
                 expected += jp.T @ pa.force_world_n
+        _golden.record(expected, f'step.{step}.qfrc')
         assert np.array_equal(qfrc, expected)
         data.time += dt
         data_l.time += dt

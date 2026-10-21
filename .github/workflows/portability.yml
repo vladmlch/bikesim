@@ -1,133 +1,104 @@
 name: Linux and macOS portability
 
-# T28: mandatory Linux and macOS native gates. The lane runner
-# (tools/ci_portability.py) executes only the qualified commands —
-# tools/dev.py + tools/run_tests.sh, tools/native_coverage.sh and the
-# checked-in offline installer tooling — and stops at the first nonzero
-# command. Lanes are defined in tools/ci_portability.py; exact toolchains in
-# docs/development/toolchain-matrix.json.
+# Phase 3: root presets + native checker, with explicit package/coverage lanes.
+# All Linux work runs in the pinned linux/arm64 container on an ARM64 host.
 on:
   pull_request:
   push:
   workflow_dispatch:
   schedule:
-    # Runtime-intensive lanes (sanitizer/RTSan/coverage/full) run nightly and
-    # on demand; release acceptance requires them — they are never omitted.
     - cron: "23 4 * * *"
 
 permissions:
   contents: read
 
 jobs:
-  # Hosted PR/push gates: both operating systems, Debug+Release, both
-  # compiler families. No lane is continue-on-error.
   native:
     strategy:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-24.04
-            lane: linux-clang-release
-          - runner: ubuntu-24.04
-            lane: linux-gcc-debug
+          - runner: ubuntu-24.04-arm
+            lane: linux-aarch64-release
+            preset: release
+          - runner: ubuntu-24.04-arm
+            lane: linux-aarch64-debug
+            preset: debug
           - runner: macos-15
-            lane: macos-appleclang-release
+            lane: macos-arm64-release
+            preset: release
     runs-on: ${{ matrix.runner }}
+    env:
+      BIKE_CI_LANE: ${{ matrix.lane }}
+      BIKE_LINUX_CONTAINER: bike-ci-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      # astral-sh/setup-uv v10.3.0 — installs the qualified uv (measured
-      # 0.13.1 on the Linux lane) and caches only uv's download cache keyed
-      # by the lock hash; compiled artifacts are never cached.
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
-        with:
-          version: "0.13.1"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - name: Run qualified lane
-        env:
-          BIKE_CI_LANE: ${{ matrix.lane }}
-        run: python3 tools/ci_portability.py --lane "$BIKE_CI_LANE"
+      - name: Install macOS build and analysis tools
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install cmake ninja llvm gcc cppcheck shellcheck jq
+      - name: Run preset and native sweeps
+        run: bash tools/ci_presets.sh '${{ matrix.preset }}'
       - name: Upload lane evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         with:
           name: portability-${{ matrix.lane }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            output/ci/${{ matrix.lane }}/
-            native/build/${{ matrix.lane }}/CMakeCache.txt
-            native/build/${{ matrix.lane }}/compile_commands.json
-            native/build/${{ matrix.lane }}/native_check_context.json
-            native/build/${{ matrix.lane }}/native_check_summaries/
-            native/build/${{ matrix.lane }}/native_check_logs/
-            native/build/${{ matrix.lane }}/native_test_provenance.json
-            native/build/${{ matrix.lane }}/bike_policy_report.json
+          path: output/ci/${{ matrix.lane }}/
           if-no-files-found: warn
           retention-days: 30
 
-  # Sanitizer/RTSan/coverage/full lanes — scheduled nightly and dispatchable.
-  # Missing hardware/tooling is an unmet gate: these jobs fail red rather
-  # than degrade to a skipped lane.
   extended:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-24.04
-            lane: linux-asan
-          - runner: ubuntu-24.04
-            lane: linux-rtsan
-          - runner: ubuntu-24.04
-            lane: linux-coverage
-          - runner: ubuntu-24.04
-            lane: linux-full
+          - runner: ubuntu-24.04-arm
+            lane: linux-aarch64-asan
+            preset: asan
+            mode: checks
+          - runner: ubuntu-24.04-arm
+            lane: linux-aarch64-coverage
+            preset: coverage
+            mode: checks
           - runner: macos-15
-            lane: macos-asan
+            lane: macos-arm64-asan
+            preset: asan
+            mode: checks
           - runner: macos-15
-            lane: macos-rtsan
-          - runner: macos-15
-            lane: macos-coverage
-          - runner: macos-15
-            lane: macos-full
+            lane: macos-arm64-coverage
+            preset: coverage
+            mode: checks
+          - runner: ubuntu-24.04-arm
+            lane: linux-xvfb-smoke
+            preset: gui
+            mode: gui-smoke
     runs-on: ${{ matrix.runner }}
+    env:
+      BIKE_CI_LANE: ${{ matrix.lane }}
+      BIKE_LINUX_CONTAINER: bike-ci-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
-        with:
-          version: "0.13.1"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - name: Run qualified lane
-        env:
-          BIKE_CI_LANE: ${{ matrix.lane }}
-        run: python3 tools/ci_portability.py --lane "$BIKE_CI_LANE"
+      - name: Install macOS build and analysis tools
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install cmake ninja llvm gcc cppcheck shellcheck jq
+      - name: Run preset, sweeps and selected gate
+        run: bash tools/ci_presets.sh '${{ matrix.preset }}' '${{ matrix.mode }}'
       - name: Upload lane evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         with:
           name: portability-${{ matrix.lane }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            output/ci/${{ matrix.lane }}/
-            output/offline-bundles/${{ matrix.lane }}/
-            native/build/${{ matrix.lane }}/CMakeCache.txt
-            native/build/${{ matrix.lane }}/compile_commands.json
-            native/build/${{ matrix.lane }}/native_check_context.json
-            native/build/${{ matrix.lane }}/native_check_summaries/
-            native/build/${{ matrix.lane }}/native_check_logs/
-            native/build/${{ matrix.lane }}/native_test_provenance.json
-            native/build/${{ matrix.lane }}/bike_policy_report.json
-            native/build/${{ matrix.lane }}/native_coverage_runs/
+          path: output/ci/${{ matrix.lane }}/
           if-no-files-found: warn
           retention-days: 30
 
-  # Trusted lanes: release gates on the recovered baseline hosts, offline
-  # bundle/install rehearsals, manual GUI acceptance. Self-hosted runners
-  # behind the release-qualification environment, dispatch-only — untrusted
-  # pull-request code never reaches them and no secrets are exposed to PRs.
+  # Dispatch-only + protected environment + trusted runner labels are
+  # retained. Pull-request code cannot enter these self-hosted lanes.
   trusted:
     if: ${{ github.event_name == 'workflow_dispatch' }}
     environment: release-qualification
@@ -135,44 +106,37 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - lane: linux-release
-            runner: [self-hosted, linux, bike-qualified]
-          - lane: macos-release
-            runner: [self-hosted, macos, arm64, bike-qualified]
-          - lane: linux-offline
-            runner: [self-hosted, linux, bike-qualified]
-          - lane: macos-offline
-            runner: [self-hosted, macos, arm64, bike-qualified]
-          - lane: linux-manual-gui
-            runner: [self-hosted, linux, bike-qualified]
-          - lane: macos-manual-gui
-            runner: [self-hosted, macos, arm64, bike-qualified]
+          - lane: package-linux
+            runner: [self-hosted, Linux, ARM64, bike-qualified]
+            preset: release
+            mode: package
+          - lane: package-macos
+            runner: [self-hosted, macOS, ARM64, bike-qualified]
+            preset: release
+            mode: package
+          - lane: offline-rebuild-linux
+            runner: [self-hosted, Linux, ARM64, bike-qualified]
+            preset: release
+            mode: offline
+          - lane: macos-arm64-rtsan
+            runner: [self-hosted, macOS, ARM64, bike-qualified]
+            preset: rtsan
+            mode: checks
     runs-on: ${{ matrix.runner }}
+    env:
+      BIKE_CI_LANE: ${{ matrix.lane }}
+      BIKE_LINUX_CONTAINER: bike-ci-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
-        with:
-          version: "0.13.1"
-      - name: Run qualified lane
-        env:
-          BIKE_CI_LANE: ${{ matrix.lane }}
-        run: python3 tools/ci_portability.py --lane "$BIKE_CI_LANE"
-      - name: Upload lane evidence
+      - name: Run qualified preset and selected gate
+        run: bash tools/ci_presets.sh '${{ matrix.preset }}' '${{ matrix.mode }}'
+      - name: Upload release evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         with:
           name: portability-${{ matrix.lane }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            output/ci/${{ matrix.lane }}/
-            output/offline-bundles/${{ matrix.lane }}/
-            native/build/${{ matrix.lane }}/CMakeCache.txt
-            native/build/${{ matrix.lane }}/compile_commands.json
-            native/build/${{ matrix.lane }}/native_check_context.json
-            native/build/${{ matrix.lane }}/native_check_summaries/
-            native/build/${{ matrix.lane }}/native_check_logs/
-            native/build/${{ matrix.lane }}/native_test_provenance.json
-            native/build/${{ matrix.lane }}/bike_policy_report.json
+          path: output/ci/${{ matrix.lane }}/
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 90

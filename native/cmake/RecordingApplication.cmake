@@ -195,13 +195,27 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
       bike_install_relocate_mujoco(${_command})
     endif()
   endforeach()
-  add_library(bike_recording_cli STATIC "${native_dir}/src/cli/recording.cpp")
+  # The analyst library remains engine-free. Golden simulation belongs to a
+  # separate library used only by the explicit recording golden subcommand.
+  add_library(bike_golden STATIC
+    "${native_dir}/src/golden/episode.cpp"
+    "${native_dir}/src/golden/capture.cpp")
+  bike_startup_target_policy(bike_golden "${native_dir}")
+  target_link_libraries(bike_golden PUBLIC bike_app bike_numpy_io bike_platform)
+  add_library(bike_recording_cli STATIC
+    "${native_dir}/src/cli/recording.cpp"
+    "${native_dir}/src/cli/recording_golden.cpp")
   bike_startup_target_policy(bike_recording_cli "${native_dir}")
-  target_link_libraries(bike_recording_cli PUBLIC bike_recording_reader)
+  target_link_libraries(bike_recording_cli PUBLIC bike_recording_reader bike_golden)
   target_link_libraries(bike_cli PRIVATE bike_recording_cli)
   add_executable(bike-recording "${native_dir}/src/cli/recording_main.cpp")
   bike_startup_target_policy(bike-recording "${native_dir}")
   target_link_libraries(bike-recording PRIVATE bike_recording_cli)
+  if(BIKE_ROOT_BUILD)
+    bike_rewrite_mujoco_load_name(bike-recording "${mujoco_library}")
+  else()
+    bike_fix_mujoco_install_name(bike-recording)
+  endif()
   set_target_properties(bike-recording PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
   install(TARGETS bike-recording RUNTIME DESTINATION bin OPTIONAL)
   if(BIKE_ROOT_BUILD)

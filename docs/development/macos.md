@@ -4,7 +4,7 @@ Active instructions for developing bike-sim on macOS (Apple Silicon). The
 sibling [Linux guide](linux.md) covers the Linux toolchain; shared failure
 diagnosis lives in [troubleshooting.md](troubleshooting.md).
 
-Qualified lane (measured 2026-10-14/17, this worktree):
+Historical binding lane (measured 2026-10-14/17; not qualification of the Phase 3 root presets):
 
 | Component | Qualified value |
 |---|---|
@@ -31,10 +31,9 @@ macOS.
 
 ## Prerequisites
 
-- **CPython 3.13 or newer is required** (`requires-python = ">=3.13"`);
-  the qualified host interpreter is CPython **3.14.3**, provisioned by uv
-  (`uv python install` or select an installed one via
-  `tools/dev.py bootstrap --python`).
+- The root graph requires no Python. The transition oracle pins **CPython 3.13**
+  (`requires-python = ">=3.13,<3.14"`); the 3.14 interpreter in the historical
+  baseline above does not satisfy the current oracle contract.
 - uv for the project environment; Git; Xcode with the macOS SDK (Xcode
   26.6 measured) or the Command Line Tools; CMake 3.27+ (4.4.3 measured).
 - **The OS-default compiler is a candidate, not a promise.** Configure
@@ -48,7 +47,7 @@ macOS.
   `brew --prefix llvm` — `/opt/homebrew/opt/llvm` on Apple Silicon,
   `/usr/local/opt/llvm` on Intel — never a single hard-coded prefix.
 
-## Frozen environment
+## Transition oracle environment
 
 ```sh
 uv sync --frozen --group native
@@ -66,54 +65,37 @@ the project's private ABI symbols and the numerical backend is the system
 Accelerate provider ([numerical-profiles.md](numerical-profiles.md),
 [dependency-matrix.md](dependency-matrix.md)).
 
-## Configure and build (Debug and Release)
+## Configure and build with root presets
+
+Acquire the pinned archives and extracted trees described in
+[installation](../installation.md), then use the standalone graph:
 
 ```sh
-uv run --frozen --group native --no-sync python tools/dev.py configure --build native/build/release --config Release
-uv run --frozen --group native --no-sync python tools/dev.py build --build native/build/release
+cmake --workflow --preset release
+cmake --workflow --preset debug
+bash tools/run_native_checks.sh build/native-release
 ```
 
-Separate configurations, compilers and sanitizer lanes use separate
-directories (`native/build`, `native/build/release`, `native/build/asan`,
-`native/build/rtsan`, `native/build/coverage` are the conventional names).
-Select a compiler at configure time with `--compiler`; it is passed
-verbatim as `CMAKE_CXX_COMPILER` (for example the Homebrew LLVM
-`clang++` resolved by `brew --prefix llvm` for the RTSan lane):
+`release` keeps `build/native-release`; the other preset names use
+`build/<preset>`. Ordinary presets use the selected Xcode compiler and SDK;
+`rtsan` explicitly selects `/opt/homebrew/opt/llvm/bin/clang++`.
+The root graph uses `.deps` and the measured numerics record without
+finding an interpreter or loading the extension. SDK selection and actual
+compiler/stdlib capability probes remain mandatory. Pass an explicit SDK
+with `cmake --preset release -DCMAKE_OSX_SYSROOT=<SDK>` when required.
 
-```sh
-uv run --frozen --group native --no-sync python tools/dev.py configure --build native/build/debug --config Debug
-uv run --frozen --group native --no-sync python tools/dev.py build --build native/build/debug
-```
+## Configure diagnostics
 
-**Xcode/SDK selection.** With no explicit `CMAKE_OSX_SYSROOT`, configure
-probes the `xcrun` default and installed SDK candidates by compiling and
-linking against Accelerate. An explicit `CMAKE_OSX_SYSROOT` may be an
-absolute SDK path or an SDK alias resolved through `xcrun --sdk <name>
---show-sdk-path`; a missing or compiler-incompatible explicit SDK fails
-configuration — the caller-supplied value is retained and checked, never
-replaced. `xcode-select -p` selects the active developer directory for the
-whole machine. `tools/dev.py` exports the selected
-`UV_PROJECT_ENVIRONMENT` to every child `uv run`, passes the selected
-interpreter as `Python_EXECUTABLE`, and rejects a stale or relocated
-`CMakeCache.txt` before invoking CMake. Cross-compilation is rejected.
+Configure now owns the former doctor's native checks: dependency archive
+and selected-file hashes, MuJoCo private ABI, compiler/stdlib support,
+numerics record and instrumentation controls. Inspect
+`build/<preset>/native_check_context.json` and `bike_policy_report.json`
+(`build/native-release` for release). A successful configure is not a CTest,
+performance, package or GUI acceptance result. The interpreter-specific
+checks below apply only to the transition binding graph, which remains
+until the Phase 4 deletion gate.
 
-## Doctor
-
-```sh
-uv run --frozen --group native --no-sync python tools/dev.py doctor --build native/build/release --numerics
-```
-
-`doctor` emits schema-1 JSON on stdout and human diagnostics on stderr. It
-checks the selected interpreter (exact Python version and SOABI), lock
-freshness, native pins, compiler probes, the selected build context, exactly
-one extension artifact, the loaded MuJoCo 3.12.0 image plus its private ABI
-symbols, and — with `--numerics` — the runtime numerical provider against
-the compiled provider record (the apple-system Accelerate identity). It
-performs file checks, version queries and a fresh-process import; it never
-compiles and cannot replace CTest, the `native` gate, GUI acceptance or
-isolated offline installation.
-
-## Run: Python, native, headless and GUI
+## Transition Python entry points
 
 The application selects `native/build/release` by default, or the absolute
 directory in **`BIKE_NATIVE_BUILD_PATH`**:
@@ -271,3 +253,22 @@ mismatch, missing artifact, wrong SOABI, stale source stamp, unresolved
 dyld image, `mjpython`/`DYLD_FALLBACK_LIBRARY_PATH`, sanitizer and coverage
 tool lanes, strict invalid-controller stop, replay identity, slim
 externals) lives in [troubleshooting.md](troubleshooting.md).
+## Phase 3 instrumentation and packaging
+
+```sh
+cmake --workflow --preset asan
+cmake --workflow --preset coverage
+ctest --test-dir build/native-release -R '^package_smoke$' --no-tests=error --output-on-failure
+```
+
+On Linux, prefix each command with `bash tools/linux/container.sh exec`.
+Coverage runs the native tests, merges only fresh profiles and writes
+`build/coverage/coverage.lcov` plus `coverage-summary.txt`. ASan and RTSan
+executables link their own runtime; no interpreter preload is used by the
+root graph. RTSan fails configure if the selected compiler lacks the actual
+flag/annotation/runtime contract.
+
+Ordinary presets exclude `slow`, `audit` and `package` labels. Those remain
+explicit gates: package smoke is selected above; slow tests and the final
+completeness/documentation audits belong to the release checklist. Source
+implementation and a recorded command do not establish a passing gate.

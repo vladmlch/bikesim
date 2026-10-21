@@ -34,6 +34,8 @@
 #include "tire_common.hpp"
 #include "writer_types.hpp"
 
+namespace bike::testing { struct PneumaticWriterAccess; }
+
 // Pneumatic tyre writer. Shares the TireWriter/DistributedTireWriter
 // scaffolding conventions — interval/clock gates, staged
 // snapshot/diagnostics committed only after BOTH wheels evaluate, probe
@@ -224,6 +226,9 @@ public:
     }
 
 private:
+    // Reference-test access to existing state/clock and the checked
+    // second-wheel failure control. No callable production mutation API.
+    friend struct bike::testing::PneumaticWriterAccess;
     // The advancing compute_qfrc body after its precondition gates:
     // backup, two-wheel evaluation, derived gates, rollback, commit.
     void accumulate_validated(const mjData *d, double dt,

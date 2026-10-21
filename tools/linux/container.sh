@@ -255,6 +255,7 @@ case "$cmd" in
         trap 'rm -rf -- "$image_stage"' EXIT
         cp -- "$repo_root/tools/linux/Dockerfile" "$image_stage/Dockerfile"
         cp -- "$repo_root/tools/linux/acquire_deps.sh" "$image_stage/acquire_deps.sh"
+        cp -- "$repo_root/tools/linux/extract_deps.sh" "$image_stage/extract_deps.sh"
         cp -- "$repo_root/native/dependencies.lock.json" "$image_stage/dependencies.lock.json"
         docker build --platform linux/arm64 -t "$image" \
             -f "$image_stage/Dockerfile" "$image_stage"

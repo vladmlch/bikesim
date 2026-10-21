@@ -105,8 +105,8 @@ def test_force_staging(tmp_path, kind, mode):
     assert_tree(n.drive_stored_energy(),p.stored_energy(m,d))
 
 
-@pytest.mark.parametrize('kind,topology', [('elastic_chain','plain')] + [(k,t) for k in ('ideal_mid_drive','geometric_ideal_mid_drive') for t in ('plain','clutch','rotor')])
-@pytest.mark.parametrize('sparse', [False,True])
+@pytest.mark.parametrize('kind,topology', [('elastic_chain','plain')] + [(k,t) for k in ('ideal_mid_drive','geometric_ideal_mid_drive') for t in ('plain','clutch','rotor')], ids=['elastic_chain-plain','ideal_mid_drive-plain','ideal_mid_drive-clutch','ideal_mid_drive-rotor','geometric_ideal_mid_drive-plain','geometric_ideal_mid_drive-clutch','geometric_ideal_mid_drive-rotor'])
+@pytest.mark.parametrize('sparse', [False,True], ids=['dense','sparse'])
 @pytest.mark.parametrize('mode', ['crank_effort','articulated_effort'])
 def test_solved_intervals(tmp_path,kind,topology,sparse,mode):
     m,d,p,n = pair(tmp_path,kind,mode,topology=topology,sparse=sparse)
@@ -237,7 +237,7 @@ def test_random_multiturn_staging(tmp_path,kind,seed):
 
 
 @pytest.mark.parametrize('kind',['ideal_mid_drive','geometric_ideal_mid_drive'])
-@pytest.mark.parametrize('contact,slip',[(True,None),(False,None),(True,5.),(True,-5.)])
+@pytest.mark.parametrize('contact,slip',[(True,None),(False,None),(True,5.),(True,-5.)], ids=['contact','airborne','slip-positive','slip-negative'])
 def test_shifting_prepared_state_and_clock(tmp_path,kind,contact,slip):
     shift = ShiftingConfig(enabled=True,cadence_smoothing_tau_s=0.,shift_cooldown_s=.3,shift_cut_duration_s=.1)
     m,d,p,n = pair(tmp_path,kind,shifting=shift,pedaling=PedalingConfig(enabled=True))
@@ -264,7 +264,7 @@ def test_shifting_prepared_state_and_clock(tmp_path,kind,contact,slip):
 
 
 @pytest.mark.parametrize('kind',['elastic_chain','ideal_mid_drive','geometric_ideal_mid_drive'])
-@pytest.mark.parametrize('enabled,energy',[(True,0.),(True,.00001),(True,1.),(False,0.)])
+@pytest.mark.parametrize('enabled,energy',[(True,0.),(True,.00001),(True,1.),(False,0.)], ids=['empty','tiny','limited','disabled'])
 def test_energy_ceiling_and_actual_force(tmp_path,kind,enabled,energy):
     b=BatteryConfig(enabled=enabled,energy_j=energy)
     m,d,p,n=pair(tmp_path,kind,battery=b)
@@ -287,7 +287,7 @@ def asdict_control(control):
 
 
 @pytest.mark.parametrize('kind',['elastic_chain','ideal_mid_drive','geometric_ideal_mid_drive'])
-@pytest.mark.parametrize('active,braking',[(True,False),(False,False),(True,True)])
+@pytest.mark.parametrize('active,braking',[(True,False),(False,False),(True,True)], ids=['active','inactive','braking'])
 def test_probe_does_not_touch_ratchets_or_live_state(tmp_path,kind,active,braking):
     m,d,p,n=pair(tmp_path,kind)
     before=n.drive_state()
@@ -303,7 +303,7 @@ def test_probe_does_not_touch_ratchets_or_live_state(tmp_path,kind,active,brakin
         assert_tree(after,python_state(p,m))
 
 
-@pytest.mark.parametrize('key,value',[('drive_mode','unknown'),('transmission_model','unknown'),('torque_ripple',1.),('motor_clutch',1),('chain_k_n_m',0.),('rotor_inertia_kgm2',float('inf'))])
+@pytest.mark.parametrize('key,value',[('drive_mode','unknown'),('transmission_model','unknown'),('torque_ripple',1.),('motor_clutch',1),('chain_k_n_m',0.),('rotor_inertia_kgm2',float('inf'))], ids=['drive-mode','transmission','ripple','clutch-integer','chain-zero','rotor-infinite'])
 def test_invalid_config(tmp_path,key,value):
     from tools.native_config import project_drive
     m,d,p,n=pair(tmp_path)
@@ -312,7 +312,7 @@ def test_invalid_config(tmp_path,key,value):
     with pytest.raises(ValueError):bike_native.Stepper(str(path),{'schema':1,'drive':config})
 
 
-@pytest.mark.parametrize('field,value',[('dt',0.),('dt',float('nan')),('speed_mps',float('inf')),('braking',1),('active','true'),('advance',1),('sensed_human_torque_nm',float('nan')),('control',{'rider_enabled':1}),('control',{'motor_limit_nm':-1.})])
+@pytest.mark.parametrize('field,value',[('dt',0.),('dt',float('nan')),('speed_mps',float('inf')),('braking',1),('active','true'),('advance',1),('sensed_human_torque_nm',float('nan')),('control',{'rider_enabled':1}),('control',{'motor_limit_nm':-1.})], ids=['dt-zero','dt-nan','speed-infinite','braking-integer','active-string','advance-integer','sensed-nan','rider-integer','motor-limit-negative'])
 def test_invalid_calls_are_atomic(tmp_path,field,value):
     _,_,_,n=pair(tmp_path)
     before=n.drive_state();ctrl=n.ctrl.copy();args={'control':{},'dt':.002,'speed_mps':2.};args[field]=value
@@ -324,7 +324,7 @@ def test_invalid_calls_are_atomic(tmp_path,field,value):
     ('root','angles',[0.,1.]),('root','reference',float('nan')),('root','last_time_s',float('inf')),
     ('ideal_hub','ratio',0.),('ideal_hub','shift_pending',1),('ideal_hub','coefficients',[0.]),
     ('shifting','shift_count',2**40),('pedaling','coasting',1),('shifting','direction','bad'),
-    ('battery','energy_j',-1.),('assist','torque',float('nan'))])
+    ('battery','energy_j',-1.),('assist','torque',float('nan'))], ids=['angles-width','reference-nan','time-infinite','ratio-zero','pending-integer','coefficient-width','count-overflow','coasting-integer','direction','battery-negative','assist-nan'])
 def test_invalid_restoration_is_atomic(tmp_path,section,key,value):
     _,_,_,n=pair(tmp_path,'geometric_ideal_mid_drive')
     before=n.drive_state();bad=copy.deepcopy(before)
@@ -410,7 +410,7 @@ def test_passive_topology_without_actuators(tmp_path,mode,kind):
     assert_bitwise_equal(n.drive_settle_actuation(),p.settle_actuation(m,d));assert_tree(n.drive_state(),python_state(p,m))
 
 
-@pytest.mark.parametrize('key,value',[('shift_direction','invalid'),('transmission_model','invalid'),('motor_enabled',1),('gear_rear_teeth',2**40),('nonsense',1.),('motor_control_source','invalid')])
+@pytest.mark.parametrize('key,value',[('shift_direction','invalid'),('transmission_model','invalid'),('motor_enabled',1),('gear_rear_teeth',2**40),('nonsense',1.),('motor_control_source','invalid')], ids=['shift-direction','transmission','motor-integer','teeth-overflow','unknown','control-source'])
 def test_diagnostic_state_validation(tmp_path,key,value):
     _,_,_,n=pair(tmp_path)
     n.drive_components({},.002,2.)
@@ -470,7 +470,7 @@ def test_set_inputs_both_cross_buffer_aliases(tmp_path):
     assert_bitwise_equal(n.ctrl,[1.,2.]);assert_bitwise_equal(n.qfrc_applied,[17.,18.])
 
 
-@pytest.mark.parametrize('key,value',[('gear_ratio',0.),('gear_front_teeth',2),('shift_count',-1)])
+@pytest.mark.parametrize('key,value',[('gear_ratio',0.),('gear_front_teeth',2),('shift_count',-1)], ids=['ratio-zero','front-teeth-small','count-negative'])
 def test_diagnostic_ratio_and_integer_ranges(tmp_path,key,value):
     _,_,_,n=pair(tmp_path);before=n.drive_state();bad=copy.deepcopy(before);bad['last'][key]=value
     with pytest.raises(ValueError):n.set_drive_state(bad)

@@ -22,6 +22,11 @@ struct ProjectionOptions {
 // setup.py validate_supported, on resolved values rather than filenames.
 void validate_native_supported(const bike::configuration::SimulationPhysicsConfig&,
                                const bike::configuration::RiderSpecs&);
+// Model-independent drive projection. Own/normalize the input, then use the
+// same profile resolver and wire validation as project_writer_config. This
+// retains initial gearing; live shifter state is never part of configuration.
+[[nodiscard]] bike::io::Value project_drive_config(
+    const bike::configuration::SimulationPhysicsConfig&);
 [[nodiscard]] bike::io::Value project_writer_config(
     const bike::model::BuildRequest&, const mjModel&,
     const bike::terrain::TrackSpec&, const ProjectionOptions& = {});

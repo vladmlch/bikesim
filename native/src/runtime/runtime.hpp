@@ -32,6 +32,8 @@
 #include "step.hpp"
 
 class Stepper;
+namespace bike::golden { class RuntimeAccess; }
+namespace bike::validation { class RuntimeRigAccess; }
 
 namespace runtime {
 
@@ -171,7 +173,10 @@ public:
 
 private:
     friend class NativeResearchRuntime;
-    void advance_interval(const RideControl &command, double front, double rear);
+    friend class bike::golden::RuntimeAccess;
+    friend class bike::validation::RuntimeRigAccess;
+    void advance_interval(const RideControl &command, double front, double rear,
+                          GoldenForceObservation *golden = nullptr);
     void cache_research_boundary();
     void flush_accounting();
     double committed_position_m_ = 0.;

@@ -58,8 +58,11 @@ private:
 class PlaybackClock {
 public:
     explicit PlaybackClock(double timestep_s);
+    PlaybackClock(bool) = delete;
     void rebase(double now_s, std::int64_t step);
     void set_scale(int scale, double now_s, std::int64_t step);
+    void set_scale(bool scale, double now_s, std::int64_t step) = delete;
+    void set_scale(double scale, double now_s, std::int64_t step) = delete;
     void set_paused(bool paused, double now_s, std::int64_t step);
     [[nodiscard]] std::int64_t target(double now_s, std::int64_t completed_step);
     [[nodiscard]] double debt_s() const noexcept { return debt_s_; }

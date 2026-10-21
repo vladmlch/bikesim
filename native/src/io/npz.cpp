@@ -144,4 +144,66 @@ NpzArchive parse_npz(std::span<const std::byte> input){
     std::ranges::sort(extents);for(std::size_t i=1;i<extents.size();++i)if(extents[i].first<extents[i-1].second)bad("overlapping member extents");
     return out;
 }
+
+std::vector<std::byte> encode_npz(const NpzArchive &archive) {
+    if (archive.size() > kMaxNumpyMembers) bad("too many archive members");
+    struct Member {
+        std::string name;
+        std::vector<std::byte> payload;
+        std::uint32_t checksum = 0;
+        std::size_t offset = 0;
+    };
+    std::vector<Member> members;
+    members.reserve(archive.size());
+    std::set<std::string> names;
+    std::size_t length = 22;
+    for (const auto &[key, array] : archive) {
+        Member member;
+        member.name = key + ".npy";
+        (void)member_name(std::as_bytes(std::span(member.name)));
+        if (!names.insert(member.name).second) bad("duplicate archive member");
+        member.payload = encode_npy(array);
+        member.checksum = crc32(member.payload); // same routine as parse_npz
+        const auto overhead = 30U + 46U + 2U * member.name.size();
+        if (overhead > kMaxNumpyBytes - length || member.payload.size() > kMaxNumpyBytes - length - overhead)
+            bad("encoded archive exceeds resource bound");
+        length += overhead + member.payload.size();
+        members.push_back(std::move(member));
+    }
+    std::vector<std::byte> result;
+    result.reserve(length);
+    const auto put = [&](std::uint64_t value, unsigned int width) {
+        for (unsigned int i = 0; i < width; ++i)
+            result.push_back(static_cast<std::byte>((value >> (8U * i)) & 0xffU));
+    };
+    const auto name_bytes = [&](const std::string &name) {
+        const auto bytes = std::as_bytes(std::span(name));
+        result.insert(result.end(), bytes.begin(), bytes.end());
+    };
+    for (auto &member : members) {
+        member.offset = result.size();
+        put(0x04034b50U, 4); put(20, 2); // local header and version required
+        put(0, 2); put(0, 2); // flags and STORED method
+        put(0, 2); put(33, 2); // 00:00:00, 1980-01-01; deterministic DOS epoch
+        put(member.checksum, 4); put(member.payload.size(), 4); put(member.payload.size(), 4);
+        put(member.name.size(), 2); put(0, 2);
+        name_bytes(member.name);
+        result.insert(result.end(), member.payload.begin(), member.payload.end());
+    }
+    const auto central_offset = result.size();
+    for (const auto &member : members) {
+        put(0x02014b50U, 4); put(20, 2); put(20, 2);
+        put(0, 2); put(0, 2); put(0, 2); put(33, 2);
+        put(member.checksum, 4); put(member.payload.size(), 4); put(member.payload.size(), 4);
+        put(member.name.size(), 2); put(0, 2); put(0, 2);
+        put(0, 2); put(0, 2); put(0, 4); put(member.offset, 4);
+        name_bytes(member.name);
+    }
+    const auto central_size = result.size() - central_offset;
+    put(0x06054b50U, 4); put(0, 2); put(0, 2);
+    put(members.size(), 2); put(members.size(), 2);
+    put(central_size, 4); put(central_offset, 4); put(0, 2);
+    if (result.size() != length) bad("encoded ZIP length disagrees with directory");
+    return result;
+}
 } // namespace bike::io

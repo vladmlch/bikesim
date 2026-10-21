@@ -1,0 +1,23 @@
+# Inputs shared with freeze.py; no precomputed initial state is substituted.
+# The oracle is forty direct physical steps with human_torque_nm = 35.
+# freeze.py explicitly selects the Python oracle and the same seed 0.
+request_schema = 1
+physics_file = "physics.toml"
+track_file = "../../../../../examples/research/rough_uphill_savage.toml"
+model_mode = "ride"
+rider_variant = "articulated_planar"
+speed_kph = 0.0
+seed_decimal = "0"
+use_equilibrium_cache = false
+duration_s = 1.0
+control_period_s = 0.01
+actuator_delay_s = 0.005
+sensor_delay_s = 0.01
+check_policy = "diagnostic"
+capture_mode = "legacy"
+
+[overrides]
+timestep_s = 0.00125
+
+[experiment]
+record_decimation = 80

@@ -28,6 +28,9 @@ using NpzArchive=std::vector<std::pair<std::string,NpyArray>>;
 [[nodiscard]] NpyArray parse_npy(std::span<const std::byte>);
 [[nodiscard]] std::vector<std::byte> encode_npy(const NpyArray&);
 [[nodiscard]] NpzArchive parse_npz(std::span<const std::byte>);
+// Deterministic, bounded ZIP32 archive of STORED .npy members. No pickle,
+// compression dependency, filesystem extraction or wall-clock timestamps.
+[[nodiscard]] std::vector<std::byte> encode_npz(const NpzArchive &);
 [[nodiscard]] std::vector<std::byte> read_numpy_bytes(const std::filesystem::path&);
 [[nodiscard]] NpyArray double_array(std::span<const double>,std::vector<std::size_t> shape);
 [[nodiscard]] NpyArray integer_array(std::span<const std::int64_t>,std::vector<std::size_t> shape);

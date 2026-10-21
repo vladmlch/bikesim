@@ -1,19 +1,28 @@
 #!/usr/bin/env bash
-# Explicit Linux image/dependency acquisition. Never called by CMake, CTest,
+# Explicit pinned image/dependency acquisition. Never called by CMake, CTest,
 # configure, build or install. Archives are inert input: no fetched code runs.
-# Usage: acquire_deps.sh LOCK DESTINATION linux-aarch64
+# Usage: acquire_deps.sh LOCK DESTINATION {linux-aarch64|darwin-arm64}
 set -euo pipefail
 
 die() { printf 'dependency acquisition: %s\n' "$*" >&2; exit 1; }
-[[ $# -eq 3 ]] || die 'usage: acquire_deps.sh LOCK DESTINATION linux-aarch64'
-lock_file=$(realpath -- "$1")
-dependency_destination=$(realpath -m -- "$2")
+[[ $# -eq 3 ]] || die 'usage: acquire_deps.sh LOCK DESTINATION {linux-aarch64|darwin-arm64}'
+lock_file=$(cd -- "$(dirname -- "$1")" && printf '%s/%s\n' "$PWD" "$(basename -- "$1")")
+mkdir -p -- "$2"
+dependency_destination=$(cd -- "$2" && pwd -P)
 platform_key=$3
-[[ $platform_key == linux-aarch64 ]] || die "unsupported acquisition platform: $platform_key"
+[[ $platform_key == linux-aarch64 || $platform_key == darwin-arm64 ]] || die "unsupported acquisition platform: $platform_key"
 [[ -f $lock_file ]] || die "missing lock: $lock_file"
-for tool in jq curl sha256sum unzip tar awk; do
+for tool in jq curl unzip tar awk; do
     command -v "$tool" >/dev/null || die "required acquisition tool is missing: $tool"
 done
+if command -v sha256sum >/dev/null; then
+    sha_tool=sha256sum
+    sha_args=(--check --strict -)
+else
+    command -v shasum >/dev/null || die 'required SHA-256 tool is missing'
+    sha_tool=shasum
+    sha_args=(-a 256 --check -)
+fi
 jq -e '.schema_version == 2 and (.dependencies | type == "object" and length > 0)' \
     "$lock_file" >/dev/null || die 'expected a nonempty schema-2 dependency lock'
 mkdir -p -- "$dependency_destination/_archives"
@@ -30,7 +39,7 @@ check_relative() {
 verify_sha() {
     local expected=$1 path=$2
     [[ $expected =~ ^[0-9a-f]{64}$ ]] || die "invalid SHA-256 for $path"
-    printf '%s  %s\n' "$expected" "$path" | sha256sum --check --strict -
+    printf '%s  %s\n' "$expected" "$path" | "$sha_tool" "${sha_args[@]}"
 }
 
 while IFS= read -r dependency_name; do
@@ -78,77 +87,9 @@ while IFS= read -r dependency_name; do
         verify_sha "$archive_sha" "$archive_path"
     fi
 
-    # Extraction starts only after the archive passes its pinned SHA-256.
-    # Each archive is handled by its audited upstream layout, never by a command
-    # read from the lock. No wheel is installed or imported.
-    unpacked=$acquisition_work/unpacked
-    staged_root=$acquisition_work/staged
-    mkdir -p -- "$unpacked" "$staged_root"
-    case $dependency_name in
-        mujoco)
-            unzip -q "$archive_path" 'mujoco/include/*' \
-                "mujoco/libmujoco.so.$version" \
-                "mujoco-$version.dist-info/licenses/*" -d "$unpacked"
-            mkdir -p -- "$staged_root/lib"
-            cp -a -- "$unpacked/mujoco/include" "$staged_root/include"
-            cp -- "$unpacked/mujoco/libmujoco.so.$version" "$staged_root/lib/"
-            cp -- "$unpacked/mujoco-$version.dist-info/licenses/LICENSE" \
-                "$unpacked/mujoco-$version.dist-info/licenses/LICENSES_THIRD_PARTY.md" "$staged_root/"
-            ;;
-        duckdb)
-            unzip -q "$archive_path" duckdb.h duckdb.hpp libduckdb.so -d "$unpacked"
-            mkdir -p -- "$staged_root/include" "$staged_root/lib"
-            cp -- "$unpacked/duckdb.h" "$unpacked/duckdb.hpp" "$staged_root/include/"
-            cp -- "$unpacked/libduckdb.so" "$staged_root/lib/"
-            # The release zip carries its complete MIT notice as the initial
-            # block in the hash-pinned amalgamated header, not a LICENSE member.
-            awk 'NR == 1 { if ($0 != "/*") exit 1; next }
-                 /^\*\/$/ { complete = 1; exit }
-                 { print }
-                 END { if (!complete) exit 1 }' "$unpacked/duckdb.hpp" > "$staged_root/LICENSE"
-            ;;
-        numpy_openblas)
-            jq -er '.required_files | keys[] | select(startswith("lib/"))' \
-                "$entry_file" > "$acquisition_work/numpy-libraries.list"
-            unzip -q "$archive_path" 'numpy.libs/*' \
-                "numpy-$version.dist-info/licenses/LICENSE.txt" -d "$unpacked"
-            mkdir -p -- "$staged_root/lib"
-            while IFS= read -r library_member; do
-                check_relative "$library_member"
-                [[ $library_member == lib/* && ${library_member#lib/} != */* ]] \
-                    || die "unsupported NumPy provider member: $library_member"
-                cp -- "$unpacked/numpy.libs/${library_member#lib/}" "$staged_root/$library_member"
-            done < "$acquisition_work/numpy-libraries.list"
-            cp -- "$unpacked/numpy-$version.dist-info/licenses/LICENSE.txt" "$staged_root/LICENSE.txt"
-            ;;
-        glfw)
-            unzip -q "$archive_path" -d "$unpacked"
-            # Preserve all CMake inputs and platform source files, not headers
-            # alone. Wayland remains unselected by the Linux CMake policy.
-            cp -a -- "$unpacked/glfw-$version/." "$staged_root/"
-            ;;
-        tomlplusplus|rapidjson|cairo|eigen)
-            tar --extract --file "$archive_path" --directory "$staged_root" --strip-components=1
-            if [[ $dependency_name == rapidjson ]]; then
-                # This pinned upstream commit calls it license.txt; preserve
-                # that file and map a copy to the lock's common LICENSE path.
-                cp -- "$staged_root/license.txt" "$staged_root/LICENSE"
-            fi
-            ;;
-        *) die "no reviewed extraction layout for dependency: $dependency_name" ;;
-    esac
-    printf '%s\n' "$version" > "$staged_root/BIKE_VERSION"
-    while IFS=$'\t' read -r member expected; do
-        check_relative "$member"
-        [[ -f $staged_root/$member ]] || die "required file missing: $dependency_name/$member"
-        verify_sha "$expected" "$staged_root/$member"
-    done < "$acquisition_work/required-files.tsv"
-    while IFS= read -r license_member; do
-        check_relative "$license_member"
-        [[ $license_member == "$dependency_root/"* ]] || die "license outside dependency root: $license_member"
-        [[ -f $staged_root/${license_member#"$dependency_root/"} ]] || die "missing license: $license_member"
-    done < "$acquisition_work/licenses.list"
-    mv -- "$staged_root" "$dependency_destination/$dependency_root"
-    rm -rf -- "$unpacked"
-    printf 'dependency %s %s acquired and sha256 verified\n' "$dependency_name" "$version"
 done < "$acquisition_work/dependencies.list"
+
+# Both image acquisition and offline source-package rebuild use this exact
+# extraction path. The offline helper cannot download missing archives.
+bash "$(dirname -- "${BASH_SOURCE[0]}")/extract_deps.sh" \
+    "$lock_file" "$dependency_destination" "$platform_key"

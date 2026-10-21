@@ -1,4 +1,5 @@
 #include "recording.hpp"
+#include "recording_golden.hpp"
 #include "../recording/reader.hpp"
 #include "../recording/export.hpp"
 #include "../recording/analysis_detail.hpp"
@@ -136,6 +137,8 @@ Arguments parse(std::span<const std::string_view> arguments) {
 }
 } // namespace
 int recording_command(std::span<const std::string_view> arguments, std::ostream& out, std::ostream& error) {
+    if (!arguments.empty() && arguments[0] == "golden")
+        return golden_command(arguments.subspan(1), out, error);
     if (arguments.size() == 1 && (arguments[0] == "--help" || arguments[0] == "-h")) { out << help; return 0; }
     if (arguments.size() > 1 && std::ranges::any_of(arguments.subspan(1), [](auto arg) { return arg == "-h" || arg == "--help"; })) {
         const std::set<std::string_view> known{"overview", "fields", "events", "window", "sql", "export", "compare"};

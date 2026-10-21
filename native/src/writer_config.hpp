@@ -64,6 +64,9 @@ namespace nativecfg {
     // for a dict input. An empty object decodes to the empty WriterConfig
     // (mirroring the adapter's empty-dict → no-writers rule).
     [[nodiscard]] WriterConfig decode(const bike::io::Value &value);
+    // Standalone policy owner uses the identical generic decoder and
+    // config-rooted diagnostics as the nanobind DrivePolicies adapter.
+    [[nodiscard]] drivetrain::DrivePolicyConfig decode_policy_config(const bike::io::Value& value);
 
     namespace detail {
         using validation::positive;

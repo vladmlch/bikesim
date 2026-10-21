@@ -6,6 +6,7 @@
 #include "shifting.hpp"
 #include "motor.hpp"
 #include "freehub.hpp"
+#include "policy_set.hpp"
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
@@ -62,23 +63,10 @@ namespace {
         return d;
     }
 
-    class DrivePolicies {
+    class DrivePolicies : public drivetrain::PolicySet {
     public:
-        explicit DrivePolicies(nb::handle input) : config(parse_drive_policy_config(wire::mapping(input, "config"))),
-                                                        pedaling(config.pedaling),
-                                                        shifting(config.gearing, config.shifting),
-                                                        assist(config.assist),
-                                                        battery(config.battery.energy_j),
-                                                        hub(config.hub_stiffness_nm_rad, config.hub_damping_nm_s) {
-        }
-
-        void reset() {
-            pedaling.reset();
-            shifting.reset();
-            assist.reset();
-            battery.reset();
-            hub.reset();
-        }
+        explicit DrivePolicies(nb::handle input)
+            : PolicySet(parse_drive_policy_config(wire::mapping(input, "config"))) {}
 
         nb::dict state() const {
             nb::dict d, a, b, h;
@@ -138,30 +126,9 @@ namespace {
             wire::exact(a, wire::keys("torque", "pedaling", "last_gain"));
             wire::exact(b, wire::keys("initial_energy_j", "energy_j", "drawn_energy_j"));
             wire::exact(h, wire::keys("boundary", "energy_j", "torque_nm"));
-            // Relational checks: a candidate must agree with the config and
-            // with itself, not merely carry field-valid values.
-            const bool shifted = shift.shift_count > 0;
-            if ((shift.direction != "none") != shifted ||
-                (!shifted && (shift.cooldown_s != 0. || shift.cut_remaining_s != 0.)))
-                throw std::invalid_argument("shift count/direction mismatch");
-            const auto &cassette = config.shifting.cassette;
-            if (config.shifting.enabled &&
-                (!std::ranges::contains(cassette, shift.rear_teeth) ||
-                 !std::ranges::contains(cassette, shift.from_teeth)))
-                throw std::invalid_argument("shifter teeth outside the cassette");
-            const auto &batt = next.battery.state();
-            if (batt.initial_energy_j != config.battery.energy_j ||
-                batt.energy_j > batt.initial_energy_j || batt.drawn_energy_j > batt.initial_energy_j)
-                throw std::invalid_argument("battery energy outside the configured store");
+            next.validate_state();
             *this = std::move(next);
         }
-
-        DrivePolicyConfig config;
-        PedalingPolicy pedaling;
-        CadenceShifter shifting;
-        AssistController assist;
-        Battery battery;
-        Freehub hub;
     };
 }
 
@@ -190,7 +157,7 @@ void bind_drive_policies(nb::module_ &module) {
                nb::arg("ripple").none() = .35);
     nb::class_<DrivePolicies>(module, "DrivePolicies")
             .def(nb::init<nb::handle>(), nb::arg("config").none())
-            .def("reset", &DrivePolicies::reset)
+            .def("reset", [](DrivePolicies& self) { self.reset(); })
             .def("state", &DrivePolicies::state)
             .def("set_state", &DrivePolicies::set_state, nb::arg("state").none())
             .def("pedaling_update", [](DrivePolicies &self, nb::handle phase, nb::handle rate, nb::handle required, nb::handle effort,

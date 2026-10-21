@@ -775,7 +775,7 @@ _bike_probe_capability(BIKE_CAP_COVERAGE_SUPPORTED coverage
 # qualified only when BOTH gates pass under this toolchain:
 #   1. the flags probe above (compile+link with -fprofile-instr-generate
 #      -fcoverage-mapping), and
-#   2. tools/native_toolchain.py's coverage-tools resolution against the
+#   2. CoverageTools.cmake's Python-free resolution against the
 #      selected compiler: explicit LLVM_PROFDATA/LLVM_COV override, then a
 #      compiler sibling, then a PATH candidate, then the Darwin-only xcrun
 #      fallback — followed by the real instrumented format probe (compile,
@@ -798,58 +798,8 @@ set(BIKE_CAP_COVERAGE_TOOLS "coverage tools not qualified (lane unrequested)")
 set(BIKE_CAP_COVERAGE_FORMAT_PROBE
   "format probe not run (lane unrequested)")
 if(NATIVE_COVERAGE)
-  # The helper is stdlib-only — any python3 can drive it. Prefer the
-  # interpreter the caller pinned for the project (configure tests pass
-  # -DPython_EXECUTABLE); fall back to PATH discovery — this module runs
-  # before find_package(Python) in native/CMakeLists.txt.
-  if(DEFINED Python_EXECUTABLE AND NOT Python_EXECUTABLE STREQUAL "")
-    set(_bike_coverage_python "${Python_EXECUTABLE}")
-  else()
-    # Do not predefine the variable — find_program skips its search unless
-    # the result variable is unset or a literal *-NOTFOUND.
-    find_program(_bike_coverage_python NAMES python3 python)
-  endif()
-  if(NOT _bike_coverage_python)
-    message(FATAL_ERROR
-      "NATIVE_COVERAGE requires a python3 interpreter to qualify the LLVM "
-      "coverage toolchain through tools/native_toolchain.py; none was "
-      "found (pass -DPython_EXECUTABLE=... or put python3 on PATH)")
-  endif()
-  get_filename_component(_bike_repository_root "${BIKE_NATIVE_ROOT}/.." ABSOLUTE)
-  execute_process(
-    COMMAND "${_bike_coverage_python}"
-      "${_bike_repository_root}/tools/native_toolchain.py" coverage-tools
-      --compiler "${CMAKE_CXX_COMPILER}"
-      --json "${_bike_policy_probe_dir}/coverage_tool_resolution.json"
-    RESULT_VARIABLE _bike_coverage_tools_rc
-    OUTPUT_VARIABLE _bike_coverage_tools_out
-    ERROR_VARIABLE _bike_coverage_tools_err
-    TIMEOUT 300)
-  if(NOT _bike_coverage_tools_rc EQUAL 0)
-    message(FATAL_ERROR
-      "NATIVE_COVERAGE was requested but the coverage toolchain failed "
-      "qualification for the selected compiler ${CMAKE_CXX_COMPILER} "
-      "(${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}): "
-      "${_bike_coverage_tools_err}${_bike_coverage_tools_out}")
-  endif()
-  string(JSON _bike_coverage_profdata GET "${_bike_coverage_tools_out}"
-    llvm_profdata path)
-  string(JSON _bike_coverage_cov GET "${_bike_coverage_tools_out}"
-    llvm_cov path)
-  string(JSON _bike_coverage_profdata_version GET "${_bike_coverage_tools_out}"
-    llvm_profdata version)
-  string(JSON _bike_coverage_cov_version GET "${_bike_coverage_tools_out}"
-    llvm_cov version)
-  string(JSON _bike_coverage_export_version GET "${_bike_coverage_tools_out}"
-    format_probe export_version)
-  string(CONCAT BIKE_CAP_COVERAGE_TOOLS
-    "llvm-profdata=${_bike_coverage_profdata} "
-    "(${_bike_coverage_profdata_version}), "
-    "llvm-cov=${_bike_coverage_cov} (${_bike_coverage_cov_version})")
-  string(CONCAT BIKE_CAP_COVERAGE_FORMAT_PROBE
-    "instrumented control compiled, ran, merged and exported through the "
-    "resolved tools; export type llvm.coverage.json.export version "
-    "${_bike_coverage_export_version}")
+  include("${CMAKE_CURRENT_LIST_DIR}/CoverageTools.cmake")
+  bike_qualify_coverage_tools()
 endif()
 
 # --------------------------------------------------------------------------
@@ -946,8 +896,8 @@ endfunction()
 
 # _bike_run_sanitizer_control(<sanitizer> <runtime> <rc-var> <detail-var>)
 # Compile the clean control with the lane's real instrumentation and run it
-# under the preload variable the runner injects. Any nonzero exit — a
-# loader failure included — means the selected runtime cannot carry an
+# with its linked runtime for the root graph, or the binding runner
+# preload contract. Any nonzero exit — a loader failure included — means the selected runtime cannot carry an
 # instrumented process.
 function(_bike_run_sanitizer_control sanitizer runtime rc_var detail_var)
   set(_control_dir "${_bike_capability_probe_dir}/run-${sanitizer}")
@@ -959,11 +909,16 @@ function(_bike_run_sanitizer_control sanitizer runtime rc_var detail_var)
     "  std::free(block);\n"
     "  return block == nullptr ? 1 : 0;\n"
     "}\n")
+  set(_control_rpath_flags)
+  if(BIKE_ROOT_BUILD)
+    get_filename_component(_runtime_directory "${runtime}" DIRECTORY)
+    list(APPEND _control_rpath_flags "-DCMAKE_BUILD_RPATH:STRING=${_runtime_directory}")
+  endif()
   try_compile(_control_compiled
     "${_control_dir}/build"
     SOURCES "${_control_dir}/control.cpp"
     CMAKE_FLAGS
-      ${_bike_policy_sysroot_flags}
+      ${_bike_policy_sysroot_flags} ${_control_rpath_flags}
       "-DCMAKE_CXX_STANDARD:STRING=23"
       "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
     COMPILE_DEFINITIONS ${_bike_cap_compile_${sanitizer}}
@@ -976,21 +931,28 @@ function(_bike_run_sanitizer_control sanitizer runtime rc_var detail_var)
       "control build failed: ${_control_build_log}" PARENT_SCOPE)
     return()
   endif()
-  if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
-    set(_preload_var "DYLD_INSERT_LIBRARIES")
-    set(_existing_preload "$ENV{DYLD_INSERT_LIBRARIES}")
+  if(BIKE_ROOT_BUILD)
+    set(_preload_arguments --unset=LD_PRELOAD --unset=DYLD_INSERT_LIBRARIES)
+    set(_runtime_launch_description "linked runtime (no preload)")
   else()
-    set(_preload_var "LD_PRELOAD")
-    set(_existing_preload "$ENV{LD_PRELOAD}")
-  endif()
-  if(_existing_preload STREQUAL "")
-    set(_preload_value "${runtime}")
-  else()
-    set(_preload_value "${runtime}:${_existing_preload}")
+    if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+      set(_preload_var "DYLD_INSERT_LIBRARIES")
+      set(_existing_preload "$ENV{DYLD_INSERT_LIBRARIES}")
+    else()
+      set(_preload_var "LD_PRELOAD")
+      set(_existing_preload "$ENV{LD_PRELOAD}")
+    endif()
+    if(_existing_preload STREQUAL "")
+      set(_preload_value "${runtime}")
+    else()
+      set(_preload_value "${runtime}:${_existing_preload}")
+    endif()
+    set(_preload_arguments "${_preload_var}=${_preload_value}")
+    set(_runtime_launch_description "${_preload_var}=<selected>")
   endif()
   execute_process(
     COMMAND "${CMAKE_COMMAND}" -E env
-      "${_preload_var}=${_preload_value}"
+      ${_preload_arguments}
       "${_control_dir}/control_exe"
     RESULT_VARIABLE _control_rc
     OUTPUT_VARIABLE _control_out
@@ -1000,14 +962,14 @@ function(_bike_run_sanitizer_control sanitizer runtime rc_var detail_var)
   string(STRIP "${_control_err}" _control_err)
   set(${rc_var} "${_control_rc}" PARENT_SCOPE)
   set(${detail_var}
-    "control ran with ${_preload_var}=<selected>: rc=${_control_rc} "
+    "control ran with ${_runtime_launch_description}: rc=${_control_rc} "
     "stdout='${_control_out}' stderr='${_control_err}'" PARENT_SCOPE)
 endfunction()
 
 # _bike_run_rtsan_violation_control(<runtime> <result-var> <detail-var>)
 # The RTSan lane's negative gate: build the checked-in violation control
 # (native/tests/rtsan_control.cpp) with the lane's real instrumentation and
-# run its forbidden-allocation mode under the runner's preload contract.
+# run its forbidden-allocation mode with the graph's runtime launch contract.
 # TRUE is returned only when the process dies with the real
 # RealtimeSanitizer report — a clean exit proves the annotation never
 # instrumented the call, and a loader failure or unrelated signal without
@@ -1015,11 +977,16 @@ endfunction()
 function(_bike_run_rtsan_violation_control runtime result_var detail_var)
   set(_violation_dir "${_bike_capability_probe_dir}/violation-rtsan")
   file(MAKE_DIRECTORY "${_violation_dir}")
+  set(_control_rpath_flags)
+  if(BIKE_ROOT_BUILD)
+    get_filename_component(_runtime_directory "${runtime}" DIRECTORY)
+    list(APPEND _control_rpath_flags "-DCMAKE_BUILD_RPATH:STRING=${_runtime_directory}")
+  endif()
   try_compile(_violation_compiled
     "${_violation_dir}/build"
     SOURCES "${BIKE_NATIVE_ROOT}/tests/rtsan_control.cpp"
     CMAKE_FLAGS
-      ${_bike_policy_sysroot_flags}
+      ${_bike_policy_sysroot_flags} ${_control_rpath_flags}
       "-DCMAKE_CXX_STANDARD:STRING=23"
       "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
     COMPILE_DEFINITIONS -fsanitize=realtime
@@ -1034,21 +1001,28 @@ function(_bike_run_rtsan_violation_control runtime result_var detail_var)
       "${_violation_build_log}" PARENT_SCOPE)
     return()
   endif()
-  if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
-    set(_preload_var "DYLD_INSERT_LIBRARIES")
-    set(_existing_preload "$ENV{DYLD_INSERT_LIBRARIES}")
+  if(BIKE_ROOT_BUILD)
+    set(_preload_arguments --unset=LD_PRELOAD --unset=DYLD_INSERT_LIBRARIES)
+    set(_runtime_launch_description "linked runtime (no preload)")
   else()
-    set(_preload_var "LD_PRELOAD")
-    set(_existing_preload "$ENV{LD_PRELOAD}")
-  endif()
-  if(_existing_preload STREQUAL "")
-    set(_preload_value "${runtime}")
-  else()
-    set(_preload_value "${runtime}:${_existing_preload}")
+    if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+      set(_preload_var "DYLD_INSERT_LIBRARIES")
+      set(_existing_preload "$ENV{DYLD_INSERT_LIBRARIES}")
+    else()
+      set(_preload_var "LD_PRELOAD")
+      set(_existing_preload "$ENV{LD_PRELOAD}")
+    endif()
+    if(_existing_preload STREQUAL "")
+      set(_preload_value "${runtime}")
+    else()
+      set(_preload_value "${runtime}:${_existing_preload}")
+    endif()
+    set(_preload_arguments "${_preload_var}=${_preload_value}")
+    set(_runtime_launch_description "${_preload_var}=<selected>")
   endif()
   execute_process(
     COMMAND "${CMAKE_COMMAND}" -E env
-      "${_preload_var}=${_preload_value}"
+      ${_preload_arguments}
       "${_violation_dir}/violation_exe" forbidden-allocation
     RESULT_VARIABLE _violation_rc
     OUTPUT_VARIABLE _violation_out
@@ -1072,7 +1046,7 @@ function(_bike_run_rtsan_violation_control runtime result_var detail_var)
     set(${result_var} TRUE PARENT_SCOPE)
     set(${detail_var}
       "violation control reported the RealtimeSanitizer diagnostic "
-      "(rc=${_violation_rc}, ${_preload_var}=<selected>): "
+      "(rc=${_violation_rc}, ${_runtime_launch_description}): "
       "'${_violation_combined}'" PARENT_SCOPE)
   endif()
 endfunction()
@@ -1087,7 +1061,7 @@ set(BIKE_CAP_ASAN_ANNOTATION_CONTROL
   "annotation gate not applicable to the asan lane")
 set(BIKE_CAP_ASAN_MACRO_CONTROL "macro gate not applicable to the asan lane")
 set(BIKE_CAP_ASAN_VIOLATION_CONTROL
-  "asan violation evidence lives in the pytest subprocess control")
+  "asan violation evidence lives in sanitizer_negative_control (root) and the pytest subprocess control (binding)")
 set(BIKE_CAP_RTSAN_RUNTIME "")
 set(BIKE_CAP_RTSAN_RUNTIME_QUERY "rtsan runtime not queried")
 set(BIKE_CAP_RTSAN_RUN_CONTROL "rtsan run control not executed")
@@ -1374,6 +1348,17 @@ function(bike_apply_native_policy target)
   endif()
   if(BIKE_POLICY_LINK_OPTIONS)
     target_link_options(${target} PRIVATE ${BIKE_POLICY_LINK_OPTIONS})
+  endif()
+  # Root executables discover the shared sanitizer they link without an
+  # interpreter preload. This is a build-tree loader path, never an
+  # instrumentation change or an installed-package runtime dependency.
+  if(BIKE_ROOT_BUILD)
+    foreach(_runtime IN ITEMS "${BIKE_CAP_ASAN_RUNTIME}" "${BIKE_CAP_RTSAN_RUNTIME}")
+      if((NATIVE_SANITIZE OR NATIVE_RTSAN) AND NOT _runtime STREQUAL "")
+        get_filename_component(_runtime_directory "${_runtime}" DIRECTORY)
+        set_property(TARGET ${target} APPEND PROPERTY BUILD_RPATH "${_runtime_directory}")
+      endif()
+    endforeach()
   endif()
 endfunction()
 

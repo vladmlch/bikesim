@@ -639,7 +639,8 @@ void NativeRideRuntime::cache_research_boundary() {
     committed_balance_ = physical_->balance_event();
 }
 
-void NativeRideRuntime::advance_interval(const RideControl &command, double front, double rear) {
+void NativeRideRuntime::advance_interval(const RideControl &command, double front, double rear,
+                                        GoldenForceObservation *golden) {
     // Async closes become visible only at a main-thread step boundary. The
     // worker never changes presentation or the live controller/contact state.
     try { accounting_->collect(false); }
@@ -649,7 +650,7 @@ void NativeRideRuntime::advance_interval(const RideControl &command, double fron
     }
     physical_->capture_accounted_presentation(committed_presentation_);
     test_failure_boundary();
-    RawStep raw = physical_->advance_physics(front, rear, std::nullopt, command);
+    RawStep raw = physical_->advance_physics(front, rear, std::nullopt, command, golden);
     accounting_->push(std::move(raw));
     engine::get_state(stepper_->model(), stepper_->data(),
         next_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));

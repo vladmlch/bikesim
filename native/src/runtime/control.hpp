@@ -69,6 +69,12 @@ wire_diagnostics(const std::map<std::string,
                  std::variant<std::monostate, double, int, bool,
                               std::string>> &values);
 
+// Pneumatic writer diagnostic wire, shared by runtime publication and the
+// standalone reference contract. Key order is the Python dictionary order.
+[[nodiscard]] WireObject wire_pneumatic_tire_diagnostics(const TireDiagnostics &);
+// ContactPatch.world_force_n as emitted by the runtime contact wire.
+[[nodiscard]] std::array<double, 3> patch_world_force(const TirePatch &);
+
 // ---- control.py RideControl ------------------------------------------
 // The full wire shape is rider::IntentControl; decode (and its
 // __post_init__ gates) live in rider/intent_wire.cpp. validate_for

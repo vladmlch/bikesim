@@ -887,3 +887,70 @@ bike-dev-python-free-cpp-numerics` exits 0 with `bike-linux-image:port`.
 Pre-commit `git diff --cached --check` exits 0; staged file enumeration contains
 exactly the four task files listed in the report. Staging uses approved escalation
 because this worktree's shared Git index is outside the writable root.
+
+## 2026-10-21 — Phase 3 source implementation from the supplied Repomix snapshot
+
+This entry records a new source-only session. The user explicitly prohibited
+compilation and project execution. No compiler (including `-fsyntax-only`),
+CMake configure, pytest collection/run, CTest, application, simulation, benchmark,
+container, capture script, sanitizer, coverage or package command was invoked.
+The preceding historical logs are inherited evidence, not runs from this session.
+No L1/L2/L3 gate or Phase-3 task is closed by this entry.
+
+Implemented source includes the opt-in Python golden hook and strict native
+sidecar/payload readers; native episode save/load/capture/compare and recording
+CLI; whole-boundary realtime measurement/report/CLI; root CTest successor
+registrations; selected per-function test ports; native validation modules and
+CLI; root presets, sanitizer/RTSan controls, coverage, offline archive extraction,
+CPack recipes and preset-based CI. The validation work remains partial even at
+the source level. Shared projection/codec seams reuse existing owned native
+implementations; physical thresholds and FP policy were not relaxed.
+
+The independently reconciled text inventory contains 2369 original test
+functions/methods: the original map had 1611, leaving 758 missing. Twelve new
+capture-hook test functions bring the current map to 2381 unique rows, including
+16 class methods. The removal ledger now covers all 532 original `.py` paths plus
+three new capture sources, fixing the original 73 missing rows. No Python file
+was removed, and no row was promoted to qualified or `replacement_landed`.
+
+Current function dispositions are 183 `port`, 58 `golden`, 35 future `drop`,
+and 2105 `planned`. These are source decisions, not executed or parameterized
+test counts. Named full-file source ports include pneumatic config/forces
+(29 functions), drivetrain/policies/clone/topology (69), six drive-policy and
+pedalling files (60), the three episode regression files (9 functions, 10 cases),
+and the smaller reviewed realtime/clock/domain/kernel groups. Required platform
+goldens are absent; none was invented or populated from native results.
+
+Across the 53 Phase-3 tasks: 13 have source implementations, 11 have partial
+source implementations, 23 test-port batches remain unimplemented, and six
+historical failure diagnoses require execution. Source review does not establish
+compilation, numerical parity, initialization validity, performance or relocation.
+The phase is explicitly incomplete.
+
+Detailed source evidence and unresolved work:
+
+- `migration/cpp-linux-phase3-source-status.json`
+- `migration/cpp-linux-phase3-source-review.md`
+- `migration/cpp-linux-phase3-golden-review.md`
+- `migration/cpp-linux-phase3-episode-ports.md`
+- `migration/cpp-linux-phase3-pneumatic-ports.md`
+- `migration/cpp-linux-phase3-drive-ports.md`
+- `migration/cpp-linux-phase3-drive-dispositions.json`
+- `migration/cpp-linux-phase3-realtime-review.md`
+- `migration/cpp-linux-phase3-validation-review.md`
+- `migration/cpp-linux-phase3-validation-map.json`
+- `migration/cpp-linux-phase3-tooling-review.md`
+
+The quoted earlier audit described `fc848de`; the supplied text already contains
+the later two-platform/eight-operation numerics lock, exact canonical-nonfinite
+sincos assertions and recursive safe container pull. Its later inherited evidence
+also describes actual-checkout branch integration and restoration of nine binary
+research files. Original Git objects and binary payloads were omitted by Repomix,
+so this session cannot independently prove ancestry or those restored bytes.
+The numerics lock and prior qualification results were left intact.
+
+The delivery uses a normalized text patch and a reconstructed text-source archive.
+File inspection, JSON/AST inventory and patch applicability are file operations;
+they are not execution of the project. The export manifest records exactly those
+checks and the limitations of reconstruction. Apply the patch to a matching real
+checkout to retain its original history, binary artifacts and existing file modes.

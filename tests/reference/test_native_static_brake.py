@@ -8,6 +8,7 @@ qfrc_applied on a wheel DOF gives the friction row real work to hold.
 import mujoco
 import numpy as np
 import pytest
+from _golden import record as record_golden
 
 from native_loader import load_native
 
@@ -79,6 +80,7 @@ def test_frictionloss_writes_match_python(model, probe):
     expected = np.zeros(model.nv)
     StaticBrakeApplier(front_dof, rear_dof, CEILING).apply(
         model, mujoco.MjData(model), 0.4, 0.7)
+    record_golden(model.dof_frictionloss, "static brake frictionloss")
     np.testing.assert_array_equal(written, model.dof_frictionloss)
 
 
@@ -94,6 +96,10 @@ def test_solved_components_match_python(model, probe):
     probe.set_inputs(ctrl, loads)
     probe.forward()
     solved = probe.static_brake_solved()
+    record_golden(expected["front_static_brake"], "front static brake solved",
+                  kind="close", rtol=1e-12, atol=1e-12)
+    record_golden(expected["rear_static_brake"], "rear static brake solved",
+                  kind="close", rtol=1e-12, atol=1e-12)
     np.testing.assert_allclose(
         solved["front_static_brake"], expected["front_static_brake"],
         rtol=1e-12, atol=1e-12)

@@ -3856,15 +3856,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/tire.hpp",
+      "native/src/validation/tire.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -3876,7 +3869,16 @@
     "snapshot_sha256": "ea9300580e2b69483192c2ac815cf0e4906958e67f32731576dffa50032de594",
     "snapshot_line_count": 84,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "`TireCalibration`, record/file loading, geometry/provenance, explicit curve and inclusive load range. No implicit pressure scaling.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/physics/tire_curve.py",
@@ -3885,15 +3887,10 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
+      "native/src/contact/tabulated_radial.hpp",
+      "native/src/contact/tabulated_radial.cpp",
       "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/registry.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -3905,7 +3902,16 @@
     "snapshot_sha256": "dcc5d80a5a2bcad58f050ae07b82be756d76874c5267f11cf151aa9392e108b0",
     "snapshot_line_count": 92,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "Monotone table, interval force integral, unilateral damping, no extrapolation and range errors. CLI `tire_curve` retains energy in joules.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/physics/transmission_constraint.py",
@@ -5540,16 +5546,10 @@
     "owner_task": "T55",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/tools/golden_episode_main.cpp",
-      "native/src/tools/episode_compare_main.cpp",
-      "native/src/tools/divergence_horizon_main.cpp",
-      "native/src/tools/measure_realtime_main.cpp",
-      "native/src/tools/step_profile_main.cpp",
-      "native/src/tools/diag_main.cpp",
-      "native/src/tools/finalize_bench_main.cpp",
-      "native/src/tools/benchmark_main.cpp",
-      "native/src/tools/state_format.hpp",
-      "native/src/tools/state_format.cpp"
+      "native/src/runtime/realtime_measurement.hpp",
+      "native/src/runtime/realtime_measurement.cpp",
+      "native/src/runtime/realtime_report.cpp",
+      "native/tests/reference/test_realtime_measurement.cpp"
     ],
     "verification_ids": [
       "migration_T55",
@@ -5561,7 +5561,15 @@
     "snapshot_sha256": "293aa51058c49f0ce74d8ae612e6dc7dbc46fb60f2b58c1e356970555bf139a3",
     "snapshot_line_count": 196,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "implemented_pending_qualification",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ],
+      "verification": "No compilation, project execution or platform capture performed in this session"
+    }
   },
   {
     "path": "src/bike_sim/sim/research/__init__.py",
@@ -12316,15 +12324,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
       "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/registry.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12336,7 +12337,16 @@
     "snapshot_sha256": "4582ccb6bfdbc2555e226e2ddfda19fc0866320785c55d20adff1d6202178c14",
     "snapshot_line_count": 1,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "Package organization becomes an explicit native library and registry; no Python module discovery.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/antiwheelie_bench.py",
@@ -12345,15 +12355,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/benchmark.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12365,7 +12367,16 @@
     "snapshot_sha256": "6e91b9237047b49a69c2d85f1e090b849a2e7ba6fdd9bf6c4e76f79286b1dd4b",
     "snapshot_line_count": 133,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Version/profile identity, evidence matching, bounded results, 14 load/shaft stands and five-operation mechanics pipeline are implemented. Native provenance replaces Python package versions; subordinate partial rigs/benchmarks prevent a complete source-equivalence claim.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/antiwheelie_reports.py",
@@ -12374,15 +12385,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/acceptance.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12394,7 +12397,16 @@
     "snapshot_sha256": "f4593798c125da974738f5e82351bfbe115a99a449fccfea17b42c5680a732bd",
     "snapshot_line_count": 70,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "`assess_run`, tuple grouping, numeric integer-seed ordering, candidate/baseline exclusions and horizon checks. Mixed unusual seed types and Python truthiness of non-boolean intervention values are narrower at the native typed boundary.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/benchmarks.py",
@@ -12403,15 +12415,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/benchmark.cpp",
+      "native/src/validation/registry.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12423,7 +12428,16 @@
     "snapshot_sha256": "08287259fbf9579763001c7aff1407148c488a71d9c63499961afd86fb48eee1",
     "snapshot_line_count": 240,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "All 41 registry entries, original bounds, convergence keys/floors, mandatory-vs-diagnostic selection, complete-suite and exact-dt gates. `jobs=1` executes sequentially; source isolated worker execution for jobs 2–32 is explicitly rejected. Native versions are declared as native versions.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/climbing_benchmark.py",
@@ -12432,15 +12446,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/benchmark.cpp",
+      "native/src/validation/evidence.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12452,7 +12459,16 @@
     "snapshot_sha256": "989f6a4cbf16e6a9db41b2fb57f41a65af86c100dee4534cabfda425ca36ff0b",
     "snapshot_line_count": 166,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Accounted physical steps and real research `PolicySession` ticks, setup/warmup/latency, output-directory exclusivity, validity, hashes and recording publication. Native research capture uses the existing native recording contract; equivalence of setup/retention costs and sampled diagnostics requires captures. Source `preview_mode()` is already removed and raises `preview path removed`; the port preserves that rejection.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/climbing_evidence.py",
@@ -12461,15 +12477,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/evidence.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12481,7 +12489,16 @@
     "snapshot_sha256": "b9b5443a833a952ba5527678b1e8e399ca81de597c287995b99f2b710de1e197",
     "snapshot_line_count": 111,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "Ordered/contiguous support intervals, observed-vs-unknown support, model/energy invalidity, first bad/unknown time, reason counts, valid prefix and separate completeness. Unknown observations are never invented as zero-valued evidence.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/contact_acceptance.py",
@@ -12490,15 +12507,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
       "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/rigs.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12510,7 +12520,16 @@
     "snapshot_sha256": "f9fa84151567d4b397c1c3207871dfa7dc90a1dd2fc2d049ba09ba9c25162da2",
     "snapshot_line_count": 82,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Bounds and flat/step/incline matrix over actual distributed stands. Native metric decoding currently expects numeric JSON values, while Python `float()` also accepts some strings/bools. Stand station limits and custom-material surface remain narrower; empty CLI bounds do not constitute accepted evidence.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/contact_manifold_rigs.py",
@@ -12519,15 +12538,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/rigs.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12539,7 +12550,16 @@
     "snapshot_sha256": "6e93efe366ad48b6af525102e6eb07fd8d48b708f37e08cf65ad760c5ac27580",
     "snapshot_line_count": 173,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Two-body wheel stand, kinetic/material ledger, flat/step/incline rigs, six road profiles and retained trajectories. The private native stand currently uses the declared default density/mu; the Python helper's arbitrary optional density/mu inputs are not exposed. Some NumPy scalar ufunc/matrix lowering still needs a dedicated bitwise comparison.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/contact_resolution.py",
@@ -12548,15 +12568,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/experiments.cpp",
+      "native/src/validation/evidence.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12568,7 +12581,16 @@
     "snapshot_sha256": "9b98fc2ebbbeca382277d0f6593f840c27c286474597132f0b91d477a872fe26",
     "snapshot_line_count": 95,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Both source NNLS density fits, 12 flat and three incline stands, all six roads, time/road/station axes, persistent events and finest-pair acceptance. Numerical qualification depends on the partial contact stand producer; report/provenance serialization is native.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/datasets.py",
@@ -12577,15 +12599,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/tire.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12597,7 +12611,16 @@
     "snapshot_sha256": "b5438abab77bffee1e8b30de4a645861a0f7f375faf464db359b2ddb9a65ae76",
     "snapshot_line_count": 237,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Seven unit schemas, whole-experiment splits, measured conditions, sensor/estimate provenance, per-experiment errors, declared parameter/error budgets and canonical ASCII hashing. The public C++ holdout API is a one-dimensional span; Python accepts same-shaped multidimensional NumPy inputs. Existing native JSON byte/number limits also bound metadata.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/drive_suspension_rig.py",
@@ -12606,15 +12629,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/drivetrain.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12626,7 +12641,16 @@
     "snapshot_sha256": "393974fee5bc6535c7e493917440ecf5e2d54fde752a0f8a3071adb3203b1830",
     "snapshot_line_count": 163,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Actual compiled suspension fixture, four-joint bounded closure continuation, 784.8 N frame load, viscous rollers, three transmissions, all stroke/torque/dt combinations and original force gates. `shock_total` is presently reconstructed from split damper/HBO components: subtracting then adding HBO can change the last bits. The discarded source scalar must be exposed or recomputed exactly before bitwise qualification.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/environment.py",
@@ -12635,15 +12659,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/evidence.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12655,7 +12671,16 @@
     "snapshot_sha256": "03c94b8a2157a46da451f85dc8fa53ba38097e40a5ac71db404e1c8e7a888c1a",
     "snapshot_line_count": 82,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Ordered length-delimited source hashing and actual native build lock/MuJoCo/provider identity. This intentionally reports a native identity; Python/PEP 440 marker evaluation and every direct package version are not reproduced. Current lock verification covers the build-lock digest and loaded MuJoCo, not every transitive image.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/experiment_acceptance.py",
@@ -12664,15 +12689,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
       "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/registry.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12684,7 +12702,16 @@
     "snapshot_sha256": "1fbf9e084d9c20fec95730e39ab25d7e2ff8b910ed83b8b1791b1ec4356fc0bb",
     "snapshot_line_count": 44,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Split rejection, synthetic declaration and explicit boolean calibration gates. Source `is_synthetic` applies Python `str()` to an arbitrary `source` object; the C++ record boundary requires a string. The discrepancy-budget constants remain in the Python authority and are not automatically applied or invented as new thresholds.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/fidelity_sweep.py",
@@ -12693,15 +12720,9 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
       "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/scenarios.cpp",
+      "native/src/validation/experiments.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12713,7 +12734,16 @@
     "snapshot_sha256": "0d12221024db33fc88dae25f14e4aec67e4259881d14ca8581819a1f3e1730fb",
     "snapshot_line_count": 409,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Resolution validation, interval integration, all comparison criteria, seven cases, physical seeds, periodic station projection, rows/events/metrics and finest-pair summaries. Jobs 2–16 are explicitly unavailable. Runtime rows consume each immutable finalized interval once; this differs from the source's repeated `sim.physical.sample` read after each physics step. Initial state files preserve the exact payload bytes used for their hashes.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/grade_feasibility.py",
@@ -12723,14 +12753,7 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/registry.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12742,7 +12765,16 @@
     "snapshot_sha256": "25574b654eaf847ba162788b068b3cd6d223f7aa22b4995c319020dd64f4cae0",
     "snapshot_line_count": 20,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "Explicit scalar domains and `mu * rear_fraction - grade`; result is labelled necessary and never sufficient for a completed climb.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/load_transfer.py",
@@ -12751,15 +12783,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/rigs.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12771,7 +12795,16 @@
     "snapshot_sha256": "d2fcbb57a05b1dff9c4c8e4fc45ad6ce0dcd53cf3c0d7735bbd13fde89cd2829",
     "snapshot_line_count": 71,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Quasistatic load formula and full free-pitch rigid stand with normal/tangent reaction and moment checks. Source NumPy scalar trig lowering and small matrix products need confirmation against platform captures.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/plant_prefix.py",
@@ -12780,15 +12813,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
       "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/registry.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12800,7 +12826,16 @@
     "snapshot_sha256": "527fe1bfeed23e9017fe831442c20bc63803b7ef76f2d8d0ab831eec3bc10dda",
     "snapshot_line_count": 43,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "`ValidPrefix::observe`: seen/accepted counters, first invalid record, strict evidence booleans, positive interval, loads and impulse prefix. A later valid row cannot resume acceptance.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/plant_release.py",
@@ -12809,15 +12844,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
       "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/evidence.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12829,7 +12857,16 @@
     "snapshot_sha256": "0cb3d1ae9c59c86a5ca75573434acd610e7464e185a872c39309fdf325f36755",
     "snapshot_line_count": 28,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "All eight independent SIL gates, optional completion, no calibration/safety promotion and ordered trapezoidal trace integral.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/plant_torque_rig.py",
@@ -12838,15 +12875,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/rigs.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12858,7 +12887,16 @@
     "snapshot_sha256": "0a16cca53e7f408af10a89e0d9c208a9a21f62bdfc23b2496a9e61b4d83b7267",
     "snapshot_line_count": 40,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "Actual tendon-based shaft/freehub stand, arbitrary positive ratio, overrun, constraint reaction, angular acceleration and shaft-power identity. Uses actual MuJoCo actuation/constraint results.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/reference_release.py",
@@ -12867,15 +12905,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
       "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/experiments.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12887,7 +12918,16 @@
     "snapshot_sha256": "28e0f2dc69435d51629207514d8b22ad43fa34f8622d126b7aaa67dc76763be3",
     "snapshot_line_count": 289,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Required release gates, candidate choice, hashed evidence manifests, measured-holdout authentication, outcome ordering and all 18 scenarios. Matrix execution inherits the immutable-interval and native-seed differences; no reference release was created.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/ride_cases.py",
@@ -12896,15 +12936,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/scenarios.cpp",
+      "native/src/validation/runtime_access.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12916,7 +12949,16 @@
     "snapshot_sha256": "56c40fffd6dfe2bc0e6b169bd574ee9e962bf737b5eed59090431eef2f7193ee",
     "snapshot_line_count": 239,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Flat/native static, exact requested-sag fitting bounds, brake hold, low mu, airborne passive/released rider, road runs and terrain refinement. All source horizons/thresholds remain. Live published interval observation replaces the source's per-physics-step sample access; source-vs-native instantaneous observer timing and integral weighting must be qualified.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/rider_cases.py",
@@ -12925,15 +12967,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/rider.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12945,7 +12979,16 @@
     "snapshot_sha256": "5fd0baf5a2cbb01caeffb1756ad6cacbd497c25b9d047435129cfbd095652ddf",
     "snapshot_line_count": 54,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "Compiled airborne articulated tree, actual rider/internal forces, ballistic/momentum/work invariants and original two-second horizon.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/rider_factor_matrix.py",
@@ -12954,15 +12997,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/scenarios.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -12974,7 +13009,16 @@
     "snapshot_sha256": "57cd03453d02bfc6ea9294afec61d922817a91213c6d063057e00b42d8ada11d",
     "snapshot_line_count": 40,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Nine original factors, ten-second horizon, baseline-resumed and causal-replay-resolved gates. Inherits replay observation differences; unsupported motor-only replay is retained as an explicit failed experiment.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/rider_replay.py",
@@ -12983,15 +13027,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/scenarios.cpp",
+      "native/src/validation/evidence.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -13003,7 +13040,16 @@
     "snapshot_sha256": "041a6de4c9b5e67a06bdf319d8e19c3b53d8c7117c7a9dbae397e0bbab9ba00a",
     "snapshot_line_count": 295,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Schedules, profile loading, diagnostic rows, replay, coast/resume diagnosis and JSON/gzip reports. All seven modes remain; motor-only open loop rejects. Native report writing uses actual gzip stored blocks and atomic native publication. Row cadence is the distinct finalized interval stream rather than repeated/stale `sample` access.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/rider_work.py",
@@ -13012,15 +13058,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/evidence.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -13032,7 +13070,16 @@
     "snapshot_sha256": "46626f65351b0215df5a6f36d66faad4cadb39fc53ef49f9024d2aa8fa7da471",
     "snapshot_line_count": 10,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "Exact component-name selection, CPython-style active-work sum, separate passive, net and motor work.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/rigs.py",
@@ -13042,14 +13089,7 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/drivetrain.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -13061,7 +13101,16 @@
     "snapshot_sha256": "e4505badd8608ac626e3c1ca97a9ad9914f4d12c2664afc8e56bb19a0700514b",
     "snapshot_line_count": 194,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_implementation",
+      "scope_and_limits": "Every public stand and compiled chain derivative is implemented against actual compiled models/production laws. Small-matrix and NumPy-vs-libm scalar lowering still needs direct comparison; a manually reconstructed small rotation is not asserted bitwise equal.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/system_momentum.py",
@@ -13070,15 +13119,7 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
-      "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/rider.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -13090,7 +13131,16 @@
     "snapshot_sha256": "279c6c36ec9c55149445e2a7529d048bad8ee4fc307a2b2258e1f40383950eab",
     "snapshot_line_count": 128,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "Independent body inertial Jacobians, world inertia, CoM/linear/angular momentum, actual complete airborne tree, passive/active/motor-only cases, gravity impulse, free-pitch conservation and separate roll/yaw constraint evidence. Task 3.19 reference tests reuse this API.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/validation/tire_characterization.py",
@@ -13099,15 +13149,8 @@
     "owner_task": "T54",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/validation/rigs.cpp",
       "native/src/validation/tire.cpp",
-      "native/src/validation/rider.cpp",
-      "native/src/validation/drivetrain.cpp",
-      "native/src/validation/acceptance.cpp",
-      "native/src/validation/evidence.cpp",
-      "native/src/tools/validate_main.cpp",
-      "native/src/validation/acceptance.hpp",
-      "native/tests/migration/test_t54.cpp"
+      "native/src/validation/registry.cpp"
     ],
     "verification_ids": [
       "migration_T54",
@@ -13119,7 +13162,16 @@
     "snapshot_sha256": "bc37cdd7b506cb69e0f0ac1911c5fde7ce690c56e78eceb84412f1a33449a849",
     "snapshot_line_count": 42,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_implemented_pending_qualification",
+      "scope_and_limits": "Pure brush-step loop, exact slip convention, Stribeck cap, loss/storage/stiffness metadata and integer horizon. Default-material provenance is explicit through a supplied tire record or physics profile.",
+      "evidence": [
+        "migration/cpp-linux-phase3-validation-review.md"
+      ],
+      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+    }
   },
   {
     "path": "src/bike_sim/viz/__init__.py",
@@ -14439,7 +14491,19 @@
     "snapshot_sha256": "0b42a9006455aa00eb40cd4fd55f3acef69d2a332bb321f12931a11242257502",
     "snapshot_line_count": 197,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 22
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_attachment_budget.py",
@@ -14523,7 +14587,19 @@
     "snapshot_sha256": "fc1719c6cca56a74e28ec4bfd93f94a6a87ae93d3310b47fcf9a5a0eff19a48d",
     "snapshot_line_count": 83,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 9
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_closed_form_rider.py",
@@ -14586,7 +14662,20 @@
     "snapshot_sha256": "8c80d9f1892b8c777f5754fa705cc1024f08f64352bb8b775435db7d32334893",
     "snapshot_line_count": 84,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_triage",
+      "counts": {
+        "port": 3,
+        "planned": 1
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_coupled_rider_task.py",
@@ -14656,10 +14745,8 @@
     "sha256": "b0cda08936b4ac13bf82dc351bb30cbc53509343b5960c4593090f15fab4ab53",
     "line_count": 39,
     "owner_task": "T52",
-    "action": "port_assertions_and_fixture_orchestration",
-    "replacement_paths": [
-      "native/tests/reference/test_divergence_horizon.cpp"
-    ],
+    "action": "delete_with_python",
+    "replacement_paths": [],
     "verification_ids": [
       "migration_T52",
       "source_assertion_map",
@@ -14670,7 +14757,19 @@
     "snapshot_sha256": "9e5ebf8e642051275dc478dd735956c6ad4e966f5a97912d90630c94fa76792d",
     "snapshot_line_count": 39,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "drop": 2
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_drivetrain_policy_clone.py",
@@ -14691,7 +14790,19 @@
     "snapshot_sha256": "f9b16b2329d7359d12fe0c9587e2e76788e2c16248befcf6cfe407a4b3d28f3a",
     "snapshot_line_count": 39,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 1
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_energy_ledger.py",
@@ -14721,7 +14832,7 @@
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_episode_compare.cpp"
+      "native/tests/reference/test_golden_episode_regressions.cpp"
     ],
     "verification_ids": [
       "migration_T52",
@@ -14733,7 +14844,19 @@
     "snapshot_sha256": "99260f97a3e23a1c539c95e505d7fd95ad9863bc5eae92133c9e0a1d6196d4e2",
     "snapshot_line_count": 51,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 3
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_equilibrium_state_file.py",
@@ -14805,7 +14928,7 @@
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_golden_episode.cpp"
+      "native/tests/reference/test_golden_episode_regressions.cpp"
     ],
     "verification_ids": [
       "migration_T52",
@@ -14817,7 +14940,19 @@
     "snapshot_sha256": "b20011ac8f86c2a429471a3dfe4a2c0d19b45a7cefd116c9d8e6d8e8c8cdc7fe",
     "snapshot_line_count": 37,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 2
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_golden_episode_v2.py",
@@ -14826,7 +14961,7 @@
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_golden_episode_v2.cpp"
+      "native/tests/reference/test_golden_episode_regressions.cpp"
     ],
     "verification_ids": [
       "migration_T52",
@@ -14838,7 +14973,19 @@
     "snapshot_sha256": "2710e6931ad9ba0fec7b5336714482a4f6246cd04854e314a2561f3af480827b",
     "snapshot_line_count": 112,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 4
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_hud_columns.py",
@@ -14943,7 +15090,19 @@
     "snapshot_sha256": "7fcdbcdbb5daac15657e1442f187823c2c95994be572c1e5acacee3fdafaf4c9",
     "snapshot_line_count": 131,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 6
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_monitor_strictness.py",
@@ -14985,7 +15144,19 @@
     "snapshot_sha256": "ac22a546576368ea32d2160f77e581003789b1e172afd71343595ecd4b036f10",
     "snapshot_line_count": 203,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 9
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_motor_profile.py",
@@ -15006,7 +15177,19 @@
     "snapshot_sha256": "581846b5ca91890f887ead4df97208506487a9beb5fa3621f9e0774a425ce898",
     "snapshot_line_count": 90,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 8
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_native_atomicity.py",
@@ -15132,7 +15315,21 @@
     "snapshot_sha256": "d06f0969b2a34bb9b9f99a58e189dab833c761c2c721c327b1a51d502e7fb464",
     "snapshot_line_count": 370,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "partial_source_triage",
+      "counts": {
+        "port": 9,
+        "golden": 4,
+        "planned": 3
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_native_contract_checks.py",
@@ -15237,7 +15434,20 @@
     "snapshot_sha256": "b8a177d4f573f69ef9616c135cfc6cf8919f2b13b488b8103307ebca3ffdfcda",
     "snapshot_line_count": 510,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 4,
+        "golden": 27
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_native_drivetrain.py",
@@ -15258,7 +15468,20 @@
     "snapshot_sha256": "c34cf400ad78e9cbdb583fd6f1a03c3882a1f48de059d37aa08008e9c49810bf",
     "snapshot_line_count": 560,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "golden": 24,
+        "port": 4
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_native_encode_columns.py",
@@ -15330,7 +15553,7 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_native_loader.cpp"
+      "native/tests/reference/test_native_loader_contracts.cmake"
     ],
     "verification_ids": [
       "migration_T53",
@@ -15342,7 +15565,20 @@
     "snapshot_sha256": "518cf533a892593511f55ecf5d028fcd62cf6151f0aa2520baddd062b46702f2",
     "snapshot_line_count": 543,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "drop": 17,
+        "port": 3
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_native_numeric_completion.py",
@@ -15384,7 +15620,19 @@
     "snapshot_sha256": "24cd093fcab61085c0c79f731cc4038d8fb633a33170d57c0575fb1438e0f8b4",
     "snapshot_line_count": 229,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 10
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_native_pneumatic_brush.py",
@@ -16140,7 +16388,20 @@
     "snapshot_sha256": "ad0702cb4e44909a7c48f4ff834a90aeeb8c51bbd3d8ab0021929ce0a4a59fb5",
     "snapshot_line_count": 158,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "golden": 2,
+        "port": 3
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_native_stepper.py",
@@ -16254,7 +16515,7 @@
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_numba_kernels.cpp"
+      "native/tests/reference/test_native_kernel_contracts.cpp"
     ],
     "verification_ids": [
       "migration_T52",
@@ -16266,7 +16527,20 @@
     "snapshot_sha256": "d3e2c718112c1705efe5f180d8d4ed52ed2c8adbbc2ba2616feee9bea45786f9",
     "snapshot_line_count": 178,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "drop": 4,
+        "port": 4
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_pedal_waveform.py",
@@ -16287,7 +16561,19 @@
     "snapshot_sha256": "2f3940fd671e61204b4eb4dda95c8ab2ac982015f155d340d9b54d35eed75ac2",
     "snapshot_line_count": 110,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 10
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_pedaling_policy.py",
@@ -16308,7 +16594,19 @@
     "snapshot_sha256": "3d0547d3ab5e6d54fd49b6b3f0a0a27380b7fa7642abbae0f5227de3e305299b",
     "snapshot_line_count": 89,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 9
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_pedelec_replay_contract.py",
@@ -16455,7 +16753,19 @@
     "snapshot_sha256": "8078b939ff576d962650dfb900f33a52a6b929563bd250a99f0bbf08750cf39a",
     "snapshot_line_count": 70,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 7
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_pneumatic_physical_runtime.py",
@@ -16497,7 +16807,19 @@
     "snapshot_sha256": "ed8378351533f597256bdec569fafe75d473f57e47e6f7694b1591b3e0abd946",
     "snapshot_line_count": 158,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 13
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_pneumatic_tire_forces.py",
@@ -16506,7 +16828,8 @@
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_pneumatic_tire_forces.cpp"
+      "native/tests/reference/test_pneumatic_tire_forces.cpp",
+      "native/tests/reference/test_pneumatic_tire_oracle.cpp"
     ],
     "verification_ids": [
       "migration_T52",
@@ -16518,7 +16841,20 @@
     "snapshot_sha256": "c1ed487b9c20d0790f5a9be884ba58259af49389e16536b3dec3c85da5c34142",
     "snapshot_line_count": 485,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 15,
+        "golden": 1
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_realistic_pedelec_acceptance.py",
@@ -16602,7 +16938,19 @@
     "snapshot_sha256": "eeacb12413825007738daff4e31321e58d986d8ecda78b06e9b3f83aab4a6861",
     "snapshot_line_count": 164,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 7
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_recorder_columns.py",
@@ -17253,7 +17601,19 @@
     "snapshot_sha256": "5252f723579715f5279033fa55732e45ded7eb92ce04777284fc01e7f0675198",
     "snapshot_line_count": 25,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 2
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    }
   },
   {
     "path": "tests/reference/test_terrain_placement_regression.py",
@@ -17525,16 +17885,9 @@
     "owner_task": "T55",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/tools/golden_episode_main.cpp",
-      "native/src/tools/episode_compare_main.cpp",
-      "native/src/tools/divergence_horizon_main.cpp",
-      "native/src/tools/measure_realtime_main.cpp",
-      "native/src/tools/step_profile_main.cpp",
-      "native/src/tools/diag_main.cpp",
-      "native/src/tools/finalize_bench_main.cpp",
-      "native/src/tools/benchmark_main.cpp",
-      "native/src/tools/state_format.hpp",
-      "native/src/tools/state_format.cpp"
+      "native/src/golden/episode.cpp",
+      "native/src/cli/recording_golden.cpp",
+      "native/tests/reference/test_golden_episode_codec.cpp"
     ],
     "verification_ids": [
       "migration_T55",
@@ -17546,7 +17899,15 @@
     "snapshot_sha256": "f637b45afe42a2fa033e7d1dfd2e016071325458258e6e30f659608bbb5898ed",
     "snapshot_line_count": 125,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "implemented_pending_qualification",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ],
+      "verification": "No compilation, project execution or platform capture performed in this session"
+    }
   },
   {
     "path": "tools/golden_episode.py",
@@ -17555,16 +17916,11 @@
     "owner_task": "T55",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/tools/golden_episode_main.cpp",
-      "native/src/tools/episode_compare_main.cpp",
-      "native/src/tools/divergence_horizon_main.cpp",
-      "native/src/tools/measure_realtime_main.cpp",
-      "native/src/tools/step_profile_main.cpp",
-      "native/src/tools/diag_main.cpp",
-      "native/src/tools/finalize_bench_main.cpp",
-      "native/src/tools/benchmark_main.cpp",
-      "native/src/tools/state_format.hpp",
-      "native/src/tools/state_format.cpp"
+      "native/src/golden/episode.hpp",
+      "native/src/golden/episode.cpp",
+      "native/src/golden/capture.cpp",
+      "native/src/cli/recording_golden.cpp",
+      "native/tests/reference/test_golden_episode_tool.cpp"
     ],
     "verification_ids": [
       "migration_T55",
@@ -17576,7 +17932,15 @@
     "snapshot_sha256": "f0b7b48de88012d8cc9ab32748b364cda29691e8473b08ea3093d15734345d06",
     "snapshot_line_count": 342,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "implemented_pending_qualification",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ],
+      "verification": "No compilation, project execution or platform capture performed in this session"
+    }
   },
   {
     "path": "tools/install_offline.py",
@@ -17611,16 +17975,12 @@
     "owner_task": "T55",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/tools/golden_episode_main.cpp",
-      "native/src/tools/episode_compare_main.cpp",
-      "native/src/tools/divergence_horizon_main.cpp",
       "native/src/tools/measure_realtime_main.cpp",
-      "native/src/tools/step_profile_main.cpp",
-      "native/src/tools/diag_main.cpp",
-      "native/src/tools/finalize_bench_main.cpp",
-      "native/src/tools/benchmark_main.cpp",
-      "native/src/tools/state_format.hpp",
-      "native/src/tools/state_format.cpp"
+      "native/src/runtime/realtime_command.cpp",
+      "native/src/runtime/realtime_options.cpp",
+      "native/src/runtime/realtime_provenance.cpp",
+      "native/src/runtime/realtime_report.cpp",
+      "native/tests/reference/test_measure_realtime.cpp"
     ],
     "verification_ids": [
       "migration_T55",
@@ -17632,7 +17992,15 @@
     "snapshot_sha256": "338b428a4e585aeff4823011637451887274d553800525d95100e75ca6b0ea9f",
     "snapshot_line_count": 343,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "implemented_pending_qualification",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md"
+      ],
+      "verification": "No compilation, project execution or platform capture performed in this session"
+    }
   },
   {
     "path": "tools/native_checks.py",
@@ -17962,5 +18330,1474 @@
     "snapshot_line_count": 63,
     "tracked": true,
     "presence": "tracked"
+  },
+  {
+    "path": "src/bike_sim/native/execution_identity.py",
+    "sha256": "77de3479d42874c16e992b76c49c525c5ac847e4fd6702001e8cde0b5d472364",
+    "line_count": 399,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "77de3479d42874c16e992b76c49c525c5ac847e4fd6702001e8cde0b5d472364",
+    "snapshot_line_count": 399,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "378467cc8403599a86cb7b7deb467584892bb84bb35bed9aff4ddd1841e0dce1"
+  },
+  {
+    "path": "src/bike_sim/native/provider_build_id.py",
+    "sha256": "c66767c809726705583908e0aaccf42ca83b13c627dc236efdbb5985b2baa6f5",
+    "line_count": 36,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "c66767c809726705583908e0aaccf42ca83b13c627dc236efdbb5985b2baa6f5",
+    "snapshot_line_count": 36,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "6a53e73a8d29e0b84d9d72d8f90f7a66de94f7669ce25145878d4573c800fa21"
+  },
+  {
+    "path": "tests/fixtures/golden/episode/pinned_savage_40/freeze.py",
+    "sha256": "b33dbcc865e94113a74b6d4862a5d7ff4031c97f9072658b493ab83905223e1a",
+    "line_count": 52,
+    "owner_task": "T53",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [
+      "phase3_source_inventory",
+      "two_platform_golden_acquisition",
+      "T63"
+    ],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence",
+    "status": "planned",
+    "snapshot_sha256": "b33dbcc865e94113a74b6d4862a5d7ff4031c97f9072658b493ab83905223e1a",
+    "snapshot_line_count": 52,
+    "tracked": false,
+    "presence": "new_source",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open."
+  },
+  {
+    "path": "tests/portability/interpreter_shim.py",
+    "sha256": "4b1c51933635c2c013963116f7b131e8c82f5b10d283600dd400beb58bcf054a",
+    "line_count": 41,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "4b1c51933635c2c013963116f7b131e8c82f5b10d283600dd400beb58bcf054a",
+    "snapshot_line_count": 41,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "939d31faf7ed85ae1a73dc3d36b5f2821b315258c32f9eb29293225e43c95de0"
+  },
+  {
+    "path": "tests/portability/offline_install_probe.py",
+    "sha256": "3e5e08c68f4e7a35c0caca93d25236c67071ac887eeb4d6e9c95897605f00ec1",
+    "line_count": 321,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "3e5e08c68f4e7a35c0caca93d25236c67071ac887eeb4d6e9c95897605f00ec1",
+    "snapshot_line_count": 321,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "6be7a990945f88066e9f14e447f13884347a885105ed9b3f1dc3d2040117d620"
+  },
+  {
+    "path": "tests/portability/test_baseline.py",
+    "sha256": "5a76f3a98dbf19890b93bb537e5771a98741ff824f3b26517d2bde9d21dc941e",
+    "line_count": 103,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_baseline.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "5a76f3a98dbf19890b93bb537e5771a98741ff824f3b26517d2bde9d21dc941e",
+    "snapshot_line_count": 103,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "4521c44aca2f85195114f52c8e8d7ed64580a0f7306cc34fd981e365ebf3debc"
+  },
+  {
+    "path": "tests/portability/test_ci_lanes.py",
+    "sha256": "01c5669fc815c63d56d181a69e0d6de7fd3416f962f1b2bb9687873785d62f1b",
+    "line_count": 430,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_ci_lanes.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "01c5669fc815c63d56d181a69e0d6de7fd3416f962f1b2bb9687873785d62f1b",
+    "snapshot_line_count": 430,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "70920b988fb5f0ede20b28a461d200e2d7aa41d0078541b7297da3ae9ad075c8"
+  },
+  {
+    "path": "tests/portability/test_cmake_platform.py",
+    "sha256": "76280859080c69721e2d95105d99031b3fe6a2bcd7f0a37e706b420a5a49119a",
+    "line_count": 424,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_cmake_platform.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "76280859080c69721e2d95105d99031b3fe6a2bcd7f0a37e706b420a5a49119a",
+    "snapshot_line_count": 424,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "c8ec94b61725855086341b61c57ab147421d2b30fa28d167696c7135f670f142"
+  },
+  {
+    "path": "tests/portability/test_compiler_policy.py",
+    "sha256": "94636ce71bc6c14968481b7b1a5bbe195edcdd63f86badcfe71117c1f2cb7577",
+    "line_count": 387,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_compiler_policy.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "94636ce71bc6c14968481b7b1a5bbe195edcdd63f86badcfe71117c1f2cb7577",
+    "snapshot_line_count": 387,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "eea9f6f79566003b014432e3d57b4572d266895de0fbc5e5b49045bf26fba112"
+  },
+  {
+    "path": "tests/portability/test_dependency_policy.py",
+    "sha256": "f72a0f75826f8b482fd93253452fb0031b97a08c5c7b95d730607350db62ffd0",
+    "line_count": 82,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_dependency_policy.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "f72a0f75826f8b482fd93253452fb0031b97a08c5c7b95d730607350db62ffd0",
+    "snapshot_line_count": 82,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "0446a0180eceafacd2aa035de975f0bba8afa8ef65d6f429a0c35361c45a3ae8"
+  },
+  {
+    "path": "tests/portability/test_dev_commands.py",
+    "sha256": "fa6f8fad32316352d476002f2c5d2eb4839f054215664dc931206539c92411b1",
+    "line_count": 323,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_dev_commands.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "fa6f8fad32316352d476002f2c5d2eb4839f054215664dc931206539c92411b1",
+    "snapshot_line_count": 323,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "34eec57b7a31b5e6f9bf471bc9ecf8f5b9bb44038ce3d5247b345eeb53258f3d"
+  },
+  {
+    "path": "tests/portability/test_development_docs.py",
+    "sha256": "f001bec4b3c843e570314b447464f8a3f579a2e332248c0895af17bf9689a750",
+    "line_count": 264,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_development_docs.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "f001bec4b3c843e570314b447464f8a3f579a2e332248c0895af17bf9689a750",
+    "snapshot_line_count": 264,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "cde261d541fd292680baea8e01afb367d788f30e887d59dc7a6df52ec79a1a52"
+  },
+  {
+    "path": "tests/portability/test_headless_imports.py",
+    "sha256": "9dad3da1e4f96103c3f40e23e93a4775f6057e131fc3bd96be647c8129fca63e",
+    "line_count": 139,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_headless_imports.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "9dad3da1e4f96103c3f40e23e93a4775f6057e131fc3bd96be647c8129fca63e",
+    "snapshot_line_count": 139,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "ab9395771aab4d022a54e9b5eadcdb65d1354efd2ab88914f3beec3b5ca13499"
+  },
+  {
+    "path": "tests/portability/test_install_modes.py",
+    "sha256": "df403d4028a20551954cb13127cf53ecc9adadb6cf6a0657f881fcbcf3969d3c",
+    "line_count": 605,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_install_modes.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "df403d4028a20551954cb13127cf53ecc9adadb6cf6a0657f881fcbcf3969d3c",
+    "snapshot_line_count": 605,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "6b3592fdc9adbd4f5b126715732a9670c53c7acfadf12edb579a8603e4e6a870"
+  },
+  {
+    "path": "tests/portability/test_native_coverage_tools.py",
+    "sha256": "b30ef9ac199d29bcbd3eccac9b477b2986614e7846021d36b3fcd20f9aaf1161",
+    "line_count": 355,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_native_coverage_tools.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "b30ef9ac199d29bcbd3eccac9b477b2986614e7846021d36b3fcd20f9aaf1161",
+    "snapshot_line_count": 355,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "b0333c3f1d0c2c1d43fe1ffcebf3d7404883f88fa9ab8eca109a236c56796bc6"
+  },
+  {
+    "path": "tests/portability/test_native_dependencies.py",
+    "sha256": "85260e7234937f7b9fdd40be8e1733b5ef2095c706fedc7004f963348635a2fc",
+    "line_count": 367,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_native_dependencies.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "85260e7234937f7b9fdd40be8e1733b5ef2095c706fedc7004f963348635a2fc",
+    "snapshot_line_count": 367,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "e1ee5eb2ff619c2576b9c2e3fbf12df3f34ba0dd0518bf71def6501397d7a3e2"
+  },
+  {
+    "path": "tests/portability/test_native_runtime.py",
+    "sha256": "068d931d0a1fde15ce12ad3e67c6d04583c3420784facda870dabce5365319c7",
+    "line_count": 1308,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_native_runtime.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "068d931d0a1fde15ce12ad3e67c6d04583c3420784facda870dabce5365319c7",
+    "snapshot_line_count": 1308,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "49b1bcae16f3a730496c9d40ae9e9898a53e2597d73830951732f32d90432c64"
+  },
+  {
+    "path": "tests/portability/test_native_toolchain.py",
+    "sha256": "4d4a8706c64aee9dcb548db8305263618bd03ec99b2a063c44399f19fbcfd622",
+    "line_count": 644,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_native_toolchain.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "4d4a8706c64aee9dcb548db8305263618bd03ec99b2a063c44399f19fbcfd622",
+    "snapshot_line_count": 644,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "4138925a8fba046be3cf301ab44824c6f1db2cebfbe0f450edab6b19c786a5d2"
+  },
+  {
+    "path": "tests/portability/test_numerics_discovery.py",
+    "sha256": "30cee8e14c6447869e15ef28f3be7778fe6cd2bc182b857d250ac58b5e5674ce",
+    "line_count": 1960,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_numerics_discovery.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "30cee8e14c6447869e15ef28f3be7778fe6cd2bc182b857d250ac58b5e5674ce",
+    "snapshot_line_count": 1960,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "0fd3db0f70ca61cf732927ec7a4c433297be687f77c14c245589fdcb85cf02e3"
+  },
+  {
+    "path": "tests/portability/test_offline_bundle.py",
+    "sha256": "6c19c7f748cfc966b1486b62db6308e6dec3340db7eedd78f2ac137497ece726",
+    "line_count": 570,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_offline_bundle.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "6c19c7f748cfc966b1486b62db6308e6dec3340db7eedd78f2ac137497ece726",
+    "snapshot_line_count": 570,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "415efc5efef4df51e76aab08e65490929c3bb9fee5a792e923f9bd0789fa6fff"
+  },
+  {
+    "path": "tests/portability/test_offline_install.py",
+    "sha256": "25f9b0bdb73b93d98de96934f8fefc45bac68a74f69e36ec4974673be1e95954",
+    "line_count": 733,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_offline_install.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "25f9b0bdb73b93d98de96934f8fefc45bac68a74f69e36ec4974673be1e95954",
+    "snapshot_line_count": 733,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "2189cb00b8b717e5bae2dcd7959688c8d13c326d245d365cb36f627c033bf688"
+  },
+  {
+    "path": "tests/portability/test_offline_tools.py",
+    "sha256": "ed3e74fdd7db98353af72c4bca44d5d1f8544fb630ec7063e6efe869b0be2abd",
+    "line_count": 182,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_offline_tools.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "ed3e74fdd7db98353af72c4bca44d5d1f8544fb630ec7063e6efe869b0be2abd",
+    "snapshot_line_count": 182,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "f3cdd43283d4bcddd961f10d61010b6fdebc2520d619360dde5c1dca825942d9"
+  },
+  {
+    "path": "tests/portability/test_performance_evidence.py",
+    "sha256": "9fae8a671b4071107b3f2f26cdaaf62f518ac61ee9d215b843825f424ce8914a",
+    "line_count": 173,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_performance_evidence.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "9fae8a671b4071107b3f2f26cdaaf62f518ac61ee9d215b843825f424ce8914a",
+    "snapshot_line_count": 173,
+    "tracked": true,
+    "presence": "tracked",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "port": 16
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    },
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "827b09538331e3f955257f7c86d0bf6aae66fd922ca601cdfb0ea2e47e30b63e"
+  },
+  {
+    "path": "tests/portability/test_provider_identity.py",
+    "sha256": "80394aae88a6b02471985c627bed5b304999699f6246d91d2b751a2df805e846",
+    "line_count": 475,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_provider_identity.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "80394aae88a6b02471985c627bed5b304999699f6246d91d2b751a2df805e846",
+    "snapshot_line_count": 475,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "b8926dc53453d826e4d4c838f792fec9047f30022005c0d7dec847f2e99b5d3b"
+  },
+  {
+    "path": "tests/portability/test_qualification_report.py",
+    "sha256": "45253fdf9774b3103610e8f66f0159eddf7d0a2c028fb1c3796ce85d26e56d9a",
+    "line_count": 743,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_qualification_report.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "45253fdf9774b3103610e8f66f0159eddf7d0a2c028fb1c3796ce85d26e56d9a",
+    "snapshot_line_count": 743,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "96e8514e38164d4cbcd5023f726c4bd73299e9b64df63db99a38754c5dc6b26e"
+  },
+  {
+    "path": "tests/portability/test_release_gate.py",
+    "sha256": "7e010b5560754a671f9de7ae297df1a5b4557c4d50808816163a96febd5ec9d5",
+    "line_count": 869,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_release_gate.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "7e010b5560754a671f9de7ae297df1a5b4557c4d50808816163a96febd5ec9d5",
+    "snapshot_line_count": 869,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "90f83820f3404e8cd4bb126208de7b44f314c79d6ca1d7af1e12b4f494d1e7cc"
+  },
+  {
+    "path": "tests/portability/test_root_configure.py",
+    "sha256": "23708279fb28c70c018e8c409502d1c911848a767d598068d60a8b5502f1f948",
+    "line_count": 116,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_root_configure.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "23708279fb28c70c018e8c409502d1c911848a767d598068d60a8b5502f1f948",
+    "snapshot_line_count": 116,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "b584fafaa5677ca551e07f0e79c3f21278489bacf410496632a525fbf7d3540e"
+  },
+  {
+    "path": "tests/portability/test_viewer_launch_platform.py",
+    "sha256": "8f58a039efa5f1ed21e14f67ab3edff8dcaacfb06294155d8d18d5ccf119bcec",
+    "line_count": 434,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_viewer_launch_platform.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "8f58a039efa5f1ed21e14f67ab3edff8dcaacfb06294155d8d18d5ccf119bcec",
+    "snapshot_line_count": 434,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "2032313622ee8949b4139d2df2b47d67f8418cab35724d64bce8fb574ed03ed9"
+  },
+  {
+    "path": "tests/portability/test_worker_platform.py",
+    "sha256": "3a701221afea84b1134f2489722b5b6966c0d5a0d7f68204e0e0065386d3b35f",
+    "line_count": 214,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_worker_platform.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "3a701221afea84b1134f2489722b5b6966c0d5a0d7f68204e0e0065386d3b35f",
+    "snapshot_line_count": 214,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "7738a86c22e99090540ca2c026d3a7b0dc35f765f7964a53317e38073ba43cea"
+  },
+  {
+    "path": "tests/portability/worker_entry_probe.py",
+    "sha256": "ea28019b609df75631e66691fd35b1f1bfb547ffbb45ab20760293c9ac036f8b",
+    "line_count": 110,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "ea28019b609df75631e66691fd35b1f1bfb547ffbb45ab20760293c9ac036f8b",
+    "snapshot_line_count": 110,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "1917b7f3446cdcac3a3ca188e27886570d04974e3864277b89cb1a1f72ea9a01"
+  },
+  {
+    "path": "tests/reference/_golden.py",
+    "sha256": "010b0b16d9b7757d8bbb48aed397b8fce167614ade3388520539a8d2a2b6c4a3",
+    "line_count": 106,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [
+      "two_platform_golden_acquisition",
+      "source_assertion_map",
+      "T63"
+    ],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "010b0b16d9b7757d8bbb48aed397b8fce167614ade3388520539a8d2a2b6c4a3",
+    "snapshot_line_count": 106,
+    "tracked": false,
+    "presence": "new_source",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open."
+  },
+  {
+    "path": "tests/reference/test_golden_hook.py",
+    "sha256": "0ba7951cdfa86eeef879a3b71a43101f65e0f38a027f5e95f92daa732e8ed5a7",
+    "line_count": 110,
+    "owner_task": "T53",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [
+      "two_platform_golden_acquisition",
+      "source_assertion_map",
+      "T63"
+    ],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "0ba7951cdfa86eeef879a3b71a43101f65e0f38a027f5e95f92daa732e8ed5a7",
+    "snapshot_line_count": 110,
+    "tracked": false,
+    "presence": "new_source",
+    "phase3_source_implementation": {
+      "date": "2026-10-21",
+      "status": "source_triaged",
+      "counts": {
+        "drop": 12
+      },
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "migration/test-port-map.json"
+      ],
+      "verification": "Not executed; deletion gates remain open"
+    },
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open."
+  },
+  {
+    "path": "tests/reference/test_native_linux_headless.py",
+    "sha256": "19cd0a4f4ba3e5b2675120ca87d5145c44f3e1a70e2dd098ea6ac368cde021a4",
+    "line_count": 336,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_native_linux_headless.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "19cd0a4f4ba3e5b2675120ca87d5145c44f3e1a70e2dd098ea6ac368cde021a4",
+    "snapshot_line_count": 336,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "6bc8db92fad9778f74e11cbe764366661bb8fb60d19271adeb3a2ed6a210c855"
+  },
+  {
+    "path": "tests/reference/test_native_numeric_portability.py",
+    "sha256": "1dd160fe9fa15971be8f3d86b0f05015e419befde9e8d438f6ffcfcaf7ad0215",
+    "line_count": 609,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_native_numeric_portability.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "1dd160fe9fa15971be8f3d86b0f05015e419befde9e8d438f6ffcfcaf7ad0215",
+    "snapshot_line_count": 609,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "ce2146e5416f77eefb8e8cc607127c0c684c80f22e9eb66421963180e2ff5cc7"
+  },
+  {
+    "path": "tests/reference/test_native_platform_blas.py",
+    "sha256": "95b721b4a9c35754db6adb1ca6427427d206894d9d1c4e1e2b64d67a34c06b86",
+    "line_count": 176,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_native_platform_blas.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "95b721b4a9c35754db6adb1ca6427427d206894d9d1c4e1e2b64d67a34c06b86",
+    "snapshot_line_count": 176,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "3d5a26285b1cc5c7d88d363c8b14f17211e81dcb78066278e93810829ec9c90c"
+  },
+  {
+    "path": "tests/reference/test_native_platform_linkage.py",
+    "sha256": "18e0f73ed9661ef9ba24abc3a89cb6742a4f7058117ea8336fc392d75cea3b2b",
+    "line_count": 301,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_native_platform_linkage.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "18e0f73ed9661ef9ba24abc3a89cb6742a4f7058117ea8336fc392d75cea3b2b",
+    "snapshot_line_count": 301,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "5daba9374184f0ce94e0477924a14bffb2f77e260cf2e708fcdeb4b73a98736a"
+  },
+  {
+    "path": "tests/reference/test_native_platform_recording.py",
+    "sha256": "d9ad5b846add89e0e4ff09f6bb0ead72b6bc08bda6947d810cd6b58ce1b0ce26",
+    "line_count": 679,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_native_platform_recording.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "d9ad5b846add89e0e4ff09f6bb0ead72b6bc08bda6947d810cd6b58ce1b0ce26",
+    "snapshot_line_count": 679,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "ac27c86a08d80c17d46cd82d7f39319f2ea55b55160743f82eb0528f47f05355"
+  },
+  {
+    "path": "tests/reference/test_native_platform_replay.py",
+    "sha256": "7a9e7614e6219d4a5cade5e61c52c1378bdd5e1053947b2f87346dd6b06e1b51",
+    "line_count": 181,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_native_platform_replay.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "7a9e7614e6219d4a5cade5e61c52c1378bdd5e1053947b2f87346dd6b06e1b51",
+    "snapshot_line_count": 181,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "8a43a033cbb841949bafddead76eae071fc09bba9f0ef8b8a18cc81bf15fa105"
+  },
+  {
+    "path": "tests/test_async_recovery.py",
+    "sha256": "b896baa2a2511f07dc79146b0829dd891f6d0d2f93cb3b98bb3608c9d34ebd14",
+    "line_count": 254,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_async_recovery.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "b896baa2a2511f07dc79146b0829dd891f6d0d2f93cb3b98bb3608c9d34ebd14",
+    "snapshot_line_count": 254,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "739cf9292eb595d743173210b34597dad144a8b97125e7db2e1deac18b2c86bb"
+  },
+  {
+    "path": "tests/test_execution_identity.py",
+    "sha256": "b579065b6825dd46beb23ba38d2d4cb4f14157b9b332b66710e0dd5acc28b304",
+    "line_count": 442,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_execution_identity.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "b579065b6825dd46beb23ba38d2d4cb4f14157b9b332b66710e0dd5acc28b304",
+    "snapshot_line_count": 442,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "29ba119662b7f99ded0278a6877c762d12057e8e21ec862f4f02b7ff712cb185"
+  },
+  {
+    "path": "tests/test_recording_platform_compatibility.py",
+    "sha256": "ade34dca8d893e015bae59e96b1e5ee06484f89e614080031c3f55de07f043ed",
+    "line_count": 518,
+    "owner_task": "T53",
+    "action": "port_assertions_and_fixture_orchestration",
+    "replacement_paths": [
+      "native/tests/reference/test_recording_platform_compatibility.cpp"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "ade34dca8d893e015bae59e96b1e5ee06484f89e614080031c3f55de07f043ed",
+    "snapshot_line_count": 518,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "f44ccbc6e7b70918db519115ed3496fd17b6b199201c55a2a188b4499a2339a0"
+  },
+  {
+    "path": "tools/ci_portability.py",
+    "sha256": "43b25b06735f915179eab78b46b1bfa646d611bb4c454d09d05a57cb68c331a5",
+    "line_count": 892,
+    "owner_task": "T58",
+    "action": "replace_with_ci_checklist",
+    "replacement_paths": [
+      ".github/workflows/native.yml",
+      "docs/releases/python-free-qualification.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "43b25b06735f915179eab78b46b1bfa646d611bb4c454d09d05a57cb68c331a5",
+    "snapshot_line_count": 892,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "7996666c8aabebad9abfbf60d7d1df7089507ef16c921f687fac617ed03a5ccf"
+  },
+  {
+    "path": "tools/dev.py",
+    "sha256": "bd54873b620a90f32c7ad068da5d311a7f6f82cd84bf3e2b5e5f26b812458a04",
+    "line_count": 898,
+    "owner_task": "T57",
+    "action": "replace_with_cmake_ctest_cpack",
+    "replacement_paths": [
+      "CMakePresets.json",
+      "native/cmake/Sanitizers.cmake",
+      "native/cmake/Coverage.cmake",
+      "packaging/CMakeLists.txt"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "bd54873b620a90f32c7ad068da5d311a7f6f82cd84bf3e2b5e5f26b812458a04",
+    "snapshot_line_count": 898,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "344f59f8a2157291cc639bf7e0a64e584d219d76d97553298c2c38c4e57643c1"
+  },
+  {
+    "path": "tools/migration/_t10_capture.py",
+    "sha256": "98a61f74dea139a5b001649ab44fa9594fa2891b3d643fbaa222386dc6a5f096",
+    "line_count": 108,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "98a61f74dea139a5b001649ab44fa9594fa2891b3d643fbaa222386dc6a5f096",
+    "snapshot_line_count": 108,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "53f75e352228f2ba9c5b0b2b65b1abf8e823c562633c1f806c30116ce61f8f65"
+  },
+  {
+    "path": "tools/migration/capture_reference.py",
+    "sha256": "c6df40a9237972a8b937bae8e64f810342ace1ed0a0353ce502ffa6f3ef6d7e2",
+    "line_count": 3910,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "c6df40a9237972a8b937bae8e64f810342ace1ed0a0353ce502ffa6f3ef6d7e2",
+    "snapshot_line_count": 3910,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "a1e41cbdeced8f36a791ba9cc75d581dcc436330516e2bbd3ba0e59d5989a6cf"
+  },
+  {
+    "path": "tools/native_dependencies.py",
+    "sha256": "0204c0543ba6213224b7d84766e7d50e593c1cb665a3a5dcf97f22e69a6ff226",
+    "line_count": 2675,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "0204c0543ba6213224b7d84766e7d50e593c1cb665a3a5dcf97f22e69a6ff226",
+    "snapshot_line_count": 2675,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "e555254f0e514ea3812ed641baa0d409a5671dfef7a3df30fa03ce2201bac647"
+  },
+  {
+    "path": "tools/native_runtime.py",
+    "sha256": "a35133c585ea56169acb292ed496984db7dcf08b3652d4b18f35bf3df12d44ef",
+    "line_count": 614,
+    "owner_task": "T57",
+    "action": "replace_with_cmake_ctest_cpack",
+    "replacement_paths": [
+      "CMakePresets.json",
+      "native/cmake/Sanitizers.cmake",
+      "native/cmake/Coverage.cmake",
+      "packaging/CMakeLists.txt"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "a35133c585ea56169acb292ed496984db7dcf08b3652d4b18f35bf3df12d44ef",
+    "snapshot_line_count": 614,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "20d5daf3808e3ea576247426bd3b84f7c46837ebe6a7a071d793d9466a85673f"
+  },
+  {
+    "path": "tools/native_toolchain.py",
+    "sha256": "03e87c96d52f3a73f20c3495c7cbc38721fa234f7b9aec66d7988a0db0ab6cdf",
+    "line_count": 711,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "03e87c96d52f3a73f20c3495c7cbc38721fa234f7b9aec66d7988a0db0ab6cdf",
+    "snapshot_line_count": 711,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "43430ceeb41c9c2832dc537dcd2a0009a84c4a067b81b3cdb70b4bf9597d1dbf"
+  },
+  {
+    "path": "tools/numeric_portability_probe.py",
+    "sha256": "389ea363453b251c34eec4d7fa6a0e834275d255b91f2f52bfde0e1296043458",
+    "line_count": 639,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "389ea363453b251c34eec4d7fa6a0e834275d255b91f2f52bfde0e1296043458",
+    "snapshot_line_count": 639,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "74773cf576923ddb26727e937b206cadcf1b069d14e5f2fb4a29c8868275eac5"
+  },
+  {
+    "path": "tools/offline_bundle.py",
+    "sha256": "4d8ec0252ac20acafbd7f5dae6bfcf2fe296745ab1213cc43f6e3d53bf36fcc7",
+    "line_count": 967,
+    "owner_task": "T57",
+    "action": "replace_with_cmake_ctest_cpack",
+    "replacement_paths": [
+      "CMakePresets.json",
+      "native/cmake/Sanitizers.cmake",
+      "native/cmake/Coverage.cmake",
+      "packaging/CMakeLists.txt"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "4d8ec0252ac20acafbd7f5dae6bfcf2fe296745ab1213cc43f6e3d53bf36fcc7",
+    "snapshot_line_count": 967,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "fa1644f2b137ea1875986b2627259f83db8ca84d179d61c4a34aedf74a72becc"
+  },
+  {
+    "path": "tools/offline_manifest.py",
+    "sha256": "c5813f927e45031b68142e5cced6c36bae18a86f27c3fb6a2591d89b543b833c",
+    "line_count": 360,
+    "owner_task": "T57",
+    "action": "replace_with_cmake_ctest_cpack",
+    "replacement_paths": [
+      "CMakePresets.json",
+      "native/cmake/Sanitizers.cmake",
+      "native/cmake/Coverage.cmake",
+      "packaging/CMakeLists.txt"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "c5813f927e45031b68142e5cced6c36bae18a86f27c3fb6a2591d89b543b833c",
+    "snapshot_line_count": 360,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "af9e71fa3f59bdfcbb324aa624fac4509ee452d0f0f831f77827fba4c6c62b29"
+  },
+  {
+    "path": "tools/portability_baseline.py",
+    "sha256": "ef362ae46b0df6d472ebdd0625db03326849f7df010131aa30fe2b39e8ef50b6",
+    "line_count": 364,
+    "owner_task": "T58",
+    "action": "replace_with_ci_checklist",
+    "replacement_paths": [
+      ".github/workflows/native.yml",
+      "docs/releases/python-free-qualification.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "ef362ae46b0df6d472ebdd0625db03326849f7df010131aa30fe2b39e8ef50b6",
+    "snapshot_line_count": 364,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "51ea5f939efc0c8ca3d9e0bc61fcb35f24651585d84cba913ad9582baa9299f1"
+  },
+  {
+    "path": "tools/portability_qualification.py",
+    "sha256": "fd6a63d3f09b6680e17812001047adf306cc8f3f7c323e4f4687691d5da0f294",
+    "line_count": 2196,
+    "owner_task": "T58",
+    "action": "replace_with_ci_checklist",
+    "replacement_paths": [
+      ".github/workflows/native.yml",
+      "docs/releases/python-free-qualification.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "fd6a63d3f09b6680e17812001047adf306cc8f3f7c323e4f4687691d5da0f294",
+    "snapshot_line_count": 2196,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "89936944e5efd39c7dc2761b905647d2b54fe4414d1184fdb7865add04edb218"
+  },
+  {
+    "path": "tools/prepare_offline_tools.py",
+    "sha256": "59e6cc852ac4c4e47473856c98e6071dc09b851d8093c288904fd097a3147e79",
+    "line_count": 110,
+    "owner_task": "T57",
+    "action": "replace_with_cmake_ctest_cpack",
+    "replacement_paths": [
+      "CMakePresets.json",
+      "native/cmake/Sanitizers.cmake",
+      "native/cmake/Coverage.cmake",
+      "packaging/CMakeLists.txt"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
+    "status": "planned",
+    "snapshot_sha256": "59e6cc852ac4c4e47473856c98e6071dc09b851d8093c288904fd097a3147e79",
+    "snapshot_line_count": 110,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "a51441ff5afe4e3bd0dfeaac58c2451eea1d33080dea736d2fd672e16cc47e7c"
+  },
+  {
+    "path": "tools/research/adjudication/audit_golden_cases.py",
+    "sha256": "23a9b7d7c4cffa6f2c67562b0fb16355d7c872067efdcadc6f9976c1c480683d",
+    "line_count": 219,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "23a9b7d7c4cffa6f2c67562b0fb16355d7c872067efdcadc6f9976c1c480683d",
+    "snapshot_line_count": 219,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "b2337b24e9f0723d4b15b2aa7fa179f6eb3bbbe76e8ae1c3d0852f16054286af"
+  },
+  {
+    "path": "tools/research/adjudication/gemini_golden_cases.py",
+    "sha256": "60cf2c85842a47cbc418667108a308a6e3462320b3d8c809916d6339f4898bc1",
+    "line_count": 158,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "60cf2c85842a47cbc418667108a308a6e3462320b3d8c809916d6339f4898bc1",
+    "snapshot_line_count": 158,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "76a19926e46e5d59750b4d23e871a521f9776995ccbc2fdfe55da225e56c35ea"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/analyze_profiles.py",
+    "sha256": "a269813a38edbc08da9ad835c09db4fb1d72209c41b3c03b6862b0ad04d8a6e3",
+    "line_count": 125,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "a269813a38edbc08da9ad835c09db4fb1d72209c41b3c03b6862b0ad04d8a6e3",
+    "snapshot_line_count": 125,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "c9b16d7a26cc48eeec9c94d0eb56b0273137e3751f82727b2ee1613df16f2bcf"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/bandfrac.py",
+    "sha256": "13162388eec3f0c5038418953698cbc5950560718323dbb359b1d31e31d23682",
+    "line_count": 65,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "13162388eec3f0c5038418953698cbc5950560718323dbb359b1d31e31d23682",
+    "snapshot_line_count": 65,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "cc9dbe0b595e66fc0204e02c46bb69d1583f4405ef8ba590ec21b9e240540ded"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/compare_stats.py",
+    "sha256": "52009f14b98cf10272232270f1724cef60e5e11bd765e9e82eb8b714e9fac52e",
+    "line_count": 53,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "52009f14b98cf10272232270f1724cef60e5e11bd765e9e82eb8b714e9fac52e",
+    "snapshot_line_count": 53,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "029c9c1b1560470e6ea61f92f43c28de2a53f01a22e450e6c173f083957aa194"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/dem_resolution_check.py",
+    "sha256": "653e7843f24b41daaaea6ad2672bc15d6a2216d5c0ea65cfc606727fbf72d05c",
+    "line_count": 140,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "653e7843f24b41daaaea6ad2672bc15d6a2216d5c0ea65cfc606727fbf72d05c",
+    "snapshot_line_count": 140,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "9847ed875afad27038f1ae08f0145046b619bf626fdc352f488aa7b346617d02"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/dense_check.py",
+    "sha256": "390cd2ad3352720870850cb811e722a5ec09cd3001f6fabcfe5e97a35af8c252",
+    "line_count": 70,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "390cd2ad3352720870850cb811e722a5ec09cd3001f6fabcfe5e97a35af8c252",
+    "snapshot_line_count": 70,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "f600089aa498b9398a6524d1e36a34c857995285c962c014a50506e45cf2b8c5"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/descfrac.py",
+    "sha256": "ab5edc17e768dc6464293ded27c6d72b740385a395ca29fc00ed2a6ac4364413",
+    "line_count": 64,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "ab5edc17e768dc6464293ded27c6d72b740385a395ca29fc00ed2a6ac4364413",
+    "snapshot_line_count": 64,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "edae7170b9bda714e3d980ff4a5a5e857f38e9a6ed3cf3cc6c89983a0fed24ed"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/download_tiles.py",
+    "sha256": "6f1abb360b07ad5bbcd391beeb210d4336ca6c558b31e48d48da0571ed568b11",
+    "line_count": 78,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "6f1abb360b07ad5bbcd391beeb210d4336ca6c558b31e48d48da0571ed568b11",
+    "snapshot_line_count": 78,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "fd0e2defcd8791a1e4645c919ff525dc09a85af9043ab16a8360a2d30b6d5cfa"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/fetch_dem_index.py",
+    "sha256": "dc8a8f288dc116e9e37dc6b8dc65a38efb822b9adb5ed62a5c99a2aa457e9d11",
+    "line_count": 69,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "dc8a8f288dc116e9e37dc6b8dc65a38efb822b9adb5ed62a5c99a2aa457e9d11",
+    "snapshot_line_count": 69,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "723f51136d8770ddbb7a7bfe7938b8047927241bd5e0b8700a62771741009d82"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/fetch_osm_paths.py",
+    "sha256": "ac90b5f359e467f79371661cfe5d9f920bbb806343be64a4d6e3d6f9b0ef179f",
+    "line_count": 72,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "ac90b5f359e467f79371661cfe5d9f920bbb806343be64a4d6e3d6f9b0ef179f",
+    "snapshot_line_count": 72,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "69e7731b6f70efa312e7828b02416fec99f05a9c719683e9aef88e58cdb3db5e"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/noise_check.py",
+    "sha256": "bae7da2d36b7e07e06b93840309ae5fa1a3eb80bc96d93f76506e94c39460735",
+    "line_count": 54,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "bae7da2d36b7e07e06b93840309ae5fa1a3eb80bc96d93f76506e94c39460735",
+    "snapshot_line_count": 54,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "dfb0c65a0129748e9c475274fe8a2dbc2ca107cd2dbcfcd0ba109d623cbe16f3"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/prepare.py",
+    "sha256": "91489663d71440ddd7e5b5b09056313e1f92bb311729f4477262a7dc60df1648",
+    "line_count": 83,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "91489663d71440ddd7e5b5b09056313e1f92bb311729f4477262a7dc60df1648",
+    "snapshot_line_count": 83,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "80807892d5ae7a29dc7411293b7298ee0452780caa1b6b0afbcda52ca627aeba"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/scree_analyze.py",
+    "sha256": "c3c91cf50a29b7464316daaf323d89e35788d4098efd5cee491a042999c63c71",
+    "line_count": 215,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "c3c91cf50a29b7464316daaf323d89e35788d4098efd5cee491a042999c63c71",
+    "snapshot_line_count": 215,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "76d027a14fc0b15b21fbe65cb4be170babce5f1e1bbf9d8c9956cdcdc2d74f8f"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/scree_collect.py",
+    "sha256": "efab54705810fb74adeace63ab9f33ef7c456b5aafc753c6f2f6c1e2904bf490",
+    "line_count": 142,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "efab54705810fb74adeace63ab9f33ef7c456b5aafc753c6f2f6c1e2904bf490",
+    "snapshot_line_count": 142,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "50e5df392d38d4fd01e9c4e16556d5c737b93bd71f18f9f36d0a820fb7680a1e"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/scree_elev.py",
+    "sha256": "809440969a0c69d90d4d6ff2c540580902c81d839827e16b51ac9c94236fd1c5",
+    "line_count": 223,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "809440969a0c69d90d4d6ff2c540580902c81d839827e16b51ac9c94236fd1c5",
+    "snapshot_line_count": 223,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "26a6305b2f267c75a98161214d7aee84625693f4f415b67fc81c5e6dd6ba8ed1"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/scree_stats.py",
+    "sha256": "cd4274f3e9cefe6780f04f74507b67f44a256c508cdbd2e67e26048f4959647e",
+    "line_count": 112,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "cd4274f3e9cefe6780f04f74507b67f44a256c508cdbd2e67e26048f4959647e",
+    "snapshot_line_count": 112,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "2dbcca1fed0ad3def4c580f78cd252cdb3e6289e06da694831c811ce59ee69f0"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/scree_tiles.py",
+    "sha256": "6a8f23c59c8857ed4523b0081ef3f9ed9adde78bb41876a170546e29ecb43d36",
+    "line_count": 86,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "6a8f23c59c8857ed4523b0081ef3f9ed9adde78bb41876a170546e29ecb43d36",
+    "snapshot_line_count": 86,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "bbb09f4af420a3d9ce3eefc65888f376c321ebe8479d0b64d7a9372f18a30bf5"
+  },
+  {
+    "path": "tools/research/alpine_osm_dem/stats2.py",
+    "sha256": "d72da0cabe7ff1559c7cd87380158d3cccee8136d34cf30ed160ededd2604326",
+    "line_count": 212,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "d72da0cabe7ff1559c7cd87380158d3cccee8136d34cf30ed160ededd2604326",
+    "snapshot_line_count": 212,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "38f892300da3f5dd1d0fbbc3a9d8570e39ad38035adcdc25d6822519ebe1ddce"
+  },
+  {
+    "path": "tools/research/lateral_digitise/analyse.py",
+    "sha256": "5425d92bb2b84ce4e2ab6da131d268507a28f1e26f6088379333034551f7cd91",
+    "line_count": 136,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "5425d92bb2b84ce4e2ab6da131d268507a28f1e26f6088379333034551f7cd91",
+    "snapshot_line_count": 136,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "8d9100cda1044478dd945bfd05c9661dce8a65a3e2200ce638420c0009d00d68"
+  },
+  {
+    "path": "tools/research/lateral_digitise/digitise.py",
+    "sha256": "284f6e4a698c293aad04b0094af5abdc3c0011f6ccc35c11a0f4d7dbfc4e2f22",
+    "line_count": 185,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "284f6e4a698c293aad04b0094af5abdc3c0011f6ccc35c11a0f4d7dbfc4e2f22",
+    "snapshot_line_count": 185,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "0c8b3a468feede8abf89639ca5b213c2abddf092fcad5e3273caf7ec242d00f8"
+  },
+  {
+    "path": "tools/research/lateral_digitise/finalise.py",
+    "sha256": "4cbefc65bd8bdf5f9e95012b86aaa3a79aceb45632b5a45d0e90e05b51507871",
+    "line_count": 129,
+    "owner_task": "T63",
+    "action": "delete_with_python",
+    "replacement_paths": [
+      "docs/reference/README-provenance.md"
+    ],
+    "verification_ids": [],
+    "deletion_gate": "OD-1 documented default: Phase 4.05 after completeness/qualification; preserve committed outputs and record deletion commit",
+    "status": "planned",
+    "snapshot_sha256": "4cbefc65bd8bdf5f9e95012b86aaa3a79aceb45632b5a45d0e90e05b51507871",
+    "snapshot_line_count": 129,
+    "tracked": true,
+    "presence": "tracked",
+    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
+    "repomix_input_text_sha256": "50ad94869571720fc79c5db76d8a8b94813741ed7138dbc6d3a3ebeae5b1bf89"
   }
 ]

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-10-18",
-  "purpose": "Exact qualified tool/interpreter/provider versions and runner requirements measured in this repository (portability T28). Consumed by .github/workflows/portability.yml and tools/ci_portability.py; every entry cites where it was measured.",
+  "purpose": "Historical portability T28 metadata retained for transition Python consumers. Active root-preset qualification is recorded in docs/releases/python-free-qualification.md; historical measured values do not qualify the new graph.",
   "sources": [
     "docs/superpowers/audits/2026-10-14-linux-macos-baseline.md",
     "docs/development/dependency-matrix.md",
@@ -94,7 +94,7 @@
         "gxx": "Homebrew g++-16 (frontends/odr sweeps require a real GNU frontend)"
       }
     },
-    "unqualified": "Linux aarch64 and macOS x86_64 hosted lanes are additional validation lanes only; musl, Windows, cross-compilation and native Wayland are out of scope"
+    "unqualified": "Linux x86_64, macOS x86_64 and Linux desktop GUI acceptance are not qualified/advertised; musl, Windows, cross-compilation and native Wayland are outside the required lanes."
   },
   "analysis_tools_required": {
     "note": "The native/full profiles run every configured sweep; a missing required tool is a failed gate, never a skip (AGENTS.md/native-engineering.md).",
@@ -107,37 +107,268 @@
       "check_scripts": "shellcheck over tools/*.sh (SHELLCHECK override honored)",
       "coverage": "llvm-profdata + llvm-cov resolved by tools/native_toolchain.py coverage-tools and qualified by a real instrumented format probe"
     },
-    "build": ["cmake", "ctest", "ninja (generator used by the qualified builds)", "make"],
+    "build": [
+      "cmake",
+      "ctest",
+      "ninja (generator used by the qualified builds)",
+      "make"
+    ],
     "overrides": "CLANG_TIDY, ANALYZER_CLANG, CPPCHECK, GXX, SHELLCHECK, LLVM_PROFDATA, LLVM_COV; invalid explicit overrides are hard errors"
   },
   "sanitizer_lanes": {
     "asan": "NATIVE_SANITIZE=ON; clang set address,undefined,local-bounds,float-cast-overflow -fno-sanitize-recover=all (GCC keeps the address,undefined core); runtime resolved by compiler identity via tools/native_runtime.py",
-    "rtsan": "NATIVE_RTSAN=ON; requires an upstream LLVM clang accepting -fsanitize=realtime (brew LLVM on macOS; LLVM >= 20 on Linux — a distro default that lacks it is an unmet gate, not a skip); ASan+RTSan combination rejected at configure",
+    "rtsan": "NATIVE_RTSAN=ON; requires an upstream LLVM clang accepting -fsanitize=realtime (brew LLVM on macOS; LLVM >= 20 on Linux \u2014 a distro default that lacks it is an unmet gate, not a skip); ASan+RTSan combination rejected at configure",
     "coverage": "NATIVE_COVERAGE=ON via tools/native_coverage.sh; clang-family only (llvm-cov source-based format); qualified tool pair required"
   },
   "lanes": {
-    "linux-clang-release": {"runner": "ubuntu-24.04", "system": "Linux", "machines": ["x86_64"], "config": "Release", "profile": "native", "compiler": "clang++", "python_minor": "3.13", "trusted": false},
-    "linux-gcc-debug": {"runner": "ubuntu-24.04", "system": "Linux", "machines": ["x86_64"], "config": "Debug", "profile": "native", "compiler": "g++", "python_minor": "3.13", "trusted": false},
-    "macos-appleclang-release": {"runner": "macos-15", "system": "Darwin", "machines": ["arm64"], "config": "Release", "profile": "native", "compiler": "AppleClang clang++ (/usr/bin/clang++)", "python_minor": "3.13", "trusted": false},
-    "linux-asan": {"runner": "ubuntu-24.04", "system": "Linux", "machines": ["x86_64"], "config": "Debug", "profile": "native", "compiler": "clang++", "cmake": "-DNATIVE_SANITIZE=ON", "python_minor": "3.13", "trusted": false},
-    "macos-asan": {"runner": "macos-15", "system": "Darwin", "machines": ["arm64"], "config": "Debug", "profile": "native", "compiler": "AppleClang clang++", "cmake": "-DNATIVE_SANITIZE=ON", "python_minor": "3.13", "trusted": false},
-    "linux-rtsan": {"runner": "ubuntu-24.04", "system": "Linux", "machines": ["x86_64"], "config": "Release", "profile": "native", "compiler": "upstream LLVM clang++ (clang++-21/20/19 preferred)", "cmake": "-DNATIVE_RTSAN=ON", "python_minor": "3.13", "trusted": false},
-    "macos-rtsan": {"runner": "macos-15", "system": "Darwin", "machines": ["arm64"], "config": "Release", "profile": "native", "compiler": "/opt/homebrew/opt/llvm/bin/clang++", "cmake": "-DNATIVE_RTSAN=ON", "python_minor": "3.13", "trusted": false},
-    "linux-coverage": {"runner": "ubuntu-24.04", "system": "Linux", "machines": ["x86_64"], "driver": "tools/native_coverage.sh", "compiler": "clang++ via CXX", "python_minor": "3.13", "trusted": false},
-    "macos-coverage": {"runner": "macos-15", "system": "Darwin", "machines": ["arm64"], "driver": "tools/native_coverage.sh", "compiler": "clang++ via CXX", "python_minor": "3.13", "trusted": false},
-    "linux-full": {"runner": "ubuntu-24.04", "system": "Linux", "machines": ["x86_64"], "config": "Release", "profile": "full", "compiler": "clang++", "python_minor": "3.13", "trusted": false},
-    "macos-full": {"runner": "macos-15", "system": "Darwin", "machines": ["arm64"], "config": "Release", "profile": "full", "compiler": "AppleClang clang++", "python_minor": "3.13", "trusted": false, "note": "documented 24-failure macOS baseline is classified by tools/portability_qualification.py (T27), not by this lane runner"},
-    "linux-release": {"runner": "self-hosted/linux/bike-qualified", "system": "Linux", "machines": ["x86_64", "aarch64"], "config": "Release", "profile": "native", "compiler": "clang++", "python_minor": "3.13", "trusted": true},
-    "macos-release": {"runner": "self-hosted/macos/bike-qualified", "system": "Darwin", "machines": ["arm64"], "config": "Release", "profile": "native", "compiler": "AppleClang clang++", "python_minor": "3.13", "trusted": true, "note": "retains the recovered macOS baseline environment as a required release gate"},
-    "linux-offline": {"runner": "self-hosted/linux/bike-qualified", "system": "Linux", "machines": ["x86_64", "aarch64"], "driver": "tools/offline_bundle.py + packaging/install_{full,slim}.sh", "python_minor": "3.13", "trusted": true},
-    "macos-offline": {"runner": "self-hosted/macos/bike-qualified", "system": "Darwin", "machines": ["arm64"], "driver": "tools/offline_bundle.py + packaging/install_{full,slim}.sh", "python_minor": "3.13", "trusted": true},
-    "linux-manual-gui": {"runner": "self-hosted/linux/bike-qualified", "system": "Linux", "machines": ["x86_64", "aarch64"], "config": "Release", "profile": "native", "compiler": "clang++", "python_minor": "3.13", "trusted": true, "note": "interactive GUI evidence stays operator-driven (T19/T29)"},
-    "macos-manual-gui": {"runner": "self-hosted/macos/bike-qualified", "system": "Darwin", "machines": ["arm64"], "config": "Release", "profile": "native", "compiler": "AppleClang clang++", "python_minor": "3.13", "trusted": true, "note": "retains mjpython/SDK/Accelerate expectations; interactive evidence stays operator-driven"}
+    "linux-clang-release": {
+      "runner": "ubuntu-24.04",
+      "system": "Linux",
+      "machines": [
+        "x86_64"
+      ],
+      "config": "Release",
+      "profile": "native",
+      "compiler": "clang++",
+      "python_minor": "3.13",
+      "trusted": false,
+      "qualification": "not_qualified_not_advertised",
+      "required_for_phase3_release": false
+    },
+    "linux-gcc-debug": {
+      "runner": "ubuntu-24.04",
+      "system": "Linux",
+      "machines": [
+        "x86_64"
+      ],
+      "config": "Debug",
+      "profile": "native",
+      "compiler": "g++",
+      "python_minor": "3.13",
+      "trusted": false,
+      "qualification": "not_qualified_not_advertised",
+      "required_for_phase3_release": false
+    },
+    "macos-appleclang-release": {
+      "runner": "macos-15",
+      "system": "Darwin",
+      "machines": [
+        "arm64"
+      ],
+      "config": "Release",
+      "profile": "native",
+      "compiler": "AppleClang clang++ (/usr/bin/clang++)",
+      "python_minor": "3.13",
+      "trusted": false
+    },
+    "linux-asan": {
+      "runner": "ubuntu-24.04",
+      "system": "Linux",
+      "machines": [
+        "x86_64"
+      ],
+      "config": "Debug",
+      "profile": "native",
+      "compiler": "clang++",
+      "cmake": "-DNATIVE_SANITIZE=ON",
+      "python_minor": "3.13",
+      "trusted": false,
+      "qualification": "not_qualified_not_advertised",
+      "required_for_phase3_release": false
+    },
+    "macos-asan": {
+      "runner": "macos-15",
+      "system": "Darwin",
+      "machines": [
+        "arm64"
+      ],
+      "config": "Debug",
+      "profile": "native",
+      "compiler": "AppleClang clang++",
+      "cmake": "-DNATIVE_SANITIZE=ON",
+      "python_minor": "3.13",
+      "trusted": false
+    },
+    "linux-rtsan": {
+      "runner": "ubuntu-24.04",
+      "system": "Linux",
+      "machines": [
+        "x86_64"
+      ],
+      "config": "Release",
+      "profile": "native",
+      "compiler": "upstream LLVM clang++ (clang++-21/20/19 preferred)",
+      "cmake": "-DNATIVE_RTSAN=ON",
+      "python_minor": "3.13",
+      "trusted": false,
+      "qualification": "not_qualified_not_advertised",
+      "required_for_phase3_release": false
+    },
+    "macos-rtsan": {
+      "runner": "macos-15",
+      "system": "Darwin",
+      "machines": [
+        "arm64"
+      ],
+      "config": "Release",
+      "profile": "native",
+      "compiler": "/opt/homebrew/opt/llvm/bin/clang++",
+      "cmake": "-DNATIVE_RTSAN=ON",
+      "python_minor": "3.13",
+      "trusted": false
+    },
+    "linux-coverage": {
+      "runner": "ubuntu-24.04",
+      "system": "Linux",
+      "machines": [
+        "x86_64"
+      ],
+      "driver": "tools/native_coverage.sh",
+      "compiler": "clang++ via CXX",
+      "python_minor": "3.13",
+      "trusted": false,
+      "qualification": "not_qualified_not_advertised",
+      "required_for_phase3_release": false
+    },
+    "macos-coverage": {
+      "runner": "macos-15",
+      "system": "Darwin",
+      "machines": [
+        "arm64"
+      ],
+      "driver": "tools/native_coverage.sh",
+      "compiler": "clang++ via CXX",
+      "python_minor": "3.13",
+      "trusted": false
+    },
+    "linux-full": {
+      "runner": "ubuntu-24.04",
+      "system": "Linux",
+      "machines": [
+        "x86_64"
+      ],
+      "config": "Release",
+      "profile": "full",
+      "compiler": "clang++",
+      "python_minor": "3.13",
+      "trusted": false,
+      "qualification": "not_qualified_not_advertised",
+      "required_for_phase3_release": false
+    },
+    "macos-full": {
+      "runner": "macos-15",
+      "system": "Darwin",
+      "machines": [
+        "arm64"
+      ],
+      "config": "Release",
+      "profile": "full",
+      "compiler": "AppleClang clang++",
+      "python_minor": "3.13",
+      "trusted": false,
+      "note": "documented 24-failure macOS baseline is classified by tools/portability_qualification.py (T27), not by this lane runner"
+    },
+    "linux-release": {
+      "runner": "self-hosted/linux/bike-qualified",
+      "system": "Linux",
+      "machines": [
+        "x86_64",
+        "aarch64"
+      ],
+      "config": "Release",
+      "profile": "native",
+      "compiler": "clang++",
+      "python_minor": "3.13",
+      "trusted": true,
+      "qualification": "not_qualified_not_advertised",
+      "required_for_phase3_release": false
+    },
+    "macos-release": {
+      "runner": "self-hosted/macos/bike-qualified",
+      "system": "Darwin",
+      "machines": [
+        "arm64"
+      ],
+      "config": "Release",
+      "profile": "native",
+      "compiler": "AppleClang clang++",
+      "python_minor": "3.13",
+      "trusted": true,
+      "note": "retains the recovered macOS baseline environment as a required release gate"
+    },
+    "linux-offline": {
+      "runner": "self-hosted/linux/bike-qualified",
+      "system": "Linux",
+      "machines": [
+        "x86_64",
+        "aarch64"
+      ],
+      "driver": "tools/offline_bundle.py + packaging/install_{full,slim}.sh",
+      "python_minor": "3.13",
+      "trusted": true,
+      "qualification": "not_qualified_not_advertised",
+      "required_for_phase3_release": false
+    },
+    "macos-offline": {
+      "runner": "self-hosted/macos/bike-qualified",
+      "system": "Darwin",
+      "machines": [
+        "arm64"
+      ],
+      "driver": "tools/offline_bundle.py + packaging/install_{full,slim}.sh",
+      "python_minor": "3.13",
+      "trusted": true
+    },
+    "linux-manual-gui": {
+      "runner": "self-hosted/linux/bike-qualified",
+      "system": "Linux",
+      "machines": [
+        "x86_64",
+        "aarch64"
+      ],
+      "config": "Release",
+      "profile": "native",
+      "compiler": "clang++",
+      "python_minor": "3.13",
+      "trusted": true,
+      "note": "interactive GUI evidence stays operator-driven (T19/T29)",
+      "qualification": "not_qualified_not_advertised",
+      "required_for_phase3_release": false
+    },
+    "macos-manual-gui": {
+      "runner": "self-hosted/macos/bike-qualified",
+      "system": "Darwin",
+      "machines": [
+        "arm64"
+      ],
+      "config": "Release",
+      "profile": "native",
+      "compiler": "AppleClang clang++",
+      "python_minor": "3.13",
+      "trusted": true,
+      "note": "retains mjpython/SDK/Accelerate expectations; interactive evidence stays operator-driven"
+    }
   },
   "action_pins": {
     "actions/checkout": "v7.0.1 = 3d3c42e5aac5ba805825da76410c181273ba90b1",
     "astral-sh/setup-uv": "v10.3.0 = 1c37ad07a6a961277cf70c0d37d6f313000f5884",
     "actions/upload-artifact": "v4.3.3 = 65462800fd760344b1a7b4382951275a0abb4808"
   },
-  "cache_policy": "only safe download caches (uv wheels) with keys covering OS/arch/Python/lock hash; compiled native artifacts are never shared between OSes, compiler families, ABI variants or sanitizer modes — each lane reconfigures from source"
+  "cache_policy": "only safe download caches (uv wheels) with keys covering OS/arch/Python/lock hash; compiled native artifacts are never shared between OSes, compiler families, ABI variants or sanitizer modes \u2014 each lane reconfigures from source",
+  "phase3_qualification": {
+    "date": "2026-10-21",
+    "checklist": "docs/releases/python-free-qualification.md",
+    "verification": "source_only_not_executed",
+    "required_platforms": [
+      "darwin-arm64",
+      "linux-aarch64"
+    ],
+    "linux_execution": "aarch64 container from tools/linux/Dockerfile, on an aarch64 CI host",
+    "not_qualified": [
+      "linux-x86_64",
+      "darwin-x86_64",
+      "linux-desktop-gui"
+    ],
+    "rtsan": "qualified only where the real capability/annotation/runtime probes and controls pass"
+  }
 }

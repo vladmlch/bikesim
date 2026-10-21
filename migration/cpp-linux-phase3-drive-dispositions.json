@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "source": "tests/reference/test_native_drivetrain.py",
+  "successor_source": "native/tests/reference/test_native_drivetrain.cpp",
+  "successor_ctest": "reference.native_drivetrain",
+  "status": "source review only; no compilation, capture, CTest or project execution",
+  "qualification": "not_run",
+  "golden_platforms_required": ["darwin-arm64", "linux-aarch64"],
+  "function_count": 28,
+  "golden_function_count": 24,
+  "functions": {
+    "test_chain_core": {"disposition": "source_port", "comparison": "bitwise_golden", "golden_required": true, "scope": "12 seeds; geometry scalar sequence and full gradient; normal(0,1) draw order"},
+    "test_force_staging": {"disposition": "source_port", "comparison": "bitwise_golden", "golden_required": true, "scope": "3 families x 4 modes; components/control/diagnostics/energy"},
+    "test_solved_intervals": {"disposition": "source_port", "comparison": "bitwise_golden", "golden_required": true, "scope": "7 topologies x 2 Jacobian modes x 2 effort modes x 10 genuine intervals"},
+    "test_atomic_state_inputs_and_probes": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "probe/state/input atomicity and snapshots"},
+    "test_projection": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "assist projection oracle plus mode/initial gear contract"},
+    "test_no_drive": {"disposition": "source_port", "comparison": "contract", "golden_required": false, "scope": "absent-drive exception and valid bare step"},
+    "test_transmission_core": {"disposition": "source_port", "comparison": "bitwise_golden", "golden_required": true, "scope": "2 families x reset/prepare/ratio; all prepared fields"},
+    "test_random_multiturn_staging": {"disposition": "source_port", "comparison": "bitwise_golden", "golden_required": true, "scope": "8 seeds x 3 families x 12 ordered state/probe intervals"},
+    "test_shifting_prepared_state_and_clock": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "2 families x 4 contact/slip cases; prepare/clock/pending/reset"},
+    "test_energy_ceiling_and_actual_force": {"disposition": "source_port", "comparison": "bitwise_golden", "golden_required": true, "scope": "3 families x 4 battery cases x 10 genuine intervals"},
+    "test_probe_does_not_touch_ratchets_or_live_state": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "3 families x 3 active/braking cases x 3 phases; state preservation"},
+    "test_invalid_config": {"disposition": "source_port", "comparison": "contract", "golden_required": false, "scope": "all 6 source malformed configs through owned decoder"},
+    "test_invalid_calls_are_atomic": {
+      "disposition": "source_port_with_parameter_drops",
+      "comparison": "bitwise_golden_and_contract",
+      "golden_required": true,
+      "golden_parameters": ["dt-zero", "dt-nan", "speed-infinite", "sensed-nan", "rider-integer", "motor-limit-negative"],
+      "parameter_drops": {
+        "braking-integer": "Python strict bool call marshalling; typed native TickInputs has no dynamic argument adapter",
+        "active-string": "Python strict bool call marshalling; typed native TickInputs has no dynamic argument adapter",
+        "advance-integer": "Python strict bool call marshalling; typed native TickInputs has no dynamic argument adapter"
+      },
+      "scope": "rider-integer retained through actual dynamic rider-control decoder; all retained failures compare state and ctrl"
+    },
+    "test_invalid_restoration_is_atomic": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "all 11 malformed snapshot parameters and atomic state"},
+    "test_set_inputs_cross_aliases_and_ownership": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "cross aliases, 3 malformed inputs, detached output after destruction"},
+    "test_injected_valid_state_and_replay": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "3 families; all source injected fields, ownership, 8 genuine intervals"},
+    "test_pending_and_duplicate_settlement_guards": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "2 ideal families; pending/duplicate failures, actual saved controls and battery snapshots"},
+    "test_passive_topology_without_actuators": {"disposition": "source_port", "comparison": "bitwise_golden", "golden_required": true, "scope": "3 families x 2 passive modes; genuine actuator-free step/settlement"},
+    "test_diagnostic_state_validation": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "all 6 malformed diagnostic parameters and atomic snapshots"},
+    "test_prepared_state_requires_boundary": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "missing boundary rejected and full state retained"},
+    "test_real_solved_request_violation": {"disposition": "source_port", "comparison": "contract", "golden_required": false, "scope": "genuine 1000 Nm engine interval; reserved-effort ArithmeticError diagnostic"},
+    "test_invalid_elastic_topology_rejects": {"disposition": "source_port", "comparison": "contract", "golden_required": false, "scope": "illegal clutch and rotor through typed and wire constructors"},
+    "test_optional_project_and_initial_gearing": {
+      "disposition": "source_port_with_language_assertion_drops",
+      "comparison": "bitwise_golden_and_contract",
+      "golden_required": true,
+      "scope": "actual projected initial configuration, live gear mutation independence and native optional absence",
+      "assertion_drops": ["SimpleNamespace wrapper construction", "Python absent-attribute lookup", "Python delattr mechanics"]
+    },
+    "test_set_inputs_both_cross_buffer_aliases": {"disposition": "source_port", "comparison": "bitwise_golden", "golden_required": true, "scope": "simultaneous ctrl and force cross-buffer alias swap"},
+    "test_diagnostic_ratio_and_integer_ranges": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "all 3 range errors and complete state snapshots"},
+    "test_genuine_wheel_and_rotor_overrun": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "3 families x 8 real intervals; unrelated joint-limit row and zero freehub torque"},
+    "test_geometric_prepared_buffers_reuse_storage": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "golden_parameters": ["prepare", "reset", "shift", "restore"], "scope": "all four parameters have oracle captures plus stable generation/capacity checks"},
+    "test_geometric_prepared_sentinel_owns_reused_storage": {"disposition": "source_port", "comparison": "bitwise_golden_and_contract", "golden_required": true, "scope": "absent sentinel, settle-before-solve failure, ownership, restore/reset and storage reuse"}
+  }
+}

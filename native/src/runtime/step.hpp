@@ -35,6 +35,8 @@
 #include "static_brake.hpp"
 
 class Stepper;
+namespace bike::validation { class RuntimeRigAccess; }
+namespace bike::golden { class RuntimeAccess; }
 
 namespace runtime {
 struct PresentationState;
@@ -111,6 +113,27 @@ struct ForceSample {
     std::vector<std::pair<std::string, std::vector<double>>> components;
 };
 
+// Opt-in, cold golden-episode observation. Normal advancement passes null
+// and performs no extra copies. Entry/exit values are independent live
+// observations around apply_forces, never reconstructed from components.
+struct GoldenForceObservation {
+    std::vector<double> qpos, qvel, act, warmstart;
+    double time_s = 0.;
+    std::vector<double> ctrl, qfrc_applied, tire_state;
+    std::vector<std::string> tire_state_names;
+    std::vector<std::pair<std::string, std::vector<double>>> components;
+    std::array<std::optional<TireSnapshot>, 2> tire_snapshots;
+    WireObject tire_diagnostics;
+private:
+    // Only the cold golden regression entry point installs this callback.
+    // Existing advancement never supplies an observation, and ordinary
+    // capture leaves both fields null. No general runtime hook is exposed.
+    friend class bike::golden::RuntimeAccess;
+    friend class PhysicalStep;
+    void *test_exit_context_ = nullptr;
+    void (*test_exit_mutation_)(void *, std::span<double>) noexcept = nullptr;
+};
+
 // The step-owned share of _runtime_state — the binding decodes/emits the
 // full section; these are the fields the step mutates. PeriodAccounting
 // separately owns history, model status, monitor and the energy ledger.
@@ -149,6 +172,7 @@ struct MassObservations {
 };
 
 class PhysicalStep {
+    friend class bike::validation::RuntimeRigAccess;
     friend class bike::initialization::PhysicalInitialState;
     friend void bike::initialization::finalize_initial_state(
         bike::initialization::SetupContext&, const runtime::RuntimeConfig&);
@@ -193,7 +217,8 @@ public:
     [[nodiscard]] RawStep
     advance_physics(double front, double rear,
                     const std::optional<std::vector<double>> &external,
-                    const RideControl &control);
+                    const RideControl &control,
+                    GoldenForceObservation *golden = nullptr);
 
     // The non-advancing staged-input probe (apply_forces with
     // advance=false): returns the ordered component fold, the actuator
@@ -230,6 +255,7 @@ public:
 
     // Accessors the binding/adapters read.
     [[nodiscard]] std::int64_t step() const noexcept { return step_; }
+    [[nodiscard]] const RideControl &applied_control() const noexcept { return applied_control_; }
     [[nodiscard]] int generation() const noexcept { return generation_; }
     void bump_generation() noexcept { ++generation_; }
     // reset() overrides the bootstrap restore with the next epoch — the
@@ -370,7 +396,7 @@ private:
     [[nodiscard]] RawStep
     advance_body(double front, double rear,
                  const std::optional<std::vector<double>> &external,
-                 const RideControl &control);
+                 const RideControl &control, GoldenForceObservation *golden);
 
     // Everything after mj_step: the solved-interval captures, channel
     // dicts, diagnostics and RawStep assembly consume the pre-step

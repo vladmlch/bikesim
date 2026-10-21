@@ -192,7 +192,7 @@ rejected without deleting it; move that build directory aside and
 configure the correct lane. `sync` preserves the root gate's build tree.
 Checkpoint 2-A, L3, measured failure counts and the push remain pending.
 
-## Frozen environment
+## Transition oracle environment
 
 One editable environment per source tree. On Linux, always select a
 **Linux-native** venv before the first uv command and keep it for every
@@ -216,47 +216,38 @@ arbitrary distro OpenBLAS is not a substitute
 ([numerical-profiles.md](numerical-profiles.md),
 [dependency-matrix.md](dependency-matrix.md)).
 
-## Configure and build (Debug and Release)
+## Configure and build with root presets
+
+The standalone graph uses `.deps` and the measured numerics record. Its
+configure/build/test route invokes no interpreter. Run every Linux
+qualification command inside the checkout's aarch64 container:
 
 ```sh
-uv run --frozen --group native --no-sync python tools/dev.py configure --build native/build/release --config Release
-uv run --frozen --group native --no-sync python tools/dev.py build --build native/build/release
+bash tools/linux/container.sh sync
+bash tools/linux/container.sh exec cmake --workflow --preset release
+bash tools/linux/container.sh exec cmake --workflow --preset debug
+bash tools/linux/container.sh exec bash tools/run_native_checks.sh build/native-release
 ```
 
-Separate compilers, configurations and sanitizer lanes use separate
-directories — measured examples: `native/build-linux-clang` (Clang 18) and
-`native/build-linux-gcc` (GCC 13) on the container. Select a compiler at
-configure time with `--compiler`; it is passed verbatim as
-`CMAKE_CXX_COMPILER`:
+`release` selects `/usr/bin/clang++-18` and keeps
+`build/native-release`; `debug` selects `/usr/bin/g++` and uses
+`build/debug`. GUI, ASan, RTSan and coverage use their own preset-named build
+directories. An explicit `-DCMAKE_CXX_COMPILER=...` is a toolchain override,
+which must be independently qualified; existing caches are not migrated
+between compilers.
 
-```sh
-uv run --frozen --group native --no-sync python tools/dev.py configure --build native/build-linux-clang --config Release --compiler /usr/bin/clang++-18
-uv run --frozen --group native --no-sync python tools/dev.py configure --build native/build/debug --config Debug
-uv run --frozen --group native --no-sync python tools/dev.py build --build native/build/debug
-```
+## Configure diagnostics
 
-`tools/dev.py` resolves its project root from its own source path, exports
-the selected `UV_PROJECT_ENVIRONMENT` to every child `uv run`, passes the
-selected interpreter as `Python_EXECUTABLE`, and rejects a stale or
-relocated `CMakeCache.txt` before invoking CMake. Cross-compilation is
-rejected; Debug and Release are the only configs.
+Configure now owns the former doctor's native checks: dependency archive
+and selected-file hashes, MuJoCo private ABI, compiler/stdlib support,
+numerics record and instrumentation controls. Inspect
+`build/<preset>/native_check_context.json` and `bike_policy_report.json`
+(`build/native-release` for release). A successful configure is not a CTest,
+performance, package or GUI acceptance result. The interpreter-specific
+checks below apply only to the transition binding graph, which remains
+until the Phase 4 deletion gate.
 
-## Doctor
-
-```sh
-uv run --frozen --group native --no-sync python tools/dev.py doctor --build native/build/release --numerics
-```
-
-`doctor` emits schema-1 JSON on stdout and human diagnostics on stderr. It
-checks the selected interpreter (exact Python version and SOABI), lock
-freshness, native pins, compiler probes, the selected build context, exactly
-one extension artifact, the loaded MuJoCo 3.12.0 image plus its private ABI
-symbols, and — with `--numerics` — the runtime BLAS/LAPACK provider against
-the compiled provider record. It performs file checks, version queries and a
-fresh-process import; it never compiles and cannot replace CTest, the
-`native` gate, GUI acceptance or isolated offline installation.
-
-## Run: Python, native, headless and GUI
+## Transition Python entry points
 
 The application selects `native/build/release` by default, or the absolute
 directory in **`BIKE_NATIVE_BUILD_PATH`**:
@@ -401,3 +392,22 @@ stamp, unresolved DSO, missing display, unsupported sanitizer, coverage
 tool mismatch, strict invalid-controller stop, cross-environment replay
 rejection, slim external mismatch) lives in
 [troubleshooting.md](troubleshooting.md).
+## Phase 3 instrumentation and packaging
+
+```sh
+cmake --workflow --preset asan
+cmake --workflow --preset coverage
+ctest --test-dir build/native-release -R '^package_smoke$' --no-tests=error --output-on-failure
+```
+
+On Linux, prefix each command with `bash tools/linux/container.sh exec`.
+Coverage runs the native tests, merges only fresh profiles and writes
+`build/coverage/coverage.lcov` plus `coverage-summary.txt`. ASan and RTSan
+executables link their own runtime; no interpreter preload is used by the
+root graph. RTSan fails configure if the selected compiler lacks the actual
+flag/annotation/runtime contract.
+
+Ordinary presets exclude `slow`, `audit` and `package` labels. Those remain
+explicit gates: package smoke is selected above; slow tests and the final
+completeness/documentation audits belong to the release checklist. Source
+implementation and a recorded command do not establish a passing gate.

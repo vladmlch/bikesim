@@ -57,6 +57,11 @@ ControlClock::ControlClock(double timestep, double period)
     // only distinguishable exactly on a .5 boundary, which the 1e-9 check
     // below rejects anyway.
     const double ratio = period_s / timestep_s;
+    // Reject before conversion: finite input durations can still overflow
+    // their quotient, and converting infinity/out-of-range to int64 is UB.
+    if (!std::isfinite(ratio) || ratio >= 0x1p63)
+        throw std::invalid_argument(
+            "control period must be a representable integer multiple of the timestep");
     const auto steps = static_cast<std::int64_t>(std::nearbyint(ratio));
     if (steps < 1 ||
         std::abs(static_cast<double>(steps) * timestep_s - period_s) > 1e-9)

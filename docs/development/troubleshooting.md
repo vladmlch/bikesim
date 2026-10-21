@@ -1,38 +1,35 @@
 # Failure diagnosis — Linux and macOS
 
-Symptom → evidence command → bounded remediation. Every remediation stays
-inside the qualified toolchain and frozen environment. **Never** repair a
-failure with arbitrary library symlinks, a broad `LD_LIBRARY_PATH`/`DYLD_*`
-rescue, weakened or skipped tests, changed physics tolerances, or a removed
-`uv.lock` — those hide the evidence instead of fixing the cause. When in
-doubt, `tools/dev.py doctor --build <dir> --numerics` is the first
-read-only evidence command, and `<build>/native_check_context.json` is the
-recorded toolchain/SDK/Python/provider identity for the selected build.
+Preserve the original error and the selected build's
+`native_check_context.json` and `bike_policy_report.json`. Configure owns
+native dependency/toolchain/ABI diagnostics; there is no separate Python
+doctor in the root workflow. Do not hide a failure with arbitrary library
+symlinks, broad loader-path exports, weakened tests, changed physics
+tolerances or a modified dependency lock.
 
-| # | Symptom | Evidence command | Bounded remediation |
-|---|---|---|---|
-| 1 | **Apple SDK error on Linux** — `No installed macOS SDK is compatible with compiler …` or `CMAKE_OSX_SYSROOT is a macOS option; use a Linux-native toolchain` | `cmake -S native -B <build>` stderr; `grep -i osx <build>/CMakeCache.txt` | Remove `-DCMAKE_OSX_SYSROOT` (and any `SDKROOT` export) and configure a fresh Linux build directory. Apple SDK options are invalid on Linux by design; do not emulate `xcrun` or transplant an SDK. |
-| 2 | **Missing MuJoCo 3.12 private symbol** — link or doctor failure naming `_mjPRIVATE_setTlsLogHandler`, `_mjPRIVATE_getGlobalLogHandler` or `mj_makeRawData`; `mujoco.__version__ != '3.12.0'` | `uv run --frozen --group native python -c 'import mujoco; print(mujoco.__version__, mujoco.mj_versionString())'`; `tools/dev.py doctor --build <dir>` | `uv sync --frozen --group native` in the selected environment restores the pinned `mujoco==3.12.0` wheel image the private ABI was qualified against. A system libmujoco or a newer wheel is not a substitute — do not relink the extension against one. |
-| 3 | **NumPy provider/ABI mismatch** — configure or `doctor --numerics` rejects the BLAS/LAPACK provider (wrong backend, LP64 instead of ILP64, or a deleted `numpy.libs/libscipy_openblas64_*.so`); `numerical_profile` check fails | `tools/dev.py doctor --numerics`; `python -c 'import numpy; numpy.show_runtime()'`; compare `native_check_context.json` `numerics` against [numerical-profiles.md](numerical-profiles.md) | Restore the pinned `numpy==2.5.2` in the selected env via `uv sync --frozen --group native`, then reconfigure/rebuild. A distro OpenBLAS or differently widthed provider is rejected — the native port binds only the qualified provider identity. |
-| 4 | **Missing native artifact** — `no bike_native extension in <dir>`, ambiguous artifacts, or `RuntimeError` naming the selected build on import | `tools/dev.py doctor --build <abs dir>` (`selected_artifact` check); `ls <dir>/bike_native*` | Explicitly `tools/dev.py configure --build <dir> --config Release` then `tools/dev.py build --build <dir>` in the selected editable environment. Keep exactly one extension per directory. A `py3-none-any` wheel never contains `bike_native` — work from the real source tree. |
-| 5 | **Wrong Python SOABI** — artifact built for another interpreter (`cpython-313-aarch64-linux-gnu` vs `cpython-313-darwin`); doctor reports configured Python version/SOABI differs from selected | `python -c 'import sysconfig; print(sysconfig.get_config_var("SOABI"))'` vs `native_check_context.json` `python.soabi` | Configure a fresh build directory under the selected interpreter — `tools/dev.py` passes it as `Python_EXECUTABLE`. Do not rename or copy an extension across SOABIs; the filename encodes the ABI. |
-| 6 | **Stale compiled source stamp** — loader/doctor reports compiled native source hash differs from the checked-out sources | `tools/dev.py doctor --build <dir>` → `dependency_probe.details.native` (`compiled_source_sha256` vs `source_sha256`) | Rebuild the selected directory against the current sources with `tools/dev.py build --build <dir>` in the same environment. The stamp is evidence of source identity — there is no override to bypass it. |
-| 7 | **Unresolved DSO** — `ImportError`/`OSError`: `cannot open shared object file`, `Library not loaded`, `image not found`, `undefined symbol` | The original loader error is preserved as the exception cause; `ldd <dir>/bike_native*.so` (Linux) / `otool -L <dir>/bike_native*.so` (macOS); `readelf -d` `NEEDED`/`RUNPATH` | Rebuild in the selected environment so the build's recorded `BUILD_RPATH`/install names resolve — relocation requires a fresh configure, not a repaired path. Do not symlink libraries into place or export a broad loader search path; a copied build cache is diagnosed as stale. |
-| 8 | **Missing display** — GLFW fails to open a window; `DISPLAY`/`WAYLAND_DISPLAY` unset; Cocoa session unavailable | `printf '%s %s\n' "$DISPLAY" "$WAYLAND_DISPLAY"`; rerun the same command with `--headless` | Use `--headless` for CI/container runs, or run the viewer on a host with a real display server plus the system GLFW/OpenGL stack (macOS also requires `mjpython`, handled by `ensure_macos_mjpython`). A fake/Xvfb window does not qualify GUI acceptance. |
-| 9 | **Unsupported sanitizer** — configure fails closed: `NATIVE_SANITIZE`/`NATIVE_RTSAN` requested but the toolchain probe fails, or the recorded runtime cannot be resolved | Configure stderr and `native_check_context.json` `capabilities`; `tools/native_runtime.py run --build <dir> -- true` | Select a qualified compiler with `configure --compiler` — LLVM clang for ASan lanes, an LLVM >= 20 clang for RTSan (AppleClang and some distro clangs lack `-fsanitize=realtime`). The runtime the recorded compiler resolved is the only runtime; do not preload an arbitrary one. |
-| 10 | **Coverage tool mismatch** — `NATIVE_COVERAGE=ON` configure rejects the compiler/tools, or `llvm-profdata` merge/`llvm-cov` export fails | `tools/native_toolchain.py coverage-tools` resolution output; `<run>/coverage_provenance.json` `tool_resolution`; `tools/native_coverage.sh` run logs | Pin `LLVM_PROFDATA`/`LLVM_COV` to the pair matching the compiler recorded in the build context (sibling toolchain tools qualify via a real instrumented control). Never mix coverage tool versions across toolchains. |
-| 11 | **Strict invalid-controller stop** — headless run ends early classified `invalid_controller` (e.g. the documented `energy.constraint_work` baseline violation at t=0.005 s) | Run events/`summary.md` first-failure evidence; `[FIRST FAILURE]` banner in interactive runs; [RIDE.md](../RIDE.md) baseline note | Treat it as retained diagnostic evidence of the model's validity boundary — a short valid prefix, not a crash to patch. Keep `strict` semantics; the `diagnostic` policy retains sticky invalid status. Do not relax tolerances or checks to lengthen the run. |
-| 12 | **Cross-environment checked replay rejection** — `bike-replay` fails on execution identity: runtime versions, source hash, backend, platform/numerics or artifact identity fields differ | The replay error names the differing identity fields before stepping; compare the recording's `execution` block with `tools/dev.py doctor --build <dir>` provenance | Checked replay is same-environment only: replay in an environment matching the recorded execution identity (platform, numerics profile, backend, artifact/source identity). `bike-replay --view` remains the portable, unverified recorded-state inspection — it never claims physical replay. Do not edit recorded identity or suppress the gate. |
-| 13 | **Slim bundle external mismatch** — offline slim install rejects a declared external provider (e.g. `scipy` 1.17.1 where the manifest requires 1.17.0) or its import origin | `python3 tools/install_offline.py --mode slim` preflight output naming the package, required version and actual origin | Provision the exact declared versions on the selected base interpreter, or install the full bundle — externals that fail the profile are a slim rejection. Bundled wheels never silently shadow a validated system provider. |
+| Symptom | Evidence | Bounded remediation |
+| --- | --- | --- |
+| Apple SDK option on Linux | Configure stderr and the selected `CMakeCache.txt` | Configure a fresh Linux build without `CMAKE_OSX_SYSROOT` or `SDKROOT`. Apple discovery must never run in the Linux lane. |
+| Missing MuJoCo private symbol | Configure ABI-probe log naming `_mjPRIVATE_setTlsLogHandler`, `_mjPRIVATE_getGlobalLogHandler` or `mj_makeRawData` | Restore the exact MuJoCo 3.12.0 SDK from the lock's verified archive, then configure again. |
+| Archive/member hash mismatch | Configure identifies the dependency and expected/actual SHA-256 | Reacquire the pinned archive explicitly or restore an intact offline package. Do not replace the lock with the bytes on disk. |
+| Numerics record or ABI mismatch | `native/numerics.lock.json`, context `numerics`, original configure error | Restore the measured record and selected target's pinned provider. Generated records are updated only by their authorized measurement workflow. |
+| Missing native executable | Missing `build/<preset>/bin/bike-*` or stale build cache | Use `cmake --workflow --preset <preset>` in the intended source checkout. Release lives at `build/native-release`. |
+| Unresolved DSO | Original loader diagnostic; `readelf -d` on Linux or `otool -L` on Darwin | Rebuild with the selected dependency tree. For installation, rerun `install_smoke`; retain the complete `bin/lib/share` package layout. |
+| Missing display | GLFW diagnostic and display/session environment | Use the application's headless mode or a real desktop. Linux Xvfb smoke is separate from GUI acceptance. |
+| Unsupported sanitizer | Configure stderr and context `capabilities` | Select a qualified instrumenting compiler in its own build directory. Do not preload an unrelated runtime or run the release binary as a sanitizer control. |
+| ASan executable cannot load its runtime | Linked runtime path and the selected compiler's resolved sanitizer image | Reconfigure the instrumented root build; its build rpath must point to the same runtime the compiler qualified. Native executables do not use the Python preload launcher. |
+| Coverage tool mismatch | CMake policy probe `coverage_tool_resolution.json` and `coverage-format/` command/output logs | Set `LLVM_PROFDATA`/`LLVM_COV` only to tools compatible with the chosen compiler. The real compile/run/merge/export control must pass. |
+| Empty coverage report | `build/coverage/profiles`, `coverage-binaries-<config>.txt`, CTest output | Build target `coverage`. It requires fresh profiles, successful tests and at least one `native/src/` file in the exported LCOV. |
+| Strict invalid-controller stop | Run events, summary and first-failure diagnostic | Preserve the model's validity boundary and committed prefix. Do not relax tolerances to lengthen an episode. |
+| Checked replay identity mismatch | Error names differing execution/provider/platform/source fields | Replay with the matching environment; use recorded-state inspection only when that is the intended operation. Do not edit recorded identity. |
+| Offline dependency missing | `extract_deps.sh` identifies a missing archive or member | Use the source package for the same target platform. Offline extraction has no network fallback. |
+| Transition Python SOABI/source-stamp mismatch | Retained binding loader error and binding context | Rebuild the binding graph with its selected CPython 3.13 environment. This does not affect selection of the standalone C++ executable. |
 
 ## Escalation evidence
 
-When a failure survives the bounded remediation, collect: the
-`doctor` schema-1 JSON, `<build>/native_check_context.json`,
-`<build>/native_check_summaries/<kind>.json` plus logs under
-`<build>/native_check_logs/<kind>/`, the failing test node IDs, and the
-exact toolchain/interpreter versions from the platform guide's measured
-matrix ([linux.md](linux.md) / [macos.md](macos.md)). A failed sweep names
-its own CMake target — rerun it with
-`cmake --build <selected-build> --target check_<name>` instead of the full
-gate.
+Keep the exact command, source commit, selected preset, complete diagnostic,
+exit code, failed test node names, context and per-sweep summaries/logs.
+A failed sweep names its CMake target; rerun only that named target while
+iterating. The release checklist retains the final broader gate evidence.
+The source-only implementation session did not execute any command shown
+as a future verification procedure.

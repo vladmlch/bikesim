@@ -264,14 +264,44 @@ def test_viewer_simulation_error_publishes_owned_prefix(tmp_path, monkeypatch):
 # --- Real storage seam: retries, exclusivity and crash survivors ---
 
 
-@pytest.mark.skipif(
-    hasattr(os, 'geteuid') and os.geteuid() == 0,
-    reason='chmod permission bits do not deny root; the EACCES path runs '
-           'under unprivileged CI/dev users')
 def test_publication_permission_denied_then_retry(tmp_path):
     """A filesystem-level EACCES inside publication fails closed: the
     capture keeps its owned evidence in ``publication_failed`` and an
     explicit retry publishes it once — no duplicated episodes or events."""
+    if hasattr(os, 'geteuid') and os.geteuid() == 0:
+        # Root bypasses the mode bits this regression must exercise. A fresh
+        # child drops all groups and its UID before importing the probe and
+        # creates its own temporary tree; root-owned pytest parents are never
+        # made writable or chowned. Missing privilege support is a failure,
+        # not a successful skip of the EACCES contract (completion 3.11).
+        import pwd
+        account = pwd.getpwnam('nobody')
+        script = r'''
+import os
+import sys
+os.setgroups([])
+os.setgid(int(sys.argv[1]))
+os.setuid(int(sys.argv[2]))
+assert os.geteuid() != 0, 'permission probe still has root privileges'
+from pathlib import Path
+from tempfile import TemporaryDirectory
+sys.path.insert(0, sys.argv[3])
+from test_native_platform_recording import _publication_permission_denied_probe
+with TemporaryDirectory(prefix='bike-eacces-') as directory:
+    _publication_permission_denied_probe(Path(directory))
+print('unprivileged EACCES and explicit publication retry passed')
+'''
+        child = subprocess.run(
+            [sys.executable, '-c', script, str(account.pw_gid),
+             str(account.pw_uid), str(Path(__file__).resolve().parent)],
+            text=True, capture_output=True, check=False, timeout=60)
+        assert child.returncode == 0, child.stdout + '\n' + child.stderr
+        assert 'unprivileged EACCES and explicit publication retry passed' in child.stdout
+        return
+    _publication_permission_denied_probe(tmp_path)
+
+
+def _publication_permission_denied_probe(tmp_path):
     denied = tmp_path/'denied'
     denied.mkdir()
     capture = support.synthetic_capture(

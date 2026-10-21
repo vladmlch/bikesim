@@ -3,6 +3,7 @@ import copy
 import os
 from dataclasses import asdict, replace
 import gc
+import json
 from pathlib import Path
 import sys
 
@@ -17,6 +18,7 @@ from bike_sim.physics.pedaling import PedalingPolicy, human_crank_torque
 from bike_sim.physics.physical_config import PhysicalDriveConfig, PedalingConfig, ShiftingConfig, AssistConfig
 from bike_sim.sim.ride.drivetrain_forces import DrivetrainForceApplier
 from _bits import assert_bitwise_equal
+import _golden
 
 from native_loader import load_native
 bike_native = load_native()
@@ -31,20 +33,30 @@ KEYS = {
 }
 
 
-def assert_tree(actual, expected):
+def assert_tree(actual, expected, path='$'):
     if isinstance(expected, dict):
         assert set(actual) == set(expected)
-        for k in expected:
-            assert_tree(actual[k], expected[k])
+        payload = json.dumps(sorted(expected), ensure_ascii=False, separators=(',', ':')).encode('utf-8')
+        _golden.record(np.frombuffer(payload, dtype=np.uint8), path + '#keys')
+        # KEYS contains sets. Sort traversal for deterministic capture order;
+        # the existing equality/type assertions are unchanged.
+        for k in sorted(expected):
+            assert_tree(actual[k], expected[k], f'{path}.{k}')
     elif isinstance(expected, (list, tuple)):
         assert len(actual) == len(expected)
-        for a, b in zip(actual, expected):
-            assert_tree(a, b)
+        payload = str(len(expected)).encode('ascii')
+        _golden.record(np.frombuffer(payload, dtype=np.uint8), path + '#length')
+        for i, (a, b) in enumerate(zip(actual, expected)):
+            assert_tree(a, b, f'{path}[{i}]')
     elif isinstance(expected, (str, bool, int)) or expected is None:
+        # Freeze discrete oracle leaves too; a float-only tree would lose
+        # modes, permissions, counters and absent/present distinctions.
+        payload = json.dumps(expected, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode('utf-8')
+        _golden.record(np.frombuffer(payload, dtype=np.uint8), path)
         assert type(actual) is type(expected)
         assert actual == expected
     else:
-        assert_bitwise_equal(actual, expected)
+        assert_bitwise_equal(actual, expected, path)
 
 
 def applier(**overrides):
@@ -131,8 +143,8 @@ def test_pedaling_sequences(config, drive):
         check(native, drive)
 
 
-@pytest.mark.parametrize('mode', ['legacy_signed', 'magnitude'])
-@pytest.mark.parametrize('tau', [0., .35])
+@pytest.mark.parametrize('mode', ['legacy_signed', 'magnitude'], ids=['signed', 'magnitude'])
+@pytest.mark.parametrize('tau', [0., .35], ids=['raw', 'ema'])
 def test_shifting(mode, tau):
     drive = applier(shifting=ShiftingConfig(enabled=True, upshift_slip_mode=mode, cadence_smoothing_tau_s=tau))
     from tools.native_config import project_drive_policies
@@ -146,12 +158,13 @@ def test_shifting(mode, tau):
     cases += [(float(rng.uniform(30,130)), float(rng.uniform(30,130)), .01, True, False, True, None) for _ in range(250)]
     for rpm, req, dt, pedaling, brake, ground, slip in cases:
         expected = drive.shifting.update(rpm, req, dt, pedaling=pedaling, braking=brake, rear_in_contact=ground, rear_slip_mps=slip)
+        _golden.record(np.array(expected, dtype=np.bool_), 'shifted')
         assert native.shifting_update(rpm, req, dt, pedaling, brake, ground, slip) == expected
         assert_tree(native.shifting_diagnostics(), {**snapshot(drive)['shifting'], 'gear_ratio': drive.shifting.gear_ratio, 'torque_factor': drive.shifting.torque_factor})
         check(native, drive)
 
 
-@pytest.mark.parametrize('profile,mode', [(None,'custom'), ('bosch_cx_gen4','eco'), ('bosch_cx_gen4','tour'), ('bosch_cx_gen4','emtb'), ('bosch_cx_gen4','turbo')])
+@pytest.mark.parametrize('profile,mode', [(None,'custom'), ('bosch_cx_gen4','eco'), ('bosch_cx_gen4','tour'), ('bosch_cx_gen4','emtb'), ('bosch_cx_gen4','turbo')], ids=['custom', 'eco', 'tour', 'emtb', 'turbo'])
 def test_assist(profile, mode):
     drive = applier(assist=AssistConfig(profile=profile, mode=mode, torque_curve=((0., 80.), (43., 71.), (100., 35.), (150., 0.))))
     from tools.native_config import project_drive_policies
@@ -170,8 +183,8 @@ def test_assist(profile, mode):
         check(native, drive)
 
 
-@pytest.mark.parametrize('a', [0., .02])
-@pytest.mark.parametrize('enabled', [False, True])
+@pytest.mark.parametrize('a', [0., .02], ids=['lossless', 'copper'])
+@pytest.mark.parametrize('enabled', [False, True], ids=['disabled', 'enabled'])
 def test_energy_helpers(config, a, enabled):
     config['battery'].update(copper_w_per_nm2=a, speed_w_per_rad_s2=.03, idle_w=5., enabled=enabled)
     native = bike_native.DrivePolicies(config)
@@ -211,7 +224,7 @@ def test_replay_reset_and_ownership(config, drive):
 def test_invalid_restore_is_atomic(config, section):
     native = bike_native.DrivePolicies(config)
     old = native.state()
-    for key in KEYS[section]:
+    for key in sorted(KEYS[section]):
         for value in [np.nan, np.inf, 'invalid', [], None]:
             if old[section][key] is None and value is None:
                 continue
@@ -227,7 +240,7 @@ def test_invalid_restore_is_atomic(config, section):
         assert_tree(native.state(), old)
 
 
-@pytest.mark.parametrize('section,key,value', [('battery','energy_j',-1.), ('hub','energy_j',-1.), ('shifting','cooldown_s',-1.), ('shifting','rear_teeth',2), ('shifting','shift_count',-1), ('shifting','rear_teeth',3.5), ('pedaling','coasting',1), ('shifting','cadence_ema',10.)])
+@pytest.mark.parametrize('section,key,value', [('battery','energy_j',-1.), ('hub','energy_j',-1.), ('shifting','cooldown_s',-1.), ('shifting','rear_teeth',2), ('shifting','shift_count',-1), ('shifting','rear_teeth',3.5), ('pedaling','coasting',1), ('shifting','cadence_ema',10.)], ids=['battery-negative', 'hub-negative', 'cooldown-negative', 'teeth-small', 'count-negative', 'teeth-fractional', 'coasting-integer', 'ema-unpaired'])
 def test_invalid_restore_values(config, section, key, value):
     native = bike_native.DrivePolicies(config)
     old = native.state()
@@ -347,7 +360,10 @@ def test_disabled_shifter_initial_teeth_outside_cassette():
     ('assist','gain',-1.), ('assist','mode',1), ('assist','torque_curve',[[0.,1.]]),
     ('assist','torque_curve',[[0.,1.],[0.,2.]]), ('assist','torque_curve',[[0.,1.],[2.,-1.]]),
     ('assist','profile',{'mode_gains':{}}), ('battery','enabled',1), ('battery','energy_j',-1.),
-])
+], ids=['front-bool', 'rear-fractional', 'pitch-zero', 'pedaling-bool', 'stop-zero', 'resume-band',
+        'shifting-bool', 'cassette-duplicate', 'cassette-bool', 'cassette-empty', 'torque-factor',
+        'shift-cut', 'slip-mode', 'tau-zero', 'slew-zero', 'gain-negative', 'mode-integer',
+        'curve-short', 'curve-duplicate', 'curve-negative', 'profile-incomplete', 'battery-bool', 'energy-negative'])
 def test_invalid_config_values(config, section, key, value):
     bad = copy.deepcopy(config)
     bad[section][key] = value
@@ -398,7 +414,7 @@ def test_config_and_python_object_deletion():
     assert_tree(native.state(), expected_state)
 
 
-@pytest.mark.parametrize('tau,slew,mash', [(0.,0.,0.), (0.,0.,60.), (.03,300.,0.)])
+@pytest.mark.parametrize('tau,slew,mash', [(0.,0.,0.), (0.,0.,60.), (.03,300.,0.)], ids=['raw', 'mash', 'filtered'])
 def test_pedaling_parameter_branches(tau, slew, mash):
     from tools.native_config import project_drive_policies
     drive = applier(pedaling=PedalingConfig(enabled=True,coast_cadence_tau_s=tau,
@@ -436,7 +452,8 @@ def test_extra_and_missing_state_sections(config):
     ('assist_step',(30.,80.,0.,False,0.)), ('assist_step',(np.inf,80.,0.,False,.01)),
     ('battery_draw',(np.inf,.01)), ('battery_draw',(1.,0.)), ('freehub_torque',(0.,np.inf,0.,0.)),
     ('electrical_power',(np.inf,0.,True)), ('energy_limit',(-1.,0.,100.)),
-])
+], ids=['pedal-nan', 'pedal-zero-dt', 'shift-zero-dt', 'shift-infinite', 'assist-zero-dt',
+        'assist-infinite', 'battery-infinite', 'battery-zero-dt', 'hub-infinite', 'power-infinite', 'limit-negative'])
 def test_invalid_calls_preserve_state(config, method, args):
     native = bike_native.DrivePolicies(config)
     old = native.state()
@@ -445,7 +462,7 @@ def test_invalid_calls_preserve_state(config, method, args):
     assert_tree(native.state(),old)
 
 
-@pytest.mark.parametrize('mean,phase,ripple', [(np.nan,0.,.35), (1.,np.inf,.35), (1.,0.,-1.), (1.,0.,1.)])
+@pytest.mark.parametrize('mean,phase,ripple', [(np.nan,0.,.35), (1.,np.inf,.35), (1.,0.,-1.), (1.,0.,1.)], ids=['nan', 'infinite', 'negative', 'one'])
 def test_invalid_human_torque(mean,phase,ripple):
     with pytest.raises(ValueError):
         bike_native.human_crank_torque(mean,phase,ripple)
@@ -475,9 +492,9 @@ def test_unrepresentable_count_restore_is_atomic(config):
     assert_tree(native.state(),old)
 
 
-@pytest.mark.parametrize('profile,mode', [(None,'turbo'), ('bosch_cx_gen4','emtb')])
-@pytest.mark.parametrize('cadence', [-1e308, 1e308])
-@pytest.mark.parametrize('shaft', [None, 80.])
+@pytest.mark.parametrize('profile,mode', [(None,'turbo'), ('bosch_cx_gen4','emtb')], ids=['plain', 'emtb'])
+@pytest.mark.parametrize('cadence', [-1e308, 1e308], ids=['negative', 'positive'])
+@pytest.mark.parametrize('shaft', [None, 80.], ids=['crank', 'shaft'])
 def test_assist_computed_crank_overflow_matches_python_state(profile, mode, cadence, shaft):
     from tools.native_config import project_drive_policies
     drive = applier(assist=AssistConfig(profile=profile,mode=mode))

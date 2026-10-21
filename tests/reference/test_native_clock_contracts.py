@@ -25,6 +25,7 @@ from native_loader import load_native
 bike_native = load_native()
 
 from _bits import assert_bitwise_equal
+from _golden import record as record_golden
 from bike_sim.sim.ride.cruise import CruiseController
 from bike_sim.sim.ride.tire_forces import interval_id
 from test_native_tire import CANONICAL_NAMES, MJB, _tire_cfg
@@ -127,6 +128,8 @@ class TestIntervalId:
                 q = t / dt
                 if not math.isfinite(q) or q >= INT64_BOUND:
                     continue
+                record_golden(np.asarray(round(q), dtype=np.int64),
+                              'builtin round interval')
                 assert interval_id(t, dt) == round(q)
 
     @pytest.mark.parametrize('time', [float('nan'), float('inf'),
@@ -186,6 +189,8 @@ class TestIntervalId:
                 # A mode-sensitive quotient shifts identically for both
                 # conversions — the helper still mirrors builtin round().
                 for t, dt in ((.3, .1), (1., 3.), (5., 2.)):
+                    record_golden(np.asarray(round(t / dt), dtype=np.int64),
+                                  'rounded mode quotient')
                     assert interval_id(t, dt) == round(t / dt)
                 with pytest.raises(OverflowError):
                     interval_id(INT64_BOUND, 1.)

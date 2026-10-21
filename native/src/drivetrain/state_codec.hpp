@@ -22,8 +22,14 @@
 
 #include "../io/value.hpp"
 #include "../writers/drivetrain.hpp"
+#include "policy_set.hpp"
 
 namespace drivetrain {
+
+    // Five-policy standalone owner, with the same strict per-member codec as
+    // the writer's policies subtree. No fake model/transmission is required.
+    [[nodiscard]] PolicySnapshot decode_policy_snapshot(const bike::io::Value& value);
+    [[nodiscard]] bike::io::Value encode_policy_snapshot(const PolicySnapshot& state);
 
     // The `state.drive` document -> typed DriveSnapshot. Rejections are
     // std::invalid_argument carrying the full member path under

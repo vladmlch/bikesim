@@ -1,0 +1,266 @@
+{
+  "date": "2026-10-21",
+  "qualification": "not_performed",
+  "records": [
+    {
+      "source": "src/bike_sim/physics/tire_calibration.py",
+      "native_sources": [
+        "native/src/validation/tire.hpp",
+        "native/src/validation/tire.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "`TireCalibration`, record/file loading, geometry/provenance, explicit curve and inclusive load range. No implicit pressure scaling."
+    },
+    {
+      "source": "src/bike_sim/physics/tire_curve.py",
+      "native_sources": [
+        "native/src/contact/tabulated_radial.hpp",
+        "native/src/contact/tabulated_radial.cpp",
+        "native/src/validation/tire.cpp",
+        "native/src/validation/registry.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "Monotone table, interval force integral, unilateral damping, no extrapolation and range errors. CLI `tire_curve` retains energy in joules."
+    },
+    {
+      "source": "src/bike_sim/validation/__init__.py",
+      "native_sources": [
+        "native/src/validation/acceptance.hpp",
+        "native/src/validation/registry.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "Package organization becomes an explicit native library and registry; no Python module discovery."
+    },
+    {
+      "source": "src/bike_sim/validation/antiwheelie_bench.py",
+      "native_sources": [
+        "native/src/validation/benchmark.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Version/profile identity, evidence matching, bounded results, 14 load/shaft stands and five-operation mechanics pipeline are implemented. Native provenance replaces Python package versions; subordinate partial rigs/benchmarks prevent a complete source-equivalence claim."
+    },
+    {
+      "source": "src/bike_sim/validation/antiwheelie_reports.py",
+      "native_sources": [
+        "native/src/validation/acceptance.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "`assess_run`, tuple grouping, numeric integer-seed ordering, candidate/baseline exclusions and horizon checks. Mixed unusual seed types and Python truthiness of non-boolean intervention values are narrower at the native typed boundary."
+    },
+    {
+      "source": "src/bike_sim/validation/benchmarks.py",
+      "native_sources": [
+        "native/src/validation/benchmark.cpp",
+        "native/src/validation/registry.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "All 41 registry entries, original bounds, convergence keys/floors, mandatory-vs-diagnostic selection, complete-suite and exact-dt gates. `jobs=1` executes sequentially; source isolated worker execution for jobs 2–32 is explicitly rejected. Native versions are declared as native versions."
+    },
+    {
+      "source": "src/bike_sim/validation/climbing_benchmark.py",
+      "native_sources": [
+        "native/src/validation/benchmark.cpp",
+        "native/src/validation/evidence.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Accounted physical steps and real research `PolicySession` ticks, setup/warmup/latency, output-directory exclusivity, validity, hashes and recording publication. Native research capture uses the existing native recording contract; equivalence of setup/retention costs and sampled diagnostics requires captures. Source `preview_mode()` is already removed and raises `preview path removed`; the port preserves that rejection."
+    },
+    {
+      "source": "src/bike_sim/validation/climbing_evidence.py",
+      "native_sources": [
+        "native/src/validation/evidence.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "Ordered/contiguous support intervals, observed-vs-unknown support, model/energy invalidity, first bad/unknown time, reason counts, valid prefix and separate completeness. Unknown observations are never invented as zero-valued evidence."
+    },
+    {
+      "source": "src/bike_sim/validation/contact_acceptance.py",
+      "native_sources": [
+        "native/src/validation/acceptance.cpp",
+        "native/src/validation/rigs.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Bounds and flat/step/incline matrix over actual distributed stands. Native metric decoding currently expects numeric JSON values, while Python `float()` also accepts some strings/bools. Stand station limits and custom-material surface remain narrower; empty CLI bounds do not constitute accepted evidence."
+    },
+    {
+      "source": "src/bike_sim/validation/contact_manifold_rigs.py",
+      "native_sources": [
+        "native/src/validation/rigs.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Two-body wheel stand, kinetic/material ledger, flat/step/incline rigs, six road profiles and retained trajectories. The private native stand currently uses the declared default density/mu; the Python helper's arbitrary optional density/mu inputs are not exposed. Some NumPy scalar ufunc/matrix lowering still needs a dedicated bitwise comparison."
+    },
+    {
+      "source": "src/bike_sim/validation/contact_resolution.py",
+      "native_sources": [
+        "native/src/validation/experiments.cpp",
+        "native/src/validation/evidence.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Both source NNLS density fits, 12 flat and three incline stands, all six roads, time/road/station axes, persistent events and finest-pair acceptance. Numerical qualification depends on the partial contact stand producer; report/provenance serialization is native."
+    },
+    {
+      "source": "src/bike_sim/validation/datasets.py",
+      "native_sources": [
+        "native/src/validation/tire.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Seven unit schemas, whole-experiment splits, measured conditions, sensor/estimate provenance, per-experiment errors, declared parameter/error budgets and canonical ASCII hashing. The public C++ holdout API is a one-dimensional span; Python accepts same-shaped multidimensional NumPy inputs. Existing native JSON byte/number limits also bound metadata."
+    },
+    {
+      "source": "src/bike_sim/validation/drive_suspension_rig.py",
+      "native_sources": [
+        "native/src/validation/drivetrain.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Actual compiled suspension fixture, four-joint bounded closure continuation, 784.8 N frame load, viscous rollers, three transmissions, all stroke/torque/dt combinations and original force gates. `shock_total` is presently reconstructed from split damper/HBO components: subtracting then adding HBO can change the last bits. The discarded source scalar must be exposed or recomputed exactly before bitwise qualification."
+    },
+    {
+      "source": "src/bike_sim/validation/environment.py",
+      "native_sources": [
+        "native/src/validation/evidence.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Ordered length-delimited source hashing and actual native build lock/MuJoCo/provider identity. This intentionally reports a native identity; Python/PEP 440 marker evaluation and every direct package version are not reproduced. Current lock verification covers the build-lock digest and loaded MuJoCo, not every transitive image."
+    },
+    {
+      "source": "src/bike_sim/validation/experiment_acceptance.py",
+      "native_sources": [
+        "native/src/validation/tire.cpp",
+        "native/src/validation/registry.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Split rejection, synthetic declaration and explicit boolean calibration gates. Source `is_synthetic` applies Python `str()` to an arbitrary `source` object; the C++ record boundary requires a string. The discrepancy-budget constants remain in the Python authority and are not automatically applied or invented as new thresholds."
+    },
+    {
+      "source": "src/bike_sim/validation/fidelity_sweep.py",
+      "native_sources": [
+        "native/src/validation/evidence.cpp",
+        "native/src/validation/scenarios.cpp",
+        "native/src/validation/experiments.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Resolution validation, interval integration, all comparison criteria, seven cases, physical seeds, periodic station projection, rows/events/metrics and finest-pair summaries. Jobs 2–16 are explicitly unavailable. Runtime rows consume each immutable finalized interval once; this differs from the source's repeated `sim.physical.sample` read after each physics step. Initial state files preserve the exact payload bytes used for their hashes."
+    },
+    {
+      "source": "src/bike_sim/validation/grade_feasibility.py",
+      "native_sources": [
+        "native/src/validation/rigs.cpp",
+        "native/src/validation/registry.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "Explicit scalar domains and `mu * rear_fraction - grade`; result is labelled necessary and never sufficient for a completed climb."
+    },
+    {
+      "source": "src/bike_sim/validation/load_transfer.py",
+      "native_sources": [
+        "native/src/validation/rigs.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Quasistatic load formula and full free-pitch rigid stand with normal/tangent reaction and moment checks. Source NumPy scalar trig lowering and small matrix products need confirmation against platform captures."
+    },
+    {
+      "source": "src/bike_sim/validation/plant_prefix.py",
+      "native_sources": [
+        "native/src/validation/evidence.cpp",
+        "native/src/validation/registry.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "`ValidPrefix::observe`: seen/accepted counters, first invalid record, strict evidence booleans, positive interval, loads and impulse prefix. A later valid row cannot resume acceptance."
+    },
+    {
+      "source": "src/bike_sim/validation/plant_release.py",
+      "native_sources": [
+        "native/src/validation/acceptance.cpp",
+        "native/src/validation/evidence.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "All eight independent SIL gates, optional completion, no calibration/safety promotion and ordered trapezoidal trace integral."
+    },
+    {
+      "source": "src/bike_sim/validation/plant_torque_rig.py",
+      "native_sources": [
+        "native/src/validation/rigs.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "Actual tendon-based shaft/freehub stand, arbitrary positive ratio, overrun, constraint reaction, angular acceleration and shaft-power identity. Uses actual MuJoCo actuation/constraint results."
+    },
+    {
+      "source": "src/bike_sim/validation/reference_release.py",
+      "native_sources": [
+        "native/src/validation/acceptance.cpp",
+        "native/src/validation/experiments.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Required release gates, candidate choice, hashed evidence manifests, measured-holdout authentication, outcome ordering and all 18 scenarios. Matrix execution inherits the immutable-interval and native-seed differences; no reference release was created."
+    },
+    {
+      "source": "src/bike_sim/validation/ride_cases.py",
+      "native_sources": [
+        "native/src/validation/scenarios.cpp",
+        "native/src/validation/runtime_access.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Flat/native static, exact requested-sag fitting bounds, brake hold, low mu, airborne passive/released rider, road runs and terrain refinement. All source horizons/thresholds remain. Live published interval observation replaces the source's per-physics-step sample access; source-vs-native instantaneous observer timing and integral weighting must be qualified."
+    },
+    {
+      "source": "src/bike_sim/validation/rider_cases.py",
+      "native_sources": [
+        "native/src/validation/rider.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "Compiled airborne articulated tree, actual rider/internal forces, ballistic/momentum/work invariants and original two-second horizon."
+    },
+    {
+      "source": "src/bike_sim/validation/rider_factor_matrix.py",
+      "native_sources": [
+        "native/src/validation/scenarios.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Nine original factors, ten-second horizon, baseline-resumed and causal-replay-resolved gates. Inherits replay observation differences; unsupported motor-only replay is retained as an explicit failed experiment."
+    },
+    {
+      "source": "src/bike_sim/validation/rider_replay.py",
+      "native_sources": [
+        "native/src/validation/scenarios.cpp",
+        "native/src/validation/evidence.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Schedules, profile loading, diagnostic rows, replay, coast/resume diagnosis and JSON/gzip reports. All seven modes remain; motor-only open loop rejects. Native report writing uses actual gzip stored blocks and atomic native publication. Row cadence is the distinct finalized interval stream rather than repeated/stale `sample` access."
+    },
+    {
+      "source": "src/bike_sim/validation/rider_work.py",
+      "native_sources": [
+        "native/src/validation/evidence.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "Exact component-name selection, CPython-style active-work sum, separate passive, net and motor work."
+    },
+    {
+      "source": "src/bike_sim/validation/rigs.py",
+      "native_sources": [
+        "native/src/validation/rigs.cpp",
+        "native/src/validation/drivetrain.cpp"
+      ],
+      "source_status": "partial",
+      "scope_and_limits": "Every public stand and compiled chain derivative is implemented against actual compiled models/production laws. Small-matrix and NumPy-vs-libm scalar lowering still needs direct comparison; a manually reconstructed small rotation is not asserted bitwise equal."
+    },
+    {
+      "source": "src/bike_sim/validation/system_momentum.py",
+      "native_sources": [
+        "native/src/validation/rider.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "Independent body inertial Jacobians, world inertia, CoM/linear/angular momentum, actual complete airborne tree, passive/active/motor-only cases, gravity impulse, free-pitch conservation and separate roll/yaw constraint evidence. Task 3.19 reference tests reuse this API."
+    },
+    {
+      "source": "src/bike_sim/validation/tire_characterization.py",
+      "native_sources": [
+        "native/src/validation/tire.cpp",
+        "native/src/validation/registry.cpp"
+      ],
+      "source_status": "full",
+      "scope_and_limits": "Pure brush-step loop, exact slip convention, Stribeck cap, loss/storage/stiffness metadata and integer horizon. Default-material provenance is explicit through a supplied tire record or physics profile."
+    }
+  ]
+}

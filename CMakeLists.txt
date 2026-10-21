@@ -27,7 +27,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikePlatform.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeDependencyLock.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Provenance.cmake")
 
-project(bike_sim CXX)
+project(bike_sim VERSION 0.0.0 LANGUAGES CXX)
 if(CMAKE_CROSSCOMPILING)
   message(FATAL_ERROR "Cross-compilation is not supported by this native-build workflow")
 endif()
@@ -549,6 +549,10 @@ target_link_libraries(bike_engine PUBLIC bike::mujoco bike_io Bike::Numerics ${C
 
 include("${_bike_native_dir}/cmake/NativeStartup.cmake")
 bike_add_native_startup("${_bike_native_dir}")
+include("${_bike_native_dir}/cmake/RealtimeMeasurement.cmake")
+bike_add_realtime_measurement("${_bike_native_dir}")
+include("${_bike_native_dir}/cmake/NativeValidation.cmake")
+bike_add_native_validation("${_bike_native_dir}")
 
 # native_bench: the proto_native_bench prototype TU. The produced manifest
 # declares tools/proto_native_bench a first-party root exactly like the
@@ -597,6 +601,52 @@ endif()
 # after the native executables exist: the migration_T03 build target depends
 # on them.
 add_subdirectory(native/tests/migration)
+
+# Completion 3.37-3.40: root-only validation stands and evidence contracts.
+# The binding graph keeps its own migration scope until phase 4.
+if(BUILD_TESTING)
+  add_executable(migration_T54 "${_bike_native_tests_dir}/migration/test_t54.cpp")
+  bike_startup_target_policy(migration_T54 "${_bike_native_dir}")
+  target_link_libraries(migration_T54 PRIVATE bike_migration_test bike_validation)
+  bike_rewrite_mujoco_load_name(migration_T54 "${BIKE_DEP_mujoco_LIBRARY}")
+  add_dependencies(migration_T54 bike-validate)
+  add_test(NAME migration_T54 COMMAND migration_T54)
+  set_tests_properties(migration_T54 PROPERTIES LABELS "migration;t54;validation;slow"
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T54>")
+endif()
+
+# Completion 3.02: keep the binding graph's portable regressions alive in
+# the root graph before Phase 4 removes that graph. Each source compiles
+# once here and retains the same CTest name and qualified numerics edge.
+if(BUILD_TESTING)
+  add_executable(native_contract_tests "${_bike_native_tests_dir}/test_contracts.cpp"
+    $<TARGET_OBJECTS:bike_test_allocation_faults>)
+  bike_apply_native_policy(native_contract_tests)
+  target_include_directories(native_contract_tests SYSTEM PRIVATE
+    "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(native_contract_tests PRIVATE bike_core bike_engine
+    bike_rider_math Bike::Numerics Threads::Threads)
+  bike_rewrite_mujoco_load_name(native_contract_tests "${BIKE_DEP_mujoco_LIBRARY}")
+  add_test(NAME native_contract_tests COMMAND native_contract_tests)
+  foreach(_numeric IN ITEMS blas lapack sincos)
+    add_executable(native_platform_${_numeric}_tests
+      "${_bike_native_tests_dir}/test_platform_${_numeric}.cpp")
+    bike_apply_native_policy(native_platform_${_numeric}_tests)
+    target_include_directories(native_platform_${_numeric}_tests SYSTEM PRIVATE
+      "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+    if(NOT _numeric STREQUAL "sincos")
+      target_link_libraries(native_platform_${_numeric}_tests PRIVATE Bike::Numerics)
+    endif()
+    add_test(NAME native_platform_${_numeric}_tests COMMAND native_platform_${_numeric}_tests)
+  endforeach()
+  add_test(NAME native_bench_bare COMMAND native_bench bare 20 5
+    --artifacts "${CMAKE_SOURCE_DIR}/tools/proto_native_bench/artifacts")
+  add_test(NAME native_bench_glue COMMAND native_bench glue 10 4
+    --artifacts "${CMAKE_SOURCE_DIR}/tools/proto_native_bench/artifacts")
+  add_test(NAME native_bench_heavy COMMAND native_bench heavy 6 3
+    --artifacts "${CMAKE_SOURCE_DIR}/tools/proto_native_bench/artifacts")
+endif()
+add_subdirectory(native/tests/reference)
 
 if(BUILD_TESTING AND TARGET bike_installed_provider)
   add_executable(native_installed_provider_tests
@@ -666,4 +716,7 @@ endif()
 # fixture contract. Included last so every first-party target — root scope,
 # native/tests/migration, and the transition extension when bindings are on —
 # is already defined before the manifest enumerates it.
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Sanitizers.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Checks.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Coverage.cmake")
+add_subdirectory(packaging)

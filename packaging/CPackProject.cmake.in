@@ -1,0 +1,11 @@
+# Evaluated by CPack, not by a project build/install. These paths are inert
+# generated values from the already-resolved configure.
+if(CPACK_PACKAGE_FILE_NAME STREQUAL "bike-sim-@BIKE_PACKAGE_VERSION@-source")
+  set(BIKE_PACKAGE_SOURCE_DIR "@BIKE_PACKAGE_SOURCE_DIR@")
+  set(BIKE_PACKAGE_BUILD_DIR "@BIKE_PACKAGE_BUILD_DIR@")
+  set(BIKE_PACKAGE_SOURCE_DEPS "@BIKE_PACKAGE_SOURCE_DEPS@")
+  include("@BIKE_PACKAGE_SOURCE_DIR@/packaging/StageSource.cmake")
+  set(CPACK_INSTALLED_DIRECTORIES "@BIKE_PACKAGE_BUILD_DIR@/package-source-tree;/")
+  set(CPACK_INSTALL_CMAKE_PROJECTS "")
+  set(CPACK_IGNORE_FILES "")
+endif()

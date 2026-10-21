@@ -52,7 +52,7 @@
 
 **Note (D10):** `docs/development/toolchain-matrix.json` has no `machines` key (its keys are `platforms`, `lanes`, `sanitizer_lanes`, …). "First machine is required" from the interview maps to the `platforms`/`lanes` entries Task 3.45 edits: Linux aarch64 is required, and x86_64 is marked not qualified.
 
-**Open decision OD-1 (ask the user at Task 3.02, because Task 4.01 needs the ledger rows resolved; default stated):** the `feat/drop-oracle-parity` merge (Task 1.03) brings 22 research scripts under `tools/research/**/*.py`. These are OSM/DEM statistics and figure digitisation; their outputs back `docs/reference/*`. Default if the user does not answer: delete the scripts in Task 4.05 like every other Python file, keep their committed outputs, and record the deletion with the commit hash in `docs/reference/README-provenance.md` so the scripts stay recoverable from git.
+**Decision OD-1 (resolve the ledger in Task 3.02 using the stated default unless the user selects relocation):** the `feat/drop-oracle-parity` merge (Task 1.03) brings 22 research scripts under `tools/research/**/*.py`. These are OSM/DEM statistics and figure digitisation; their outputs back `docs/reference/*`. Default: delete the scripts in Task 4.05 like every other Python file, keep their committed outputs, and record the deletion with the commit hash in `docs/reference/README-provenance.md` so the scripts stay recoverable from git. Applying this recorded default does not block Phase 3 or authorize deletion before Phase 4's qualification gates.
 
 ---
 
@@ -3360,7 +3360,7 @@ Expected: the only failures are the 3 Linux baseline node IDs listed under "reta
 # Phase 3: Port the tests and replace the tooling
 
 Phase 3 is the bulk of the work. It consists of:
-- 5 enabling tasks (3.01, 3.02, 3.03a, 3.03b, 3.04);
+- 4 enabling tasks (3.01, 3.02, 3.03, 3.04; Task 3.03 contains freeze and compare);
 - 7 baseline-failure tasks (3.05–3.11);
 - 33 test-port batches (3.12a–3.36; oversized batches are split into lettered sub-tasks that each fit one subagent session);
 - 4 validation-rig tasks (3.37–3.40);
@@ -3455,9 +3455,9 @@ Each batch task lists its pytest files. For **each file** the batch performs the
 5. **Register** the test in `native/tests/reference/CMakeLists.txt`:
 
    ```cmake
-   bike_add_reference_test(native_pneumatic_brush
+   bike_add_reference_test(native_pneumatic_brush ENGINE
      SOURCES test_native_pneumatic_brush.cpp
-     LIBRARIES bike_writers bike_configuration)
+     LIBRARIES bike_app bike_configuration)
    ```
 
    Link exactly the libraries the code under test lives in; find them with `grep -n 'add_library' CMakeLists.txt native/cmake/*.cmake`.
@@ -3558,7 +3558,7 @@ public:
 }
 ```
 
-- Produces (CMake): `bike_add_reference_test(<name> SOURCES … LIBRARIES … [LABELS …])`, which creates the executable and the CTest node `reference.<name>` with labels `reference;<labels>`.
+- Produces (CMake): `bike_add_reference_test(<name> [ENGINE] SOURCES … LIBRARIES … [LABELS …])`, which creates the executable and the CTest node `reference.<name>` with labels `reference;<labels>`. `ENGINE` applies startup policy and the MuJoCo load-name rewrite only to targets that actually link the engine.
 
 **Review focus:**
 - The capture path and the C++ lookup compute `<node_path>` identically (tested both ways, including the hashed long form).
@@ -3711,13 +3711,14 @@ def record(value, label: str = "", *, kind: str = "bitwise", rtol=None, atol=Non
         raise RuntimeError("golden capture outside a pytest node")
     index = _counters.get(node, 0)
     _counters[node] = index + 1
-    array = np.ascontiguousarray(np.asarray(value))
+    # Preserve scalar shape (): ascontiguousarray would promote it to (1,).
+    array = np.asarray(value)
     meta_path, bin_path = node_files(root, node)
     meta_path.parent.mkdir(parents=True, exist_ok=True)
     meta = [] if index == 0 else json.loads(meta_path.read_text())
     offset = 0 if index == 0 else bin_path.stat().st_size
     with bin_path.open("wb" if index == 0 else "ab") as payload:
-        payload.write(array.tobytes())
+        payload.write(array.tobytes(order="C"))
     meta.append({"index": index, "node": node, "label": str(label), "kind": kind,
                  "dtype": array.dtype.str, "shape": list(array.shape),
                  "offset": offset, "nbytes": array.nbytes, "rtol": rtol, "atol": atol})
@@ -3783,6 +3784,8 @@ PYTHONPATH=tests/reference uv run --no-project --with numpy python -c "import _g
 ```
 
 - [ ] **Step 5: Implement** `golden.hpp/.cpp` and `native/tests/reference/CMakeLists.txt`:
+
+The implementation uses a private generated header for golden root/platform literals; do not place quoted paths in public compile definitions serialized by the native check-context generator. Guard this directory with `BUILD_TESTING`. The illustrative registration below is superseded by the actual helper in `native/tests/reference/CMakeLists.txt`, including its `ENGINE` switch.
 
 ```cmake
 # Reference ports of the pytest suites (completion plan Phase 3).
@@ -3857,6 +3860,8 @@ Co-Authored-By: <the trailer the executing harness specifies>"
 - Existing records carry `comparison_class: "source-specific; assigned by T01 before implementation"`; new ones carry `"unassigned"`. Both mean "not triaged yet"; Task 4.01 accepts neither.
 
 - [ ] **Step 1: Generate the records with a one-off AST scan** (not committed as a tool):
+
+When extending this scan to the whole test tree, retain each containing class in `source_symbol` (`TestIntervalId.test_half_even_ties`). Match records by qualified symbol, not bare method name: otherwise the 16 existing clock methods are added a second time. Inventory functions as source; never label the count as pytest-collected parameterized nodes.
 
 ```bash
 uv run --no-project python - <<'EOF'
@@ -3943,7 +3948,7 @@ Expected: `added` ≥ 545 + the platform files' function count. The file uses 2-
 
   Task 4.06's pre-delete check relies on exactly this file: every name the `comm -23` above prints must appear as a `binding_name` in `migration/ctest-graph-map.json`, and each entry's `root_name` must be non-null and present in the root `ctest -N` list unless its `disposition` is `drop`.
 
-- [ ] **Step 2c: Ask the user OD-1 now.** Present the 22 `tools/research/**/*.py` files from Task 1.03 with their provenance, and ask: delete (default) or relocate outside the repository. Record the answer in the evidence log, and replace every `remove_or_relocate_pending_OD-1` action with `delete_with_python` or `relocate_outside_repo`. Task 4.01 rejects any row still pending, and Task 4.05 executes the recorded answer. If the user is not reachable, stop the task here: the rest of Phase 3 does not depend on it, but Task 3.02 is not done until OD-1 is answered.
+- [ ] **Step 2c: Resolve OD-1.** Record any explicit user choice to relocate the 22 `tools/research/**/*.py` files. Otherwise apply the Decision-record default, `delete_with_python`, with deletion deferred to Task 4.05 after qualification and provenance preservation. Replace every `remove_or_relocate_pending_OD-1` action with the selected action and record whether it came from an explicit answer or the default. Task 4.01 rejects pending rows; absence of a new answer does not block this task.
 
 - [ ] **Step 3: Verify JSON validity and counts**
 
@@ -3974,7 +3979,7 @@ This is two sub-tasks, each sized for one session. "Depends on 3.03" elsewhere i
 - No episode artifact is committed today: `test_golden_episode_v2.py:48-52` writes one into `tmp_path`. Sub-task 3.03a freezes and commits one.
 - `native/src/io` reads `.npz` (`parse_npz`, `npz.cpp`, CRC32 in its anonymous namespace) and encodes single `.npy` arrays (`encode_npy`, `double_array`, `string_array`, …, `npy.hpp:29-37`). There is no ZIP writer, and Python `save` writes `np.savez` (ZIP, stored members).
 - `mj_saveModel(model, nullptr, buffer, size)` is already used (`runtime/project_config.cpp:59`); writing to a file name is the same call with `filename`.
-- There is no `bike::app::Ride` and no `runtime::RideControl`. Python `capture_episode(env, steps, control)` takes a research environment. The C++ equivalent is `research::make_environment` → `std::unique_ptr<runtime::NativeResearchRuntime>` (`research/environment.hpp:75-76`, `runtime/research.hpp:111`). The control type is `bike::writers::drivetrain::RideControl` (`writers/drivetrain.hpp:37`).
+- There is no `bike::app::Ride`. Python `capture_episode(env, steps, control)` takes a research environment. The C++ equivalent is `research::make_environment` → `std::unique_ptr<runtime::NativeResearchRuntime>`. The full control type is `runtime::RideControl`, an alias of `rider::IntentControl` in `runtime/control.hpp`; `bike::writers::drivetrain::RideControl` contains only the drivetrain subset. Capture must follow the Python direct physical-step boundary, without inserting the research outer policy/delay loop.
 - `bike-recording` already has a `compare` subcommand (DuckDB recordings, `--atol/--rtol`, `recording.cpp:22,99,128`). `recording_command` validates a flat command set (`:90`) with positional-count rules (`:117`).
 - Tests importing the Python tools: `test_episode_compare.py`, `test_golden_episode.py`, `test_golden_episode_v2.py`, `test_native_brake_resistance.py`, `test_native_distributed_tire.py`, `test_native_pneumatic_tire.py`, `test_native_rider_forces.py`, `test_native_state_restore.py`, `test_native_suspension.py`, `test_native_tire.py`.
 
@@ -4004,7 +4009,7 @@ using Leaf = std::variant<std::monostate, bool, std::int64_t, double, std::strin
 using Row = std::vector<std::pair<std::string, Leaf>>;   // insertion order kept
 struct EpisodeArtifact { /* every golden_episode.EpisodeArtifact field, listed in the header comment */ };
 EpisodeArtifact capture_episode(runtime::NativeResearchRuntime &env, std::size_t steps,
-                                const writers::drivetrain::RideControl &control);
+                                const runtime::RideControl &control);
 void save(const EpisodeArtifact &episode, const std::filesystem::path &out_dir, const mjModel *model);
 EpisodeArtifact load_episode(const std::filesystem::path &dir);
 // Port of compare_rows: row-count check, union of leaf names, _close per leaf,
@@ -4158,7 +4163,7 @@ Co-Authored-By: <the trailer the executing harness specifies>"
   - `--backend {python,native}` (native only in C++; `python` is rejected with exit 2);
   - `--physics-config` (default `examples/research/viewer_physics_welded.toml`), `--track` (default `examples/research/rough_uphill_savage.toml`), `--duration` (30), `--dt`, `--warmup` (1), `--runs` (3);
   - `--record-decimation`/`--decimate` (80), `--seed`, `--out` (required, new or empty dir), `--compare`, `--benchmark`.
-- The JSON report schema is the one `tests/reference/test_measure_realtime_report.py` pins (including the nested `comparability` and `provenance.sanitizer_options` objects, `:60-114`). Read that test and copy its key paths into the header comment.
+- The current measurement schema is pinned by `tests/reference/test_realtime_measurement.py` and `src/bike_sim/sim/realtime_measurement.py`: report-level `warmups`, `runs`, sampling and threshold classifications, and each run's `comparability`, `execution`, `prefix` and chunk timing. `tests/reference/test_measure_realtime_report.py` additionally pins the historical per-metric comparison helper and `provenance.sanitizer_options`. Preserve those helper contracts without inventing per-step latency for the current whole-boundary measurement. Copy the key paths into the header comment.
 - Output files, as the Python tool writes them: `report.json` (`measure_realtime.py:345`) plus one `{phase}-{index:02d}.json` per run (`:325`).
 - Provenance fields the C++ tool must derive without Python: `git_sha` = `git rev-parse HEAD` in the repository root (`:187`; run `git` through `platform/process.hpp`, and record `null` with a reason when the binary runs outside a checkout), the dirty flag from `git status --porcelain` over the native sources and the tool's own source (the Python tool scopes it to `src/bike_sim` and itself, `:188-189`), and `machine` = the `platform.platform()` equivalent (`uname` sysname-release-machine). The Python `source_fingerprint` (`bike_sim.validation.environment`) becomes the native source digest the build already records (`native_source_sha256`, root `CMakeLists.txt` provenance).
 - Produces: `bike-measure-realtime` with the same flags, the same output files and the same report key paths/semantics.
@@ -4174,7 +4179,7 @@ Co-Authored-By: <the trailer the executing harness specifies>"
   - `--out` pointing at a non-empty directory exits 2;
   - `--runs 0` exits 2.
 - [ ] **Step 3: Implement.**
-- [ ] **Step 4: Compare** against the Python tool on the same inputs. Keys and non-timing fields must match exactly; timing fields need only be present and finite:
+- [ ] **Step 4: Compare** against the Python tool on the same inputs. Shared measurement, input and physical-result fields must match; timing fields need only be present and finite. Record the explicit native provenance differences: executable versus imported extension, native source digest versus Python source fingerprint, native build context and the unavailable-Python version fields. Do not suppress physical differences under a broad host/timing exclusion.
 
 ```bash
 rm -rf /tmp/rt-cpp /tmp/rt-py
@@ -4200,7 +4205,7 @@ print("value diff:", sorted(k for k in set(a) & set(b) if a[k] != b[k] and not a
 PY
 ```
 
-Expected: no file-list difference; `key-path diff: []`; `value diff: []`. Before trusting the `timing` filter, print the excluded paths and confirm each is a timing or host field; extend the tuple only with fields that are, and list them in the evidence log.
+Expected: no output-layout difference, and no unexplained key or value difference. The script above is a diagnostic inventory, not an acceptance filter: inspect each difference and record the narrowly enumerated provenance exceptions described above. Timing and identity exceptions cannot hide changed inputs, physical outcomes, committed steps or validity classifications.
 
 - [ ] **Step 5: Linux + commit**
 
@@ -4362,7 +4367,7 @@ Every batch follows the shared procedure.
 | 3.19 | drive policies and pedalling (`drive`) | `R/test_motor_profile.py` 8, `R/test_assist_controller.py` 22, `R/test_cadence_shifter.py` 9, `R/test_pedal_waveform.py` 10, `R/test_pedaling_policy.py` 9, `R/test_system_momentum_drive.py` 2 | 3.01 | |
 | 3.20 | brakes, cruise, suspension, clocks (`runtime`) | `R/test_native_brake_resistance.py` 5, `R/test_native_static_brake.py` 5, `R/test_native_cruise.py` 24, `R/test_native_suspension.py` 4, `R/test_native_stepper.py` 1, `R/test_native_clock_contracts.py` 16, `R/test_control_clock.py` 4, `R/test_playback_clock.py` 7 | 3.03 | `brake_resistance`, `suspension` and `stepper` read golden episodes. |
 | 3.21a | numeric completion (`numerics`) | `R/test_native_numeric_completion.py` 61 | 3.01 | |
-| 3.21b | numeric domains, Numba kernels (`numerics`) | `R/test_native_numeric_domains.py` 10, `R/test_numba_kernels.py` 8 — 18 | 3.01 | `test_numba_kernels.py` tests the Numba twins: expect `drop`, with evidence naming the C++ kernel tests that cover the arithmetic. |
+| 3.21b | numeric domains, Numba kernels (`numerics`) | `R/test_native_numeric_domains.py` 10, `R/test_numba_kernels.py` 8 — 18 | 3.01 | Triage Numba functions separately: the four randomized twin-equivalence functions may be `drop` under D14; preserve three arithmetic-error contracts and the deterministic box inside/tie cases. Evidence names native kernel coverage and does not call analytical controls a reproduction of the 1000-example Hypothesis comparisons. |
 | 3.22a | encode columns (`recording`) | `R/test_native_encode_columns.py` 40 | 3.01 | |
 | 3.22b | recorder/HUD columns, period buffer (`recording`) | `R/test_recorder_columns.py` 4, `R/test_hud_columns.py` 2, `R/test_period_buffer.py` 10, `R/test_frozen_force_arrays.py` 2, `R/test_ride_plots_html_markers.py` 3 — 21 | 3.08 | |
 | 3.23 | monitors, energy, acceptance (`physics`) | `R/test_energy_ledger.py` 14, `R/test_balance_monitor.py` 9, `R/test_monitor_strictness.py` 10, `R/test_reference_monitor.py` 4, `R/test_sensor_noise.py` 8, `R/test_acceptance_interval_capture.py` 2, `R/test_realistic_pedelec_acceptance.py` 4, `R/test_lean_limit.py` 2 | 3.09 | |
@@ -4372,7 +4377,7 @@ Every batch follows the shared procedure.
 | 3.26 | runtime config, accounting, rollout, performance contract (`runtime`) | `R/test_native_runtime_config.py` 17, `R/test_native_runtime_accounting.py` 11, `R/test_native_runtime_rollout.py` 6, `R/test_native_runtime_performance_contract.py` 10 | 3.04 | `performance_contract` uses the realtime measurement (3.04). |
 | 3.27 | state bundles (`state`) | `R/test_native_state_bundle.py` 31, `R/test_native_state_fuzz.py` 2, `R/test_native_state_restore.py` 19, `R/test_equilibrium_state_file.py` 9 | 3.03 | `state_restore` reads golden episodes. Fuzz → a seeded C++ property test with the same seed and case count. |
 | 3.28 | atomicity and input contracts (`contracts`) | `R/test_native_atomicity.py` 21, `R/test_native_input_contracts.py` 32 | 3.01 | |
-| 3.29a | engine errors, loader (`checks`) | `R/test_native_engine_errors.py` 24, `R/test_native_loader.py` 20 — 44 | 1.06–1.09 | `native_loader` → `drop` (Python extension loading). |
+| 3.29a | engine errors, loader (`checks`) | `R/test_native_engine_errors.py` 24, `R/test_native_loader.py` 20 — 44 | 1.06–1.09 | `native_loader`: triage per function. The 17 Python extension-loading/reporter/preload functions may be `drop` under D14; preserve the three native executable assertions (`--require-failure`, exact `--list`, source-manifest ownership) as CTest script cases. Do not drop the whole file. |
 | 3.29b | contract checks, check tools (`checks`) | `R/test_native_contract_checks.py` 17, `R/test_native_check_tools.py` 37 — 54 | 1.06–1.09 | `check_tools` / `contract_checks` → `run_case` entries in `migration_T56_check.cmake`; the ~30 schema-2 cases (`test_native_check_tools.py:1869-2414`) port 1:1. |
 | 3.30 | native recording lifecycle (`recording`) | `R/test_native_recording_lifecycle.py` 31, `R/test_native_recording_retention.py` 17, `R/test_recording_capture.py` 24, `R/test_recording_publication.py` 2 | 3.11 | |
 | 3.31 | recording catalog, CLI, analysis (`recording`) | `R/test_recording_catalog.py` 15, `R/test_recording_cli.py` 12, `R/test_recording_report.py` 1, `R/test_recording_storage.py` 11, `R/test_recording_values.py` 5, `R/test_recording_analysis.py` 16, `R/test_recording_analyst_cli.py` 6 | 3.01 | |
@@ -4381,7 +4386,7 @@ Every batch follows the shared procedure.
 | 3.33b | research capture, frontend, lifecycle, sweep (`research`) | `R/test_research_capture.py` 7, `R/test_research_frontend.py` 1, `R/test_research_recording_lifecycle.py` 7, `R/test_research_sweep.py` 3 — 18 | 3.01 | `research_sweep` ports against `bike-research-sweep`. |
 | 3.34 | frontends, realtime, async, batch (`frontend`) | `R/test_frontend_windows.py` 6, `R/test_native_ride_frontend.py` 2, `R/test_physical_view.py` 4, `R/test_pinned_measurement.py` 3, `R/test_pneumatic_physical_runtime.py` 3, `R/test_realtime_deferred_checks.py` 3, `R/test_realtime_gate.py` 1, `R/test_realtime_measurement.py` 7, `R/test_measure_realtime_report.py` 6, `R/test_runtime_single_path.py` 6, `T/test_async_close.py` 4, `T/test_batch.py` 8 | 3.04, 3.10 | `T/test_async_close.py` → `native/tests/integration/test_async_close.cpp`; `T/test_batch.py` → `…/test_batch.cpp` (plan-08). |
 | 3.35 | platform files (`platform`) | `R/test_native_linux_headless.py`, `R/test_native_numeric_portability.py`, `R/test_native_platform_blas.py`, `R/test_native_platform_linkage.py`, `R/test_native_platform_recording.py`, `R/test_native_platform_replay.py`, `T/test_async_recovery.py`, `T/test_execution_identity.py`, `T/test_recording_platform_compatibility.py`, `R/test_golden_hook.py` (counts from 3.02) | 3.02, 3.11 | Linkage tests port to `cmake -P` scripts that inspect `otool -L` / `readelf -d` of installed binaries (2.08). `test_native_linux_headless.py` is Linux-only: its golden records list one platform (`golden_platforms`). `test_golden_hook.py` → `drop` (tests the Python capture hook; the C++ readers are covered by `reference.golden_support`). `test_native_numeric_portability.py:157` compares `.view(np.uint64)`: insert capture sites. |
-| 3.36 | portability tooling tests (`portability`) | 24 `tests/portability/test_*.py` (counts from 3.02) | 3.02, 3.41–3.45 | Port `test_cmake_platform`, `test_compiler_policy`, `test_dependency_policy`, `test_provider_identity` and `test_root_configure` to `cmake -P` CTest scripts (scratch configures, as `migration_T03` does). Tests of tools that D18 deletes (`dev`, `ci_lanes`, `offline_*`, `qualification_report`, `release_gate`, `baseline`, `native_dependencies`, `numerics_discovery`, `native_runtime`, `native_toolchain`, `native_coverage_tools`, `install_modes`) → `drop`; the evidence names the replacing preset/CTest/CPack test from 3.41–3.45. |
+| 3.36 | portability tooling tests (`portability`) | 24 `tests/portability/test_*.py` (counts from 3.02) | 3.02, 3.41–3.45 | Port `test_cmake_platform`, `test_compiler_policy`, `test_dependency_policy`, `test_provider_identity` and `test_root_configure` to `cmake -P` CTest scripts (scratch configures, as `migration_T03` does). For tools that D18 deletes, decide per function and name the exact preset/CTest/CPack successor. A filename is not evidence for dropping all its tests: `test_numerics_discovery.py`, for example, includes direct `BikeNumerics.cmake` record-only, provider identity/path, platform, ABI-width and symbol guards that remain native contracts and require CTest successors. Retain such rows as planned until ported. |
 
 ### CHECKPOINTs 3-C, 3-D, 3-E, 3-F (L2)
 
@@ -4396,7 +4401,7 @@ Append the evidence and commit.
 
 ---
 
-## Validation rigs (T54: 30 Python files in `src/bike_sim/validation/` + 2 in `src/bike_sim/physics/`)
+## Validation rigs (T54: 28 Python files in `src/bike_sim/validation/` + 2 in `src/bike_sim/physics/`)
 
 These tasks follow plan-08 §T54. The target files are:
 - `native/src/validation/{rigs,tire,rider,drivetrain,acceptance,evidence}.cpp`;
@@ -4535,10 +4540,10 @@ Expected: exit 0 on both (CTest runs inside); the container cache names `/usr/bi
 - [ ] **Step 3: Verify** on macOS and Linux (`ctest -R '^package_smoke$'`), plus an offline rebuild rehearsal in a fresh container started with `--network none`:
 
 ```bash
-docker run --rm --network none --platform linux/arm64 -v /tmp/pkg:/pkg bike-dev-linux:24.04 bash -c 'cd /tmp && tar xf /pkg/bike-sim-*-source.tar.gz && cd bike-sim-*-source && mkdir -p .deps && <extract archives per native/dependencies.md> && cmake --workflow --preset release'
+docker run --rm --network none --platform linux/arm64 -v /tmp/pkg:/pkg bike-dev-linux:24.04 bash -c 'cd /tmp && tar xf /pkg/bike-sim-*-source.tar.gz && cd bike-sim-*-source && tools/linux/extract_deps.sh native/dependencies.lock.json .deps linux-aarch64 && cmake --workflow --preset release'
 ```
 
-Replace `<extract archives per native/dependencies.md>` with the exact extraction commands Task 2.05 codified in the Dockerfile's acquire stage. Factor them into `tools/linux/extract_deps.sh` (shell, no network) in this task, so the Dockerfile and this rehearsal call the same script.
+The source package supplies the pinned archives under `.deps/_archives`. `tools/linux/extract_deps.sh LOCK DESTINATION PLATFORM` verifies their hashes and prepares the selected platform's dependency tree without network access. The Dockerfile acquisition stage and this rehearsal use the same extraction implementation.
 
 - [ ] **Step 4: Commit** `build: CPack binary and offline source distributions`.
 
@@ -4573,22 +4578,22 @@ tools/linux/container.sh exec cmake --workflow --preset release
 ### Task 4.01: Golden completeness and ledger reconciliation
 
 **Files:**
-- Create: `native/tests/golden/completeness.cmake` (CTest `golden_completeness`, registered from `native/tests/reference/CMakeLists.txt` with label `audit` only, so it does not run in every `native` CTest pass)
+- Create: `native/tests/golden/completeness.cmake` (CTest `golden_completeness`, registered from `native/tests/reference/CMakeLists.txt` with label `audit`; ordinary test presets explicitly exclude `audit`, because labels alone never exclude a CTest test)
 - Modify: `migration/test-port-map.json`, `migration/python-removal.json`
 - Modify: `migration/task-graph.json`. Statuses: T16–T51 → `verified` where their migration tests and, if any, ported reference tests are green; T52–T60 → `verified`.
 
 **Interfaces:**
 - Produces:
   - `golden_completeness` fails if any of these holds:
-    1. a `golden` record's node directory is missing under any platform named in that record's `golden_platforms` list (written by shared-procedure step 1), or exists under a platform the list does not name. A record whose `golden_platforms` has one entry (e.g. `test_native_linux_headless.py`, skip-guarded platform nodes) must carry an `evidence` sentence saying why;
-    2. a directory's `NNN.json` indices are not contiguous from `000`;
+    1. a `golden` record's `<file-key>/<test-key>.json` sidecar and matching `.bin` payload are missing under any platform named in that record's `golden_platforms` list, or appear under an undeclared platform. Check each concrete collected node ID, including parameters. A one-platform record must explain its platform restriction in `evidence`;
+    2. the sidecar is not a nonempty JSON array; entry indices are not contiguous from zero; entries name another node; offsets and lengths are not contiguous or disagree with dtype/shape; or the final payload extent differs from the `.bin` size. The format is one `.json`/`.bin` pair per node, not one file per entry;
     3. any `test-port-map.json` record has `disposition` outside `{port, golden, drop}`, or `comparison_class` outside the enum defined in shared-procedure step 1. All 1611 records start as `"disposition": "planned"` with `"comparison_class": "source-specific; assigned by T01 before implementation"`, so both fields must have been rewritten by a Phase 3 batch task;
     4. any `drop` record has an empty `evidence`.
-  - Every `python-removal.json` row ends in `replacement_landed`, `delete_with_python`, `replace_with_cmake_ctest_cpack` or `replace_with_ci_checklist`. The `remove_or_relocate_pending_OD-1` rows are resolved by OD-1 before this task closes. If the user has not been asked yet, ask in Step 3; with no answer, apply the D-record default (delete, provenance in `docs/reference/README-provenance.md`) and record that.
+  - Every `python-removal.json` row ends in `replacement_landed`, `delete_with_python`, `replace_with_cmake_ctest_cpack` or `replace_with_ci_checklist`. The `remove_or_relocate_pending_OD-1` rows must already reflect the explicit relocation choice or the Decision-record default (delete in Phase 4, preserve provenance); record the choice's origin.
 
 **Review focus:** the 46 rows that lacked `implementation` records for already-verified tasks (T03, T05, T09, T11–T15, T19, e.g. `src/bike_sim/geometry/*.py`, `src/bike_sim/physics/*.py`) get a `replacement_paths` entry pointing at their C++ module. Find it in `migration/file-work-units.json` or `migration/api-index.md`. None is waved through without one.
 
-- [ ] **Step 1: Write `completeness.cmake`** implementing rules 1–4 with `file(GLOB …)` and `string(JSON …)`. Read `migration/test-port-map.json` (≈1.2 MB) via `file(READ)`. Each `string(JSON GET)` re-parses the document, so 1611 × ≥4 GETs cost minutes. That is acceptable only because the test carries the `audit` label alone and runs at checkpoints, not in every `native` pass. If one run exceeds 5 minutes, move the rules into `bike-native-checks --kind golden-completeness` (C++ JSON is already linked there) and keep the CTest name. Register it:
+- [ ] **Step 1: Write `completeness.cmake`** implementing rules 1–4 with `file(GLOB …)` and `string(JSON …)`. Read `migration/test-port-map.json` via `file(READ)`. Repeated `string(JSON GET)` calls re-parse the document; the full reconciled map may exceed the original 1611 records. This is an explicit checkpoint audit, excluded by ordinary presets with `-LE 'slow|audit|package'`. If one run exceeds 5 minutes, move the rules into `bike-native-checks --kind golden-completeness` and keep the CTest name. Register it:
 
 ```cmake
 add_test(NAME golden_completeness COMMAND "${CMAKE_COMMAND}"
@@ -4626,13 +4631,13 @@ Expected:
 **Files:**
 - Modify: `tools/run_tests.sh` (rewrite; keep the profile names `quick`, `native`, `full` and the usage text style)
 - Modify: `native/tests/reference/CMakeLists.txt`, `native/tests/migration/CMakeLists.txt`. Add the label `slow` to tests whose measured duration exceeds 30 s (`ctest --test-dir build/native-release -j1 --timeout 600 | sort -k5 -n` lists durations).
-- Modify: `CMakePresets.json` (Task 3.41). The `release` test preset gets `"filter": {"exclude": {"label": "slow"}}`, because a workflow preset cannot take `-LE slow` from argv.
+- Modify: `CMakePresets.json` (Task 3.41). Ordinary test presets keep `"filter": {"exclude": {"label": "slow|audit|package"}}`; slow, audit and package gates run explicitly, because labels by themselves do not exclude tests.
 
 **Interfaces:**
 - Produces: `tools/run_tests.sh <profile> [preset]`. `preset` defaults to `release`, and `<build>` = the preset's `binaryDir` (`build/<preset>`, Task 3.41). `native asan` therefore runs the same stages on `build/asan`. This replaces `NATIVE_TEST_BUILD_PATH`/`NATIVE_TEST_BUILD_DIR=asan|rtsan|coverage` (old script lines 18-19, 101-112). Sanitizer runtimes now come from the preset's own link flags, not a preload. The profiles:
-  - `quick` = `cmake --workflow --preset <preset>` (its test preset already excludes `slow`);
-  - `native` = `cmake --preset <preset> && cmake --build --preset <preset>`, then `tools/run_native_checks.sh <build>`, then `ctest --test-dir <build> -LE slow -j8 --output-junit Testing/junit.xml`;
-  - `full` = `native` + `ctest --test-dir <build> -L slow --no-tests=error` + `ctest --test-dir <build> -L package --no-tests=error`. `--no-tests=error` stops an unlabelled tree from passing silently: no `slow` or `package` label exists today.
+  - `quick` = `cmake --workflow --preset <preset>` (its test preset excludes `slow|audit|package`);
+  - `native` = `cmake --preset <preset> && cmake --build --preset <preset>`, then `tools/run_native_checks.sh <build>`, then `ctest --test-dir <build> -LE 'slow|audit|package' -j8 --output-junit Testing/junit.xml`;
+  - `full` = `native` + explicit `ctest --test-dir <build> -L slow --no-tests=error`, `-L audit --no-tests=error` and `-L package --no-tests=error`. The no-tests gate prevents an absent registration from passing silently.
 
   No `uv`, `python` or `pytest` token remains in the script.
 - Provenance: the old `NATIVE_TEST_PROVENANCE_PATH` / `native_test_reporter` output (old script lines 118-119) is replaced by CTest's `<build>/Testing/` tree plus the JUnit file. The CI artifacts of Task 3.45 upload both. Record this mapping in the header comment.
@@ -4649,7 +4654,7 @@ grep -nE 'python|pytest|uv run|uv sync' tools/run_tests.sh; echo "hits=$?"
 
 Expected: hits (exit 0).
 
-- [ ] **Step 2: Rewrite the script.** Keep `set -euo pipefail` and the `usage()` style. Keep the Darwin-only malloc debugging exports (`MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1`, old lines 63-69 and 81-84; never on Linux). They wrap only the non-`slow` CTest invocation of every profile: run that `ctest -LE slow` in a subshell that exports them. They are never set around `ctest -L slow`, because the `slow` set holds the realtime measurements (Task 3.10) and the old script kept them off `full` for that reason.
+- [ ] **Step 2: Rewrite the script.** Keep `set -euo pipefail` and the `usage()` style. Keep the Darwin-only malloc debugging exports (`MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1`, old lines 63-69 and 81-84; never on Linux). They wrap only the ordinary CTest invocation, `ctest -LE 'slow|audit|package'`, in a subshell. They are never set around `ctest -L slow`, which contains realtime measurements (Task 3.10).
 - [ ] **Step 3: Verify**
 
 ```bash
@@ -4705,7 +4710,7 @@ A node still waiting for a decision blocks 4.03: stop and ask the user.
 ### Task 4.04: No-Python enforcement (T62)
 
 **Files:**
-- Modify: `native/cmake/Checks.cmake`. Register CTest `python_audit_source` (`bike-python-audit --mode source --root ${CMAKE_SOURCE_DIR}`) with `WILL_FAIL TRUE` and label `audit`, and CTest `python_audit_documentation` (`--mode documentation`) the same way. Task 4.06 removes `WILL_FAIL`.
+- Modify: `native/cmake/Checks.cmake`. Register CTest `python_audit_source` (`bike-python-audit --mode source --root ${CMAKE_SOURCE_DIR}`) with `WILL_FAIL TRUE` and label `audit`, and CTest `python_audit_documentation` (`--mode documentation`) the same way. Task 4.06 removes `WILL_FAIL` for the source audit; Task 4.07 removes it for documentation after the rewrite.
 - Create: `native/tests/package/audit_negative_controls.cmake` (plan-09 T62 path). It copies an unpacked package into a scratch dir and injects, one at a time: a `.py` file, a `#!/usr/bin/env python3` script, a `site-packages/` directory, and a Python-linked binary. Each injection must make `--mode package` exit non-zero.
   - The Python-linked binary must not need a real CPython, because 4.06 reruns `-L audit` in a container rebuilt without one. The control builds a stub with `execute_process(${CMAKE_CXX_COMPILER} …)`:
     - Linux: `-shared -Wl,-soname,libpython3.13.so.1.0 -o libpython3.13.so.1.0` from a one-function TU;
@@ -4831,7 +4836,7 @@ Co-Authored-By: <the trailer the executing harness specifies>"
 - `CMakeLists.txt`: remove the `BIKE_BUILD_PYTHON_BINDINGS` option and the `add_subdirectory(native)` refusal branch (lines 611-618).
 - `tools/linux/Dockerfile`: remove uv, CPython and `UV_PROJECT_ENVIRONMENT`.
 - `tools/linux/container.sh`: remove `venv` and the `native` graph from `configure`; `gate` runs `bash tools/run_tests.sh` without `NATIVE_TEST_BUILD_PATH`.
-- `native/cmake/Checks.cmake`: drop `WILL_FAIL` from `python_audit_source` and `python_audit_documentation`.
+- `native/cmake/Checks.cmake`: drop `WILL_FAIL` from `python_audit_source`. The documentation audit changes to a mandatory positive check in Task 4.07.
 - `migration/no-python-policy.json`:
   - `source_mode.exempt_globs` becomes `["build*/**", "native/build*/**", ".venv/**", ".work/**", "output/**", ".worktrees/**", "docs/superpowers/**", "migration/**", "native/tests/migration/migration_T56_check.cmake"]`. Narrowing it to historical paths alone would expose untracked host trees: today's run reports hits in 7 stale `native/build*/` trees and in `.work/reference-sources/cpython/**/CMakeLists.txt`, the reference checkouts AGENTS.md sanctions. The T56 script is exempt because its `EXPECT_STDERR "python … audit"` needles and `uv run python thing.py` fixture body (:292, :308, :323) are the audit's own negative fixtures; state that in the policy's `description` string (JSON has no comments). Drop `**/proto_native_bench/**`: after 4.05 only C++ and data remain there, so the exemption must not hide new Python.
   - `documentation_mode.exempt_globs` stays `["docs/superpowers/**", "docs/archive/**", "migration/**", "**/CHANGELOG*"]`.
@@ -4881,14 +4886,14 @@ Both lists must be empty before Step 2. An unmapped name means Task 3.02 missed 
 ```bash
 tools/linux/container.sh image && tools/linux/container.sh down && tools/linux/container.sh sync
 cmake --workflow --preset release
-ctest --test-dir build/native-release -L audit --output-on-failure
+ctest --test-dir build/native-release -L audit -E '^python_audit_documentation$' --output-on-failure
 tools/linux/container.sh exec cmake --workflow --preset release
-tools/linux/container.sh exec ctest --test-dir build/native-release -L audit --output-on-failure
+tools/linux/container.sh exec ctest --test-dir build/native-release -L audit -E '^python_audit_documentation$' --output-on-failure
 diff <(jq -r '.sources[].path' /tmp/sources-before.json | sort) <(jq -r '.sources[].path' build/native-release/native_sources.json | sort)
 ```
 
 Expected:
-- every command exits 0. `python_audit_source` passes because its exempt list covers only untracked host trees, history and the T56 fixtures;
+- every command exits 0. `python_audit_source` passes because its exempt list covers only untracked host trees, history and the T56 fixtures. The documentation audit becomes mandatory in Task 4.07 after the documentation rewrite; it is explicitly excluded from this earlier gate;
 - the `diff` shows no root-graph removals: the binding TUs were never in the root manifest. Any removal must be listed in `/tmp/binding-tus.txt`.
 
 - [ ] **Step 4: Commit** `feat(cpp): T63 delete the nanobind binding graph`.
@@ -4919,7 +4924,7 @@ Expected:
 - Every fenced command block in live docs runs as written. `bike-python-audit --mode documentation` passes.
 - No link is broken: `grep -o '\](\([^)]*\))' -r README.md docs/*.md docs/development/*.md | …`. Check each relative target with `test -e`.
 
-- [ ] Edit; run `ctest --test-dir build/native-release -R '^python_audit_documentation$' --output-on-failure`; check links; commit `docs: native workflow after Python removal`.
+- [ ] Edit the documentation and remove `WILL_FAIL` from `python_audit_documentation` in `native/cmake/Checks.cmake`; run `ctest --test-dir build/native-release -R '^python_audit_documentation$' --output-on-failure` on both platforms, then the full `-L audit` gate; check links; commit `docs: native workflow after Python removal`.
 
 ---
 

@@ -351,6 +351,15 @@ bio::Value finalize_writer_config(const Value& out) {
 }
 } // namespace
 
+bio::Value project_drive_config(const cfg::SimulationPhysicsConfig& source) {
+    auto resolved = std::make_unique<cfg::SimulationPhysicsConfig>(source);
+    cfg::post_init(*resolved);
+    const auto document = cfg::detail::plain_document(cfg::to_value(*resolved));
+    const auto projected = finalize_writer_config(Value{Object{
+        {"schema", integer(2)}, {"drive", drive(*resolved, document)}}});
+    return field(projected, "drive");
+}
+
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel& model,

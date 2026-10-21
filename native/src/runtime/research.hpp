@@ -156,6 +156,7 @@ public:
     // pure layer holds it as state; emission is the adapter's.
     [[nodiscard]] std::optional<std::string> take_pending_warning();
 private:
+    friend class bike::golden::RuntimeAccess;
     void require_open() const;
     void consume_samples(bool stop_at_outcome = true);
     void consume_sample(const SamplePtr &sample, bool stop_at_outcome);

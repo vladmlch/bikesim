@@ -1,0 +1,65 @@
+[
+  {
+    "binding_name": "native_contract_tests",
+    "root_name": "native_contract_tests",
+    "disposition": "moved",
+    "task": "3.02",
+    "evidence": "Source registration in root CMakeLists.txt from native/tests/test_contracts.cpp; CTest enumeration and execution remain unperformed."
+  },
+  {
+    "binding_name": "native_platform_blas_tests",
+    "root_name": "native_platform_blas_tests",
+    "disposition": "moved",
+    "task": "3.02",
+    "evidence": "Source registration in root CMakeLists.txt from native/tests/test_platform_blas.cpp; CTest enumeration and execution remain unperformed."
+  },
+  {
+    "binding_name": "native_platform_lapack_tests",
+    "root_name": "native_platform_lapack_tests",
+    "disposition": "moved",
+    "task": "3.02",
+    "evidence": "Source registration in root CMakeLists.txt from native/tests/test_platform_lapack.cpp; CTest enumeration and execution remain unperformed."
+  },
+  {
+    "binding_name": "native_platform_sincos_tests",
+    "root_name": "native_platform_sincos_tests",
+    "disposition": "moved",
+    "task": "3.02",
+    "evidence": "Source registration in root CMakeLists.txt from native/tests/test_platform_sincos.cpp; CTest enumeration and execution remain unperformed."
+  },
+  {
+    "binding_name": "native_bench_bare",
+    "root_name": "native_bench_bare",
+    "disposition": "moved",
+    "task": "3.02",
+    "evidence": "Source registration in root CMakeLists.txt from tools/proto_native_bench/bench.cpp; CTest enumeration and execution remain unperformed."
+  },
+  {
+    "binding_name": "native_bench_glue",
+    "root_name": "native_bench_glue",
+    "disposition": "moved",
+    "task": "3.02",
+    "evidence": "Source registration in root CMakeLists.txt from tools/proto_native_bench/bench.cpp; CTest enumeration and execution remain unperformed."
+  },
+  {
+    "binding_name": "native_bench_heavy",
+    "root_name": "native_bench_heavy",
+    "disposition": "moved",
+    "task": "3.02",
+    "evidence": "Source registration in root CMakeLists.txt from tools/proto_native_bench/bench.cpp; CTest enumeration and execution remain unperformed."
+  },
+  {
+    "binding_name": "native_sanitizer_control",
+    "root_name": "sanitizer_clean_control",
+    "disposition": "replaced",
+    "task": "3.42",
+    "evidence": "Source registration in native/cmake/Sanitizers.cmake; instrumentation/diagnostic gates remain unperformed."
+  },
+  {
+    "binding_name": "native_rtsan_control",
+    "root_name": "rtsan_clean_control",
+    "disposition": "replaced",
+    "task": "3.42",
+    "evidence": "Source registration in native/cmake/Sanitizers.cmake; instrumentation/diagnostic gates remain unperformed."
+  }
+]

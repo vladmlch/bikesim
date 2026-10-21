@@ -22,6 +22,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -487,6 +488,20 @@ namespace {
     }
 
 } // namespace
+
+PolicySnapshot decode_policy_snapshot(const bio::Value& value) {
+    auto decoded = std::make_unique<DriveSnapshot>();
+    decode_policies(mapping(VNode{&value}, "state"), *decoded);
+    if (!decoded->hub) throw std::invalid_argument("state.hub: expected dict");
+    return {decoded->pedaling, decoded->shifting, decoded->assist, decoded->battery, *decoded->hub};
+}
+
+bio::Value encode_policy_snapshot(const PolicySnapshot& state) {
+    auto source = std::make_unique<DriveSnapshot>();
+    source->pedaling = state.pedaling; source->shifting = state.shifting;
+    source->assist = state.assist; source->battery = state.battery; source->hub = state.hub;
+    return policy_value(*source);
+}
 
 DriveSnapshot decode_drive_snapshot(const bio::Value &value) {
     const Dict d = mapping(VNode{&value}, "state.drive");

@@ -155,6 +155,13 @@ namespace nativecfg::detail {
 
 namespace nativecfg {
 
+    drivetrain::DrivePolicyConfig decode_policy_config(const bike::io::Value& value) {
+        if (!std::holds_alternative<bike::io::Value::Object>(value.data))
+            detail::invalid("config", "expected dict");
+        return detail::decode_drive_policies(
+            detail::Dict<detail::VNode>{.value = detail::VNode{&value}, .path = "config"}, {});
+    }
+
     WriterConfig decode(const bike::io::Value &value) {
         const auto *const root =
             std::get_if<bike::io::Value::Object>(&value.data);

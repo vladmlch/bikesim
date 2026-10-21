@@ -508,3 +508,171 @@ Task 1.10's record-generation requirement is fulfilled. Its portability
 pytest/build/configure checks, Task 1.03's L1 checks and all phase
 checkpoints remain open; no task checkbox or qualification status is
 advanced by these successful numerics controls alone.
+
+## 2026-10-21 — Task 1.18 measured nonfinite sin/cos parity
+
+Source revision: `36b0b0af5f386fa509179c6520d204f5fde89aad`, branch
+`impl/python-free-cpp`. This is the explicitly authorized focused
+measurement/regression slice for review item 3. No full project build,
+native/full profile, simulation episode or phase checkpoint was run.
+
+### Identities and measured decision
+
+| Identity | macOS arm64 | Linux aarch64 |
+|---|---|---|
+| Host | macOS 27.0.1, build 26A434, Darwin 27.0.0 | Linux 7.0.14-linuxkit, aarch64 |
+| Interpreter | CPython 3.13.12, checkout `.venv/bin/python3` | CPython 3.13.16, `/opt/bike-venv/bin/python3` |
+| NumPy | 2.5.2, existing checkout venv | 2.5.2, image-owned venv |
+| Native compiler | Apple Clang 21.0.0 (clang-2100.3.34.2) | Clang 18.1.3 (1ubuntu1); GCC 13.3.0-6ubuntu2~24.04.1 |
+| Trig provider | libSystem.B.dylib 1359.0.0 | `/lib/aarch64-linux-gnu/libm.so.6`, Ubuntu glibc 2.39-0ubuntu8.9 |
+| Focused linter | Homebrew clang-tidy/LLVM 23.1.2 | Ubuntu clang-tidy/LLVM 18.1.3 |
+
+Reused running container `bike-dev-python-free-cpp-numerics`, image
+`sha256:959091e9b453461be335eb31edadc63e36269b827755994f6b54d3796703ca69`.
+Its `bike.checkout` label matches this worktree and `Mounts=[]`.
+Only the probe, wrapper header, focused test and clang-tidy policy were
+copied into `/tmp`; no host venv, bind mount, sync or image rebuild.
+
+**Reproduced decision:** scalar and array NumPy results agree for all four
+inputs and both operations on each platform (512 array output lanes per
+platform). Linux libm already matches every oracle bit, so its existing
+plain-libm rule stays unchanged. On macOS, libm sin preserves the negative
+qNaN while libm cos canonicalizes it positive; the existing Apple
+subtraction rule matches NumPy. No wrapper arithmetic, platform gate,
+finite operation order or volatile anti-fusion load was changed.
+No inference about other NaN payloads, signaling NaNs or other platforms
+is made by this four-input measurement.
+
+### Probe source and commands
+
+The exact `/private/tmp/bike-sincos-probe.py` source (SHA-256
+`1738b72ed70d45e53222d68c7d2a07cca5809973750b72b94432ebe9df83a8e1`):
+
+```python
+import platform
+import struct
+import sys
+
+import numpy as np
+
+
+def bits(value):
+    return f"{struct.unpack('<Q', struct.pack('<d', value))[0]:016x}"
+
+
+print(f"platform={platform.platform()} machine={platform.machine()}")
+print(f"python={sys.version} executable={sys.executable}")
+print(f"numpy={np.__version__} path={np.__file__}")
+print("input scalar_sin scalar_cos array_sin array_cos lanes_equal")
+for word in (0x7FF0000000000000, 0xFFF0000000000000,
+             0x7FF8000000000000, 0xFFF8000000000000):
+    value = struct.unpack('<d', struct.pack('<Q', word))[0]
+    with np.errstate(invalid="ignore"):
+        scalar = (np.sin(np.float64(value)), np.cos(np.float64(value)))
+        array = (np.sin(np.full(64, value, dtype=np.float64)),
+                 np.cos(np.full(64, value, dtype=np.float64)))
+    equal = all(np.all(result.view(np.uint64) == result.view(np.uint64)[0])
+                for result in array)
+    print(f"{word:016x}", *(bits(item) for item in scalar),
+          *(bits(result[0]) for result in array), equal)
+```
+
+These commands exited 0:
+
+```sh
+uv run --frozen --no-sync --group native python /private/tmp/bike-sincos-probe.py
+docker inspect bike-dev-python-free-cpp-numerics --format '{{.Image}} {{.State.Status}} {{json .Mounts}} {{json .Config.Labels}}'
+docker cp /private/tmp/bike-sincos-probe.py bike-dev-python-free-cpp-numerics:/tmp/bike-sincos-probe.py
+docker exec bike-dev-python-free-cpp-numerics /root/.local/bin/uv run --no-project --python /opt/bike-venv/bin/python3 python /tmp/bike-sincos-probe.py
+```
+
+NumPy scalar/contiguous-array output on **both** measured platforms (each
+`lanes_equal` covers all 64 lanes for both operations):
+
+```text
+input scalar_sin scalar_cos array_sin array_cos lanes_equal
+7ff0000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 True
+fff0000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 True
+7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 True
+fff8000000000000 fff8000000000000 fff8000000000000 fff8000000000000 fff8000000000000 True
+```
+
+macOS Apple Clang native dump (before and after the test/comment change):
+
+```text
+input native_sin native_cos libm_sin libm_cos subtract
+7ff0000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000
+fff0000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000
+7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000
+fff8000000000000 fff8000000000000 fff8000000000000 fff8000000000000 7ff8000000000000 fff8000000000000
+```
+
+Linux aarch64 Clang 18 native dump (before and after), and GCC 13 final
+dump (identical):
+
+```text
+input native_sin native_cos libm_sin libm_cos subtract
+7ff0000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000
+fff0000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000
+7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000 7ff8000000000000
+fff8000000000000 fff8000000000000 fff8000000000000 fff8000000000000 fff8000000000000 fff8000000000000
+```
+
+### Focused regression and negative control
+
+The final standalone TU is compiled with C++23, `-O2`,
+`-ffp-contract=off -Wall -Wextra -Wpedantic -Werror`, and the shared
+required safety flags
+`-fstack-protector-strong -ftrivial-auto-var-init=zero
+-fvisibility=hidden -fvisibility-inlines-hidden -fstrict-flex-arrays=3`.
+Apple Clang, Linux Clang 18 and Linux GCC 13 each compile and run with
+exit 0 and no test output: **24 exact-bit assertions per binary** (eight
+measured nonfinite results, four signed-zero controls, twelve nonzero
+finite np/math-versus-separate-libm controls). Final strict commands and
+all exit details are in
+`.superpowers/sdd/2026-10-21-sincos-golden-pull/task-3-report.md`.
+
+The temporary negative-control TU changes only the +infinity row's
+expected sin from `7ff8000000000000` to `fff8000000000000` in both
+platform tables. Apple Clang and Linux Clang 18 compile it with the same
+strict flags (exit 0); both runs exit **1**, reporting:
+
+```text
+np_sin nonfinite input=0x7ff0000000000000 expected=0xfff8000000000000 actual=0x7ff8000000000000
+```
+
+The production tree always retains the correct table. The three correct
+binaries were run again after the isolated negative control and exit 0.
+Because the original Linux rule already matches NumPy, this is an
+expectation negative control, not evidence of a production behavior fix.
+
+Focused clang-tidy, one selected TU plus its first-party header, uses
+`native/.clang-tidy` and the same strict flags. Both final runs exit 0
+with zero first-party diagnostics. macOS prints 1496 generated warnings
+and suppresses 1500 (1496 non-user, four existing NOLINT); Linux prints
+and suppresses 56118 non-user warnings. Earlier local helper diagnostics
+(one swappable-parameter finding, then ten designated-initializer
+findings on macOS) were corrected and rechecked; no suppression was added.
+
+Two transient sandbox access failures occurred: uv could not initialize
+its user cache (exit 2), and a Docker identity query could not access the
+socket (exit 1). Each was retried with approved sandbox escalation. An
+initial sequential negative-control preparation batch continued after
+uv's failure, producing missing-source compile (1), missing binary (127)
+and missing Docker-copy source (1); its Linux compile/run used the prior
+analytic TU and exited 0. Those results are **not** RED evidence. The
+subsequent successful preparation and final isolated negative controls
+above establish RED; no failure is hidden.
+
+### Verification limits
+
+The existing cached native Makefile/compile database has no sincos target
+entry, so this task uses the expressly permitted standalone compilation.
+`native/CMakeLists.txt` already registers the test in the binding graph;
+it is unchanged. Root-graph registration remains upstream Task 3.02.
+No CMake configure, full graph rebuild, CTest/pytest suite, orchestrated
+`check_tidy` sweep, sanitizer, RTSan, coverage or native/full gate was
+run. Direct one-TU clang-tidy is not a claim that the full sweep passed.
+Review item 5 owns full-project/phase verification. No phase status or
+plan checkbox advances here. `native/numerics.lock.json` is unchanged,
+SHA-256 `19f542e9a581ef5b47379ab1420b6104f5bac72cf270860421c5ae5acd0539bc`.

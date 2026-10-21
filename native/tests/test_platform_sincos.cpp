@@ -1,7 +1,6 @@
-// Completion-plan 1.18: analytic contracts plus an explicit bit-table probe.
+// Completion-plan 1.18: measured bit contracts plus an explicit bit-table probe.
 // --dump-nonfinite prints native/libm/subtraction bits for comparison with
-// NumPy's scalar AND contiguous-array paths on the same platform. No provider
-// bit table is fabricated here: freeze measured expectations after that check.
+// NumPy's scalar AND contiguous-array paths on the same platform.
 #include "../src/numeric_sincos.hpp"
 
 #include <array>
@@ -12,6 +11,7 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <span>
 #include <stdexcept>
 #include <string_view>
@@ -22,23 +22,91 @@ namespace {
         UINT64_C(0x7ff8000000000000), UINT64_C(0xfff8000000000000),
     };
 
-    void require(bool condition, const char *message) {
-        if (!condition) throw std::runtime_error(message);
+    // Measured 2026-10-21 with NumPy 2.5.2; scalar np.float64 and contiguous
+    // np.full(64, value, dtype=np.float64) agree in all lanes, under
+    // np.errstate(invalid="ignore"). Rows follow inputs; columns are sin/cos.
+    // Probe: uv run --frozen --no-sync --group native python
+    // /private/tmp/bike-sincos-probe.py (macOS CPython 3.13.12).
+    // Linux: /root/.local/bin/uv run --no-project --python
+    // /opt/bike-venv/bin/python3 python /tmp/bike-sincos-probe.py (3.13.16).
+    // Full reproducible probe, identities and outputs are retained in
+    // migration/cpp-linux-completion-evidence.md, Task 1.18's dated entry.
+#if defined(__APPLE__) && defined(__arm64__)
+    constexpr std::array<std::array<std::uint64_t, 2>, 4> expected_nonfinite{{
+        {UINT64_C(0x7ff8000000000000), UINT64_C(0x7ff8000000000000)},
+        {UINT64_C(0x7ff8000000000000), UINT64_C(0x7ff8000000000000)},
+        {UINT64_C(0x7ff8000000000000), UINT64_C(0x7ff8000000000000)},
+        {UINT64_C(0xfff8000000000000), UINT64_C(0xfff8000000000000)},
+    }};
+#elif defined(__linux__) && defined(__aarch64__)
+    constexpr std::array<std::array<std::uint64_t, 2>, 4> expected_nonfinite{{
+        {UINT64_C(0x7ff8000000000000), UINT64_C(0x7ff8000000000000)},
+        {UINT64_C(0x7ff8000000000000), UINT64_C(0x7ff8000000000000)},
+        {UINT64_C(0x7ff8000000000000), UINT64_C(0x7ff8000000000000)},
+        {UINT64_C(0xfff8000000000000), UINT64_C(0xfff8000000000000)},
+    }};
+#endif
+
+    struct BitExpectation {
+        std::uint64_t result;
+        std::uint64_t input;
+        std::string_view operation;
+    };
+
+    void require_bits(double actual, BitExpectation expected) {
+        const auto actual_bits = std::bit_cast<std::uint64_t>(actual);
+        if (actual_bits == expected.result) return;
+        std::ostringstream message;
+        message << expected.operation << " input=0x" << std::hex << std::setfill('0')
+                << std::setw(16) << expected.input << " expected=0x" << std::setw(16)
+                << expected.result << " actual=0x" << std::setw(16) << actual_bits;
+        throw std::runtime_error(message.str());
     }
 
     void check_analytic_contracts() {
-        require(std::bit_cast<std::uint64_t>(numeric::np_sin(0.)) == 0,
-                "sin(+0) is +0");
-        require(std::bit_cast<std::uint64_t>(numeric::np_sin(-0.)) ==
-                    UINT64_C(0x8000000000000000), "sin(-0) is -0");
-        require(numeric::np_cos(0.) == 1. && numeric::np_cos(-0.) == 1.,
-                "cos(signed zero) is one");
-        for (const auto bits : inputs) {
-            const double value = std::bit_cast<double>(bits);
-            require(std::isnan(numeric::np_sin(value)) &&
-                        std::isnan(numeric::np_cos(value)),
-                    "nonfinite trigonometric inputs return NaN");
+        require_bits(numeric::np_sin(0.),
+                     {.result = 0, .input = 0, .operation = "np_sin signed zero"});
+        require_bits(numeric::np_sin(-0.),
+                     {.result = UINT64_C(0x8000000000000000),
+                      .input = UINT64_C(0x8000000000000000), .operation = "np_sin signed zero"});
+        require_bits(numeric::np_cos(0.),
+                     {.result = UINT64_C(0x3ff0000000000000),
+                      .input = 0, .operation = "np_cos signed zero"});
+        require_bits(numeric::np_cos(-0.),
+                     {.result = UINT64_C(0x3ff0000000000000),
+                      .input = UINT64_C(0x8000000000000000), .operation = "np_cos signed zero"});
+        // Nonzero finite controls include the known same-operand fusion
+        // witness. Volatile loads keep the reference libm calls separate.
+        for (const double input : {-1., 0.5, -0.57532456093834838}) {
+            const volatile double value = input;
+            const auto bits = std::bit_cast<std::uint64_t>(input);
+            const auto sin_bits = std::bit_cast<std::uint64_t>(std::sin(value));
+            const auto cos_bits = std::bit_cast<std::uint64_t>(std::cos(value));
+            require_bits(numeric::np_sin(value),
+                         {.result = sin_bits, .input = bits, .operation = "np_sin finite"});
+            require_bits(numeric::np_cos(value),
+                         {.result = cos_bits, .input = bits, .operation = "np_cos finite"});
+            require_bits(numeric::math_sin(value),
+                         {.result = sin_bits, .input = bits, .operation = "math_sin finite"});
+            require_bits(numeric::math_cos(value),
+                         {.result = cos_bits, .input = bits, .operation = "math_cos finite"});
         }
+    }
+
+    void check_nonfinite_bits() {
+#if (defined(__APPLE__) && defined(__arm64__)) || (defined(__linux__) && defined(__aarch64__))
+        for (std::size_t index = 0; index < inputs.size(); ++index) {
+            const double value = std::bit_cast<double>(inputs[index]);
+            require_bits(numeric::np_sin(value),
+                         {.result = expected_nonfinite[index][0],
+                          .input = inputs[index], .operation = "np_sin nonfinite"});
+            require_bits(numeric::np_cos(value),
+                         {.result = expected_nonfinite[index][1],
+                          .input = inputs[index], .operation = "np_cos nonfinite"});
+        }
+#else
+        throw std::runtime_error("nonfinite NumPy bits are unmeasured on this platform");
+#endif
     }
 
     void dump_nonfinite() {
@@ -89,6 +157,7 @@ int main(int argc, char **argv) {
     }
     try {
         check_analytic_contracts();
+        check_nonfinite_bits();
         return 0;
     } catch (const std::exception &error) {
         std::cerr << error.what() << '\n';

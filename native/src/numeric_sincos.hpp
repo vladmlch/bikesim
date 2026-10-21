@@ -25,21 +25,20 @@
 //     npy_sin/npy_cos additionally return `x - x` for non-finite
 //     inputs on __APPLE__ && __arm64__ (WORKAROUND_APPLE_TRIG_BUG,
 //     npy_math_internal.h.src:296-313): the AArch64 FSUB keeps the
-//     operand's NaN sign/payload (quieting a sNaN) where Apple libm
-//     canonicalizes to +qNaN — np.cos(-nan 0xfff8…0000) is
-//     0xfff8…0000 while libm cos is 0x7ff8…0000. The identical
-//     preprocessor guard is mirrored below; on other targets npy_sin
-//     is a plain libm call, which is exactly what the unconditional
-//     return already is.
-//     Completion-plan 1.18 leaves the Linux gate unchanged until the
-//     per-platform scalar/array NumPy and libm tables are measured. The
-//     native_platform_sincos_tests --dump-nonfinite probe and reference test
-//     test_sin_cos_nonfinite_scalar_array_agreement expose that decision;
-//     source inspection alone does not qualify a different NaN-sign rule.
+//     operand's NaN sign/payload (quieting a sNaN). Measured 2026-10-21:
+//     np.cos(-nan 0xfff8…0000) is 0xfff8…0000 while Apple libm cos is
+//     0x7ff8…0000; libm sin preserves this negative qNaN. The identical
+//     Apple preprocessor guard is mirrored below. On Linux aarch64,
+//     NumPy 2.5.2 scalar and contiguous 64-element array sin/cos match
+//     glibc 2.39 libm for +inf, -inf and both qNaN signs, so Linux keeps
+//     the plain libm calls. The frozen tables, probe commands and provider
+//     identities are in native/tests/test_platform_sincos.cpp and
+//     migration/cpp-linux-completion-evidence.md (Task 1.18).
 //
 //   numeric::math_sin / math_cos — the math.sin / math.cos contract.
 //     CPython calls libm directly; there is no `x - x` path, so a
-//     negative-NaN angle returns libm's +qNaN, matching CPython.
+//     negative-NaN angle follows libm (on measured Apple libm, sin keeps
+//     its sign while cos returns +qNaN), matching CPython.
 //     Error-text note (W1.2x): CPython 3.14 raises
 //     "expected a finite input, got %s" for nonfinite sin/cos/tan and
 //     "expected a nonnegative input, got %s" for negative sqrt, where

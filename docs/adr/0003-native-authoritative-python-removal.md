@@ -17,13 +17,13 @@ which retained Python as a readable specification while dropping live
 Python/native parity. The transition below preserves the evidence used to
 review the current native behavior before the oracle disappears.
 
-The supplied Repomix snapshot contains neither that branch's Git objects
-nor `docs/adr/0002-drop-python-oracle-parity.md` and its research payload.
-Task 1.03's merge remains pending. This ADR records the already agreed D12
-decision directly; it does not claim that the merge happened or recreate
-the missing ADR's text. When the real ADR-0002 lands, its status must say
-that ADR-0003 amends the verification transition and supersedes its
-permanent-Python clause.
+On 2026-10-21, [ADR-0002](0002-drop-python-oracle-parity.md) and the r2
+research payload were merged into this source snapshot from the supplied
+`drop-oracle-parity.xml.zip`, as required by Task 1.03. ADR-0002's status
+records this ADR's precedence over its immediate parity-removal and
+permanent-Python clauses. The Repomix archives do not provide Git history:
+this source merge does not establish a Git merge commit or claim that
+Task 1.03's L1 build and checker gates passed.
 
 ## Decision
 

@@ -1,0 +1,57 @@
+{
+ "T01_balloon_400kPa": {
+  "nF_norm": -0.129,
+  "CaFz_lo": 11.86,
+  "CaFz_hi": 11.49
+ },
+ "T02_brooklyn_300kPa": {
+  "nF_norm": -0.259,
+  "CaFz_lo": 16.34,
+  "CaFz_hi": 15.33
+ },
+ "T02_brooklyn_400kPa": {
+  "nF_norm": -0.419,
+  "CaFz_lo": 17.29,
+  "CaFz_hi": 15.59
+ },
+ "T03_energizer_300kPa": {
+  "nF_norm": -0.545,
+  "CaFz_lo": 17.57,
+  "CaFz_hi": 14.5
+ },
+ "T03_energizer_400kPa": {
+  "nF_norm": -0.329,
+  "CaFz_lo": 16.4,
+  "CaFz_hi": 14.61
+ },
+ "T03_energizer_500kPa": {
+  "nF_norm": -0.281,
+  "CaFz_lo": 14.47,
+  "CaFz_hi": 13.1
+ },
+ "T04_active_300kPa": {
+  "nF_norm": -0.406,
+  "CaFz_lo": 16.72,
+  "CaFz_hi": 14.49
+ },
+ "T04_active_400kPa": {
+  "nF_norm": -0.379,
+  "CaFz_lo": 13.65,
+  "CaFz_hi": 11.94
+ },
+ "T04_active_500kPa": {
+  "nF_norm": 0.189,
+  "CaFz_lo": 13.21,
+  "CaFz_hi": 14.12
+ },
+ "T05_scalato_300kPa": {
+  "nF_norm": -0.481,
+  "CaFz_lo": 22.05,
+  "CaFz_hi": 18.61
+ },
+ "T05_scalato_400kPa": {
+  "nF_norm": -0.397,
+  "CaFz_lo": 20.23,
+  "CaFz_hi": 17.59
+ }
+}

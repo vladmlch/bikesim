@@ -1,0 +1,1114 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "task": "D13 / Task 1.03 with D12 / Task 1.04 reconciliation",
+  "operation": "selective source-snapshot merge; no Git merge commit",
+  "inputs": [
+    {
+      "name": "orig.xml.zip",
+      "sha256": "d76f46a7745130aa8d3ad8c9c56b94acbaeecdf86b4657d4a531a05833f22037",
+      "text_file_count": 2004
+    },
+    {
+      "name": "drop-oracle-parity.xml.zip",
+      "sha256": "d30493e3fbe353a16c6256a65346b12073e0470a317283934dd3dfefe0ea9092",
+      "text_file_count": 1010
+    }
+  ],
+  "result": {
+    "file_count": 2151,
+    "original_files_preserved": 2004,
+    "original_files_unchanged": 1999,
+    "original_files_modified": [
+      "CONTEXT.md",
+      "docs/TESTING.md",
+      "docs/adr/0001-native-port-mujoco-core.md",
+      "docs/adr/0003-native-authoritative-python-removal.md",
+      "migration/cpp-linux-completion-evidence.md"
+    ],
+    "original_files_deleted": [],
+    "added_file_count": 147,
+    "added_python_files": [
+      "tools/research/adjudication/audit_golden_cases.py",
+      "tools/research/adjudication/gemini_golden_cases.py",
+      "tools/research/alpine_osm_dem/analyze_profiles.py",
+      "tools/research/alpine_osm_dem/bandfrac.py",
+      "tools/research/alpine_osm_dem/compare_stats.py",
+      "tools/research/alpine_osm_dem/dem_resolution_check.py",
+      "tools/research/alpine_osm_dem/dense_check.py",
+      "tools/research/alpine_osm_dem/descfrac.py",
+      "tools/research/alpine_osm_dem/download_tiles.py",
+      "tools/research/alpine_osm_dem/fetch_dem_index.py",
+      "tools/research/alpine_osm_dem/fetch_osm_paths.py",
+      "tools/research/alpine_osm_dem/noise_check.py",
+      "tools/research/alpine_osm_dem/prepare.py",
+      "tools/research/alpine_osm_dem/scree_analyze.py",
+      "tools/research/alpine_osm_dem/scree_collect.py",
+      "tools/research/alpine_osm_dem/scree_elev.py",
+      "tools/research/alpine_osm_dem/scree_stats.py",
+      "tools/research/alpine_osm_dem/scree_tiles.py",
+      "tools/research/alpine_osm_dem/stats2.py",
+      "tools/research/lateral_digitise/analyse.py",
+      "tools/research/lateral_digitise/digitise.py",
+      "tools/research/lateral_digitise/finalise.py"
+    ]
+  },
+  "imports": [
+    {
+      "source": "docs/adr/0002-drop-python-oracle-parity.md",
+      "destination": "docs/adr/0002-drop-python-oracle-parity.md",
+      "source_sha256": "51b4d10bdaaca75769bd455ad37ff80b30f0e2473c8f4a124c8abd303e97106c",
+      "destination_sha256": "b1c4d47138ee2124a1abbfa0a5b46d845aaca09b483e8a0fe93690cde311f5aa",
+      "content_changed": true
+    },
+    {
+      "source": "docs/reference/alpine-trail-statistics.md",
+      "destination": "docs/reference/alpine-trail-statistics.md",
+      "source_sha256": "bfa0917fbc1c60e52c2c7a8cdf2eb69ecb478ca03ecf7e0edeb345605b95fa7b",
+      "destination_sha256": "bfa0917fbc1c60e52c2c7a8cdf2eb69ecb478ca03ecf7e0edeb345605b95fa7b",
+      "content_changed": false
+    },
+    {
+      "source": "docs/reference/mtb-lateral-digitisation.md",
+      "destination": "docs/reference/mtb-lateral-digitisation.md",
+      "source_sha256": "d233b17cc635a8b8ff1532e39e4b226a4304c0945830eca3821630deb3da393f",
+      "destination_sha256": "d233b17cc635a8b8ff1532e39e4b226a4304c0945830eca3821630deb3da393f",
+      "content_changed": false
+    },
+    {
+      "source": "docs/researches/chatgpt_Deep Research- Tire × Terrain × Loose Scree Physics for BikeSim.md",
+      "destination": "docs/researches/chatgpt_Deep Research- Tire × Terrain × Loose Scree Physics for BikeSim.md",
+      "source_sha256": "dd82bafd94837cf51f4365290e8bfe8e7f4d7f53428a30ee1c1acd244efb35cf",
+      "destination_sha256": "dd82bafd94837cf51f4365290e8bfe8e7f4d7f53428a30ee1c1acd244efb35cf",
+      "content_changed": false
+    },
+    {
+      "source": "docs/researches/chatgpt_Reality-Calibrating a High-Alpine “Martian” e‑MTB Track Generator.md",
+      "destination": "docs/researches/chatgpt_Reality-Calibrating a High-Alpine “Martian” e‑MTB Track Generator.md",
+      "source_sha256": "ec960f65ad74465ce47d079eb181c00dc2328d96e8eeb335fd6b07ba2a3143d7",
+      "destination_sha256": "ec960f65ad74465ce47d079eb181c00dc2328d96e8eeb335fd6b07ba2a3143d7",
+      "content_changed": false
+    },
+    {
+      "source": "docs/researches/gemini-взаимодействие пневматической шины, трёхмерного каменистого рельефа и тонкого слоя сыпухи для симулятора BikeSim.md",
+      "destination": "docs/researches/gemini-взаимодействие пневматической шины, трёхмерного каменистого рельефа и тонкого слоя сыпухи для симулятора BikeSim.md",
+      "source_sha256": "d790e98a7111498bc8a942abf3de8077ed2409a6e1645ffe8b1a82d7e6dca58c",
+      "destination_sha256": "d790e98a7111498bc8a942abf3de8077ed2409a6e1645ffe8b1a82d7e6dca58c",
+      "content_changed": false
+    },
+    {
+      "source": "docs/researches/long-name-d39e97248cc3fa6a.md",
+      "destination": "docs/researches/gemini-alpine-trail-geomorphology.md",
+      "source_sha256": "76e501bf108ec78635ba92784c423dcab147261b2fa75d342e83310cb85d908a",
+      "destination_sha256": "76e501bf108ec78635ba92784c423dcab147261b2fa75d342e83310cb85d908a",
+      "content_changed": false
+    },
+    {
+      "source": "docs/superpowers/audits/2026-10-14-deep-research-round-2.md",
+      "destination": "docs/superpowers/audits/2026-10-14-deep-research-round-2.md",
+      "source_sha256": "523b5d68765d44f717a02baa3e6d844764999acc92ed009b569215cad9294e3a",
+      "destination_sha256": "523b5d68765d44f717a02baa3e6d844764999acc92ed009b569215cad9294e3a",
+      "content_changed": false
+    },
+    {
+      "source": "docs/superpowers/audits/2026-10-14-round-2-adjudication.md",
+      "destination": "docs/superpowers/audits/2026-10-14-round-2-adjudication.md",
+      "source_sha256": "2929476aa8979ca594c36e47aea20c6c55a5d37cfe21672efcf0656c6db386f4",
+      "destination_sha256": "2929476aa8979ca594c36e47aea20c6c55a5d37cfe21672efcf0656c6db386f4",
+      "content_changed": false
+    },
+    {
+      "source": "docs/superpowers/audits/2026-10-14-round-2-cross-check.md",
+      "destination": "docs/superpowers/audits/2026-10-14-round-2-cross-check.md",
+      "source_sha256": "d5b7a3e359e388e022e1730a5e4feb8e92c35fdbcee3432179b6cdeba9ad2d49",
+      "destination_sha256": "d5b7a3e359e388e022e1730a5e4feb8e92c35fdbcee3432179b6cdeba9ad2d49",
+      "content_changed": false
+    },
+    {
+      "source": "docs/superpowers/audits/2026-10-14-track-deep-research.md",
+      "destination": "docs/superpowers/audits/2026-10-14-track-deep-research.md",
+      "source_sha256": "216cb4aa94502cee7fed2cdfdf1c1c07e4ff111ad3bd893ec4a20678ef199b19",
+      "destination_sha256": "216cb4aa94502cee7fed2cdfdf1c1c07e4ff111ad3bd893ec4a20678ef199b19",
+      "content_changed": false
+    },
+    {
+      "source": "docs/superpowers/audits/2026-10-14-two-compiler-spike.md",
+      "destination": "docs/superpowers/audits/2026-10-14-two-compiler-spike.md",
+      "source_sha256": "1f59c885bfdf015c28a8f40578f9fb05fdd28dbdc20d0485b270fe7f58a54cfe",
+      "destination_sha256": "1f59c885bfdf015c28a8f40578f9fb05fdd28dbdc20d0485b270fe7f58a54cfe",
+      "content_changed": false
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-14-alpine-track-deep-research-brief.md",
+      "destination": "docs/superpowers/plans/2026-10-14-alpine-track-deep-research-brief.md",
+      "source_sha256": "4825dd2baf29b197c89dcb4a9304e84d0f9c73531d712987c13f92e2d134a0cf",
+      "destination_sha256": "4825dd2baf29b197c89dcb4a9304e84d0f9c73531d712987c13f92e2d134a0cf",
+      "content_changed": false
+    },
+    {
+      "source": "docs/superpowers/plans/2026-10-14-round-2-integration-master.md",
+      "destination": "docs/superpowers/plans/2026-10-14-round-2-integration-master.md",
+      "source_sha256": "a149aad820781b86941f8228470e938bacaca50f3ab13e9b9ba746e6e07863eb",
+      "destination_sha256": "a149aad820781b86941f8228470e938bacaca50f3ab13e9b9ba746e6e07863eb",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/adjudication/README.md",
+      "destination": "tools/research/adjudication/README.md",
+      "source_sha256": "d274307d19ec1d2a938a8efc123583789c9744b291e128fcdc721e26ed018f0c",
+      "destination_sha256": "d274307d19ec1d2a938a8efc123583789c9744b291e128fcdc721e26ed018f0c",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/adjudication/audit_golden_cases.py",
+      "destination": "tools/research/adjudication/audit_golden_cases.py",
+      "source_sha256": "b2337b24e9f0723d4b15b2aa7fa179f6eb3bbbe76e8ae1c3d0852f16054286af",
+      "destination_sha256": "b2337b24e9f0723d4b15b2aa7fa179f6eb3bbbe76e8ae1c3d0852f16054286af",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/adjudication/gemini_golden_cases.py",
+      "destination": "tools/research/adjudication/gemini_golden_cases.py",
+      "source_sha256": "76a19926e46e5d59750b4d23e871a521f9776995ccbc2fdfe55da225e56c35ea",
+      "destination_sha256": "76a19926e46e5d59750b4d23e871a521f9776995ccbc2fdfe55da225e56c35ea",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/.gitignore",
+      "destination": "tools/research/alpine_osm_dem/.gitignore",
+      "source_sha256": "865ddde4f746a13861d73a5aefe5bfbfc9bb1ee6449daf245f0f3cf3cf9500c3",
+      "destination_sha256": "0c0312f977ea55c6416b01bc98c9917f5ba8a3f3fff033b1ce090de5d61035b9",
+      "content_changed": true
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/README.md",
+      "destination": "tools/research/alpine_osm_dem/README.md",
+      "source_sha256": "96b63d1804293d048d234aec7e9f9e7438e07778394ab011637c35a1d8ece627",
+      "destination_sha256": "112fc6f02b6e15b0863dbe25fa8954aaf5ade726b5c9c6ad5fd404602c846488",
+      "content_changed": true
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/analyze_profiles.py",
+      "destination": "tools/research/alpine_osm_dem/analyze_profiles.py",
+      "source_sha256": "c9b16d7a26cc48eeec9c94d0eb56b0273137e3751f82727b2ee1613df16f2bcf",
+      "destination_sha256": "c9b16d7a26cc48eeec9c94d0eb56b0273137e3751f82727b2ee1613df16f2bcf",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/bandfrac.py",
+      "destination": "tools/research/alpine_osm_dem/bandfrac.py",
+      "source_sha256": "cc9dbe0b595e66fc0204e02c46bb69d1583f4405ef8ba590ec21b9e240540ded",
+      "destination_sha256": "cc9dbe0b595e66fc0204e02c46bb69d1583f4405ef8ba590ec21b9e240540ded",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/compare_stats.py",
+      "destination": "tools/research/alpine_osm_dem/compare_stats.py",
+      "source_sha256": "029c9c1b1560470e6ea61f92f43c28de2a53f01a22e450e6c173f083957aa194",
+      "destination_sha256": "029c9c1b1560470e6ea61f92f43c28de2a53f01a22e450e6c173f083957aa194",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/data/engadin_tiles.json",
+      "destination": "tools/research/alpine_osm_dem/data/engadin_tiles.json",
+      "source_sha256": "5751ffb4c4b0cf452ca5ff968d6f08f9c287e0a8ff2ddcd638986f9abf67db8f",
+      "destination_sha256": "5751ffb4c4b0cf452ca5ff968d6f08f9c287e0a8ff2ddcd638986f9abf67db8f",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/data/zermatt_tiles.json",
+      "destination": "tools/research/alpine_osm_dem/data/zermatt_tiles.json",
+      "source_sha256": "ca05db52e42a99712051b87d5608615ba6fd67bf68c1ee80003e574fbe5569f5",
+      "destination_sha256": "ca05db52e42a99712051b87d5608615ba6fd67bf68c1ee80003e574fbe5569f5",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/dem_resolution_check.py",
+      "destination": "tools/research/alpine_osm_dem/dem_resolution_check.py",
+      "source_sha256": "9847ed875afad27038f1ae08f0145046b619bf626fdc352f488aa7b346617d02",
+      "destination_sha256": "9847ed875afad27038f1ae08f0145046b619bf626fdc352f488aa7b346617d02",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/dense_check.py",
+      "destination": "tools/research/alpine_osm_dem/dense_check.py",
+      "source_sha256": "f600089aa498b9398a6524d1e36a34c857995285c962c014a50506e45cf2b8c5",
+      "destination_sha256": "f600089aa498b9398a6524d1e36a34c857995285c962c014a50506e45cf2b8c5",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/descfrac.py",
+      "destination": "tools/research/alpine_osm_dem/descfrac.py",
+      "source_sha256": "edae7170b9bda714e3d980ff4a5a5e857f38e9a6ed3cf3cc6c89983a0fed24ed",
+      "destination_sha256": "edae7170b9bda714e3d980ff4a5a5e857f38e9a6ed3cf3cc6c89983a0fed24ed",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/download_tiles.py",
+      "destination": "tools/research/alpine_osm_dem/download_tiles.py",
+      "source_sha256": "fd0e2defcd8791a1e4645c919ff525dc09a85af9043ab16a8360a2d30b6d5cfa",
+      "destination_sha256": "fd0e2defcd8791a1e4645c919ff525dc09a85af9043ab16a8360a2d30b6d5cfa",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/fetch_dem_index.py",
+      "destination": "tools/research/alpine_osm_dem/fetch_dem_index.py",
+      "source_sha256": "723f51136d8770ddbb7a7bfe7938b8047927241bd5e0b8700a62771741009d82",
+      "destination_sha256": "723f51136d8770ddbb7a7bfe7938b8047927241bd5e0b8700a62771741009d82",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/fetch_osm_paths.py",
+      "destination": "tools/research/alpine_osm_dem/fetch_osm_paths.py",
+      "source_sha256": "69e7731b6f70efa312e7828b02416fec99f05a9c719683e9aef88e58cdb3db5e",
+      "destination_sha256": "69e7731b6f70efa312e7828b02416fec99f05a9c719683e9aef88e58cdb3db5e",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/noise_check.py",
+      "destination": "tools/research/alpine_osm_dem/noise_check.py",
+      "source_sha256": "dfb0c65a0129748e9c475274fe8a2dbc2ca107cd2dbcfcd0ba109d623cbe16f3",
+      "destination_sha256": "dfb0c65a0129748e9c475274fe8a2dbc2ca107cd2dbcfcd0ba109d623cbe16f3",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/prepare.py",
+      "destination": "tools/research/alpine_osm_dem/prepare.py",
+      "source_sha256": "80807892d5ae7a29dc7411293b7298ee0452780caa1b6b0afbcda52ca627aeba",
+      "destination_sha256": "80807892d5ae7a29dc7411293b7298ee0452780caa1b6b0afbcda52ca627aeba",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/scree_analyze.py",
+      "destination": "tools/research/alpine_osm_dem/scree_analyze.py",
+      "source_sha256": "76d027a14fc0b15b21fbe65cb4be170babce5f1e1bbf9d8c9956cdcdc2d74f8f",
+      "destination_sha256": "76d027a14fc0b15b21fbe65cb4be170babce5f1e1bbf9d8c9956cdcdc2d74f8f",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/scree_collect.py",
+      "destination": "tools/research/alpine_osm_dem/scree_collect.py",
+      "source_sha256": "50e5df392d38d4fd01e9c4e16556d5c737b93bd71f18f9f36d0a820fb7680a1e",
+      "destination_sha256": "50e5df392d38d4fd01e9c4e16556d5c737b93bd71f18f9f36d0a820fb7680a1e",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/scree_elev.py",
+      "destination": "tools/research/alpine_osm_dem/scree_elev.py",
+      "source_sha256": "26a6305b2f267c75a98161214d7aee84625693f4f415b67fc81c5e6dd6ba8ed1",
+      "destination_sha256": "26a6305b2f267c75a98161214d7aee84625693f4f415b67fc81c5e6dd6ba8ed1",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/scree_stats.py",
+      "destination": "tools/research/alpine_osm_dem/scree_stats.py",
+      "source_sha256": "2dbcca1fed0ad3def4c580f78cd252cdb3e6289e06da694831c811ce59ee69f0",
+      "destination_sha256": "2dbcca1fed0ad3def4c580f78cd252cdb3e6289e06da694831c811ce59ee69f0",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/scree_tiles.py",
+      "destination": "tools/research/alpine_osm_dem/scree_tiles.py",
+      "source_sha256": "bbb09f4af420a3d9ce3eefc65888f376c321ebe8479d0b64d7a9372f18a30bf5",
+      "destination_sha256": "bbb09f4af420a3d9ce3eefc65888f376c321ebe8479d0b64d7a9372f18a30bf5",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/alpine_osm_dem/stats2.py",
+      "destination": "tools/research/alpine_osm_dem/stats2.py",
+      "source_sha256": "38f892300da3f5dd1d0fbbc3a9d8570e39ad38035adcdc25d6822519ebe1ddce",
+      "destination_sha256": "38f892300da3f5dd1d0fbbc3a9d8570e39ad38035adcdc25d6822519ebe1ddce",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/.gitignore",
+      "destination": "tools/research/lateral_digitise/.gitignore",
+      "source_sha256": "0db22fa55d497ca90aa1dbe987e99b871338ef4eb42b9ab873267f1ca218645b",
+      "destination_sha256": "0db22fa55d497ca90aa1dbe987e99b871338ef4eb42b9ab873267f1ca218645b",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/analyse.py",
+      "destination": "tools/research/lateral_digitise/analyse.py",
+      "source_sha256": "8d9100cda1044478dd945bfd05c9661dce8a65a3e2200ce638420c0009d00d68",
+      "destination_sha256": "8d9100cda1044478dd945bfd05c9661dce8a65a3e2200ce638420c0009d00d68",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/digitise.py",
+      "destination": "tools/research/lateral_digitise/digitise.py",
+      "source_sha256": "0c8b3a468feede8abf89639ca5b213c2abddf092fcad5e3273caf7ec242d00f8",
+      "destination_sha256": "0c8b3a468feede8abf89639ca5b213c2abddf092fcad5e3273caf7ec242d00f8",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/finalise.py",
+      "destination": "tools/research/lateral_digitise/finalise.py",
+      "source_sha256": "50ad94869571720fc79c5db76d8a8b94813741ed7138dbc6d3a3ebeae5b1bf89",
+      "destination_sha256": "50ad94869571720fc79c5db76d8a8b94813741ed7138dbc6d3a3ebeae5b1bf89",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/notes.md",
+      "destination": "tools/research/lateral_digitise/notes.md",
+      "source_sha256": "6808379ae1af72034fedc394655d173087b0c7044b21b6b043552a8c51aee758",
+      "destination_sha256": "31512416b51f0bade5fb3fae1a9d25516f0fce7b8e411e9052bdd428d6ddcb0b",
+      "content_changed": true
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/dellorto_nF_check.json",
+      "destination": "tools/research/lateral_digitise/points/dellorto_nF_check.json",
+      "source_sha256": "6e01c728b77e07665d54a531a24203cbbe80cc838fb8af17c3035cd92014cd79",
+      "destination_sha256": "6e01c728b77e07665d54a531a24203cbbe80cc838fb8af17c3035cd92014cd79",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/fig3_3a_blue.csv",
+      "destination": "tools/research/lateral_digitise/points/fig3_3a_blue.csv",
+      "source_sha256": "635abb895e321012f9069af04938edb70c483d42738da4c3ca8e76f6e5860cd1",
+      "destination_sha256": "635abb895e321012f9069af04938edb70c483d42738da4c3ca8e76f6e5860cd1",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/fig3_3a_red.csv",
+      "destination": "tools/research/lateral_digitise/points/fig3_3a_red.csv",
+      "source_sha256": "a925d5fe21b9980c94fe1b3f2386db78cb5cb1b840c4c3d4674f8cb1a677af8b",
+      "destination_sha256": "a925d5fe21b9980c94fe1b3f2386db78cb5cb1b840c4c3d4674f8cb1a677af8b",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/fig3_3b_blue.csv",
+      "destination": "tools/research/lateral_digitise/points/fig3_3b_blue.csv",
+      "source_sha256": "3ddda24892f86ad96fd1a09cc5660a05160fc631ac5003c15a4e7075ae5a5cad",
+      "destination_sha256": "3ddda24892f86ad96fd1a09cc5660a05160fc631ac5003c15a4e7075ae5a5cad",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/fig3_3b_red.csv",
+      "destination": "tools/research/lateral_digitise/points/fig3_3b_red.csv",
+      "source_sha256": "b83a43dbfd9c3472b8d74b63d9aca662e17a4bf7db8b2290c7dbee61a30ee9af",
+      "destination_sha256": "b83a43dbfd9c3472b8d74b63d9aca662e17a4bf7db8b2290c7dbee61a30ee9af",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17a_bald_29x2.3_25mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17a_bald_29x2.3_25mm.csv",
+      "source_sha256": "d1082d0880f3b255c1bee2b8f112792e08a6c6d850c48bf520e6f0b71b0c8ae7",
+      "destination_sha256": "d1082d0880f3b255c1bee2b8f112792e08a6c6d850c48bf520e6f0b71b0c8ae7",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17a_bald_29x2.5_25mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17a_bald_29x2.5_25mm.csv",
+      "source_sha256": "518dd42dcea746843872d3db0c3b4bb73bee0691f273df46ba88315d87bcb0ed",
+      "destination_sha256": "518dd42dcea746843872d3db0c3b4bb73bee0691f273df46ba88315d87bcb0ed",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17a_filetread_29x2.5_22mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17a_filetread_29x2.5_22mm.csv",
+      "source_sha256": "fff37eee86302c791bc0143551e273314d5d810ef363c3c8949d0544baae7f95",
+      "destination_sha256": "fff37eee86302c791bc0143551e273314d5d810ef363c3c8949d0544baae7f95",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17a_filetread_29x2.5_25mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17a_filetread_29x2.5_25mm.csv",
+      "source_sha256": "9c9507ce345b3cb5dfa0921045952522b1249d4371a1555d5bf6cab039b60195",
+      "destination_sha256": "9c9507ce345b3cb5dfa0921045952522b1249d4371a1555d5bf6cab039b60195",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17a_knobby_26x4.0_86mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17a_knobby_26x4.0_86mm.csv",
+      "source_sha256": "bde19be5d78e35d3572fb18da3686a7155c916210d4e052aec2a385f8522baa1",
+      "destination_sha256": "bde19be5d78e35d3572fb18da3686a7155c916210d4e052aec2a385f8522baa1",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17a_knobby_27.5x2.8_38mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17a_knobby_27.5x2.8_38mm.csv",
+      "source_sha256": "b6f85be96a5a7a3902db9ec51560ae0eb48e22bfeb8ac49fb90fa538a42ad35c",
+      "destination_sha256": "b6f85be96a5a7a3902db9ec51560ae0eb48e22bfeb8ac49fb90fa538a42ad35c",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17a_knobby_29x2.3_22mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17a_knobby_29x2.3_22mm.csv",
+      "source_sha256": "8d9aa0d4a3a17addd93ab9aa767f36ba245a3bf1ce73cb40ff55b439981bcefc",
+      "destination_sha256": "8d9aa0d4a3a17addd93ab9aa767f36ba245a3bf1ce73cb40ff55b439981bcefc",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17a_knobby_29x2.3_25mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17a_knobby_29x2.3_25mm.csv",
+      "source_sha256": "c14a293a153df586c490f02579b3dffa635dd2ba9746e6ef5c3b835bfbd14a1b",
+      "destination_sha256": "c14a293a153df586c490f02579b3dffa635dd2ba9746e6ef5c3b835bfbd14a1b",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17a_knobby_29x3.0_45mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17a_knobby_29x3.0_45mm.csv",
+      "source_sha256": "d109f4eadbc1259513b92658887702a5188c754954ddaa9a5a12ccb404809b76",
+      "destination_sha256": "d109f4eadbc1259513b92658887702a5188c754954ddaa9a5a12ccb404809b76",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17b_bald_29x2.3_25mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17b_bald_29x2.3_25mm.csv",
+      "source_sha256": "c53598a4d4faee157654d7dda161c6e84ccf247b63e9221598e5be521f287179",
+      "destination_sha256": "c53598a4d4faee157654d7dda161c6e84ccf247b63e9221598e5be521f287179",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17b_bald_29x2.5_25mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17b_bald_29x2.5_25mm.csv",
+      "source_sha256": "aecf7c9c0474ac3ff62d6718f47a1314c3a704752a36dd40e888e32187214024",
+      "destination_sha256": "aecf7c9c0474ac3ff62d6718f47a1314c3a704752a36dd40e888e32187214024",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17b_filetread_29x2.5_22mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17b_filetread_29x2.5_22mm.csv",
+      "source_sha256": "aa51d4cec259fb9b52f1801e2406603df8dccce05d226d2820fcb039c56bce41",
+      "destination_sha256": "aa51d4cec259fb9b52f1801e2406603df8dccce05d226d2820fcb039c56bce41",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17b_filetread_29x2.5_25mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17b_filetread_29x2.5_25mm.csv",
+      "source_sha256": "9fbf5dd33e1943e8608a1898d022ba5a23a987f29ed06902ea38d784e3945bc1",
+      "destination_sha256": "9fbf5dd33e1943e8608a1898d022ba5a23a987f29ed06902ea38d784e3945bc1",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17b_knobby_26x4.0_86mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17b_knobby_26x4.0_86mm.csv",
+      "source_sha256": "8d7be5d7314744cdc40b42225a2fe73eb14ae2385cd60ff929c0e21a8b87d7bd",
+      "destination_sha256": "8d7be5d7314744cdc40b42225a2fe73eb14ae2385cd60ff929c0e21a8b87d7bd",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17b_knobby_27.5x2.8_38mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17b_knobby_27.5x2.8_38mm.csv",
+      "source_sha256": "7446ae6ab9526cdd2e3a5a4491eec06a75ff98ce09140ac527620f4be91dd2ed",
+      "destination_sha256": "7446ae6ab9526cdd2e3a5a4491eec06a75ff98ce09140ac527620f4be91dd2ed",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17b_knobby_29x2.3_22mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17b_knobby_29x2.3_22mm.csv",
+      "source_sha256": "1beafcee7915b6262aebe8c7096b42c5238e9a91e4ea18de8a11d506a49cec63",
+      "destination_sha256": "1beafcee7915b6262aebe8c7096b42c5238e9a91e4ea18de8a11d506a49cec63",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17b_knobby_29x2.3_25mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17b_knobby_29x2.3_25mm.csv",
+      "source_sha256": "de482aa74e58ce40e3a186790f12857e2464304a84d04f223f0fe4898e6f5659",
+      "destination_sha256": "de482aa74e58ce40e3a186790f12857e2464304a84d04f223f0fe4898e6f5659",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_17b_knobby_29x3.0_45mm.csv",
+      "destination": "tools/research/lateral_digitise/points/final_17b_knobby_29x3.0_45mm.csv",
+      "source_sha256": "b7d5fa6688f5078fae948e182e06495cfa3f5bf80a00a59f19dd4def6b5205a3",
+      "destination_sha256": "b7d5fa6688f5078fae948e182e06495cfa3f5bf80a00a59f19dd4def6b5205a3",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/final_summary.json",
+      "destination": "tools/research/lateral_digitise/points/final_summary.json",
+      "source_sha256": "e24b817d03cb8b33a21bb6b27767f4f1451580c7c286a913923ef4e0dc7f282d",
+      "destination_sha256": "e24b817d03cb8b33a21bb6b27767f4f1451580c7c286a913923ef4e0dc7f282d",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_blue_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_blue_c0.csv",
+      "source_sha256": "057598814a53308cbcc197abe4814f66cd1f50d27e02dece4069585dd73bbd95",
+      "destination_sha256": "057598814a53308cbcc197abe4814f66cd1f50d27e02dece4069585dd73bbd95",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_blue_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_blue_c1.csv",
+      "source_sha256": "d02f53dc8332dca287f367e17ab48359a950c6e17baa02a293f14984b71b01ec",
+      "destination_sha256": "d02f53dc8332dca287f367e17ab48359a950c6e17baa02a293f14984b71b01ec",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_blue_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_blue_c2.csv",
+      "source_sha256": "ddba651b58b8788eb6d1da147470e2be4a55cb2ad4d4350eb6a3e836f093ac52",
+      "destination_sha256": "ddba651b58b8788eb6d1da147470e2be4a55cb2ad4d4350eb6a3e836f093ac52",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_brown_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_brown_c0.csv",
+      "source_sha256": "9a354633cc99c3c1c5eea0806b81c3d64aa96f83e5ca0403bc692050961618b8",
+      "destination_sha256": "9a354633cc99c3c1c5eea0806b81c3d64aa96f83e5ca0403bc692050961618b8",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_brown_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_brown_c1.csv",
+      "source_sha256": "53f73195a802f723e72953bbf033ac2a28a2e457179a9979034f0c2279b929db",
+      "destination_sha256": "53f73195a802f723e72953bbf033ac2a28a2e457179a9979034f0c2279b929db",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_cyan_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_cyan_c0.csv",
+      "source_sha256": "8e3d0e1b8101988a5555b1b637e6cd9faa02830322a234fad95ba39ca6b051e9",
+      "destination_sha256": "8e3d0e1b8101988a5555b1b637e6cd9faa02830322a234fad95ba39ca6b051e9",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_green_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_green_c0.csv",
+      "source_sha256": "6023484113e1b90e326407776da4c8deabe19a581040b01c188cdadb725a2e34",
+      "destination_sha256": "6023484113e1b90e326407776da4c8deabe19a581040b01c188cdadb725a2e34",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_green_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_green_c1.csv",
+      "source_sha256": "a7faea22dbeb902572c3b01c168a70489341a39597f0d5872bc44dee3a21bd4c",
+      "destination_sha256": "a7faea22dbeb902572c3b01c168a70489341a39597f0d5872bc44dee3a21bd4c",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_magenta_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_magenta_c0.csv",
+      "source_sha256": "c237fe80d7aeefc4768e050c7e93fdf38e7e2f816bbe02bec45e3fdd4cbbdb4e",
+      "destination_sha256": "c237fe80d7aeefc4768e050c7e93fdf38e7e2f816bbe02bec45e3fdd4cbbdb4e",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_magenta_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_magenta_c1.csv",
+      "source_sha256": "a1ef9bc0efd0844af981efc6714618775fb53145b246bedb8b2e7d24d9ef1711",
+      "destination_sha256": "a1ef9bc0efd0844af981efc6714618775fb53145b246bedb8b2e7d24d9ef1711",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_orange_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_orange_c0.csv",
+      "source_sha256": "47af7c627e8fbb09ce098226693fd417f089f4d41996a7edcc85f6b394567bff",
+      "destination_sha256": "47af7c627e8fbb09ce098226693fd417f089f4d41996a7edcc85f6b394567bff",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_orange_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_orange_c1.csv",
+      "source_sha256": "d3dd5ee7dbf754add4000598b9acddd5f498dc0d7b09708072e87f690397c452",
+      "destination_sha256": "d3dd5ee7dbf754add4000598b9acddd5f498dc0d7b09708072e87f690397c452",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_orange_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_orange_c2.csv",
+      "source_sha256": "0fc163c3cc714c7b7cef0c6d032ae477f822a94d8773a2dcd04edaa387c91ba5",
+      "destination_sha256": "0fc163c3cc714c7b7cef0c6d032ae477f822a94d8773a2dcd04edaa387c91ba5",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_red_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_red_c0.csv",
+      "source_sha256": "4ce4dd2de6da68137af53b4fe14b5bd398bb445493e227468fbe281ac35559d5",
+      "destination_sha256": "4ce4dd2de6da68137af53b4fe14b5bd398bb445493e227468fbe281ac35559d5",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_red_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_red_c1.csv",
+      "source_sha256": "ecc2939ba1d4b0cfaf2fa05bd9eb9a668c745a3e9859da3f2f9c3177a95506ad",
+      "destination_sha256": "ecc2939ba1d4b0cfaf2fa05bd9eb9a668c745a3e9859da3f2f9c3177a95506ad",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_red_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_red_c2.csv",
+      "source_sha256": "9691f17b3f8e34bf252d1e769dc28cdffec566367083ccebfdadb5132cb2a1e6",
+      "destination_sha256": "9691f17b3f8e34bf252d1e769dc28cdffec566367083ccebfdadb5132cb2a1e6",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_red_c3.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_red_c3.csv",
+      "source_sha256": "b4807519441ef8be8420fb98766882e27cbdaabc8ea298308f653084d10e0f46",
+      "destination_sha256": "b4807519441ef8be8420fb98766882e27cbdaabc8ea298308f653084d10e0f46",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17a_red_c4.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17a_red_c4.csv",
+      "source_sha256": "38bde9ca1b19064381d27d80fa0864d02a8365322af2a16c57b2b9031e2889ff",
+      "destination_sha256": "38bde9ca1b19064381d27d80fa0864d02a8365322af2a16c57b2b9031e2889ff",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_blue_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_blue_c0.csv",
+      "source_sha256": "be721e9ebf8ad7cde551e9979dda806a10c8939500aa17f239bca702abab4fd2",
+      "destination_sha256": "be721e9ebf8ad7cde551e9979dda806a10c8939500aa17f239bca702abab4fd2",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_blue_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_blue_c1.csv",
+      "source_sha256": "9c4cba5fce544690bd3ac42d87b71652ac71db14b78c371d06dfcd252c49ece1",
+      "destination_sha256": "9c4cba5fce544690bd3ac42d87b71652ac71db14b78c371d06dfcd252c49ece1",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_blue_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_blue_c2.csv",
+      "source_sha256": "e548ea219431330b7e1899b83769baa29d938aa1b0a8d2198175e56939b27edc",
+      "destination_sha256": "e548ea219431330b7e1899b83769baa29d938aa1b0a8d2198175e56939b27edc",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_blue_c3.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_blue_c3.csv",
+      "source_sha256": "d957661842e315c3e83c2fb51bd58d17677d84cff96d46272ffbdbf880108962",
+      "destination_sha256": "d957661842e315c3e83c2fb51bd58d17677d84cff96d46272ffbdbf880108962",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_brown_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_brown_c0.csv",
+      "source_sha256": "52d28dd745bfacf971d4c43d82dd026949dd027c796cf822a5fe662eb808ccb3",
+      "destination_sha256": "52d28dd745bfacf971d4c43d82dd026949dd027c796cf822a5fe662eb808ccb3",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_brown_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_brown_c1.csv",
+      "source_sha256": "a8c9c5f73bb334dda7dc79ebc2c1ff88d4e4ca9c99f62ab6e6d9bb79169990f7",
+      "destination_sha256": "a8c9c5f73bb334dda7dc79ebc2c1ff88d4e4ca9c99f62ab6e6d9bb79169990f7",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_cyan_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_cyan_c0.csv",
+      "source_sha256": "0c2a1228b542ae24008fa4a39b514229b0b3b59d78c5e9a3044918fc40aae6cf",
+      "destination_sha256": "0c2a1228b542ae24008fa4a39b514229b0b3b59d78c5e9a3044918fc40aae6cf",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_green_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_green_c0.csv",
+      "source_sha256": "4d2687a28dfb20aa838060c6a2520076ebd17c2d3bc029ec42843d977764bd44",
+      "destination_sha256": "4d2687a28dfb20aa838060c6a2520076ebd17c2d3bc029ec42843d977764bd44",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_green_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_green_c1.csv",
+      "source_sha256": "0fad27e67f4f3044f30c3df9bff34dcc97174da5913fdae4145e7b868bf8eb67",
+      "destination_sha256": "0fad27e67f4f3044f30c3df9bff34dcc97174da5913fdae4145e7b868bf8eb67",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_green_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_green_c2.csv",
+      "source_sha256": "4ac47b82ba960037d6af50389aa4f5210cfc552784c10c535eba35c4507c6e92",
+      "destination_sha256": "4ac47b82ba960037d6af50389aa4f5210cfc552784c10c535eba35c4507c6e92",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_magenta_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_magenta_c0.csv",
+      "source_sha256": "7c7a29a7a01c5e7fa1bb7db899b41f788c83225efee11de9790be8fa5c14700a",
+      "destination_sha256": "7c7a29a7a01c5e7fa1bb7db899b41f788c83225efee11de9790be8fa5c14700a",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_orange_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_orange_c0.csv",
+      "source_sha256": "5aa694473774a1f4531d7d5c860e99c646652978255c6f8547a907d049483276",
+      "destination_sha256": "5aa694473774a1f4531d7d5c860e99c646652978255c6f8547a907d049483276",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_orange_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_orange_c1.csv",
+      "source_sha256": "1d61f51d97f497f89272d270a931cad81ab67ef9a5124171f04a6ee3507c21a4",
+      "destination_sha256": "1d61f51d97f497f89272d270a931cad81ab67ef9a5124171f04a6ee3507c21a4",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_orange_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_orange_c2.csv",
+      "source_sha256": "3b5d02c38aaa0a5e733aa9531792ee5f6ec2b7b70211d070bd6ae62ece076925",
+      "destination_sha256": "3b5d02c38aaa0a5e733aa9531792ee5f6ec2b7b70211d070bd6ae62ece076925",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_red_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_red_c0.csv",
+      "source_sha256": "f5c62beb6d917340beb653262698e2ad50d3e6b03a7d7c7162f72d0a9f10da13",
+      "destination_sha256": "f5c62beb6d917340beb653262698e2ad50d3e6b03a7d7c7162f72d0a9f10da13",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_red_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_red_c1.csv",
+      "source_sha256": "5320f4ae98c605163c233663f0528ccec541dd3e758eabb286f2900be91f625e",
+      "destination_sha256": "5320f4ae98c605163c233663f0528ccec541dd3e758eabb286f2900be91f625e",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_red_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_red_c2.csv",
+      "source_sha256": "25676a1b0800fb6b301262fc90cf033d0fe58c9f9350f238abdd074ed4761dfa",
+      "destination_sha256": "25676a1b0800fb6b301262fc90cf033d0fe58c9f9350f238abdd074ed4761dfa",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17b_red_c3.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17b_red_c3.csv",
+      "source_sha256": "801d0207cda2718e2575b28f43cc56257c3b7eefc4755590661c01065cf96d05",
+      "destination_sha256": "801d0207cda2718e2575b28f43cc56257c3b7eefc4755590661c01065cf96d05",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17c_blue_c-1.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17c_blue_c-1.csv",
+      "source_sha256": "e6bde3eed3aff1aa961507685b03282460ba4362a995ca27e0b194e851b72040",
+      "destination_sha256": "e6bde3eed3aff1aa961507685b03282460ba4362a995ca27e0b194e851b72040",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17c_blue_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17c_blue_c2.csv",
+      "source_sha256": "2d780fb30e8edbda302d6b927294a2dff417feabe08d025ec5b3d1c91293a9e3",
+      "destination_sha256": "2d780fb30e8edbda302d6b927294a2dff417feabe08d025ec5b3d1c91293a9e3",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_17c_blue_c5.csv",
+      "destination": "tools/research/lateral_digitise/points/passA_17c_blue_c5.csv",
+      "source_sha256": "b482daef35449c50041ca14f07c754dfb1e24f3409313d9918db44fd36eabc3b",
+      "destination_sha256": "b482daef35449c50041ca14f07c754dfb1e24f3409313d9918db44fd36eabc3b",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passA_meta.json",
+      "destination": "tools/research/lateral_digitise/points/passA_meta.json",
+      "source_sha256": "4aba6cdccc38e3fee27c4b83da96308fc7d3b665cd273d20838fe3929cc63ed4",
+      "destination_sha256": "4aba6cdccc38e3fee27c4b83da96308fc7d3b665cd273d20838fe3929cc63ed4",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_blue_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_blue_c0.csv",
+      "source_sha256": "bd463d2f4d0563bf56afe25ac04481a33b92179f6f8816bdb9ef685bc1d0336b",
+      "destination_sha256": "bd463d2f4d0563bf56afe25ac04481a33b92179f6f8816bdb9ef685bc1d0336b",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_blue_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_blue_c1.csv",
+      "source_sha256": "33962453f6e942bbcc74a59a326612cce2468f4c85688f739bda2c76d2006f5b",
+      "destination_sha256": "33962453f6e942bbcc74a59a326612cce2468f4c85688f739bda2c76d2006f5b",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_blue_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_blue_c2.csv",
+      "source_sha256": "6f9634b4d42395d0fb82bdf1dbaefb267fdb683a4ed1f7d5769c011232115299",
+      "destination_sha256": "6f9634b4d42395d0fb82bdf1dbaefb267fdb683a4ed1f7d5769c011232115299",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_cyan_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_cyan_c0.csv",
+      "source_sha256": "f2ef6f42ea5d2109362f02ffa050590649672b2d01e937ed219e58a17a909a0b",
+      "destination_sha256": "f2ef6f42ea5d2109362f02ffa050590649672b2d01e937ed219e58a17a909a0b",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_green_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_green_c0.csv",
+      "source_sha256": "fd310745b49affc75b52ba3a4aba03c5774b8da2679931f078f996c332a12086",
+      "destination_sha256": "fd310745b49affc75b52ba3a4aba03c5774b8da2679931f078f996c332a12086",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_green_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_green_c1.csv",
+      "source_sha256": "a196b83cc32ee02d854e9a2cd3a955071c9e4e719ef3641af2e47903228911bb",
+      "destination_sha256": "a196b83cc32ee02d854e9a2cd3a955071c9e4e719ef3641af2e47903228911bb",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_magenta_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_magenta_c0.csv",
+      "source_sha256": "92a92b803181b9f5e89817dc6be2c45655694721ab7665f8288011a30aed9dc7",
+      "destination_sha256": "92a92b803181b9f5e89817dc6be2c45655694721ab7665f8288011a30aed9dc7",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_magenta_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_magenta_c1.csv",
+      "source_sha256": "c6479f8271efbef4aaa0b31f56812a9bc3c123dc637890a18fe62b0890b867ac",
+      "destination_sha256": "c6479f8271efbef4aaa0b31f56812a9bc3c123dc637890a18fe62b0890b867ac",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_orange_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_orange_c0.csv",
+      "source_sha256": "7366693696265a5aaf0bac49637ffa5e25ac38f6b237708e4f91f7dbd404b56e",
+      "destination_sha256": "7366693696265a5aaf0bac49637ffa5e25ac38f6b237708e4f91f7dbd404b56e",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_orange_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_orange_c1.csv",
+      "source_sha256": "2317db7d349db864e51c2a8f272a8bfec06d64aa542c1ecf11f4c2b1940bdfeb",
+      "destination_sha256": "2317db7d349db864e51c2a8f272a8bfec06d64aa542c1ecf11f4c2b1940bdfeb",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_red_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_red_c0.csv",
+      "source_sha256": "a666b6cad15b35edcfadb6fa8fc5f7d523a10934f976e62e420eea526b846770",
+      "destination_sha256": "a666b6cad15b35edcfadb6fa8fc5f7d523a10934f976e62e420eea526b846770",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_red_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_red_c1.csv",
+      "source_sha256": "f6aa7658f55374ec1c27ac576849126705964f3dafaed41a6f6d09d6bfbb7379",
+      "destination_sha256": "f6aa7658f55374ec1c27ac576849126705964f3dafaed41a6f6d09d6bfbb7379",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_red_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_red_c2.csv",
+      "source_sha256": "1e39afa7ea48101302ecc5982dd1f95296e769784f367688b66b85d8c6bfeaeb",
+      "destination_sha256": "1e39afa7ea48101302ecc5982dd1f95296e769784f367688b66b85d8c6bfeaeb",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_red_c3.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_red_c3.csv",
+      "source_sha256": "a2c72910cc91700bfe0fdfc3f06d20f2dae4be4b1d136d75a86fba6cdd933648",
+      "destination_sha256": "a2c72910cc91700bfe0fdfc3f06d20f2dae4be4b1d136d75a86fba6cdd933648",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_red_c4.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_red_c4.csv",
+      "source_sha256": "8d620d2b9f80a819f138d9263578170cd0bb6169770ffe9db26fbad75042e2d1",
+      "destination_sha256": "8d620d2b9f80a819f138d9263578170cd0bb6169770ffe9db26fbad75042e2d1",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17a_red_c5.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17a_red_c5.csv",
+      "source_sha256": "3c3d4d13e76a79ff838da4cc6d713583839be299314e394190c5b13019a101f5",
+      "destination_sha256": "3c3d4d13e76a79ff838da4cc6d713583839be299314e394190c5b13019a101f5",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_blue_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_blue_c0.csv",
+      "source_sha256": "c1d88f2e22805349177bae1ebbdc012d572ffd6b621118b8a0b4d43e8143ab35",
+      "destination_sha256": "c1d88f2e22805349177bae1ebbdc012d572ffd6b621118b8a0b4d43e8143ab35",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_blue_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_blue_c1.csv",
+      "source_sha256": "72b50e33811220e6e9a985639731ab0182e4f8f96f1bdc312c499e78cb96746e",
+      "destination_sha256": "72b50e33811220e6e9a985639731ab0182e4f8f96f1bdc312c499e78cb96746e",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_blue_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_blue_c2.csv",
+      "source_sha256": "b0c6aa9a9b274b483a36a299e287e1fc791d283fc449ec9c8052e7f1d83b8a96",
+      "destination_sha256": "b0c6aa9a9b274b483a36a299e287e1fc791d283fc449ec9c8052e7f1d83b8a96",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_blue_c3.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_blue_c3.csv",
+      "source_sha256": "dd1fd0edf219040b22452672ae3c77b53fbfaa461e51fe856ec41ceb16c696e4",
+      "destination_sha256": "dd1fd0edf219040b22452672ae3c77b53fbfaa461e51fe856ec41ceb16c696e4",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_blue_c4.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_blue_c4.csv",
+      "source_sha256": "1accaa116cebb42da9f80f7bdd8b289edd85aa616efec6f9b465361464af8939",
+      "destination_sha256": "1accaa116cebb42da9f80f7bdd8b289edd85aa616efec6f9b465361464af8939",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_cyan_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_cyan_c0.csv",
+      "source_sha256": "c8cda7d2b12aa3665b9d3f3723b9358fcf58cba83501d2fb31c420491f1d5521",
+      "destination_sha256": "c8cda7d2b12aa3665b9d3f3723b9358fcf58cba83501d2fb31c420491f1d5521",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_green_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_green_c0.csv",
+      "source_sha256": "f8282c6a94d4c0e90e8d89fff3434ad6ffa52c7de5a7a953cb500c3f3a8322b5",
+      "destination_sha256": "f8282c6a94d4c0e90e8d89fff3434ad6ffa52c7de5a7a953cb500c3f3a8322b5",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_green_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_green_c1.csv",
+      "source_sha256": "47eff4efbc89bb34efd135dbbb3fbcc8a3e4b3bc6cbbdd9135d78c5d50803d62",
+      "destination_sha256": "47eff4efbc89bb34efd135dbbb3fbcc8a3e4b3bc6cbbdd9135d78c5d50803d62",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_green_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_green_c2.csv",
+      "source_sha256": "3b75ac7cd465985b825ec83bb6513f497acefc63861a5b910f5603964d5c529f",
+      "destination_sha256": "3b75ac7cd465985b825ec83bb6513f497acefc63861a5b910f5603964d5c529f",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_magenta_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_magenta_c0.csv",
+      "source_sha256": "9d628611d98c46077b9f238730ad50060333068162144cbd7e21d5cc626cfaea",
+      "destination_sha256": "9d628611d98c46077b9f238730ad50060333068162144cbd7e21d5cc626cfaea",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_orange_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_orange_c0.csv",
+      "source_sha256": "a244151c6ff5734d873b9f541e1e085e73405220c352932dd470eaf884401e50",
+      "destination_sha256": "a244151c6ff5734d873b9f541e1e085e73405220c352932dd470eaf884401e50",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_orange_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_orange_c1.csv",
+      "source_sha256": "ae819f050b2b198669450c3b52b79de7c2ef4a9e3a002b9e22b33a2e2807f1be",
+      "destination_sha256": "ae819f050b2b198669450c3b52b79de7c2ef4a9e3a002b9e22b33a2e2807f1be",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_orange_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_orange_c2.csv",
+      "source_sha256": "dcca9858f54d5d29ae7ea3cfed9c06fef04698c0da1fe969d7f0cb4adf90e253",
+      "destination_sha256": "dcca9858f54d5d29ae7ea3cfed9c06fef04698c0da1fe969d7f0cb4adf90e253",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_red_c0.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_red_c0.csv",
+      "source_sha256": "be66134b2f1dea403d9276b556b47f4341265f7fb3335566078710c36d44bb37",
+      "destination_sha256": "be66134b2f1dea403d9276b556b47f4341265f7fb3335566078710c36d44bb37",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_red_c1.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_red_c1.csv",
+      "source_sha256": "6c972c9ef08dfefcdc48d5330eab0a9d3b0144bbd4df43b8a7cfe92dcdfe2392",
+      "destination_sha256": "6c972c9ef08dfefcdc48d5330eab0a9d3b0144bbd4df43b8a7cfe92dcdfe2392",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_red_c2.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_red_c2.csv",
+      "source_sha256": "656918b75306a33723ff8079160db202e42e7a2161c3c3f8bfa0c023f145949f",
+      "destination_sha256": "656918b75306a33723ff8079160db202e42e7a2161c3c3f8bfa0c023f145949f",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_red_c3.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_red_c3.csv",
+      "source_sha256": "07ec10cb9d3ce24a4f34c516f4c86fb9434b5f7deec7db92bfd78e63a4a5cf4a",
+      "destination_sha256": "07ec10cb9d3ce24a4f34c516f4c86fb9434b5f7deec7db92bfd78e63a4a5cf4a",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_red_c4.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_red_c4.csv",
+      "source_sha256": "8502f598f99024e4c04b509747527434166f88ade4f0bf73b2c673cd563b3c4d",
+      "destination_sha256": "8502f598f99024e4c04b509747527434166f88ade4f0bf73b2c673cd563b3c4d",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_red_c5.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_red_c5.csv",
+      "source_sha256": "56b5608fac7db62c54fa73f62db9a80abf1959d78a7973c8ce91b7c35da8b2ce",
+      "destination_sha256": "56b5608fac7db62c54fa73f62db9a80abf1959d78a7973c8ce91b7c35da8b2ce",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_17b_red_c6.csv",
+      "destination": "tools/research/lateral_digitise/points/passB_17b_red_c6.csv",
+      "source_sha256": "ecd1e9ccf20c231a6e5e6cf54049c68ab9b4312b18e91e05846b3fecb3f314b3",
+      "destination_sha256": "ecd1e9ccf20c231a6e5e6cf54049c68ab9b4312b18e91e05846b3fecb3f314b3",
+      "content_changed": false
+    },
+    {
+      "source": "tools/research/lateral_digitise/points/passB_meta.json",
+      "destination": "tools/research/lateral_digitise/points/passB_meta.json",
+      "source_sha256": "d3352a6be2e29072f4cb65b33313c0566f93c78053e93ad27b433f6454b66635",
+      "destination_sha256": "d3352a6be2e29072f4cb65b33313c0566f93c78053e93ad27b433f6454b66635",
+      "content_changed": false
+    }
+  ],
+  "recovered_reference": {
+    "source": ".scratch/track-research/a-slope-profile/src/stats2_out.json",
+    "destination": "tools/research/alpine_osm_dem/expected/stats2_out.json",
+    "sha256": "414e7f4b37309ce839d6cc3926dcb43570150afb9ff937b9a7f4ae902855bc30"
+  },
+  "portable_rename": {
+    "source": "docs/researches/gemini-Геоморфология, трибология и стохастическая геометрия высокогорных безлесных трасс верификация параметров процедурного генератора рельефа для симулятора e-MTB.md",
+    "destination": "docs/researches/gemini-alpine-trail-geomorphology.md"
+  },
+  "preserved": {
+    "native": {
+      "file_count": 609,
+      "sha256_path_nul_content_sha256_lf": "f8d2ec7995a0e1404d216ade4db017e1a309dce436f86a1e0c984054b43641c9"
+    },
+    "runtime_tests_and_build": {
+      "file_count": 805,
+      "sha256_path_nul_content_sha256_lf": "c3be42759a758b80289a4dba93b89998a3f188a5d4ecc98106220aa89f4a60f9"
+    }
+  },
+  "missing_research_inputs": [
+    "tools/research/alpine_osm_dem/data/zermatt_paths.json.gz",
+    "tools/research/alpine_osm_dem/data/engadin_paths.json.gz",
+    "tools/research/alpine_osm_dem/data/zermatt_ways_lv.json.gz",
+    "tools/research/alpine_osm_dem/data/engadin_ways_lv.json.gz",
+    "tools/research/alpine_osm_dem/data/zermatt_profiles.json.gz",
+    "tools/research/alpine_osm_dem/data/engadin_profiles.json.gz",
+    "tools/research/alpine_osm_dem/data/scree_crossings_at.slim.json.gz",
+    "tools/research/alpine_osm_dem/data/scree_crossings_ch.slim.json.gz",
+    "tools/research/alpine_osm_dem/data/scree_crossing_elev_at.json.gz"
+  ],
+  "other_unavailable_inputs": [
+    "lateral digitisation source PDFs and images",
+    "Git objects/branch ancestry",
+    "binary assets omitted by Repomix"
+  ],
+  "excluded_donor_only": {
+    "temporary_working_files": 146,
+    "unrelated_progress_records": 1
+  },
+  "verification": {
+    "mode": "file comparison and static source review only",
+    "project_execution": false,
+    "compilation": false,
+    "test_execution": false,
+    "gates_claimed_passed": []
+  },
+  "eof_convention": "Input file bytes are the exact Repomix-unmixer output; existing file modes are not changed by the patch.",
+  "hash_convention": "SHA-256 values describe exact Repomix-unmixed input/result file bytes in the source archive and raw patch. The ordinary checkout patch retains new imported bytes and adapts EOF only for existing text files."
+}

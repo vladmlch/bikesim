@@ -1,5 +1,14 @@
 # Running tests
 
+> **Current verification contract (2026-10-20, [ADR-0003](adr/0003-native-authoritative-python-removal.md)):**
+> a test file's live Python/native comparisons remain bitwise gates until its
+> porting task captures the consumed golden values on macOS arm64 and Linux
+> aarch64 and lands its C++ test port. Then the C++ test against those per-platform
+> goldens becomes the gate. ADR-0002's historical immediate-removal statements
+> are superseded by this transition. Native unit/contract tests, in-build
+> determinism, physical invariants and reviewed self-goldens remain required;
+> Python is removed at T63. The dated execution records below are unchanged.
+
 ## Track C verification status (2026-10-10)
 
 The Track C source delivery has been applied and executed in this checkout. The

@@ -1,0 +1,4 @@
+# Large binary sources — regenerable / re-downloadable (see notes.md).
+# figs/*.png is already ignored by the root .gitignore.
+figs/*.pdf
+figs/*.jpg

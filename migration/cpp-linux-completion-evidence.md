@@ -306,3 +306,76 @@ No task/checkpoint checkbox was changed. **Checkpoint 2-A and L3 Linux
 (end of Phase 2) were not run and remain open.** No commit, push or new
 qualified lane is claimed. The source delivery is ready for review and
 the existing plan's execution gates when execution is authorized.
+
+## 2026-10-21 — Task 1.03 source merge from supplied snapshots
+
+The user supplied both `orig.xml.zip` and `drop-oracle-parity.xml.zip` and
+requested the merge required by the completion plan. Input ZIP SHA-256:
+
+- orig: `d76f46a7745130aa8d3ad8c9c56b94acbaeecdf86b4657d4a531a05833f22037`.
+- drop-oracle-parity: `d30493e3fbe353a16c6256a65346b12073e0470a317283934dd3dfefe0ea9092`.
+
+Repomix-unmixer restored 2,004 and 1,010 text files respectively. The
+source merge imports the 144 donor-only docs/research-tool files and
+recovers one expected JSON from the donor's preserved audit output.
+It reconciles ADR-0002 with the already adopted ADR-0003, retaining the
+original Phase-1/Phase-2 implementation and every original path.
+
+This resolves the missing text-payload portion of Task 1.03 recorded
+above. It does not establish Git ancestry or a real branch merge commit:
+the supplied snapshots contain no branch objects. Earlier missing-input
+entries remain historical, and no checkpoint or task gate is marked green.
+
+All original native code, root/binding build graphs, dependency locks,
+Python implementation/tests, active agent contracts, oracle manifests,
+and historical plans retain their input bytes. The donor's older source
+and build definitions do not overwrite orig. `research/fp32-physics` is
+outside this merge. Historical r2 policy text is subordinate to ADR-0003:
+live parity stays a per-file gate until both-platform capture and the
+C++ port land; Python is removed at T63.
+
+The nine compressed alpine snapshots and lateral source images/PDFs are
+not present in the supplied text archives. The expected statistics JSON
+is recovered from existing input bytes, not recalculated. Its generated
+output ignore rule is anchored so the expected reference is trackable.
+One overlong report filename is shortened without altering its text.
+
+Only source inspection, filesystem extraction/copying, hashing and patch
+application to temporary source copies are performed. No project code,
+configure, build, test, checker, container, numerical probe or application
+is executed. No L1/L2/L3 result or platform qualification is claimed.
+The source review, provenance, availability limits and application notes
+are in [cpp-linux-task103-source-merge.md](cpp-linux-task103-source-merge.md);
+the exact imported-path/hash inventory is in
+[cpp-linux-task103-merge-manifest.json](cpp-linux-task103-merge-manifest.json).
+
+## Task 1.03 — Python files added by the r2 merge (OD-1)
+
+Exactly 22 new files under `tools/research/`, copied unchanged from the
+supplied donor snapshot: 17 OSM/DEM scripts, three lateral-digitisation
+scripts and two adjudication scripts. This is the real input inventory,
+not a reconstructed list from the plan. OD-1 remains pending until the
+Task-3.02 triage; this merge does not delete or relocate these files.
+
+- `tools/research/adjudication/audit_golden_cases.py`
+- `tools/research/adjudication/gemini_golden_cases.py`
+- `tools/research/alpine_osm_dem/analyze_profiles.py`
+- `tools/research/alpine_osm_dem/bandfrac.py`
+- `tools/research/alpine_osm_dem/compare_stats.py`
+- `tools/research/alpine_osm_dem/dem_resolution_check.py`
+- `tools/research/alpine_osm_dem/dense_check.py`
+- `tools/research/alpine_osm_dem/descfrac.py`
+- `tools/research/alpine_osm_dem/download_tiles.py`
+- `tools/research/alpine_osm_dem/fetch_dem_index.py`
+- `tools/research/alpine_osm_dem/fetch_osm_paths.py`
+- `tools/research/alpine_osm_dem/noise_check.py`
+- `tools/research/alpine_osm_dem/prepare.py`
+- `tools/research/alpine_osm_dem/scree_analyze.py`
+- `tools/research/alpine_osm_dem/scree_collect.py`
+- `tools/research/alpine_osm_dem/scree_elev.py`
+- `tools/research/alpine_osm_dem/scree_stats.py`
+- `tools/research/alpine_osm_dem/scree_tiles.py`
+- `tools/research/alpine_osm_dem/stats2.py`
+- `tools/research/lateral_digitise/analyse.py`
+- `tools/research/lateral_digitise/digitise.py`
+- `tools/research/lateral_digitise/finalise.py`

@@ -1,0 +1,227 @@
+# C++ + Linux completion: evidence log
+
+Append-only evidence for
+docs/superpowers/plans/2026-10-20-cpp-linux-completion.md.
+Historical measurements in the plan are not measurements of this patch.
+Executed gates must record the source revision, host/image identity,
+commands, exit codes, test counts and failing node IDs.
+
+## 2026-10-21 — source-only Phase 1 implementation session
+
+Input: repomix-output.xml(20261021-145241).zip.
+Input SHA-256: 8226e739c82198a9ce9bdf34e1b3e4581c0e5bb34deac1ca1272dfc78738e0b9.
+The Repomix-unmixer skill
+restored 1,992 text files into an isolated working copy. Original extracted
+files were retained separately for patch generation. Git objects, branch
+refs, omitted binaries and dependency environments are not part of this
+snapshot; its Git HEAD cannot be established from the archive.
+
+The current user instruction prohibits compilation and execution.
+Accordingly no project configure, build, test, static-analysis sweep,
+interpreter import, container start, numerical probe, simulation, Git
+merge or push is executed in this session. Filesystem extraction,
+source inspection, editing and deliverable packaging are the evidence.
+No L1/L2/L3 pass or current-platform qualification is claimed.
+
+### Implementation work allocation
+
+- Tasks 1.01–1.05: existing-fix inspection, Linux lane, migration policy,
+  source-supported finding review and honest evidence bookkeeping.
+- Tasks 1.06–1.09: checker schema/platform/tool/control/child-configure
+  parity, plus the depth-2 script sweep and provider-binding regressions.
+- Tasks 1.10–1.12, 1.17–1.18: numerics probe/face/callers, binary64
+  feasibility, and measurement preparation for non-finite trigonometry.
+- Tasks 1.13–1.16: recursive Value ownership, Linux source branches,
+  explicit lock types and GCC source compatibility.
+- Task 1.19 and checkpoints: static integration review here; runtime
+  verification remains pending under the current user restriction.
+
+The existing detailed plan is the implementation specification; its
+gate-dependent checkboxes and historical plans remain unchanged.
+
+### Task 1.01 — inherited fixes
+
+The supplied BikeLinkage.cmake already guards optional ARGV1 with ARGC,
+then falls back to _native_mujoco_library for one-argument callers.
+The supplied io/value.hpp already includes <algorithm>.
+These are input facts, not new fixes or newly verified build results.
+
+### Task 1.03 — missing merge input
+
+The archive has only ADR-0001, no ADR-0002, no tools/research/ payload
+from feat/drop-oracle-parity and no Git objects for either branch.
+No substitute merge, invented 22-file manifest or fabricated commit is
+created. Task 1.03 remains pending in the real checkout. The known D12
+transition is recorded directly in ADR-0003 and the active contracts;
+ADR-0002's original text/status must be reconciled when its actual merge
+lands, retaining ADR-0003's precedence.
+
+### Task 1.05 — source-supported fixes, verification still open
+
+The snapshot's PhysicalStep now calls cruise.compute() for the admitted
+ideal-speed mode (F2), adds resistance from refreshed engine contacts
+when no tire writer exists (F3), and passes the configured recovery
+switch to the rider controller (F5).
+The corresponding Python physical_runtime.py branches and test_t23.cpp
+regressions support the intended changes by source inspection.
+The completion plan attributes those corrections to 89cfcb1; that Git
+object is not available in this archive.
+
+No regression was run on either graph. The 73 python-removal rows and
+four physics-research task records therefore retain their existing
+implemented_tested_findings_open statuses and findings_open arrays.
+Nothing is promoted to tested, verified, qualified or closed.
+
+### Task 1.02 — acquisition provenance, not runtime qualification
+
+The Dockerfile records metadata fetched read-only on 2026-10-21:
+
+- Ubuntu 24.04 index digest:
+  sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac.
+  Source: https://hub.docker.com/layers/library/ubuntu/24.04/images/sha256-7f622ca8766bccb22f04242ecb6f19f770b2f08827dc4b8c707de5e78a6da7ab
+  (the current page reports the index digest above).
+- uv 0.13.1 aarch64 GNU/Linux archive SHA-256:
+  9041c73c99fdc5892cf128140beb354eca9231d502068cc36e6cb53a8e59ad14.
+  Source: https://releases.astral.sh/github/uv/releases/download/0.13.1/uv-aarch64-unknown-linux-gnu.tar.gz.sha256
+
+No image or executable archive was run to obtain these values. The image
+was not built or inspected with Docker. Its package versions, Python
+runtime and numerical provider still require the planned lane checks.
+
+### Source implementation review — Tasks 1.02, 1.04, 1.06–1.19
+
+The following is a source-review status table. "Implemented" describes
+the edited source and regression cases; it does not mean a task's
+execution gate passed.
+
+| Task | Source result | Outstanding requirement |
+|---|---|---|
+| 1.01 | Both fixes were already present in the supplied snapshot. | Rebuild the affected graphs when execution is authorized. |
+| 1.02 | Added the pinned Linux image recipe and checkout-owned container driver; both script sweeps select depth 2 and reject an empty selection. | Build/provision the image, record actual versions and qualify the lane. |
+| 1.03 | No merge was attempted; required branch objects, ADR-0002 and research payload are absent. | Perform the specified merge from the real branch and reconcile its actual files. |
+| 1.04 | Added ADR-0003 and updated AGENTS.md, native engineering rules and CONTEXT.md to the agreed per-file golden transition. | Amend the actual ADR-0002 when Task 1.03 is possible. |
+| 1.05 | Reviewed the existing F2/F3/F5 source fixes and regression definitions. | Run the required regressions on both graphs before changing any open finding/status. |
+| 1.06 | Added schema-2 platform/SDK/sysroot/stdlib/policy/capability validation and context-only CLI validation. | Run T56 and the affected sweeps on the supported platforms. |
+| 1.07 | Added optional sysroot validation/forwarding and the reference tool candidate chain, preserving executable symlink spelling. | Run tool/sysroot regression cases and sweeps. |
+| 1.08 | Added shared platform control dispatch/listing and the five Linux context controls; Darwin-only controls remain gated. | Execute each platform's control set. |
+| 1.09 | Child configure uses CMake directly and only the recorded binding interpreter; added Linux standard-library hardening controls. | Run the binding-context L1 command and hardened/unhardened controls. |
+| 1.10 | Probe, record validators, CMake projection and fixtures now require eight operations with exact spellings and separate ABI classes. | Regenerate real Darwin and Linux lock entries; the generated lock is intentionally unchanged here. |
+| 1.11 | Added typed raw ILP64 dot, unconjugated complex dot, dgesv and dsyevd adapters and analytic contract cases. | Measure the raw-dot zero bits and execute adapter/provider contracts. |
+| 1.12 | Replaced all five direct caller bindings with the typed faces; added structural provider-boundary checks and necessary CMake usage requirements. | Build/link both graphs and run the affected bitwise and structural regressions. |
+| 1.13 | Applied the plan's primary ObjectList solution and added aggregate/ownership/copy/move/lexeme guards. | Confirm the diagnosed incomplete-pair chain is resolved on both Linux compilers and preserve macOS behavior; no boxing fallback was selected without that evidence. |
+| 1.14 | Corrected the glibc spawn-chdir gate, bounded executable-path construction and spawn lock type. | Compile the platform objects and run T06. |
+| 1.15 | Supplied explicit mutex template arguments at 37 lock declarations, retaining the recursive mutex where required. | Run the affected compile/sweep/runtime gates. |
+| 1.16 | Made the tyre-tier table constexpr with string_view names, removed the duplicate research-startup default argument and used a stateless FILE deleter. | Compile both graphs and run the covering tests. |
+| 1.17 | Changed interval storage/arithmetic to binary64 while retaining every outward down/up/nextafter step; added boundary and one-ULP guards. | Run feasibility/native regression gates on both platforms. |
+| 1.18 | Added analytic native sin/cos contracts, a native/libm/subtraction bit-table mode and scalar/contiguous-array/native NumPy comparison support. | Measure both platforms, freeze the actual tables, and only then decide the Linux nonfinite branch. The existing branch is retained. |
+| 1.19 | Reviewed source integration, new interfaces, callers, CMake edges and regression fixtures. | Discover and resolve remaining compiler/runtime findings through the specified Linux/macOS gates. |
+
+No task/checkpoint checkbox in the completion plan was marked complete.
+Checkpoints 1-A/1-B and Phase 1's final acceptance remain pending. Linux
+root-graph/C++ checker execution still belongs to Phase 2; Phase 1's
+Linux binding sweeps use the Python commands specified by Task 1.19.
+
+#### Integration decisions and independent review
+
+- The numerics interface keeps ordinary `blas::ddot`'s existing `0. +`
+  seed and Darwin legacy symbol. `blas::ddot_raw` forwards the original
+  unseeded ILP64 fold; its platform-specific zero sign was not guessed.
+- Probe/discovery distinguishes legacy BLAS, always-ILP64 BLAS and
+  LAPACK. New LAPACK and dot bindings must belong to the corresponding
+  NumPy import set as well as the provider's export set.
+- Geometry's inline functions require `Bike::Numerics` as a PUBLIC
+  dependency in both graphs. Model, kinematics and filter callers carry
+  explicit adapter edges. The adapter exports the MuJoCo include
+  requirement of its public CBLAS header; generated provider names stay
+  private to the backend translation units.
+- Checker validation/control code was compared directly with
+  `tools/native_checks.py` and `tools/native_toolchain.py`. The fixtures
+  use the actual Python messages where the plan's prose was stale:
+  `missing configured sysroot` and `invalid <kind> override`.
+- The standard-library control is deliberately stricter than the current
+  Python implementation in one case: an unhardened probe that does not
+  compile fails the C++ sweep. A failed compile cannot establish that
+  hardening flags did not leak into the negative control.
+- The contracts command's default repository-root traversal was one
+  parent short. It now reaches the repository root; a T56 case covers
+  invocation without `--repo-root`.
+- Independent source reviews covered checker fixtures/CLI, typed
+  numerical ABI signatures/callers/CMake dependencies, Value ownership
+  and Linux scripts. No new ABI-width, argument-order or fixture blocker
+  was identified by those reviews. This is not compilation evidence.
+- The driver stages source selection/archive creation before touching
+  container sources, checks checkout ownership, excludes host dependency
+  and build directories, and rejects symlink parents. It retains Ninja's
+  failure status and does not publish a zero count for an unreadable log.
+  Rebuilding an image does not replace an existing container: an explicit
+  `down`/`sync`/`venv` cycle is documented.
+
+#### Added regression coverage (not executed)
+
+- T56: schema-2 valid and malformed contexts, platform controls/CLI modes,
+  Linux sysroot rejection, override precedence, provider binding boundary,
+  script depth/empty selection, and default repository-root resolution.
+- T05: aggregate Value shape, insertion order, large integer and signed
+  zero lexemes, object/array deep copies, copy/move assignments,
+  moved-from reassignment, range/base-vector construction, null vs object.
+- T28: a one-ULP contradictory interval cannot yield a feasible witness,
+  and a boundary-feasible interval cannot be certified empty.
+- Platform BLAS/LAPACK: raw/seeded dot separation, strides, unconjugated
+  complex products, linear solve/singularity and eigenvalue workspace/
+  eigenvector contracts.
+- Dependency portability: all eight operation records, import
+  classification/membership, exact-name rejection and platform entries.
+- Nonfinite trigonometry: native analytic contracts and explicit measured
+  table output, plus NumPy scalar/contiguous-array/native agreement.
+
+#### Local suppression records
+
+These entries record source-level intent. No checker was executed to
+claim a new observed diagnostic in this session.
+
+| Checker / location | Origin, reason and reproducer | Removal condition |
+|---|---|---|
+| clang-tidy `modernize-use-equals-default`, `native/src/io/value.hpp` | Task 1.13's recorded libstdc++ 13 chain: defaulted constexpr destruction reaches incomplete `pair<string, Value>`. Reproducer is the plan's isolated `io/json.cpp` object compile. Non-constexpr out-of-line bodies are the prescribed fix. | Qualified Linux compilers accept the defaulted form and the Value/config/JSON copy/move guards pass. |
+| clang-tidy `misc-redundant-expression`, `native/tests/test_platform_sincos.cpp` | Task 1.18 explicitly requires measuring `x-x` as a candidate nonfinite rule. The source expression in `dump_nonfinite` is intentional; its four inputs are the two infinities and signed quiet NaNs. | The candidate measurement is no longer required or the checker recognizes this intentional probe without an exception. |
+| Clang `-Wunsafe-buffer-usage-in-container`, `native/tests/test_platform_sincos.cpp` | The CLI constructs a bounded span from C/C++ `main`'s `argv` and `argc`, then inspects only admitted indices. Reproducer is that single construction under the project's warning set; the local pragma matches the existing test CLI pattern. | The supported compiler accepts the bounded entry-point adapter, or an equally bounded adapter can express it without a local diagnostic exception. |
+| ShellCheck `SC2016`, `tools/linux/container.sh` | The inner Bash snippets intentionally defer variables/positionals to the container process. The annotated sync/build/failures command strings are the reproducer; host interpolation would alter their meaning. | The snippets no longer cross a shell boundary, or ShellCheck can recognize the deferred interpretation. |
+
+#### Qualification handoff — commands below were not executed
+
+First obtain the missing branch payload for Task 1.03 and provision the
+two exact dependency environments. The extended validator rejects the
+old four-operation record even on Darwin. Do not add symbol names or
+Linux provider facts by hand and do not configure against that stale
+lock expecting a qualified build.
+
+In the real macOS checkout, with its `.venv` and the Linux container
+already provisioned, regenerate the record through the actual probe:
+
+~~~sh
+numerics_backup_dir="$(mktemp -d "${TMPDIR:-/tmp}/bike-numerics-lock.XXXXXXXX")"
+mv native/numerics.lock.json "$numerics_backup_dir/numerics.lock.json"
+uv run --frozen --group native python tools/native_dependencies.py \
+  --python .venv/bin/python3 \
+  --write-numerics-record native/numerics.lock.json
+tools/linux/container.sh sync
+tools/linux/container.sh exec uv run --frozen --group native python \
+  tools/native_dependencies.py \
+  --python /opt/bike-venv/bin/python3 \
+  --write-numerics-record native/numerics.lock.json
+tools/linux/container.sh pull native/numerics.lock.json
+~~~
+
+Moving the old lock aside is necessary because the writer validates an
+existing file before preserving other platforms' entries. The first
+successful probe writes the new Darwin record; the Linux probe then
+preserves it while appending its measured record. Retain the backup
+until both new records are reviewed.
+
+After the affected graph can build, record raw-dot bits and the two
+platforms' scalar/array/native/libm/subtraction sin/cos tables. The new
+`native_platform_sincos_tests --dump-nonfinite` mode and
+`test_sin_cos_nonfinite_scalar_array_agreement` reference test provide
+measurement output; neither is a frozen per-platform acceptance table.
+Then follow the existing plan's focused regressions, Checkpoint 1-A,
+Checkpoint 1-B and final Phase 1 gates. Record exact source/image
+identities, commands, exits and failing cases before closing findings.

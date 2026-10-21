@@ -19,6 +19,12 @@
 #include <unistd.h>
 
 namespace bike::viz {
+namespace {
+struct FileCloser {
+    void operator()(std::FILE *file) const noexcept { (void)std::fclose(file); }
+};
+} // namespace
+
 const std::vector<double>* numeric(const Channels& channels,std::string_view name) {
     for(const auto& [key,column]:channels)if(key==name)return std::get_if<std::vector<double>>(&column);
     return nullptr;
@@ -60,7 +66,7 @@ Channels load_ride_csv(const std::filesystem::path& path) {
     // RFC 4180 fields, including embedded commas/newlines and escaped quotes.
     // Keep numeric-vs-text columns consistent with csv.DictReader + float.
     auto handle=platform::open_regular(path);
-    std::unique_ptr<std::FILE,decltype(&std::fclose)> in(::fdopen(handle.get(),"rb"),&std::fclose);
+    std::unique_ptr<std::FILE,FileCloser> in(::fdopen(handle.get(),"rb"));
     if(!in)throw std::system_error(errno,std::generic_category(),"cannot read ride CSV: "+path.string());
     (void)handle.release();
     std::vector<std::vector<std::string>> rows;std::vector<std::string> row;std::string field;

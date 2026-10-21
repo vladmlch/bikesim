@@ -350,26 +350,22 @@ bike_apply_native_graph_policy(bike_rider_math)
 target_link_libraries(bike_rider_math PUBLIC Bike::Numerics)
 
 # T14 geometry boundary: the identical geometry/*.cpp TUs as the root graph.
-# These TUs still call the raw Accelerate ILP64 CBLAS/LAPACK entry points
-# (specs.hpp detail::np_dot/np_norm); the port's provider target carries the
-# Apple framework on Darwin. Linux has no such provider and these TUs are not
-# qualified there yet (see the report's raw-Accelerate note).
+# specs.hpp's inline np_dot/np_norm calls use the qualified raw ILP64 face;
+# its PUBLIC edge supplies the backend definitions and provider to consumers.
 add_library(bike_geometry STATIC
   src/geometry/specs.hpp src/geometry/hardpoints.cpp
   src/geometry/cockpit.cpp src/geometry/validation.cpp)
 bike_apply_native_graph_policy(bike_geometry)
-if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
-  target_link_libraries(bike_geometry PUBLIC Bike::NumericsProvider)
-endif()
+target_link_libraries(bike_geometry PUBLIC Bike::Numerics)
 
-# T14 Horst-link boundary: curves.cpp's 2x2 np.linalg.solve reaches Accelerate's
-# ILP64 dgesv; the bike_geometry edge supplies the transitive provider.
+# T14 Horst-link boundary: curves.cpp's 2x2 np.linalg.solve reaches the
+# qualified ILP64 dgesv adapter on the selected platform.
 add_library(bike_kinematics STATIC
   src/kinematics/linkage_math.hpp src/kinematics/linkage_math.cpp
   src/kinematics/solver.hpp src/kinematics/solver.cpp
   src/kinematics/curves.cpp)
 bike_apply_native_graph_policy(bike_kinematics)
-target_link_libraries(bike_kinematics PUBLIC bike_geometry)
+target_link_libraries(bike_kinematics PUBLIC bike_geometry PRIVATE Bike::Numerics)
 
 # T19 seeded-random boundary: no third-party or Python dependency.
 add_library(bike_random STATIC
@@ -379,14 +375,14 @@ add_library(bike_random STATIC
 bike_apply_native_graph_policy(bike_random)
 
 # T15 model boundary: mass.cpp's compiled-model reads inspect mjModel/mjData
-# fields (the MuJoCo include edge is compile-only), and the Accelerate provider
-# arrives transitively through bike_kinematics -> bike_geometry.
+# fields (the MuJoCo include edge is compile-only), and eigvalsh uses the
+# qualified numerics adapter through its direct dependency.
 add_library(bike_model STATIC
   src/model/checks.hpp src/model/mass.hpp src/model/mass.cpp
   src/model/rider_geometry.hpp src/model/rider_geometry.cpp
   src/model/suspension_setup.hpp src/model/suspension_setup.cpp)
 bike_apply_native_graph_policy(bike_model)
-target_link_libraries(bike_model PUBLIC bike_kinematics bike_configuration)
+target_link_libraries(bike_model PUBLIC bike_kinematics bike_configuration PRIVATE Bike::Numerics)
 
 # The pinned error interceptor is compiled once and shared by the extension,
 # direct C++ contracts, and the native benchmark target. Its engine-image
@@ -463,6 +459,11 @@ add_executable(native_platform_lapack_tests tests/test_platform_lapack.cpp)
 bike_apply_native_graph_policy(native_platform_lapack_tests)
 bike_link_numerics(native_platform_lapack_tests)
 
+# Analytic sin/cos contracts and --dump-nonfinite measurement support. The
+# per-platform NumPy bit-table acceptance is still a separate qualification.
+add_executable(native_platform_sincos_tests tests/test_platform_sincos.cpp)
+bike_apply_native_graph_policy(native_platform_sincos_tests)
+
 # Prototype native benchmark (native-safety runtime plan task R2). The TU
 # lives outside native/, so its directory joins the first-party source roots
 # below and the target inherits the extension's warning/hardening/sanitizer
@@ -518,6 +519,7 @@ if(BUILD_TESTING)
   add_test(NAME native_station_tests COMMAND native_station_tests)
   add_test(NAME native_platform_blas_tests COMMAND native_platform_blas_tests)
   add_test(NAME native_platform_lapack_tests COMMAND native_platform_lapack_tests)
+  add_test(NAME native_platform_sincos_tests COMMAND native_platform_sincos_tests)
   add_test(NAME native_sanitizer_control COMMAND native_sanitizer_control)
   # Only the clean mode runs under CTest — the forbidden-allocation mode
   # must die with the sanitizer report, so it is exercised by the

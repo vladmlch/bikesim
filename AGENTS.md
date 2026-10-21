@@ -56,13 +56,14 @@ installed read-only. `tools/research_sweep.py` pays the import+JIT
 startup in every child process; it is amortized inside each episode,
 not shared.
 
-Bitwise oracle pinning: njit codegen may drift float results ~1 ulp
-from the pure-Python arithmetic the C++ port is bitwise-locked to, so
-`tests/reference/conftest.py::_pin_oracle_kernels` rebinds the compiled
-cores to their `*_py` twins inside `test_native_*.py` files. The
-contract stays: C++ bitwise-equals reference arithmetic; production
-Python runs the compiled kernels. If a kernel signature changes, its
-`*_py` twin and the fixture must change with it.
+Oracle parity ([ADR-0003](docs/adr/0003-native-authoritative-python-removal.md)):
+a pytest file comparing C++ with the live Python oracle stays a bitwise
+gate until its porting task captures goldens on macOS arm64 and Linux
+aarch64 under `tests/fixtures/golden/<platform>/` and lands the C++ port.
+From then on the C++ test against those goldens is the gate. Inside
+`test_native_*.py`, `tests/reference/conftest.py::_pin_oracle_kernels`
+rebinds njit cores to their `*_py` twins; a signature change updates the
+twin and fixture together. Python and this fixture are removed at T63.
 
 
 ## Behavioral Stability

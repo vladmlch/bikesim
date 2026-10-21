@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -122,7 +123,7 @@ inline const TyreSpecs kRearTyre{
     .casing_width_mm=60., .compressed_casing_mm=6., .area_factor=.4576, .carcass_stiffness_n_mm2=.1225, .contact_length_factor=.8801, .rate_stiffening=.2498, .rate_relaxation_s=.2, .loss_factor=.069, .hysteresis_rate_eps_mps=.01, .relaxation_length_mm=60., .rim_stiffness_n_mm2=28., .tread_loss_crr=.00481};
 
 struct TierSpec {
-    std::string name;
+    std::string_view name;
     int n_rays;
     double half_angle_deg;
     double timestep_s;
@@ -130,10 +131,10 @@ struct TierSpec {
 };
 
 // tyre.py TIERS, in dict insertion order ('fast', 'detailed').
-inline constexpr auto kTireTiers = std::to_array<TierSpec>({
+inline constexpr std::array<TierSpec, 2> kTireTiers{{
     {.name="fast", .n_rays=64, .half_angle_deg=75.0, .timestep_s=0.0005, .discretised_brush=false},
     {.name="detailed", .n_rays=256, .half_angle_deg=75.0, .timestep_s=0.00025, .discretised_brush=true},
-});
+}};
 [[nodiscard]] const TierSpec* find_tire_tier(std::string_view name);
 
 // ---- chain.py DrivetrainSpecs (the mid-drive gearing record) -----------------

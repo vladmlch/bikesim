@@ -40,6 +40,29 @@ RECORD_KEY = "darwin-arm64"
 SHA256 = "ab" * 32
 
 
+def test_committed_provider_records_qualify_every_bound_operation():
+    """Generated records must cover the adapter surface on both required lanes.
+
+    This gate deliberately rejects a legacy four-op lock; records are
+    regenerated with the real per-platform probe, never completed by a test.
+    """
+    from tools.native_dependencies import load_numerics_lock
+    records = load_numerics_lock(NUMERICS_LOCK)["records"]
+    operations = {
+        "ddot", "dgemv", "dgemm", "dgelsd", "dgesv", "dsyevd",
+        "ddot_ilp64", "zdotu_sub",
+    }
+    for key in ("darwin-arm64", "linux-aarch64"):
+        assert set(records[key]["numerics"]["symbols"]) == operations
+    darwin = records["darwin-arm64"]["numerics"]
+    assert darwin["blas_integer_bits"] == 32
+    assert darwin["symbols"]["ddot"] == "cblas_ddot"
+    assert darwin["symbols"]["ddot_ilp64"] == "cblas_ddot$NEWLAPACK$ILP64"
+    linux = records["linux-aarch64"]["numerics"]
+    assert linux["blas_integer_bits"] == 64
+    assert linux["symbols"]["ddot"] == linux["symbols"]["ddot_ilp64"]
+
+
 def _cmake_quote(text: str) -> str:
     """A CMake quoted argument that carries ``text`` verbatim, tabs and newlines included."""
     escaped = (text.replace("\\", "\\\\").replace('"', '\\"')

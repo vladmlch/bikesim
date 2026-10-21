@@ -31,6 +31,49 @@ CANONICAL = {"Darwin": "libmujoco.3.12.0.dylib", "Linux": "libmujoco.so.3.12.0"}
 ALIAS = {"Darwin": "libmujoco.dylib", "Linux": "libmujoco.so"}
 
 
+def test_numerics_ops_include_solve_eigh_and_ilp64_dots():
+    from tools import native_dependencies as nd
+    assert set(nd._NUMERICS_OPS) == {
+        "ddot", "dgemv", "dgemm", "dgelsd", "dgesv", "dsyevd",
+        "ddot_ilp64", "zdotu_sub",
+    }
+    assert set(nd._NUMERICS_BLAS_ILP64_OPS) == {"ddot_ilp64", "zdotu_sub"}
+    assert not set(nd._NUMERICS_BLAS_ILP64_OPS) & set(nd._NUMERICS_BLAS_OPS)
+    assert "dgesv" not in nd._NUMERICS_BLAS_OPS
+
+
+def test_op_symbol_tail_does_not_confuse_dgesvd_with_dgesv():
+    from tools import native_dependencies as nd
+    assert nd._OP_SYMBOL_TAIL.search("dgesvd$NEWLAPACK$ILP64") is None
+    assert nd._OP_SYMBOL_TAIL.search("dgesv$NEWLAPACK$ILP64").group(1) == "dgesv"
+    assert nd._OP_SYMBOL_TAIL.search(
+        "cblas_zdotu_sub$NEWLAPACK$ILP64").group(1) == "zdotu_sub"
+
+
+@pytest.mark.parametrize("system, symbol, inspector", [
+    ("Darwin", "cblas_ddot$NEWLAPACK$ILP64", "_macho_undefined_symbols"),
+    ("Linux", "scipy_cblas_ddot64_", "_elf_undefined_symbols"),
+])
+def test_numpy_ilp64_ddot_import_qualifies_both_faces(tmp_path, monkeypatch,
+                                                   system, symbol, inspector):
+    from tools import native_dependencies as nd
+    (tmp_path / "_multiarray_umath.so").write_bytes(b"fixture, never loaded")
+    monkeypatch.setattr(nd, inspector, lambda _path: {symbol, "dgesvd$NEWLAPACK$ILP64"})
+    imports = nd._numpy_extension_imports(tmp_path, system)
+    assert imports["ddot"] == [symbol]
+    assert imports["ddot_ilp64"] == [symbol]
+    assert imports["dgesv"] == []
+
+
+def test_numpy_lp64_ddot_import_cannot_qualify_the_ilp64_face(tmp_path, monkeypatch):
+    from tools import native_dependencies as nd
+    (tmp_path / "_multiarray_umath.so").write_bytes(b"fixture, never loaded")
+    monkeypatch.setattr(nd, "_macho_undefined_symbols", lambda _path: {"cblas_ddot"})
+    imports = nd._numpy_extension_imports(tmp_path, "Darwin")
+    assert imports["ddot"] == ["cblas_ddot"]
+    assert imports["ddot_ilp64"] == []
+
+
 # --------------------------------------------------------------------------
 # select_mujoco_library — pure selection over package-shaped directories
 # --------------------------------------------------------------------------

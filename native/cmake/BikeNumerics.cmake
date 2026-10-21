@@ -90,10 +90,14 @@
 #   BIKE_NUMERICS_BACKEND_RESOLVED  ACCELERATE or NUMPY_OPENBLAS
 #   _native_numerics_blas_bits      qualified BLAS integer width
 #   _native_numerics_lapack_bits    qualified LAPACK integer width
-#   _native_numerics_symbol_ddot    \
-#   _native_numerics_symbol_dgemv    > exact provider-export spellings
-#   _native_numerics_symbol_dgemm    |
-#   _native_numerics_symbol_dgelsd  /
+#   _native_numerics_symbol_ddot        \
+#   _native_numerics_symbol_dgemv        |
+#   _native_numerics_symbol_dgemm        |
+#   _native_numerics_symbol_dgelsd       > exact provider-export spellings
+#   _native_numerics_symbol_dgesv        |
+#   _native_numerics_symbol_dsyevd       |
+#   _native_numerics_symbol_ddot_ilp64   |
+#   _native_numerics_symbol_zdotu_sub   /
 #   _native_numerics_provider       provider path (Linux file or Darwin
 #                                   framework umbrella description)
 #   _native_numerics_symbols_header generated numerics_symbols.hpp path
@@ -355,24 +359,37 @@ set(_native_numerics_lapack_bits "${_numerics_lapack_bits}")
 # interface; scipy-openblas ILP64 carries the 64_ suffixes.
 # --------------------------------------------------------------------------
 set(_numerics_symbol_re "^[A-Za-z_][A-Za-z0-9_$]*$")
-foreach(_op ddot dgemv dgemm dgelsd)
+foreach(_op ddot dgemv dgemm dgelsd dgesv dsyevd ddot_ilp64 zdotu_sub)
   _numerics_record_field(_native_numerics_symbol_${_op} numerics symbols ${_op})
   set(_sym "${_native_numerics_symbol_${_op}}")
   if(NOT _sym MATCHES "${_numerics_symbol_re}")
     message(FATAL_ERROR
       "numerics symbol for '${_op}' is not a safe identifier: '${_sym}'")
   endif()
-  if(_op STREQUAL "dgelsd")
+  if(_op MATCHES "^(dgelsd|dgesv|dsyevd)$")
     if(_numerics_backend STREQUAL "ACCELERATE")
-      if(NOT _sym MATCHES "NEWLAPACK\\$ILP64$")
+      if(NOT _sym MATCHES "^${_op}\\$NEWLAPACK\\$ILP64$")
         message(FATAL_ERROR
-          "numerics symbol '${_sym}' for 'dgelsd' is not the qualified "
+          "numerics symbol '${_sym}' for '${_op}' is not the qualified "
           "Accelerate NEWLAPACK ILP64 interface")
       endif()
-    elseif(NOT _sym MATCHES "^scipy_.*_64_$" OR _sym MATCHES "cblas")
+    elseif(NOT _sym STREQUAL "scipy_${_op}_64_")
       message(FATAL_ERROR
-        "numerics symbol '${_sym}' for 'dgelsd' is not the qualified "
+        "numerics symbol '${_sym}' for '${_op}' is not the qualified "
         "scipy-openblas ILP64 Fortran spelling")
+    endif()
+  elseif(_op MATCHES "^(ddot_ilp64|zdotu_sub)$")
+    string(REGEX REPLACE "_ilp64$" "" _stem "${_op}")
+    if(_numerics_backend STREQUAL "ACCELERATE")
+      if(NOT _sym MATCHES "^cblas_${_stem}\\$NEWLAPACK\\$ILP64$")
+        message(FATAL_ERROR
+          "numerics symbol '${_sym}' for '${_op}' is not the qualified "
+          "Accelerate NEWLAPACK ILP64 CBLAS interface")
+      endif()
+    elseif(NOT _sym STREQUAL "scipy_cblas_${_stem}64_")
+      message(FATAL_ERROR
+        "numerics symbol '${_sym}' for '${_op}' is not the qualified "
+        "scipy-openblas ILP64 CBLAS spelling 'scipy_cblas_${_stem}64_'")
     endif()
   else()
     if(_numerics_backend STREQUAL "ACCELERATE")
@@ -590,7 +607,7 @@ if(_numerics_backend STREQUAL "ACCELERATE")
 else()
   set(_numerics_asm_prefix "")
 endif()
-foreach(_op ddot dgemv dgemm dgelsd)
+foreach(_op ddot dgemv dgemm dgelsd dgesv dsyevd ddot_ilp64 zdotu_sub)
   set(_numerics_asm_${_op}
       "${_numerics_asm_prefix}${_native_numerics_symbol_${_op}}")
 endforeach()
@@ -648,7 +665,11 @@ if(NOT DEFINED _native_numerics_target_guard)
     # the toolchain needs the generated mjsan.h shadow under the ASan lane
     # (BikeDependencies.cmake); it is empty otherwise.
     target_include_directories(bike_native_numerics PRIVATE
-      "${_native_numerics_symbols_dir}"
+      "${_native_numerics_symbols_dir}")
+    # cblas_abi.hpp's public scalar-width contract includes mujoco.h. Inline
+    # geometry callers now consume that face, so its include root is a usage
+    # requirement; the private provider-symbol header remains backend-only.
+    target_include_directories(bike_native_numerics SYSTEM PUBLIC
       ${BIKE_MUJOCO_COMPAT_INCLUDE}
       "${_numerics_mujoco_include}")
     # Fail closed: a CXX-enabled project that reaches this point is a real

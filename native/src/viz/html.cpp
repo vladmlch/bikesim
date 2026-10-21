@@ -14,7 +14,7 @@ std::mutex resource_mutex;
 std::optional<std::filesystem::path> plotly_override;
 std::optional<std::string> plotly_script() {
     std::optional<std::filesystem::path> configured;
-    {std::scoped_lock const lock(resource_mutex);configured=plotly_override;}
+    {std::scoped_lock<std::mutex> const lock(resource_mutex);configured=plotly_override;}
     std::vector<std::filesystem::path> candidates;
     if(configured)candidates.push_back(*configured);
     else{
@@ -82,7 +82,7 @@ for(const text of p.notes){const note=document.createElement('p');note.className
 }
 void set_plotly_resource(const std::filesystem::path& path) {
     if(path.empty())throw std::invalid_argument("Plotly resource path is empty");
-    std::scoped_lock const lock(resource_mutex);plotly_override=path;
+    std::scoped_lock<std::mutex> const lock(resource_mutex);plotly_override=path;
 }
 namespace detail {
 std::string report_json(const Report& report) {

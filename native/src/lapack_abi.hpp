@@ -43,13 +43,23 @@ namespace numeric_backend {
                 const integer *ldb, double *s, const double *rcond,
                 integer *rank, double *work, const integer *lwork,
                 integer *iwork, integer *info) noexcept;
+
+    // NumPy solve / eigh entry points, using the same ILP64 Fortran ABI.
+    // Input matrices and RHS buffers are overwritten by the provider.
+    void dgesv(const integer *n, const integer *nrhs, double *a,
+               const integer *lda, integer *ipiv, double *b,
+               const integer *ldb, integer *info) noexcept;
+    void dsyevd(const char *jobz, const char *uplo, const integer *n,
+                double *a, const integer *lda, double *w, double *work,
+                const integer *lwork, integer *iwork, const integer *liwork,
+                integer *info) noexcept;
 } // namespace numeric_backend
 
 // Width and format pins: the qualified ABI is 64-bit Fortran integers
 // and IEEE-754 binary64 elements — a drifted platform would silently
 // encode the wrong call.
 static_assert(std::is_same_v<numeric_backend::integer, std::int64_t>,
-              "lapack_abi: the qualified DGELSD ABI requires int64 integers");
+              "lapack_abi: the qualified LAPACK ABI requires int64 integers");
 static_assert(sizeof(double) == 8 &&
                   std::numeric_limits<double>::is_iec559,
-              "lapack_abi: the qualified DGELSD ABI requires binary64 doubles");
+              "lapack_abi: the qualified LAPACK ABI requires binary64 doubles");

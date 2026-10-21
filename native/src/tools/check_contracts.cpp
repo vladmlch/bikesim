@@ -7,9 +7,8 @@
 // in the emitted summaries:
 //   * context-kind case configures use the produced standalone root project
 //     (context["configure_source_dir"], emitted by Checks.cmake) instead of
-//     `uv run cmake -S <repo>/native` — the produced sweep requires no
-//     interpreter; a legacy context without that field still wraps the
-//     scratch configure in `uv run cmake` exactly like the oracle.
+//     the bindings project at <repo>/native. Both invoke cmake directly;
+//     only a recorded binding interpreter adds -DPython_EXECUTABLE.
 //   * contract checks that only exist for a binding artifact (loader
 //     provenance, selected-artifact test loaders, contract executable) are
 //     reported "not-applicable" when the artifact class is absent from a
@@ -23,6 +22,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <csignal>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -479,6 +479,15 @@ std::int64_t median_of(std::vector<std::int64_t> samples) {
 
 } // namespace
 
+std::vector<std::string> context_control_names(const Value &context) {
+    if (opt_string(context, "platform_system") == "Darwin")
+        return {"explicit_sdk", "missing_sdk", "default_sdk", "default_sdk_fallback"};
+    if (opt_string(context, "platform_system") == "Linux")
+        return {"no_sdk", "bad_sysroot", "rejected_osx_sysroot", "no_apple_tool", "sysroot_preservation"};
+    throw CheckError("unsupported context platform: " +
+                     opt_string(context, "platform_system").value_or("None"));
+}
+
 int run_context_checks(const fs::path &build) {
     const fs::path build_dir = canonical_path(build);
     const std::string kind = "context";
@@ -507,15 +516,13 @@ int run_context_checks(const fs::path &build) {
     std::vector<CompileEntry> entries;
     fs::path cmake;
     fs::path compiler;
-    std::optional<fs::path> uv;
     try {
         context = load_context(build_dir);
         const SourceManifest manifest = load_source_manifest(build_dir);
         entries = load_entries(build_dir, manifest.sources);
         // The produced context sweep configures the standalone root project
-        // with the same CMake binary that configured this build (recorded by
-        // Checks.cmake); a legacy context configures <repo>/native via the
-        // `uv`-provided cmake — both fail closed when the tool is absent.
+        // with the recorded CMake binary; a binding context falls back to
+        // PATH's cmake. Interpreter selection is an explicit configure flag.
         const auto recorded_cmake = opt_string(context, "cmake");
         if (recorded_cmake.has_value() && !recorded_cmake->empty()) {
             cmake = canonical_path(expand_home(*recorded_cmake));
@@ -527,16 +534,6 @@ int run_context_checks(const fs::path &build) {
             if (!located.has_value())
                 throw CheckError("required tool is unavailable: cmake");
             cmake = canonical_path(*located);
-        }
-        // Legacy contexts (no produced dependency fields) configure the
-        // bindings project through `uv run cmake`, exactly like the Python
-        // oracle, so the venv interpreter and `uv`-provided cmake are on the
-        // child environment; resolve `uv` eagerly to fail closed.
-        if (!opt_string(context, "dependency_root").has_value()) {
-            const std::optional<fs::path> located = which("uv");
-            if (!located.has_value())
-                throw CheckError("required tool is unavailable: uv");
-            uv = canonical_path(*located);
         }
         compiler = fs::path(std::get<std::string>(
             member(*member(context, "compiler"), "path")->data));
@@ -574,16 +571,10 @@ int run_context_checks(const fs::path &build) {
             bool use_default_compiler,
             std::pair<Value, fs::path> &out) {
             const fs::path case_build = work_root / ("cmake-" + name);
-            // Legacy parity: `uv run cmake -S <native> -B <build>` so the
-            // scratch configure sees the project venv. Produced contexts
-            // invoke the recorded cmake directly — no interpreter needed.
-            std::vector<std::string> argv;
-            if (uv.has_value())
-                argv = {uv->string(), "run", "cmake", "-S",
-                        project_source.string(), "-B", case_build.string()};
-            else
-                argv = {cmake.string(), "-S", project_source.string(), "-B",
-                        case_build.string()};
+            std::vector<std::string> argv = {
+                cmake.string(), "-S", project_source.string(), "-B", case_build.string()};
+            if (const auto python = opt_string(context, "python_executable"))
+                argv.push_back("-DPython_EXECUTABLE=" + *python);
             if (!use_default_compiler)
                 argv.push_back("-DCMAKE_CXX_COMPILER=" +
                                configured_compiler.value_or(compiler).string());
@@ -623,197 +614,309 @@ int run_context_checks(const fs::path &build) {
     std::map<std::string, Value> sdk_details;
     const std::string sdk_request =
         opt_string(context, "sdk_requested").value_or("");
-
-    {
-        std::pair<Value, fs::path> result;
-        configure_case("sdk-explicit",
-                       {"-DCMAKE_OSX_SYSROOT=" + sdk_request}, nullptr,
-                       std::nullopt, false, result);
-        try {
-            const Value explicit_context = configured_context(result.second);
-            const auto rc = record_returncode(result.first);
-            const bool explicit_ok =
-                rc.has_value() && *rc == 0 &&
-                opt_string(explicit_context, "sdk_source") == "explicit" &&
-                canonical_path(std::get<std::string>(
-                              member(explicit_context, "sdk")->data)) ==
-                    canonical_path(std::get<std::string>(
-                                  member(context, "sdk")->data)) &&
-                canonical_path(std::get<std::string>(
-                              member(*member(explicit_context, "compiler"),
-                                     "path")
-                                  ->data)) == canonical_path(compiler);
-            sdk_controls.emplace_back("explicit_sdk",
-                                      explicit_ok ? "passed" : "failed");
-            sdk_details["explicit_sdk"] = vobj({
-                {"requested", vstr(sdk_request)},
-                {"selected", *member(explicit_context, "sdk")},
-                {"compiler",
-                 *member(*member(explicit_context, "compiler"), "path")},
-            });
-        } catch (const std::exception &error) {
-            sdk_controls.emplace_back("explicit_sdk", "failed");
-            sdk_details["explicit_sdk"] =
-                vobj({{"error", vstr(error.what())}});
-        }
-        cmake_records.push_back(result.first);
-    }
-
-    {
-        const fs::path missing_sdk = work_root / "missing-explicit-sdk";
-        std::pair<Value, fs::path> result;
-        configure_case("sdk-missing",
-                       {"-DCMAKE_OSX_SYSROOT=" + missing_sdk.string()},
-                       nullptr, std::nullopt, false, result);
-        const std::string combined =
-            record_stdout_text(result.first) + record_stderr(result.first);
-        const auto rc = record_returncode(result.first);
-        const bool missing_ok = rc.has_value() && *rc != 0 &&
-                                combined.find(missing_sdk.string()) !=
-                                    std::string::npos;
-        sdk_controls.emplace_back("missing_sdk",
-                                  missing_ok ? "rejected" : "failed");
-        sdk_details["missing_sdk"] = vobj({
-            {"requested", vstr(missing_sdk.string())},
-            {"returncode",
-             rc.has_value() ? vint(*rc) : vnull()},
-        });
-        cmake_records.push_back(result.first);
-    }
-
+    const std::string platform_system = opt_string(context, "platform_system").value_or("");
     auto default_environment = environ_copy();
     default_environment.erase("SDKROOT");
     default_environment.erase("CMAKE_OSX_SYSROOT");
-    {
-        std::pair<Value, fs::path> result;
-        configure_case("sdk-default", {}, &default_environment, std::nullopt,
-                       true, result);
-        try {
-            const Value default_context = configured_context(result.second);
-            const auto rc = record_returncode(result.first);
-            const fs::path selected_sdk = fs::path(std::get<std::string>(
-                member(default_context, "sdk")->data));
-            std::error_code dir_ec;
-            const bool default_ok =
-                rc.has_value() && *rc == 0 &&
-                opt_string(default_context, "sdk_source") == "default" &&
-                fs::is_directory(selected_sdk, dir_ec);
-            sdk_controls.emplace_back("default_sdk",
-                                      default_ok ? "passed" : "failed");
-            sdk_details["default_sdk"] = vobj({
-                {"selected", *member(default_context, "sdk")},
-                {"compiler",
-                 *member(*member(default_context, "compiler"), "path")},
-            });
-        } catch (const std::exception &error) {
-            sdk_controls.emplace_back("default_sdk", "failed");
-            sdk_details["default_sdk"] =
-                vobj({{"error", vstr(error.what())}});
-        }
-        cmake_records.push_back(result.first);
-    }
 
-    {
-        const fs::path rejected_default_sdk =
-            work_root / "incompatible-default-sdk";
-        fs::create_directories(rejected_default_sdk, ec);
-        const fs::path fake_bin = work_root / "fake-tool-bin";
-        fs::create_directories(fake_bin, ec);
-        const fs::path fake_xcrun = fake_bin / "xcrun";
-        {
-            std::ofstream stream(fake_xcrun,
-                                 std::ios::binary | std::ios::trunc);
-            stream << "#!/bin/sh\n"
-                      "if [ \"${1:-}\" = \"--sdk\" ] && [ \"${2:-}\" = "
-                      "\"macosx\" ] && [ \"${3:-}\" = \"--show-sdk-path\" ]; "
-                      "then\n"
-                      "  printf \"%s\\n\" \"$BIKE_TEST_BAD_SDK\"; exit 0;\n"
-                      "fi\n"
-                      "exec /usr/bin/xcrun \"$@\"\n";
-        }
-        fs::permissions(fake_xcrun,
-                        fs::perms::owner_all | fs::perms::group_read |
-                            fs::perms::group_exec | fs::perms::others_read |
-                            fs::perms::others_exec,
-                        ec);
-        const fs::path reject_marker =
-            work_root / "link-incompatibility-seen.txt";
-        const fs::path compiler_wrapper =
-            work_root / "compiler-link-control.sh";
-        {
-            std::ofstream stream(compiler_wrapper,
-                                 std::ios::binary | std::ios::trunc);
-            stream
-                << "#!/bin/bash\n"
-                   "args=(\"$@\")\n"
-                   "selected_sdk=\"\"\n"
-                   "syntax_only=0\n"
-                   "for ((i=0; i<${#args[@]}; ++i)); do\n"
-                   "  if [[ \"${args[i]}\" == \"-isysroot\" && $((i+1)) -lt "
-                   "${#args[@]} ]]; then selected_sdk=\"${args[i+1]}\"; fi\n"
-                   "  if [[ \"${args[i]}\" == \"-fsyntax-only\" ]]; then "
-                   "syntax_only=1; fi\n"
-                   "done\n"
-                   "if [[ \"$selected_sdk\" == \"$BIKE_TEST_BAD_SDK\" && "
-                   "$syntax_only == 0 ]]; then\n"
-                   "  printf \"%s\\n\" \"link-rejected $selected_sdk\" >> "
-                   "\"$BIKE_TEST_REJECT_MARKER\"\n"
-                   "  printf \"%s\\n\" \"synthetic linker incompatibility for "
-                   "$selected_sdk\" >&2\n"
-                   "  exit 1\n"
-                   "fi\n"
-                   "exec /usr/bin/c++ \"${args[@]}\"\n";
-        }
-        fs::permissions(compiler_wrapper,
-                        fs::perms::owner_all | fs::perms::group_read |
-                            fs::perms::group_exec | fs::perms::others_read |
-                            fs::perms::others_exec,
-                        ec);
-        auto fallback_environment = default_environment;
-        fallback_environment["PATH"] =
-            fake_bin.string() + ":" +
-            (fallback_environment.count("PATH") ? fallback_environment["PATH"]
-                                                : std::string{});
-        fallback_environment["BIKE_TEST_BAD_SDK"] =
-            rejected_default_sdk.string();
-        fallback_environment["BIKE_TEST_REJECT_MARKER"] =
-            reject_marker.string();
+    const auto run_linux_controls = [&](const std::string &control) {
         std::pair<Value, fs::path> result;
-        configure_case("sdk-default-link-fallback", {}, &fallback_environment,
-                       compiler_wrapper, false, result);
-        try {
-            const Value fallback_context = configured_context(result.second);
-            const auto rc = record_returncode(result.first);
-            std::error_code marker_ec;
-            const bool marker_exists = fs::is_regular_file(reject_marker, marker_ec);
-            std::string marker_text;
-            if (marker_exists) {
-                std::ostringstream content;
-                content << std::ifstream(reject_marker).rdbuf();
-                marker_text = content.str();
+        if (control == "no_sdk") {
+            configure_case("linux-no-sdk", {}, nullptr, std::nullopt, false, result);
+            try {
+                const Value child = configured_context(result.second);
+                const bool passed = record_returncode(result.first) == 0 &&
+                    io::is_null(*member(child, "sdk")) &&
+                    io::is_null(*member(child, "sdk_requested")) &&
+                    opt_string(child, "sdk_source") == "not-applicable" &&
+                    io::is_null(*member(child, "sysroot")) &&
+                    opt_string(child, "platform_system") == "Linux";
+                sdk_controls.emplace_back(control, passed ? "passed" : "failed");
+                sdk_details[control] = vobj({
+                    {"sdk", *member(child, "sdk")}, {"sysroot", *member(child, "sysroot")},
+                    {"compiler", *member(*member(child, "compiler"), "path")},
+                });
+            } catch (const std::exception &error) {
+                sdk_controls.emplace_back(control, "failed");
+                sdk_details[control] = vobj({{"error", vstr(error.what())}});
             }
-            const bool fallback_ok =
-                rc.has_value() && *rc == 0 &&
-                opt_string(fallback_context, "sdk_source") == "default" &&
-                canonical_path(std::get<std::string>(
-                              member(fallback_context, "sdk")->data)) !=
-                    canonical_path(rejected_default_sdk) &&
-                marker_exists &&
-                marker_text.find("link-rejected") != std::string::npos;
-            sdk_controls.emplace_back("default_sdk_fallback",
-                                      fallback_ok ? "passed" : "failed");
-            sdk_details["default_sdk_fallback"] = vobj({
-                {"rejected", vstr(rejected_default_sdk.string())},
-                {"selected", *member(fallback_context, "sdk")},
-                {"compiler_wrapper", vstr(compiler_wrapper.string())},
-                {"link_rejection_observed", vbool(marker_exists)},
+        } else if (control == "bad_sysroot") {
+            const fs::path missing = work_root / "missing-sysroot";
+            configure_case("linux-bad-sysroot", {"-DCMAKE_SYSROOT=" + missing.string()},
+                           nullptr, std::nullopt, false, result);
+            const std::string output = record_stdout_text(result.first) + record_stderr(result.first);
+            const auto rc = record_returncode(result.first);
+            const bool rejected = rc.has_value() && *rc != 0 &&
+                (output.find("CMake Error") != std::string::npos ||
+                 output.find("Configuring incomplete") != std::string::npos);
+            sdk_controls.emplace_back(control, rejected ? "rejected" : "failed");
+            sdk_details[control] = vobj({
+                {"requested", vstr(missing.string())},
+                {"returncode", rc.has_value() ? vint(*rc) : vnull()},
+                {"named_in_output", vbool(output.find(missing.string()) != std::string::npos)},
             });
-        } catch (const std::exception &error) {
-            sdk_controls.emplace_back("default_sdk_fallback", "failed");
-            sdk_details["default_sdk_fallback"] =
-                vobj({{"error", vstr(error.what())}});
+        } else if (control == "rejected_osx_sysroot") {
+            configure_case("linux-reject-osx-sysroot",
+                           {"-DCMAKE_OSX_SYSROOT=/System/Library/Frameworks"},
+                           nullptr, std::nullopt, false, result);
+            const std::string output = record_stdout_text(result.first) + record_stderr(result.first);
+            const auto rc = record_returncode(result.first);
+            const bool named = output.find("CMAKE_OSX_SYSROOT") != std::string::npos;
+            sdk_controls.emplace_back(control, rc.has_value() && *rc != 0 && named ? "rejected" : "failed");
+            sdk_details[control] = vobj({
+                {"returncode", rc.has_value() ? vint(*rc) : vnull()}, {"matched_option", vbool(named)},
+            });
+        } else if (control == "no_apple_tool") {
+            const fs::path fake_bin = work_root / "fake-apple-tool-bin";
+            fs::create_directories(fake_bin);
+            const fs::path marker = work_root / "apple-tool-invocations.txt";
+            for (const std::string_view tool : {"xcrun", "sw_vers", "otool", "install_name_tool"}) {
+                const fs::path stub = fake_bin / tool;
+                std::ofstream stream(stub, std::ios::binary | std::ios::trunc);
+                stream << "#!/bin/sh\n"
+                          "printf \"%s %s\\n\" \"$0\" \"$*\" >> \"$BIKE_T14_APPLE_TOOL_LOG\"\n"
+                          "exit 1\n";
+                stream.close();
+                if (!stream) throw CheckError("cannot write Apple-tool control: " + stub.string());
+                fs::permissions(stub, fs::perms::owner_all | fs::perms::group_read |
+                    fs::perms::group_exec | fs::perms::others_read | fs::perms::others_exec);
+            }
+            auto environment = environ_copy();
+            environment["BIKE_T14_APPLE_TOOL_LOG"] = marker.string();
+            environment["PATH"] = fake_bin.string() + ":" + environment["PATH"];
+            configure_case("linux-no-apple-tools", {}, &environment, std::nullopt, false, result);
+            const bool invoked = fs::exists(marker);
+            Array invocations;
+            if (invoked) {
+                std::ifstream stream(marker);
+                std::ostringstream contents;
+                contents << stream.rdbuf();
+                if (!stream) throw CheckError("cannot read Apple-tool invocations: " + marker.string());
+                for (const auto &line : split_lines(contents.str())) invocations.push_back(vstr(line));
+            }
+            const auto rc = record_returncode(result.first);
+            sdk_controls.emplace_back(control, rc == 0 && !invoked ? "passed" : "failed");
+            sdk_details[control] = vobj({
+                {"configure_returncode", rc.has_value() ? vint(*rc) : vnull()},
+                {"invocations", varr(std::move(invocations))},
+            });
+        } else if (control == "sysroot_preservation") {
+            configure_case("linux-sysroot-preserved", {"-DCMAKE_SYSROOT=/"},
+                           nullptr, std::nullopt, false, result);
+            try {
+                const Value child = configured_context(result.second);
+                std::vector<fs::path> expected;
+                for (const auto &entry : entries) expected.push_back(entry.source);
+                const auto preserved = load_entries(result.second, expected);
+                std::set<std::string> sysroot_args;
+                for (const auto &entry : preserved)
+                    for (const auto &argument : entry.arguments)
+                        if (argument.starts_with("--sysroot") || argument.starts_with("-isysroot"))
+                            sysroot_args.insert(argument);
+                const bool passed = record_returncode(result.first) == 0 &&
+                    opt_string(child, "sysroot") == "/" &&
+                    sysroot_args == std::set<std::string>{"--sysroot=/"};
+                Array arguments;
+                for (const auto &argument : sysroot_args) arguments.push_back(vstr(argument));
+                sdk_controls.emplace_back(control, passed ? "passed" : "failed");
+                sdk_details[control] = vobj({
+                    {"sysroot", *member(child, "sysroot")}, {"sysroot_args", varr(std::move(arguments))},
+                });
+            } catch (const std::exception &error) {
+                sdk_controls.emplace_back(control, "failed");
+                sdk_details[control] = vobj({{"error", vstr(error.what())}});
+            }
+        } else {
+            throw CheckError("unknown Linux context control: " + control);
         }
         cmake_records.push_back(result.first);
+    };
+
+    for (const std::string &control : context_control_names(context)) {
+        if (control == "explicit_sdk") {
+            std::pair<Value, fs::path> result;
+            configure_case("sdk-explicit",
+                           {"-DCMAKE_OSX_SYSROOT=" + sdk_request}, nullptr,
+                           std::nullopt, false, result);
+            try {
+                const Value explicit_context = configured_context(result.second);
+                const auto rc = record_returncode(result.first);
+                const bool explicit_ok =
+                    rc.has_value() && *rc == 0 &&
+                    opt_string(explicit_context, "sdk_source") == "explicit" &&
+                    canonical_path(std::get<std::string>(
+                                  member(explicit_context, "sdk")->data)) ==
+                        canonical_path(std::get<std::string>(
+                                      member(context, "sdk")->data)) &&
+                    canonical_path(std::get<std::string>(
+                                  member(*member(explicit_context, "compiler"),
+                                         "path")
+                                      ->data)) == canonical_path(compiler);
+                sdk_controls.emplace_back("explicit_sdk",
+                                          explicit_ok ? "passed" : "failed");
+                sdk_details["explicit_sdk"] = vobj({
+                    {"requested", vstr(sdk_request)},
+                    {"selected", *member(explicit_context, "sdk")},
+                    {"compiler",
+                     *member(*member(explicit_context, "compiler"), "path")},
+                });
+            } catch (const std::exception &error) {
+                sdk_controls.emplace_back("explicit_sdk", "failed");
+                sdk_details["explicit_sdk"] =
+                    vobj({{"error", vstr(error.what())}});
+            }
+            cmake_records.push_back(result.first);
+        } else if (control == "missing_sdk") {
+            const fs::path missing_sdk = work_root / "missing-explicit-sdk";
+            std::pair<Value, fs::path> result;
+            configure_case("sdk-missing",
+                           {"-DCMAKE_OSX_SYSROOT=" + missing_sdk.string()},
+                           nullptr, std::nullopt, false, result);
+            const std::string combined =
+                record_stdout_text(result.first) + record_stderr(result.first);
+            const auto rc = record_returncode(result.first);
+            const bool missing_ok = rc.has_value() && *rc != 0 &&
+                                    combined.find(missing_sdk.string()) !=
+                                        std::string::npos;
+            sdk_controls.emplace_back("missing_sdk",
+                                      missing_ok ? "rejected" : "failed");
+            sdk_details["missing_sdk"] = vobj({
+                {"requested", vstr(missing_sdk.string())},
+                {"returncode",
+                 rc.has_value() ? vint(*rc) : vnull()},
+            });
+            cmake_records.push_back(result.first);
+        } else if (control == "default_sdk") {
+            std::pair<Value, fs::path> result;
+            configure_case("sdk-default", {}, &default_environment, std::nullopt,
+                           true, result);
+            try {
+                const Value default_context = configured_context(result.second);
+                const auto rc = record_returncode(result.first);
+                const fs::path selected_sdk = fs::path(std::get<std::string>(
+                    member(default_context, "sdk")->data));
+                std::error_code dir_ec;
+                const bool default_ok =
+                    rc.has_value() && *rc == 0 &&
+                    opt_string(default_context, "sdk_source") == "default" &&
+                    fs::is_directory(selected_sdk, dir_ec);
+                sdk_controls.emplace_back("default_sdk",
+                                          default_ok ? "passed" : "failed");
+                sdk_details["default_sdk"] = vobj({
+                    {"selected", *member(default_context, "sdk")},
+                    {"compiler",
+                     *member(*member(default_context, "compiler"), "path")},
+                });
+            } catch (const std::exception &error) {
+                sdk_controls.emplace_back("default_sdk", "failed");
+                sdk_details["default_sdk"] =
+                    vobj({{"error", vstr(error.what())}});
+            }
+            cmake_records.push_back(result.first);
+        } else if (control == "default_sdk_fallback") {
+            const fs::path rejected_default_sdk =
+                work_root / "incompatible-default-sdk";
+            fs::create_directories(rejected_default_sdk, ec);
+            const fs::path fake_bin = work_root / "fake-tool-bin";
+            fs::create_directories(fake_bin, ec);
+            const fs::path fake_xcrun = fake_bin / "xcrun";
+            {
+                std::ofstream stream(fake_xcrun,
+                                     std::ios::binary | std::ios::trunc);
+                stream << "#!/bin/sh\n"
+                          "if [ \"${1:-}\" = \"--sdk\" ] && [ \"${2:-}\" = "
+                          "\"macosx\" ] && [ \"${3:-}\" = \"--show-sdk-path\" ]; "
+                          "then\n"
+                          "  printf \"%s\\n\" \"$BIKE_TEST_BAD_SDK\"; exit 0;\n"
+                          "fi\n"
+                          "exec /usr/bin/xcrun \"$@\"\n";
+            }
+            fs::permissions(fake_xcrun,
+                            fs::perms::owner_all | fs::perms::group_read |
+                                fs::perms::group_exec | fs::perms::others_read |
+                                fs::perms::others_exec,
+                            ec);
+            const fs::path reject_marker =
+                work_root / "link-incompatibility-seen.txt";
+            const fs::path compiler_wrapper =
+                work_root / "compiler-link-control.sh";
+            {
+                std::ofstream stream(compiler_wrapper,
+                                     std::ios::binary | std::ios::trunc);
+                stream
+                    << "#!/bin/bash\n"
+                       "args=(\"$@\")\n"
+                       "selected_sdk=\"\"\n"
+                       "syntax_only=0\n"
+                       "for ((i=0; i<${#args[@]}; ++i)); do\n"
+                       "  if [[ \"${args[i]}\" == \"-isysroot\" && $((i+1)) -lt "
+                       "${#args[@]} ]]; then selected_sdk=\"${args[i+1]}\"; fi\n"
+                       "  if [[ \"${args[i]}\" == \"-fsyntax-only\" ]]; then "
+                       "syntax_only=1; fi\n"
+                       "done\n"
+                       "if [[ \"$selected_sdk\" == \"$BIKE_TEST_BAD_SDK\" && "
+                       "$syntax_only == 0 ]]; then\n"
+                       "  printf \"%s\\n\" \"link-rejected $selected_sdk\" >> "
+                       "\"$BIKE_TEST_REJECT_MARKER\"\n"
+                       "  printf \"%s\\n\" \"synthetic linker incompatibility for "
+                       "$selected_sdk\" >&2\n"
+                       "  exit 1\n"
+                       "fi\n"
+                       "exec /usr/bin/c++ \"${args[@]}\"\n";
+            }
+            fs::permissions(compiler_wrapper,
+                            fs::perms::owner_all | fs::perms::group_read |
+                                fs::perms::group_exec | fs::perms::others_read |
+                                fs::perms::others_exec,
+                            ec);
+            auto fallback_environment = default_environment;
+            fallback_environment["PATH"] =
+                fake_bin.string() + ":" +
+                (fallback_environment.count("PATH") ? fallback_environment["PATH"]
+                                                    : std::string{});
+            fallback_environment["BIKE_TEST_BAD_SDK"] =
+                rejected_default_sdk.string();
+            fallback_environment["BIKE_TEST_REJECT_MARKER"] =
+                reject_marker.string();
+            std::pair<Value, fs::path> result;
+            configure_case("sdk-default-link-fallback", {}, &fallback_environment,
+                           compiler_wrapper, false, result);
+            try {
+                const Value fallback_context = configured_context(result.second);
+                const auto rc = record_returncode(result.first);
+                std::error_code marker_ec;
+                const bool marker_exists = fs::is_regular_file(reject_marker, marker_ec);
+                std::string marker_text;
+                if (marker_exists) {
+                    std::ostringstream content;
+                    content << std::ifstream(reject_marker).rdbuf();
+                    marker_text = content.str();
+                }
+                const bool fallback_ok =
+                    rc.has_value() && *rc == 0 &&
+                    opt_string(fallback_context, "sdk_source") == "default" &&
+                    canonical_path(std::get<std::string>(
+                                  member(fallback_context, "sdk")->data)) !=
+                        canonical_path(rejected_default_sdk) &&
+                    marker_exists &&
+                    marker_text.find("link-rejected") != std::string::npos;
+                sdk_controls.emplace_back("default_sdk_fallback",
+                                          fallback_ok ? "passed" : "failed");
+                sdk_details["default_sdk_fallback"] = vobj({
+                    {"rejected", vstr(rejected_default_sdk.string())},
+                    {"selected", *member(fallback_context, "sdk")},
+                    {"compiler_wrapper", vstr(compiler_wrapper.string())},
+                    {"link_rejection_observed", vbool(marker_exists)},
+                });
+            } catch (const std::exception &error) {
+                sdk_controls.emplace_back("default_sdk_fallback", "failed");
+                sdk_details["default_sdk_fallback"] =
+                    vobj({{"error", vstr(error.what())}});
+            }
+            cmake_records.push_back(result.first);
+        } else {
+            run_linux_controls(control);
+        }
     }
 
     Array hardening_evidence;
@@ -823,7 +926,7 @@ int run_context_checks(const fs::path &build) {
         std::holds_alternative<bool>(
             member(*hardening, "supported")->data) &&
         std::get<bool>(member(*hardening, "supported")->data);
-    if (hardening_supported) {
+    if (platform_system == "Darwin" && hardening_supported) {
         const fs::path hardening_source = work_root / "hardening_probe.cpp";
         {
             std::ofstream stream(hardening_source,
@@ -939,11 +1042,11 @@ int run_context_checks(const fs::path &build) {
                 };
                 compile_argv.insert(compile_argv.end(), arch_args.begin(),
                                     arch_args.end());
+                if (const auto sysroot = configured_sysroot(context))
+                    compile_argv.insert(compile_argv.end(), {"-isysroot", sysroot->string()});
                 compile_argv.insert(
                     compile_argv.end(),
-                    {"-isysroot",
-                     std::get<std::string>(member(context, "sdk")->data),
-                     "-stdlib=libc++",
+                    {"-stdlib=libc++",
                      "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_" +
                          std::string(mode)});
                 compile_argv.insert(compile_argv.end(), optimization.begin(),
@@ -1112,6 +1215,129 @@ int run_context_checks(const fs::path &build) {
         }
         sdk_controls.emplace_back("libcpp_hardening",
                                   hardening_failed ? "failed" : "passed");
+    } else if (platform_system == "Linux") {
+        const Value &stdlib = *member(context, "stdlib");
+        const std::string stdlib_name = *opt_string(stdlib, "name");
+        const std::string mode = *opt_string(*member(stdlib, "hardening"), "mode");
+        const bool libcxx = stdlib_name == "libc++";
+        const std::string compiler_id = opt_string(*member(context, "compiler"), "id").value_or("");
+        const std::vector<std::int64_t> expected_signals = libcxx
+            ? std::vector<std::int64_t>{SIGILL, SIGTRAP}
+            : std::vector<std::int64_t>{SIGABRT};
+        const fs::path source = work_root / "stdlib_hardening_probe.cpp";
+        {
+            std::ofstream stream(source, std::ios::binary | std::ios::trunc);
+            stream << "#include <cstdint>\n#include <vector>\n"
+                      "#if !defined(__STRICT_ANSI__) || __cplusplus < 202100L\n"
+                      "#error Native first-party code must compile as strict C++23\n#endif\n"
+                      "#if defined(_GLIBCXX_DEBUG)\n"
+                      "#error _GLIBCXX_DEBUG changes container ABI; it is not a production hardening mode\n"
+                      "#endif\n"
+                      "#if defined(BIKE_HARDENED) && defined(__GLIBCXX__) && !defined(_GLIBCXX_ASSERTIONS)\n"
+                      "#error the hardened libstdc++ control requires _GLIBCXX_ASSERTIONS\n"
+                      "#endif\n"
+                      "#if !defined(BIKE_HARDENED) && defined(_GLIBCXX_ASSERTIONS)\n"
+                      "#error _GLIBCXX_ASSERTIONS leaked into the unhardened control\n"
+                      "#endif\n"
+                      "int main(int argc, char**) {\n"
+                      "  std::vector<std::uint64_t> values(64);\n"
+                      "  if (argc > 1) {\n"
+                      "    volatile std::uint64_t invalid = values[values.size() + 64];\n"
+                      "    return static_cast<int>(invalid);\n"
+                      "  }\n"
+                      "  return 0;\n"
+                      "}\n";
+            stream.close();
+            if (!stream) throw CheckError("cannot write stdlib hardening probe: " + source.string());
+        }
+        std::vector<std::string> base_argv{compiler.string(), "-std=c++23"};
+        const auto &configured_args = entries.front().arguments;
+        for (std::size_t index = 0; index + 1 < configured_args.size(); ++index) {
+            if (configured_args[index] == "-arch") {
+                base_argv.insert(base_argv.end(), {"-arch", configured_args[index + 1]});
+                ++index;
+            }
+        }
+        if (const auto sysroot = configured_sysroot(context))
+            base_argv.insert(base_argv.end(), {"--sysroot", sysroot->string()});
+        if (libcxx && (compiler_id == "Clang" || compiler_id == "AppleClang"))
+            base_argv.emplace_back("-stdlib=libc++");
+
+        const fs::path hardened_binary = work_root / "stdlib-hardening-probe-hardened";
+        auto hardened_argv = base_argv;
+        hardened_argv.insert(hardened_argv.end(), {
+            "-DBIKE_HARDENED=1",
+            libcxx ? "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_" + mode : "-D_GLIBCXX_ASSERTIONS",
+            "-O0", source.string(), "-o", hardened_binary.string(),
+        });
+        Value compile_record = run_process(hardened_argv, repository, log_directory,
+            "stdlib-hardening-compile", nullptr, false, 180);
+        bool hardening_failed = !record_health_ok(compile_record);
+        std::optional<std::string> outcome = hardening_failed
+            ? std::optional<std::string>("compile-failed") : std::nullopt;
+        records.push_back(std::move(compile_record));
+        bool assertion_active = false;
+        std::optional<std::int64_t> assertion_returncode;
+        if (!hardening_failed) {
+            Value assertion = run_process({hardened_binary.string(), "invalid-element-control"},
+                repository, log_directory, "stdlib-hardening-assertion", nullptr, true, 30);
+            assertion_returncode = record_returncode(assertion);
+            if (!io::is_null(*member(assertion, "launch_error")) ||
+                opt_bool(assertion, "timed_out").value_or(false)) {
+                outcome = "tool-failed";
+            } else {
+                assertion_active = assertion_returncode.has_value() && *assertion_returncode < 0 &&
+                    std::ranges::find(expected_signals, -*assertion_returncode) != expected_signals.end();
+                outcome = assertion_active ? "asserted" : "silent";
+            }
+            set_member(assertion, "control", vstr("stdlib-hardening-assertion"));
+            set_member(assertion, "assertion_active", vbool(assertion_active));
+            set_member(assertion, "assertion_category", vstr(stdlib_name + " std::vector element access"));
+            records.push_back(std::move(assertion));
+            Value benign = run_process({hardened_binary.string()}, repository, log_directory,
+                "stdlib-hardening-benign", nullptr, false, 30);
+            hardening_failed = !record_health_ok(benign) || outcome != "asserted";
+            records.push_back(std::move(benign));
+        }
+
+        const fs::path unhardened_binary = work_root / "stdlib-hardening-probe-unhardened";
+        auto unhardened_argv = base_argv;
+        if (libcxx)
+            unhardened_argv.emplace_back("-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE");
+        else
+            unhardened_argv.insert(unhardened_argv.end(), {"-U_GLIBCXX_ASSERTIONS", "-D_GLIBCXX_NO_ASSERTIONS"});
+        unhardened_argv.insert(unhardened_argv.end(), {
+            "-O0", source.string(), "-o", unhardened_binary.string(),
+        });
+        Value unhardened_compile = run_process(unhardened_argv, repository, log_directory,
+            "stdlib-unhardened-compile", nullptr, false, 180);
+        const bool unhardened_compiled = record_health_ok(unhardened_compile);
+        // A broken control cannot prove the absence of leaked hardening flags.
+        hardening_failed = hardening_failed || !unhardened_compiled;
+        records.push_back(std::move(unhardened_compile));
+        Value unhardened = vobj({
+            {"compiled", vbool(unhardened_compiled)}, {"returncode", vnull()},
+            {"note", vstr("out-of-bounds access without assertions is undefined "
+                          "behavior — recorded as evidence, not a guarantee")},
+        });
+        if (unhardened_compiled) {
+            Value probe = run_process({unhardened_binary.string(), "invalid-element-control"},
+                repository, log_directory, "stdlib-unhardened-run", nullptr, true, 30);
+            set_member(unhardened, "returncode", *member(probe, "returncode"));
+            set_member(probe, "control", vstr("stdlib-unhardened-run"));
+            records.push_back(std::move(probe));
+        }
+        Array signals;
+        for (const auto number : expected_signals) signals.push_back(vint(number));
+        hardening_evidence.push_back(vobj({
+            {"build_type", vstr("control")}, {"stdlib", vstr(stdlib_name)}, {"mode", vstr(mode)},
+            {"outcome", outcome.has_value() ? vstr(*outcome) : vnull()},
+            {"assertion_active", vobj({{mode, vbool(assertion_active)}})},
+            {"expected_signals", varr(std::move(signals))},
+            {"assertion_returncode", assertion_returncode.has_value() ? vint(*assertion_returncode) : vnull()},
+            {"unhardened", std::move(unhardened)},
+        }));
+        sdk_controls.emplace_back("stdlib_hardening", hardening_failed ? "failed" : "passed");
     } else {
         sdk_controls.emplace_back("libcpp_hardening", "not-applicable");
         set_member(summary, "hardening_limitation",
@@ -1204,6 +1430,45 @@ Value read_contract_json(const fs::path &path, const std::string &label) {
         throw ContractError("malformed " + label + ": " + path.string() + ": " +
                             error.what());
     }
+}
+
+Value validate_provider_bindings(const fs::path &repo_root) {
+    const fs::path source_root = repo_root / "native" / "src";
+    std::error_code ec;
+    if (!fs::is_directory(source_root, ec))
+        throw ContractError("native source directory does not exist: " + source_root.string());
+    const fs::path platform_root = source_root / "platform";
+    std::vector<fs::path> candidates;
+    for (fs::recursive_directory_iterator it(source_root, ec), end; !ec && it != end;
+         it.increment(ec)) {
+        if (is_under(it->path(), {platform_root})) {
+            if (it->is_directory()) it.disable_recursion_pending();
+            continue;
+        }
+        const std::string suffix = it->path().extension().string();
+        if (it->is_regular_file() &&
+            (suffix == ".cpp" || suffix == ".hpp" || suffix == ".cc" || suffix == ".cxx" ||
+             suffix == ".h" || suffix == ".hh" || suffix == ".hxx"))
+            candidates.push_back(it->path());
+    }
+    if (ec) throw ContractError("cannot inspect native provider bindings: " + ec.message());
+    std::ranges::sort(candidates);
+    // Inspect assembler-label declarations, not ordinary mentions of a
+    // provider in comments, diagnostics, or include directives.
+    static const std::regex provider_label(
+        R"binding(\b(?:__asm__|asm)\s*\(\s*"[^"\n]*(?:\$NEWLAPACK|scipy_)[^"\n]*")binding");
+    for (const fs::path &path : candidates) {
+        std::ifstream stream(path, std::ios::binary);
+        if (!stream) throw ContractError("cannot read native source: " + path.string());
+        std::ostringstream contents;
+        contents << stream.rdbuf();
+        if (stream.bad()) throw ContractError("cannot read native source: " + path.string());
+        if (std::regex_search(contents.str(), provider_label))
+            throw ContractError("provider symbol bound outside native/src/platform: " +
+                                path.lexically_relative(repo_root).string());
+    }
+    return vobj({{"status", vstr("passed")},
+                 {"source_count", vint(static_cast<std::int64_t>(candidates.size()))}});
 }
 
 // importlib.machinery.EXTENSION_SUFFIXES equivalents on this platform: any
@@ -2191,6 +2456,7 @@ int run_contracts(const fs::path &build,
             : canonical_path(fs::path(__FILE__)
                             .parent_path()
                             .parent_path()
+                            .parent_path()
                             .parent_path());
     std::error_code ec;
     const std::map<std::string, std::string> environment = environ_copy();
@@ -2200,6 +2466,7 @@ int run_contracts(const fs::path &build,
             throw ContractError("build directory does not exist: " +
                                 build_dir.string());
         const Value context = load_context(build_dir);
+        const Value provider_bindings = validate_provider_bindings(repo_root);
         const Value sources = read_contract_json(
             build_dir / "native_sources.json", "native source manifest");
         {
@@ -2250,6 +2517,7 @@ int run_contracts(const fs::path &build,
         }
 
         Object checks;
+        checks.emplace_back("provider_binding_boundary", provider_bindings);
         checks.emplace_back(
             "manifest_selection",
             vobj({

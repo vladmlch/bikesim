@@ -184,7 +184,13 @@ function(bike_fix_mujoco_install_name target)
     message(FATAL_ERROR
       "bike_fix_mujoco_install_name: '${target}' is not a CMake target")
   endif()
-  set(_bike_rewrite_library "${ARGV1}")
+  # Read the optional image through ARGC: a one-argument call from inside
+  # another function would otherwise resolve ${ARGV1} to the caller's own
+  # second argument (function argument names fall through the scope chain).
+  set(_bike_rewrite_library "")
+  if(ARGC GREATER 1)
+    set(_bike_rewrite_library "${ARGV1}")
+  endif()
   if(_bike_rewrite_library STREQUAL "")
     if(NOT DEFINED _native_mujoco_library
        OR NOT EXISTS "${_native_mujoco_library}")

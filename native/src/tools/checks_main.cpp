@@ -7,6 +7,7 @@
 //   bike-native-checks --kind KIND --build BUILD
 //                      [--tools-dir DIR]      (scripts kind only)
 //                      [--repo-root DIR]      (contracts kind only)
+//                      [--validate-only | --list-controls] (context only)
 //   bike-native-checks --check-child PROGRAM [ARG...]   (internal)
 //
 // argparse parity: missing required options or an invalid --kind print the
@@ -43,7 +44,7 @@ std::string usage_line(const std::string &prog) {
         kinds += kind;
     }
     return "usage: " + prog + " [-h] --kind {" + kinds + "} --build BUILD" +
-           " [--tools-dir DIR] [--repo-root DIR]";
+           " [--tools-dir DIR] [--repo-root DIR] [--validate-only | --list-controls]";
 }
 
 int argparse_error(const std::string &prog, const std::string &message) {
@@ -99,6 +100,8 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
     std::string build;
     std::string tools_dir;
     std::string repo_root;
+    bool validate_only = false;
+    bool list_controls = false;
 
     for (std::size_t index = 1; index < arguments.size(); ++index) {
         const std::string argument = arguments[index];
@@ -110,7 +113,9 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
                       << "  --kind KIND\n"
                       << "  --build BUILD\n"
                       << "  --tools-dir DIR\n"
-                      << "  --repo-root DIR\n";
+                      << "  --repo-root DIR\n"
+                      << "  --validate-only  validate context without running controls\n"
+                      << "  --list-controls  list this platform's context controls\n";
             return 0;
         }
         const auto take_value = [&](std::string &out) -> bool {
@@ -142,6 +147,10 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
                     prog, "argument --repo-root: expected one argument");
         } else if (argument.starts_with("--repo-root=")) {
             repo_root = argument.substr(std::string("--repo-root=").size());
+        } else if (argument == "--validate-only") {
+            validate_only = true;
+        } else if (argument == "--list-controls") {
+            list_controls = true;
         } else {
             return argparse_error(prog,
                                   "unrecognized arguments: " + argument);
@@ -171,8 +180,20 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
                                         "' (choose from " + choices + ")");
     }
 
+    if ((validate_only || list_controls) && kind != "context")
+        return argparse_error(prog, "--validate-only and --list-controls require --kind context");
+    if (validate_only && list_controls)
+        return argparse_error(prog, "--validate-only and --list-controls are mutually exclusive");
+
     const bike::checks::fs::path build_path(build);
     try {
+        if (validate_only || list_controls) {
+            const auto context = bike::checks::load_context(build_path);
+            if (list_controls)
+                for (const auto &control : bike::checks::context_control_names(context))
+                    std::cout << control << '\n';
+            return 0;
+        }
         if (kind == "headers")
             return bike::checks::run_header_sweep(build_path);
         if (kind == "diagnostic-controls")

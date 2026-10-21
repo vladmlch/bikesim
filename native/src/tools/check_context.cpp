@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <set>
 #include <sstream>
+#include <sys/utsname.h>
 #include <utility>
 
 namespace bike::checks {
@@ -159,6 +160,257 @@ std::vector<std::string> member_string_list(const Value &object,
     return result;
 }
 
+// Python's repr spelling is part of the malformed-context diagnostics.
+std::string py_repr(const Value *value) {
+    if (value == nullptr || io::is_null(*value)) return "None";
+    if (const auto *boolean = std::get_if<bool>(&value->data))
+        return *boolean ? "True" : "False";
+    if (const auto *number = std::get_if<io::Number>(&value->data))
+        return number->lexeme;
+    const auto *text = std::get_if<std::string>(&value->data);
+    if (text == nullptr) return dump_json(*value);
+    const char quote = text->find('\'') != std::string::npos &&
+                               text->find('"') == std::string::npos
+                           ? '"' : '\'';
+    std::string result(1, quote);
+    for (const char ch : *text) {
+        if (ch == '\\' || ch == quote) {
+            result += '\\';
+            result += ch;
+        } else if (ch == '\n') {
+            result += "\\n";
+        } else if (ch == '\r') {
+            result += "\\r";
+        } else if (ch == '\t') {
+            result += "\\t";
+        } else {
+            result += ch;
+        }
+    }
+    result += quote;
+    return result;
+}
+
+bool is_object(const Value *value) {
+    return value != nullptr && std::holds_alternative<Object>(value->data);
+}
+
+bool is_text(const Value *value) {
+    return value != nullptr && std::holds_alternative<std::string>(value->data);
+}
+
+bool is_string_array(const Value *value) {
+    const auto *array = value != nullptr ? std::get_if<Array>(&value->data) : nullptr;
+    return array != nullptr && std::ranges::all_of(*array, [](const Value &item) {
+        return std::holds_alternative<std::string>(item.data);
+    });
+}
+
+// The legacy schema cannot express Linux's no-SDK build. Keep its Darwin
+// checks unchanged, and reuse them for schema 2's Darwin branch.
+void validate_sdk(Value &context, const std::string &system, bool schema_two) {
+    if (system == "Linux") {
+        for (const std::string_view field : {"sdk", "sdk_requested"}) {
+            const Value *value = member(context, field);
+            const auto *text = value != nullptr
+                                   ? std::get_if<std::string>(&value->data) : nullptr;
+            if (value != nullptr && !io::is_null(*value) &&
+                (text == nullptr || !text->empty()))
+                throw CheckError(field == "sdk"
+                    ? "Linux native check context must not record an Apple SDK"
+                    : "Linux native check context must not record a requested SDK");
+        }
+        if (member_string(context, "sdk_source") != "not-applicable")
+            throw CheckError("Linux native check context must record sdk_source "
+                             "'not-applicable'");
+        set_member(context, "sdk", vnull());
+        set_member(context, "sdk_requested", vnull());
+        return;
+    }
+    const Value *sdk_value = member(context, "sdk");
+    const fs::path sdk_path = require_existing_path(
+        sdk_value != nullptr ? *sdk_value : Value{}, "configured SDK");
+    std::error_code ec;
+    if (!fs::is_directory(sdk_path, ec))
+        throw CheckError("configured SDK is not a directory: " + sdk_path.string());
+    set_member(context, "sdk", vstr(sdk_path.string()));
+    const std::string sdk_requested = member_string(context, "sdk_requested");
+    if (sdk_requested.empty())
+        throw CheckError("native check context has no requested SDK value");
+    const std::string sdk_source = member_string(context, "sdk_source");
+    if (sdk_source != "explicit" && sdk_source != "default")
+        throw CheckError("native check context has an invalid SDK source");
+    const fs::path requested_sdk_path = expand_home(sdk_requested);
+    if (fs::exists(requested_sdk_path) && canonical_path(requested_sdk_path) != sdk_path)
+        throw CheckError("requested SDK and selected SDK differ: requested=" +
+                         canonical_path(requested_sdk_path).string() +
+                         ", selected=" + sdk_path.string());
+    if (schema_two && member_string(context, "sysroot") != sdk_path.string())
+        throw CheckError("Darwin sysroot " + py_repr(member(context, "sysroot")) +
+                         " does not equal the selected SDK " + py_repr(member(context, "sdk")));
+}
+
+void validate_capabilities(Value &context) {
+    Value *capabilities = member_mut(context, "capabilities");
+    if (!is_object(capabilities))
+        throw CheckError("native check context has no capabilities record");
+    for (const std::string_view capability : {"asan", "rtsan", "coverage"}) {
+        Value *record = member_mut(*capabilities, capability);
+        if (!is_object(record))
+            throw CheckError("native check context has no " + std::string(capability) +
+                             " capability record");
+        const std::string prefix = "native check context capability " + std::string(capability);
+        for (const std::string_view field : {"requested", "supported", "enabled"}) {
+            const Value *value = member(*record, field);
+            if (value == nullptr || !std::holds_alternative<bool>(value->data))
+                throw CheckError(prefix + "." + std::string(field) + " must be boolean");
+        }
+        const bool enabled = std::get<bool>(member(*record, "enabled")->data);
+        if (enabled && !std::get<bool>(member(*record, "supported")->data))
+            throw CheckError(prefix + " is enabled without support evidence");
+        if (enabled && !std::get<bool>(member(*record, "requested")->data))
+            throw CheckError(prefix + " is enabled without a requested lane");
+        const Value *evidence = member(*record, "evidence");
+        if (is_text(evidence)) {
+            if (std::get<std::string>(evidence->data).empty())
+                throw CheckError(prefix + " has an empty evidence record");
+        } else if (is_object(evidence)) {
+            const auto &items = std::get<Object>(evidence->data);
+            if (items.empty() || !std::ranges::all_of(items, [](const auto &item) {
+                    return std::holds_alternative<std::string>(item.second.data);
+                }))
+                throw CheckError(prefix + " evidence must map names to strings");
+        } else {
+            throw CheckError(prefix + " has no evidence record");
+        }
+        const Value *runtime = member(*record, "runtime");
+        if (runtime == nullptr)
+            throw CheckError(prefix + " has no runtime record");
+        if (!io::is_null(*runtime)) {
+            const fs::path path = require_existing_path(
+                *runtime, "capability " + std::string(capability) + " runtime");
+            std::error_code ec;
+            if (!fs::is_regular_file(path, ec))
+                throw CheckError("capability " + std::string(capability) +
+                                 " runtime is not a file: " + path.string());
+            set_member(*record, "runtime", vstr(path.string()));
+        }
+        if (capability != "coverage") {
+            if (enabled && io::is_null(*member(*record, "runtime")))
+                throw CheckError(prefix + " is enabled without a recorded sanitizer runtime");
+            if (member_string(*record, "compiler_id").empty())
+                throw CheckError(prefix + " has no compiler identity record");
+            const Value *target = member(*record, "target");
+            if (target != nullptr && !io::is_null(*target) &&
+                (!is_text(target) || std::get<std::string>(target->data).empty()))
+                throw CheckError(prefix + " target must be a triple string or null");
+        }
+    }
+    Value *frontend_tools = member_mut(*capabilities, "frontend_tools");
+    if (!is_object(frontend_tools))
+        throw CheckError("native check context has no frontend_tools capability record");
+    for (auto &[name, record] : std::get<Object>(frontend_tools->data)) {
+        const Value name_value = vstr(name);
+        const std::string prefix = "native check frontend tool " + py_repr(&name_value);
+        if (!is_object(&record) || !is_text(member(record, "configured")))
+            throw CheckError(prefix + " has no configured spelling");
+        const Value *located = member(record, "located");
+        if (located != nullptr && !io::is_null(*located)) {
+            if (!is_text(located) || std::get<std::string>(located->data).empty())
+                throw CheckError(prefix + " located record must be a path or null");
+            const fs::path path = require_existing_path(
+                *located, "located frontend tool " + name, true, true);
+            set_member(record, "located", vstr(path.string()));
+        }
+    }
+}
+
+std::string validate_platform_record(Value &context) {
+    utsname host{};
+    if (::uname(&host) != 0)
+        throw CheckError("native check context: uname() failed");
+    const Value *platform = member(context, "platform");
+    if (!is_object(platform))
+        throw CheckError("native check context has no platform record");
+    const Value *system_value = member(*platform, "system");
+    const std::string system = member_string(*platform, "system");
+    if (system != "Darwin" && system != "Linux")
+        throw CheckError("native check context has an unsupported platform system: " +
+                         py_repr(system_value));
+    if (system != host.sysname || member_string(*platform, "host_system") != host.sysname)
+        throw CheckError("native check platform records system=" + py_repr(system_value) +
+                         " host_system=" + py_repr(member(*platform, "host_system")) +
+                         " on a '" + host.sysname + "' host");
+    if (member_string(*platform, "machine") != host.machine)
+        throw CheckError("native check platform machine " + py_repr(member(*platform, "machine")) +
+                         " does not match host machine '" + host.machine + "'");
+    const Value *pointer_bits = member(*platform, "pointer_bits");
+    const auto *width = pointer_bits != nullptr
+                            ? std::get_if<io::Number>(&pointer_bits->data) : nullptr;
+    if (width == nullptr || width->lexeme != std::to_string(sizeof(void *) * 8))
+        throw CheckError("native check platform pointer width does not match the host");
+
+    const Value *sysroot = member(context, "sysroot");
+    if (sysroot == nullptr || io::is_null(*sysroot)) {
+        set_member(context, "sysroot", vnull());
+    } else if (is_text(sysroot) && !std::get<std::string>(sysroot->data).empty()) {
+        const fs::path path = require_existing_path(*sysroot, "configured sysroot");
+        std::error_code ec;
+        if (!fs::is_directory(path, ec))
+            throw CheckError("configured sysroot is not a directory: " + path.string());
+        set_member(context, "sysroot", vstr(path.string()));
+    } else {
+        throw CheckError("native check context sysroot must be null or a directory path");
+    }
+    validate_sdk(context, system, true);
+
+    const Value *stdlib = member(context, "stdlib");
+    if (!is_object(stdlib))
+        throw CheckError("native check context has no stdlib record");
+    const std::string stdlib_name = member_string(*stdlib, "name");
+    if (stdlib_name != "libc++" && stdlib_name != "libstdc++")
+        throw CheckError("native check context has an unsupported stdlib: " +
+                         py_repr(member(*stdlib, "name")));
+    if (system == "Darwin" && stdlib_name != "libc++")
+        throw CheckError("the Darwin native build requires the libc++ standard library");
+    if (member_string(*stdlib, "version").empty())
+        throw CheckError("native check context stdlib has no version");
+    const Value *hardening = member(*stdlib, "hardening");
+    if (!is_object(hardening))
+        throw CheckError("native check context stdlib has no hardening record");
+    const std::string mode = member_string(*hardening, "mode");
+    if ((stdlib_name == "libc++" && mode != "EXTENSIVE" && mode != "FAST") ||
+        (stdlib_name == "libstdc++" && mode != "ASSERTIONS"))
+        throw CheckError("native check context stdlib hardening mode " +
+                         py_repr(member(*hardening, "mode")) + " is invalid for " + stdlib_name);
+    const Value *effective = member(*hardening, "effective");
+    if (effective == nullptr || !std::holds_alternative<bool>(effective->data) ||
+        !std::get<bool>(effective->data))
+        throw CheckError("native check context stdlib hardening must be effective");
+    const Value *numerics = member(context, "numerics");
+    if (!is_object(numerics))
+        throw CheckError("native check context has no numerics record");
+    if (member_string(*numerics, "backend").empty())
+        throw CheckError("native check context numerics has no backend");
+    const Value *policy = member(context, "policy");
+    if (!is_object(policy))
+        throw CheckError("native check context has no policy record");
+    for (const std::string_view field : {"required_flags", "accepted_warnings"})
+        if (!is_string_array(member(*policy, field)))
+            throw CheckError("native check context policy '" + std::string(field) +
+                             "' must be a string list");
+    const Value *rejected = member(*policy, "rejected_warnings");
+    const auto *rejected_items = rejected != nullptr ? std::get_if<Array>(&rejected->data) : nullptr;
+    if (rejected_items == nullptr || !std::ranges::all_of(*rejected_items, [](const Value &item) {
+            return is_object(&item) && is_text(member(item, "flag")) &&
+                   is_text(member(item, "reason"));
+        }))
+        throw CheckError("native check context policy rejected_warnings must be a "
+                         "list of flag/reason records");
+    validate_capabilities(context);
+    return system;
+}
+
 } // namespace
 
 Value load_context(const fs::path &build) {
@@ -171,11 +423,9 @@ Value load_context(const fs::path &build) {
     if (!std::holds_alternative<Object>(context.data))
         throw CheckError("native check context has an unsupported schema");
     const Value *schema = member(context, "schema_version");
-    const bool schema_one =
-        schema != nullptr &&
-        std::holds_alternative<io::Number>(schema->data) &&
-        std::get<io::Number>(schema->data).lexeme == "1";
-    if (!schema_one)
+    const auto *schema_number = schema != nullptr ? std::get_if<io::Number>(&schema->data) : nullptr;
+    const std::string schema_text = schema_number != nullptr ? schema_number->lexeme : std::string{};
+    if (schema_text != "1" && schema_text != "2")
         throw CheckError("native check context has an unsupported schema");
 
     Value *compiler = member_mut(context, "compiler");
@@ -191,9 +441,10 @@ Value load_context(const fs::path &build) {
         const Value *python = member(context, "python_executable");
         if (python != nullptr && !io::is_null(*python)) {
             // Bindings-era contexts carry a configured interpreter; validate
-            // it. The Python-free core context may carry explicit null.
+            // it without resolving the venv symlink to its base interpreter.
+            // The Python-free core context may carry explicit null.
             const fs::path python_path = require_existing_path(
-                *python, "configured Python executable", true);
+                *python, "configured Python executable", true, true);
             set_member(context, "python_executable",
                        vstr(python_path.string()));
         } else {
@@ -201,36 +452,9 @@ Value load_context(const fs::path &build) {
         }
     }
 
-    const Value *sdk_value = member(context, "sdk");
-    const fs::path sdk_path = require_existing_path(
-        sdk_value != nullptr ? *sdk_value : Value{}, "configured SDK");
-    if (!fs::is_directory(sdk_path, ec))
-        throw CheckError("configured SDK is not a directory: " + sdk_path.string());
-    set_member(context, "sdk", vstr(sdk_path.string()));
-    const Value *sdk_requested_raw = member(context, "sdk_requested");
-    const auto *sdk_requested_text =
-        sdk_requested_raw != nullptr
-            ? std::get_if<std::string>(&sdk_requested_raw->data)
-            : nullptr;
-    if (sdk_requested_text == nullptr || sdk_requested_text->empty())
-        throw CheckError("native check context has no requested SDK value");
-    const std::string sdk_requested = *sdk_requested_text;
-    const Value *sdk_source_raw = member(context, "sdk_source");
-    const auto *sdk_source_text =
-        sdk_source_raw != nullptr
-            ? std::get_if<std::string>(&sdk_source_raw->data)
-            : nullptr;
-    const std::string sdk_source =
-        sdk_source_text != nullptr ? *sdk_source_text : std::string{};
-    if (sdk_source != "explicit" && sdk_source != "default")
-        throw CheckError("native check context has an invalid SDK source");
-    const fs::path requested_sdk_path = expand_home(sdk_requested);
-    if (fs::exists(requested_sdk_path) &&
-        canonical_path(requested_sdk_path) != sdk_path)
-        throw CheckError(
-            "requested SDK and selected SDK differ: requested=" +
-            canonical_path(requested_sdk_path).string() + ", selected=" +
-            sdk_path.string());
+    const std::string system = schema_text == "2" ? validate_platform_record(context) : "Darwin";
+    if (schema_text == "1") validate_sdk(context, system, false);
+    set_member(context, "platform_system", vstr(system));
 
     const Value *hardening = member(context, "libcpp_hardening");
     if (hardening == nullptr || !std::holds_alternative<Object>(hardening->data))
@@ -606,22 +830,26 @@ void validate_compilation_context(const std::vector<std::string> &argv,
             position += 1;
         }
     }
-    const fs::path configured_sdk =
-        canonical_path(std::get<std::string>(member(context, "sdk")->data));
-    const bool mismatch =
-        selected_sysroots.empty() ||
-        std::ranges::any_of(selected_sysroots,
-                    [&](const fs::path &path) { return path != configured_sdk; });
+    const std::optional<fs::path> configured = configured_sysroot(context);
+    const bool mismatch = configured.has_value()
+        ? selected_sysroots.empty() || std::ranges::any_of(selected_sysroots,
+            [&](const fs::path &path) { return path != *configured; })
+        : !selected_sysroots.empty();
     if (mismatch) {
         std::string selected;
         for (const fs::path &path: selected_sysroots) {
             if (!selected.empty()) selected += ", ";
-            selected += path.string();
+            const Value path_value = vstr(path.string());
+            selected += py_repr(&path_value);
         }
+        if (!configured.has_value())
+            throw CheckError("compilation database selects a sysroot in entry " +
+                             std::to_string(index) + " but the build context configures none: "
+                             "selected=[" + selected + "]");
         throw CheckError("compilation database sysroot differs from configured "
-                         "SDK in entry " +
+                         "sysroot in entry " +
                          std::to_string(index) + ": selected=[" + selected +
-                         "], configured=" + configured_sdk.string());
+                         "], configured=" + configured->string());
     }
 }
 
@@ -1052,6 +1280,57 @@ std::vector<CompileEntry> load_entries(const fs::path &build,
     return entries;
 }
 
+std::optional<fs::path> configured_sysroot(const Value &context) {
+    for (const std::string_view key : {"sysroot", "sdk"}) {
+        const Value *value = member(context, key);
+        if (value == nullptr) continue;
+        const auto *text = std::get_if<std::string>(&value->data);
+        if (text != nullptr && !text->empty()) return canonical_path(*text);
+    }
+    return std::nullopt;
+}
+
+namespace {
+
+std::vector<std::string> sibling_candidates(const Value &compiler, const std::string &kind) {
+    const std::string required_id = kind == "gxx" ? "GNU" : "Clang";
+    if (kind == "cppcheck" || member_string(compiler, "id") != required_id) return {};
+    const fs::path path(member_string(compiler, "path"));
+    static const std::regex driver(
+        R"(^((?:[A-Za-z0-9_.+]+-)+)?(?:clang\+\+|clang|g\+\+|gcc)(?:-([0-9]+(?:\.[0-9]+)*))?$)");
+    std::smatch match;
+    const std::string basename = path.filename().string();
+    if (!std::regex_match(basename, match, driver)) return {};
+    const std::string prefix = match[1].str();
+    const std::string version = match[2].str();
+    const std::string stem = kind == "tidy" ? "clang-tidy" : kind == "analyzer" ? "clang++" : "g++";
+    std::vector<std::string> names;
+    const auto append = [&](const std::string &name) {
+        const std::string candidate = (path.parent_path() / name).string();
+        if (std::ranges::find(names, candidate) == names.end()) names.push_back(candidate);
+    };
+    if (!version.empty()) {
+        append(stem + "-" + version);
+        append(prefix + stem + "-" + version);
+    }
+    append(stem);
+    append(prefix + stem);
+    return names;
+}
+
+std::vector<std::string> darwin_tool_candidates(const std::string &kind) {
+    if (kind == "tidy")
+        return {"/opt/homebrew/opt/llvm/bin/clang-tidy", "/usr/local/opt/llvm/bin/clang-tidy"};
+    if (kind == "analyzer")
+        return {"/opt/homebrew/opt/llvm/bin/clang++", "/usr/local/opt/llvm/bin/clang++"};
+    if (kind == "cppcheck")
+        return {"/opt/homebrew/bin/cppcheck", "/usr/local/bin/cppcheck"};
+    return {"g++-16", "g++-15", "g++-14", "g++-13", "g++",
+            "/opt/homebrew/bin/g++-16", "/usr/local/bin/g++-16"};
+}
+
+} // namespace
+
 std::pair<fs::path, std::string> resolve_tool(
     const std::string &kind, const Value &context,
     const std::map<std::string, std::string> &environment) {
@@ -1073,25 +1352,39 @@ std::pair<fs::path, std::string> resolve_tool(
         requested = env->second;
     if (requested.empty())
         requested = member_string(*member(context, "tool_overrides"), override_name);
-    if (requested.empty())
-        requested = member_string(*member(context, "tool_defaults"), default_key);
-    if (requested.empty())
-        throw CheckError("no executable configured for " + kind + "; set " +
-                         override_name);
-    fs::path executable;
-    if (requested.find('/') != std::string::npos) {
-        executable = canonical_path(expand_home(requested));
-        if (!is_executable_file(executable))
-            throw CheckError("required tool is missing or not executable: " +
-                             requested);
+    std::vector<std::string> candidates;
+    if (!requested.empty()) {
+        candidates.push_back(requested);
     } else {
-        const std::optional<fs::path> located = which(requested);
-        if (!located.has_value())
-            throw CheckError("required tool is unavailable: " + requested +
-                             " (set " + override_name + ")");
-        executable = canonical_path(*located);
+        candidates = sibling_candidates(*member(context, "compiler"), default_key);
+        const std::string fallback = member_string(*member(context, "tool_defaults"), default_key);
+        if (!fallback.empty()) candidates.push_back(fallback);
+        const Value *capabilities = member(context, "capabilities");
+        const Value *frontends = capabilities != nullptr ? member(*capabilities, "frontend_tools") : nullptr;
+        const Value *tool = frontends != nullptr ? member(*frontends, default_key) : nullptr;
+        if (tool != nullptr) {
+            const std::string located = member_string(*tool, "located");
+            if (!located.empty()) candidates.push_back(located);
+        }
+        if (member_string(context, "platform_system") == "Darwin") {
+            const auto darwin = darwin_tool_candidates(default_key);
+            candidates.insert(candidates.end(), darwin.begin(), darwin.end());
+        }
     }
-    return {executable, override_name};
+    for (const std::string &candidate : candidates) {
+        const auto located = fs::path(candidate).is_absolute()
+            ? std::optional<fs::path>(candidate) : which(candidate);
+        if (located.has_value() && is_executable_file(*located))
+            return {absolute_lexical(*located), override_name};
+    }
+    if (!requested.empty()) throw CheckError("invalid " + kind + " override: " + requested);
+    std::string checked;
+    for (const std::string &candidate : candidates) {
+        if (!checked.empty()) checked += ", ";
+        const Value text = vstr(candidate);
+        checked += py_repr(&text);
+    }
+    throw CheckError("required tool " + kind + " was not found; checked [" + checked + "]");
 }
 
 fs::path temporary_database(const fs::path &build, const std::string &kind,
@@ -1185,12 +1478,26 @@ std::vector<std::string> gcc_context_args(const CompileEntry &entry,
     std::vector<std::string> output;
     static const std::set<std::string> accepted_pairs = {
         "-I", "-isystem", "-iquote", "-idirafter",
-        "-isysroot", "-D", "-U", "-include",
+        "-isysroot", "--sysroot", "-D", "-U", "-include", "-imacros", "-arch",
     };
     static const std::vector<std::string> accepted_prefixes = {
-        "-I", "-D", "-U", "-isystem", "-isysroot", "-iquote", "-idirafter",
+        "-I", "-D", "-U", "-isystem", "-iquote", "-idirafter", "-imacros",
+        "-isysroot", "--sysroot=",
     };
     std::size_t position = 1;
+    if (const Value *launcher = member(*member(context, "compiler"), "launcher")) {
+        if (const auto *items = std::get_if<Array>(&launcher->data)) position += items->size();
+        else if (const auto *text = std::get_if<std::string>(&launcher->data);
+                 text != nullptr && !text->empty()) ++position;
+    }
+    const std::optional<fs::path> configured = configured_sysroot(context);
+    const auto check_sysroot = [&](const std::string &value) {
+        const fs::path selected = canonical_path(value, &directory);
+        if (!configured.has_value() || selected != *configured)
+            throw CheckError("secondary-frontend compile context selects a sysroot the build "
+                             "context did not record: selected=" + selected.string() +
+                             ", configured=" + (configured.has_value() ? configured->string() : "None"));
+    };
     while (position < argv.size()) {
         const std::string &argument = argv[position];
         if (argument == "-o" || argument == "-MF" || argument == "-MT" ||
@@ -1209,6 +1516,8 @@ std::vector<std::string> gcc_context_args(const CompileEntry &entry,
             continue;
         }
         if (accepted_pairs.contains(argument) && position + 1 < argv.size()) {
+            if (argument == "-isysroot" || argument == "--sysroot")
+                check_sysroot(argv[position + 1]);
             output.push_back(argument);
             output.push_back(argv[position + 1]);
             position += 2;
@@ -1217,6 +1526,8 @@ std::vector<std::string> gcc_context_args(const CompileEntry &entry,
         bool prefixed = false;
         for (const std::string &prefix: accepted_prefixes) {
             if (argument.starts_with(prefix) && argument != prefix) {
+                if (prefix == "-isysroot" || prefix == "--sysroot=")
+                    check_sysroot(argument.substr(prefix.size()));
                 output.push_back(argument);
                 prefixed = true;
                 break;
@@ -1227,10 +1538,21 @@ std::vector<std::string> gcc_context_args(const CompileEntry &entry,
             continue;
         }
         static const std::set<std::string> accepted_flags = {
-            "-pthread", "-fPIC", "-fpic", "-ffp-contract=off",
+            "-pthread", "-fPIC", "-fpic", "-fPIE", "-fpie", "-fno-common",
             "-fvisibility=hidden", "-fvisibility-inlines-hidden",
+            "-fstack-protector", "-fstack-protector-strong", "-fstack-protector-all",
+            "-fno-omit-frame-pointer",
         };
-        if (accepted_flags.contains(argument)) output.push_back(argument);
+        static constexpr std::array<std::string_view, 14> flag_prefixes{
+            "-std=", "-ffp-contract=", "-fvisibility=", "-ftrivial-auto-var-init=",
+            "-fstrict-flex-arrays=", "-fcf-protection=", "-fabi-version=", "-march=",
+            "-mcpu=", "-mtune=", "-mabi=", "-mfpu=", "-mfloat-abi=", "-mbranch-protection=",
+        };
+        if (accepted_flags.contains(argument) ||
+            std::ranges::any_of(flag_prefixes, [&](std::string_view prefix) {
+                return argument.starts_with(prefix);
+            }))
+            output.push_back(argument);
         position += 1;
     }
     if (const Value *include_paths = member(context, "include_paths"))

@@ -174,12 +174,18 @@ def select_mujoco_library(directory: Path, system: str, version: str) -> Path:
 SYMBOL = re.compile(r"[A-Za-z_][A-Za-z0-9_$]*")
 
 _NUMERICS_BACKENDS = ("ACCELERATE", "NUMPY_OPENBLAS")
-_NUMERICS_OPS = ("ddot", "dgemv", "dgemm", "dgelsd")
+_NUMERICS_OPS = (
+    "ddot", "dgemv", "dgemm", "dgelsd", "dgesv", "dsyevd",
+    "ddot_ilp64", "zdotu_sub",
+)
 _NUMERICS_BLAS_OPS = ("ddot", "dgemv", "dgemm")
+_NUMERICS_BLAS_ILP64_OPS = ("ddot_ilp64", "zdotu_sub")
+_NUMERICS_LAPACK_OPS = ("dgelsd", "dgesv", "dsyevd")
 # The qualified integer widths per backend: Darwin keeps Accelerate's legacy
-# 32-bit CBLAS with the 64-bit NEWLAPACK DGELSD; the Linux wheel provider is
-# ILP64 on both interfaces. No other profile is qualified — an LP64 or mixed
-# record is a hard failure, never reinterpreted.
+# 32-bit CBLAS ops with 64-bit NEWLAPACK LAPACK. The separate ILP64 BLAS class
+# is always 64-bit, including Darwin; blas_integer_bits describes legacy
+# _NUMERICS_BLAS_OPS only. The Linux wheel provider is ILP64 throughout.
+# No other profile is qualified — an LP64 or mixed record fails closed.
 _NUMERICS_WIDTHS = {"ACCELERATE": (32, 64), "NUMPY_OPENBLAS": (64, 64)}
 _NUMERICS_ROLES = ("blas", "lapack", "blas_lapack")
 _NUMERICS_IDENTITY_KINDS = ("file", "apple-system")
@@ -233,12 +239,39 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _validate_numerics_op_symbol(backend: str, op: str, name: str) -> None:
+    """Pin both operation and integer ABI before accepting a provider name."""
+    stem = op.removesuffix("_ilp64")
+    if backend == "NUMPY_OPENBLAS":
+        if op in (*_NUMERICS_BLAS_OPS, *_NUMERICS_BLAS_ILP64_OPS):
+            expected = f"scipy_cblas_{stem}64_"
+            interface = "scipy-openblas ILP64 CBLAS spelling"
+        else:
+            expected = f"scipy_{op}_64_"
+            interface = "scipy-openblas ILP64 Fortran spelling"
+    elif op in _NUMERICS_BLAS_OPS:
+        expected = f"cblas_{op}"
+        interface = "qualified legacy 32-bit CBLAS interface"
+    elif op in _NUMERICS_BLAS_ILP64_OPS:
+        expected = f"cblas_{stem}$NEWLAPACK$ILP64"
+        interface = "Accelerate NEWLAPACK ILP64 CBLAS interface"
+    else:
+        expected = f"{op}$NEWLAPACK$ILP64"
+        interface = "Accelerate NEWLAPACK ILP64 interface"
+    if name != expected:
+        raise ValueError(
+            f"numerics symbol {name!r} for '{op}' is not the {interface}: "
+            f"expected {expected!r}; it cannot back the qualified integer ABI"
+        )
+
+
 def validate_numerics(value: dict) -> dict:
     """Validate a ``numerics`` record; return it unchanged.
 
     Pure metadata validation — no symbol is invoked and nothing is executed
     here. Fail-closed on: unknown backend, an unqualified integer width
-    (BLAS not matching the backend's pinned width, LAPACK not 64-bit),
+    (legacy BLAS not matching the backend's pinned width, LAPACK not 64-bit;
+    _NUMERICS_BLAS_ILP64_OPS are 64-bit on every backend),
     missing/duplicate/unsafe symbol names, library paths outside the
     recorded NumPy distribution, fabricated digests, apple-system entries
     carrying a file hash, and threading records without a positive count.
@@ -294,57 +327,19 @@ def validate_numerics(value: dict) -> dict:
         missing = sorted(set(_NUMERICS_OPS) - symbol_keys)
         extra = sorted(symbol_keys - set(_NUMERICS_OPS))
         raise ValueError(
-            "numerics.symbols must map exactly the four qualified "
+            f"numerics.symbols must map exactly the {len(_NUMERICS_OPS)} qualified "
             f"operations {_NUMERICS_OPS}; missing={missing} extra={extra}"
         )
     accepted = {
         op: checked_symbol(symbols[op]) for op in _NUMERICS_OPS
     }
-    if backend == "NUMPY_OPENBLAS":
-        for op in _NUMERICS_BLAS_OPS:
-            name = accepted[op]
-            if not (
-                name.startswith("scipy_cblas_") and name.endswith("64_")
-            ):
-                raise ValueError(
-                    f"numerics symbol {name!r} for '{op}' is not the "
-                    "scipy-openblas ILP64 CBLAS spelling "
-                    "(scipy_cblas_<op>64_); it cannot back a 64-bit "
-                    "integer ABI claim"
-                )
-        lapack_name = accepted["dgelsd"]
-        if not (
-            lapack_name.startswith("scipy_")
-            and lapack_name.endswith("_64_")
-            and "cblas" not in lapack_name.lower()
-            and "lapacke" not in lapack_name.lower()
-        ):
-            raise ValueError(
-                f"numerics symbol {lapack_name!r} for 'dgelsd' is not the "
-                "scipy-openblas ILP64 Fortran spelling (scipy_<op>_64_); "
-                "it cannot back a 64-bit integer ABI claim"
-            )
-    else:  # ACCELERATE
-        for op in _NUMERICS_BLAS_OPS:
-            name = accepted[op]
-            if not name.startswith("cblas_") or "NEWLAPACK" in name:
-                raise ValueError(
-                    f"numerics symbol {name!r} for '{op}' is not the "
-                    "qualified legacy 32-bit CBLAS interface — a NEWLAPACK "
-                    "variant claims a different integer ABI"
-                )
-        lapack_name = accepted["dgelsd"]
-        if "NEWLAPACK" not in lapack_name or "ILP64" not in lapack_name:
-            raise ValueError(
-                f"numerics symbol {lapack_name!r} for 'dgelsd' is not the "
-                "Accelerate NEWLAPACK ILP64 interface — an unmarked symbol "
-                "would carry the legacy 32-bit integer ABI"
-            )
+    for op, name in accepted.items():
+        _validate_numerics_op_symbol(backend, op, name)
 
     imports = _require_object(value, "numpy_imports")
     if set(imports) != set(_NUMERICS_OPS):
         raise ValueError(
-            "numerics.numpy_imports must map exactly the four qualified "
+            f"numerics.numpy_imports must map exactly the {len(_NUMERICS_OPS)} qualified "
             f"operations {_NUMERICS_OPS}"
         )
     for op in _NUMERICS_OPS:
@@ -356,6 +351,11 @@ def validate_numerics(value: dict) -> dict:
             )
         for name in listed:
             checked_symbol(name)
+        if op not in _NUMERICS_BLAS_OPS and accepted[op] not in listed:
+            raise ValueError(
+                f"numerics symbol {accepted[op]!r} for '{op}' is not one "
+                "of NumPy's own imports for that operation"
+            )
 
     library_paths = value.get("library_paths")
     if not isinstance(library_paths, list) or not library_paths:
@@ -732,7 +732,7 @@ _NUMPY_INSTALL_INSTRUCTION = (
 # legacy Fortran adds a trailing underscore. Matching is anchored at the end
 # so kernel names like ``ddot_k_NEOVERSEN1`` or ``dgemmt`` never qualify.
 _OP_SYMBOL_TAIL = re.compile(
-    r"(ddot|dgemv|dgemm|dgelsd)"
+    r"(ddot|dgemv|dgemm|dgelsd|dgesv|dsyevd|zdotu_sub)"
     r"(?:\$NEWLAPACK\$ILP64|\$NEWLAPACK|_64_|64_|_)?$"
 )
 
@@ -877,7 +877,7 @@ def _numpy_extension_imports(
     """Which BLAS/LAPACK entry points NumPy's own extension images import.
 
     Evidence-driven symbol derivation: every ``*.so`` under the installed
-    NumPy package is scanned for undefined ddot/dgemv/dgemm/dgelsd imports —
+    NumPy package is scanned for the qualified BLAS/LAPACK imports —
     the accepted names are what NumPy actually calls, not what a table of
     constants guesses.
     """
@@ -898,7 +898,14 @@ def _numpy_extension_imports(
     for name in undefined:
         match = _OP_SYMBOL_TAIL.search(name)
         if match is not None:
-            per_op[match.group(1)].add(name)
+            op = match.group(1)
+            per_op[op].add(name)
+            # NumPy's ILP64 ddot import qualifies the raw-fold face too.
+            # Do not let an LP64 import stand in for its 64-bit ABI.
+            if op == "ddot" and name in (
+                "cblas_ddot$NEWLAPACK$ILP64", "scipy_cblas_ddot64_"
+            ):
+                per_op["ddot_ilp64"].add(name)
     return {op: sorted(names) for op, names in per_op.items()}
 
 
@@ -1028,15 +1035,24 @@ def _numerics_abi_probe_source(backend: str, symbols: dict) -> str:
 #include <stdlib.h>
 
 typedef {blas_int} blas_int;
+typedef int64_t blas64_int;
 typedef int64_t lapack_int;
 _Static_assert(sizeof(blas_int) == {blas_bits},
                "BLAS integer width does not match the qualified ABI");
 _Static_assert(sizeof(lapack_int) == 8,
                "LAPACK integer width does not match the qualified ABI");
+_Static_assert(sizeof(blas64_int) == 8,
+               "ILP64 dot integer width must remain 64-bit on every backend");
 
 extern double probe_ddot(blas_int n, const double *x, blas_int incx,
                          const double *y, blas_int incy)
     __asm__("{qualified['ddot']}");
+extern double probe_ddot_ilp64(blas64_int n, const double *x, blas64_int incx,
+                               const double *y, blas64_int incy)
+    __asm__("{qualified['ddot_ilp64']}");
+extern void probe_zdotu_sub(blas64_int n, const void *x, blas64_int incx,
+                             const void *y, blas64_int incy, void *out)
+    __asm__("{qualified['zdotu_sub']}");
 extern void probe_dgemv(blas_int order, blas_int transa, blas_int m,
                         blas_int n, double alpha, const double *a,
                         blas_int lda, const double *x, blas_int incx,
@@ -1055,6 +1071,16 @@ extern void probe_dgelsd(const lapack_int *m, const lapack_int *n,
                          double *work, const lapack_int *lwork,
                          lapack_int *iwork, lapack_int *info)
     __asm__("{qualified['dgelsd']}");
+extern void probe_dgesv(const lapack_int *n, const lapack_int *nrhs,
+                        double *a, const lapack_int *lda, lapack_int *ipiv,
+                        double *b, const lapack_int *ldb, lapack_int *info)
+    __asm__("{qualified['dgesv']}");
+extern void probe_dsyevd(const char *jobz, const char *uplo,
+                         const lapack_int *n, double *a, const lapack_int *lda,
+                         double *w, double *work, const lapack_int *lwork,
+                         lapack_int *iwork, const lapack_int *liwork,
+                         lapack_int *info)
+    __asm__("{qualified['dsyevd']}");
 
 static int failures = 0;
 static void check(int ok, const char *name) {{
@@ -1069,6 +1095,12 @@ int main(void) {{
     double x3[3] = {{1., 2., 3.}};
     double y3[3] = {{4., 5., 6.}};
     check(probe_ddot(3, x3, 1, y3, 1) == 32., "ddot");
+    check(probe_ddot_ilp64(3, x3, 1, y3, 1) == 32., "ddot_ilp64");
+    /* Non-conjugating complex dot: -18 + 92i, exact in binary64. */
+    double zx[4] = {{1., 2., 5., 6.}}, zy[4] = {{3., 4., 7., 8.}};
+    double zout[2] = {{0., 0.}};
+    probe_zdotu_sub(2, zx, 1, zy, 1, zout);
+    check(zout[0] == -18. && zout[1] == 92., "zdotu_sub");
 
     /* rectangular dgemv, row-major 3x4 NoTrans: row sums {{10, 26, 42}} */
     double a34[12] = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
@@ -1100,10 +1132,18 @@ int main(void) {{
                  &work_size, &lwork, &iwork_size, &info);
     check(info == 0, "dgelsd.workspace_query");
     check(work_size > 0. && iwork_size > 0, "dgelsd.workspace_sizes");
+    if (info != 0 || !isfinite(work_size) || work_size < 1. ||
+        work_size > 10000000. || iwork_size < 1 || iwork_size > 10000000) {{
+        return 1;
+    }}
     lwork = (lapack_int) work_size;
     double *work = malloc(sizeof(double) * (size_t) lwork);
     lapack_int *iwork = malloc(sizeof(lapack_int) * (size_t) iwork_size);
     check(work != NULL && iwork != NULL, "dgelsd.workspace_alloc");
+    if (work == NULL || iwork == NULL) {{
+        free(work); free(iwork);
+        return 1;
+    }}
     a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 2; a[4] = 4; a[5] = 6;
     b[0] = 3; b[1] = 6; b[2] = 9;
     info = 0; rank = 0;
@@ -1115,7 +1155,43 @@ int main(void) {{
           "dgelsd.solution");
     free(work);
     free(iwork);
+
+    /* DGESV: [[2,1],[1,3]] x = [4,7], exact solution [1,2]. */
+    lapack_int ns = 2, rhs = 1, ld = 2, solve_info = -1;
+    lapack_int pivots[2] = {{0, 0}};
+    double solve_a[4] = {{2., 1., 1., 3.}}, solve_b[2] = {{4., 7.}};
+    probe_dgesv(&ns, &rhs, solve_a, &ld, pivots, solve_b, &ld, &solve_info);
+    check(solve_info == 0 && solve_b[0] == 1. && solve_b[1] == 2., "dgesv");
+
+    /* DSYEVD: symmetric [[2,1],[1,2]], eigenvalues 1 and 3. */
+    double eigen_a[4] = {{2., 1., 1., 2.}}, eigenvalues[2] = {{0., 0.}};
+    double eigen_query = 0.;
+    lapack_int eigen_lwork = -1, eigen_liwork = -1, eigen_iquery = 0;
+    lapack_int eigen_info = -1;
+    probe_dsyevd("V", "L", &ns, eigen_a, &ld, eigenvalues, &eigen_query,
+                  &eigen_lwork, &eigen_iquery, &eigen_liwork, &eigen_info);
+    check(eigen_info == 0, "dsyevd.workspace_query");
+    if (eigen_info != 0 || !isfinite(eigen_query) || eigen_query < 1. ||
+        eigen_query > 10000000. || eigen_iquery < 1 || eigen_iquery > 10000000) {{
+        return 1;
+    }}
+    eigen_lwork = (lapack_int) eigen_query;
+    eigen_liwork = eigen_iquery;
+    double *eigen_work = malloc(sizeof(double) * (size_t) eigen_lwork);
+    lapack_int *eigen_iwork = malloc(sizeof(lapack_int) * (size_t) eigen_liwork);
+    check(eigen_work != NULL && eigen_iwork != NULL, "dsyevd.workspace_alloc");
+    if (eigen_work == NULL || eigen_iwork == NULL) {{
+        free(eigen_work); free(eigen_iwork);
+        return 1;
+    }}
+    probe_dsyevd("V", "L", &ns, eigen_a, &ld, eigenvalues, eigen_work,
+                  &eigen_lwork, eigen_iwork, &eigen_liwork, &eigen_info);
+    check(eigen_info == 0 && fabs(eigenvalues[0] - 1.) < 1e-14 &&
+          fabs(eigenvalues[1] - 3.) < 1e-14, "dsyevd");
+    free(eigen_work);
+    free(eigen_iwork);
     printf("BIKE-ABI-OK ddot=32 dgemv=[10 26 42] dgemm=[4 5;10 11] "
+           "ddot_ilp64=32 zdotu_sub=[-18 92] dgesv=[1 2] dsyevd=[1 3] "
            "dgelsd_rank=%lld x=[%g %g]\\n",
            (long long) rank, b[0], b[1]);
     return failures ? 1 : 0;
@@ -1472,8 +1548,8 @@ def _discover_numpy_provider_linux(np, threadpoolctl, package: Path,
                 "operation"
             )
         preferred = (
-            f"scipy_cblas_{op}64_"
-            if op in _NUMERICS_BLAS_OPS
+            f"scipy_cblas_{op.removesuffix('_ilp64')}64_"
+            if op in (*_NUMERICS_BLAS_OPS, *_NUMERICS_BLAS_ILP64_OPS)
             else f"scipy_{op}_64_"
         )
         if preferred in candidates:
@@ -1492,6 +1568,7 @@ def _discover_numpy_provider_linux(np, threadpoolctl, package: Path,
                 "spelling cannot back the 64-bit integer ABI profile"
             )
         symbols[op] = checked_symbol(accepted)
+        _validate_numerics_op_symbol("NUMPY_OPENBLAS", op, symbols[op])
 
     # Foreign-code boundary: the query symbols are regex-validated AND
     # verified members of the provider's export table before ctypes sees
@@ -1708,30 +1785,40 @@ def _discover_numpy_provider_darwin(np, threadpoolctl, package: Path,
         "dgemv": "cblas_dgemv",
         "dgemm": "cblas_dgemm",
         "dgelsd": "dgelsd$NEWLAPACK$ILP64",
+        "dgesv": "dgesv$NEWLAPACK$ILP64",
+        "dsyevd": "dsyevd$NEWLAPACK$ILP64",
+        "ddot_ilp64": "cblas_ddot$NEWLAPACK$ILP64",
+        "zdotu_sub": "cblas_zdotu_sub$NEWLAPACK$ILP64",
     }
-    for op in _NUMERICS_BLAS_OPS:
+    for op in (*_NUMERICS_BLAS_OPS, *_NUMERICS_BLAS_ILP64_OPS):
         if symbols[op] not in blas_exports:
             raise ValueError(
                 f"Accelerate's libBLAS does not export the qualified "
-                f"legacy CBLAS symbol {symbols[op]!r} — exports check "
+                f"CBLAS symbol {symbols[op]!r} — exports check "
                 f"against {blas_image}"
             )
-    if symbols["dgelsd"] not in lapack_exports:
-        raise ValueError(
-            "Accelerate's libLAPACK does not export the qualified ILP64 "
-            f"symbol {symbols['dgelsd']!r} — exports check against "
-            f"{lapack_image}"
-        )
+    for op in _NUMERICS_LAPACK_OPS:
+        if symbols[op] not in lapack_exports:
+            raise ValueError(
+                "Accelerate's libLAPACK does not export the qualified ILP64 "
+                f"symbol {symbols[op]!r} — exports check against "
+                f"{lapack_image}"
+            )
 
     imports = _numpy_extension_imports(package, "Darwin")
     for op in _NUMERICS_OPS:
-        available = lapack_exports if op == "dgelsd" else blas_exports
+        available = lapack_exports if op in _NUMERICS_LAPACK_OPS else blas_exports
         missing = [name for name in imports.get(op, []) if name not in available]
         if missing:
             raise ValueError(
                 f"NumPy imports {missing} for '{op}' which the loaded "
                 "Accelerate does not export — the wheel and the system "
                 "provider disagree"
+            )
+        if op not in _NUMERICS_BLAS_OPS and symbols[op] not in imports[op]:
+            raise ValueError(
+                f"qualified Accelerate symbol {symbols[op]!r} for '{op}' "
+                "is not one of NumPy's own imports — refusing an unmeasured binding"
             )
 
     macos_build = _run_tool(["sw_vers", "-buildVersion"]).strip()
@@ -2292,7 +2379,7 @@ def validate_numerics_record_entry(key: str, entry: dict) -> dict:
         raise ValueError(
             f"{label} numerics.symbols must map exactly {_NUMERICS_OPS}")
     for op in _NUMERICS_OPS:
-        checked_symbol(symbols[op])
+        _validate_numerics_op_symbol(backend, op, checked_symbol(symbols[op]))
     _validate_record_library_paths(label, backend, numerics["library_paths"])
     interp = _require_object(numerics, "interp")
     if set(interp) != {"lowering"} or \

@@ -413,6 +413,35 @@ def test_sin_cos_edge_fixture(name):
     assert_bitwise_equal(got, expected, f"np.{name} edges")
 
 
+@pytest.mark.parametrize("name", ["sin", "cos"])
+def test_sin_cos_nonfinite_scalar_array_agreement(name):
+    """Phase 1.18's decision gate: a single native rule must satisfy both
+    scalar NumPy and its contiguous array path before any platform guard changes.
+    Run with -s to retain the measured uint64 table in the evidence log.
+    """
+    oracle = getattr(np, name)
+    cases = []
+    for bits in (0x7FF0000000000000, 0xFFF0000000000000,
+                 0x7FF8000000000000, 0xFFF8000000000000):
+        value = _bits([bits])[0]
+        xs = np.full(64, value, dtype=np.float64)
+        with np.errstate(all="ignore"):
+            scalar = np.asarray([oracle(np.float64(value))], dtype=np.float64)
+            array = oracle(xs)
+        got = _contract(name, xs, xs[:0])
+        print(f"{name} input={bits:016x} scalar={int(scalar.view(np.uint64)[0]):016x} "
+              f"array={int(array.view(np.uint64)[0]):016x} "
+              f"native={int(got.view(np.uint64)[0]):016x}")
+        cases.append((bits, scalar, array, got))
+
+    # Keep the complete measured table even when the current native rule
+    # fails the first input: that evidence determines the platform branch.
+    for bits, scalar, array, got in cases:
+        assert_bitwise_equal(array, np.full(64, scalar[0], dtype=np.float64),
+                             f"np.{name} scalar/array nonfinite agreement {bits:016x}")
+        assert_bitwise_equal(got, array, f"np.{name} native nonfinite path {bits:016x}")
+
+
 def test_contract_rejects_unknown_name():
     with pytest.raises((ValueError, RuntimeError)):
         bike_native._debug_numeric_contract(

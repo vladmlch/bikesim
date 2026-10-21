@@ -66,7 +66,7 @@ function(bike_add_physics_research native_dir core_target)
     "${native_dir}/src/legacy/recorder.cpp"
     "${native_dir}/src/legacy/metrics.cpp")
   bike_startup_target_policy(bike_legacy "${native_dir}")
-  target_link_libraries(bike_legacy PUBLIC bike_initialization)
+  target_link_libraries(bike_legacy PUBLIC bike_initialization PRIVATE Bike::Numerics)
   target_link_libraries(bike-native-ride PRIVATE bike_legacy)
 
   add_library(bike_playground STATIC

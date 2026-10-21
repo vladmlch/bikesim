@@ -17,12 +17,13 @@
 // it, so `a @ b` yields +0.0 where the bare provider fold yields -0.0
 // (and quiets a signaling NaN). blas::ddot returns the seeded value —
 // it mirrors numpy's dot kernel, not the raw cblas symbol; every
-// production call site ports a numpy dot expression, so the seed lives
-// in this one wrapper rather than at ~30 call sites.
+// ordinary dot call uses this seed. The kinematics np_dot/np_norm helpers
+// keep their original bare ILP64 fold through the distinct ddot_raw face.
 //
 // Why no foreign declarations here: the CBLAS integer width is
-// platform-private. macOS links Accelerate's legacy 32-bit cblas_*;
-// Linux links the NumPy wheel's scipy-openblas ILP64 exports. Each
+// platform-private. macOS links Accelerate's legacy 32-bit cblas_* for
+// ddot/dgemv/dgemm; ddot_raw and zdotu_sub use NEWLAPACK ILP64 instead.
+// Linux links the NumPy wheel's scipy-openblas ILP64 exports throughout. Each
 // backend lives in exactly one translation unit
 // (src/platform/blas_accelerate.cpp / blas_numpy_openblas.cpp) that
 // carries the qualified foreign declarations, the compile-time signature
@@ -88,6 +89,16 @@ namespace blas {
     // cannot either. Defined in the one selected backend TU.
     [[nodiscard]] double ddot(int n, const double *x, int incx,
                               const double *y, int incy) noexcept;
+
+    // The bare ILP64 provider fold, without numpy's `0. +` seed. Geometry's
+    // np_dot/np_norm retain this entry point and its original result bits.
+    [[nodiscard]] double ddot_raw(int n, const double *x, int incx,
+                                  const double *y, int incy) noexcept;
+
+    // np.convolve's CDOUBLE_dot inner loop: unconjugated complex dot.
+    // x, y and out point to interleaved (real, imaginary) binary64 pairs.
+    void zdotu_sub(int n, const void *x, int incx, const void *y, int incy,
+                   void *out) noexcept;
 
     void dgemv(Order order, Transpose trans, int m, int n, double alpha,
                const double *a, int lda, const double *x, int incx,

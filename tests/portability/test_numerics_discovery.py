@@ -53,12 +53,20 @@ OPENBLAS_SYMBOLS = {
     "dgemv": "scipy_cblas_dgemv64_",
     "dgemm": "scipy_cblas_dgemm64_",
     "dgelsd": "scipy_dgelsd_64_",
+    "dgesv": "scipy_dgesv_64_",
+    "dsyevd": "scipy_dsyevd_64_",
+    "ddot_ilp64": "scipy_cblas_ddot64_",
+    "zdotu_sub": "scipy_cblas_zdotu_sub64_",
 }
 ACCELERATE_SYMBOLS = {
     "ddot": "cblas_ddot",
     "dgemv": "cblas_dgemv",
     "dgemm": "cblas_dgemm",
     "dgelsd": "dgelsd$NEWLAPACK$ILP64",
+    "dgesv": "dgesv$NEWLAPACK$ILP64",
+    "dsyevd": "dsyevd$NEWLAPACK$ILP64",
+    "ddot_ilp64": "cblas_ddot$NEWLAPACK$ILP64",
+    "zdotu_sub": "cblas_zdotu_sub$NEWLAPACK$ILP64",
 }
 ACCELERATE_BUILD_ID = "macos-26A434+accelerate-a697e7b98ff4356ca50764b38af1ccaa+sdk-26A425"
 ACCELERATE_BLAS_IMAGE = (
@@ -147,6 +155,10 @@ def _accelerate_record(tmp_path: Path) -> dict:
             "dgemv": ["cblas_dgemv$NEWLAPACK$ILP64"],
             "dgemm": ["cblas_dgemm$NEWLAPACK$ILP64"],
             "dgelsd": ["dgelsd$NEWLAPACK$ILP64"],
+            "dgesv": ["dgesv$NEWLAPACK$ILP64"],
+            "dsyevd": ["dsyevd$NEWLAPACK$ILP64"],
+            "ddot_ilp64": ["cblas_ddot$NEWLAPACK$ILP64"],
+            "zdotu_sub": ["cblas_zdotu_sub$NEWLAPACK$ILP64"],
         },
         "library_paths": [
             {
@@ -468,6 +480,36 @@ def test_symbol_names_must_be_checked_identifiers(tmp_path):
         validate_numerics(record)
 
 
+@pytest.mark.parametrize("record_factory", [_openblas_record, _accelerate_record])
+@pytest.mark.parametrize("operation", ["dgelsd", "dgesv", "dsyevd", "ddot_ilp64", "zdotu_sub"])
+def test_ilp64_symbol_must_be_a_numpy_import(tmp_path, record_factory, operation):
+    record = record_factory(tmp_path)
+    record["numpy_imports"][operation] = []
+    with pytest.raises(ValueError, match="NumPy's own imports"):
+        validate_numerics(record)
+
+
+@pytest.mark.parametrize("record_factory", [_openblas_record, _accelerate_record])
+def test_matching_integer_width_cannot_substitute_a_different_operation(tmp_path, record_factory):
+    record = record_factory(tmp_path)
+    record["symbols"]["dgesv"] = record["symbols"]["dsyevd"]
+    with pytest.raises(ValueError, match="dgesv"):
+        validate_numerics(record)
+
+
+def test_accelerate_raw_dot_cannot_use_the_legacy_ddot_abi(tmp_path):
+    record = _accelerate_record(tmp_path)
+    record["symbols"]["ddot_ilp64"] = "cblas_ddot"
+    with pytest.raises(ValueError, match="NEWLAPACK ILP64"):
+        validate_numerics(record)
+
+
+def test_accelerate_legacy_dot_keeps_its_separate_32_bit_contract(tmp_path):
+    record = _accelerate_record(tmp_path)
+    assert record["symbols"]["ddot"] not in record["numpy_imports"]["ddot"]
+    assert validate_numerics(record) is record
+
+
 def test_openblas_symbols_must_carry_the_ilp64_suffix(tmp_path):
     """An unsuffixed export name cannot back a 64-bit claim — the naming
     contract is part of the qualified profile."""
@@ -723,6 +765,13 @@ def test_abi_probe_source_uses_the_qualified_widths_and_symbols():
     assert '__asm__("scipy_cblas_dgemm64_")' in source
     assert '__asm__("scipy_dgelsd_64_")' in source
     assert "sizeof(blas_int) == 8" in source
+    assert "sizeof(blas64_int) == 8" in source
+    assert "probe_ddot_ilp64(blas64_int n" in source
+    assert "probe_zdotu_sub(blas64_int n" in source
+    for symbol in OPENBLAS_SYMBOLS.values():
+        assert f'__asm__("{symbol}")' in source
+    for operation in ("ddot_ilp64", "zdotu_sub", "dgesv", "dsyevd"):
+        assert f'"{operation}"' in source
 
 
 def test_abi_probe_source_darwin_uses_32_bit_blas_and_asm_labels():
@@ -732,6 +781,11 @@ def test_abi_probe_source_darwin_uses_32_bit_blas_and_asm_labels():
     assert "sizeof(lapack_int) == 8" in source
     assert '__asm__("_cblas_ddot")' in source
     assert '__asm__("_dgelsd$NEWLAPACK$ILP64")' in source
+    assert "typedef int64_t blas64_int;" in source
+    assert "probe_ddot_ilp64(blas64_int n" in source
+    assert "probe_zdotu_sub(blas64_int n" in source
+    for symbol in ACCELERATE_SYMBOLS.values():
+        assert f'__asm__("_{symbol}")' in source
 
 
 def test_abi_probe_source_rejects_unknown_backend_and_unsafe_names():
@@ -797,7 +851,7 @@ def test_probe_dependencies_reports_the_qualified_provider():
     else:
         assert numerics["blas_integer_bits"] == 64
         assert numerics["lapack_integer_bits"] == 64
-    assert set(numerics["symbols"]) == {"ddot", "dgemv", "dgemm", "dgelsd"}
+    assert set(numerics["symbols"]) == set(OPENBLAS_SYMBOLS)
     assert all(numerics["symbols"].values())
     assert numerics["threading"]["num_threads"] >= 1
     assert numerics["library_paths"]
@@ -1309,7 +1363,8 @@ def _measured_darwin_document(tmp_path: Path) -> dict:
     }
     numerics["threading"] = {"implementation": "accelerate", "num_threads": 5}
     numerics["interp"]["queries"] = 4096
-    numerics["numpy_imports"] = {"ddot": ["cblas_ddot$NEWLAPACK$ILP64"]}
+    # Retain all eight imported operations from _accelerate_record: this is
+    # a complete measured-document fixture, not a four-op legacy record.
     document["numerics"] = numerics
     return document
 
@@ -1503,6 +1558,7 @@ def test_committed_numerics_lock_is_a_valid_darwin_record():
     assert entry["numerics"]["numpy_version"] == REQUIRED_NUMPY_VERSION
     assert entry["numerics"]["interp"] == {"lowering": "contracted"}
     assert entry["numerics"]["multiply_broadcast"] == {"nan_winner": "scalar"}
+    assert entry["numerics"]["symbols"] == ACCELERATE_SYMBOLS
 
 
 def test_cli_rejects_output_combined_with_numerics_record(tmp_path):

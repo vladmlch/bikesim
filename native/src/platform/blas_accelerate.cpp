@@ -1,8 +1,7 @@
 // blas_accelerate.cpp — the Darwin backend for cblas_abi.hpp's typed
-// call face. macOS numpy links Apple Accelerate; the providers' legacy
-// cblas_* entry points are the SAME symbols the Python oracle's `@`/
-// `np.dot` resolve to, so invoking them preserves the bitwise contract
-// the shared header documents.
+// call face. macOS numpy links Apple Accelerate. The existing seeded dot,
+// dgemv and dgemm keep their qualified legacy 32-bit exports; geometry's
+// bare dot and complex convolution keep NumPy's NEWLAPACK ILP64 imports.
 //
 // Why hand-written declarations: <Accelerate/Accelerate.h> marks these
 // symbols deprecated (a hard error under -Werror) and its vecLib headers
@@ -10,7 +9,7 @@
 // verbatim copies of what cblas_abi.hpp declared before the backend
 // split — the classic 32-bit CBLAS integer ABI Accelerate exports. The
 // exact export spellings are also pinned by the dependency probe
-// (numerics.symbols: cblas_ddot/cblas_dgemv/cblas_dgemm).
+// (numerics.symbols: ddot/dgemv/dgemm plus the ILP64 ddot_ilp64/zdotu_sub).
 //
 // Exactly one backend TU is compiled per platform — BikeNumerics.cmake
 // selects this file only for the resolved ACCELERATE backend. The body is
@@ -21,6 +20,8 @@
 #if defined(__APPLE__)
 
 #include "../cblas_abi.hpp"
+
+#include "numerics_symbols.hpp"
 
 namespace blas {
     // Defines the header's declaration (cblas_abi.hpp); the name matches the
@@ -42,6 +43,15 @@ namespace blas {
                          int k, double alpha, const double *a, int lda,
                          const double *b, int ldb, double beta, double *c,
                          int ldc);
+
+        double backend_ddot_ilp64(std::int64_t n, const double *x,
+                                  std::int64_t incx, const double *y,
+                                  std::int64_t incy) noexcept
+            __asm__(BIKE_NUMERICS_SYM_DDOT_ILP64);
+        void backend_zdotu_sub(std::int64_t n, const void *x,
+                               std::int64_t incx, const void *y,
+                               std::int64_t incy, void *out) noexcept
+            __asm__(BIKE_NUMERICS_SYM_ZDOTU_SUB);
     }
 
     // Compile-time signature pins — a drifted prototype fails here before
@@ -63,6 +73,16 @@ namespace blas {
                                 const double *, int, const double *, int,
                                 double, double *, int)>,
         "cblas_abi: cblas_dgemm prototype drifted");
+    static_assert(
+        std::is_same_v<decltype(&backend_ddot_ilp64),
+                       double (*)(std::int64_t, const double *, std::int64_t,
+                                  const double *, std::int64_t) noexcept>,
+        "cblas_abi: ILP64 ddot prototype drifted");
+    static_assert(
+        std::is_same_v<decltype(&backend_zdotu_sub),
+                       void (*)(std::int64_t, const void *, std::int64_t,
+                                const void *, std::int64_t, void *) noexcept>,
+        "cblas_abi: ILP64 zdotu_sub prototype drifted");
 
     // Symbol-link controls: materializing each address in a constant
     // initializer gives every ODR-using TU a relocation for the symbol —
@@ -71,6 +91,8 @@ namespace blas {
     [[maybe_unused]] inline constexpr auto cblas_link_ddot = &cblas_ddot;
     [[maybe_unused]] inline constexpr auto cblas_link_dgemv = &cblas_dgemv;
     [[maybe_unused]] inline constexpr auto cblas_link_dgemm = &cblas_dgemm;
+    [[maybe_unused]] inline constexpr auto backend_link_ddot_ilp64 = &backend_ddot_ilp64;
+    [[maybe_unused]] inline constexpr auto backend_link_zdotu_sub = &backend_zdotu_sub;
 
     double ddot(int n, const double *x, int incx,
                 const double *y, int incy) noexcept {
@@ -83,6 +105,20 @@ namespace blas {
         // way the oracle does, so the wrapper below reproduces
         // `a @ b` bitwise where the bare provider call would not.
         return 0. + cblas_ddot(n, x, incx, y, incy);
+    }
+
+    double ddot_raw(int n, const double *x, int incx,
+                    const double *y, int incy) noexcept {
+        return backend_ddot_ilp64(static_cast<std::int64_t>(n), x,
+                                  static_cast<std::int64_t>(incx), y,
+                                  static_cast<std::int64_t>(incy));
+    }
+
+    void zdotu_sub(int n, const void *x, int incx, const void *y, int incy,
+                   void *out) noexcept {
+        backend_zdotu_sub(static_cast<std::int64_t>(n), x,
+                          static_cast<std::int64_t>(incx), y,
+                          static_cast<std::int64_t>(incy), out);
     }
 
     void dgemv(Order order, Transpose trans, int m, int n,

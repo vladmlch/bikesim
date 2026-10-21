@@ -90,38 +90,38 @@ struct Playground::Impl {
 Playground::Playground(std::unique_ptr<Impl> impl):impl_(std::move(impl)){}
 Playground::~Playground()=default;
 std::unique_ptr<Playground> make_playground(PlaygroundOptions options){auto impl=std::make_unique<Playground::Impl>(std::move(options));impl->load(impl->options.model_mode);return std::unique_ptr<Playground>(new Playground(std::move(impl)));}
-void Playground::set_model(std::string mode){auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.load(std::move(mode));}
-void Playground::reset(){auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.live();try{reset_stand(*p.state->model,*p.state->data,p.solver,p.state->rear_actuator,p.state->fork_actuator);}catch(const engine::EngineFailure&){p.state->poisoned=true;throw;}p.rear_mm=0.;p.fork_mm=0.;p.auto_sweep=false;++p.generation;}
+void Playground::set_model(std::string mode){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.load(std::move(mode));}
+void Playground::reset(){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.live();try{reset_stand(*p.state->model,*p.state->data,p.solver,p.state->rear_actuator,p.state->fork_actuator);}catch(const engine::EngineFailure&){p.state->poisoned=true;throw;}p.rear_mm=0.;p.fork_mm=0.;p.auto_sweep=false;++p.generation;}
 void Playground::step(){step_at(wall_time());}
 void Playground::step_at(double now){
     if(!std::isfinite(now))throw std::invalid_argument("sweep clock must be finite");
     auto& p=*impl_;
-    std::scoped_lock const lock(p.mutex);
+    std::scoped_lock<std::recursive_mutex> const lock(p.mutex);
     p.live();
     while(!p.pending_keys.empty()){const int key=p.pending_keys.front();p.pending_keys.pop_front();(void)handle_key(key,now);}
     double rear=p.rear_mm,fork=p.fork_mm;if(p.auto_sweep){const double phase=(numeric::np_sin(2.*std::numbers::pi*p.sweep_frequency*(now-p.sweep_start)-std::numbers::pi/2.)+1.)/2.;rear=phase*180.;fork=phase*180.;}
     try{apply_stand_targets(*p.state->model,*p.state->data,p.solver,p.state->rear_actuator,p.state->fork_actuator,rear,fork);p.rear_mm=rear;p.fork_mm=fork;engine::step(p.state->model.get(),p.state->data.get());}
     catch(const engine::EngineFailure&){p.state->poisoned=true;throw;}
 }
-void Playground::set_travel(double rear,double fork){if(!std::isfinite(rear)||!std::isfinite(fork))throw std::invalid_argument("stand targets must be finite");auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.rear_mm=std::clamp(rear,0.,180.);p.fork_mm=std::clamp(fork,0.,180.);p.auto_sweep=false;}
-void Playground::set_auto_sweep(bool enabled,double now,double frequency){if(!std::isfinite(now)||!std::isfinite(frequency)||frequency<=0.)throw std::invalid_argument("sweep requires finite clock and positive frequency");auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.auto_sweep=enabled;p.sweep_start=now;p.sweep_frequency=frequency;}
-bool Playground::toggle_rider(){auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.live();p.options.include_rider=!p.options.include_rider;try{p.apply_rider(*p.state);}catch(const engine::EngineFailure&){p.state->poisoned=true;throw;}++p.generation;return p.options.include_rider;}
-bool Playground::toggle_debug_markers(){auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.live();p.debug_markers=!p.debug_markers;p.apply_markers(*p.state);try{engine::forward(p.state->model.get(),p.state->data.get());}catch(const engine::EngineFailure&){p.state->poisoned=true;throw;}return p.debug_markers;}
-void Playground::set_fork_pressure(double psi){auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.air.set_pressure_psi(psi);}
-void Playground::set_fork_tokens(int tokens){auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.air.set_tokens(tokens);}
-void Playground::set_fork_clicks(std::optional<int> hsc,std::optional<int> lsc,std::optional<int> rebound){auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.suspension.fork_damper.set_clicks(hsc,lsc,rebound);}
-void Playground::set_shock_clicks(std::optional<int> hsc,std::optional<int> lsc,std::optional<int> rebound,std::optional<int> hbo,std::optional<bool> lockout){auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.suspension.shock_damper.set_clicks(hsc,lsc,rebound,hbo,lockout);}
+void Playground::set_travel(double rear,double fork){if(!std::isfinite(rear)||!std::isfinite(fork))throw std::invalid_argument("stand targets must be finite");auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.rear_mm=std::clamp(rear,0.,180.);p.fork_mm=std::clamp(fork,0.,180.);p.auto_sweep=false;}
+void Playground::set_auto_sweep(bool enabled,double now,double frequency){if(!std::isfinite(now)||!std::isfinite(frequency)||frequency<=0.)throw std::invalid_argument("sweep requires finite clock and positive frequency");auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.auto_sweep=enabled;p.sweep_start=now;p.sweep_frequency=frequency;}
+bool Playground::toggle_rider(){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.live();p.options.include_rider=!p.options.include_rider;try{p.apply_rider(*p.state);}catch(const engine::EngineFailure&){p.state->poisoned=true;throw;}++p.generation;return p.options.include_rider;}
+bool Playground::toggle_debug_markers(){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.live();p.debug_markers=!p.debug_markers;p.apply_markers(*p.state);try{engine::forward(p.state->model.get(),p.state->data.get());}catch(const engine::EngineFailure&){p.state->poisoned=true;throw;}return p.debug_markers;}
+void Playground::set_fork_pressure(double psi){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.air.set_pressure_psi(psi);}
+void Playground::set_fork_tokens(int tokens){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.air.set_tokens(tokens);}
+void Playground::set_fork_clicks(std::optional<int> hsc,std::optional<int> lsc,std::optional<int> rebound){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.suspension.fork_damper.set_clicks(hsc,lsc,rebound);}
+void Playground::set_shock_clicks(std::optional<int> hsc,std::optional<int> lsc,std::optional<int> rebound,std::optional<int> hbo,std::optional<bool> lockout){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.suspension.shock_damper.set_clicks(hsc,lsc,rebound,hbo,lockout);}
 void Playground::apply_preset(model::DamperPreset preset){
     if(preset!=model::DamperPreset::base&&preset!=model::DamperPreset::plush&&preset!=model::DamperPreset::enduro&&preset!=model::DamperPreset::park&&preset!=model::DamperPreset::custom)
         throw std::invalid_argument("unknown suspension preset");
-    auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.suspension.apply_preset(preset);
+    auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.suspension.apply_preset(preset);
 }
-model::DamperPreset Playground::cycle_preset(bool forward){auto& p=*impl_;std::scoped_lock const lock(p.mutex);return p.suspension.cycle_preset(forward);}
-void Playground::set_camera_mode(std::string_view mode){auto& p=*impl_;std::scoped_lock const lock(p.mutex);if(mode=="2d"||mode=="3d")p.camera_mode=mode;}
-void Playground::enqueue_key(int key){auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.pending_keys.push_back(key);}
+model::DamperPreset Playground::cycle_preset(bool forward){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);return p.suspension.cycle_preset(forward);}
+void Playground::set_camera_mode(std::string_view mode){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);if(mode=="2d"||mode=="3d")p.camera_mode=mode;}
+void Playground::enqueue_key(int key){auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.pending_keys.push_back(key);}
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 bool Playground::handle_key(int key,double now){
-    auto& p=*impl_;std::scoped_lock const lock(p.mutex);if(key>='a'&&key<='z')key-=32;
+    auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);if(key>='a'&&key<='z')key-=32;
     const auto& fd=p.suspension.fork_damper;const auto& sd=p.suspension.shock_damper;
     switch(key){
     case 'B':(void)toggle_rider();break;case 'C':set_camera_mode(p.camera_mode=="2d"?"3d":"2d");break;
@@ -145,9 +145,9 @@ bool Playground::handle_key(int key,double now){
     default:return false;
     }return true;
 }
-io::Value Playground::telemetry()const{const auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.live();TelemetryProvider const provider(p.options.specs,p.solver,p.air,p.suspension);return provider.compute(*p.state->model,*p.state->data,p.rear_mm,p.options.include_rider,p.state->handles,p.camera_mode);}
+io::Value Playground::telemetry()const{const auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.live();TelemetryProvider const provider(p.options.specs,p.solver,p.air,p.suspension);return provider.compute(*p.state->model,*p.state->data,p.rear_mm,p.options.include_rider,p.state->handles,p.camera_mode);}
 PlaygroundSnapshot Playground::snapshot()const{
-    const auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.live();const auto& m=*p.state->model;const auto& d=*p.state->data;
+    const auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.live();const auto& m=*p.state->model;const auto& d=*p.state->data;
     PlaygroundSnapshot out;out.time_s=d.time;out.target_rear_travel_mm=p.rear_mm;out.target_fork_travel_mm=p.fork_mm;out.include_rider=p.options.include_rider;out.auto_sweep=p.auto_sweep;out.debug_markers=p.debug_markers;out.show_telemetry=p.show_telemetry;out.generation=p.generation;out.model_mode=p.options.model_mode;out.camera_mode=p.camera_mode;
     const auto copy=[](auto span){return std::vector<double>(span.begin(),span.end());};out.qpos=copy(std::views::counted(d.qpos,m.nq));out.qvel=copy(std::views::counted(d.qvel,m.nv));
     // Python playground.py only commands the two stand servos; the wheel
@@ -163,7 +163,7 @@ PlaygroundSnapshot Playground::snapshot()const{
         copy(std::views::counted(m.tendon_lengthspring,2*m.ntendon)),copy(std::views::counted(m.tendon_range,2*m.ntendon))};
     out.telemetry=telemetry();return out;
 }
-runtime::ModelImage Playground::model_image()const{const auto& p=*impl_;std::scoped_lock const lock(p.mutex);p.live();return initialization::capture_model_image(*p.state->model);}
+runtime::ModelImage Playground::model_image()const{const auto& p=*impl_;std::scoped_lock<std::recursive_mutex> const lock(p.mutex);p.live();return initialization::capture_model_image(*p.state->model);}
 void step(Playground& playground){playground.step();}
 void reset(Playground& playground){playground.reset();}
 } // namespace bike::legacy

@@ -3,14 +3,15 @@
 // system np.linalg.solve(A, b) where A = column_stack([d1, -d2]).
 //
 // Bitwise contract: np.linalg.solve on a 2x2 double matrix dispatches
-// to Accelerate's _dgesv$NEWLAPACK$ILP64 — the exact symbol the
+// to numeric_backend::dgesv — the exact provider symbol the
 // oracle's linalg/_umath_linalg.*.so imports (nm-verified) — through
-// the same Fortran column-major ABI with __LAPACK_int = long. A
+// the same Fortran column-major ABI with 64-bit integer arguments. A
 // nonzero info is the LinAlgError path the source maps to np.nan
 // (canonical quiet NaN 0x7ff8000000000000). Verified bitwise against
 // np.linalg.solve on 150,000 random well/ill-conditioned 2x2 systems:
 // 0 mismatches, including singular detections.
 #include "solver.hpp"
+#include "../lapack_abi.hpp"
 
 #include <array>
 #include <limits>
@@ -18,15 +19,6 @@
 namespace bike::kinematics {
 
 namespace {
-    // _dgesv$NEWLAPACK$ILP64 — Fortran ABI, every argument by pointer,
-    // ILP64 `long` integers (the __LAPACK_int width this platform's
-    // Accelerate headers declare under ACCELERATE_LAPACK_ILP64). Same
-    // declaration convention as the CBLAS twin in geometry/specs.hpp.
-    extern "C" void dgesv_ilp64(const long *n, const long *nrhs,
-                                double *a, const long *lda, long *ipiv,
-                                double *b, const long *ldb, long *info)
-            __asm__("_dgesv$NEWLAPACK$ILP64");
-
     [[nodiscard]] inline double np_nan() noexcept {
         return std::numeric_limits<double>::quiet_NaN();
     }
@@ -59,14 +51,14 @@ InstantCenters compute_instant_centers(const HorstLinkageSolver &solver,
         std::array<double, 4> a{d1[0], d1[1], -d2[0], -d2[1]};
         std::array<double, 2> b{p5_i[0] - p0_i[0],
                                 p5_i[1] - p0_i[1]};
-        const long n = 2;
-        const long nrhs = 1;
-        const long lda = 2;
-        const long ldb = 2;
-        long info = 0;
-        std::array<long, 2> ipiv{0, 0};
-        dgesv_ilp64(&n, &nrhs, a.data(), &lda, ipiv.data(), b.data(),
-                    &ldb, &info);
+        const numeric_backend::integer n = 2;
+        const numeric_backend::integer nrhs = 1;
+        const numeric_backend::integer lda = 2;
+        const numeric_backend::integer ldb = 2;
+        numeric_backend::integer info = 0;
+        std::array<numeric_backend::integer, 2> ipiv{0, 0};
+        numeric_backend::dgesv(&n, &nrhs, a.data(), &lda, ipiv.data(), b.data(),
+                               &ldb, &info);
 
         if (info != 0) {
             // np.linalg.LinAlgError -> append np.nan (canonical qnan).

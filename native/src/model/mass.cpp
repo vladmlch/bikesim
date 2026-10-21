@@ -12,6 +12,7 @@
 
 #include "../diag.hpp"
 #include "../io/value.hpp" // detail::float_from_lexeme (header-only)
+#include "../lapack_abi.hpp"
 #include "../numeric_sum.hpp"
 #include "../writers/pyfloat.hpp"
 #include "checks.hpp"
@@ -214,50 +215,31 @@ consume_digits(std::string_view s, std::size_t &pos, std::string &clean) {
 }
 
 // ---------------------------------------------------------------------
-// np.linalg.eigvalsh on a 3x3 symmetric matrix — Accelerate's
-// dsyevd$NEWLAPACK$ILP64, called exactly like numpy's eigvalsh gufunc
+// np.linalg.eigvalsh on a 3x3 symmetric matrix — numeric_backend::dsyevd,
+// called exactly like numpy's eigvalsh gufunc through its ILP64 provider
 // (JOBZ='N', UPLO='L', an LWORK=-1 workspace query first, then the real
 // call with LWORK == the queried optimum). numpy copies the C-order
 // input verbatim into the Fortran buffer, so LAPACK sees A^T —
 // identical for the symmetric inputs this boundary admits.
-using lapack_int = long; // __LAPACK_int under ACCELERATE_LAPACK_ILP64
-extern "C" void dsyevd_ilp64(const char *jobz, const char *uplo,
-                             const lapack_int *n, double *a,
-                             const lapack_int *lda, double *w,
-                             double *work, const lapack_int *lwork,
-                             lapack_int *iwork, const lapack_int *liwork,
-                             lapack_int *info)
-    __asm__("_dsyevd$NEWLAPACK$ILP64");
-static_assert(sizeof(long) == 8,
-              "dsyevd ILP64 requires a 64-bit long (__LAPACK_int)");
-static_assert(
-        std::is_same_v<decltype(&dsyevd_ilp64),
-                       void (*)(const char *, const char *,
-                                const lapack_int *, double *,
-                                const lapack_int *, double *, double *,
-                                const lapack_int *, lapack_int *,
-                                const lapack_int *, lapack_int *)>,
-        "dsyevd ILP64 prototype drifted");
-
 [[nodiscard]] std::array<double, 3> eigvalsh3(const Mat3 &tensor) {
     std::array<double, 9> a = tensor; // Fortran-order copy == A^T == A.
     std::array<double, 3> w{};
-    const lapack_int n = 3, lda = 3;
-    lapack_int info = 0;
+    const numeric_backend::integer n = 3, lda = 3;
+    numeric_backend::integer info = 0;
     const char jobz = 'N', uplo = 'L';
-    lapack_int lwork = -1, liwork = -1;
+    numeric_backend::integer lwork = -1, liwork = -1;
     double work_query = 0.0;
-    lapack_int iwork_query = 0;
-    dsyevd_ilp64(&jobz, &uplo, &n, a.data(), &lda, w.data(), &work_query,
-                 &lwork, &iwork_query, &liwork, &info);
+    numeric_backend::integer iwork_query = 0;
+    numeric_backend::dsyevd(&jobz, &uplo, &n, a.data(), &lda, w.data(), &work_query,
+                            &lwork, &iwork_query, &liwork, &info);
     if (info != 0)
         throw std::runtime_error("dsyevd workspace query failed");
-    lwork = static_cast<lapack_int>(work_query);
+    lwork = static_cast<numeric_backend::integer>(work_query);
     liwork = iwork_query;
     std::vector<double> work(static_cast<std::size_t>(lwork));
-    std::vector<lapack_int> iwork(static_cast<std::size_t>(liwork));
-    dsyevd_ilp64(&jobz, &uplo, &n, a.data(), &lda, w.data(), work.data(),
-                 &lwork, iwork.data(), &liwork, &info);
+    std::vector<numeric_backend::integer> iwork(static_cast<std::size_t>(liwork));
+    numeric_backend::dsyevd(&jobz, &uplo, &n, a.data(), &lda, w.data(), work.data(),
+                            &lwork, iwork.data(), &liwork, &info);
     if (info != 0) throw std::runtime_error("dsyevd failed to converge");
     return w;
 }

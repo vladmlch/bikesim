@@ -226,3 +226,25 @@ remain open and the waves cannot be accepted as correct from their current
 static evidence. After corrections, the documented focused regressions and
 required native/full gates still need execution in an authorized session.
 No acceptance/deletion status was advanced here.
+
+## Source review 2026-10-21 — completion-plan Task 1.05
+
+The newer supplied source contains the F2/F3/F5 corrections described by
+the completion plan (which attributes them to 89cfcb1):
+
+- F2: PhysicalStep calls cruise.compute() in the active ideal-speed
+  branch, retains the positive-torque brake suppression, and writes the
+  result to the drive actuator.
+- F3: the engine-contact route adds resistance after refresh_contacts()
+  when no tire writer exists.
+- F5: the rider compute call receives config_.intent.enabled, preserving
+  the seated_climb.enabled switch.
+
+The matching branches in src/bike_sim/sim/ride/physical_runtime.py and the
+native_reference_resistance_and_cruise / seated_climb_recovery_switch
+cases in native/tests/migration/test_t23.cpp were inspected as source.
+No tests were executed: the current user explicitly prohibited compilation
+and execution. These findings remain verification-open; the 73 removal
+rows and four task records have not been promoted to implemented_tested.
+The Task 1.05 gate still requires migration_T23/T26/T29/T30/T32 on both
+graphs. This section does not retroactively change the older observations.

@@ -941,8 +941,8 @@ int run_header_sweep(const fs::path &build) {
 
 int run_scripts(const fs::path &build,
                 const std::optional<fs::path> &tools_dir_override) {
-    // tools/check_scripts.sh: find "$TOOLS_DIR" -maxdepth 1 -name '*.sh' |
-    // sort -z | xargs -0 shellcheck — one shellcheck argv over the sorted
+    // tools/check_scripts.sh: find -L "$TOOLS_DIR" -maxdepth 2 -type f -name '*.sh' |
+    // LC_ALL=C sort -z | xargs -0 shellcheck — one argv over the sorted
     // file set, exit status propagated. The build/context validation is the
     // same fail-closed contract the other sweeps share unless --tools-dir
     // explicitly selects the tree (the legacy script's positional arg).
@@ -1008,12 +1008,37 @@ int run_scripts(const fs::path &build,
     }
 
     std::vector<std::string> scripts;
-    for (fs::directory_iterator it(tools_dir, ec), end; !ec && it != end;
-         it.increment(ec)) {
-        std::error_code file_ec;
-        if (it->is_regular_file(file_ec) &&
-            it->path().extension() == ".sh")
-            scripts.push_back(it->path().string());
+    try {
+        for (fs::directory_iterator it(tools_dir, ec), end; !ec && it != end;
+             it.increment(ec)) {
+            std::error_code file_ec;
+            if (it->is_regular_file(file_ec) &&
+                it->path().extension() == ".sh")
+                scripts.push_back(it->path().string());
+            if (file_ec) throw CheckError("cannot inspect scripts path: " + it->path().string());
+            if (it->is_directory(file_ec)) {
+                std::error_code child_ec;
+                for (fs::directory_iterator child(it->path(), child_ec), child_end;
+                     !child_ec && child != child_end; child.increment(child_ec)) {
+                    std::error_code entry_ec;
+                    if (child->is_regular_file(entry_ec) && child->path().extension() == ".sh")
+                        scripts.push_back(child->path().string());
+                    if (entry_ec)
+                        throw CheckError("cannot inspect scripts path: " + child->path().string());
+                }
+                if (child_ec)
+                    throw CheckError("cannot read scripts directory: " + it->path().string());
+            }
+            if (file_ec) throw CheckError("cannot inspect scripts directory: " + it->path().string());
+        }
+        if (ec) throw CheckError("cannot read tools directory: " + tools_dir.string());
+        if (scripts.empty()) throw CheckError("native scripts selection: 0 scripts");
+    } catch (const std::exception &error) {
+        std::get<Array>(member_mut(summary, "errors")->data).push_back(vstr(error.what()));
+        set_member(summary, "script_count", vint(static_cast<std::int64_t>(scripts.size())));
+        write_summary(build_dir, kind, summary);
+        std::cerr << "native scripts failed: " << error.what() << '\n';
+        return 1;
     }
     // sort -z under LC_ALL=C semantics: byte order.
     std::ranges::sort(scripts);

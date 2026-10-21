@@ -57,6 +57,15 @@ namespace blas {
                             const double *y, blas_int incy) noexcept
             __asm__(BIKE_NUMERICS_SYM_DDOT);
 
+        // The same Linux export has two faces: seeded ddot and the bare
+        // ILP64 fold. Their distinction is arithmetic, not symbol identity.
+        double backend_ddot_ilp64(blas_int n, const double *x, blas_int incx,
+                                  const double *y, blas_int incy) noexcept
+            __asm__(BIKE_NUMERICS_SYM_DDOT_ILP64);
+        void backend_zdotu_sub(blas_int n, const void *x, blas_int incx,
+                               const void *y, blas_int incy, void *out) noexcept
+            __asm__(BIKE_NUMERICS_SYM_ZDOTU_SUB);
+
         void backend_dgemv(blas_int order, blas_int transa, blas_int m,
                            blas_int n, double alpha, const double *a,
                            blas_int lda, const double *x, blas_int incx,
@@ -78,6 +87,16 @@ namespace blas {
                        double (*)(blas_int, const double *, blas_int,
                                   const double *, blas_int) noexcept>,
         "backend_ddot prototype drifted");
+    static_assert(
+        std::is_same_v<decltype(&backend_ddot_ilp64),
+                       double (*)(blas_int, const double *, blas_int,
+                                  const double *, blas_int) noexcept>,
+        "backend_ddot_ilp64 prototype drifted");
+    static_assert(
+        std::is_same_v<decltype(&backend_zdotu_sub),
+                       void (*)(blas_int, const void *, blas_int,
+                                const void *, blas_int, void *) noexcept>,
+        "backend_zdotu_sub prototype drifted");
     static_assert(
         std::is_same_v<decltype(&backend_dgemv),
                        void (*)(blas_int, blas_int, blas_int, blas_int,
@@ -103,6 +122,8 @@ namespace blas {
         &backend_dgemv;
     [[maybe_unused]] inline constexpr auto backend_link_dgemm =
         &backend_dgemm;
+    [[maybe_unused]] inline constexpr auto backend_link_ddot_ilp64 = &backend_ddot_ilp64;
+    [[maybe_unused]] inline constexpr auto backend_link_zdotu_sub = &backend_zdotu_sub;
 
     double ddot(int n, const double *x, int incx,
                 const double *y, int incy) noexcept {
@@ -117,6 +138,20 @@ namespace blas {
         return 0. + backend_ddot(static_cast<blas_int>(n), x,
                                  static_cast<blas_int>(incx), y,
                                  static_cast<blas_int>(incy));
+    }
+
+    double ddot_raw(int n, const double *x, int incx,
+                    const double *y, int incy) noexcept {
+        return backend_ddot_ilp64(static_cast<blas_int>(n), x,
+                                  static_cast<blas_int>(incx), y,
+                                  static_cast<blas_int>(incy));
+    }
+
+    void zdotu_sub(int n, const void *x, int incx, const void *y, int incy,
+                   void *out) noexcept {
+        backend_zdotu_sub(static_cast<blas_int>(n), x,
+                          static_cast<blas_int>(incx), y,
+                          static_cast<blas_int>(incy), out);
     }
 
     void dgemv(Order order, Transpose trans, int m, int n,

@@ -459,11 +459,8 @@ target_link_libraries(bike_configuration PRIVATE bike_io bike_platform
 # cockpit.py's metre-domain saddle/seatpost/grip/pedal placement. One
 # STATIC library keeps each TU in a single compile-database entry per
 # build graph (the ODR sweep relocatable-links every selected TU into
-# one image). The provider edge is PUBLIC and Darwin-only: specs.hpp's
-# detail::np_dot/np_norm declare the same Accelerate ILP64 CBLAS entry
-# points the oracle's numpy resolves, so every consumer's final link
-# needs the framework. Bike::NumericsProvider is the port's mechanism for
-# that edge (the legacy graph links it the same way).
+# one image). The PUBLIC numerics adapter supplies specs.hpp's inline
+# np_dot/np_norm calls on both platforms, including the selected provider.
 add_library(bike_geometry STATIC
   "${_bike_native_dir}/src/geometry/specs.hpp"
   "${_bike_native_dir}/src/geometry/hardpoints.cpp"
@@ -473,17 +470,15 @@ set_target_properties(bike_geometry PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_target_strict_policy(bike_geometry)
 target_include_directories(bike_geometry SYSTEM PRIVATE
   "${_bike_native_dir}/src")
-if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
-  target_link_libraries(bike_geometry PUBLIC Bike::NumericsProvider)
-endif()
+target_link_libraries(bike_geometry PUBLIC Bike::Numerics)
 
 # bike_kinematics: the T14 Horst-link boundary — linkage_math.py's
 # brentq_pure/circle_circle_intersection_2d primitives, solver.py's
 # HorstLinkageSolver (state/trajectory/inverse solves) and curves.py's
 # instant centers. curves.cpp's 2x2 np.linalg.solve reaches the same
-# Accelerate ILP64 dgesv the oracle's linalg imports; the geometry
+# provider ILP64 dgesv the oracle's linalg imports; the geometry
 # edge supplies the hardpoint/specs declarations and the transitive
-# framework edge.
+# numerics adapter edge.
 add_library(bike_kinematics STATIC
   "${_bike_native_dir}/src/kinematics/linkage_math.hpp"
   "${_bike_native_dir}/src/kinematics/linkage_math.cpp"
@@ -494,7 +489,7 @@ set_target_properties(bike_kinematics PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_target_strict_policy(bike_kinematics)
 target_include_directories(bike_kinematics SYSTEM PRIVATE
   "${_bike_native_dir}/src")
-target_link_libraries(bike_kinematics PUBLIC bike_geometry)
+target_link_libraries(bike_kinematics PUBLIC bike_geometry PRIVATE Bike::Numerics)
 
 # bike_random: the T19 seeded-random boundary — SeedSequence's entropy
 # coercion/INIT_A-pool mixing/spawn bookkeeping, the PCG64 XSL-RR core with
@@ -542,7 +537,7 @@ set_target_properties(bike_model PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_target_strict_policy(bike_model)
 target_include_directories(bike_model SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
-target_link_libraries(bike_model PUBLIC bike_kinematics bike_configuration)
+target_link_libraries(bike_model PUBLIC bike_kinematics bike_configuration PRIVATE Bike::Numerics)
 
 # bike_engine: the pinned error interceptor shared by contract tests and the
 # extension (identical source/context to the legacy bike_native_engine).

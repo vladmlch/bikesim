@@ -31,6 +31,11 @@
 //     preprocessor guard is mirrored below; on other targets npy_sin
 //     is a plain libm call, which is exactly what the unconditional
 //     return already is.
+//     Completion-plan 1.18 leaves the Linux gate unchanged until the
+//     per-platform scalar/array NumPy and libm tables are measured. The
+//     native_platform_sincos_tests --dump-nonfinite probe and reference test
+//     test_sin_cos_nonfinite_scalar_array_agreement expose that decision;
+//     source inspection alone does not qualify a different NaN-sign rule.
 //
 //   numeric::math_sin / math_cos — the math.sin / math.cos contract.
 //     CPython calls libm directly; there is no `x - x` path, so a

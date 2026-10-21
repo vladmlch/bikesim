@@ -249,7 +249,50 @@ namespace {
                 "a negative m must report INFO = -1, not terminate");
     }
 
-    constexpr std::array<TestCase, 6> cases{{
+    void test_dgesv_solve_and_singular() {
+        const integer n = 2, nrhs = 1, lda = 2, ldb = 2;
+        integer info = -1;
+        std::array<integer, 2> pivots{};
+        std::array<double, 4> a{2., 1., 1., 3.};
+        std::array<double, 2> b{4., 7.};
+        numeric_backend::dgesv(&n, &nrhs, a.data(), &lda, pivots.data(),
+                               b.data(), &ldb, &info);
+        require(info == 0 && b[0] == 1. && b[1] == 2.,
+                "dgesv solves the exact 2x2 column-major system");
+        a = {1., 2., 2., 4.};
+        b = {3., 6.};
+        numeric_backend::dgesv(&n, &nrhs, a.data(), &lda, pivots.data(),
+                               b.data(), &ldb, &info);
+        require(info > 0, "dgesv exposes singularity through info");
+    }
+
+    void test_dsyevd_workspace_and_eigenvalues() {
+        const integer n = 2, lda = 2;
+        integer info = -1, lwork = -1, liwork = -1, iquery = 0;
+        std::array<double, 4> a{2., 1., 1., 2.};
+        std::array<double, 2> w{};
+        double query = 0.;
+        numeric_backend::dsyevd("V", "L", &n, a.data(), &lda, w.data(), &query,
+                                &lwork, &iquery, &liwork, &info);
+        require(info == 0 && std::isfinite(query) && query >= 1. &&
+                    query < 10000000. && query == std::trunc(query) &&
+                    iquery >= 1 && iquery < 10000000,
+                "dsyevd query gives bounded positive integral workspace sizes");
+        lwork = static_cast<integer>(query);
+        liwork = iquery;
+        std::vector<double> work(static_cast<std::size_t>(lwork));
+        std::vector<integer> iwork(static_cast<std::size_t>(liwork));
+        numeric_backend::dsyevd("V", "L", &n, a.data(), &lda, w.data(), work.data(),
+                                &lwork, iwork.data(), &liwork, &info);
+        require(info == 0 && std::abs(w[0] - 1.) < 1e-15 &&
+                    std::abs(w[1] - 3.) < 1e-15,
+                "dsyevd returns the ascending spectrum of [[2,1],[1,2]]");
+        require(std::abs(a[0] + a[1]) < 1e-15 &&
+                    std::abs(a[2] - a[3]) < 1e-15,
+                "dsyevd JOBZ=V writes column-major eigenvectors");
+    }
+
+    constexpr std::array<TestCase, 8> cases{{
         {.name = "dgelsd_workspace_query", .run = test_dgelsd_workspace_query},
         {.name = "dgelsd_degenerate_query", .run = test_dgelsd_degenerate_query},
         {.name = "dgelsd_solve", .run = test_dgelsd_solve},
@@ -258,6 +301,8 @@ namespace {
         {.name = "dgelsd_valid_retry", .run = test_dgelsd_valid_retry},
         {.name = "dgelsd_bad_arg_reports_info",
          .run = test_dgelsd_bad_arg_reports_info},
+        {.name = "dgesv_solve_and_singular", .run = test_dgesv_solve_and_singular},
+        {.name = "dsyevd_workspace_and_eigenvalues", .run = test_dsyevd_workspace_and_eigenvalues},
     }};
 
     int run_case(const TestCase &test_case) {

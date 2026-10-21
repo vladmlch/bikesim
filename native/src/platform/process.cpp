@@ -120,7 +120,8 @@ int add_chdir(posix_spawn_file_actions_t *actions, const char *path) {
     return ::posix_spawn_file_actions_addchdir_np(actions, path);
 #endif
 #elif defined(__linux__) && defined(__GLIBC__) && defined(__GLIBC_PREREQ)
-#if __GLIBC_PREREQ(2, 38)
+#if __GLIBC_PREREQ(2, 40)
+    // POSIX.1-2024 name; glibc exports it from 2.40.
     return ::posix_spawn_file_actions_addchdir(actions, path);
 #else
     return ::posix_spawn_file_actions_addchdir_np(actions, path);
@@ -191,7 +192,7 @@ ProcessResult run(const std::vector<std::string> &argv,
     // platform::run must not spawn between pipe() and fcntl(). Such a child
     // could retain a sibling's pipe and prevent EOF after that sibling exits.
     static std::mutex spawn_mutex;
-    std::unique_lock spawn_guard(spawn_mutex);
+    std::unique_lock<std::mutex> spawn_guard(spawn_mutex);
 
     ScopedFd out_read, out_write, err_read, err_write;
     make_pipe(out_read, out_write);

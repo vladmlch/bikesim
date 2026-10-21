@@ -23,6 +23,7 @@
 
 #include "../engaged.hpp"
 #include "../initialization/finalize.hpp"
+#include "../initialization/research_startup.hpp"
 #include "../rider/attachment_wrench.hpp"
 #include "../rider/intent.hpp"
 #include "../rider/spindle_controller.hpp"

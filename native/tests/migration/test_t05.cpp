@@ -20,6 +20,7 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <variant>
 
@@ -32,6 +33,79 @@ using bike::io::Bytes;
 using bike::io::Number;
 using bike::io::Tagged;
 using bike::io::Value;
+
+static_assert(std::is_aggregate_v<Value>);
+static_assert(std::is_nothrow_move_constructible_v<Value::Object>);
+static_assert(std::is_nothrow_move_assignable_v<Value::Object>);
+
+// Completion-plan 1.13: recursive object storage must keep the existing
+// aggregate/variant interface and own every nested value after copy/move.
+void checks_value_ownership() {
+    using bike::io::as_object;
+    using bike::io::canonical_json;
+
+    Value child{Value::Object{{"text", Value{std::string{"seed"}}}}};
+    const Value original{.data = Value::Object{
+        {"z", Value{Number{"9007199254740993"}}},
+        {"a", Value{Value::Array{std::move(child), Value{Number{"-0.0"}}}}},
+        {"n", Value{}},
+    }};
+    const std::string expected =
+        R"({"a":[{"text":"seed"},-0.0],"n":null,"z":9007199254740993})";
+    const auto &members = as_object(original, "$");
+    bt::require(members.size() == 3 && members[0].first == "z" &&
+                    members[1].first == "a" && members[2].first == "n",
+                "object keeps insertion order behind the variant");
+    bt::require(canonical_json(original) == expected,
+                "aggregate object retains lexemes and explicit null");
+
+    Value copied = original;
+    auto &copied_members = std::get<Value::Object>(copied.data);
+    auto &array = std::get<Value::Array>(copied_members.at(1).second.data);
+    auto &nested = std::get<Value::Object>(array.at(0).data);
+    nested.at(0).second.data = std::string{"changed"};
+    bt::require(canonical_json(original) == expected,
+                "nested object/array copy must not alias its source");
+    const std::string changed =
+        R"({"a":[{"text":"changed"},-0.0],"n":null,"z":9007199254740993})";
+    bt::require(canonical_json(copied) == changed,
+                "nested mutation stays in the copied tree");
+
+    Value assigned{Value::Object{{"old", Value{true}}}};
+    assigned = original;
+    std::get<Value::Object>(assigned.data).at(0).second.data = Number{"7"};
+    bt::require(canonical_json(original) == expected,
+                "object copy assignment preserves source ownership");
+
+    const Value moved{std::move(copied)};
+    bt::require(canonical_json(moved) == changed,
+                "object move construction preserves its nested payload");
+    // No assumption about a moved-from vector's size; it must remain
+    // destructible and assignable through the same active alternative.
+    copied = original;
+    bt::require(canonical_json(copied) == expected,
+                "moved-from object can receive a deep copy");
+
+    Value move_assigned{Value::Object{{"old", Value{false}}}};
+    move_assigned = std::move(assigned);
+    bt::require(canonical_json(move_assigned) ==
+                    R"({"a":[{"text":"seed"},-0.0],"n":null,"z":7})",
+                "object move assignment replaces the complete old tree");
+    assigned = original;
+    bt::require(canonical_json(assigned) == expected,
+                "move-assigned source stays assignable");
+
+    const Value from_range{Value::Object{members.begin(), members.end()}};
+    bt::require(canonical_json(from_range) == expected,
+                "object preserves the inherited vector range constructor");
+    Value::Object::base base_members{{"base", Value{Number{"5"}}}};
+    const Value from_base{Value::Object{std::move(base_members)}};
+    bt::require(canonical_json(from_base) == R"({"base":5})",
+                "object accepts its previous vector representation");
+    bt::require(canonical_json(Value{Value::Object{}}) == "{}" &&
+                    bike::io::is_null(Value{}),
+                "empty object and default null remain distinct");
+}
 
 // recording_json(parse_recording_json(text)) — the canonical tag form the
 // source codec's dumps(to_json_value(loads(text))) produces.
@@ -1070,6 +1144,7 @@ int main() {
     // test escape; the outer try covers std::function allocation failure.
     try {
         int failures = 0;
+        failures += bt::run(checks_value_ownership);
         failures += bt::run(checks_json);
         failures += bt::run(checks_recording);
         failures += bt::run(checks_sha256);

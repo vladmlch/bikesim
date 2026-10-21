@@ -237,6 +237,12 @@ struct SuppressionFilter {
 // require an interpreter; when a string is present it must be an executable
 // file, exactly as the oracle requires.
 [[nodiscard]] Value load_context(const fs::path &build);
+// Schema 2 records a Linux sysroot separately from the Darwin SDK;
+// schema 1 falls back to its SDK. Null admits no forwarded sysroot flag.
+[[nodiscard]] std::optional<fs::path> configured_sysroot(const Value &context);
+// The same ordered platform-control table drives --list-controls and the
+// context runner, so listed controls cannot drift from those executed.
+[[nodiscard]] std::vector<std::string> context_control_names(const Value &context);
 
 // One compile_commands entry validated against context and manifest.
 struct CompileEntry {

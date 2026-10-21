@@ -31,7 +31,7 @@ is a separately qualified lane, not evidence for Linux.
 
 ## Prerequisites
 
-- **CPython 3.13 or newer is required** (`requires-python = ">=3.13"`), and
+- **CPython 3.13 is required** (`requires-python = ">=3.13,<3.14"`), and
   the qualified Linux interpreter is CPython **3.13** specifically —
   CPython 3.13.16 measured. Ubuntu 24.04's unqualified `python3` is not the
   requirement; provision an exact interpreter with `uv python install 3.13`
@@ -51,6 +51,54 @@ is a separately qualified lane, not evidence for Linux.
   configure rejects it with `CMAKE_OSX_SYSROOT is a macOS option; use a
   Linux-native toolchain` before dependency discovery. Likewise no
   `DYLD_*`, Accelerate, or `mjpython` re-exec applies.
+
+## Container lane (C++ + Linux completion)
+
+The committed recipe is in `tools/linux/Dockerfile`; the driver is
+`tools/linux/container.sh`. It targets Docker linux/arm64 and pins Ubuntu
+24.04 by image digest, uv 0.13.1 by archive SHA-256, and managed CPython
+3.13.16. Compiler packages come from Ubuntu's signed package repositories;
+their actual versions and the built image digest still belong in the
+qualification evidence.
+
+The recipe was implemented with source inspection only on 2026-10-21.
+The earlier measured lane above does not qualify this new image.
+
+Run from a real Git checkout when executing the phase's validation:
+
+~~~sh
+tools/linux/container.sh image
+tools/linux/container.sh sync
+tools/linux/container.sh venv
+# Before configuring, regenerate both platforms' eight-symbol numerics
+# records as specified in completion-plan Task 1.10.
+tools/linux/container.sh configure native-clang native -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18
+tools/linux/container.sh configure native-gcc native -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/g++-13
+tools/linux/container.sh build native-clang
+tools/linux/container.sh ctest native-clang -j8
+~~~
+
+Each checkout has its own container, named `bike-dev-<checkout-name>`.
+`BIKE_LINUX_CONTAINER` overrides the name; an existing container belonging
+to a different checkout is rejected. `BIKE_LINUX_IMAGE` overrides the image
+tag. Sources are copied into `/src`; binding build trees stay in `/build`.
+The host `.venv`, `.deps` and generated build directories are excluded even
+if accidentally tracked. `/src/.deps` and `/src/build` stay intact on sync.
+Archive staging and rsync preserve unchanged mtimes for incremental builds.
+An unstaged deletion of a tracked file must be staged before sync.
+
+Available commands: image, up, sync, venv, configure, build, failures,
+ctest, exec, pull, down. The driver retains the failing Ninja exit code
+through tee. The failures command prints the failed-command count and
+returns an error for an absent log; ctest rejects an empty test selection.
+No automatic cleanup removes old containers.
+After changing the Dockerfile, rebuilding the image does not replace an
+existing container. Use an explicit `down`, then `sync` and `venv` to create
+and provision a replacement; `down` removes that container's build trees.
+
+During Phase 1, Linux configures the binding graph only. The root graph
+and its C++ checker are qualified in Phase 2. Use the Python checker
+invocations listed in Task 1.19 for Linux sweeps before that point.
 
 ## Frozen environment
 

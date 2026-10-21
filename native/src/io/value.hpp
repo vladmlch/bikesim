@@ -29,6 +29,7 @@
 //                           reserved key)
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <cmath>
@@ -58,13 +59,60 @@ struct Tagged {
     std::string kind;
     std::vector<Field> fields;
 };
+
+// libstdc++ 13 checks Value's default-constructibility while defining
+// pair<string, Value>. An inline constexpr destructor chain then reaches
+// variant -> vector<pair> -> is_destructible<pair> before pair is complete.
+// Declare ObjectList's special members here and define their non-constexpr
+// bodies after Value so destruction is instantiated only with complete types.
+// The inherited vector interface keeps object ordering and ownership intact.
+template <class V>
+struct ObjectList : std::vector<std::pair<std::string, V>> {
+    using base = std::vector<std::pair<std::string, V>>;
+    using base::base;
+    ObjectList();
+    ObjectList(base members);
+    ObjectList(const ObjectList &other);
+    ObjectList(ObjectList &&other) noexcept;
+    ObjectList &operator=(const ObjectList &other);
+    ObjectList &operator=(ObjectList &&other) noexcept;
+    ~ObjectList();
+};
+
 struct Value {
     using Array = std::vector<Value>;
-    using Object = std::vector<std::pair<std::string, Value>>;
+    using Object = ObjectList<Value>;
     std::variant<std::monostate, bool, Number, std::string, Array, Object,
                  Bytes, Tagged>
         data;
 };
+
+// clang-tidy modernize-use-equals-default would restore the eager constexpr
+// destruction cycle above. Completion-plan Task 1.13 records the libstdc++ 13
+// reproducer; remove this exception only when the qualified Linux compilers
+// accept the defaulted form and the JSON/config copy/move guards pass.
+// NOLINTBEGIN(modernize-use-equals-default)
+template <class V>
+ObjectList<V>::ObjectList() {}
+template <class V>
+ObjectList<V>::ObjectList(base members) : base(std::move(members)) {}
+template <class V>
+ObjectList<V>::ObjectList(const ObjectList &other) : base(other) {}
+template <class V>
+ObjectList<V>::ObjectList(ObjectList &&other) noexcept : base(std::move(other)) {}
+template <class V>
+ObjectList<V> &ObjectList<V>::operator=(const ObjectList &other) {
+    base::operator=(other);
+    return *this;
+}
+template <class V>
+ObjectList<V> &ObjectList<V>::operator=(ObjectList &&other) noexcept {
+    base::operator=(std::move(other));
+    return *this;
+}
+template <class V>
+ObjectList<V>::~ObjectList() {}
+// NOLINTEND(modernize-use-equals-default)
 
 // ---- typed extraction -----------------------------------------------------
 // Cold-path accessors: every check runs before conversion; a kind mismatch,

@@ -1,4 +1,6 @@
 #include "filter.hpp"
+#include "../cblas_abi.hpp"
+#include "../lapack_abi.hpp"
 #include <algorithm>
 #include <cmath>
 #include <complex>
@@ -14,15 +16,10 @@ namespace bike::numerics {
 namespace {
 using Complex = std::complex<double>;
 // lfilter_zi uses NumPy's solve, the same ILP64 provider as the existing
-// kinematics/curves.cpp seam. Do not substitute a handwritten elimination.
-extern "C" void filter_dgesv_ilp64(const long* n,const long* nrhs,double* a,const long* lda,
-    long* ipiv,double* b,const long* ldb,long* info) __asm__("_dgesv$NEWLAPACK$ILP64");
-static_assert(sizeof(long)==8);
+// kinematics/curves.cpp seam through numeric_backend::dgesv. Do not
+// substitute a handwritten elimination.
 // np.convolve's complex inner loop is CDOUBLE_dot, which forwards contiguous
-// windows to cblas_zdotu_sub$NEWLAPACK$ILP64 — the same Accelerate entry point
-// NumPy binds (nm -u on _multiarray_umath confirms the ILP64 spelling).
-extern "C" void filter_zdotu(long n,const void* x,long incx,
-    const void* y,long incy,void* out) __asm__("_cblas_zdotu_sub$NEWLAPACK$ILP64");
+// windows to blas::zdotu_sub, preserving NumPy's qualified ILP64 import.
 // npy complex multiply: the oracle binary contracts `ar*br - ai*bi` into
 // fma(ar,br,-(ai*bi)) and `ar*bi + ai*br` into fma(ar,bi,ai*br). Spelling
 // the fmas is required because the project build pins -ffp-contract=off.
@@ -44,21 +41,21 @@ extern "C" void filter_zdotu(long n,const void* x,long incx,
 }
 // np.poly: values = convolve(values, [1,-root]) per root. convolve forwards to
 // _pyarray_correlate with kernel [-root,1] (the reversed taps); the correlation
-// dot for each output element is cblas_zdotu_sub over (window, kernel).
+// dot for each output element is blas::zdotu_sub over (window, kernel).
 std::vector<Complex> polynomial(const std::vector<Complex>& roots) {
     std::vector<Complex> values(1,1.);
     for (const auto root : roots) {
         const std::array kernel{Complex{-root},Complex{1.}};
         std::vector<Complex> next(values.size()+1);
         const auto tail_kernel = std::span(kernel).subspan(1);
-        filter_zdotu(1,values.data(),1,tail_kernel.data(),1,next.data());
+        blas::zdotu_sub(1,values.data(),1,tail_kernel.data(),1,next.data());
         for (std::size_t i=0;i+2<next.size();++i) {
             const auto window = std::span(values).subspan(i,2);
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay) decay is the designed wire idiom here
-            filter_zdotu(2,window.data(),1,kernel.data(),1,
+            blas::zdotu_sub(2,window.data(),1,kernel.data(),1,
                 std::span(next).subspan(i+1,1).data());
         }
-        filter_zdotu(1,std::span(values).subspan(values.size()-1,1).data(),1,
+        blas::zdotu_sub(1,std::span(values).subspan(values.size()-1,1).data(),1,
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay) decay is the designed wire idiom here
             kernel.data(),1,std::span(next).subspan(next.size()-1,1).data());
         values=std::move(next);
@@ -94,8 +91,11 @@ std::vector<double> initial_state(const std::vector<double>& b,const std::vector
         if (i+1<n) matrix[(i+1)*n+i]-=1.;
         rhs[i]=b[i+1]-a[i+1]*b[0];
     }
-    std::vector<long> pivots(n);const auto width=static_cast<long>(n);const long nrhs=1;long info=0;
-    filter_dgesv_ilp64(&width,&nrhs,matrix.data(),&width,pivots.data(),rhs.data(),&width,&info);
+    std::vector<numeric_backend::integer> pivots(n);
+    const auto width=static_cast<numeric_backend::integer>(n);
+    const numeric_backend::integer nrhs=1;
+    numeric_backend::integer info=0;
+    numeric_backend::dgesv(&width,&nrhs,matrix.data(),&width,pivots.data(),rhs.data(),&width,&info);
     if(info!=0)throw std::invalid_argument("legacy Butterworth initial state is singular");
     return rhs;
 }

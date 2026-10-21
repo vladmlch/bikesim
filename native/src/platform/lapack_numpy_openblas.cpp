@@ -50,6 +50,15 @@ namespace numeric_backend {
                             double *work, const integer *lwork,
                             integer *iwork, integer *info) noexcept
             __asm__(BIKE_NUMERICS_SYM_DGELSD);
+        void backend_dgesv(const integer *n, const integer *nrhs, double *a,
+                           const integer *lda, integer *ipiv, double *b,
+                           const integer *ldb, integer *info) noexcept
+            __asm__(BIKE_NUMERICS_SYM_DGESV);
+        void backend_dsyevd(const char *jobz, const char *uplo, const integer *n,
+                            double *a, const integer *lda, double *w, double *work,
+                            const integer *lwork, integer *iwork,
+                            const integer *liwork, integer *info) noexcept
+            __asm__(BIKE_NUMERICS_SYM_DSYEVD);
     }
 
     // Compile-time signature pin on the 64-bit interface — a drifted
@@ -63,12 +72,27 @@ namespace numeric_backend {
                                 integer *, double *, const integer *,
                                 integer *, integer *) noexcept>,
         "backend_dgelsd prototype drifted");
+    static_assert(
+        std::is_same_v<decltype(&backend_dgesv),
+                       void (*)(const integer *, const integer *, double *,
+                                const integer *, integer *, double *,
+                                const integer *, integer *) noexcept>,
+        "backend_dgesv prototype drifted");
+    static_assert(
+        std::is_same_v<decltype(&backend_dsyevd),
+                       void (*)(const char *, const char *, const integer *,
+                                double *, const integer *, double *, double *,
+                                const integer *, integer *, const integer *,
+                                integer *) noexcept>,
+        "backend_dsyevd prototype drifted");
 
     // Symbol-link control: materializing the address in a constant
     // initializer gives this TU a relocation for the provider export —
     // a missing scipy_dgelsd_64_ surfaces at link time.
     [[maybe_unused]] inline constexpr auto backend_link_dgelsd =
         &backend_dgelsd;
+    [[maybe_unused]] inline constexpr auto backend_link_dgesv = &backend_dgesv;
+    [[maybe_unused]] inline constexpr auto backend_link_dsyevd = &backend_dsyevd;
 
     // The common function forwards to the one exact declaration — the
     // argument types are identical, so no LP64 pointer casts exist.
@@ -79,6 +103,19 @@ namespace numeric_backend {
                 integer *iwork, integer *info) noexcept {
         backend_dgelsd(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work,
                        lwork, iwork, info);
+    }
+
+    void dgesv(const integer *n, const integer *nrhs, double *a,
+               const integer *lda, integer *ipiv, double *b,
+               const integer *ldb, integer *info) noexcept {
+        backend_dgesv(n, nrhs, a, lda, ipiv, b, ldb, info);
+    }
+
+    void dsyevd(const char *jobz, const char *uplo, const integer *n,
+                double *a, const integer *lda, double *w, double *work,
+                const integer *lwork, integer *iwork, const integer *liwork,
+                integer *info) noexcept {
+        backend_dsyevd(jobz, uplo, n, a, lda, w, work, lwork, iwork, liwork, info);
     }
 } // namespace numeric_backend
 

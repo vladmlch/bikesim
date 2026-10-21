@@ -226,10 +226,35 @@ namespace {
                 "dgemm m=0 must not write C");
     }
 
-    constexpr std::array<TestCase, 13> cases{{
+    void test_ddot_raw_values_and_seed() {
+        const std::array<double, 4> x{1., 99., 2., 99.};
+        const std::array<double, 4> y{3., 88., 4., 88.};
+        require(blas::ddot_raw(2, x.data(), 2, y.data(), 2) == 11.,
+                "raw ILP64 dot forwards dimensions and strides");
+        const std::array<double, 1> zero{-0.}, one{1.};
+        const double seeded = blas::ddot(1, zero.data(), 1, one.data(), 1);
+        require(seeded == 0. && !std::signbit(seeded), "ddot retains its +0 seed");
+        // The bare fold's zero sign is provider-specific. Its measured
+        // per-platform assertion remains pending completion-plan 1.11;
+        // the no-execution implementation must not invent that evidence.
+    }
+
+    void test_zdotu_sub_values_and_strides() {
+        // (1+2i)(3+4i) + (5+6i)(7+8i) = -18 + 92i; no conjugation.
+        const std::array<double, 8> x{1., 2., 99., 99., 5., 6., 99., 99.};
+        const std::array<double, 4> y{3., 4., 7., 8.};
+        std::array<double, 2> out{};
+        blas::zdotu_sub(2, x.data(), 2, y.data(), 1, out.data());
+        require(out[0] == -18. && out[1] == 92.,
+                "ILP64 unconjugated complex dot respects complex-element stride");
+    }
+
+    constexpr std::array<TestCase, 15> cases{{
         {.name = "ddot_values", .run = test_ddot_values},
         {.name = "ddot_strides", .run = test_ddot_strides},
         {.name = "ddot_zero_size", .run = test_ddot_zero_size},
+        {.name = "ddot_raw_values_and_seed", .run = test_ddot_raw_values_and_seed},
+        {.name = "zdotu_sub_values_and_strides", .run = test_zdotu_sub_values_and_strides},
         {.name = "dgemv_row_major", .run = test_dgemv_row_major},
         {.name = "dgemv_column_major", .run = test_dgemv_column_major},
         {.name = "dgemv_strides", .run = test_dgemv_strides},

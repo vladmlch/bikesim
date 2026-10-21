@@ -65,11 +65,11 @@ std::vector<Result> execute(std::span<const Job> jobs,unsigned workers,const Exe
             } catch(...) { result.exit_code=-1;result.err="non-standard worker failure"; }
             result.wall_s=std::chrono::duration<double>(Clock::now()-started).count();
             // No reader observes the result before the queue's release/acquire.
-            {std::scoped_lock const lock(mutex);completed[published++]=index;}
+            {std::scoped_lock<std::mutex> const lock(mutex);completed[published++]=index;}
             wake.notify_one();
         }
         } catch(...) {
-            {std::scoped_lock const lock(mutex);if(!fatal)fatal=std::current_exception();}
+            {std::scoped_lock<std::mutex> const lock(mutex);if(!fatal)fatal=std::current_exception();}
             stop.request_stop();wake.notify_one();
         }
     };
@@ -78,7 +78,7 @@ std::vector<Result> execute(std::span<const Job> jobs,unsigned workers,const Exe
         std::size_t received=0;
         while(received<jobs.size()) {
             if(options.cancelled&&options.cancelled())stop.request_stop();
-            std::unique_lock lock(mutex);
+            std::unique_lock<std::mutex> lock(mutex);
             wake.wait_for(lock,std::chrono::milliseconds(20),[&]{return published>received||fatal;});
             if(fatal)std::rethrow_exception(fatal);
             const auto available=published;lock.unlock();

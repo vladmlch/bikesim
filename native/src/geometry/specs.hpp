@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "../numeric_numpy.hpp" // numeric::np_maximum — np.max reduce
+#include "../cblas_abi.hpp" // the qualified ILP64 raw-dot face
 
 namespace bike::geometry {
 
@@ -250,27 +251,18 @@ saddle_post_masses(double saddle_post_mass_kg, const Vec3 &p10_m,
 // ---------------------------------------------------------------------------
 namespace detail {
 
-    // _cblas_ddot$NEWLAPACK$ILP64 — the Accelerate CBLAS entry point
-    // NumPy's x.dot(x) / np.dot dispatch to on this platform (the
-    // oracle _multiarray_umath imports the ILP64 alias). __LAPACK_int
-    // is `long` under ACCELERATE_LAPACK_ILP64 — same width convention
-    // as rider/least_squares.cpp's dgelsd_ilp64 declaration.
-    extern "C" double cblas_ddot_ilp64(long n, const double *x, long incx,
-                                       const double *y, long incy)
-        __asm__("_cblas_ddot$NEWLAPACK$ILP64");
-
-    // np.dot(a, b) on contiguous 1-D doubles — BLAS ddot.
+    // np.dot(a, b) on contiguous 1-D doubles: the bare ILP64 provider fold
+    // used since T14, now qualified and bound by the platform backend.
     [[nodiscard]] inline double np_dot(std::span<const double> a,
                                        std::span<const double> b) noexcept {
-        return cblas_ddot_ilp64(static_cast<long>(a.size()), a.data(), 1,
-                                b.data(), 1);
+        return blas::ddot_raw(static_cast<int>(a.size()), a.data(), 1, b.data(), 1);
     }
 
     // np.linalg.norm(v) on a real 1-D vector: sqrt(x.dot(x)) —
     // numpy/linalg/_linalg.py:2767 + umath sqrt.
     [[nodiscard]] inline double np_norm(std::span<const double> v) noexcept {
-        return std::sqrt(cblas_ddot_ilp64(static_cast<long>(v.size()),
-                                          v.data(), 1, v.data(), 1));
+        return std::sqrt(blas::ddot_raw(static_cast<int>(v.size()),
+                                       v.data(), 1, v.data(), 1));
     }
     [[nodiscard]] inline double np_norm2(const Vec2 &v) noexcept {
         return np_norm(std::span<const double>(v.data(), v.size()));

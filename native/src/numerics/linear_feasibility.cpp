@@ -9,18 +9,20 @@
 namespace bike::numerics {
 namespace {
 namespace d=dense;
-constexpr long double inf=std::numeric_limits<long double>::infinity();
-long double down(long double x) {return std::nextafter(x,-inf);}
-long double up(long double x) {return std::nextafter(x,inf);}
+// Binary64 interval arithmetic with outward rounding (completion plan D8;
+// macOS arm64 long double was already binary64).
+constexpr double inf=std::numeric_limits<double>::infinity();
+double down(double x) {return std::nextafter(x,-inf);}
+double up(double x) {return std::nextafter(x,inf);}
 // Interval lower bound on a linear row. Every product/addition is rounded
 // outward. An unbounded or indeterminate interval gives no certificate.
-long double minimum(std::span<const double> row,std::span<const double> lo,
+double minimum(std::span<const double> row,std::span<const double> lo,
                     std::span<const double> hi,std::size_t excluded) {
-    long double sum=0.;
+    double sum=0.;
     for(std::size_t j=0;j<row.size();++j) if(j!=excluded && row[j]!=0.) {
         const double value=row[j]>0.?lo[j]:hi[j];
         if(!std::isfinite(value)) return -inf;
-        sum=down(sum+down(static_cast<long double>(row[j])*value));
+        sum=down(sum+down(row[j]*value));
     }
     return sum;
 }
@@ -39,33 +41,33 @@ FeasibilityResult linear_feasibility(const bike::rider::Matrix& g,
     bike::rider::validate(p);
     if(options.max_iterations==0) return {.status=FeasibilityStatus::unknown,.witness={},.reason="linear feasibility budget exhausted"};
     auto rows=g; if(rows.rows==0) rows.cols=n;
-    std::vector<long double> bounds;bounds.reserve(h.size()+2*b.size());
-    for(double const value:h)bounds.push_back(up(static_cast<long double>(value)+options.inequality_slack));
+    std::vector<double> bounds;bounds.reserve(h.size()+2*b.size());
+    for(double const value:h)bounds.push_back(up(value+options.inequality_slack));
     for(std::size_t i=0;i<a.rows;++i) {
         const auto row=std::span<const double>(a.values).subspan(i*n,n);
-        d::append_row(rows,row);bounds.push_back(up(static_cast<long double>(b[i])+options.primal_tolerance));
+        d::append_row(rows,row);bounds.push_back(up(b[i]+options.primal_tolerance));
         std::vector<double> neg(row.begin(),row.end());for(double& v:neg) v=-v;
-        d::append_row(rows,neg);bounds.push_back(up(-static_cast<long double>(b[i])+options.primal_tolerance));
+        d::append_row(rows,neg);bounds.push_back(up(-b[i]+options.primal_tolerance));
     }
     auto lo=p.lower,hi=p.upper;
     for(std::size_t pass=0;pass<std::min<std::size_t>(options.max_iterations,n+rows.rows+1);++pass) {
         bool changed=false;
         for(std::size_t i=0;i<rows.rows;++i) {
             const auto row=std::span<const double>(rows.values).subspan(i*n,n);
-            const long double least=minimum(row,lo,hi,n);
+            const double least=minimum(row,lo,hi,n);
             if(std::isfinite(least) && least>up(bounds[i]))
                 return {.status=FeasibilityStatus::proven_infeasible,.witness={},.reason="outward-rounded linear row contradicts propagated box"};
             for(std::size_t j=0;j<n;++j) if(row[j]!=0.) {
-                const long double rest=minimum(row,lo,hi,j);
+                const double rest=minimum(row,lo,hi,j);
                 if(!std::isfinite(rest)) continue;
-                const long double numerator=up(static_cast<long double>(bounds[i])-rest);
-                const long double raw=numerator/static_cast<long double>(row[j]);
+                const double numerator=up(bounds[i]-rest);
+                const double raw=numerator/row[j];
                 if(!std::isfinite(raw)) continue;
                 if(row[j]>0.) {
-                    const double new_hi=std::nextafter(static_cast<double>(up(raw)),std::numeric_limits<double>::infinity());
+                    const double new_hi=std::nextafter(up(raw),std::numeric_limits<double>::infinity());
                     if(new_hi<hi[j]) {hi[j]=new_hi;changed=true;}
                 } else {
-                    const double new_lo=std::nextafter(static_cast<double>(down(raw)),-std::numeric_limits<double>::infinity());
+                    const double new_lo=std::nextafter(down(raw),-std::numeric_limits<double>::infinity());
                     if(new_lo>lo[j]) {lo[j]=new_lo;changed=true;}
                 }
                 if(lo[j]>hi[j]) return {.status=FeasibilityStatus::proven_infeasible,.witness={},.reason="outward-rounded propagated bounds are disjoint"};

@@ -21,7 +21,7 @@ AsyncCloseRunner::~AsyncCloseRunner() { close(); }
 
 void AsyncCloseRunner::submit(std::shared_ptr<const std::vector<RawStep>> raws) {
     if (!raws || raws->empty()) throw std::invalid_argument("async close requires an owned nonempty period");
-    std::scoped_lock const lock(mutex_);
+    std::scoped_lock<std::mutex> const lock(mutex_);
     if (stopping_ || finished_ || failure_)
         throw AsyncWorkerLost("async close worker is unavailable");
     if (sequence_ == std::numeric_limits<std::uint64_t>::max())
@@ -35,7 +35,7 @@ void AsyncCloseRunner::submit(std::shared_ptr<const std::vector<RawStep>> raws) 
 }
 
 std::shared_ptr<const AsyncCloseRunner::Result> AsyncCloseRunner::peek(bool block) {
-    std::unique_lock lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     if (pending_.empty()) return {};
     if (block) changed_.wait(lock, [this] { return !results_.empty() || failure_ || finished_; });
     if (!results_.empty()) {
@@ -57,7 +57,7 @@ std::shared_ptr<const AsyncCloseRunner::Result> AsyncCloseRunner::peek(bool bloc
 }
 
 void AsyncCloseRunner::acknowledge(std::uint64_t sequence) {
-    std::scoped_lock const lock(mutex_);
+    std::scoped_lock<std::mutex> const lock(mutex_);
     if (pending_.empty() || results_.empty() ||
         pending_.front().sequence != sequence || results_.front()->sequence != sequence)
         throw std::invalid_argument("async close acknowledgement is not the ready prefix");
@@ -65,11 +65,11 @@ void AsyncCloseRunner::acknowledge(std::uint64_t sequence) {
     pending_.pop_front();
 }
 std::size_t AsyncCloseRunner::pending() const {
-    std::scoped_lock const lock(mutex_);
+    std::scoped_lock<std::mutex> const lock(mutex_);
     return pending_.size();
 }
 std::size_t AsyncCloseRunner::pending_intervals() const {
-    std::scoped_lock const lock(mutex_);
+    std::scoped_lock<std::mutex> const lock(mutex_);
     std::size_t count = 0;
     for (const auto& item : pending_) count += item.raws->size();
     return count;
@@ -77,7 +77,7 @@ std::size_t AsyncCloseRunner::pending_intervals() const {
 
 std::vector<std::shared_ptr<const std::vector<RawStep>>> AsyncCloseRunner::detach_pending() {
     close();
-    std::scoped_lock const lock(mutex_);
+    std::scoped_lock<std::mutex> const lock(mutex_);
     std::vector<std::shared_ptr<const std::vector<RawStep>>> result;
     result.reserve(pending_.size());
     for (const auto& item : pending_) result.push_back(item.raws);
@@ -91,7 +91,7 @@ std::vector<std::shared_ptr<const std::vector<RawStep>>> AsyncCloseRunner::detac
 
 void AsyncCloseRunner::close() noexcept {
     {
-        std::scoped_lock const lock(mutex_);
+        std::scoped_lock<std::mutex> const lock(mutex_);
         stopping_ = true;
         changed_.notify_all();
     }
@@ -103,7 +103,7 @@ void AsyncCloseRunner::work() noexcept {
         while (true) {
             Job job;
             {
-                std::unique_lock lock(mutex_);
+                std::unique_lock<std::mutex> lock(mutex_);
                 changed_.wait(lock, [this] { return stopping_ || !jobs_.empty(); });
                 if (stopping_) break;
                 job = std::move(jobs_.front());
@@ -119,23 +119,23 @@ void AsyncCloseRunner::work() noexcept {
                     .sequence=job.sequence, .publication=evaluator_->take_publication()});
                 result->publication.strict_error = std::move(strict_error);
                 {
-                    std::scoped_lock const lock(mutex_);
+                    std::scoped_lock<std::mutex> const lock(mutex_);
                     results_.push_back(std::move(result));
                     changed_.notify_all();
                 }
             } catch (...) {
-                std::scoped_lock const lock(mutex_);
+                std::scoped_lock<std::mutex> const lock(mutex_);
                 failure_ = std::current_exception();
                 changed_.notify_all();
                 break;
             }
         }
     } catch (...) {
-        std::scoped_lock const lock(mutex_);
+        std::scoped_lock<std::mutex> const lock(mutex_);
         failure_ = std::current_exception();
         worker_lost_ = true;
     }
-    std::scoped_lock const lock(mutex_);
+    std::scoped_lock<std::mutex> const lock(mutex_);
     finished_ = true;
     changed_.notify_all();
 }

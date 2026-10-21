@@ -21,3 +21,7 @@
 #define BIKE_NUMERICS_SYM_DGEMV "@_numerics_asm_dgemv@"
 #define BIKE_NUMERICS_SYM_DGEMM "@_numerics_asm_dgemm@"
 #define BIKE_NUMERICS_SYM_DGELSD "@_numerics_asm_dgelsd@"
+#define BIKE_NUMERICS_SYM_DGESV "@_numerics_asm_dgesv@"
+#define BIKE_NUMERICS_SYM_DSYEVD "@_numerics_asm_dsyevd@"
+#define BIKE_NUMERICS_SYM_DDOT_ILP64 "@_numerics_asm_ddot_ilp64@"
+#define BIKE_NUMERICS_SYM_ZDOTU_SUB "@_numerics_asm_zdotu_sub@"

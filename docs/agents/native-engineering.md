@@ -26,8 +26,10 @@ live in [development/linux.md](../development/linux.md), [development/macos.md](
 
 ## Implement the shared behavior
 
-Use the specification's strict input domains in Python and C++ together. Preserve valid-input binary64 operation order
-and existing deliberate saturation. Keep exceptional sentinels local to named fields. Field errors identify the public
+Use the specification's strict input domains in Python and C++ together until the Python replacement is qualified.
+Preserve valid-input binary64 operation order (parity with the Python oracle per
+[ADR-0003](../adr/0003-native-authoritative-python-removal.md) until a file's two-platform goldens and C++ port land;
+afterwards determinism and goldens), and existing deliberate saturation. Keep exceptional sentinels local to named fields. Field errors identify the public
 API and full field path and use the shared exception class.
 
 Validate and stage before committing state. Include model coefficients, policies, telemetry, clocks, pending actuation,

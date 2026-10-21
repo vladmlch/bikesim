@@ -18,6 +18,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <vector>
 
@@ -67,8 +68,8 @@ std::filesystem::path executable_path() {
         const int error = errno;
         fail_errno("platform::executable_path: readlink", error);
     }
-    return std::filesystem::path{buffer.data(),
-                                 static_cast<std::size_t>(got)};
+    return std::filesystem::path{
+        std::string_view{buffer.data(), static_cast<std::size_t>(got)}};
 #else
     throw std::runtime_error(
         "platform::executable_path: unsupported platform");

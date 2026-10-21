@@ -62,5 +62,22 @@ void calibration_and_root() {
     const auto fitted=n::fit_density(deflection,load,.35,"synthetic analytic",material.knots_m,64,10.);
     bt::require(fitted.accepted&&fitted.maximum_relative_error<1e-7&&fitted.calibration_status=="synthetic_fit_only","fit cannot certify physical material");
 }
+void binary64_certificate_edges() {
+    // Zero tolerance distinguishes a one-ulp contradiction from deliberate
+    // inequality slack. Outward rounding may return unknown, never a false
+    // feasible witness or an infeasibility certificate at a feasible boundary.
+    const n::FeasibilityOptions exact{.inequality_slack=0.,.primal_tolerance=0.};
+    const Matrix g{.rows=2,.cols=1,.values={-1.,1.}};
+    const std::array<double,2> h{-1.,std::nextafter(1.,0.)};
+    const std::array<double,1> lo{0.},hi{2.};
+    const auto contradiction=n::linear_feasibility(g,h,lo,hi,{}, {},exact);
+    bt::require(contradiction.status==n::FeasibilityStatus::proven_infeasible ||
+                contradiction.status==n::FeasibilityStatus::unknown,
+                "one-ulp contradiction has no feasible witness");
+    const std::array<double,2> boundary{-1.,1.};
+    bt::require(n::linear_feasibility(g,boundary,lo,hi,{}, {},exact).status!=
+                n::FeasibilityStatus::proven_infeasible,
+                "boundary-feasible interval is never proven empty");
 }
-int main(){return bt::run([]{projection_and_residuals();conservative_linear_regions();calibration_and_root();});}
+}
+int main(){return bt::run([]{projection_and_residuals();conservative_linear_regions();calibration_and_root();binary64_certificate_edges();});}

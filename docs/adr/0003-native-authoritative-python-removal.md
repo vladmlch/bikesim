@@ -25,6 +25,13 @@ permanent-Python clauses. The Repomix archives do not provide Git history:
 this source merge does not establish a Git merge commit or claim that
 Task 1.03's L1 build and checker gates passed.
 
+The actual checkout subsequently merged `feat/drop-oracle-parity` at
+`64c0a50043fd87a695e61a402572a63ee44fcfc4`, restoring its nine compressed
+research datasets and preserving this ADR's precedence. The existing
+shortened geomorphology-report path is retained for Linux portability.
+This completes the source/history integration; Task 1.03's L1 gates
+remain separate from that integration.
+
 ## Decision
 
 1. **Transition per test file.** A pytest file comparing native results to

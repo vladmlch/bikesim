@@ -379,3 +379,44 @@ Task-3.02 triage; this merge does not delete or relocate these files.
 - `tools/research/lateral_digitise/analyse.py`
 - `tools/research/lateral_digitise/digitise.py`
 - `tools/research/lateral_digitise/finalise.py`
+
+## 2026-10-21 — Task 1.03 actual-checkout integration
+
+Starting revision: `fc848de2d0d16389725b12337983bdf844e7e65c`.
+Merged branch: `feat/drop-oracle-parity` at
+`64c0a50043fd87a695e61a402572a63ee44fcfc4`.
+
+The previously imported text files are now reconciled with the actual Git
+branch. `git diff --name-status HEAD...feat/drop-oracle-parity -- native/
+CMakeLists.txt` exited 0 with no changes. Initial `git merge-tree
+--write-tree --name-only` exited 1 because the snapshot imports already
+exist as separate additions. Repeating with `-Xignore-space-at-eol` reduced
+the unresolved set to nine documentation/policy files. The actual merge
+used `git merge --no-ff --no-commit -Xignore-space-at-eol
+feat/drop-oracle-parity` (exit 1 pending those resolutions).
+
+Conflict resolution preserves the current ADR-0003 transition, portable
+reference-source lookup, native engineering rules, testing documentation,
+anchored generated-output ignore rule and lateral-source availability
+note. It restores all nine compressed alpine datasets from the branch.
+Each restored file's `git hash-object` equals the branch's `git rev-parse
+<branch>:<path>`; `gzip -t` exits 0 for all nine. The additional tyre/terrain
+research report equals the user's pre-existing untracked file byte for
+byte (blob `a0264f50f9d177903446891095b1538da84af456`); that file is now
+tracked. The geomorphology report already exists under its shortened
+portable name with identical text, so the duplicate 303-byte basename is
+excluded. No existing container or worktree is removed.
+
+Checks before the merge commit:
+
+- no unresolved index entries;
+- `git diff --cached --quiet HEAD -- native/ CMakeLists.txt`: exit 0;
+- `git diff --cached --quiet HEAD -- docs/superpowers`: exit 0;
+- nine blob comparisons and nine archive-integrity checks: exit 0;
+- comparison with the preserved untracked report: exit 0;
+- `git diff --check` and `git diff --cached --check`: exit 0.
+
+No project build, pytest/CTest suite, research calculation or L1/L2/L3
+gate is run for this source/history integration. Task 1.03's build/checker
+verification and the phase checkpoints remain open. The 22 research Python
+files and OD-1 are unchanged; no extra Python file is introduced here.

@@ -1,5 +1,17 @@
 # Task 1.03: drop-oracle-parity source merge into orig
 
+> **Actual-checkout follow-up (2026-10-21):** The source-snapshot record
+> below is historical. The real `feat/drop-oracle-parity` branch at
+> `64c0a50043fd87a695e61a402572a63ee44fcfc4` is now integrated with a
+> two-parent merge. Its nine compressed alpine datasets are restored with
+> their original Git blob identities and pass `gzip -t`. The additional
+> tyre/terrain research report is imported without changing the user's
+> identical existing file bytes. The geomorphology report keeps its existing
+> shortened path; the duplicate 303-byte basename is excluded. ADR-0003,
+> current platform documentation and native/build sources are preserved.
+> The source PDFs and figure images are still absent: this follow-up does
+> not fabricate or regenerate them. No L1/L2/L3 success is implied.
+
 Date: 2026-10-21
 Scope: D13 / Task 1.03 of [the C++ + Linux completion plan](../docs/superpowers/plans/2026-10-20-cpp-linux-completion.md), reconciled with D12 / Task 1.04 and [ADR-0003](../docs/adr/0003-native-authoritative-python-removal.md).
 

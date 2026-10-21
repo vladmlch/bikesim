@@ -1,10 +1,11 @@
 # alpine_osm_dem — reproducible OSM × DEM alpine-trail statistics
 
-> **Snapshot availability (2026-10-21):** This Repomix-based delivery
-> includes the expected statistics JSON recovered from the supplied audit
-> result and the two tile lists. The nine compressed datasets listed below
-> are absent from the supplied snapshots; the offline commands need the
-> original pinned files. The dated verification table was not rerun.
+> **Checkout availability (2026-10-21):** The nine compressed datasets listed
+> below were restored byte-for-byte from `feat/drop-oracle-parity` at
+> `64c0a50043fd87a695e61a402572a63ee44fcfc4`. The expected statistics JSON
+> recovered from the supplied audit result and the two tile lists are retained.
+> Archive integrity and Git blob identities were checked; the research
+> calculations and the dated verification table were not rerun.
 > See the [merge availability record](../../../migration/cpp-linux-task103-source-merge.md#inputs-absent-from-the-supplied-snapshots).
 
 Tools that generate the numbers in

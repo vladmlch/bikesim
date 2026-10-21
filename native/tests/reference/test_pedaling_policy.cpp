@@ -17,7 +17,7 @@ namespace cfg = bike::configuration;
 void test_reposition_knobs_and_mode_are_gone() {
     const auto removed = bike::io::parse_json(R"({"drive":{"pedaling":{"reposition_on_stall":true}}})");
     bt::invalid([&] { (void)cfg::detail::construct_config(removed); });
-    for (const auto& field : cfg::kPedalingConfigFields)
+    for (const auto& field : cfg::detail::kPedalingConfigFields)
         bt::require(field.name.find("reposition") == std::string_view::npos, "pedaling schema has no reposition knob");
     bt::require(!drivetrain::pedal_mode("reposition"), "reposition is absent from native mode domain");
     // Python's removed update(reposition=...) keyword is a signature-only

@@ -45,7 +45,7 @@ std::vector<std::byte> gzip_stored(std::string_view source) {
         offset+=count;
     } while(offset<source.size());
     std::uint32_t crc=0xffffffffU;
-    for(unsigned char ch:source){crc^=ch;for(int i=0;i<8;++i)crc=(crc>>1U)^(0xedb88320U&(0U-(crc&1U)));}
+    for(const char raw:source){const auto ch=static_cast<std::uint32_t>(static_cast<unsigned char>(raw));crc^=ch;for(int i=0;i<8;++i)crc=(crc>>1U)^(0xedb88320U&(0U-(crc&1U)));}
     crc^=0xffffffffU;
     const auto size=static_cast<std::uint32_t>(source.size()&0xffffffffULL);
     for(unsigned shift=0;shift<32;shift+=8)byte(crc>>shift);

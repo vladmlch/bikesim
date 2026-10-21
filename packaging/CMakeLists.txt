@@ -70,12 +70,16 @@ set(CPACK_SOURCE_IGNORE_FILES "")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CPackProject.cmake.in"
   "${CMAKE_BINARY_DIR}/CPackProject.cmake" @ONLY)
 set(CPACK_PROJECT_CONFIG_FILE "${CMAKE_BINARY_DIR}/CPackProject.cmake")
+# include(CPack) reuses CPACK_PACKAGE_FILE_NAME for the SOURCE package name
+# while configuring CPackSourceConfig.cmake; capture the binary tarball name
+# first so package_smoke extracts the right artifact.
+set(_package_binary_file_name "${CPACK_PACKAGE_FILE_NAME}")
 include(CPack)
 
 if(BUILD_TESTING)
   add_test(NAME package_smoke COMMAND "${CMAKE_COMMAND}"
     "-DBUILD_DIR=${CMAKE_BINARY_DIR}"
-    "-DBINARY_PACKAGE=${CPACK_PACKAGE_FILE_NAME}"
+    "-DBINARY_PACKAGE=${_package_binary_file_name}"
     "-DSOURCE_PACKAGE=${CPACK_SOURCE_PACKAGE_FILE_NAME}"
     "-DAUDIT_BINARY=$<TARGET_FILE:bike-python-audit>"
     "-DAUDIT_POLICY=${CMAKE_SOURCE_DIR}/migration/no-python-policy.json"

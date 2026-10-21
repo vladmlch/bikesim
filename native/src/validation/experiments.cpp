@@ -30,23 +30,34 @@ terrain::TrackSpec case_track(std::string_view name) {
     else if(name=="step_4cm")track.obstacles.push_back({terrain::SquareEdge{4.,.04,1.}});
     return track;
 }
-std::unique_ptr<Simulation> make_fidelity(std::string_view name,double dt,double dx,int n,std::string_view backend,std::string_view transmission,const std::filesystem::path& profile,std::optional<initialization::PhysicalInitialState> initial={}) {
-    if(name=="motor_ramp_grade")throw std::invalid_argument(std::string(motor_only_unsupported));
+// The -O0 frame budget keeps the override Value, resolved config and
+// BuildRequest temporaries each in their own helper frame.
+Value fidelity_override(std::string_view name,double dt,int n,std::string_view backend,std::string_view transmission){
     const bool moving=name=="bump_coast"||name=="crest_coast"||name=="step_4cm"||name=="recontact";
     Value tires{Object{
         {"backend",value::text(backend)},
         {"distributed",Value{Object{{"station_count",value::integer(n)}}}}
     }};
-    Value override{Object{
+    return Value{Object{
         {"timestep_s",value::real(dt)},{"closure_time_constant_s",value::real(.0025)},
         {"initial_speed_mps",value::real(moving?2.:0.)},{"tires",std::move(tires)},
         {"drive",Value{Object{{"transmission_model",value::text(transmission)}}}},
         {"equilibrium_cache_enabled",Value{true}}
     }};
-    auto c=configuration::resolve_physics(override,configuration::load_physics(profile));
-    initialization::SetupRequest request;request.model=mechanics::request(std::move(c),true);request.track=case_track(name);
-    request.model.field=research::research_field(request.track,dx);request.asset_root=profile.parent_path();request.initial_state=std::move(initial);
-    const bool recontact=name=="recontact"&&!request.initial_state;auto sim=std::make_unique<Simulation>(std::move(request));
+}
+model::BuildRequest fidelity_model(const Value& override,const std::filesystem::path& profile){
+    return mechanics::request(configuration::resolve_physics(override,configuration::load_physics(profile)),true);
+}
+std::unique_ptr<initialization::SetupRequest> fidelity_request(std::string_view name,double dt,double dx,int n,std::string_view backend,std::string_view transmission,const std::filesystem::path& profile,std::optional<initialization::PhysicalInitialState> initial){
+    auto request=std::make_unique<initialization::SetupRequest>();
+    request->model=fidelity_model(fidelity_override(name,dt,n,backend,transmission),profile);
+    request->track=case_track(name);request->model.field=research::research_field(request->track,dx);request->asset_root=profile.parent_path();request->initial_state=std::move(initial);
+    return request;
+}
+std::unique_ptr<Simulation> make_fidelity(std::string_view name,double dt,double dx,int n,std::string_view backend,std::string_view transmission,const std::filesystem::path& profile,std::optional<initialization::PhysicalInitialState> initial={}) {
+    if(name=="motor_ramp_grade")throw std::invalid_argument(std::string(motor_only_unsupported));
+    const auto request=fidelity_request(name,dt,dx,n,backend,transmission,profile,std::move(initial));
+    const bool recontact=name=="recontact"&&!request->initial_state;auto sim=std::make_unique<Simulation>(std::move(*request));
     if(recontact){(void)RuntimeRigAccess::rebase_airborne(*sim->runtime,.12,-.5,false,false,false,true);auto eq=get(sim->metadata,"equilibrium");
         set(eq,"initial_condition_fixture",Value{Object{{"airborne_height_increment_m",value::real(.12)},{"vertical_velocity_mps",value::real(-.5)}}});set(sim->metadata,"equilibrium",std::move(eq));}
     return sim;
@@ -72,6 +83,32 @@ Value axes_summary(const Array& comparisons,bool require_nonempty=true) {
     Object result;for(const char* axis:{"time","road","stations"}){bool exists=false,passed=true;for(const auto& c:comparisons)if(flag(c,"finest_pair")&&text(c,"axis")==axis){exists=true;passed=passed&&flag(c,"passed");}
         result.emplace_back(axis,Value{passed&&(!require_nonempty||exists)});}return Value{std::move(result)};
 }
+// Per-case series/comparison production extracted so fidelity_sweep's frame
+// stays under the -O0 -Wframe-larger-than budget.
+void fidelity_case(const std::string& name,const std::vector<double>& anchor,const Value& resolution,const Value& times,const Value& roads,const Value& stations,bool include,std::string_view backend,std::string_view transmission,const std::filesystem::path& profile,const std::filesystem::path& out,Value& report,Array& series,Array& comparisons){
+    std::optional<initialization::PhysicalInitialState> initial;std::map<int,initialization::PhysicalInitialState> projected;
+    using Key=std::tuple<double,double,int>;std::map<Key,Value> lookup;
+    try{auto sim=make_fidelity(name,anchor[0],anchor[1],static_cast<int>(anchor[2]),backend,transmission,profile);initial=sim->initial_state();write_report_text(out/(name+"_initial_state.json"),initial->payload_json());
+        if(include)for(const auto& count:io::as_array(stations,"stations")){const auto n=io::as_int64(count,"stations");if(n!=static_cast<int>(anchor[2]))projected.emplace(static_cast<int>(n),sim->initial_state(static_cast<int>(n)));}}
+    catch(const std::exception& e){auto errors=optional(report,"initialization_errors",empty_object());set(errors,name,value::text(e.what()));set(report,"initialization_errors",std::move(errors));}
+    for(const auto& variant:io::as_array(get(resolution,"variants"),"variants")){const auto& a=io::as_array(variant,"variant");const auto axis=io::as_string(a[0],"axis");
+        const double dt=io::as_double(a[1],"dt"),dx=io::as_double(a[2],"dx");const int n=static_cast<int>(io::as_int64(a[3],"station count"));const Key key{dt,dx,n};if(lookup.contains(key))continue;
+        const auto file=std::format("{}_dt{:.7f}_dx{:g}_n{}.json.gz",name,dt,dx,n);
+        Value item{Object{{"case",value::text(name)},{"dt_s",value::real(dt)},{"dx_m",value::real(dx)},{"station_count",value::integer(n)},{"axis",value::text(axis)},{"file",value::text(file)}}};const auto start=Clock::now();
+        try{if(!initial)throw std::invalid_argument("shared candidate initialization failed");auto seed=n==static_cast<int>(anchor[2])?*initial:projected.at(n);
+            auto sim=make_fidelity(name,dt,dx,n,backend,transmission,profile,std::move(seed));auto result=run_fidelity_case(*sim,name,initial->sha256());write_report(out/file,result);
+            for(const char* field:{"metrics","termination","metadata","equilibrium"})set(item,field,get(result,field));set(item,"runtime_s",get(result,"wall_time_s"));}
+        catch(const std::exception& e){set(item,"metrics",Value{});set(item,"termination",value::text("initialization_failure"));set(item,"error",value::text(e.what()));}
+        set(item,"total_wall_time_s",value::real(elapsed(start)));lookup.emplace(key,item);series.push_back(std::move(item));set(report,"series",Value{series});write_report(out/"report.json",report);}
+    std::vector<std::pair<std::string,std::vector<Key>>> groups;std::vector<Key> keys;
+    for(double dt:numbers(times,"times"))keys.emplace_back(dt,anchor[1],static_cast<int>(anchor[2]));groups.emplace_back("time",std::move(keys));keys.clear();
+    for(double dx:numbers(roads,"roads"))keys.emplace_back(anchor[0],dx,static_cast<int>(anchor[2]));groups.emplace_back("road",std::move(keys));
+    if(include){keys.clear();for(const auto& n:io::as_array(stations,"stations"))keys.emplace_back(anchor[0],anchor[1],static_cast<int>(io::as_int64(n,"n")));groups.emplace_back("stations",std::move(keys));}
+    for(const auto& [axis,entries]:groups)for(std::size_t i=0;i<entries.size();++i)for(std::size_t j=i+1;j<entries.size();++j){const auto& a=lookup.at(entries[i]);const auto& b=lookup.at(entries[j]);
+        Value comparison{Object{{"case",value::text(name)},{"axis",value::text(axis)},{"coarse",get(a,"file")},{"reference",get(b,"file")},{"finest_pair",Value{i==entries.size()-2&&j==entries.size()-1}}}};
+        try{if(io::is_null(get(a,"metrics"))||io::is_null(get(b,"metrics")))throw std::invalid_argument("missing/aborted series");merge(comparison,compare_metrics(get(a,"metrics"),get(b,"metrics")));}
+        catch(const std::exception& e){set(comparison,"passed",Value{false});set(comparison,"failed_criteria",value::strings(std::array<std::string,1>{"incomplete_evidence"}));set(comparison,"error",value::text(e.what()));}comparisons.push_back(std::move(comparison));}
+}
 } // namespace
 
 Value fidelity_sweep(const Value& config,const std::filesystem::path& root) {
@@ -94,28 +131,7 @@ Value fidelity_sweep(const Value& config,const std::filesystem::path& root) {
         {"candidate_resolution",Value{Object{{"dt_s",value::real(anchor[0])},{"dx_m",value::real(anchor[1])},{"station_count",value::integer(static_cast<int>(anchor[2]))}}}},
         {"time_steps",times},{"road_steps",roads},{"station_counts",stations},{"station_initialization",value::text("same qpos/qvel; explicit periodic angular material-field projection, target residual recorded")},{"jobs",value::integer(1)}}};
     Array series,comparisons;
-    for(const auto& name:selected){std::optional<initialization::PhysicalInitialState> initial;std::map<int,initialization::PhysicalInitialState> projected;
-        using Key=std::tuple<double,double,int>;std::map<Key,Value> lookup;
-        try{auto sim=make_fidelity(name,anchor[0],anchor[1],static_cast<int>(anchor[2]),backend,transmission,profile);initial=sim->initial_state();write_report_text(out/(name+"_initial_state.json"),initial->payload_json());
-            if(include)for(const auto& count:io::as_array(stations,"stations")){const auto n=io::as_int64(count,"stations");if(n!=static_cast<int>(anchor[2]))projected.emplace(static_cast<int>(n),sim->initial_state(static_cast<int>(n)));}}
-        catch(const std::exception& e){auto errors=optional(report,"initialization_errors",empty_object());set(errors,name,value::text(e.what()));set(report,"initialization_errors",std::move(errors));}
-        for(const auto& variant:io::as_array(get(resolution,"variants"),"variants")){const auto& a=io::as_array(variant,"variant");const auto axis=io::as_string(a[0],"axis");
-            const double dt=io::as_double(a[1],"dt"),dx=io::as_double(a[2],"dx");const int n=static_cast<int>(io::as_int64(a[3],"station count"));const Key key{dt,dx,n};if(lookup.contains(key))continue;
-            const auto file=std::format("{}_dt{:.7f}_dx{:g}_n{}.json.gz",name,dt,dx,n);
-            Value item{Object{{"case",value::text(name)},{"dt_s",value::real(dt)},{"dx_m",value::real(dx)},{"station_count",value::integer(n)},{"axis",value::text(axis)},{"file",value::text(file)}}};const auto start=Clock::now();
-            try{if(!initial)throw std::invalid_argument("shared candidate initialization failed");auto seed=n==static_cast<int>(anchor[2])?*initial:projected.at(n);
-                auto sim=make_fidelity(name,dt,dx,n,backend,transmission,profile,std::move(seed));auto result=run_fidelity_case(*sim,name,initial->sha256());write_report(out/file,result);
-                for(const char* field:{"metrics","termination","metadata","equilibrium"})set(item,field,get(result,field));set(item,"runtime_s",get(result,"wall_time_s"));}
-            catch(const std::exception& e){set(item,"metrics",Value{});set(item,"termination",value::text("initialization_failure"));set(item,"error",value::text(e.what()));}
-            set(item,"total_wall_time_s",value::real(elapsed(start)));lookup.emplace(key,item);series.push_back(std::move(item));set(report,"series",Value{series});write_report(out/"report.json",report);}
-        std::vector<std::pair<std::string,std::vector<Key>>> groups;std::vector<Key> keys;
-        for(double dt:numbers(times,"times"))keys.emplace_back(dt,anchor[1],static_cast<int>(anchor[2]));groups.emplace_back("time",std::move(keys));keys.clear();
-        for(double dx:numbers(roads,"roads"))keys.emplace_back(anchor[0],dx,static_cast<int>(anchor[2]));groups.emplace_back("road",std::move(keys));
-        if(include){keys.clear();for(const auto& n:io::as_array(stations,"stations"))keys.emplace_back(anchor[0],anchor[1],static_cast<int>(io::as_int64(n,"n")));groups.emplace_back("stations",std::move(keys));}
-        for(const auto& [axis,entries]:groups)for(std::size_t i=0;i<entries.size();++i)for(std::size_t j=i+1;j<entries.size();++j){const auto& a=lookup.at(entries[i]);const auto& b=lookup.at(entries[j]);
-            Value comparison{Object{{"case",value::text(name)},{"axis",value::text(axis)},{"coarse",get(a,"file")},{"reference",get(b,"file")},{"finest_pair",Value{i==entries.size()-2&&j==entries.size()-1}}}};
-            try{if(io::is_null(get(a,"metrics"))||io::is_null(get(b,"metrics")))throw std::invalid_argument("missing/aborted series");merge(comparison,compare_metrics(get(a,"metrics"),get(b,"metrics")));}
-            catch(const std::exception& e){set(comparison,"passed",Value{false});set(comparison,"failed_criteria",value::strings(std::array<std::string,1>{"incomplete_evidence"}));set(comparison,"error",value::text(e.what()));}comparisons.push_back(std::move(comparison));}}
+    for(const auto& name:selected)fidelity_case(name,anchor,resolution,times,roads,stations,include,backend,transmission,profile,out,report,series,comparisons);
     bool any=false,passed=true;std::set<std::string> failures;std::map<std::string,double> maxima;
     for(const auto& c:comparisons){if(flag(c,"finest_pair")){any=true;passed=passed&&flag(c,"passed");for(const auto& key:strings(optional(c,"failed_criteria",Value{Array{}}),"failed criteria"))failures.insert(key);}
         for(const auto& [key,v]:io::as_object(optional(c,"criteria",empty_object()),"criteria"))if(const auto* actual=find(v,"actual"))if(std::holds_alternative<io::Number>(actual->data)){const double x=io::as_double(*actual,"actual");auto it=maxima.find(key);if(it==maxima.end())maxima.emplace(key,x);else it->second=std::max(it->second,x);}}
@@ -143,50 +159,51 @@ runtime::RideControl scenario_control(const Value& item,double t) {
         else if(p=="forward"){posture.torso_lean_rad=.2;posture.pelvis_offset_m=spindle::Vec2{.08,.02};}
         else if(p=="rearward"){posture.torso_lean_rad=-.1;posture.pelvis_offset_m=spindle::Vec2{-.08,.02};}control.posture=posture;}return control;
 }
+// The -O0 frame budget keeps the resolve/request temporaries inside the
+// model builder and one scenario execution per helper frame.
+model::BuildRequest resolve_model(const Value& overrides,const configuration::SimulationPhysicsConfig& base){
+    return mechanics::request(configuration::resolve_physics(overrides,base),true);
 }
-Value reference_matrix(const Value& config,const std::filesystem::path& root) {
-    const auto profile=root/text(config,"physics_profile","examples/research/plant_reference_open_loop.toml"),out=root/text(config,"output","results/reference-matrix");
-    const auto base=configuration::load_physics(profile);std::filesystem::create_directories(out);const auto all=scenario_definitions();Array items=io::as_array(all,"scenarios");
-    if(const auto* choice=find(config,"names")){const auto names=strings(*choice,"names");std::set<std::string> known;for(const auto& item:items)known.insert(text(item,"name"));
-        if(names.empty())throw std::invalid_argument("unknown/empty reference scenario selection");for(const auto& name:names)if(!known.contains(name))throw std::invalid_argument("unknown/empty reference scenario selection");
-        std::erase_if(items,[&](const auto& item){return std::ranges::find(names,text(item,"name"))==names.end();});}
-    Value summary{Object{{"schema_version",value::integer(1)},{"source_sha256",value::text(source_fingerprint(root/"native/src"))},{"environment",environment_contract(root)},
-        {"physics_profile",value::text(profile.string())},{"scenarios",Value{Array{}}},{"release_status",value::text("parameterized_unvalidated")}}};
-    Array records;std::map<std::pair<double,double>,initialization::PhysicalInitialState> seeds;
-    for(const auto& item:items){const auto name=text(item,"name");Value record{Object{{"scenario",item},{"rows",Value{Array{}}}}};Array rows;const auto start=Clock::now();
-        try{const bool moving=name=="bump"||name=="crest"||name=="step_4cm"||name=="step_6cm"||name=="two_support"||name=="recontact";const double speed=moving?2.:0.;
-            Value drive{Object{{"human_torque_nm",value::real(0.)},{"shifting",Value{Object{{"enabled",Value{false}}}}},{"pedaling",Value{Object{{"rollback_brake",Value{false}}}}}}};
-            Value overrides{Object{{"initial_speed_mps",value::real(speed)},{"drive",std::move(drive)}}};if(const auto* dt=find(config,"dt_s"))set(overrides,"timestep_s",*dt);
-            initialization::SetupRequest request;request.model=mechanics::request(configuration::resolve_physics(overrides,base),true);request.track=scenario_track(item,root);request.model.field=research::research_field(request.track,real(config,"dx_m",.005));
-            const auto key=std::pair{speed,real(item,"grade",0.)};if(auto found=seeds.find(key);found!=seeds.end())request.initial_state=found->second;
-            Simulation sim(request);if(!seeds.contains(key))seeds.emplace(key,sim.initial_state());
-            if(name=="recontact"){(void)RuntimeRigAccess::rebase_airborne(*sim.runtime,.12,-.5,false,false,false,true);auto eq=get(sim.metadata,"equilibrium");set(eq,"airborne_initial_offset_m",value::real(.12));set(sim.metadata,"equilibrium",std::move(eq));}
-            set(record,"metadata",sim.metadata);set(record,"equilibrium",get(sim.metadata,"equilibrium"));set(record,"initial_state_sha256",value::text(sim.initial_state().sha256()));
-            RuntimeRigAccess::inspect(*sim.runtime,[&](const Stepper& stepper,const auto&){set(record,"initial_qpos",value::doubles(stepper.qpos()));set(record,"initial_qvel",value::doubles(stepper.qvel()));});
-            const auto geometry=RuntimeRigAccess::truth_geometry(*sim.runtime);runtime::WheelieTracker tracker;const double duration=real(item,"duration_s"),dt=request.model.physics->timestep_s;
-            const auto count=steps(duration,dt,1e-9),check_every=std::max<std::size_t>(1,static_cast<std::size_t>(std::nearbyint(.1/dt)));
-            std::optional<double> goal;if(const auto* g=find(item,"goal_x_m"))if(!io::is_null(*g))goal=io::as_double(*g,"goal");Value outcome;std::optional<std::string> error;bool stop=false;
-            auto drain=[&]{const auto batch=sim.runtime->prepare_samples();for(const auto& s:batch.samples)rows.push_back(interval_row(*s,geometry,tracker));sim.runtime->acknowledge_samples(batch);};
-            try{for(std::size_t i=0;i<count&&!stop;++i){const auto state=sim.runtime->snapshot();const auto result=sim.runtime->advance(state.step+1,scenario_control(item,state.time_s),0.,0.,{});drain();
-                if(!rows.empty()&&(result.outcome||!flag(get(rows.back(),"model_status"),"model_valid")||!flag(get(rows.back(),"model_status"),"numerically_valid")||i%check_every==0)){
-                    outcome=classify_outcome(Value{rows},goal,result.outcome.has_value());stop=text(outcome,"outcome")!="duration_limit";}}sim.runtime->flush();drain();}
-            catch(const std::exception& e){error=e.what();try{sim.runtime->flush();drain();}catch(const std::exception& cleanup){set(record,"cleanup_error",value::text(cleanup.what()));}}
-            if(error||io::is_null(outcome)||text(outcome,"outcome")=="duration_limit")outcome=classify_outcome(Value{rows},goal,sim.runtime->snapshot().outcome.has_value(),error,true);
-            set(record,"outcome",std::move(outcome));if(!rows.empty())set(record,"metrics",metrics_from_rows(Value{rows},duration,text(record,"initial_state_sha256")));
-            set(record,"observer",research::wire_value(runtime::Wire{tracker.metrics()}));}
-        catch(const std::exception& e){set(record,"outcome",Value{Object{{"outcome",value::text("numerical_failure")},{"reason",value::text(std::string("initialization: ")+e.what())},
-            {"time_s",value::real(0.)},{"position_m",Value{}},{"control",::rider::encode_intent_control(scenario_control(item,0.))}}});}
-        set(record,"rows",Value{rows});set(record,"wall_time_s",value::real(elapsed(start)));const std::string file=name+".json.gz";write_report(out/file,record);
-        std::erase_if(std::get<Object>(record.data),[](const auto& entry){return entry.first=="rows";});set(record,"file",value::text(file));set(record,"interval_count",value::integer(static_cast<std::int64_t>(rows.size())));
-        records.push_back(std::move(record));set(summary,"scenarios",Value{records});write_report(out/"matrix.json",summary);}
-    return summary;
+Value reference_overrides(const Value& item,const Value& config){
+    const auto name=text(item,"name");const bool moving=name=="bump"||name=="crest"||name=="step_4cm"||name=="step_6cm"||name=="two_support"||name=="recontact";const double speed=moving?2.:0.;
+    Value drive{Object{{"human_torque_nm",value::real(0.)},{"shifting",Value{Object{{"enabled",Value{false}}}}},{"pedaling",Value{Object{{"rollback_brake",Value{false}}}}}}};
+    Value overrides{Object{{"initial_speed_mps",value::real(speed)},{"drive",std::move(drive)}}};if(const auto* dt=find(config,"dt_s"))set(overrides,"timestep_s",*dt);return overrides;
 }
-
-Value contact_resolution(const Value& config,const std::filesystem::path& root) {
-    const auto out=root/text(config,"output","results/contact_resolution");std::filesystem::create_directories(out);const configuration::HingeDensity density;
-    Value material{Object{{"knots_m",value::doubles(density.knots_m)},{"stiffness_n_m",value::doubles(density.stiffness_n_m)},{"damping_ns_m",value::real(density.damping_ns_m)},{"provenance",value::text(density.provenance)}}};
-    Value report{Object{{"schema_version",value::integer(1)},{"source_sha256",value::text(source_fingerprint(root/"native/src"))},{"environment",environment_contract(root)},
-        {"material",material},{"synthetic",Value{true}},{"series",Value{Array{}}},{"stand_checks",Value{Array{}}},{"comparisons",Value{Array{}}},{"passed",Value{false}}}};
+std::unique_ptr<initialization::SetupRequest> reference_request(const Value& item,const configuration::SimulationPhysicsConfig& base,const Value& config,const std::filesystem::path& root,const std::map<std::pair<double,double>,initialization::PhysicalInitialState>& seeds,const std::pair<double,double>& key){
+    auto request=std::make_unique<initialization::SetupRequest>();
+    request->model=resolve_model(reference_overrides(item,config),base);request->track=scenario_track(item,root);request->model.field=research::research_field(request->track,real(config,"dx_m",.005));
+    if(auto found=seeds.find(key);found!=seeds.end())request->initial_state=found->second;
+    return request;
+}
+void reference_run(Simulation& sim,const Value& item,Array& rows,Value& record){
+    const auto geometry=RuntimeRigAccess::truth_geometry(*sim.runtime);runtime::WheelieTracker tracker;const double duration=real(item,"duration_s"),dt=sim.request.model.physics->timestep_s;
+    const auto count=steps(duration,dt,1e-9),check_every=std::max<std::size_t>(1,static_cast<std::size_t>(std::nearbyint(.1/dt)));
+    std::optional<double> goal;if(const auto* g=find(item,"goal_x_m"))if(!io::is_null(*g))goal=io::as_double(*g,"goal");Value outcome;std::optional<std::string> error;bool stop=false;
+    auto drain=[&]{const auto batch=sim.runtime->prepare_samples();for(const auto& s:batch.samples)rows.push_back(interval_row(*s,geometry,tracker));sim.runtime->acknowledge_samples(batch);};
+    try{for(std::size_t i=0;i<count&&!stop;++i){const auto state=sim.runtime->snapshot();const auto result=sim.runtime->advance(state.step+1,scenario_control(item,state.time_s),0.,0.,{});drain();
+        if(!rows.empty()&&(result.outcome||!flag(get(rows.back(),"model_status"),"model_valid")||!flag(get(rows.back(),"model_status"),"numerically_valid")||i%check_every==0)){
+            outcome=classify_outcome(Value{rows},goal,result.outcome.has_value());stop=text(outcome,"outcome")!="duration_limit";}}sim.runtime->flush();drain();}
+    catch(const std::exception& e){error=e.what();try{sim.runtime->flush();drain();}catch(const std::exception& cleanup){set(record,"cleanup_error",value::text(cleanup.what()));}}
+    if(error||io::is_null(outcome)||text(outcome,"outcome")=="duration_limit")outcome=classify_outcome(Value{rows},goal,sim.runtime->snapshot().outcome.has_value(),error,true);
+    set(record,"outcome",std::move(outcome));if(!rows.empty())set(record,"metrics",metrics_from_rows(Value{rows},duration,text(record,"initial_state_sha256")));
+    set(record,"observer",research::wire_value(runtime::Wire{tracker.metrics()}));
+}
+Value reference_scenario(const Value& item,const configuration::SimulationPhysicsConfig& base,const Value& config,const std::filesystem::path& root,const std::filesystem::path& out,std::map<std::pair<double,double>,initialization::PhysicalInitialState>& seeds){
+    const auto name=text(item,"name");Value record{Object{{"scenario",item},{"rows",Value{Array{}}}}};Array rows;const auto start=Clock::now();
+    try{const bool moving=name=="bump"||name=="crest"||name=="step_4cm"||name=="step_6cm"||name=="two_support"||name=="recontact";const auto key=std::pair{moving?2.:0.,real(item,"grade",0.)};
+        const auto request=reference_request(item,base,config,root,seeds,key);
+        const auto sim=std::make_unique<Simulation>(std::move(*request));if(!seeds.contains(key))seeds.emplace(key,sim->initial_state());
+        if(name=="recontact"){(void)RuntimeRigAccess::rebase_airborne(*sim->runtime,.12,-.5,false,false,false,true);auto eq=get(sim->metadata,"equilibrium");set(eq,"airborne_initial_offset_m",value::real(.12));set(sim->metadata,"equilibrium",std::move(eq));}
+        set(record,"metadata",sim->metadata);set(record,"equilibrium",get(sim->metadata,"equilibrium"));set(record,"initial_state_sha256",value::text(sim->initial_state().sha256()));
+        RuntimeRigAccess::inspect(*sim->runtime,[&](const Stepper& stepper,const auto&){set(record,"initial_qpos",value::doubles(stepper.qpos()));set(record,"initial_qvel",value::doubles(stepper.qvel()));});
+        reference_run(*sim,item,rows,record);}
+    catch(const std::exception& e){set(record,"outcome",Value{Object{{"outcome",value::text("numerical_failure")},{"reason",value::text(std::string("initialization: ")+e.what())},
+        {"time_s",value::real(0.)},{"position_m",Value{}},{"control",::rider::encode_intent_control(scenario_control(item,0.))}}});}
+    set(record,"rows",Value{rows});set(record,"wall_time_s",value::real(elapsed(start)));const std::string file=name+".json.gz";write_report(out/file,record);
+    std::erase_if(std::get<Object>(record.data),[](const auto& entry){return entry.first=="rows";});set(record,"file",value::text(file));set(record,"interval_count",value::integer(static_cast<std::int64_t>(rows.size())));
+    return record;
+}
+Array contact_fits(const configuration::HingeDensity& density){
     const auto depths=geometry::detail::np_linspace(.001,.012,12);std::vector<double> linear;for(double x:depths)linear.push_back(130000.*x);Array fits;
     const std::array<std::pair<std::string,std::vector<double>>,2> targets{{{"synthetic-original-linear-radial-130000",linear},{"synthetic-density-identifiability",numerics::flat_load(depths,.37,density,1024).force}}};
     for(const auto& [name,loads]:targets){const auto fit=numerics::fit_density(depths,loads,.37,name);
@@ -196,12 +213,18 @@ Value contact_resolution(const Value& config,const std::filesystem::path& root) 
             {"predicted_load_n",value::doubles(fit.predicted_load_n)},{"deflection_m",value::doubles(fit.deflection_m)},
             {"density",Value{Object{{"knots_m",value::doubles(fit.density.knots_m)},{"stiffness_n_m",value::doubles(fit.density.stiffness_n_m)},
                 {"damping_ns_m",value::real(fit.density.damping_ns_m)},{"provenance",value::text(fit.density.provenance)}}}}}});}
-    set(report,"fits",Value{std::move(fits)});set(report,"material_selection",value::text("unchanged declared synthetic density; no automatic promotion from fit"));Array stands,series,comparisons;
+    return fits;
+}
+Array contact_stand_checks(){
+    Array stands;
     for(int n:{128,256,512})for(double load:{100.,300.,600.,1000.}){const auto result=distributed_flat_rig(.0003125,n,load);
         stands.push_back(Value{Object{{"case",value::text("flat_load")},{"n",value::integer(n)},{"load_n",value::real(load)},{"metrics",result.metrics},{"passed",Value{checks_passed(check_bounds(result.metrics,result.bounds))}}}});}
     for(double angle:{5.,15.,30.}){const auto result=distributed_incline_rig(.0003125,256,angle);
         stands.push_back(Value{Object{{"case",value::text("incline_no_slip_fixture")},{"angle_deg",value::real(angle)},{"metrics",result.metrics},{"passed",Value{checks_passed(check_bounds(result.metrics,result.bounds))}}}});}
-    set(report,"stand_checks",Value{stands});using Key=std::tuple<double,int,double>;
+    return stands;
+}
+void contact_series(const std::filesystem::path& out,Value& report,Array& series,Array& comparisons){
+    using Key=std::tuple<double,int,double>;
     const std::array<std::pair<std::string,std::array<Key,3>>,3> variants{{
         {"time",{Key{.00125,256,.005},Key{.000625,256,.005},Key{.0003125,256,.005}}},
         {"road",{Key{.0003125,256,.01},Key{.0003125,256,.005},Key{.0003125,256,.0025}}},
@@ -218,6 +241,31 @@ Value contact_resolution(const Value& config,const std::filesystem::path& root) 
                 Value comparison{Object{{"case",value::text(name)},{"axis",value::text(axis)},{"coarse",get(a,"file")},{"reference",get(b,"file")},{"finest_pair",Value{i==1&&j==2}}}};
                 if(!io::is_null(get(a,"metrics"))&&!io::is_null(get(b,"metrics")))merge(comparison,contact_comparison(get(a,"metrics"),get(b,"metrics")));
                 else{set(comparison,"passed",Value{false});set(comparison,"reason",value::text("failed series"));}comparisons.push_back(std::move(comparison));}}}
+}
+}
+Value reference_matrix(const Value& config,const std::filesystem::path& root) {
+    const auto profile=root/text(config,"physics_profile","examples/research/plant_reference_open_loop.toml"),out=root/text(config,"output","results/reference-matrix");
+    const auto base=configuration::load_physics(profile);std::filesystem::create_directories(out);const auto all=scenario_definitions();Array items=io::as_array(all,"scenarios");
+    if(const auto* choice=find(config,"names")){const auto names=strings(*choice,"names");std::set<std::string> known;for(const auto& item:items)known.insert(text(item,"name"));
+        if(names.empty())throw std::invalid_argument("unknown/empty reference scenario selection");for(const auto& name:names)if(!known.contains(name))throw std::invalid_argument("unknown/empty reference scenario selection");
+        std::erase_if(items,[&](const auto& item){return std::ranges::find(names,text(item,"name"))==names.end();});}
+    Value summary{Object{{"schema_version",value::integer(1)},{"source_sha256",value::text(source_fingerprint(root/"native/src"))},{"environment",environment_contract(root)},
+        {"physics_profile",value::text(profile.string())},{"scenarios",Value{Array{}}},{"release_status",value::text("parameterized_unvalidated")}}};
+    Array records;std::map<std::pair<double,double>,initialization::PhysicalInitialState> seeds;
+    for(const auto& item:items){
+        auto record=reference_scenario(item,base,config,root,out,seeds);
+        records.push_back(std::move(record));set(summary,"scenarios",Value{records});write_report(out/"matrix.json",summary);}
+    return summary;
+}
+
+Value contact_resolution(const Value& config,const std::filesystem::path& root) {
+    const auto out=root/text(config,"output","results/contact_resolution");std::filesystem::create_directories(out);const configuration::HingeDensity density;
+    Value material{Object{{"knots_m",value::doubles(density.knots_m)},{"stiffness_n_m",value::doubles(density.stiffness_n_m)},{"damping_ns_m",value::real(density.damping_ns_m)},{"provenance",value::text(density.provenance)}}};
+    Value report{Object{{"schema_version",value::integer(1)},{"source_sha256",value::text(source_fingerprint(root/"native/src"))},{"environment",environment_contract(root)},
+        {"material",material},{"synthetic",Value{true}},{"series",Value{Array{}}},{"stand_checks",Value{Array{}}},{"comparisons",Value{Array{}}},{"passed",Value{false}}}};
+    set(report,"fits",Value{contact_fits(density)});set(report,"material_selection",value::text("unchanged declared synthetic density; no automatic promotion from fit"));Array series,comparisons;
+    const Array stands=contact_stand_checks();
+    set(report,"stand_checks",Value{stands});contact_series(out,report,series,comparisons);
     const auto axes=axes_summary(comparisons);bool passed=checks_passed(axes);for(const auto& stand:stands)passed=passed&&flag(stand,"passed");
     set(report,"comparisons",Value{std::move(comparisons)});set(report,"axes_passed",axes);set(report,"passed",Value{passed});
     set(report,"status",value::text(passed?"numerically_verified_synthetic_stands":"experimental_gate_failed"));write_report(out/"report.json",report);return report;

@@ -551,6 +551,13 @@ function(bike_write_check_context)
     message(FATAL_ERROR
       "Cannot record the configured Python identity: ${_ctx_python_error}")
   endif()
+  # A JSON null member (the Python-free root record) reads back empty or
+  # -NOTFOUND through GET without tripping the error check above; emit the
+  # literal null the schema-2 context requires.
+  if("${_ctx_python_json}" STREQUAL ""
+     OR "${_ctx_python_json}" MATCHES "-NOTFOUND$")
+    set(_ctx_python_json "null")
+  endif()
   _native_json_quote(_ctx_source_directory_json "${CMAKE_CURRENT_SOURCE_DIR}")
   _native_json_quote(_ctx_build_directory_json "${CMAKE_BINARY_DIR}")
   _native_json_array(_native_include_paths_json ${_native_required_includes})

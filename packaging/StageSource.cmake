@@ -28,7 +28,17 @@ foreach(_relative IN LISTS _files)
     endif()
   endif()
   if(IS_SYMLINK "${_source}/${_relative}")
-    message(FATAL_ERROR "Source archive requires a regular source file, not a symlink: ${_relative}")
+    # Tracked links (e.g. .claude/skills/*) are part of the snapshot; the
+    # archive must carry the link itself, like git archive, never the
+    # machine-local content it happens to resolve to on this host. Relative
+    # in-tree links keep working after extraction because the target's real
+    # files are staged as well; absolute links extract as the same dangling
+    # link a fresh checkout produces.
+    file(READ_SYMLINK "${_source}/${_relative}" _link_target)
+    get_filename_component(_parent "${_stage}/${_relative}" DIRECTORY)
+    file(MAKE_DIRECTORY "${_parent}")
+    file(CREATE_LINK "${_link_target}" "${_stage}/${_relative}" SYMBOLIC)
+    continue()
   endif()
   get_filename_component(_parent "${_stage}/${_relative}" DIRECTORY)
   file(MAKE_DIRECTORY "${_parent}")

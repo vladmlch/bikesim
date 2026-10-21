@@ -2,6 +2,7 @@
 // Cold validation fixtures share the production model, typed projection and
 // force writers. No reduced dynamics or replacement material model lives here.
 #include "rigs.hpp"
+#include "../model_access.hpp"
 #include "../runtime/project_config.hpp"
 #include "../writer_config.hpp"
 #include "../writers/drivetrain.hpp"
@@ -29,11 +30,17 @@ struct BikeStand {
         writers(nativecfg::decode(runtime::project_writer_config(request,*stand.model,terrain::get_preset("flat")))){}
     mjModel* model()const{return stand.model.get();}mjData* data()const{return stand.data.get();}
 };
-inline int qpos(const mjModel* m,const char* name){return m->jnt_qposadr[object_id(m,mjOBJ_JOINT,name)];}
-inline int dof(const mjModel* m,const char* name){return m->jnt_dofadr[object_id(m,mjOBJ_JOINT,name)];}
+inline int qpos(const mjModel* m,const char* name){
+    const auto adr=model_access::readonly_buffer(m->jnt_qposadr,m->njnt,"jnt_qposadr");
+    return adr[static_cast<std::size_t>(object_id(m,mjOBJ_JOINT,name))];
+}
+inline int dof(const mjModel* m,const char* name){
+    const auto adr=model_access::readonly_buffer(m->jnt_dofadr,m->njnt,"jnt_dofadr");
+    return adr[static_cast<std::size_t>(object_id(m,mjOBJ_JOINT,name))];
+}
 inline void finite_state(const mjModel* m,const mjData* d) {
-    for(mjtSize i=0;i<m->nq;++i)scalar(d->qpos[i],"fixture coordinates");
-    for(mjtSize i=0;i<m->nv;++i)scalar(d->qvel[i],"fixture velocities");
+    for(double v:model_access::readonly_buffer(d->qpos,m->nq,"qpos"))scalar(v,"fixture coordinates");
+    for(double v:model_access::readonly_buffer(d->qvel,m->nv,"qvel"))scalar(v,"fixture velocities");
 }
 inline std::array<double,3> matvec(std::span<const double> matrix,std::span<const double> x) {
     if(matrix.size()!=3*x.size()||x.size()>static_cast<std::size_t>(std::numeric_limits<int>::max()))throw std::invalid_argument("fixture Jacobian dimensions");

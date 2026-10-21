@@ -9,6 +9,7 @@
 #include <charconv>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <ranges>
 #include <set>
@@ -28,7 +29,7 @@ std::string real_text(double value) {
     if (std::isnan(value)) return "nan";
     if (std::isinf(value)) return value < 0 ? "-inf" : "inf";
     std::array<char, 64> text{};
-    const auto result = std::to_chars(text.data(), text.data() + text.size(), value);
+    const auto result = std::to_chars(text.data(), std::to_address(text.end()), value);
     if (result.ec != std::errc{}) bad("number formatting failed");
     std::string out(text.data(), result.ptr);
     if (out.find_first_of(".eE") == std::string::npos) out += ".0";

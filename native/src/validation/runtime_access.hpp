@@ -21,5 +21,12 @@ public:
         const initialization::SetupRequest&,const initialization::EquilibriumResult&,const Value& metadata,
         std::optional<int> station_count={});
     static void external_interval(runtime::NativeRideRuntime&,std::span<const double> force);
+private:
+    // -O0 frame budget: the rebase_airborne mutation stays under
+    // -Wframe-larger-than by routing the multi-kilobyte rider-contact
+    // state/probe and energy-state temporaries through these helpers.
+    static void release_rider(Stepper&,runtime::PhysicalStep&);
+    static void reset_rider_contacts(Stepper&);
+    static Value rebase_energy(runtime::PhysicalStep&);
 };
 } // namespace bike::validation

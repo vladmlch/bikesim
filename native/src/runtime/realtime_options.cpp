@@ -6,6 +6,7 @@
 #include <charconv>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <set>
 
 namespace runtime::measurement {
@@ -20,15 +21,17 @@ std::filesystem::path example(std::string_view relative) {
 }
 int integer_option(std::string_view value, std::string_view name) {
     int result = 0;
-    const auto parsed = std::from_chars(value.data(), value.data() + value.size(), result);
-    if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size())
+    const auto *end = std::to_address(value.end());
+    const auto parsed = std::from_chars(value.data(), end, result);
+    if (parsed.ec != std::errc{} || parsed.ptr != end)
         throw std::invalid_argument(std::string(name) + " requires an integer");
     return result;
 }
 double real_option(std::string_view value, std::string_view name) {
     double result = 0.;
-    const auto parsed = std::from_chars(value.data(), value.data() + value.size(), result);
-    if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() || !std::isfinite(result) || result <= 0.)
+    const auto *end = std::to_address(value.end());
+    const auto parsed = std::from_chars(value.data(), end, result);
+    if (parsed.ec != std::errc{} || parsed.ptr != end || !std::isfinite(result) || result <= 0.)
         throw std::invalid_argument(std::string(name) + " must be finite and positive");
     return result;
 }

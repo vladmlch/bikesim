@@ -7,6 +7,7 @@
 #include <charconv>
 #include <cmath>
 #include <map>
+#include <memory>
 #include <ostream>
 #include <set>
 #include <stdexcept>
@@ -69,7 +70,7 @@ Arguments parse(std::span<const std::string_view> args) {
 }
 std::size_t steps(const std::string &text) {
     std::size_t value = 0;
-    const auto end = text.data() + text.size();
+    const auto end = std::to_address(text.end());
     const auto parsed = std::from_chars(text.data(), end, value);
     if (parsed.ec != std::errc{} || parsed.ptr != end || value > 1000000)
         throw ParseError("--steps must be an integer in [0, 1000000]");
@@ -77,7 +78,7 @@ std::size_t steps(const std::string &text) {
 }
 double real(const std::string &text, const char *name) {
     double value = 0.;
-    const auto end = text.data() + text.size();
+    const auto end = std::to_address(text.end());
     const auto parsed = std::from_chars(text.data(), end, value);
     if (parsed.ec != std::errc{} || parsed.ptr != end || !std::isfinite(value) || value < 0.)
         throw ParseError(std::string("--") + name + " must be finite and nonnegative");

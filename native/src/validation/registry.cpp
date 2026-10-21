@@ -102,6 +102,102 @@ Value tire_characterization(const Value& config,const std::filesystem::path& bas
     for(double slip:slips)for(double load:loads)rows.push_back(steady_brush_force(tire,surface,slip,load,real(config,"speed_mps",2.),real(config,"dt_s",.000625),real(config,"duration_s",1.)));
     return Value{Object{{"surface",value::text(surface_name)},{"cases",Value{std::move(rows)}}}};
 }
+// One handler per registered id keeps run_case's stack frame under the
+// project limit at -O0; bodies are verbatim from the previous if-chain.
+double case_dt(const Value& c){return real(c,"dt_s",.000625);}
+int case_stations(const Value& c){const auto n=io::as_int64(optional(c,"station_count",value::integer(128)),"station_count");if(n<16||n>std::numeric_limits<int>::max())throw std::invalid_argument("station count outside native domain");return static_cast<int>(n);}
+Verdict case_tire_characterization(const Value& c,const std::filesystem::path& base){auto report=tire_characterization(c,base);return {true,std::move(report)};}
+Verdict case_tire_calibration(const Value& c,const std::filesystem::path&){const auto& record=get(c,"record");const auto r=calibration_from_record(record);return {true,Value{Object{{"record",record},{"source_kind",value::text(r.source_kind)},{"calibration_status",value::text("parameterized_unvalidated")}}}};}
+Verdict case_tire_curve(const Value& c,const std::filesystem::path&){const nativecfg::TireTable table{numbers(get(c,"deflection_m"),"deflection"),numbers(get(c,"force_n"),"force")};const contactlaw::TabulatedRadial curve(table);const double damping=nonnegative(real(c,"radial_c_ns_m",0.),"radial damping");Array rows;
+    for(const auto& entry:io::as_array(get(c,"samples"),"samples")){const auto elastic=curve.elastic_response(real(entry,"penetration_m"));const auto contact=curve.normal_contact(real(entry,"penetration_m"),real(entry,"rate_mps",0.),damping);
+        rows.push_back(Value{Object{{"elastic_force_n",value::real(elastic.first)},{"stored_energy_j",value::real(elastic.second)},{"normal_force_n",value::real(contact.first)},{"contact_stored_energy_j",value::real(contact.second)}}});}
+    if(rows.empty())throw std::invalid_argument("curve samples required");return {true,Value{std::move(rows)}};}
+Verdict case_datasets(const Value& c,const std::filesystem::path&){auto payload=validate_dataset(get(c,"dataset"),boolean(c,"allow_synthetic"));return {true,std::move(payload)};}
+Verdict case_dataset_hash(const Value& c,const std::filesystem::path&){return {true,value::text(dataset_hash(get(c,"dataset")))};}
+Verdict case_calibration_report(const Value& c,const std::filesystem::path&){return report_result(calibration_report(get(c,"dataset"),get(c,"predictions"),text(c,"quantity"),get(c,"parameters"),get(c,"bounds"),get(c,"error_budget"),boolean(c,"allow_synthetic")),"holdout_passed");}
+Verdict case_holdout_metrics(const Value& c,const std::filesystem::path&){return diagnostic(holdout_metrics(numbers(get(c,"measured"),"measured"),numbers(get(c,"predicted"),"predicted")));}
+Verdict case_experiment_acceptance(const Value& c,const std::filesystem::path&){validate_split(get(c,"fit"),get(c,"holdout"));const auto status=accepted_calibration_status(io::as_bool(get(c,"synthetic"),"synthetic"),io::as_bool(get(c,"holdout_passed"),"holdout_passed"),io::as_bool(get(c,"converged"),"converged"),io::as_bool(get(c,"within_scope"),"within_scope"));
+    return {status=="validated_within_declared_scope",Value{Object{{"status",value::text(status)},{"measurement_authentication",Value{false}}}}};}
+Verdict case_contact_bounds(const Value& c,const std::filesystem::path&){auto checks=check_bounds(get(c,"metrics"),get(c,"bounds"));const bool accepted=!io::as_object(checks,"checks").empty()&&checks_passed(checks);return {accepted,std::move(checks)};}
+Verdict case_contact_matrix(const Value& c,const std::filesystem::path&){auto rows=contact_matrix(c);bool accepted=!io::as_array(rows,"matrix").empty();for(const auto& row:io::as_array(rows,"matrix"))accepted=accepted&&flag(row,"accepted");return {accepted,std::move(rows)};}
+Verdict case_radial_rig(const Value& c,const std::filesystem::path&){return diagnostic(radial_rig(real(c,"load_n"),case_dt(c),real(c,"duration_s",2.),false));}
+Verdict case_native_radial_rig(const Value& c,const std::filesystem::path&){return diagnostic(radial_rig(real(c,"load_n"),case_dt(c),real(c,"duration_s",2.),true));}
+Verdict case_wheel_inertia_rig(const Value& c,const std::filesystem::path&){return diagnostic(wheel_inertia_rig(case_dt(c),real(c,"duration_s",.5)));}
+Verdict case_incline_rig(const Value& c,const std::filesystem::path&){return diagnostic(incline_rig(case_dt(c),real(c,"duration_s",2.),real(c,"angle_deg",30.)));}
+Verdict case_brake_stand(const Value& c,const std::filesystem::path&){return diagnostic(brake_rig(case_dt(c),real(c,"duration_s",5.)));}
+Verdict case_chain_locked_rig(const Value& c,const std::filesystem::path&){return diagnostic(chain_locked_rig(case_dt(c),real(c,"duration_s",1.)));}
+Verdict case_chain_geometry(const Value&,const std::filesystem::path&){return diagnostic(chain_geometry_rig());}
+Verdict case_compiled_chain_motion(const Value&,const std::filesystem::path&){return diagnostic(compiled_chain_motion_rig());}
+Verdict case_load_transfer(const Value& c,const std::filesystem::path&){return bounded_case(load_transfer_rig(case_dt(c),real(c,"slope_rad"),real(c,"com_x_m"),real(c,"com_h_m")));}
+Verdict case_quasistatic_front_load(const Value& c,const std::filesystem::path&){return diagnostic(value::real(quasistatic_front_load(real(c,"mass_kg"),real(c,"wheelbase_m"),real(c,"com_x_m"),real(c,"com_h_m"),real(c,"slope_rad"),real(c,"acceleration_mps2",0.),real(c,"gravity_mps2",9.81))));}
+Verdict case_grade_feasibility(const Value& c,const std::filesystem::path&){const double margin=necessary_traction_margin(real(c,"mu"),real(c,"rear_fraction"),real(c,"grade"));return diagnostic(Value{Object{{"necessary_traction_margin",value::real(margin)},{"necessary_condition_met",Value{margin>=0.}},{"sufficient_for_completion",Value{false}}}});}
+Verdict case_distributed_flat(const Value& c,const std::filesystem::path&){return bounded_case(distributed_flat_rig(case_dt(c),case_stations(c),real(c,"load_n")));}
+Verdict case_distributed_step_rig(const Value& c,const std::filesystem::path&){return bounded_case(distributed_step_rig(case_dt(c),case_stations(c),real(c,"dx_m",.005)));}
+Verdict case_distributed_incline_rig(const Value& c,const std::filesystem::path&){return bounded_case(distributed_incline_rig(case_dt(c),case_stations(c),real(c,"angle_deg",15.)));}
+Verdict case_distributed_road_trace(const Value& c,const std::filesystem::path&){auto [rows,metrics]=distributed_road_trace(case_dt(c),case_stations(c),real(c,"dx_m",.005),text(c,"case","step"),real(c,"duration_s",.4));return diagnostic(Value{Object{{"rows",std::move(rows)},{"metrics",std::move(metrics)}}});}
+Verdict case_contact_case_vertices(const Value& c,const std::filesystem::path&){Array vertices;for(const auto& vertex:contact_case_vertices(text(c,"case","step"),real(c,"dx_m",.005)))vertices.push_back(value::doubles(vertex));return {true,Value{std::move(vertices)}};}
+Verdict case_shaft_ratio(const Value& c,const std::filesystem::path&){return bounded_case(shaft_ratio_rig(case_dt(c),real(c,"ratio",34./51.),boolean(c,"overrun")));}
+Verdict case_drive_suspension(const Value& c,const std::filesystem::path&){return bounded_case(drive_suspension_rig(case_dt(c),text(c,"transmission","geometric_ideal_mid_drive"),real(c,"torque_nm"),real(c,"shock_stroke_m",.015),real(c,"duration_s",.05)));}
+Verdict case_drive_suspension_rig(const Value& c,const std::filesystem::path& base){auto config=c;if(!find(config,"output"))value::set(std::get<Object>(config.data),"output",value::text("results/drive_suspension.json"));return report_result(drive_suspension_comparison(config,base));}
+Verdict case_momentum(const Value& c,const std::filesystem::path&){std::optional<bool> rider;if(const auto* enabled=find(c,"rider_active"))rider=io::as_bool(*enabled,"rider_active");return bounded_case(momentum_rig(case_dt(c),boolean(c,"active"),text(c,"transmission","geometric_ideal_mid_drive"),rider));}
+Verdict case_rider_work(const Value& c,const std::filesystem::path&){return diagnostic(rider_work_ledger(get(c,"work_j")));}
+Verdict case_valid_prefix(const Value& c,const std::filesystem::path&){auto report=prefix_report(c);const bool accepted=real(report,"accepted")>0.&&real(report,"accepted")==real(report,"seen")&&io::is_null(get(report,"first_bad"));return {accepted,std::move(report)};}
+Verdict case_plant_release(const Value& c,const std::filesystem::path&){return report_result(release_decision(get(c,"evidence"),io::as_bool(get(c,"require_completion"),"require_completion")),"sil_ready");}
+Verdict case_trace_integral(const Value& c,const std::filesystem::path&){return diagnostic(value::real(trace_integral(numbers(get(c,"time_s"),"times"),numbers(get(c,"values"),"values"))));}
+Verdict case_interval_integral(const Value& c,const std::filesystem::path&){return diagnostic(value::real(interval_integral(get(c,"rows"),text(c,"key"))));}
+Verdict case_support_evidence(const Value& c,const std::filesystem::path&){return report_result(support_evidence(get(c,"rows"),optional_real(c,"required_duration_s")),"valid_for_learning");}
+Verdict case_coasting_evidence(const Value& c,const std::filesystem::path&){return diagnostic(coasting_evidence(get(c,"rows")));}
+Verdict case_resume_evidence(const Value& c,const std::filesystem::path&){return diagnostic(resume_evidence(get(c,"rows"),real(c,"end_s",8.)));}
+Verdict case_timing_metrics(const Value& c,const std::filesystem::path&){return diagnostic(timing_metrics(numbers(get(c,"step_ns"),"step_ns"),case_dt(c)));}
+Verdict case_assess_run(const Value& c,const std::filesystem::path&){return report_result(assess_run(get(c,"summary"),real(c,"required_duration_s"),real(c,"minimum_progress_m",0.)),"accepted");}
+Verdict case_paired_summary(const Value& c,const std::filesystem::path&){return diagnostic(paired_summary(get(c,"records")));}
+Verdict case_classify_outcome(const Value& c,const std::filesystem::path&){std::optional<std::string> error;if(const auto* v=find(c,"numerical_error"))if(!io::is_null(*v))error=io::as_string(*v,"numerical_error");return diagnostic(classify_outcome(get(c,"rows"),optional_real(c,"goal_x_m"),boolean(c,"crashed"),error,boolean(c,"duration_reached")));}
+Verdict case_resolution_variants(const Value& c,const std::filesystem::path&){return {true,resolution_variants(get(c,"time_steps"),get(c,"road_steps"),get(c,"station_counts"),boolean(c,"include_stations",true))};}
+Verdict case_persistent_events(const Value& c,const std::filesystem::path&){return diagnostic(persistent_events(get(c,"rows"),real(c,"persistence_s",.02),boolean(c,"normal_load_only")));}
+Verdict case_contact_comparison(const Value& c,const std::filesystem::path&){return report_result(contact_comparison(get(c,"coarse"),get(c,"reference")));}
+Verdict case_fidelity_compare(const Value& c,const std::filesystem::path&){return report_result(compare_metrics(get(c,"coarse"),get(c,"reference")));}
+Verdict case_metrics_from_rows(const Value& c,const std::filesystem::path&){return diagnostic(metrics_from_rows(get(c,"rows"),real(c,"expected_duration_s"),text(c,"initial_state_sha256")));}
+Verdict case_select_verified_resolution(const Value& c,const std::filesystem::path&){auto result=select_verified_resolution(get(c,"comparisons"));const bool accepted=!io::is_null(result);return {accepted,std::move(result)};}
+Verdict case_release_gates(const Value& c,const std::filesystem::path&){const auto [accepted,missing]=release_gates(get(c,"report"));return {accepted,Value{Object{{"passed",Value{accepted}},{"missing",value::strings(missing)},{"status",value::text(release_level(get(c,"report")))}}}};}
+Verdict case_release_manifest(const Value& c,const std::filesystem::path& base){return {true,write_release_manifest(base/text(c,"output"),get(c,"report"),base/text(c,"physics_profile"),optional(c,"measurement_evidence",Value{Array{}}))};}
+Verdict case_scenarios(const Value&,const std::filesystem::path&){return diagnostic(scenario_definitions());}
+Verdict case_rider_replay(const Value& c,const std::filesystem::path& base){return report_result(run_replay(c,base),"completed_requested_duration");}
+Verdict case_rider_factor_matrix(const Value& c,const std::filesystem::path& base){auto result=rider_factor_matrix(c,base);const bool accepted=flag(result,"baseline_resumed")&&flag(result,"causal_replay_resolved");return {accepted,std::move(result)};}
+Verdict case_automatic_coast(const Value& c,const std::filesystem::path& base){return diagnostic(automatic_coast_case(case_dt(c),real(c,"duration_s",5.),base));}
+Verdict case_fidelity_sweep(const Value& c,const std::filesystem::path& base){return report_result(fidelity_sweep(c,base));}
+Verdict case_reference_release(const Value& c,const std::filesystem::path& base){return diagnostic(reference_matrix(c,base));}
+Verdict case_contact_resolution(const Value& c,const std::filesystem::path& base){return report_result(contact_resolution(c,base));}
+Verdict case_benchmarks(const Value& c,const std::filesystem::path& base){return report_result(benchmark_suite(c,base));}
+Verdict case_climbing_benchmark(const Value& c,const std::filesystem::path& base){return report_result(climbing_benchmark(c,base));}
+Verdict case_antiwheelie_bench(const Value& c,const std::filesystem::path& base){if(text(c,"phase","mechanics")!="mechanics")throw std::invalid_argument("antiwheelie phase must be mechanics");return report_result(mechanics_report(c,base));}
+Verdict case_environment(const Value&,const std::filesystem::path& base){return report_result(environment_contract(base),"locked_environment_verified");}
+Verdict case_profile_identity(const Value& c,const std::filesystem::path& base){return diagnostic(profile_identity(base/text(c,"physics_profile"),base));}
+Verdict case_evidence_matches(const Value& c,const std::filesystem::path&){const bool matched=evidence_matches(get(c,"record"),get(c,"expected"));return {matched,Value{Object{{"matches",Value{matched}}}}};}
+Verdict case_source_fingerprint(const Value& c,const std::filesystem::path& base){return diagnostic(value::text(source_fingerprint(base/text(c,"source_root","native/src"))));}
+struct CaseHandler{std::string_view id;Verdict (*run)(const Value&,const std::filesystem::path&);};
+constexpr auto handlers=std::to_array<CaseHandler>({
+    {"tire_characterization",case_tire_characterization},{"tire_calibration",case_tire_calibration},{"tire_curve",case_tire_curve},
+    {"datasets",case_datasets},{"dataset_hash",case_dataset_hash},{"calibration_report",case_calibration_report},
+    {"holdout_metrics",case_holdout_metrics},{"experiment_acceptance",case_experiment_acceptance},{"contact_bounds",case_contact_bounds},
+    {"contact_matrix",case_contact_matrix},{"radial_rig",case_radial_rig},{"native_radial_rig",case_native_radial_rig},
+    {"wheel_inertia_rig",case_wheel_inertia_rig},{"incline_rig",case_incline_rig},{"brake_stand",case_brake_stand},
+    {"chain_locked_rig",case_chain_locked_rig},{"chain_geometry",case_chain_geometry},{"compiled_chain_motion",case_compiled_chain_motion},
+    {"load_transfer",case_load_transfer},{"quasistatic_front_load",case_quasistatic_front_load},{"grade_feasibility",case_grade_feasibility},
+    {"distributed_flat",case_distributed_flat},{"distributed_step_rig",case_distributed_step_rig},{"distributed_incline_rig",case_distributed_incline_rig},
+    {"distributed_road_trace",case_distributed_road_trace},{"contact_case_vertices",case_contact_case_vertices},{"shaft_ratio",case_shaft_ratio},
+    {"drive_suspension",case_drive_suspension},{"drive_suspension_rig",case_drive_suspension_rig},{"momentum",case_momentum},
+    {"rider_work",case_rider_work},{"valid_prefix",case_valid_prefix},{"plant_release",case_plant_release},
+    {"trace_integral",case_trace_integral},{"interval_integral",case_interval_integral},{"support_evidence",case_support_evidence},
+    {"coasting_evidence",case_coasting_evidence},{"resume_evidence",case_resume_evidence},{"timing_metrics",case_timing_metrics},
+    {"assess_run",case_assess_run},{"paired_summary",case_paired_summary},{"classify_outcome",case_classify_outcome},
+    {"resolution_variants",case_resolution_variants},{"persistent_events",case_persistent_events},{"contact_comparison",case_contact_comparison},
+    {"fidelity_compare",case_fidelity_compare},{"metrics_from_rows",case_metrics_from_rows},{"select_verified_resolution",case_select_verified_resolution},
+    {"release_gates",case_release_gates},{"release_manifest",case_release_manifest},{"scenarios",case_scenarios},
+    {"rider_replay",case_rider_replay},{"rider_factor_matrix",case_rider_factor_matrix},{"automatic_coast",case_automatic_coast},
+    {"fidelity_sweep",case_fidelity_sweep},{"reference_release",case_reference_release},{"contact_resolution",case_contact_resolution},
+    {"benchmarks",case_benchmarks},{"climbing_benchmark",case_climbing_benchmark},{"antiwheelie_bench",case_antiwheelie_bench},
+    {"environment",case_environment},{"profile_identity",case_profile_identity},{"evidence_matches",case_evidence_matches},
+    {"source_fingerprint",case_source_fingerprint}});
 } // namespace
 
 std::span<const CaseDescription> cases(){
@@ -122,76 +218,9 @@ Verdict run_case(std::string_view id,const std::filesystem::path& configuration_
     return run_case(id,input,configuration_file.parent_path());
 }
 Verdict run_case(std::string_view input_id,const Value& c,const std::filesystem::path& base){
-    (void)io::as_object(c,"case configuration");const auto id=normalized(input_id);const auto dt=[&]{return real(c,"dt_s",.000625);};
-    if(id=="tire_characterization"){auto report=tire_characterization(c,base);return {true,std::move(report)};}
-    if(id=="tire_calibration"){const auto& record=get(c,"record");const auto r=calibration_from_record(record);return {true,Value{Object{{"record",record},{"source_kind",value::text(r.source_kind)},{"calibration_status",value::text("parameterized_unvalidated")}}}};}
-    if(id=="tire_curve"){const nativecfg::TireTable table{numbers(get(c,"deflection_m"),"deflection"),numbers(get(c,"force_n"),"force")};const contactlaw::TabulatedRadial curve(table);const double damping=nonnegative(real(c,"radial_c_ns_m",0.),"radial damping");Array rows;
-        for(const auto& entry:io::as_array(get(c,"samples"),"samples")){const auto elastic=curve.elastic_response(real(entry,"penetration_m"));const auto contact=curve.normal_contact(real(entry,"penetration_m"),real(entry,"rate_mps",0.),damping);
-            rows.push_back(Value{Object{{"elastic_force_n",value::real(elastic.first)},{"stored_energy_j",value::real(elastic.second)},{"normal_force_n",value::real(contact.first)},{"contact_stored_energy_j",value::real(contact.second)}}});}
-        if(rows.empty())throw std::invalid_argument("curve samples required");return {true,Value{std::move(rows)}};}
-    if(id=="datasets"){auto payload=validate_dataset(get(c,"dataset"),boolean(c,"allow_synthetic"));return {true,std::move(payload)};}
-    if(id=="dataset_hash")return {true,value::text(dataset_hash(get(c,"dataset")))};
-    if(id=="calibration_report")return report_result(calibration_report(get(c,"dataset"),get(c,"predictions"),text(c,"quantity"),get(c,"parameters"),get(c,"bounds"),get(c,"error_budget"),boolean(c,"allow_synthetic")),"holdout_passed");
-    if(id=="holdout_metrics")return diagnostic(holdout_metrics(numbers(get(c,"measured"),"measured"),numbers(get(c,"predicted"),"predicted")));
-    if(id=="experiment_acceptance"){validate_split(get(c,"fit"),get(c,"holdout"));const auto status=accepted_calibration_status(io::as_bool(get(c,"synthetic"),"synthetic"),io::as_bool(get(c,"holdout_passed"),"holdout_passed"),io::as_bool(get(c,"converged"),"converged"),io::as_bool(get(c,"within_scope"),"within_scope"));
-        return {status=="validated_within_declared_scope",Value{Object{{"status",value::text(status)},{"measurement_authentication",Value{false}}}}};}
-    if(id=="contact_bounds"){auto checks=check_bounds(get(c,"metrics"),get(c,"bounds"));const bool accepted=!io::as_object(checks,"checks").empty()&&checks_passed(checks);return {accepted,std::move(checks)};}
-    if(id=="contact_matrix"){auto rows=contact_matrix(c);bool accepted=!io::as_array(rows,"matrix").empty();for(const auto& row:io::as_array(rows,"matrix"))accepted=accepted&&flag(row,"accepted");return {accepted,std::move(rows)};}
-    if(id=="radial_rig"||id=="native_radial_rig")return diagnostic(radial_rig(real(c,"load_n"),dt(),real(c,"duration_s",2.),id=="native_radial_rig"));
-    if(id=="wheel_inertia_rig")return diagnostic(wheel_inertia_rig(dt(),real(c,"duration_s",.5)));
-    if(id=="incline_rig")return diagnostic(incline_rig(dt(),real(c,"duration_s",2.),real(c,"angle_deg",30.)));
-    if(id=="brake_stand")return diagnostic(brake_rig(dt(),real(c,"duration_s",5.)));
-    if(id=="chain_locked_rig")return diagnostic(chain_locked_rig(dt(),real(c,"duration_s",1.)));
-    if(id=="chain_geometry")return diagnostic(chain_geometry_rig());
-    if(id=="compiled_chain_motion")return diagnostic(compiled_chain_motion_rig());
-    if(id=="load_transfer")return bounded_case(load_transfer_rig(dt(),real(c,"slope_rad"),real(c,"com_x_m"),real(c,"com_h_m")));
-    if(id=="quasistatic_front_load")return diagnostic(value::real(quasistatic_front_load(real(c,"mass_kg"),real(c,"wheelbase_m"),real(c,"com_x_m"),real(c,"com_h_m"),real(c,"slope_rad"),real(c,"acceleration_mps2",0.),real(c,"gravity_mps2",9.81))));
-    if(id=="grade_feasibility"){const double margin=necessary_traction_margin(real(c,"mu"),real(c,"rear_fraction"),real(c,"grade"));return diagnostic(Value{Object{{"necessary_traction_margin",value::real(margin)},{"necessary_condition_met",Value{margin>=0.}},{"sufficient_for_completion",Value{false}}}});}
-    const auto station=[&]{const auto n=io::as_int64(optional(c,"station_count",value::integer(128)),"station_count");if(n<16||n>std::numeric_limits<int>::max())throw std::invalid_argument("station count outside native domain");return static_cast<int>(n);};
-    if(id=="distributed_flat")return bounded_case(distributed_flat_rig(dt(),station(),real(c,"load_n")));
-    if(id=="distributed_step_rig")return bounded_case(distributed_step_rig(dt(),station(),real(c,"dx_m",.005)));
-    if(id=="distributed_incline_rig")return bounded_case(distributed_incline_rig(dt(),station(),real(c,"angle_deg",15.)));
-    if(id=="distributed_road_trace"){auto [rows,metrics]=distributed_road_trace(dt(),station(),real(c,"dx_m",.005),text(c,"case","step"),real(c,"duration_s",.4));return diagnostic(Value{Object{{"rows",std::move(rows)},{"metrics",std::move(metrics)}}});}
-    if(id=="contact_case_vertices"){Array vertices;for(const auto& vertex:contact_case_vertices(text(c,"case","step"),real(c,"dx_m",.005)))vertices.push_back(value::doubles(vertex));return {true,Value{std::move(vertices)}};}
-    if(id=="shaft_ratio")return bounded_case(shaft_ratio_rig(dt(),real(c,"ratio",34./51.),boolean(c,"overrun")));
-    if(id=="drive_suspension")return bounded_case(drive_suspension_rig(dt(),text(c,"transmission","geometric_ideal_mid_drive"),real(c,"torque_nm"),real(c,"shock_stroke_m",.015),real(c,"duration_s",.05)));
-    if(id=="drive_suspension_rig"){auto config=c;if(!find(config,"output"))value::set(std::get<Object>(config.data),"output",value::text("results/drive_suspension.json"));return report_result(drive_suspension_comparison(config,base));}
-    if(id=="momentum"){std::optional<bool> rider;if(const auto* enabled=find(c,"rider_active"))rider=io::as_bool(*enabled,"rider_active");return bounded_case(momentum_rig(dt(),boolean(c,"active"),text(c,"transmission","geometric_ideal_mid_drive"),rider));}
-    if(id=="rider_work")return diagnostic(rider_work_ledger(get(c,"work_j")));
-    if(id=="valid_prefix"){auto report=prefix_report(c);const bool accepted=real(report,"accepted")>0.&&real(report,"accepted")==real(report,"seen")&&io::is_null(get(report,"first_bad"));return {accepted,std::move(report)};}
-    if(id=="plant_release")return report_result(release_decision(get(c,"evidence"),io::as_bool(get(c,"require_completion"),"require_completion")),"sil_ready");
-    if(id=="trace_integral")return diagnostic(value::real(trace_integral(numbers(get(c,"time_s"),"times"),numbers(get(c,"values"),"values"))));
-    if(id=="interval_integral")return diagnostic(value::real(interval_integral(get(c,"rows"),text(c,"key"))));
-    if(id=="support_evidence")return report_result(support_evidence(get(c,"rows"),optional_real(c,"required_duration_s")),"valid_for_learning");
-    if(id=="coasting_evidence")return diagnostic(coasting_evidence(get(c,"rows")));
-    if(id=="resume_evidence")return diagnostic(resume_evidence(get(c,"rows"),real(c,"end_s",8.)));
-    if(id=="timing_metrics")return diagnostic(timing_metrics(numbers(get(c,"step_ns"),"step_ns"),dt()));
-    if(id=="assess_run")return report_result(assess_run(get(c,"summary"),real(c,"required_duration_s"),real(c,"minimum_progress_m",0.)),"accepted");
-    if(id=="paired_summary")return diagnostic(paired_summary(get(c,"records")));
-    if(id=="classify_outcome"){std::optional<std::string> error;if(const auto* v=find(c,"numerical_error"))if(!io::is_null(*v))error=io::as_string(*v,"numerical_error");return diagnostic(classify_outcome(get(c,"rows"),optional_real(c,"goal_x_m"),boolean(c,"crashed"),error,boolean(c,"duration_reached")));}
-    if(id=="resolution_variants")return {true,resolution_variants(get(c,"time_steps"),get(c,"road_steps"),get(c,"station_counts"),boolean(c,"include_stations",true))};
-    if(id=="persistent_events")return diagnostic(persistent_events(get(c,"rows"),real(c,"persistence_s",.02),boolean(c,"normal_load_only")));
-    if(id=="contact_comparison")return report_result(contact_comparison(get(c,"coarse"),get(c,"reference")));
-    if(id=="fidelity_compare")return report_result(compare_metrics(get(c,"coarse"),get(c,"reference")));
-    if(id=="metrics_from_rows")return diagnostic(metrics_from_rows(get(c,"rows"),real(c,"expected_duration_s"),text(c,"initial_state_sha256")));
-    if(id=="select_verified_resolution"){auto result=select_verified_resolution(get(c,"comparisons"));const bool accepted=!io::is_null(result);return {accepted,std::move(result)};}
-    if(id=="release_gates"){const auto [accepted,missing]=release_gates(get(c,"report"));return {accepted,Value{Object{{"passed",Value{accepted}},{"missing",value::strings(missing)},{"status",value::text(release_level(get(c,"report")))}}}};}
-    if(id=="release_manifest")return {true,write_release_manifest(base/text(c,"output"),get(c,"report"),base/text(c,"physics_profile"),optional(c,"measurement_evidence",Value{Array{}}))};
-    if(id=="scenarios")return diagnostic(scenario_definitions());
-    if(id=="rider_replay")return report_result(run_replay(c,base),"completed_requested_duration");
-    if(id=="rider_factor_matrix"){auto result=rider_factor_matrix(c,base);const bool accepted=flag(result,"baseline_resumed")&&flag(result,"causal_replay_resolved");return {accepted,std::move(result)};}
-    if(id=="automatic_coast")return diagnostic(automatic_coast_case(dt(),real(c,"duration_s",5.),base));
-    if(id=="fidelity_sweep")return report_result(fidelity_sweep(c,base));
-    if(id=="reference_release")return diagnostic(reference_matrix(c,base));
-    if(id=="contact_resolution")return report_result(contact_resolution(c,base));
-    if(id=="benchmarks")return report_result(benchmark_suite(c,base));
-    if(id=="climbing_benchmark")return report_result(climbing_benchmark(c,base));
-    if(id=="antiwheelie_bench"){if(text(c,"phase","mechanics")!="mechanics")throw std::invalid_argument("antiwheelie phase must be mechanics");return report_result(mechanics_report(c,base));}
-    if(id=="environment")return report_result(environment_contract(base),"locked_environment_verified");
-    if(id=="profile_identity")return diagnostic(profile_identity(base/text(c,"physics_profile"),base));
-    if(id=="evidence_matches"){const bool matched=evidence_matches(get(c,"record"),get(c,"expected"));return {matched,Value{Object{{"matches",Value{matched}}}}};}
-    if(id=="source_fingerprint")return diagnostic(value::text(source_fingerprint(base/text(c,"source_root","native/src"))));
-    if(std::ranges::find(benchmark_case_names(),id)!=benchmark_case_names().end())return bounded_case(benchmark_case(id,dt()));
+    (void)io::as_object(c,"case configuration");const auto id=normalized(input_id);
+    if(const auto found=std::ranges::find_if(handlers,[&](const CaseHandler& handler){return handler.id==id;});found!=handlers.end())return found->run(c,base);
+    if(std::ranges::find(benchmark_case_names(),id)!=benchmark_case_names().end())return bounded_case(benchmark_case(id,case_dt(c)));
     throw std::invalid_argument("unknown validation case: "+std::string(input_id));
 }
 } // namespace bike::validation

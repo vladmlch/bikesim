@@ -110,7 +110,14 @@ void test_research_environment_rejects_a_named_pneumatic_surface() {
     // test_pneumatic_tire_config.py::test_research_environment_rejects_a_named_pneumatic_surface
     const auto request = [](bool named) {
         auto input = std::make_unique<bike::research::ResearchRequest>();
-        input->setup.model.physics = resolve(R"({"physics_mode":"physical","drive_mode":"articulated_effort","timestep_s":0.0003,"tires":{"backend":"pneumatic","surface_mode":"track"}})");
+        // control_period_s keeps the config-level integer-step gate satisfied
+        // (2 x timestep) so a named surface reaches environment.cpp's
+        // track-material gate — the same ordering as ResearchEnvironment,
+        // where SimulationPhysicsConfig.__post_init__ precedes the tire
+        // check and the experiment control period divides last. The
+        // experiment's default 0.01 s period is deliberately not a multiple
+        // of 0.0003 s, giving the unnamed control its downstream rejection.
+        input->setup.model.physics = resolve(R"({"physics_mode":"physical","drive_mode":"articulated_effort","timestep_s":0.0003,"control_period_s":0.0006,"tires":{"backend":"pneumatic","surface_mode":"track"}})");
         if (named) input->setup.model.physics->tires.pneumatic.surface = "asphalt";
         input->setup.track.name = "gate-control"; input->setup.track.length_m = 10.;
         input->setup.model.rider = cfg::RiderSpecs{}; input->setup.model.rider->variant = "articulated_planar";

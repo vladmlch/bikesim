@@ -95,18 +95,22 @@ struct FullPlant {
     cfg::PhysicalDriveConfig raw;
     std::unique_ptr<Stepper> engine;
 };
+// NOLINTBEGIN(modernize-make-unique) make_unique's inlined forwarding path keeps each
+// by-value result on this frame and overflows the 8192-byte budget; new T(f()) elides.
 FullPlant full_plant(bool clutch = false, double inertia = 0., double speed_kph = 0.) {
     auto request = std::make_unique<bike::initialization::SetupRequest>();
     request->model.mode = "ride"; request->model.rider = cfg::RiderSpecs{};
     request->model.rider->variant = "articulated_planar";
-    request->model.physics = cfg::load_physics(bt::fixture("config/viewer_physics_welded.toml"));
+    const auto physics_owner = std::unique_ptr<cfg::SimulationPhysicsConfig>{new cfg::SimulationPhysicsConfig(
+        cfg::load_physics(bt::fixture("config/viewer_physics_welded.toml")))};
+    request->model.physics = std::move(*physics_owner);
     auto& physics = *request->model.physics;
     // _config replaces the complete [drive] table, retaining its child tables.
-    const auto old = physics.drive;
+    const auto old = std::make_unique<cfg::PhysicalDriveConfig>(physics.drive);
     physics.drive = cfg::PhysicalDriveConfig{};
-    physics.drive.pedaling = old.pedaling; physics.drive.assist = old.assist;
-    physics.drive.battery = old.battery; physics.drive.gearing = old.gearing;
-    physics.drive.shifting = old.shifting;
+    physics.drive.pedaling = old->pedaling; physics.drive.assist = old->assist;
+    physics.drive.battery = old->battery; physics.drive.gearing = old->gearing;
+    physics.drive.shifting = old->shifting;
     physics.drive.transmission_model = "ideal_mid_drive";
     physics.drive.motor_clutch = clutch; physics.drive.rotor_inertia_kgm2 = inertia;
     if (inertia > 0.) physics.drive.human_torque_nm = 20.;
@@ -116,16 +120,19 @@ FullPlant full_plant(bool clutch = false, double inertia = 0., double speed_kph 
     request->track = bike::terrain::track_from_dict(bike::terrain::parse_track_toml(
         "name = \"probe\"\nlength_m = 30.0\nsurface = \"hardpack\"\n"
         "grade_profile = { knots = [[0.0, 0.0], [30.0, 0.0]] }\n"));
-    auto raw = physics.drive;
+    auto raw = std::make_unique<cfg::PhysicalDriveConfig>(physics.drive);
     auto owner = bike::initialization::make_setup(std::move(*request));
     (void)bike::initialization::settle(*owner);
-    auto bootstrap = std::make_unique<runtime::RuntimeBootstrap>(owner->seal_bootstrap());
-    auto engine = std::make_unique<Stepper>(bootstrap->model.mjb, nativecfg::decode(bootstrap->config.writer_config));
+    auto bootstrap = std::unique_ptr<runtime::RuntimeBootstrap>{new runtime::RuntimeBootstrap(owner->seal_bootstrap())};
+    const auto writer = std::unique_ptr<nativecfg::WriterConfig>{new nativecfg::WriterConfig(
+        nativecfg::decode(bootstrap->config.writer_config))};
+    auto engine = std::make_unique<Stepper>(bootstrap->model.mjb, *writer);
     engine::set_state(engine->model(), engine->data(), bootstrap->state.integration_state.data(),
         static_cast<int>(mjSTATE_INTEGRATION));
     engine->note_posvel_stale(); engine->forward(); engine->drive().restore(bootstrap->state.drive);
-    return {std::move(raw), std::move(engine)};
+    return {std::move(*raw), std::move(engine)};
 }
+// NOLINTEND(modernize-make-unique)
 int actuator(const Stepper& engine) {
     return bike::model::required_id(*engine.model(), mjOBJ_ACTUATOR, "mid_drive");
 }

@@ -205,93 +205,102 @@ int run_sweep(const std::string &kind, const fs::path &build) {
         return 1;
     }
     const std::string run_id = new_run_id();
-    Value summary = vobj({
-        {"schema_version", vint(1)},
-        {"kind", vstr(kind)},
-        {"build", vstr(build_dir.string())},
-        {"run_id", vstr(run_id)},
-        {"tool_health", vstr("failed")},
-        {"finding_status", vstr("none")},
-        {"status", vstr("failed")},
-        {"unique_source_count", vint(0)},
-        {"translation_unit_count", vint(0)},
-        {"selected_sources", varr({})},
-        {"records", varr({})},
-        {"errors", varr({})},
-    });
+    // Bulk temporaries run inside lambda frames so this function's Debug -O0
+    // stack stays under -Wframe-larger-than: the initializer_list backing
+    // arrays and the process records are the expensive parts.
+    Value summary = [&] {
+        return vobj({
+            {"schema_version", vint(1)},
+            {"kind", vstr(kind)},
+            {"build", vstr(build_dir.string())},
+            {"run_id", vstr(run_id)},
+            {"tool_health", vstr("failed")},
+            {"finding_status", vstr("none")},
+            {"status", vstr("failed")},
+            {"unique_source_count", vint(0)},
+            {"translation_unit_count", vint(0)},
+            {"selected_sources", varr({})},
+            {"records", varr({})},
+            {"errors", varr({})},
+        });
+    }();
     Value context;
     std::vector<CompileEntry> entries;
     std::vector<Suppression> suppressions;
     fs::path tool;
-    std::string override_name;
-    try {
-        context = load_context(build_dir);
-        const SourceManifest manifest = load_source_manifest(build_dir);
-        entries = load_entries(build_dir, manifest.sources);
-        if (kind == "analyzer" || kind == "tidy")
-            suppressions = load_suppressions(fs::path(std::get<std::string>(
-                member(context, "analysis_suppressions_manifest")->data)));
-        const auto environment = environ_copy();
-        auto resolved = resolve_tool(kind, context, environment);
-        tool = std::move(resolved.first);
-        override_name = std::move(resolved.second);
-        set_member(summary, "tool", vstr(tool.string()));
-        set_member(summary, "tool_override", vstr(override_name));
-        Object overrides;
-        for (const std::string_view name:
-             {"CLANG_TIDY", "ANALYZER_CLANG", "CPPCHECK", "GXX"})
-            if (const auto found =
-                    environment.find(std::string(name));
-                found != environment.end())
-                overrides.emplace_back(std::string(name),
-                                       vstr(found->second));
-        set_member(summary, "tool_overrides", vobj(std::move(overrides)));
-        set_member(summary, "compiler_context",
-                   *member(context, "compiler"));
-        set_member(summary, "sdk", *member(context, "sdk"));
-        set_member(summary, "python_executable",
-                   member(context, "python_executable") != nullptr
-                       ? *member(context, "python_executable")
-                       : vnull());
-        std::set<std::string> unique_sources;
-        for (const auto &entry: entries) unique_sources.insert(entry.source.string());
-        set_member(summary, "unique_source_count",
-                   vint(static_cast<std::int64_t>(unique_sources.size())));
-        set_member(summary, "translation_unit_count",
-                   vint(static_cast<std::int64_t>(entries.size())));
-        Array selected;
-        for (const std::string &source: unique_sources)
-            selected.push_back(vstr(source));
-        set_member(summary, "selected_sources", varr(std::move(selected)));
-        Array selected_units;
-        for (const auto &entry: entries)
-            selected_units.push_back(vobj({
-                {"source", vstr(entry.source.string())},
-                {"target", entry.target.has_value() ? vstr(*entry.target)
-                                                    : vnull()},
-            }));
-        set_member(summary, "selected_translation_units",
-                   varr(std::move(selected_units)));
-        set_member(summary, "suppression_counts", vobj({}));
-    } catch (const CheckError &error) {
-        auto *errors = member_mut(summary, "errors");
-        std::get<Array>(errors->data).push_back(vstr(error.what()));
-        write_summary(build_dir, kind, summary);
-        std::cerr << "native sweep failed: " << error.what() << "\n";
-        return 1;
-    } catch (const std::invalid_argument &error) {
-        auto *errors = member_mut(summary, "errors");
-        std::get<Array>(errors->data).push_back(vstr(error.what()));
-        write_summary(build_dir, kind, summary);
-        std::cerr << "native sweep failed: " << error.what() << "\n";
-        return 1;
-    } catch (const std::exception &error) {
-        auto *errors = member_mut(summary, "errors");
-        std::get<Array>(errors->data).push_back(vstr(error.what()));
-        write_summary(build_dir, kind, summary);
-        std::cerr << "native sweep failed: " << error.what() << "\n";
-        return 1;
-    }
+    const bool setup_ok = [&]() -> bool {
+        std::string override_name;
+        try {
+            context = load_context(build_dir);
+            const SourceManifest manifest = load_source_manifest(build_dir);
+            entries = load_entries(build_dir, manifest.sources);
+            if (kind == "analyzer" || kind == "tidy")
+                suppressions = load_suppressions(fs::path(std::get<std::string>(
+                    member(context, "analysis_suppressions_manifest")->data)));
+            const auto environment = environ_copy();
+            auto resolved = resolve_tool(kind, context, environment);
+            tool = std::move(resolved.first);
+            override_name = std::move(resolved.second);
+            set_member(summary, "tool", vstr(tool.string()));
+            set_member(summary, "tool_override", vstr(override_name));
+            Object overrides;
+            for (const std::string_view name:
+                 {"CLANG_TIDY", "ANALYZER_CLANG", "CPPCHECK", "GXX"})
+                if (const auto found =
+                        environment.find(std::string(name));
+                    found != environment.end())
+                    overrides.emplace_back(std::string(name),
+                                           vstr(found->second));
+            set_member(summary, "tool_overrides", vobj(std::move(overrides)));
+            set_member(summary, "compiler_context",
+                       *member(context, "compiler"));
+            set_member(summary, "sdk", *member(context, "sdk"));
+            set_member(summary, "python_executable",
+                       member(context, "python_executable") != nullptr
+                           ? *member(context, "python_executable")
+                           : vnull());
+            std::set<std::string> unique_sources;
+            for (const auto &entry: entries) unique_sources.insert(entry.source.string());
+            set_member(summary, "unique_source_count",
+                       vint(static_cast<std::int64_t>(unique_sources.size())));
+            set_member(summary, "translation_unit_count",
+                       vint(static_cast<std::int64_t>(entries.size())));
+            Array selected;
+            for (const std::string &source: unique_sources)
+                selected.push_back(vstr(source));
+            set_member(summary, "selected_sources", varr(std::move(selected)));
+            Array selected_units;
+            for (const auto &entry: entries)
+                selected_units.push_back(vobj({
+                    {"source", vstr(entry.source.string())},
+                    {"target", entry.target.has_value() ? vstr(*entry.target)
+                                                        : vnull()},
+                }));
+            set_member(summary, "selected_translation_units",
+                       varr(std::move(selected_units)));
+            set_member(summary, "suppression_counts", vobj({}));
+        } catch (const CheckError &error) {
+            auto *errors = member_mut(summary, "errors");
+            std::get<Array>(errors->data).push_back(vstr(error.what()));
+            write_summary(build_dir, kind, summary);
+            std::cerr << "native sweep failed: " << error.what() << "\n";
+            return false;
+        } catch (const std::invalid_argument &error) {
+            auto *errors = member_mut(summary, "errors");
+            std::get<Array>(errors->data).push_back(vstr(error.what()));
+            write_summary(build_dir, kind, summary);
+            std::cerr << "native sweep failed: " << error.what() << "\n";
+            return false;
+        } catch (const std::exception &error) {
+            auto *errors = member_mut(summary, "errors");
+            std::get<Array>(errors->data).push_back(vstr(error.what()));
+            write_summary(build_dir, kind, summary);
+            std::cerr << "native sweep failed: " << error.what() << "\n";
+            return false;
+        }
+        return true;
+    }();
+    if (!setup_ok) return 1;
 
     std::cout << "native " << kind << " selection: "
               << std::get<io::Number>(member(summary, "unique_source_count")->data)
@@ -337,107 +346,111 @@ int run_sweep(const std::string &kind, const fs::path &build) {
         }
     }
 
-    for (std::size_t index = 0; index < entries.size(); ++index) {
-        const CompileEntry &entry = entries[index];
-        const std::vector<std::string> passes =
-            kind == "analyzer" ? std::vector<std::string>{"stable", "alpha"}
-                               : std::vector<std::string>{"stable"};
-        bool stable_failed = false;
-        for (const std::string &pass_name: passes) {
-            if (kind == "analyzer" && pass_name == "alpha" && stable_failed)
-                continue;
-            const std::vector<std::string> argv =
-                tool_argv(kind, tool, entry, context, build_dir, run_id, index,
-                          pass_name);
-            std::string name = padded_index(index);
-            name += '-';
-            name += entry.source.stem().string();
-            name += '-';
-            name += pass_name;
-            Value record =
-                run_process(argv, entry.directory, log_directory, name);
-            set_member(record, "pass", vstr(pass_name));
-            set_member(record, "source", vstr(entry.source.string()));
-            set_member(record, "target",
-                       entry.target.has_value() ? vstr(*entry.target)
-                                                : vnull());
-            std::vector<std::string> unsuppressed;
-            if (kind == "analyzer" || kind == "tidy") {
-                const auto filtered = apply_suppressions(
-                    record_diagnostics(record), tool_version, suppressions);
-                unsuppressed = filtered.remaining;
-                set_member(record, "unsuppressed_diagnostics",
-                           varr([&]() {
-                               Array items;
-                               for (const auto &line: unsuppressed)
-                                   items.push_back(vstr(line));
-                               return items;
-                           }()));
-                set_member(record, "suppressed_diagnostics",
-                           varr(filtered.matched));
-                for (const Value &item: filtered.matched) {
-                    const std::string checker = std::get<std::string>(
-                        member(item, "checker")->data);
-                    Value *counts = member_mut(summary, "suppression_counts");
-                    auto &counts_object = std::get<Object>(counts->data);
-                    bool found = false;
-                    for (auto &[key, value]: counts_object) {
-                        if (key == checker) {
-                            const std::int64_t count =
-                                parse_int64(std::get<io::Number>(value.data)
-                                                .lexeme)
-                                    .value_or(0);
-                            value = vint(count + 1);
-                            found = true;
+    [&]() {
+        for (std::size_t index = 0; index < entries.size(); ++index) {
+            const CompileEntry &entry = entries[index];
+            const std::vector<std::string> passes =
+                kind == "analyzer" ? std::vector<std::string>{"stable", "alpha"}
+                                   : std::vector<std::string>{"stable"};
+            bool stable_failed = false;
+            for (const std::string &pass_name: passes) {
+                if (kind == "analyzer" && pass_name == "alpha" && stable_failed)
+                    continue;
+                const std::vector<std::string> argv =
+                    tool_argv(kind, tool, entry, context, build_dir, run_id,
+                              index, pass_name);
+                std::string name = padded_index(index);
+                name += '-';
+                name += entry.source.stem().string();
+                name += '-';
+                name += pass_name;
+                Value record =
+                    run_process(argv, entry.directory, log_directory, name);
+                set_member(record, "pass", vstr(pass_name));
+                set_member(record, "source", vstr(entry.source.string()));
+                set_member(record, "target",
+                           entry.target.has_value() ? vstr(*entry.target)
+                                                    : vnull());
+                std::vector<std::string> unsuppressed;
+                if (kind == "analyzer" || kind == "tidy") {
+                    const auto filtered = apply_suppressions(
+                        record_diagnostics(record), tool_version, suppressions);
+                    unsuppressed = filtered.remaining;
+                    set_member(record, "unsuppressed_diagnostics",
+                               varr([&]() {
+                                   Array items;
+                                   for (const auto &line: unsuppressed)
+                                       items.push_back(vstr(line));
+                                   return items;
+                               }()));
+                    set_member(record, "suppressed_diagnostics",
+                               varr(filtered.matched));
+                    for (const Value &item: filtered.matched) {
+                        const std::string checker = std::get<std::string>(
+                            member(item, "checker")->data);
+                        Value *counts = member_mut(summary, "suppression_counts");
+                        auto &counts_object = std::get<Object>(counts->data);
+                        bool found = false;
+                        for (auto &[key, value]: counts_object) {
+                            if (key == checker) {
+                                const std::int64_t count =
+                                    parse_int64(std::get<io::Number>(value.data)
+                                                    .lexeme)
+                                        .value_or(0);
+                                value = vint(count + 1);
+                                found = true;
+                            }
                         }
+                        if (!found)
+                            counts_object.emplace_back(checker, vint(1));
                     }
-                    if (!found)
-                        counts_object.emplace_back(checker, vint(1));
+                } else {
+                    unsuppressed = record_diagnostics(record);
                 }
-            } else {
-                unsuppressed = record_diagnostics(record);
-            }
-            records.push_back(record);
-            if (!record_health_ok(record)) tool_health_failed = true;
-            const bool warning = has_warning(unsuppressed);
-            const bool error = has_error(unsuppressed);
-            if (kind == "analyzer" && pass_name == "alpha") {
-                if (warning) {
-                    report_only_findings = true;
-                    report_alpha_findings(record, entry.source);
+                records.push_back(record);
+                if (!record_health_ok(record)) tool_health_failed = true;
+                const bool warning = has_warning(unsuppressed);
+                const bool error = has_error(unsuppressed);
+                if (kind == "analyzer" && pass_name == "alpha") {
+                    if (warning) {
+                        report_only_findings = true;
+                        report_alpha_findings(record, entry.source);
+                    }
+                    if (error)
+                        // An alpha finding may be noisy, but an error
+                        // diagnostic is a broken analysis run.
+                        tool_health_failed = true;
+                    continue;
                 }
-                if (error)
-                    // An alpha finding may be noisy, but an error diagnostic
-                    // is a broken analysis run.
-                    tool_health_failed = true;
-                continue;
-            }
-            if (warning || error) {
-                blocking_findings = true;
-                if (kind == "analyzer" && pass_name == "stable")
-                    stable_failed = true;
+                if (warning || error) {
+                    blocking_findings = true;
+                    if (kind == "analyzer" && pass_name == "stable")
+                        stable_failed = true;
+                }
             }
         }
-    }
+    }();
 
-    if (kind == "odr" && !tool_health_failed) {
-        std::vector<std::string> linker = {tool.string(), "-flto=auto",
-                                           "-Wodr", "-Wno-psabi", "-r"};
-        for (const fs::path &object: object_paths)
-            linker.push_back(object.string());
-        linker.emplace_back("-o");
-        linker.push_back(
-            (build_dir / "native_check_work" / kind / run_id / "combined.o")
-                .string());
-        Value link_record =
-            run_process(linker, build_dir, log_directory, "odr-link");
-        set_member(link_record, "pass", vstr("link"));
-        set_member(link_record, "source", vnull());
-        set_member(link_record, "target", vnull());
-        if (!record_health_ok(link_record)) tool_health_failed = true;
-        if (!record_diagnostics(link_record).empty()) blocking_findings = true;
-        records.push_back(std::move(link_record));
-    }
+    [&]() {
+        if (kind == "odr" && !tool_health_failed) {
+            std::vector<std::string> linker = {tool.string(), "-flto=auto",
+                                               "-Wodr", "-Wno-psabi", "-r"};
+            for (const fs::path &object: object_paths)
+                linker.push_back(object.string());
+            linker.emplace_back("-o");
+            linker.push_back(
+                (build_dir / "native_check_work" / kind / run_id / "combined.o")
+                    .string());
+            Value link_record =
+                run_process(linker, build_dir, log_directory, "odr-link");
+            set_member(link_record, "pass", vstr("link"));
+            set_member(link_record, "source", vnull());
+            set_member(link_record, "target", vnull());
+            if (!record_health_ok(link_record)) tool_health_failed = true;
+            if (!record_diagnostics(link_record).empty()) blocking_findings = true;
+            records.push_back(std::move(link_record));
+        }
+    }();
 
     set_member(summary, "records", varr(std::move(records)));
     set_member(summary, "tool_health",
@@ -673,158 +686,170 @@ int run_header_sweep(const fs::path &build) {
         return 1;
     }
     const std::string run_id = new_run_id();
-    Value summary = vobj({
-        {"schema_version", vint(1)},
-        {"kind", vstr(kind)},
-        {"build", vstr(build_dir.string())},
-        {"run_id", vstr(run_id)},
-        {"tool_health", vstr("failed")},
-        {"finding_status", vstr("none")},
-        {"status", vstr("failed")},
-        {"header_count", vint(0)},
-        {"header_translation_unit_count", vint(0)},
-        {"records", varr({})},
-        {"errors", varr({})},
-    });
-    Value context;
-    std::vector<CompileEntry> entries;
+    // Bulk temporaries run inside lambda frames so this function's Debug -O0
+    // stack stays under -Wframe-larger-than (same framing as run_sweep).
+    Value summary = [&] {
+        return vobj({
+            {"schema_version", vint(1)},
+            {"kind", vstr(kind)},
+            {"build", vstr(build_dir.string())},
+            {"run_id", vstr(run_id)},
+            {"tool_health", vstr("failed")},
+            {"finding_status", vstr("none")},
+            {"status", vstr("failed")},
+            {"header_count", vint(0)},
+            {"header_translation_unit_count", vint(0)},
+            {"records", varr({})},
+            {"errors", varr({})},
+        });
+    }();
     std::vector<fs::path> headers;
-    std::vector<fs::path> excluded_headers;
     std::map<std::string, std::set<std::string>> reaching;
     std::map<std::string, std::map<std::string, const CompileEntry *>>
         entries_by_root;
     std::vector<fs::path> header_roots;
     fs::path compiler;
-    try {
-        context = load_context(build_dir);
-        const SourceManifest manifest = load_source_manifest(build_dir);
-        entries = load_entries(build_dir, manifest.sources);
-        header_roots = standalone_header_roots(manifest.first_party_roots);
-        // Every header under the standalone roots, deduplicated and sorted by
-        // resolved path (sorted(set(Path.rglob(...))) semantics).
-        std::set<std::string> seen;
-        std::vector<fs::path> collected;
-        for (const fs::path &root: header_roots) {
-            std::error_code iter_ec;
-            for (fs::recursive_directory_iterator it(root, iter_ec), end;
-                 !iter_ec && it != end; it.increment(iter_ec)) {
-                const std::string extension = it->path().extension().string();
-                if (extension != ".h" && extension != ".hh" &&
-                    extension != ".hpp" && extension != ".hxx")
-                    continue;
-                std::error_code file_ec;
-                if (!it->is_regular_file(file_ec)) continue;
-                const fs::path resolved = canonical_path(it->path());
-                if (seen.insert(resolved.string()).second)
-                    collected.push_back(resolved);
+    const bool setup_ok = [&]() -> bool {
+        Value context;
+        std::vector<CompileEntry> entries;
+        std::vector<fs::path> excluded_headers;
+        try {
+            context = load_context(build_dir);
+            const SourceManifest manifest = load_source_manifest(build_dir);
+            entries = load_entries(build_dir, manifest.sources);
+            header_roots = standalone_header_roots(manifest.first_party_roots);
+            // Every header under the standalone roots, deduplicated and
+            // sorted by resolved path (sorted(set(Path.rglob(...)))
+            // semantics).
+            std::set<std::string> seen;
+            std::vector<fs::path> collected;
+            for (const fs::path &root: header_roots) {
+                std::error_code iter_ec;
+                for (fs::recursive_directory_iterator it(root, iter_ec), end;
+                     !iter_ec && it != end; it.increment(iter_ec)) {
+                    const std::string extension = it->path().extension().string();
+                    if (extension != ".h" && extension != ".hh" &&
+                        extension != ".hpp" && extension != ".hxx")
+                        continue;
+                    std::error_code file_ec;
+                    if (!it->is_regular_file(file_ec)) continue;
+                    const fs::path resolved = canonical_path(it->path());
+                    if (seen.insert(resolved.string()).second)
+                        collected.push_back(resolved);
+                }
             }
-        }
-        std::ranges::sort(collected,
-                  [](const fs::path &a, const fs::path &b) {
-                      return a.string() < b.string();
-                  });
-        headers = std::move(collected);
-        if (headers.empty())
-            throw CheckError(
-                "no first-party headers found for standalone compilation");
-
-        for (const fs::path &root: header_roots)
-            for (const CompileEntry &entry: entries)
-                if (is_under(entry.source, {root}))
-                    // dict comprehension semantics: later entries overwrite
-                    // the same target key.
-                    entries_by_root[root.string()][entry.target.value_or("")] =
-                        &entry;
-        // Reachability scoping applies only to produced (Python-free)
-        // contexts: binding-side headers are reachable exclusively from
-        // translation units the standalone graph does not build, so they are
-        // recorded, not swept. A bindings context keeps the oracle's exact
-        // contract — every header under every covering target — because the
-        // extension TU set compiles the whole first-party surface there.
-        const bool bindings_expected =
-            opt_string(context, "python_executable").has_value();
-        if (!bindings_expected) {
-            std::map<std::string, std::vector<IncludeDirective>>
-                include_cache;
-            reaching = reaching_targets(entries, header_roots, include_cache);
-            std::vector<fs::path> swept;
-            std::vector<fs::path> excluded;
-            for (const fs::path &header: headers) {
-                if (reaching.contains(header.string()))
-                    swept.push_back(header);
-                else
-                    excluded.push_back(header);
-            }
-            excluded_headers = std::move(excluded);
-            headers = std::move(swept);
+            std::ranges::sort(collected,
+                      [](const fs::path &a, const fs::path &b) {
+                          return a.string() < b.string();
+                      });
+            headers = std::move(collected);
             if (headers.empty())
                 throw CheckError(
-                    "no first-party headers are reachable from compiled "
-                    "translation units");
-        }
+                    "no first-party headers found for standalone compilation");
 
-        for (const fs::path &header: headers) {
-            const fs::path *root = nullptr;
-            for (const fs::path &candidate: header_roots)
-                if (is_under(header, {candidate})) {
-                    root = &candidate;
-                    break;
+            for (const fs::path &root: header_roots)
+                for (const CompileEntry &entry: entries)
+                    if (is_under(entry.source, {root}))
+                        // dict comprehension semantics: later entries
+                        // overwrite the same target key.
+                        entries_by_root[root.string()][entry.target.value_or("")] =
+                            &entry;
+            // Reachability scoping applies only to produced (Python-free)
+            // contexts: binding-side headers are reachable exclusively from
+            // translation units the standalone graph does not build, so they
+            // are recorded, not swept. A bindings context keeps the oracle's
+            // exact contract — every header under every covering target —
+            // because the extension TU set compiles the whole first-party
+            // surface there.
+            const bool bindings_expected =
+                opt_string(context, "python_executable").has_value();
+            if (!bindings_expected) {
+                std::map<std::string, std::vector<IncludeDirective>>
+                    include_cache;
+                reaching = reaching_targets(entries, header_roots, include_cache);
+                std::vector<fs::path> swept;
+                std::vector<fs::path> excluded;
+                for (const fs::path &header: headers) {
+                    if (reaching.contains(header.string()))
+                        swept.push_back(header);
+                    else
+                        excluded.push_back(header);
                 }
-            if (root == nullptr ||
-                entries_by_root.find(root->string()) == entries_by_root.end() ||
-                entries_by_root[root->string()].empty())
-                throw CheckError(
-                    "no configured target compile context for first-party "
-                    "header: " +
-                    header.string());
-        }
+                excluded_headers = std::move(excluded);
+                headers = std::move(swept);
+                if (headers.empty())
+                    throw CheckError(
+                        "no first-party headers are reachable from compiled "
+                        "translation units");
+            }
 
-        compiler = fs::path(std::get<std::string>(
-            member(*member(context, "compiler"), "path")->data));
-        set_member(summary, "tool", vstr(compiler.string()));
-        const Value version = version_record(
-            compiler, build_dir / "native_check_logs" / kind / run_id);
-        if (const Value *text = member(version, "version"))
-            set_member(summary, "tool_version",
-                       vstr(std::get<std::string>(text->data)));
-        set_member(summary, "header_count",
-                   vint(static_cast<std::int64_t>(headers.size())));
-        std::size_t tu_count = 0;
-        for (const fs::path &header: headers) {
-            for (const fs::path &candidate: header_roots)
-                if (is_under(header, {candidate})) {
-                    tu_count += header_contexts(
-                        header, candidate, reaching, entries_by_root)
-                                    .size();
-                    break;
-                }
+            for (const fs::path &header: headers) {
+                const fs::path *root = nullptr;
+                for (const fs::path &candidate: header_roots)
+                    if (is_under(header, {candidate})) {
+                        root = &candidate;
+                        break;
+                    }
+                if (root == nullptr ||
+                    entries_by_root.find(root->string()) ==
+                        entries_by_root.end() ||
+                    entries_by_root[root->string()].empty())
+                    throw CheckError(
+                        "no configured target compile context for first-party "
+                        "header: " +
+                        header.string());
+            }
+
+            compiler = fs::path(std::get<std::string>(
+                member(*member(context, "compiler"), "path")->data));
+            set_member(summary, "tool", vstr(compiler.string()));
+            const Value version = version_record(
+                compiler, build_dir / "native_check_logs" / kind / run_id);
+            if (const Value *text = member(version, "version"))
+                set_member(summary, "tool_version",
+                           vstr(std::get<std::string>(text->data)));
+            set_member(summary, "header_count",
+                       vint(static_cast<std::int64_t>(headers.size())));
+            std::size_t tu_count = 0;
+            for (const fs::path &header: headers) {
+                for (const fs::path &candidate: header_roots)
+                    if (is_under(header, {candidate})) {
+                        tu_count += header_contexts(
+                            header, candidate, reaching, entries_by_root)
+                                        .size();
+                        break;
+                    }
+            }
+            set_member(summary, "header_translation_unit_count",
+                       vint(static_cast<std::int64_t>(tu_count)));
+            Array header_values;
+            for (const fs::path &header: headers)
+                header_values.push_back(vstr(header.string()));
+            set_member(summary, "headers", varr(std::move(header_values)));
+            // Provenance for the scoping decision: headers under the roots
+            // that no compiled TU reaches are reported, never silently
+            // skipped. Produced-only keys — a bindings context emits exactly
+            // the oracle's summary shape.
+            if (!bindings_expected) {
+                Array excluded_values;
+                for (const fs::path &header: excluded_headers)
+                    excluded_values.push_back(vstr(header.string()));
+                set_member(summary, "unreachable_headers",
+                           varr(std::move(excluded_values)));
+                set_member(
+                    summary, "unreachable_header_count",
+                    vint(static_cast<std::int64_t>(excluded_headers.size())));
+            }
+        } catch (const std::exception &error) {
+            std::get<Array>(member_mut(summary, "errors")->data)
+                .push_back(vstr(error.what()));
+            write_summary(build_dir, kind, summary);
+            std::cerr << "native headers failed: " << error.what() << "\n";
+            return false;
         }
-        set_member(summary, "header_translation_unit_count",
-                   vint(static_cast<std::int64_t>(tu_count)));
-        Array header_values;
-        for (const fs::path &header: headers)
-            header_values.push_back(vstr(header.string()));
-        set_member(summary, "headers", varr(std::move(header_values)));
-        // Provenance for the scoping decision: headers under the roots that
-        // no compiled TU reaches are reported, never silently skipped.
-        // Produced-only keys — a bindings context emits exactly the oracle's
-        // summary shape.
-        if (!bindings_expected) {
-            Array excluded_values;
-            for (const fs::path &header: excluded_headers)
-                excluded_values.push_back(vstr(header.string()));
-            set_member(summary, "unreachable_headers",
-                       varr(std::move(excluded_values)));
-            set_member(summary, "unreachable_header_count",
-                       vint(static_cast<std::int64_t>(excluded_headers.size())));
-        }
-    } catch (const std::exception &error) {
-        std::get<Array>(member_mut(summary, "errors")->data)
-            .push_back(vstr(error.what()));
-        write_summary(build_dir, kind, summary);
-        std::cerr << "native headers failed: " << error.what() << "\n";
-        return 1;
-    }
+        return true;
+    }();
+    if (!setup_ok) return 1;
 
     const fs::path work_root = build_dir / "native_check_work" / kind / run_id;
     fs::create_directories(work_root, ec);
@@ -833,48 +858,52 @@ int run_header_sweep(const fs::path &build) {
     Array records;
     bool tool_health_failed = false;
     bool blocking_findings = false;
-    std::size_t index = 0;
-    for (const fs::path &header: headers) {
-        const fs::path *root = nullptr;
-        for (const fs::path &candidate: header_roots)
-            if (is_under(header, {candidate})) {
-                root = &candidate;
-                break;
+    [&]() {
+        std::size_t index = 0;
+        for (const fs::path &header: headers) {
+            const fs::path *root = nullptr;
+            for (const fs::path &candidate: header_roots)
+                if (is_under(header, {candidate})) {
+                    root = &candidate;
+                    break;
+                }
+            for (const auto &[target, entry]:
+                 header_contexts(header, *root, reaching, entries_by_root)) {
+                // tempfile.TemporaryDirectory(dir=work_root): a unique probe
+                // dir per header/target probe, removed after the record.
+                const fs::path probe_dir =
+                    work_root / ("header-" + std::to_string(index) + "-" +
+                                 new_run_id());
+                fs::create_directories(probe_dir, ec);
+                const fs::path probe = probe_dir / "header_probe.cpp";
+                {
+                    std::ofstream stream(probe,
+                                         std::ios::binary | std::ios::trunc);
+                    stream << "#include \"" << header.generic_string()
+                           << "\"\nint main() { return 0; }\n";
+                }
+                const std::vector<std::string> argv =
+                    replace_compile_source(*entry, probe, true);
+                std::string name = padded_index(index);
+                name += '-';
+                name += header.stem().string();
+                name += '-';
+                name += target;
+                Value record =
+                    run_process(argv, entry->directory, log_directory, name);
+                std::error_code rm_ec;
+                fs::remove_all(probe_dir, rm_ec);
+                set_member(record, "pass", vstr("header"));
+                set_member(record, "source", vstr(header.string()));
+                set_member(record, "target", vstr(target));
+                if (!record_health_ok(record)) tool_health_failed = true;
+                if (!record_diagnostics(record).empty())
+                    blocking_findings = true;
+                records.push_back(std::move(record));
+                ++index;
             }
-        for (const auto &[target, entry]:
-             header_contexts(header, *root, reaching, entries_by_root)) {
-            // tempfile.TemporaryDirectory(dir=work_root): a unique probe dir
-            // per header/target probe, removed after the record.
-            const fs::path probe_dir =
-                work_root / ("header-" + std::to_string(index) + "-" +
-                             new_run_id());
-            fs::create_directories(probe_dir, ec);
-            const fs::path probe = probe_dir / "header_probe.cpp";
-            {
-                std::ofstream stream(probe, std::ios::binary | std::ios::trunc);
-                stream << "#include \"" << header.generic_string()
-                       << "\"\nint main() { return 0; }\n";
-            }
-            const std::vector<std::string> argv =
-                replace_compile_source(*entry, probe, true);
-            std::string name = padded_index(index);
-            name += '-';
-            name += header.stem().string();
-            name += '-';
-            name += target;
-            Value record =
-                run_process(argv, entry->directory, log_directory, name);
-            std::error_code rm_ec;
-            fs::remove_all(probe_dir, rm_ec);
-            set_member(record, "pass", vstr("header"));
-            set_member(record, "source", vstr(header.string()));
-            set_member(record, "target", vstr(target));
-            if (!record_health_ok(record)) tool_health_failed = true;
-            if (!record_diagnostics(record).empty()) blocking_findings = true;
-            records.push_back(std::move(record));
-            ++index;
         }
-    }
+    }();
 
     set_member(summary, "records", varr(std::move(records)));
     set_member(summary, "tool_health",

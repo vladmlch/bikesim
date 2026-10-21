@@ -62,7 +62,7 @@ void test_pedaling_sequences(const Value& baseline) {
 struct ShiftCase {
     double cadence, required, dt;
     bool pedaling = true, braking = false, contact = true;
-    std::optional<double> slip;
+    std::optional<double> slip = std::nullopt;
 };
 void shift_case(bt::oracle::Node& golden, PolicySet& policy, const ShiftCase& item) {
     shifted(golden, policy.shifting.update(item.cadence, item.required, item.dt,

@@ -116,40 +116,49 @@ int run_diagnostic_controls(const fs::path &build) {
         return 1;
     }
     const std::string run_id = new_run_id();
-    Value summary = vobj({
-        {"schema_version", vint(1)},
-        {"kind", vstr(kind)},
-        {"build", vstr(build_dir.string())},
-        {"run_id", vstr(run_id)},
-        {"tool_health", vstr("failed")},
-        {"finding_status", vstr("none")},
-        {"status", vstr("failed")},
-        {"controls", varr({})},
-        {"suppression_counts", vobj({})},
-        {"errors", varr({})},
-    });
+    // Bulk temporaries run inside lambda frames so this function's Debug -O0
+    // stack stays under -Wframe-larger-than: the initializer_list backing
+    // arrays and the control-probe records are the expensive parts.
+    Value summary = [&] {
+        return vobj({
+            {"schema_version", vint(1)},
+            {"kind", vstr(kind)},
+            {"build", vstr(build_dir.string())},
+            {"run_id", vstr(run_id)},
+            {"tool_health", vstr("failed")},
+            {"finding_status", vstr("none")},
+            {"status", vstr("failed")},
+            {"controls", varr({})},
+            {"suppression_counts", vobj({})},
+            {"errors", varr({})},
+        });
+    }();
     Value context;
     std::vector<CompileEntry> entries;
     std::vector<Suppression> suppressions;
     fs::path compiler;
     fs::path analyzer;
-    try {
-        context = load_context(build_dir);
-        const SourceManifest manifest = load_source_manifest(build_dir);
-        entries = load_entries(build_dir, manifest.sources);
-        suppressions = load_suppressions(fs::path(std::get<std::string>(
-            member(context, "analysis_suppressions_manifest")->data)));
-        compiler = fs::path(std::get<std::string>(
-            member(*member(context, "compiler"), "path")->data));
-        analyzer = resolve_tool("analyzer", context, environ_copy()).first;
-    } catch (const std::exception &error) {
-        std::get<Array>(member_mut(summary, "errors")->data)
-            .push_back(vstr(error.what()));
-        write_summary(build_dir, kind, summary);
-        std::cerr << "native diagnostic controls failed: " << error.what()
-                  << "\n";
-        return 1;
-    }
+    const bool setup_ok = [&]() -> bool {
+        try {
+            context = load_context(build_dir);
+            const SourceManifest manifest = load_source_manifest(build_dir);
+            entries = load_entries(build_dir, manifest.sources);
+            suppressions = load_suppressions(fs::path(std::get<std::string>(
+                member(context, "analysis_suppressions_manifest")->data)));
+            compiler = fs::path(std::get<std::string>(
+                member(*member(context, "compiler"), "path")->data));
+            analyzer = resolve_tool("analyzer", context, environ_copy()).first;
+        } catch (const std::exception &error) {
+            std::get<Array>(member_mut(summary, "errors")->data)
+                .push_back(vstr(error.what()));
+            write_summary(build_dir, kind, summary);
+            std::cerr << "native diagnostic controls failed: " << error.what()
+                      << "\n";
+            return false;
+        }
+        return true;
+    }();
+    if (!setup_ok) return 1;
 
     const fs::path version_logs =
         build_dir / "native_check_logs" / kind / run_id;
@@ -257,140 +266,152 @@ int run_diagnostic_controls(const fs::path &build) {
 
     // cplusplus.Move positive control: alpha-adjacent checker kept stable by
     // the dedicated checker flag, with suppression filtering active.
-    const fs::path move_source =
-        control_root / "first_party_use_after_move.cpp";
-    {
-        std::ofstream stream(move_source, std::ios::binary | std::ios::trunc);
-        stream << "#include <string>\n#include <utility>\n"
-                  "void check_move() { std::string source{\"value\"}; "
-                  "std::string destination{std::move(source)}; "
-                  "(void)source.size(); }\n";
-    }
-    std::vector<std::string> move_argv =
-        replace_compile_source(entry, move_source, false);
-    if (!move_argv.empty()) move_argv[0] = analyzer.string();
-    move_argv.insert(move_argv.end(),
-                     {"--analyze", "-Xanalyzer", "-analyzer-output=text",
-                      "-Xanalyzer", "-analyzer-checker=cplusplus.Move",
-                      "-Wno-error"});
-    Value move_record = run_process(move_argv, entry.directory, log_directory,
-                                    "first_party_use_after_move");
-    const std::string analyzer_version_text =
-        member(analyzer_version, "version") != nullptr
-            ? std::get<std::string>(member(analyzer_version, "version")->data)
-            : std::string{};
-    const auto filtered = apply_suppressions(
-        record_diagnostics(move_record), analyzer_version_text, suppressions);
-    std::vector<std::string> move_matched;
-    for (const auto &line: filtered.remaining)
-        if (line.find("cplusplus.Move") != std::string::npos)
-            move_matched.push_back(line);
-    for (const Value &item: filtered.matched) {
-        const std::string checker = std::get<std::string>(
-            member(item, "checker")->data);
-        Value *counts = member_mut(summary, "suppression_counts");
-        auto &counts_object = std::get<Object>(counts->data);
-        bool found = false;
-        for (auto &[key, value]: counts_object) {
-            if (key == checker) {
-                value = vint(parse_int64(
-                                 std::get<io::Number>(value.data).lexeme)
-                                 .value_or(0) +
-                             1);
-                found = true;
-            }
+    [&]() {
+        const fs::path move_source =
+            control_root / "first_party_use_after_move.cpp";
+        {
+            std::ofstream stream(move_source,
+                                 std::ios::binary | std::ios::trunc);
+            stream << "#include <string>\n#include <utility>\n"
+                      "void check_move() { std::string source{\"value\"}; "
+                      "std::string destination{std::move(source)}; "
+                      "(void)source.size(); }\n";
         }
-        if (!found) counts_object.emplace_back(checker, vint(1));
-    }
-    {
-        const Value *launch_error = member(move_record, "launch_error");
-        const bool launch_ok =
-            launch_error == nullptr || io::is_null(*launch_error);
-        const Value *timed_out = member(move_record, "timed_out");
-        const bool timeout_clear =
-            timed_out == nullptr ||
-            (std::holds_alternative<bool>(timed_out->data) &&
-             !std::get<bool>(timed_out->data));
-        const std::optional<std::int64_t> rc = record_returncode(move_record);
-        const bool move_status = rc.has_value() && *rc == 0 && launch_ok &&
-                                 timeout_clear && !move_matched.empty();
-        if (!launch_ok || !timeout_clear || !rc.has_value() || *rc != 0)
-            tool_health_failed = true;
-        Array matched_values;
-        for (const auto &line: move_matched)
-            matched_values.push_back(vstr(line));
-        Object control = {
-            {"name", vstr("first_party_use_after_move")},
-            {"status", vstr(move_status ? "passed" : "failed")},
-            {"expected_markers", varr({vstr("cplusplus.Move")})},
-            {"matched_diagnostics", varr(std::move(matched_values))},
-            {"suppressed_diagnostics", varr(filtered.matched)},
-        };
-        Object record_members = std::get<Object>(move_record.data);
-        control.insert(control.end(),
-                       std::make_move_iterator(record_members.begin()),
-                       std::make_move_iterator(record_members.end()));
-        controls.push_back(vobj(std::move(control)));
-    }
+        std::vector<std::string> move_argv =
+            replace_compile_source(entry, move_source, false);
+        if (!move_argv.empty()) move_argv[0] = analyzer.string();
+        move_argv.insert(move_argv.end(),
+                         {"--analyze", "-Xanalyzer", "-analyzer-output=text",
+                          "-Xanalyzer", "-analyzer-checker=cplusplus.Move",
+                          "-Wno-error"});
+        Value move_record = run_process(move_argv, entry.directory,
+                                        log_directory,
+                                        "first_party_use_after_move");
+        const std::string analyzer_version_text =
+            member(analyzer_version, "version") != nullptr
+                ? std::get<std::string>(member(analyzer_version, "version")->data)
+                : std::string{};
+        const auto filtered = apply_suppressions(
+            record_diagnostics(move_record), analyzer_version_text,
+            suppressions);
+        std::vector<std::string> move_matched;
+        for (const auto &line: filtered.remaining)
+            if (line.find("cplusplus.Move") != std::string::npos)
+                move_matched.push_back(line);
+        for (const Value &item: filtered.matched) {
+            const std::string checker = std::get<std::string>(
+                member(item, "checker")->data);
+            Value *counts = member_mut(summary, "suppression_counts");
+            auto &counts_object = std::get<Object>(counts->data);
+            bool found = false;
+            for (auto &[key, value]: counts_object) {
+                if (key == checker) {
+                    value = vint(parse_int64(
+                                     std::get<io::Number>(value.data).lexeme)
+                                     .value_or(0) +
+                                 1);
+                    found = true;
+                }
+            }
+            if (!found) counts_object.emplace_back(checker, vint(1));
+        }
+        {
+            const Value *launch_error = member(move_record, "launch_error");
+            const bool launch_ok =
+                launch_error == nullptr || io::is_null(*launch_error);
+            const Value *timed_out = member(move_record, "timed_out");
+            const bool timeout_clear =
+                timed_out == nullptr ||
+                (std::holds_alternative<bool>(timed_out->data) &&
+                 !std::get<bool>(timed_out->data));
+            const std::optional<std::int64_t> rc =
+                record_returncode(move_record);
+            const bool move_status = rc.has_value() && *rc == 0 && launch_ok &&
+                                     timeout_clear && !move_matched.empty();
+            if (!launch_ok || !timeout_clear || !rc.has_value() || *rc != 0)
+                tool_health_failed = true;
+            Array matched_values;
+            for (const auto &line: move_matched)
+                matched_values.push_back(vstr(line));
+            Object control = {
+                {"name", vstr("first_party_use_after_move")},
+                {"status", vstr(move_status ? "passed" : "failed")},
+                {"expected_markers", varr({vstr("cplusplus.Move")})},
+                {"matched_diagnostics", varr(std::move(matched_values))},
+                {"suppressed_diagnostics", varr(filtered.matched)},
+            };
+            Object record_members = std::get<Object>(move_record.data);
+            control.insert(control.end(),
+                           std::make_move_iterator(record_members.begin()),
+                           std::make_move_iterator(record_members.end()));
+            controls.push_back(vobj(std::move(control)));
+        }
+    }();
 
     // The hardening-mode guard control must REJECT a libc++ configured with
     // no selected mode: nonzero rc plus the expected #error text on stderr.
-    const fs::path fake_libcpp_include = control_root / "fake-libcpp";
-    fs::create_directories(fake_libcpp_include, ec);
-    {
-        std::ofstream stream(fake_libcpp_include / "__config",
-                             std::ios::binary | std::ios::trunc);
-        stream << "#define _LIBCPP_VERSION 1\n";
-    }
-    const fs::path guard_source = control_root / "libcpp_hardening_guard.cpp";
-    {
-        std::ofstream stream(guard_source, std::ios::binary | std::ios::trunc);
-        stream << "#include <__config>\n"
-                  "#ifndef _LIBCPP_VERSION\n#error not libc++\n#endif\n"
-                  "#ifndef _LIBCPP_HARDENING_MODE_EXTENSIVE\n#error missing "
-                  "hardening mode macro\n#endif\n"
-                  "#ifndef _LIBCPP_HARDENING_MODE\n#error missing hardening "
-                  "selection macro\n#endif\n"
-                  "int main() { return 0; }\n";
-    }
-    Value guard_record = run_process(
-        {compiler.string(), "-std=c++23", "-I", fake_libcpp_include.string(),
-         "-fsyntax-only", guard_source.string()},
-        entry.directory, log_directory, "libcpp_probe_rejects_missing_mode");
-    {
-        const std::string guard_stderr = record_stderr(guard_record);
-        const bool guard_error =
-            guard_stderr.find("missing hardening mode macro") !=
-            std::string::npos;
-        const Value *launch_error = member(guard_record, "launch_error");
-        const bool launch_ok =
-            launch_error == nullptr || io::is_null(*launch_error);
-        const Value *timed_out = member(guard_record, "timed_out");
-        const bool timeout_clear =
-            timed_out == nullptr ||
-            (std::holds_alternative<bool>(timed_out->data) &&
-             !std::get<bool>(timed_out->data));
-        const std::optional<std::int64_t> rc =
-            record_returncode(guard_record);
-        const bool guard_status =
-            rc.has_value() && *rc != 0 && guard_error && launch_ok;
-        if (!launch_ok || !timeout_clear || !guard_status)
-            tool_health_failed = true;
-        Array matched;
-        if (guard_error) matched.push_back(vstr(guard_stderr));
-        Object control = {
-            {"name", vstr("libcpp_probe_rejects_missing_mode")},
-            {"status", vstr(guard_status ? "passed" : "failed")},
-            {"expected_markers", varr({vstr("missing hardening mode macro")})},
-            {"matched_diagnostics", varr(std::move(matched))},
-            {"expected_nonzero", vbool(true)},
-        };
-        Object record_members = std::get<Object>(guard_record.data);
-        control.insert(control.end(),
-                       std::make_move_iterator(record_members.begin()),
-                       std::make_move_iterator(record_members.end()));
-        controls.push_back(vobj(std::move(control)));
-    }
+    [&]() {
+        const fs::path fake_libcpp_include = control_root / "fake-libcpp";
+        fs::create_directories(fake_libcpp_include, ec);
+        {
+            std::ofstream stream(fake_libcpp_include / "__config",
+                                 std::ios::binary | std::ios::trunc);
+            stream << "#define _LIBCPP_VERSION 1\n";
+        }
+        const fs::path guard_source =
+            control_root / "libcpp_hardening_guard.cpp";
+        {
+            std::ofstream stream(guard_source,
+                                 std::ios::binary | std::ios::trunc);
+            stream << "#include <__config>\n"
+                      "#ifndef _LIBCPP_VERSION\n#error not libc++\n#endif\n"
+                      "#ifndef _LIBCPP_HARDENING_MODE_EXTENSIVE\n#error missing "
+                      "hardening mode macro\n#endif\n"
+                      "#ifndef _LIBCPP_HARDENING_MODE\n#error missing hardening "
+                      "selection macro\n#endif\n"
+                      "int main() { return 0; }\n";
+        }
+        Value guard_record = run_process(
+            {compiler.string(), "-std=c++23", "-I", fake_libcpp_include.string(),
+             "-fsyntax-only", guard_source.string()},
+            entry.directory, log_directory,
+            "libcpp_probe_rejects_missing_mode");
+        {
+            const std::string guard_stderr = record_stderr(guard_record);
+            const bool guard_error =
+                guard_stderr.find("missing hardening mode macro") !=
+                std::string::npos;
+            const Value *launch_error = member(guard_record, "launch_error");
+            const bool launch_ok =
+                launch_error == nullptr || io::is_null(*launch_error);
+            const Value *timed_out = member(guard_record, "timed_out");
+            const bool timeout_clear =
+                timed_out == nullptr ||
+                (std::holds_alternative<bool>(timed_out->data) &&
+                 !std::get<bool>(timed_out->data));
+            const std::optional<std::int64_t> rc =
+                record_returncode(guard_record);
+            const bool guard_status =
+                rc.has_value() && *rc != 0 && guard_error && launch_ok;
+            if (!launch_ok || !timeout_clear || !guard_status)
+                tool_health_failed = true;
+            Array matched;
+            if (guard_error) matched.push_back(vstr(guard_stderr));
+            Object control = {
+                {"name", vstr("libcpp_probe_rejects_missing_mode")},
+                {"status", vstr(guard_status ? "passed" : "failed")},
+                {"expected_markers",
+                 varr({vstr("missing hardening mode macro")})},
+                {"matched_diagnostics", varr(std::move(matched))},
+                {"expected_nonzero", vbool(true)},
+            };
+            Object record_members = std::get<Object>(guard_record.data);
+            control.insert(control.end(),
+                           std::make_move_iterator(record_members.begin()),
+                           std::make_move_iterator(record_members.end()));
+            controls.push_back(vobj(std::move(control)));
+        }
+    }();
 
     set_member(summary, "controls", varr(controls));
     const Value &controls_value = *member(summary, "controls");
@@ -499,51 +520,63 @@ int run_context_checks(const fs::path &build) {
         return 1;
     }
     const std::string run_id = new_run_id();
-    Value summary = vobj({
-        {"schema_version", vint(1)},
-        {"kind", vstr(kind)},
-        {"build", vstr(build_dir.string())},
-        {"run_id", vstr(run_id)},
-        {"tool_health", vstr("failed")},
-        {"finding_status", vstr("none")},
-        {"status", vstr("failed")},
-        {"sdk_controls", vobj({})},
-        {"hardening_evidence", varr({})},
-        {"records", varr({})},
-        {"errors", varr({})},
-    });
+    // Bulk temporaries run inside lambda frames so this function's Debug -O0
+    // stack stays under -Wframe-larger-than: the initializer_list backing
+    // arrays, the per-control configure records and the hardening probes are
+    // the expensive parts.
+    Value summary = [&] {
+        return vobj({
+            {"schema_version", vint(1)},
+            {"kind", vstr(kind)},
+            {"build", vstr(build_dir.string())},
+            {"run_id", vstr(run_id)},
+            {"tool_health", vstr("failed")},
+            {"finding_status", vstr("none")},
+            {"status", vstr("failed")},
+            {"sdk_controls", vobj({})},
+            {"hardening_evidence", varr({})},
+            {"records", varr({})},
+            {"errors", varr({})},
+        });
+    }();
     Value context;
     std::vector<CompileEntry> entries;
     fs::path cmake;
     fs::path compiler;
-    try {
-        context = load_context(build_dir);
-        const SourceManifest manifest = load_source_manifest(build_dir);
-        entries = load_entries(build_dir, manifest.sources);
-        // The produced context sweep configures the standalone root project
-        // with the recorded CMake binary; a binding context falls back to
-        // PATH's cmake. Interpreter selection is an explicit configure flag.
-        const auto recorded_cmake = opt_string(context, "cmake");
-        if (recorded_cmake.has_value() && !recorded_cmake->empty()) {
-            cmake = canonical_path(expand_home(*recorded_cmake));
-            if (!is_executable_file(cmake))
-                throw CheckError("required tool is unavailable: " +
-                                 *recorded_cmake + " (context 'cmake')");
-        } else {
-            const std::optional<fs::path> located = which("cmake");
-            if (!located.has_value())
-                throw CheckError("required tool is unavailable: cmake");
-            cmake = canonical_path(*located);
+    const bool setup_ok = [&]() -> bool {
+        try {
+            context = load_context(build_dir);
+            const SourceManifest manifest = load_source_manifest(build_dir);
+            entries = load_entries(build_dir, manifest.sources);
+            // The produced context sweep configures the standalone root
+            // project with the recorded CMake binary; a binding context falls
+            // back to PATH's cmake. Interpreter selection is an explicit
+            // configure flag.
+            const auto recorded_cmake = opt_string(context, "cmake");
+            if (recorded_cmake.has_value() && !recorded_cmake->empty()) {
+                cmake = canonical_path(expand_home(*recorded_cmake));
+                if (!is_executable_file(cmake))
+                    throw CheckError("required tool is unavailable: " +
+                                     *recorded_cmake + " (context 'cmake')");
+            } else {
+                const std::optional<fs::path> located = which("cmake");
+                if (!located.has_value())
+                    throw CheckError("required tool is unavailable: cmake");
+                cmake = canonical_path(*located);
+            }
+            compiler = fs::path(std::get<std::string>(
+                member(*member(context, "compiler"), "path")->data));
+        } catch (const std::exception &error) {
+            std::get<Array>(member_mut(summary, "errors")->data)
+                .push_back(vstr(error.what()));
+            write_summary(build_dir, kind, summary);
+            std::cerr << "native context checks failed: " << error.what()
+                      << "\n";
+            return false;
         }
-        compiler = fs::path(std::get<std::string>(
-            member(*member(context, "compiler"), "path")->data));
-    } catch (const std::exception &error) {
-        std::get<Array>(member_mut(summary, "errors")->data)
-            .push_back(vstr(error.what()));
-        write_summary(build_dir, kind, summary);
-        std::cerr << "native context checks failed: " << error.what() << "\n";
-        return 1;
-    }
+        return true;
+    }();
+    if (!setup_ok) return 1;
 
     const fs::path work_root = build_dir / "native_check_work" / kind / run_id;
     fs::create_directories(work_root, ec);
@@ -734,186 +767,205 @@ int run_context_checks(const fs::path &build) {
 
     for (const std::string &control : context_control_names(context)) {
         if (control == "explicit_sdk") {
-            std::pair<Value, fs::path> result;
-            configure_case("sdk-explicit",
-                           {"-DCMAKE_OSX_SYSROOT=" + sdk_request}, nullptr,
-                           std::nullopt, false, result);
-            try {
-                const Value explicit_context = configured_context(result.second);
-                const auto rc = record_returncode(result.first);
-                const bool explicit_ok =
-                    rc.has_value() && *rc == 0 &&
-                    opt_string(explicit_context, "sdk_source") == "explicit" &&
-                    canonical_path(std::get<std::string>(
-                                  member(explicit_context, "sdk")->data)) ==
+            [&]() {
+                std::pair<Value, fs::path> result;
+                configure_case("sdk-explicit",
+                               {"-DCMAKE_OSX_SYSROOT=" + sdk_request}, nullptr,
+                               std::nullopt, false, result);
+                try {
+                    const Value explicit_context =
+                        configured_context(result.second);
+                    const auto rc = record_returncode(result.first);
+                    const bool explicit_ok =
+                        rc.has_value() && *rc == 0 &&
+                        opt_string(explicit_context, "sdk_source") ==
+                            "explicit" &&
                         canonical_path(std::get<std::string>(
-                                      member(context, "sdk")->data)) &&
-                    canonical_path(std::get<std::string>(
-                                  member(*member(explicit_context, "compiler"),
-                                         "path")
-                                      ->data)) == canonical_path(compiler);
-                sdk_controls.emplace_back("explicit_sdk",
-                                          explicit_ok ? "passed" : "failed");
-                sdk_details["explicit_sdk"] = vobj({
-                    {"requested", vstr(sdk_request)},
-                    {"selected", *member(explicit_context, "sdk")},
-                    {"compiler",
-                     *member(*member(explicit_context, "compiler"), "path")},
-                });
-            } catch (const std::exception &error) {
-                sdk_controls.emplace_back("explicit_sdk", "failed");
-                sdk_details["explicit_sdk"] =
-                    vobj({{"error", vstr(error.what())}});
-            }
-            cmake_records.push_back(result.first);
-        } else if (control == "missing_sdk") {
-            const fs::path missing_sdk = work_root / "missing-explicit-sdk";
-            std::pair<Value, fs::path> result;
-            configure_case("sdk-missing",
-                           {"-DCMAKE_OSX_SYSROOT=" + missing_sdk.string()},
-                           nullptr, std::nullopt, false, result);
-            const std::string combined =
-                record_stdout_text(result.first) + record_stderr(result.first);
-            const auto rc = record_returncode(result.first);
-            const bool missing_ok = rc.has_value() && *rc != 0 &&
-                                    combined.find(missing_sdk.string()) !=
-                                        std::string::npos;
-            sdk_controls.emplace_back("missing_sdk",
-                                      missing_ok ? "rejected" : "failed");
-            sdk_details["missing_sdk"] = vobj({
-                {"requested", vstr(missing_sdk.string())},
-                {"returncode",
-                 rc.has_value() ? vint(*rc) : vnull()},
-            });
-            cmake_records.push_back(result.first);
-        } else if (control == "default_sdk") {
-            std::pair<Value, fs::path> result;
-            configure_case("sdk-default", {}, &default_environment, std::nullopt,
-                           true, result);
-            try {
-                const Value default_context = configured_context(result.second);
-                const auto rc = record_returncode(result.first);
-                const fs::path selected_sdk = fs::path(std::get<std::string>(
-                    member(default_context, "sdk")->data));
-                std::error_code dir_ec;
-                const bool default_ok =
-                    rc.has_value() && *rc == 0 &&
-                    opt_string(default_context, "sdk_source") == "default" &&
-                    fs::is_directory(selected_sdk, dir_ec);
-                sdk_controls.emplace_back("default_sdk",
-                                          default_ok ? "passed" : "failed");
-                sdk_details["default_sdk"] = vobj({
-                    {"selected", *member(default_context, "sdk")},
-                    {"compiler",
-                     *member(*member(default_context, "compiler"), "path")},
-                });
-            } catch (const std::exception &error) {
-                sdk_controls.emplace_back("default_sdk", "failed");
-                sdk_details["default_sdk"] =
-                    vobj({{"error", vstr(error.what())}});
-            }
-            cmake_records.push_back(result.first);
-        } else if (control == "default_sdk_fallback") {
-            const fs::path rejected_default_sdk =
-                work_root / "incompatible-default-sdk";
-            fs::create_directories(rejected_default_sdk, ec);
-            const fs::path fake_bin = work_root / "fake-tool-bin";
-            fs::create_directories(fake_bin, ec);
-            const fs::path fake_xcrun = fake_bin / "xcrun";
-            {
-                std::ofstream stream(fake_xcrun,
-                                     std::ios::binary | std::ios::trunc);
-                stream << "#!/bin/sh\n"
-                          "if [ \"${1:-}\" = \"--sdk\" ] && [ \"${2:-}\" = "
-                          "\"macosx\" ] && [ \"${3:-}\" = \"--show-sdk-path\" ]; "
-                          "then\n"
-                          "  printf \"%s\\n\" \"$BIKE_TEST_BAD_SDK\"; exit 0;\n"
-                          "fi\n"
-                          "exec /usr/bin/xcrun \"$@\"\n";
-            }
-            fs::permissions(fake_xcrun,
-                            fs::perms::owner_all | fs::perms::group_read |
-                                fs::perms::group_exec | fs::perms::others_read |
-                                fs::perms::others_exec,
-                            ec);
-            const fs::path reject_marker =
-                work_root / "link-incompatibility-seen.txt";
-            const fs::path compiler_wrapper =
-                work_root / "compiler-link-control.sh";
-            {
-                std::ofstream stream(compiler_wrapper,
-                                     std::ios::binary | std::ios::trunc);
-                stream
-                    << "#!/bin/bash\n"
-                       "args=(\"$@\")\n"
-                       "selected_sdk=\"\"\n"
-                       "syntax_only=0\n"
-                       "for ((i=0; i<${#args[@]}; ++i)); do\n"
-                       "  if [[ \"${args[i]}\" == \"-isysroot\" && $((i+1)) -lt "
-                       "${#args[@]} ]]; then selected_sdk=\"${args[i+1]}\"; fi\n"
-                       "  if [[ \"${args[i]}\" == \"-fsyntax-only\" ]]; then "
-                       "syntax_only=1; fi\n"
-                       "done\n"
-                       "if [[ \"$selected_sdk\" == \"$BIKE_TEST_BAD_SDK\" && "
-                       "$syntax_only == 0 ]]; then\n"
-                       "  printf \"%s\\n\" \"link-rejected $selected_sdk\" >> "
-                       "\"$BIKE_TEST_REJECT_MARKER\"\n"
-                       "  printf \"%s\\n\" \"synthetic linker incompatibility for "
-                       "$selected_sdk\" >&2\n"
-                       "  exit 1\n"
-                       "fi\n"
-                       "exec /usr/bin/c++ \"${args[@]}\"\n";
-            }
-            fs::permissions(compiler_wrapper,
-                            fs::perms::owner_all | fs::perms::group_read |
-                                fs::perms::group_exec | fs::perms::others_read |
-                                fs::perms::others_exec,
-                            ec);
-            auto fallback_environment = default_environment;
-            fallback_environment["PATH"] =
-                fake_bin.string() + ":" +
-                (fallback_environment.count("PATH") ? fallback_environment["PATH"]
-                                                    : std::string{});
-            fallback_environment["BIKE_TEST_BAD_SDK"] =
-                rejected_default_sdk.string();
-            fallback_environment["BIKE_TEST_REJECT_MARKER"] =
-                reject_marker.string();
-            std::pair<Value, fs::path> result;
-            configure_case("sdk-default-link-fallback", {}, &fallback_environment,
-                           compiler_wrapper, false, result);
-            try {
-                const Value fallback_context = configured_context(result.second);
-                const auto rc = record_returncode(result.first);
-                std::error_code marker_ec;
-                const bool marker_exists = fs::is_regular_file(reject_marker, marker_ec);
-                std::string marker_text;
-                if (marker_exists) {
-                    std::ostringstream content;
-                    content << std::ifstream(reject_marker).rdbuf();
-                    marker_text = content.str();
+                                      member(explicit_context, "sdk")->data)) ==
+                            canonical_path(std::get<std::string>(
+                                          member(context, "sdk")->data)) &&
+                        canonical_path(std::get<std::string>(
+                                      member(*member(explicit_context,
+                                                     "compiler"),
+                                             "path")
+                                          ->data)) == canonical_path(compiler);
+                    sdk_controls.emplace_back(
+                        "explicit_sdk", explicit_ok ? "passed" : "failed");
+                    sdk_details["explicit_sdk"] = vobj({
+                        {"requested", vstr(sdk_request)},
+                        {"selected", *member(explicit_context, "sdk")},
+                        {"compiler",
+                         *member(*member(explicit_context, "compiler"),
+                                 "path")},
+                    });
+                } catch (const std::exception &error) {
+                    sdk_controls.emplace_back("explicit_sdk", "failed");
+                    sdk_details["explicit_sdk"] =
+                        vobj({{"error", vstr(error.what())}});
                 }
-                const bool fallback_ok =
-                    rc.has_value() && *rc == 0 &&
-                    opt_string(fallback_context, "sdk_source") == "default" &&
-                    canonical_path(std::get<std::string>(
-                                  member(fallback_context, "sdk")->data)) !=
-                        canonical_path(rejected_default_sdk) &&
-                    marker_exists &&
-                    marker_text.find("link-rejected") != std::string::npos;
-                sdk_controls.emplace_back("default_sdk_fallback",
-                                          fallback_ok ? "passed" : "failed");
-                sdk_details["default_sdk_fallback"] = vobj({
-                    {"rejected", vstr(rejected_default_sdk.string())},
-                    {"selected", *member(fallback_context, "sdk")},
-                    {"compiler_wrapper", vstr(compiler_wrapper.string())},
-                    {"link_rejection_observed", vbool(marker_exists)},
+                cmake_records.push_back(result.first);
+            }();
+        } else if (control == "missing_sdk") {
+            [&]() {
+                const fs::path missing_sdk =
+                    work_root / "missing-explicit-sdk";
+                std::pair<Value, fs::path> result;
+                configure_case("sdk-missing",
+                               {"-DCMAKE_OSX_SYSROOT=" + missing_sdk.string()},
+                               nullptr, std::nullopt, false, result);
+                const std::string combined = record_stdout_text(result.first) +
+                                             record_stderr(result.first);
+                const auto rc = record_returncode(result.first);
+                const bool missing_ok = rc.has_value() && *rc != 0 &&
+                                        combined.find(missing_sdk.string()) !=
+                                            std::string::npos;
+                sdk_controls.emplace_back("missing_sdk",
+                                          missing_ok ? "rejected" : "failed");
+                sdk_details["missing_sdk"] = vobj({
+                    {"requested", vstr(missing_sdk.string())},
+                    {"returncode",
+                     rc.has_value() ? vint(*rc) : vnull()},
                 });
-            } catch (const std::exception &error) {
-                sdk_controls.emplace_back("default_sdk_fallback", "failed");
-                sdk_details["default_sdk_fallback"] =
-                    vobj({{"error", vstr(error.what())}});
-            }
-            cmake_records.push_back(result.first);
+                cmake_records.push_back(result.first);
+            }();
+        } else if (control == "default_sdk") {
+            [&]() {
+                std::pair<Value, fs::path> result;
+                configure_case("sdk-default", {}, &default_environment,
+                               std::nullopt, true, result);
+                try {
+                    const Value default_context =
+                        configured_context(result.second);
+                    const auto rc = record_returncode(result.first);
+                    const fs::path selected_sdk = fs::path(std::get<std::string>(
+                        member(default_context, "sdk")->data));
+                    std::error_code dir_ec;
+                    const bool default_ok =
+                        rc.has_value() && *rc == 0 &&
+                        opt_string(default_context, "sdk_source") == "default" &&
+                        fs::is_directory(selected_sdk, dir_ec);
+                    sdk_controls.emplace_back("default_sdk",
+                                              default_ok ? "passed" : "failed");
+                    sdk_details["default_sdk"] = vobj({
+                        {"selected", *member(default_context, "sdk")},
+                        {"compiler",
+                         *member(*member(default_context, "compiler"), "path")},
+                    });
+                } catch (const std::exception &error) {
+                    sdk_controls.emplace_back("default_sdk", "failed");
+                    sdk_details["default_sdk"] =
+                        vobj({{"error", vstr(error.what())}});
+                }
+                cmake_records.push_back(result.first);
+            }();
+        } else if (control == "default_sdk_fallback") {
+            [&]() {
+                const fs::path rejected_default_sdk =
+                    work_root / "incompatible-default-sdk";
+                fs::create_directories(rejected_default_sdk, ec);
+                const fs::path fake_bin = work_root / "fake-tool-bin";
+                fs::create_directories(fake_bin, ec);
+                const fs::path fake_xcrun = fake_bin / "xcrun";
+                {
+                    std::ofstream stream(fake_xcrun,
+                                         std::ios::binary | std::ios::trunc);
+                    stream << "#!/bin/sh\n"
+                              "if [ \"${1:-}\" = \"--sdk\" ] && [ \"${2:-}\" = "
+                              "\"macosx\" ] && [ \"${3:-}\" = \"--show-sdk-path\" ]; "
+                              "then\n"
+                              "  printf \"%s\\n\" \"$BIKE_TEST_BAD_SDK\"; exit 0;\n"
+                              "fi\n"
+                              "exec /usr/bin/xcrun \"$@\"\n";
+                }
+                fs::permissions(fake_xcrun,
+                                fs::perms::owner_all | fs::perms::group_read |
+                                    fs::perms::group_exec | fs::perms::others_read |
+                                    fs::perms::others_exec,
+                                ec);
+                const fs::path reject_marker =
+                    work_root / "link-incompatibility-seen.txt";
+                const fs::path compiler_wrapper =
+                    work_root / "compiler-link-control.sh";
+                {
+                    std::ofstream stream(compiler_wrapper,
+                                         std::ios::binary | std::ios::trunc);
+                    stream
+                        << "#!/bin/bash\n"
+                           "args=(\"$@\")\n"
+                           "selected_sdk=\"\"\n"
+                           "syntax_only=0\n"
+                           "for ((i=0; i<${#args[@]}; ++i)); do\n"
+                           "  if [[ \"${args[i]}\" == \"-isysroot\" && $((i+1)) -lt "
+                           "${#args[@]} ]]; then selected_sdk=\"${args[i+1]}\"; fi\n"
+                           "  if [[ \"${args[i]}\" == \"-fsyntax-only\" ]]; then "
+                           "syntax_only=1; fi\n"
+                           "done\n"
+                           "if [[ \"$selected_sdk\" == \"$BIKE_TEST_BAD_SDK\" && "
+                           "$syntax_only == 0 ]]; then\n"
+                           "  printf \"%s\\n\" \"link-rejected $selected_sdk\" >> "
+                           "\"$BIKE_TEST_REJECT_MARKER\"\n"
+                           "  printf \"%s\\n\" \"synthetic linker incompatibility for "
+                           "$selected_sdk\" >&2\n"
+                           "  exit 1\n"
+                           "fi\n"
+                           "exec /usr/bin/c++ \"${args[@]}\"\n";
+                }
+                fs::permissions(compiler_wrapper,
+                                fs::perms::owner_all | fs::perms::group_read |
+                                    fs::perms::group_exec | fs::perms::others_read |
+                                    fs::perms::others_exec,
+                                ec);
+                auto fallback_environment = default_environment;
+                fallback_environment["PATH"] =
+                    fake_bin.string() + ":" +
+                    (fallback_environment.count("PATH")
+                         ? fallback_environment["PATH"]
+                         : std::string{});
+                fallback_environment["BIKE_TEST_BAD_SDK"] =
+                    rejected_default_sdk.string();
+                fallback_environment["BIKE_TEST_REJECT_MARKER"] =
+                    reject_marker.string();
+                std::pair<Value, fs::path> result;
+                configure_case("sdk-default-link-fallback", {},
+                               &fallback_environment,
+                               compiler_wrapper, false, result);
+                try {
+                    const Value fallback_context =
+                        configured_context(result.second);
+                    const auto rc = record_returncode(result.first);
+                    std::error_code marker_ec;
+                    const bool marker_exists =
+                        fs::is_regular_file(reject_marker, marker_ec);
+                    std::string marker_text;
+                    if (marker_exists) {
+                        std::ostringstream content;
+                        content << std::ifstream(reject_marker).rdbuf();
+                        marker_text = content.str();
+                    }
+                    const bool fallback_ok =
+                        rc.has_value() && *rc == 0 &&
+                        opt_string(fallback_context, "sdk_source") ==
+                            "default" &&
+                        canonical_path(std::get<std::string>(
+                                      member(fallback_context, "sdk")->data)) !=
+                            canonical_path(rejected_default_sdk) &&
+                        marker_exists &&
+                        marker_text.find("link-rejected") != std::string::npos;
+                    sdk_controls.emplace_back("default_sdk_fallback",
+                                              fallback_ok ? "passed" : "failed");
+                    sdk_details["default_sdk_fallback"] = vobj({
+                        {"rejected", vstr(rejected_default_sdk.string())},
+                        {"selected", *member(fallback_context, "sdk")},
+                        {"compiler_wrapper", vstr(compiler_wrapper.string())},
+                        {"link_rejection_observed", vbool(marker_exists)},
+                    });
+                } catch (const std::exception &error) {
+                    sdk_controls.emplace_back("default_sdk_fallback", "failed");
+                    sdk_details["default_sdk_fallback"] =
+                        vobj({{"error", vstr(error.what())}});
+                }
+                cmake_records.push_back(result.first);
+            }();
         } else {
             run_linux_controls(control);
         }
@@ -927,6 +979,7 @@ int run_context_checks(const fs::path &build) {
             member(*hardening, "supported")->data) &&
         std::get<bool>(member(*hardening, "supported")->data);
     if (platform_system == "Darwin" && hardening_supported) {
+        [&]() {
         const fs::path hardening_source = work_root / "hardening_probe.cpp";
         {
             std::ofstream stream(hardening_source,
@@ -1117,6 +1170,7 @@ int run_context_checks(const fs::path &build) {
                     }));
                 if (mode == "EXTENSIVE" && !assertion_active)
                     hardening_failed = true;
+                [&]() {
                 for (int run_index = 0; run_index < 6; ++run_index) {
                     std::string run_name = control_name;
                     run_name += "-run-";
@@ -1184,6 +1238,7 @@ int run_context_checks(const fs::path &build) {
                         samples->push_back(vint(elapsed_ns));
                     }
                 }
+                }();
                 // row["median_ns"][mode] over collected timing samples.
                 Object &timings = nested("timings_ns");
                 for (auto &[name, value]: timings) {
@@ -1215,7 +1270,9 @@ int run_context_checks(const fs::path &build) {
         }
         sdk_controls.emplace_back("libcpp_hardening",
                                   hardening_failed ? "failed" : "passed");
+        }();
     } else if (platform_system == "Linux") {
+        [&]() {
         const Value &stdlib = *member(context, "stdlib");
         const std::string stdlib_name = *opt_string(stdlib, "name");
         const std::string mode = *opt_string(*member(stdlib, "hardening"), "mode");
@@ -1338,6 +1395,7 @@ int run_context_checks(const fs::path &build) {
             {"unhardened", std::move(unhardened)},
         }));
         sdk_controls.emplace_back("stdlib_hardening", hardening_failed ? "failed" : "passed");
+        }();
     } else {
         sdk_controls.emplace_back("libcpp_hardening", "not-applicable");
         set_member(summary, "hardening_limitation",
@@ -2118,7 +2176,11 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
         else
             all_engine = false;
     }
+    // Each status block runs in a lambda frame: the per-block temporaries
+    // (streams, regex sets, result objects) would otherwise accumulate in
+    // this function's frame and trip -Wframe-larger-than under Debug -O0.
     Object engine_status;
+    [&]() {
     if (any_engine) {
         if (!all_engine)
             throw ContractError(
@@ -2213,8 +2275,10 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
              vstr("no engine-call wrapper declaration manifest exists yet")},
         };
     }
+    }();
 
     Object benchmark_status;
+    [&]() {
     {
         std::set<std::string> benchmark_targets;
         for (const Value &entry: source_entries) {
@@ -2283,6 +2347,7 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
             };
         }
     }
+    }();
 
     // Shared include-edge recognizer for the dependency rules below.
     static const std::regex include_target(
@@ -2292,6 +2357,7 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
     // include edges — the executable-level dependency rule the removal gate
     // relies on.
     Object pure_core_status;
+    [&]() {
     {
         static const std::set<std::string> pure_core_targets = {
             "bike_core", "bike_io", "bike_platform", "bike_engine",
@@ -2358,6 +2424,7 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
                   "NumPy include edges")},
         };
     }
+    }();
 
     // T56 step-4.6 clause 2: hot-kernel sources — the per-step physics TUs
     // under native/src/{tyre,rider,drivetrain,pneumatic,contact} plus the
@@ -2368,6 +2435,7 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
     // (GLFW/cairo). The edge is positional, not target-gated: a kernel
     // file manifested into any target is still a kernel.
     Object hot_kernel_status;
+    [&]() {
     {
         static const std::set<std::string> kernel_dirs = {
             "tyre", "rider", "drivetrain", "pneumatic", "contact",
@@ -2435,6 +2503,7 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
                   "edges")},
         };
     }
+    }();
 
     return vobj({
         {"engine_call_wrappers", vobj(std::move(engine_status))},
@@ -2486,171 +2555,182 @@ int run_contracts(const fs::path &build,
             throw ContractError(
                 "native source manifest has an empty source set");
         std::vector<fs::path> expected;
-        std::size_t index = 0;
-        for (const Value &entry: std::get<Array>(source_entries->data)) {
-            const bool valid =
-                std::holds_alternative<Object>(entry.data) &&
-                member(entry, "path") != nullptr &&
-                std::holds_alternative<std::string>(
-                    member(entry, "path")->data) &&
-                member(entry, "target") != nullptr &&
-                std::holds_alternative<std::string>(
-                    member(entry, "target")->data) &&
-                member(entry, "context") != nullptr &&
-                std::holds_alternative<std::string>(
-                    member(entry, "context")->data);
-            if (!valid)
-                throw ContractError("native source manifest entry " +
-                                    std::to_string(index) + " is malformed");
-            expected.push_back(canonical_path(
-                std::get<std::string>(member(entry, "path")->data)));
-            ++index;
-        }
         std::vector<CompileEntry> compiled_entries;
-        try {
-            compiled_entries = load_entries(build_dir, expected);
-        } catch (const CheckError &error) {
-            throw ContractError(
-                "native source manifest differs from selected translation "
-                "units: " +
-                std::string(error.what()));
-        }
+        // The validation/assembly blocks run in lambda frames: their record
+        // temporaries would otherwise accumulate in this function's frame
+        // and trip -Wframe-larger-than under Debug -O0.
+        [&]() {
+            std::size_t index = 0;
+            for (const Value &entry: std::get<Array>(source_entries->data)) {
+                const bool valid =
+                    std::holds_alternative<Object>(entry.data) &&
+                    member(entry, "path") != nullptr &&
+                    std::holds_alternative<std::string>(
+                        member(entry, "path")->data) &&
+                    member(entry, "target") != nullptr &&
+                    std::holds_alternative<std::string>(
+                        member(entry, "target")->data) &&
+                    member(entry, "context") != nullptr &&
+                    std::holds_alternative<std::string>(
+                        member(entry, "context")->data);
+                if (!valid)
+                    throw ContractError("native source manifest entry " +
+                                        std::to_string(index) + " is malformed");
+                expected.push_back(canonical_path(
+                    std::get<std::string>(member(entry, "path")->data)));
+                ++index;
+            }
+            try {
+                compiled_entries = load_entries(build_dir, expected);
+            } catch (const CheckError &error) {
+                throw ContractError(
+                    "native source manifest differs from selected translation "
+                    "units: " +
+                    std::string(error.what()));
+            }
+        }();
 
         Object checks;
-        checks.emplace_back("provider_binding_boundary", provider_bindings);
-        checks.emplace_back(
-            "manifest_selection",
-            vobj({
-                {"status", vstr("passed")},
-                {"source_count",
-                 vint(static_cast<std::int64_t>(expected.size()))},
-                {"translation_unit_context_count",
-                 vint(static_cast<std::int64_t>(compiled_entries.size()))},
-            }));
-
-        // Binding-artifact checks: the Python-free build produces no
-        // extension, so loader provenance / contract-executable checks report
-        // not-applicable rather than failing on an intentionally absent
-        // artifact; when an extension IS present the oracle path runs
-        // unchanged. A bindings context (python_executable non-null) keeps
-        // the oracle's fail-closed contract — an absent extension there is a
-        // broken build, not an accepted shape.
-        const bool bindings_expected =
-            opt_string(context, "python_executable").has_value();
-        const std::vector<fs::path> found_extensions =
-            extensions_in(build_dir);
-        if (found_extensions.empty() && bindings_expected)
-            throw ContractError(
-                "expected exactly one bike_native extension in " +
-                build_dir.string() + ", found 0");
-        if (!found_extensions.empty()) {
-            const fs::path extension = selected_extension(build_dir);
+        [&]() {
+            checks.emplace_back("provider_binding_boundary", provider_bindings);
             checks.emplace_back(
-                "loader_provenance",
+                "manifest_selection",
                 vobj({
                     {"status", vstr("passed")},
-                    {"provenance",
-                     validate_provenance(build_dir, extension, environment)},
+                    {"source_count",
+                     vint(static_cast<std::int64_t>(expected.size()))},
+                    {"translation_unit_context_count",
+                     vint(static_cast<std::int64_t>(compiled_entries.size()))},
                 }));
-        } else {
-            checks.emplace_back(
-                "loader_provenance",
-                vobj({
-                    {"status", vstr("not-applicable")},
-                    {"detail",
-                     vstr("no bike_native extension in the Python-free "
-                          "build")},
-                }));
-        }
-        {
-            Object fields = {{"status", vstr("passed")}};
-            Object extra = std::get<Object>(
-                validate_language_and_hardening(context, sources).data);
-            fields.insert(fields.end(),
-                          std::make_move_iterator(extra.begin()),
-                          std::make_move_iterator(extra.end()));
-            checks.emplace_back("iso_language_mode_and_hardening",
-                                vobj(std::move(fields)));
-        }
-        {
-            Object fields = {{"status", vstr("passed")}};
-            Object extra =
-                std::get<Object>(validate_tidy_policy(repo_root).data);
-            fields.insert(fields.end(),
-                          std::make_move_iterator(extra.begin()),
-                          std::make_move_iterator(extra.end()));
-            checks.emplace_back("analysis_policy", vobj(std::move(fields)));
-        }
-        {
-            Object fields = {{"status", vstr("passed")}};
-            Object extra =
-                std::get<Object>(validate_test_loaders(repo_root).data);
-            fields.insert(fields.end(),
-                          std::make_move_iterator(extra.begin()),
-                          std::make_move_iterator(extra.end()));
-            checks.emplace_back("selected_artifact_assertions",
-                                vobj(std::move(fields)));
-        }
-        {
-            bool has_contract_target = false;
-            for (const Value &entry: std::get<Array>(source_entries->data)) {
-                if (!std::holds_alternative<Object>(entry.data)) continue;
-                const auto *target = member(entry, "target") != nullptr
-                                         ? std::get_if<std::string>(
-                                               &member(entry, "target")->data)
-                                         : nullptr;
-                if (target != nullptr && *target == "native_contract_tests")
-                    has_contract_target = true;
+
+            // Binding-artifact checks: the Python-free build produces no
+            // extension, so loader provenance / contract-executable checks
+            // report not-applicable rather than failing on an intentionally
+            // absent artifact; when an extension IS present the oracle path
+            // runs unchanged. A bindings context (python_executable non-null)
+            // keeps the oracle's fail-closed contract — an absent extension
+            // there is a broken build, not an accepted shape.
+            const bool bindings_expected =
+                opt_string(context, "python_executable").has_value();
+            const std::vector<fs::path> found_extensions =
+                extensions_in(build_dir);
+            if (found_extensions.empty() && bindings_expected)
+                throw ContractError(
+                    "expected exactly one bike_native extension in " +
+                    build_dir.string() + ", found 0");
+            if (!found_extensions.empty()) {
+                const fs::path extension = selected_extension(build_dir);
+                checks.emplace_back(
+                    "loader_provenance",
+                    vobj({
+                        {"status", vstr("passed")},
+                        {"provenance",
+                         validate_provenance(build_dir, extension,
+                                             environment)},
+                    }));
+            } else {
+                checks.emplace_back(
+                    "loader_provenance",
+                    vobj({
+                        {"status", vstr("not-applicable")},
+                        {"detail",
+                         vstr("no bike_native extension in the Python-free "
+                              "build")},
+                    }));
             }
-            if (has_contract_target) {
+            {
                 Object fields = {{"status", vstr("passed")}};
                 Object extra = std::get<Object>(
-                    validate_contract_manifest(sources, repo_root).data);
+                    validate_language_and_hardening(context, sources).data);
                 fields.insert(fields.end(),
                               std::make_move_iterator(extra.begin()),
                               std::make_move_iterator(extra.end()));
-                checks.emplace_back("contract_source_manifest_membership",
+                checks.emplace_back("iso_language_mode_and_hardening",
                                     vobj(std::move(fields)));
-                Object ctest_fields = {{"status", vstr("passed")}};
-                Object ctest_extra = std::get<Object>(
-                    validate_ctest_contracts(build_dir).data);
-                ctest_fields.insert(
-                    ctest_fields.end(),
-                    std::make_move_iterator(ctest_extra.begin()),
-                    std::make_move_iterator(ctest_extra.end()));
-                checks.emplace_back("ctest_contract_cases",
-                                    vobj(std::move(ctest_fields)));
-            } else {
-                checks.emplace_back(
-                    "contract_source_manifest_membership",
-                    vobj({
-                        {"status", vstr("not-applicable")},
-                        {"detail",
-                         vstr("native_contract_tests is not part of the "
-                              "Python-free build graph")},
-                    }));
-                checks.emplace_back(
-                    "ctest_contract_cases",
-                    vobj({
-                        {"status", vstr("not-applicable")},
-                        {"detail",
-                         vstr("no contract test executable in the "
-                              "Python-free build")},
-                    }));
             }
-        }
-        {
-            Object pending =
-                std::get<Object>(check_pending_rules(repo_root, sources).data);
-            for (auto &[name, value]: pending)
-                checks.emplace_back(name, std::move(value));
-        }
-        summary = vobj({
-            {"schema_version", vint(1)},
-            {"status", vstr("passed")},
-            {"build", vstr(build_dir.string())},
-            {"checks", vobj(std::move(checks))},
-        });
+            {
+                Object fields = {{"status", vstr("passed")}};
+                Object extra =
+                    std::get<Object>(validate_tidy_policy(repo_root).data);
+                fields.insert(fields.end(),
+                              std::make_move_iterator(extra.begin()),
+                              std::make_move_iterator(extra.end()));
+                checks.emplace_back("analysis_policy", vobj(std::move(fields)));
+            }
+            {
+                Object fields = {{"status", vstr("passed")}};
+                Object extra =
+                    std::get<Object>(validate_test_loaders(repo_root).data);
+                fields.insert(fields.end(),
+                              std::make_move_iterator(extra.begin()),
+                              std::make_move_iterator(extra.end()));
+                checks.emplace_back("selected_artifact_assertions",
+                                    vobj(std::move(fields)));
+            }
+        }();
+        [&]() {
+            {
+                bool has_contract_target = false;
+                for (const Value &entry: std::get<Array>(source_entries->data)) {
+                    if (!std::holds_alternative<Object>(entry.data)) continue;
+                    const auto *target =
+                        member(entry, "target") != nullptr
+                            ? std::get_if<std::string>(
+                                  &member(entry, "target")->data)
+                            : nullptr;
+                    if (target != nullptr && *target == "native_contract_tests")
+                        has_contract_target = true;
+                }
+                if (has_contract_target) {
+                    Object fields = {{"status", vstr("passed")}};
+                    Object extra = std::get<Object>(
+                        validate_contract_manifest(sources, repo_root).data);
+                    fields.insert(fields.end(),
+                                  std::make_move_iterator(extra.begin()),
+                                  std::make_move_iterator(extra.end()));
+                    checks.emplace_back("contract_source_manifest_membership",
+                                        vobj(std::move(fields)));
+                    Object ctest_fields = {{"status", vstr("passed")}};
+                    Object ctest_extra = std::get<Object>(
+                        validate_ctest_contracts(build_dir).data);
+                    ctest_fields.insert(
+                        ctest_fields.end(),
+                        std::make_move_iterator(ctest_extra.begin()),
+                        std::make_move_iterator(ctest_extra.end()));
+                    checks.emplace_back("ctest_contract_cases",
+                                        vobj(std::move(ctest_fields)));
+                } else {
+                    checks.emplace_back(
+                        "contract_source_manifest_membership",
+                        vobj({
+                            {"status", vstr("not-applicable")},
+                            {"detail",
+                             vstr("native_contract_tests is not part of the "
+                                  "Python-free build graph")},
+                        }));
+                    checks.emplace_back(
+                        "ctest_contract_cases",
+                        vobj({
+                            {"status", vstr("not-applicable")},
+                            {"detail",
+                             vstr("no contract test executable in the "
+                                  "Python-free build")},
+                        }));
+                }
+            }
+            {
+                Object pending = std::get<Object>(
+                    check_pending_rules(repo_root, sources).data);
+                for (auto &[name, value]: pending)
+                    checks.emplace_back(name, std::move(value));
+            }
+            summary = vobj({
+                {"schema_version", vint(1)},
+                {"status", vstr("passed")},
+                {"build", vstr(build_dir.string())},
+                {"checks", vobj(std::move(checks))},
+            });
+        }();
     } catch (const std::exception &error) {
         summary = vobj({
             {"schema_version", vint(1)},

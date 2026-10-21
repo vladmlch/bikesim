@@ -3,7 +3,7 @@
 #include "../src/drivetrain/motor.hpp"
 #include "../src/drivetrain/freehub.hpp"
 #include "../src/drivetrain/transmission.hpp"
-#include "../src/binding_arrays.hpp"
+#include "../src/binding_ownership.hpp"
 #include "../src/engine_call.hpp"
 #include "../src/engine_abi_312.hpp"
 #include "../src/diag.hpp"
@@ -717,7 +717,7 @@ namespace {
     }
 
     // F4 capsule-creation-failure seam. Production owned arrays stage the
-    // buffer through wire::detail::release_with_owner (binding_arrays.hpp):
+    // buffer through wire::detail::release_with_owner (binding_ownership.hpp):
     // the owner is built while the unique_ptr still holds the allocation,
     // so a throwing owner frees instead of leaking. nb::capsule cannot run
     // in this Python-free executable, so OwnerSeam follows the same

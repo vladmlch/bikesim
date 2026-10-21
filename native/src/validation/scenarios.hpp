@@ -12,7 +12,7 @@ struct Simulation {
     explicit Simulation(initialization::SetupRequest input);
     [[nodiscard]] initialization::PhysicalInitialState initial_state(std::optional<int> stations={});
 };
-[[nodiscard]] initialization::SetupRequest profile_request(const std::filesystem::path& physics,const std::filesystem::path& track,std::optional<double> dt={},const Value& overrides=Value{Object{}});
+[[nodiscard]] std::unique_ptr<initialization::SetupRequest> profile_request(const std::filesystem::path& physics,const std::filesystem::path& track,std::optional<double> dt={},const Value& overrides=Value{Object{}});
 [[nodiscard]] runtime::RideControl resume_schedule(double time);
 [[nodiscard]] runtime::RideControl automatic_schedule(double time);
 [[nodiscard]] runtime::RideControl open_loop_schedule(double time);

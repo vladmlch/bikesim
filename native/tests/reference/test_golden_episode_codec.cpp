@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <limits>
+#include <memory>
 #include <sstream>
 #include <string_view>
 
@@ -90,7 +91,10 @@ void comparison_contract() {
 }
 void artifact_contract() {
     Scratch scratch;
-    golden::EpisodeArtifact episode;
+    // Heap — the artifact and each load result are ~1KB; this frame is held
+    // under the 8192-byte budget.
+    const auto episode_owner = std::make_unique<golden::EpisodeArtifact>();
+    auto& episode = *episode_owner;
     // Synthetic format exercise only. These are not engine bytes or an
     // oracle trajectory; no reference golden directory is written here.
     episode.model_image = {std::byte{1}, std::byte{2}};
@@ -106,7 +110,10 @@ void artifact_contract() {
     const std::array live{.125, -0.}; episode.qfrc_applied = io::double_array(live, {1, 2});
     episode.manifest = io::parse_json(R"({"producer":"synthetic codec exercise"})");
     golden::save(episode, scratch.root / "saved");
-    const auto loaded = golden::load_episode(scratch.root / "saved");
+    // NOLINTNEXTLINE(modernize-make-unique) make_unique's inlined forwarding keeps the by-value result on this frame; new T(f()) elides
+    const auto loaded_owner = std::unique_ptr<golden::EpisodeArtifact>{new golden::EpisodeArtifact(
+        golden::load_episode(scratch.root / "saved"))};
+    const auto& loaded = *loaded_owner;
     bt::require(golden::compare_rows(episode.rows, loaded.rows, 0., 0.).empty(), "numeric, absent, list and null channels survive save/load");
     bt::require(episode.channel_names == loaded.channel_names && episode.force_names == loaded.force_names, "names survive");
     bt::require(io::canonical_json(Value{episode.controls}) == io::canonical_json(Value{loaded.controls}), "nested applied controls survive manifest sidecar");
@@ -120,7 +127,10 @@ void artifact_contract() {
     const auto bytes = io::encode_npz(old);
     std::filesystem::remove(scratch.root / "saved/episode.npz");
     bike::platform::write_exclusive(scratch.root / "saved/episode.npz", bytes);
-    const auto legacy = golden::load_episode(scratch.root / "saved");
+    // NOLINTNEXTLINE(modernize-make-unique) same inlined-forwarding frame budget as loaded_owner
+    const auto legacy_owner = std::unique_ptr<golden::EpisodeArtifact>{new golden::EpisodeArtifact(
+        golden::load_episode(scratch.root / "saved"))};
+    const auto& legacy = *legacy_owner;
     bt::require(legacy.qfrc_applied.shape == std::vector<std::size_t>{0, 2} && legacy.qfrc_applied.bytes.empty(), "old artifacts never synthesize live exit totals from components");
     same(legacy.forces, episode.forces);
     // Python json.dumps leaves nonfinite constants unquoted within lists;
@@ -128,7 +138,10 @@ void artifact_contract() {
     std::ofstream manifest(scratch.root / "saved/manifest.json", std::ios::binary | std::ios::trunc);
     manifest << R"({"non_numeric":[{"q":[NaN,Infinity,-Infinity],"status":"NaN outside"},{}],"controls":[]})";
     manifest.close();
-    const auto nonfinite = golden::load_episode(scratch.root / "saved");
+    // NOLINTNEXTLINE(modernize-make-unique) same inlined-forwarding frame budget as loaded_owner
+    const auto nonfinite_owner = std::unique_ptr<golden::EpisodeArtifact>{new golden::EpisodeArtifact(
+        golden::load_episode(scratch.root / "saved"))};
+    const auto& nonfinite = *nonfinite_owner;
     const auto wanted = golden::flatten_row(io::parse_json(R"({"a":-0.0,"q":["nan","inf","-inf"],"status":"NaN outside"})"));
     bt::require(golden::compare_rows({wanted}, {nonfinite.rows.front()}, 0., 0.).empty(), "legacy nonfinite list tokens retain comparison meaning");
 }

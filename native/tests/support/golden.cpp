@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <iomanip>
 #include <limits>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <system_error>
@@ -58,8 +59,9 @@ std::size_t item_size(std::string_view dtype) {
     std::size_t width = 0;
     const auto suffix = dtype.find('[');
     const auto digits = dtype.substr(2, suffix == std::string_view::npos ? suffix : suffix - 2);
-    const auto parsed = std::from_chars(digits.data(), digits.data() + digits.size(), width);
-    if (digits.empty() || parsed.ec != std::errc{} || parsed.ptr != digits.data() + digits.size())
+    const auto *end = std::to_address(digits.end());
+    const auto parsed = std::from_chars(digits.data(), end, width);
+    if (digits.empty() || parsed.ec != std::errc{} || parsed.ptr != end)
         bad("golden dtype", "invalid element width");
     if (suffix != std::string_view::npos &&
         ((dtype[1] != 'M' && dtype[1] != 'm') || dtype.back() != ']'))

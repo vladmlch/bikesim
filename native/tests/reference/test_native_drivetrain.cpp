@@ -455,7 +455,10 @@ void test_geometric_prepared_buffers_reuse_storage() {
         bt::require(baseline[0] != 0 && baseline[1] != 0, "prepared storage identities are nonzero generations");
         bt::require(baseline[2] >= static_cast<std::uint64_t>(owner->model()->nv) &&
             baseline[3] >= static_cast<std::uint64_t>(owner->model()->nv), "prepared buffers fit every model degree of freedom");
-        const int initial_teeth = owner->drive().state().shifting.rear_teeth;
+        // DriveSnapshot is several KB; the member reads go through a lambda so
+        // each by-value snapshot lives in the callee frame (-Wframe-larger-than).
+        const auto rear_teeth = [&] { return owner->drive().state().shifting.rear_teeth; };
+        const int initial_teeth = rear_teeth();
         if (which == "prepare" || which == "restore") {
             for (int i = 0; i < 8; ++i) {
                 const auto forces = components(*owner, .0002, 2.); components(golden, forces);
@@ -469,7 +472,7 @@ void test_geometric_prepared_buffers_reuse_storage() {
         } else {
             const auto pedal = owner->drive().prepare({}, .15, false, true, true, true, {}, {});
             tree(golden, policy_reference::pedaling_result(pedal));
-            bt::require(owner->drive().state().shifting.rear_teeth != initial_teeth, "source fixture causes an actual shift");
+            bt::require(rear_teeth() != initial_teeth, "source fixture causes an actual shift");
             bt::require(storage(*owner) == baseline, "actual gear change preserves prepared storage"); state(golden, *owner);
         }
         golden.done();
@@ -478,17 +481,21 @@ void test_geometric_prepared_buffers_reuse_storage() {
 // Source: test_geometric_prepared_sentinel_owns_reused_storage.
 void test_geometric_prepared_sentinel_owns_reused_storage() {
     auto golden = node("test_geometric_prepared_sentinel_owns_reused_storage"); auto owner = pair("geometric_ideal_mid_drive");
-    const auto baseline = storage(*owner); auto saved = std::make_unique<drivetrain::DriveSnapshot>(owner->drive().state());
+    const auto baseline = storage(*owner);
+    // DriveSnapshot is several KB; the state() calls go through a lambda so
+    // each by-value snapshot lives in the callee frame (-Wframe-larger-than).
+    const auto snapshot = [&] { return std::make_unique<drivetrain::DriveSnapshot>(owner->drive().state()); };
+    auto saved = snapshot();
     bt::require(baseline[0] != 0 && baseline[1] != 0, "public storage identity uses nonzero generations");
     bt::require(saved->ideal_hub && saved->ideal_hub->prepared, "source reset has a prepared geometric state");
     auto none = std::make_unique<drivetrain::DriveSnapshot>(*saved); none->ideal_hub->prepared.reset(); owner->drive().restore(*none);
-    bt::require(!owner->drive().state().ideal_hub->prepared, "explicit absent-prepared sentinel survives restoration");
+    bt::require(!snapshot()->ideal_hub->prepared, "explicit absent-prepared sentinel survives restoration");
     bt::require(storage(*owner) == baseline, "clearing prepared state does not release its storage");
     error<std::runtime_error>([&] { (void)owner->drive().settle(); }, "before solving");
     owner->drive().restore(*saved); state(golden, *owner);
     bt::require(storage(*owner) == baseline, "restoring prepared state reuses its storage");
     std::ranges::fill(saved->ideal_hub->prepared->jacobian, 99.);
-    const auto restored = std::make_unique<drivetrain::DriveSnapshot>(owner->drive().state());
+    const auto restored = snapshot();
     array(golden, restored->ideal_hub->prepared->jacobian);
     owner->drive().reset(); state(golden, *owner);
     bt::require(storage(*owner) == baseline, "reset retains prepared storage after owned snapshot mutation");

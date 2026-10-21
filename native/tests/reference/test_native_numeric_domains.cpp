@@ -11,6 +11,8 @@
 #include "writers/resistance.hpp"
 #include "model/suspension_setup.hpp"
 #include "drivetrain/policy_set.hpp"
+#include "configuration/suspension_spec.hpp"
+#include "io/json.hpp"
 #include <array>
 #include <limits>
 #include <tuple>
@@ -32,7 +34,12 @@ Value& member(Value& value, std::string_view key) {
 Value suspension_wire() {
     const auto captured = io::parse_json(bt::text(bt::fixture("bootstrap/welded/config.json")));
     auto suspension = field(field(captured, "writer_config"), "suspension");
-    set(suspension, "fork_joint", text("fork_slide")); set(suspension, "shock_joint", text("shock_stroke"));
+    // The wire carries joint names under suspension.joints.{fork,shock}
+    // (tools.native_config.project); flat fork_joint/shock_joint keys are
+    // unknown-key rejections there.
+    auto joints = field(suspension, "joints");
+    set(joints, "fork", text("fork_slide")); set(joints, "shock", text("shock_stroke"));
+    set(suspension, "joints", std::move(joints));
     return Value{Object{{"schema", integer(2)}, {"suspension", std::move(suspension)}}};
 }
 constexpr std::string_view suspension_xml = R"(<mujoco><worldbody>

@@ -26,7 +26,7 @@ using io::Value;
 Value number(double value) {
     if (!std::isfinite(value)) return Value{std::string(std::isnan(value) ? "nan" : value < 0 ? "-inf" : "inf")};
     std::array<char, 64> text{};
-    const auto end = std::to_chars(text.data(), text.data() + text.size(), value);
+    const auto end = std::to_chars(text.data(), std::to_address(text.end()), value);
     if (end.ec != std::errc{}) throw std::runtime_error("golden number formatting failed");
     std::string lexeme(text.data(), end.ptr);
     if (lexeme.find_first_of(".eE") == std::string::npos) lexeme += ".0";
@@ -94,19 +94,19 @@ std::vector<double> initial_vector(const EpisodeArtifact &episode, std::string_v
 runtime::RideControl decode_control(const io::Value &value) {
     // episode_compare._control ignores surplus fields and fills dataclass
     // defaults, including nested RiderPosture defaults.
-    auto defaults = io::as_object(rider::encode_intent_control(runtime::RideControl{}), "control defaults");
+    auto defaults = io::as_object(::rider::encode_intent_control(runtime::RideControl{}), "control defaults");
     const auto &source = io::as_object(value, "recorded control");
     for (auto &[name, target] : defaults) {
         const auto *supplied = io::find_member(source, name);
         if (supplied) target = *supplied;
     }
     for (auto &[name, target] : defaults) if (name == "posture" && !io::is_null(target)) {
-        auto posture = io::as_object(rider::encode_rider_posture(rider::RiderPosture{}), "posture defaults");
+        auto posture = io::as_object(::rider::encode_rider_posture(::rider::RiderPosture{}), "posture defaults");
         const auto &supplied = io::as_object(target, "recorded posture");
         for (auto &[key, member] : posture) if (const auto *found = io::find_member(supplied, key)) member = *found;
         target = Value{std::move(posture)};
     }
-    return rider::decode_intent_control(Value{std::move(defaults)}, "golden.control");
+    return ::rider::decode_intent_control(Value{std::move(defaults)}, "golden.control");
 }
 void arrays(EpisodeArtifact &episode, const std::vector<runtime::GoldenForceObservation> &records,
             const mjModel &model) {
@@ -203,7 +203,7 @@ public:
             records.back().test_exit_context_ = test_exit_context;
             records.back().test_exit_mutation_ = test_exit_mutation;
             runtime.advance_interval(control, 0., 0., &records.back());
-            result->controls.push_back(rider::encode_intent_control(runtime.physical_->applied_control()));
+            result->controls.push_back(::rider::encode_intent_control(runtime.physical_->applied_control()));
             append_samples(runtime, *result);
             tire_snapshots.push_back(snapshots(records.back()));
             tire_diagnostics.push_back(value_from_wire(runtime::Wire(records.back().tire_diagnostics)));

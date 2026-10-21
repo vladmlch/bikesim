@@ -102,8 +102,12 @@ environment/build exclusions. Symlink parents, copied symlink/special entries,
 destination symlink counterparts and file/directory conflicts are rejected.
 All operands are staged and validated before publication; failed transfers
 leave existing content intact, and publication errors restore backups. Use
-nonoverlapping paths (exact duplicates are accepted), keep source/destination
-trees unchanged during the pull, and allow disk space for the staged merge
+nonoverlapping paths (exact duplicates are accepted). Pulls reject filesystem-
+equivalent operands and ancestor aliases, including case/Unicode-normalization
+aliases on the host volume even for absent destinations. Environment/build
+exclusions also reject all ASCII case variants on every host; other non-ASCII
+names remain supported. Keep source/destination trees unchanged during the
+pull, and allow disk space for the staged merge
 and original backups. This is not a crash-atomic snapshot; if rollback itself
 fails, the driver reports and retains its backup directory for recovery.
 No automatic cleanup removes old containers.

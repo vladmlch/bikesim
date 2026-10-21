@@ -71,8 +71,33 @@ source_path() {
     return 0
 }
 
+# Linux names may alias protected host names on a case-insensitive filesystem.
+# Conservatively exclude ASCII case variants on every host, for pulls only.
+pull_source_path() {
+    local folded
+    folded="$(printf '%s/' "$1" | LC_ALL=C tr '[:upper:]' '[:lower:]')"
+    source_path "${folded%/}"
+}
+
+# Compare filesystem identities along both ancestor chains. Reservation paths
+# exist on the checkout volume, so this also detects case/normalization aliases
+# for destinations that do not exist yet. Existing host paths catch hardlinks.
+pull_paths_overlap() {
+    local ancestor="$1" other="$2" direction
+    for ((direction=0; direction<2; direction++)); do
+        while :; do
+            [[ ! "$ancestor" -ef "$other" ]] || return 0
+            [[ "$ancestor" != / ]] || break
+            ancestor="${ancestor%/*}"
+            [[ -n "$ancestor" ]] || ancestor=/
+        done
+        ancestor="$2" other="$1"
+    done
+    return 1
+}
+
 # Validate every copied entry, including dotfiles, without following symlinks.
-# Also used inside the container, with source_path supplied as a shell function.
+# Also used inside the container, with exclusion helpers supplied as functions.
 pull_tree() {
     local root="$1" rel="$2" entry suffix
     [[ ! -L "$root" && ( -f "$root" || -d "$root" ) ]] || {
@@ -82,13 +107,13 @@ pull_tree() {
     find "$root" -print0 > "$3"
     while IFS= read -r -d '' entry; do
         suffix="${entry#"$root"}"
-        source_path "$rel$suffix" || {
+        pull_source_path "$rel$suffix" || {
             printf 'container.sh: excluded pull entry: %s\n' "$rel$suffix" >&2
             return 2
         }
         # A trailing slash also applies build*/__pycache__ exclusions to
         # empty directories, which have no child for find to expose.
-        if [[ -d "$entry" ]] && ! source_path "$rel$suffix/"; then
+        if [[ -d "$entry" ]] && ! pull_source_path "$rel$suffix/"; then
             printf 'container.sh: excluded pull directory: %s\n' "$rel$suffix" >&2
             return 2
         fi
@@ -105,10 +130,10 @@ pull_cleanup() {
     if [[ "$pull_committed" == 0 ]]; then
         for ((index=pull_started-1; index>=0; index--)); do
             destination="$repo_root/${pull_paths[index]}"
-            backup="$pull_stage/$index/backup"
+            backup="$pull_stage/$index/original/${pull_paths[index]##*/}"
             if [[ -e "$backup" ]]; then
-                rm -rf -- "$destination" && mv -- "$backup" "$destination" || rollback_failed=1
-            elif [[ "${pull_existed[index]}" == 0 ]]; then
+                rm -rf -- "$destination" && mv -- "$backup" "$(dirname -- "$destination")/" || rollback_failed=1
+            elif [[ "${pull_installed[index]}" == 1 ]]; then
                 rm -rf -- "$destination" || rollback_failed=1
             fi
         done
@@ -123,17 +148,20 @@ pull_cleanup() {
 
 pull_paths_from_container() {
     local rel previous index=0 entry suffix destination ready parent
-    pull_paths=() pull_existed=() pull_started=0 pull_committed=0
+    pull_paths=() pull_existed=() pull_installed=() pull_started=0 pull_committed=0
     pull_stage="$(mktemp -d "$repo_root/.bike-linux-pull.XXXXXXXX")"
     trap pull_cleanup EXIT
     for rel in "$@"; do
         relative_path "$rel"
-        source_path "$rel" || die "not a source destination: $rel"
+        pull_source_path "$rel" || die "not a source destination: $rel"
+        mkdir -p -- "$pull_stage/aliases/$rel"
         # Overlapping operands would invalidate the prepared merge/rollback.
         for previous in ${pull_paths[@]+"${pull_paths[@]}"}; do
             [[ "$rel" != "$previous" ]] || continue 2
-            [[ "$rel" != "$previous/"* && "$previous" != "$rel/"* ]] ||
+            if pull_paths_overlap "$pull_stage/aliases/$rel" "$pull_stage/aliases/$previous" ||
+                pull_paths_overlap "$repo_root/$rel" "$repo_root/$previous"; then
                 die "overlapping pull paths: $previous and $rel"
+            fi
         done
         require_checkout_parents "$rel"
         destination="$repo_root/$rel"
@@ -142,7 +170,7 @@ pull_paths_from_container() {
         # Reject source symlink parents before Docker can resolve them. The
         # selected tree is checked both before transfer and after staging.
         # shellcheck disable=SC2016  # This script runs in the container.
-        in_container bash -c "$(declare -f source_path pull_tree)"'
+        in_container bash -c "$(declare -f source_path pull_source_path pull_tree)"'
             set -euo pipefail
             parent="/src/$1"
             while :; do
@@ -167,7 +195,8 @@ pull_paths_from_container() {
                     die "incompatible destination type: $rel$suffix"
             fi
         done < "$pull_stage/$index/entries"
-        ready="$pull_stage/$index/ready"
+        mkdir -- "$pull_stage/$index/ready" "$pull_stage/$index/original"
+        ready="$pull_stage/$index/ready/${rel##*/}"
         if [[ -e "$destination" ]]; then
             pull_existed+=(1)
             cp -pPR -- "$destination" "$ready"
@@ -181,6 +210,7 @@ pull_paths_from_container() {
             mv -- "$pull_stage/$index/incoming" "$ready"
         fi
         pull_paths+=("$rel")
+        pull_installed+=(0)
         index=$((index + 1))
     done
     # All transfers and merges succeeded. Publish by rename, retaining each
@@ -188,11 +218,22 @@ pull_paths_from_container() {
     for ((index=0; index<${#pull_paths[@]}; index++)); do
         destination="$repo_root/${pull_paths[index]}"
         mkdir -p -- "$(dirname -- "$destination")"
+        require_checkout_parents "${pull_paths[index]}"
+        [[ ! -L "$destination" ]] || die "symlink destination: ${pull_paths[index]}"
+        if [[ "${pull_existed[index]}" == 1 ]]; then
+            [[ -e "$destination" ]] || die "pull destination disappeared: ${pull_paths[index]}"
+        else
+            [[ ! -e "$destination" ]] || die "pull destination appeared: ${pull_paths[index]}"
+        fi
         pull_started=$((index + 1))
         if [[ "${pull_existed[index]}" == 1 ]]; then
-            mv -- "$destination" "$pull_stage/$index/backup"
+            mv -- "$destination" "$pull_stage/$index/original/"
         fi
-        mv -- "$pull_stage/$index/ready" "$destination"
+        # Match the source basename and target the parent directory. Unlike
+        # `mv ready destination`, this cannot nest ready inside a destination
+        # directory that unexpectedly appears after the existence check.
+        mv -- "$pull_stage/$index/ready/${pull_paths[index]##*/}" "$(dirname -- "$destination")/"
+        pull_installed[index]=1
     done
     pull_committed=1
 }

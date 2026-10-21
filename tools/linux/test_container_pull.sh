@@ -35,6 +35,10 @@ case "$1" in
         if [[ "${PULL_TEST_BAD_STAGE:-0}" == 1 ]]; then
             ln -s "$PULL_TEST_SOURCE/outside" "$3/injected-link"
         fi
+        if [[ "${PULL_TEST_EARLY_DEST:-0}" == 1 && "$src" == */late-trigger ]]; then
+            mkdir -p "$PULL_TEST_CHECKOUT/late-before"
+            printf 'early arrival\n' > "$PULL_TEST_CHECKOUT/late-before/sentinel"
+        fi
         ;;
     *) exit 93 ;;
 esac
@@ -43,8 +47,14 @@ chmod +x "$scratch/bin/docker"
 cat > "$scratch/bin/mv" <<'MOVE'
 #!/usr/bin/env bash
 set -euo pipefail
-if [[ "${PULL_TEST_PUBLISH_FAIL:-0}" == 1 && "$2" == */1/ready ]]; then
+if [[ "${PULL_TEST_PUBLISH_FAIL:-0}" == 1 && ( "$2" == */1/ready || "$2" == */1/ready/* ) ]]; then
     exit 42
+fi
+# Invalidate the absent-destination assumption after the driver's last check.
+# A same-basename move into the parent must fail, never nest the staged entry.
+if [[ "${PULL_TEST_LATE_DEST:-0}" == 1 && ( "$2" == */1/ready || "$2" == */1/ready/* ) ]]; then
+    mkdir -p "$PULL_TEST_CHECKOUT/late"
+    printf 'late arrival\n' > "$PULL_TEST_CHECKOUT/late/sentinel"
 fi
 exec /bin/mv "$@"
 MOVE
@@ -194,4 +204,111 @@ rm "$PULL_TEST_CHECKOUT/two"
 PULL_TEST_PUBLISH_FAIL=1 PULL_TEST_EXPECT_STATUS=42 reject empty two
 [[ -d "$PULL_TEST_CHECKOUT/empty" && ! -e "$PULL_TEST_CHECKOUT/two" ]]
 pass 'publication failure restores directory and absent operand'
+
+# Select an added group to independently record each pre-fix RED. The default
+# retains all original cases and runs every new group.
+focus="${PULL_TEST_FOCUS:-all}"
+if [[ "$focus" == all || "$focus" == excluded ]]; then
+    for pair in '.venv .VENV' '.deps .DEPS' 'build BUILD' 'build-debug BUILD-DEBUG' '.git .GIT' '__pycache__ __PYCACHE__'; do
+        lower="${pair% *}" upper="${pair#* }"
+        mkdir -p "$PULL_TEST_CHECKOUT/$lower" "$PULL_TEST_SOURCE/$upper"
+        printf 'protected\n' > "$PULL_TEST_CHECKOUT/$lower/sentinel"
+        printf 'replacement\n' > "$PULL_TEST_SOURCE/$upper/sentinel"
+        reject "$upper"
+        [[ "$(cat "$PULL_TEST_CHECKOUT/$lower/sentinel")" == protected ]]
+        pass "direct excluded case alias [$upper] preserves protected content"
+        mkdir -p "$PULL_TEST_CHECKOUT/protected-parent/$lower" "$PULL_TEST_SOURCE/protected-parent/$upper"
+        printf 'protected\n' > "$PULL_TEST_CHECKOUT/protected-parent/$lower/sentinel"
+        printf 'replacement\n' > "$PULL_TEST_SOURCE/protected-parent/$upper/sentinel"
+        # .git is excluded at the checkout root by the existing policy.
+        if [[ "$lower" != .git ]]; then
+            reject protected-parent
+            [[ "$(cat "$PULL_TEST_CHECKOUT/protected-parent/$lower/sentinel")" == protected ]]
+            pass "nested excluded case alias [$upper] preserves protected content"
+        fi
+        rm -rf "$PULL_TEST_SOURCE/protected-parent" "$PULL_TEST_CHECKOUT/protected-parent"
+    done
+fi
+if [[ "$focus" == all || "$focus" == operands ]]; then
+    mkdir -p "$scratch/identity/lower"
+    if [[ "$scratch/identity/lower" -ef "$scratch/identity/LOWER" ]]; then
+        printf 'INFO: host case aliases share filesystem identity; alias cases execute\n'
+        mkdir -p "$PULL_TEST_SOURCE/newdir"
+        printf 'new\n' > "$PULL_TEST_SOURCE/newdir/value"
+        reject newdir NEWDIR
+        [[ ! -e "$PULL_TEST_CHECKOUT/newdir" && ! -e "$PULL_TEST_CHECKOUT/NEWDIR" ]]
+        pass 'absent filesystem-equivalent operands reject before publication'
+        mkdir -p "$PULL_TEST_CHECKOUT/newdir"
+        printf 'original\n' > "$PULL_TEST_CHECKOUT/newdir/value"
+        reject newdir NEWDIR
+        [[ "$(cat "$PULL_TEST_CHECKOUT/newdir/value")" == original && ! -e "$PULL_TEST_CHECKOUT/newdir/ready" ]]
+        pass 'existing filesystem-equivalent operands preserve original'
+        mkdir -p "$PULL_TEST_SOURCE/newdir/child"
+        printf 'child\n' > "$PULL_TEST_SOURCE/newdir/child/value"
+        reject newdir NEWDIR/child
+        reject NEWDIR/child newdir
+        [[ "$(cat "$PULL_TEST_CHECKOUT/newdir/value")" == original && ! -e "$PULL_TEST_CHECKOUT/newdir/child" ]]
+        pass 'ancestor/descendant aliases reject in both operand orders'
+        mkdir -p "$PULL_TEST_SOURCE/absent-parent/child"
+        printf 'child\n' > "$PULL_TEST_SOURCE/absent-parent/child/value"
+        reject absent-parent ABSENT-PARENT/child
+        reject ABSENT-PARENT/child absent-parent
+        [[ ! -e "$PULL_TEST_CHECKOUT/absent-parent" ]]
+        pass 'absent ancestor/descendant aliases reject in both orders'
+        PULL_TEST_PUBLISH_FAIL=1 reject newdir NEWDIR two
+        [[ "$(cat "$PULL_TEST_CHECKOUT/newdir/value")" == original && ! -e "$PULL_TEST_CHECKOUT/two" ]]
+        pass 'alias operands reject even with publication failure armed'
+    else
+        printf 'SKIP: five case-alias operand cases require case-insensitive host filesystem\n'
+    fi
+    # Hardlinks exercise actual inode identity independently of name folding.
+    printf 'original\n' > "$PULL_TEST_CHECKOUT/hard-one"
+    ln "$PULL_TEST_CHECKOUT/hard-one" "$PULL_TEST_CHECKOUT/hard-two"
+    printf 'new\n' > "$PULL_TEST_SOURCE/hard-one"
+    printf 'new\n' > "$PULL_TEST_SOURCE/hard-two"
+    reject hard-one hard-two
+    [[ "$(cat "$PULL_TEST_CHECKOUT/hard-one")" == original && "$PULL_TEST_CHECKOUT/hard-one" -ef "$PULL_TEST_CHECKOUT/hard-two" ]]
+    pass 'filesystem-equivalent hardlink operands preserve both originals'
+    composed=$'caf\303\251'
+    decomposed=$'cafe\314\201'
+    mkdir -p "$scratch/identity/$composed"
+    if [[ "$scratch/identity/$composed" -ef "$scratch/identity/$decomposed" ]]; then
+        printf 'INFO: host Unicode normalization aliases share identity; alias case executes\n'
+        mkdir -p "$PULL_TEST_SOURCE/$composed"
+        printf 'new\n' > "$PULL_TEST_SOURCE/$composed/value"
+        reject "$composed" "$decomposed"
+        [[ ! -e "$PULL_TEST_CHECKOUT/$composed" ]]
+        pass 'absent Unicode normalization aliases reject before publication'
+    else
+        printf 'SKIP: Unicode normalization alias case requires normalizing host filesystem\n'
+    fi
+fi
+if [[ "$focus" == all || "$focus" == publication ]]; then
+    mkdir -p "$PULL_TEST_SOURCE/brand-new"
+    printf 'new\n' > "$PULL_TEST_SOURCE/brand-new/value"
+    PULL_TEST_PUBLISH_FAIL=1 PULL_TEST_EXPECT_STATUS=42 reject brand-new two
+    [[ ! -e "$PULL_TEST_CHECKOUT/brand-new" && ! -e "$PULL_TEST_CHECKOUT/two" ]]
+    pass 'publication failure removes successfully installed absent operand'
+    mkdir -p "$PULL_TEST_SOURCE/late-before"
+    printf 'new\n' > "$PULL_TEST_SOURCE/late-before/value"
+    printf 'trigger\n' > "$PULL_TEST_SOURCE/late-trigger"
+    PULL_TEST_EARLY_DEST=1 PULL_TEST_EXPECT_STATUS=2 reject guard late-before late-trigger
+    [[ "$(cat "$PULL_TEST_CHECKOUT/guard")" == safe && "$(cat "$PULL_TEST_CHECKOUT/late-before/sentinel")" == 'early arrival' ]]
+    [[ ! -e "$PULL_TEST_CHECKOUT/late-before/value" && ! -e "$PULL_TEST_CHECKOUT/late-trigger" ]]
+    pass 'publication recheck preserves unexpected destination and rolls back prior operand'
+    mkdir -p "$PULL_TEST_SOURCE/late"
+    printf 'new\n' > "$PULL_TEST_SOURCE/late/value"
+    PULL_TEST_LATE_DEST=1 reject guard late
+    [[ "$(cat "$PULL_TEST_CHECKOUT/guard")" == safe ]]
+    [[ "$(cat "$PULL_TEST_CHECKOUT/late/sentinel")" == 'late arrival' ]]
+    [[ ! -e "$PULL_TEST_CHECKOUT/late/ready" && ! -e "$PULL_TEST_CHECKOUT/late/late" && ! -e "$PULL_TEST_CHECKOUT/late/value" ]]
+    pass 'late destination cannot nest staged directory; prior operand rolls back'
+fi
+# A normal non-ASCII path remains usable; alias checks must not ban such names.
+mkdir -p "$PULL_TEST_SOURCE/données with spaces"
+printf 'unicode\n' > "$PULL_TEST_SOURCE/données with spaces/value"
+pull 'données with spaces'
+[[ "$(cat "$PULL_TEST_CHECKOUT/données with spaces/value")" == unicode ]]
+pass 'non-ASCII directory with spaces remains supported'
+[[ -z "$(find "$PULL_TEST_CHECKOUT" -maxdepth 1 -name '.bike-linux-pull.*' -print)" ]]
 printf 'PASS: %d pull regression cases\n' "$passed"

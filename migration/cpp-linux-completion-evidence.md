@@ -764,3 +764,126 @@ actual transfers. Review item 5 owns project profiles/phase verification: no
 native/full gate, broad sweep, CMake, build, CTest or pytest was run. No phase
 checkbox advances. Detailed RED/GREEN and self-review are in
 `.superpowers/sdd/2026-10-21-sincos-golden-pull/task-4-report.md`.
+
+### 2026-10-21 final pull fix — protected names and filesystem aliases
+
+Addressed both `final-review.md` Important/P1 findings (#1 protected exclusions,
+#2 equivalent/ancestor operands and rename placement), based at
+`e5ce714350ec41ce339ee735d4617fe834755946` on `impl/python-free-cpp`.
+No numerical/native/physics behavior changed.
+
+Pull-specific exclusion checks now fold ASCII case before applying the existing
+exclusion policy, both in-container and to every staged tree entry. This is a
+conservative policy on all hosts: `.VENV`, `.DEPS`, `BUILD*`, `.GIT` at the checkout
+root, and corresponding previously excluded nested names cannot bypass checks.
+Sync's existing matcher is unchanged. Ordinary non-ASCII/spaced names remain valid.
+Private reservation directories under checkout-local staging use the actual
+filesystem's name equivalence for absent as well as existing operand names.
+Ancestor identity checks reject overlap in either order; existing host identity
+checks also reject hardlink operands. Exact literal duplicates remain compatible.
+
+Prepared and backup entries now retain the destination basename, and rename into
+its parent. Thus an unexpectedly existing directory cannot turn `ready` into an
+extra nested level. Publication rechecks destination/parent assumptions; rollback
+tracks successful installs separately from attempted moves, preserving an
+unexpected, unpublished destination while restoring earlier operands. All
+reservation/staging directories are removed on ordinary success/rejection/failure;
+rollback-failure retention and the documented quiescent-tree contract remain.
+
+TDD RED commands, each exit 1 before production edits (full logs retained in /tmp):
+
+```bash
+PULL_TEST_FOCUS=excluded /bin/bash tools/linux/test_container_pull.sh
+PULL_TEST_FOCUS=operands /bin/bash tools/linux/test_container_pull.sh
+PULL_TEST_FOCUS=publication /bin/bash tools/linux/test_container_pull.sh
+```
+
+Each passed the original 37 cases, then respectively printed:
+
+```text
+FAIL: accepted unsafe/failed pull: .VENV
+INFO: host case aliases share filesystem identity; alias cases execute
+FAIL: accepted unsafe/failed pull: newdir NEWDIR
+FAIL: accepted unsafe/failed pull: guard late
+```
+
+Logs: `/tmp/pull-fix-red-{excluded,operands,publication}.log`.
+An intermediate combined syntax/ShellCheck/diff command returned 0 because the
+last diff check succeeded, but ShellCheck emitted SC2034 for an unused loop
+variable. That was not a clean static check. Replaced the loop with an arithmetic
+counter; independently invoked ShellCheck subsequently exits 0 without diagnostics.
+First GREEN: 56 cases; added normalization, successful-absent rollback and
+publication-recheck coverage before final validation.
+
+Final commands, each exit 0:
+
+```bash
+/bin/bash tools/linux/test_container_pull.sh > /tmp/pull-fix-green-final.log 2>&1
+/bin/bash -n tools/linux/container.sh tools/linux/test_container_pull.sh
+shellcheck tools/linux/container.sh tools/linux/test_container_pull.sh
+git diff --check
+/bin/bash -n /tmp/task-4-final-fix-smoke.sh
+shellcheck /tmp/task-4-final-fix-smoke.sh
+/bin/bash /tmp/task-4-final-fix-smoke.sh > /tmp/pull-fix-real-smoke.log 2>&1
+```
+
+Regression result: `PASS: 59 pull regression cases`, retaining all original 37.
+The host reports case aliases and Unicode-normalization aliases share filesystem
+identity, so all five conditional case groups and the normalization case execute;
+there are no skipped cases on this lane. Other filesystems print explicit SKIP
+messages for unsupported equivalences. Covers direct/nested protected variants,
+absent/existing equivalent operands, existing/absent ancestor aliases in both
+orders, hardlinks, aliases with publication failure armed, rollback after a new
+operand was installed, destination invalidation before and after the publication
+check, non-ASCII/spaced directories and no leftover staging directories.
+
+Real Docker smoke reuses the existing owned numerics container and a unique
+`.pull-smoke-task4.unCcXruR` subtree (removed in host/container on exit), and proves
+actual initial/repeated merges, exact placement, file modes, hidden/spaced names,
+empty directories and existing negative controls. It additionally creates Linux-
+distinct `alias-dir`/`ALIAS-DIR`, rejects them together before macOS publication,
+and preserves a disposable nested `.venv` sentinel against source `.VENV`.
+Output (five expected rejection diagnostics, final exit 0):
+
+```text
+container.sh: missing, symlink or special pull source: .pull-smoke-task4.unCcXruR/missing
+container.sh: symlink or special pull entry: .pull-smoke-task4.unCcXruR/artifacts/link
+container.sh: symlink destination: .pull-smoke-task4.unCcXruR/artifacts/nested dir
+container.sh: overlapping pull paths: .pull-smoke-task4.unCcXruR/alias-dir and .pull-smoke-task4.unCcXruR/ALIAS-DIR
+container.sh: excluded pull entry: .pull-smoke-task4.unCcXruR/protected/.VENV
+PASS: real Linux-distinct case operands rejected before macOS publication; nested protected case alias preserved
+PASS: real Docker initial/repeat directory, file mode, empty directory, hidden/spaced entries, exact basename, sibling preservation; missing source, source symlink, nested destination symlink rejected
+```
+
+Before/after command (both exit 0 and identical output):
+
+```bash
+docker container inspect --format '{{.State.Status}} {{.Image}} {{json .Mounts}} {{index .Config.Labels "bike.checkout"}}' bike-dev-python-free-cpp-numerics
+```
+
+```text
+running sha256:959091e9b453461be335eb31edadc63e36269b827755994f6b54d3796703ca69 [] /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp
+```
+
+Identity commands (`/bin/bash --version`, `shellcheck --version`, `uname -sm`,
+`docker version --format 'Docker client={{.Client.Version}} server={{.Server.Version}}'`,
+`docker exec bike-dev-python-free-cpp-numerics bash -c 'uname -sm; bash --version | head -1'`)
+exit 0: host Darwin arm64, Bash 3.2.57(1), ShellCheck 0.11.0; Docker client/server
+29.8.2; container Linux aarch64, Bash 5.2.21(1). Docker operations used approved
+escalation. No compiler/provider was involved; no numerical qualification implied.
+
+Only focused shell regressions, syntax, ShellCheck, diff checks and the narrow
+existing-container smoke ran. No native/full profile, build, simulator, network,
+download, image/up/sync, new container, container/worktree removal, push or merge.
+All real protected-name repros used disposable fixture/smoke directories; actual
+checkout `.git`/`.venv`, `/tmp/bike-sincos`, prior artifacts and the four unrelated
+untracked XML/ZIP files were untouched. Concurrent tree mutation/crashes and
+rollback filesystem failures retain the previously documented limits. Full
+command/output and self-review: the appended final-fix section of
+`.superpowers/sdd/2026-10-21-sincos-golden-pull/task-4-report.md`.
+
+Configured-image query `docker container inspect --format '{{.Config.Image}}'
+bike-dev-python-free-cpp-numerics` exits 0 with `bike-linux-image:port`.
+Pre-commit `git diff --cached --check` exits 0; staged file enumeration contains
+exactly the four task files listed in the report. Staging uses approved escalation
+because this worktree's shared Git index is outside the writable root.

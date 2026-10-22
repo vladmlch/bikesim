@@ -81,6 +81,12 @@ struct EffortObservation {
 class EffortContext {
 public:
     EffortContext(const rider::SpindleController&, std::size_t nq, std::size_t nv);
+    // Model-free construction — the same two properties the controller-bound
+    // form copies. Lets tests and detached evaluators drive the identical
+    // async observation path without an mjModel owner.
+    EffortContext(rider::SpindleConfig config,
+                  std::vector<rider::SpindleController::JointEntry> joints,
+                  std::size_t nq, std::size_t nv);
     [[nodiscard]] const rider::SpindleConfig& config() const noexcept { return config_; }
     [[nodiscard]] const std::vector<rider::SpindleController::JointEntry>& joints() const noexcept { return joints_; }
     [[nodiscard]] std::vector<std::string> strength_violations(
@@ -92,6 +98,11 @@ private:
 };
 [[nodiscard]] EffortObservation observe_effort(const RawStep &raw,
                                                const rider::SpindleController &controller,
+                                               double dt_s);
+// Same evaluator over the model-free async boundary; the async runner calls
+// the shared implementation with exactly this argument set.
+[[nodiscard]] EffortObservation observe_effort(const RawStep &raw,
+                                               const EffortContext &controller,
                                                double dt_s);
 
 struct AccountingDiagnostics {

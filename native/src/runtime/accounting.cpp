@@ -355,16 +355,26 @@ EffortObservation observe_effort(const RawStep& raw,
     const rider::SpindleController& controller, double dt_s) {
     return observe_effort_impl(raw, controller, dt_s);
 }
+EffortObservation observe_effort(const RawStep& raw,
+    const EffortContext& controller, double dt_s) {
+    return observe_effort_impl(raw, controller, dt_s);
+}
 
-EffortContext::EffortContext(const rider::SpindleController& controller,
+EffortContext::EffortContext(rider::SpindleConfig config,
+    std::vector<rider::SpindleController::JointEntry> joints,
     std::size_t nq, std::size_t nv)
-    : config_(controller.config()), joints_(controller.joints()), nq_(nq), nv_(nv) {
+    : config_(std::move(config)), joints_(std::move(joints)), nq_(nq), nv_(nv) {
     for (const auto& joint : joints_)
         if (joint.qpos_adr < 0 || joint.dof_adr < 0 || joint.actuator_id < 0 ||
             std::cmp_greater_equal(joint.qpos_adr, nq_) ||
             std::cmp_greater_equal(joint.dof_adr, nv_))
             throw std::invalid_argument("async effort context has invalid joint addresses");
 }
+EffortContext::EffortContext(const rider::SpindleController& controller,
+    std::size_t nq, std::size_t nv)
+    : EffortContext(controller.config(),
+        std::vector<rider::SpindleController::JointEntry>(controller.joints()),
+        nq, nv) {}
 
 std::vector<std::string> EffortContext::strength_violations(
     const rider::NamedEntries<double>& active, std::span<const double> qpos,

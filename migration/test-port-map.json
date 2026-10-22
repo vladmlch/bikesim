@@ -2704,13 +2704,15 @@
       "line": 6,
       "end_line": 17,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_frozen_force_arrays::test_freeze_force_is_immutable_finite_and_recognised",
+      "native_test_id": "reference.frozen_force_arrays::test_freeze_force_is_immutable_finite_and_recognised",
       "native_source": "native/tests/reference/test_frozen_force_arrays.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.frozen_force_arrays)"
+      ]
     },
     {
       "source_path": "tests/reference/test_frozen_force_arrays.py",
@@ -2718,13 +2720,15 @@
       "line": 20,
       "end_line": 28,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_frozen_force_arrays::test_samples_reuse_frozen_arrays_without_copying",
+      "native_test_id": "reference.frozen_force_arrays::test_samples_reuse_frozen_arrays_without_copying",
       "native_source": "native/tests/reference/test_frozen_force_arrays.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.frozen_force_arrays)"
+      ]
     },
     {
       "source_path": "tests/reference/test_golden_episode.py",
@@ -2840,13 +2844,15 @@
       "line": 28,
       "end_line": 39,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_hud_columns::test_arm_lean_limit_and_balance_columns",
+      "native_test_id": "reference.hud_columns::test_arm_lean_limit_and_balance_columns",
       "native_source": "native/tests/reference/test_hud_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "structural",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.hud_columns)"
+      ]
     },
     {
       "source_path": "tests/reference/test_hud_columns.py",
@@ -2854,13 +2860,15 @@
       "line": 42,
       "end_line": 46,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_hud_columns::test_arm_highlight_uses_published_directional_capacity",
-      "native_source": "native/tests/reference/test_hud_columns.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: dropped - the orange1 styled-segment surface does not exist on the native HUD (HudColumn carries legend/text only); the directional-capacity data it colored still reaches the arm column text, covered by reference.hud_columns test_arm_lean_limit_and_balance_columns"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -18477,142 +18485,170 @@
     {
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_batched_wrench_matches_scalar_and_first_violation",
-      "line": 36,
-      "end_line": 52,
+      "line": 38,
+      "end_line": 54,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_period_buffer::test_batched_wrench_matches_scalar_and_first_violation",
+      "native_test_id": "reference.period_buffer::test_batched_wrench_matches_scalar_and_first_violation",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+      ]
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_missing_wrench_is_not_replaced_by_zero",
-      "line": 55,
-      "end_line": 59,
+      "line": 57,
+      "end_line": 61,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_period_buffer::test_missing_wrench_is_not_replaced_by_zero",
+      "native_test_id": "reference.period_buffer::test_missing_wrench_is_not_replaced_by_zero",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+      ]
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_buffer_overflow_and_discontinuous_interval_are_rejected",
-      "line": 62,
-      "end_line": 71,
+      "line": 64,
+      "end_line": 73,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_period_buffer::test_buffer_overflow_and_discontinuous_interval_are_rejected",
+      "native_test_id": "reference.period_buffer::test_buffer_overflow_and_discontinuous_interval_are_rejected",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+      ]
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_recording_a_published_period_twice_is_idempotent",
-      "line": 74,
-      "end_line": 89,
+      "line": 76,
+      "end_line": 91,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_period_buffer::test_recording_a_published_period_twice_is_idempotent",
+      "native_test_id": "reference.period_buffer::test_recording_a_published_period_twice_is_idempotent",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+      ]
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_actual_spatial_body_inputs_match_scalar_attachment_measurement",
-      "line": 92,
-      "end_line": 118,
+      "line": 94,
+      "end_line": 120,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_period_buffer::test_actual_spatial_body_inputs_match_scalar_attachment_measurement",
+      "native_test_id": "reference.period_buffer::test_actual_spatial_body_inputs_match_scalar_attachment_measurement",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+      ]
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_held_command_power_and_strength_are_checked_at_each_incoming_state",
-      "line": 121,
-      "end_line": 144,
+      "line": 123,
+      "end_line": 146,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_period_buffer::test_held_command_power_and_strength_are_checked_at_each_incoming_state",
+      "native_test_id": "reference.period_buffer::test_held_command_power_and_strength_are_checked_at_each_incoming_state",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+      ]
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_held_intervals_reject_joint_power_and_speed_between_control_ticks",
-      "line": 147,
-      "end_line": 164,
+      "line": 149,
+      "end_line": 166,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_period_buffer::test_held_intervals_reject_joint_power_and_speed_between_control_ticks",
+      "native_test_id": "reference.period_buffer::test_held_intervals_reject_joint_power_and_speed_between_control_ticks",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+      ]
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
-      "line": 168,
-      "end_line": 221,
+      "line": 170,
+      "end_line": 259,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_period_buffer::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
+      "native_test_id": "reference.period_buffer::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "tolerance-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.period_buffer green on both; darwin qvel/power entries gated at the measured platform parity floor (1e-10/5e-9, ~400x tighter than the oracle's own cross-platform spread), linux at source tolerances (bitwise in practice)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_runtime_batch_matches_preserved_scalar_step_and_flush",
-      "line": 225,
-      "end_line": 289,
+      "line": 263,
+      "end_line": 374,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_period_buffer::test_runtime_batch_matches_preserved_scalar_step_and_flush",
+      "native_test_id": "reference.period_buffer::test_runtime_batch_matches_preserved_scalar_step_and_flush",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "tolerance-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.period_buffer green on both; darwin qvel/power entries gated at the measured platform parity floor (1e-10/5e-9, ~400x tighter than the oracle's own cross-platform spread), linux at source tolerances (bitwise in practice)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_record_decimation_forwards_period_closing_energy",
-      "line": 293,
-      "end_line": 397,
+      "line": 378,
+      "end_line": 482,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_period_buffer::test_record_decimation_forwards_period_closing_energy",
+      "native_test_id": "reference.period_buffer::test_record_decimation_forwards_period_closing_energy",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+      ]
     },
     {
       "source_path": "tests/reference/test_physical_view.py",
@@ -19832,13 +19868,15 @@
       "line": 12,
       "end_line": 25,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_recorder_columns::test_columns_are_rectangular_and_csv_matches_rows",
+      "native_test_id": "reference.recorder_columns::test_columns_are_rectangular_and_csv_matches_rows",
       "native_source": "native/tests/reference/test_recorder_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "structural",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recorder_columns.py",
@@ -19846,13 +19884,15 @@
       "line": 28,
       "end_line": 34,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_recorder_columns::test_sample_owns_channels_without_recursive_copy_and_arrays_remain_readonly",
+      "native_test_id": "reference.recorder_columns::test_sample_owns_channels_without_recursive_copy_and_arrays_remain_readonly",
       "native_source": "native/tests/reference/test_recorder_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recorder_columns.py",
@@ -19860,13 +19900,15 @@
       "line": 37,
       "end_line": 62,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_recorder_columns::test_column_csv_and_streamed_jsonl_preserve_the_original_interval_row",
+      "native_test_id": "reference.recorder_columns::test_column_csv_and_streamed_jsonl_preserve_the_original_interval_row",
       "native_source": "native/tests/reference/test_recorder_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "structural",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recorder_columns.py",
@@ -19874,13 +19916,15 @@
       "line": 66,
       "end_line": 95,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_recorder_columns::test_runtime_publishes_owned_channels_and_preserves_previous_samples",
+      "native_test_id": "reference.recorder_columns::test_runtime_publishes_owned_channels_and_preserves_previous_samples",
       "native_source": "native/tests/reference/test_recorder_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -21932,13 +21976,15 @@
       "line": 35,
       "end_line": 52,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_plots_html_markers::test_markers_are_batched_and_match_the_events",
+      "native_test_id": "reference.ride_plots_html_markers::test_markers_are_batched_and_match_the_events",
       "native_source": "native/tests/reference/test_ride_plots_html_markers.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "structural",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.ride_plots_html_markers)"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_plots_html_markers.py",
@@ -21946,13 +21992,15 @@
       "line": 55,
       "end_line": 60,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_plots_html_markers::test_shift_events_ignore_nan_teeth",
+      "native_test_id": "reference.ride_plots_html_markers::test_shift_events_ignore_nan_teeth",
       "native_source": "native/tests/reference/test_ride_plots_html_markers.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.ride_plots_html_markers)"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_plots_html_markers.py",
@@ -21960,13 +22008,15 @@
       "line": 63,
       "end_line": 70,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_plots_html_markers::test_html_generation_is_linear_in_ride_length",
+      "native_test_id": "reference.ride_plots_html_markers::test_html_generation_is_linear_in_ride_length",
       "native_source": "native/tests/reference/test_ride_plots_html_markers.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.ride_plots_html_markers)"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -34705,12 +34755,12 @@
       "bt::golden_f64",
       "bt::invalid"
     ],
-    "comparison_contract": "golden_f64 compares uint64_t object representations — signed zero and NaN bit payloads are significant; no global epsilon and no auto-update mode; explicit little-endian binary64 decode with length checks, fixture-root containment and 512 MiB bounded reads",
+    "comparison_contract": "golden_f64 compares uint64_t object representations \u2014 signed zero and NaN bit payloads are significant; no global epsilon and no auto-update mode; explicit little-endian binary64 decode with length checks, fixture-root containment and 512 MiB bounded reads",
     "evidence": [
       "ctest --test-dir native/build -R '^migration_T02$' --no-tests=error: 1/1 tests passed, exit 0",
       "migration_T02 output: 'PASS 302 checks', exit 0",
       "binary executed from / and /tmp and under CTest WORKING_DIRECTORY override: fixtures resolve independently of cwd",
-      "standalone -O2 -DNDEBUG compile+run: 'PASS 302 checks' — require() is real code, no assert/NDEBUG dependence"
+      "standalone -O2 -DNDEBUG compile+run: 'PASS 302 checks' \u2014 require() is real code, no assert/NDEBUG dependence"
     ],
     "note": "T02 owns no Python source rows in python-removal.json and no ported test records in this map; this task-scoped entry is its registration evidence. Later tasks add migration_TNN executables under the same registration pattern; each task owns its own native/tests/migration/test_tNN.cpp."
   },
@@ -34745,7 +34795,7 @@
     ],
     "dependency_lock": "native/dependencies.lock.json",
     "dependency_root": ".deps/ (explicit acquisition only; gitignored); entries verified by sha256 at configure time via native/cmake/Dependencies.cmake",
-    "shared_policy": "native/cmake/CompilerPolicy.cmake::bike_target_strict_policy — strict warnings, -ffp-contract=off, stack protection, libc++ hardening, optional NATIVE_SANITIZE/NATIVE_RTSAN/NATIVE_COVERAGE",
+    "shared_policy": "native/cmake/CompilerPolicy.cmake::bike_target_strict_policy \u2014 strict warnings, -ffp-contract=off, stack protection, libc++ hardening, optional NATIVE_SANITIZE/NATIVE_RTSAN/NATIVE_COVERAGE",
     "evidence": [
       "ctest --test-dir build/native-release -R '^migration_T03$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0",
       "ctest --test-dir build/native-release --output-on-failure: 4/4 tests passed (native_distance_tests, native_station_tests, migration_T02, migration_T03)",
@@ -34759,101 +34809,101 @@
     "ctest_name": "migration_T04",
     "build_target": "migration_T04",
     "kind": "executable",
-    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T04 test_t04.cpp); the standalone root build links bike_engine + bike::mujoco (locked .deps) and the legacy binding build links bike_native_engine + ${MJ_DIR}/libmujoco.3.12.0.dylib — the identical engine_call.cpp TU in both graphs",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T04 test_t04.cpp); the standalone root build links bike_engine + bike::mujoco (locked .deps) and the legacy binding build links bike_native_engine + ${MJ_DIR}/libmujoco.3.12.0.dylib \u2014 the identical engine_call.cpp TU in both graphs",
     "produced_apis": [
-      "engine::Identity / engine::identity() / engine::verify_identity() — native/src/engine_identity.hpp declares; engine_call.cpp resolves mj_versionString, dladdr's the loaded image and SHA-256s the resolved libmujoco bytes",
-      "engine::TimeCallbackProvenance{none,native,foreign} / engine::native_time / engine::time_callback_provenance / engine::try_native_time_policy / engine::require_native_time_policy — engine_call.hpp; address-only classification carries no interpreter dependency",
-      "blas::provider_name == \"accelerate\" — cblas_abi.hpp; the recorded supplier engine::Identity.numeric_provider reports"
+      "engine::Identity / engine::identity() / engine::verify_identity() \u2014 native/src/engine_identity.hpp declares; engine_call.cpp resolves mj_versionString, dladdr's the loaded image and SHA-256s the resolved libmujoco bytes",
+      "engine::TimeCallbackProvenance{none,native,foreign} / engine::native_time / engine::time_callback_provenance / engine::try_native_time_policy / engine::require_native_time_policy \u2014 engine_call.hpp; address-only classification carries no interpreter dependency",
+      "blas::provider_name == \"accelerate\" \u2014 cblas_abi.hpp; the recorded supplier engine::Identity.numeric_provider reports"
     ],
     "callback_split": "vendor/Python timer recognition stays in the bindings adapter (native/src/stepper.cpp refresh_time_callback_policy) and only runs for the foreign bucket; the standalone rule accepts mjcb_time == nullptr or == &engine::native_time",
     "mandatory_cases": [
       "nested handler restoration: inner framed fatal contained, inner framed call succeeds after it, a RAW mj_step fatal inside the operation lands on the outer frame (forked child)",
       "thread-independent contexts: two workers each contain their own invalid-integrator fatal and recover; the main thread is unaffected (forked child)",
-      "fatal committed-prefix: opt.integrator=-1 step fails with kind=fatal 'invalid integrator'; d->time, d->timer[mjTIMER_STEP].number, qpos, qvel stay bit-identical to the committed prefix; a fresh framed call works (engine layer is stateless — poison-until-reset lives at the Stepper adapter via set_poisoned_error's canonical message)",
-      "same-provider bitwise: forward → reset_data → forward reproduces qfrc_smooth bit-identically; existing binary64 fixture corpus unchanged",
-      "foreign callback rejection: foreign mjcb_time → TimeCallbackProvenance::foreign → try_native_time_policy fails 'unsupported installed MuJoCo callback: mjcb_time' (unsupported_callback); foreign mjcb_control rejected by invoke inside load_model's frame verbatim",
+      "fatal committed-prefix: opt.integrator=-1 step fails with kind=fatal 'invalid integrator'; d->time, d->timer[mjTIMER_STEP].number, qpos, qvel stay bit-identical to the committed prefix; a fresh framed call works (engine layer is stateless \u2014 poison-until-reset lives at the Stepper adapter via set_poisoned_error's canonical message)",
+      "same-provider bitwise: forward \u2192 reset_data \u2192 forward reproduces qfrc_smooth bit-identically; existing binary64 fixture corpus unchanged",
+      "foreign callback rejection: foreign mjcb_time \u2192 TimeCallbackProvenance::foreign \u2192 try_native_time_policy fails 'unsupported installed MuJoCo callback: mjcb_time' (unsupported_callback); foreign mjcb_control rejected by invoke inside load_model's frame verbatim",
       "native/no-timer acceptance: nullptr and &engine::native_time pass the policy; native_time is monotone nonnegative steady-clock seconds; a foreign C timer reached inside a marked step (counted) neither corrupts nor escapes the frame",
       "identity: engine::identity() == engine/identity.json descriptor verbatim (version, loaded-dylib sha256, provider); verify_identity accepts it and rejects each tampered field with std::invalid_argument naming the field and both values",
       "non-MJB payload: load_model('harness/utf8.txt') returns nullptr while MuJoCo's header warning forwards to the pre-frame destination (observed on stderr)"
     ],
-    "fixture": "tests/fixtures/migration/engine/identity.json — authored T04 descriptor (comparison Q, expected accepted, recipe RCP-00): mujoco_version 3.12.0, loaded-dylib sha256 9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c, numeric_provider 'accelerate', expected guarded-call error outcomes",
+    "fixture": "tests/fixtures/migration/engine/identity.json \u2014 authored T04 descriptor (comparison Q, expected accepted, recipe RCP-00): mujoco_version 3.12.0, loaded-dylib sha256 9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c, numeric_provider 'accelerate', expected guarded-call error outcomes",
     "evidence": [
-      "RED recorded: at the pre-T04 source state 'cmake --build build/native-release --target migration_T04' fails at test_t04.cpp:14 'engine_identity.hpp' file not found — missing produced API, the intended red",
+      "RED recorded: at the pre-T04 source state 'cmake --build build/native-release --target migration_T04' fails at test_t04.cpp:14 'engine_identity.hpp' file not found \u2014 missing produced API, the intended red",
       "ctest --test-dir build/native-release -R '^migration_T04$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 ('PASS 60 checks')",
       "ctest --test-dir native/build -R '^migration_T04$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 ('PASS 60 checks')",
       "ctest --test-dir build/native-release --output-on-failure: 5/5 tests passed (native_distance_tests, native_station_tests, migration_T02, migration_T04, migration_T03)",
       "ctest --test-dir native/build --output-on-failure: 9/9 tests passed (native_contract_tests, native_distance_tests, native_station_tests, 3x native_bench, migration_T02, migration_T04, migration_T03)",
-      "NATIVE_TEST_BUILD_PATH=$PWD/native/build uv run --frozen pytest tests/reference/test_native_engine_errors.py -x -q: 31 passed — bindings-side fatal/callback contract unchanged under the provenance split"
+      "NATIVE_TEST_BUILD_PATH=$PWD/native/build uv run --frozen pytest tests/reference/test_native_engine_errors.py -x -q: 31 passed \u2014 bindings-side fatal/callback contract unchanged under the provenance split"
     ],
-    "note": "T04 owns no Python source rows in python-removal.json and no ported test records in this map — its deliverable is the native boundary itself (migration card: 'owns no individual Python source file in the supplied removal inventory'). This task-scoped entry is its registration evidence. The test_native_engine_errors.py rows stay owned by T53; they were rerun here only as transition-environment source coverage."
+    "note": "T04 owns no Python source rows in python-removal.json and no ported test records in this map \u2014 its deliverable is the native boundary itself (migration card: 'owns no individual Python source file in the supplied removal inventory'). This task-scoped entry is its registration evidence. The test_native_engine_errors.py rows stay owned by T53; they were rerun here only as transition-environment source coverage."
   },
   "io_boundary_contract": {
     "task": "T05",
     "ctest_name": "migration_T05",
     "build_target": "migration_T05",
     "kind": "executable",
-    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T05 test_t05.cpp) linked against bike_migration_test + bike_io; bike_io (native/src/io/json.cpp + hash.cpp) is defined in BOTH build graphs — the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt under BIKE_DEPENDENCY_ROOT) compile the identical TUs against the pinned RapidJSON 24b5e7a include tree",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T05 test_t05.cpp) linked against bike_migration_test + bike_io; bike_io (native/src/io/json.cpp + hash.cpp) is defined in BOTH build graphs \u2014 the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt under BIKE_DEPENDENCY_ROOT) compile the identical TUs against the pinned RapidJSON 24b5e7a include tree",
     "produced_apis": [
-      "bike::io::Value owned cold-path AST — native/src/io/value.hpp; variant monostate/bool/Number/Array/Object/Bytes/Tagged, Number keeps the exact JSON number lexeme, Object is insertion-ordered pairs; find_member/as_object/as_array/number_i64/number_double/tagged_double throw std::invalid_argument naming accessor + $-path",
-      "bike::io::parse_json — RapidJSON SAX + kParseNumbersAsStringsFlag (RawNumber lexeme verbatim); rejects duplicate keys, trailing content, malformed UTF-8, unpaired surrogate escapes, raw NUL, leading BOM, bare NaN/Infinity, positive-exponent lexemes beyond binary64, >512 MiB inputs and depth >512",
-      "bike::io::canonical_json / recording_json / parse_recording_json — deterministic emit (sorted keys, compact separators, verbatim lexemes) and the $bike_recording tag codec matching src/bike_sim/recording/json_codec.py: float64 nan/+inf/-inf sentinels only, strict base64 bytes, CPython Decimal canonicalization (Unicode digits/space, underscores, specials, exact binary64 expansion), CPython 3.14 date/time/datetime fromisoformat+isoformat parity (week dates, 'T24:00' wrap, arbitrary separators, comma fraction, offset spellings), timedelta days/seconds/microseconds normalization with |days|<=999999999, reserved-key object escaping, $[a][0][b] path diagnostics",
-      "bike::io::Sha256 + sha256() — FIPS 180-4 streaming hasher; engine_call.cpp's resolved-libmujoco image hash now runs through it (4096-byte chunks)",
-      "bt::manifest_parse / manifest_verify_files / manifest() / manifest_entry() / verified_fixture — strict oracle-manifest validation through bike::io::parse_json plus per-file byte-count and sha256 checks; failures are hard errors, never skips"
+      "bike::io::Value owned cold-path AST \u2014 native/src/io/value.hpp; variant monostate/bool/Number/Array/Object/Bytes/Tagged, Number keeps the exact JSON number lexeme, Object is insertion-ordered pairs; find_member/as_object/as_array/number_i64/number_double/tagged_double throw std::invalid_argument naming accessor + $-path",
+      "bike::io::parse_json \u2014 RapidJSON SAX + kParseNumbersAsStringsFlag (RawNumber lexeme verbatim); rejects duplicate keys, trailing content, malformed UTF-8, unpaired surrogate escapes, raw NUL, leading BOM, bare NaN/Infinity, positive-exponent lexemes beyond binary64, >512 MiB inputs and depth >512",
+      "bike::io::canonical_json / recording_json / parse_recording_json \u2014 deterministic emit (sorted keys, compact separators, verbatim lexemes) and the $bike_recording tag codec matching src/bike_sim/recording/json_codec.py: float64 nan/+inf/-inf sentinels only, strict base64 bytes, CPython Decimal canonicalization (Unicode digits/space, underscores, specials, exact binary64 expansion), CPython 3.14 date/time/datetime fromisoformat+isoformat parity (week dates, 'T24:00' wrap, arbitrary separators, comma fraction, offset spellings), timedelta days/seconds/microseconds normalization with |days|<=999999999, reserved-key object escaping, $[a][0][b] path diagnostics",
+      "bike::io::Sha256 + sha256() \u2014 FIPS 180-4 streaming hasher; engine_call.cpp's resolved-libmujoco image hash now runs through it (4096-byte chunks)",
+      "bt::manifest_parse / manifest_verify_files / manifest() / manifest_entry() / verified_fixture \u2014 strict oracle-manifest validation through bike::io::parse_json plus per-file byte-count and sha256 checks; failures are hard errors, never skips"
     ],
     "mandatory_cases": [
       "SHA-256 FIPS vectors (empty, 'abc', 448-bit message, 1e6 x 'a') plus chunked streaming equivalence",
       "lossless lexemes: 9007199254740993, -0.0, 39-digit integer, exponent spellings; duplicate keys, malformed UTF-8/CESU-8, unpaired surrogates, raw NUL, BOM, trailing content, 512-depth accepted / 600 rejected",
       "recording tags: float64 sentinels + finite reject path, strict base64 (padding, continuity, alphabet), decimal canonicalization incl. Decimal(float) exact expansion and signed zero, date/time/datetime incl. week dates, '24:00' wrap, comma fraction, offset seconds, timedelta normalization/overflow, reserved-key escaping, unknown/malformed tags rejected with path diagnostics",
-      "manifest: schema marker, required sections, oracle/tool/environment identity, fixture-name uniqueness, comparison codes, expected-kind shapes, file containment, lowercase sha256, byte counts, dtype/order/shape consistency, nullable input sha256 — ~30 mutation cases fail closed; real oracle-manifest.json validates all 92 entries and every declared file digest"
+      "manifest: schema marker, required sections, oracle/tool/environment identity, fixture-name uniqueness, comparison codes, expected-kind shapes, file containment, lowercase sha256, byte counts, dtype/order/shape consistency, nullable input sha256 \u2014 ~30 mutation cases fail closed; real oracle-manifest.json validates all 92 entries and every declared file digest"
     ],
     "evidence": [
-      "RED recorded: first 'cmake --build build/native-release --target migration_T05' of the implementation failed compile under -Werror (-Wunsafe-buffer-usage on byte access, -Wsign-conversion in base64/ISO paths); the first clean compile then failed ctest — '1e999' raw lexeme rejected by pinned RapidJSON's unconditional exponent scan (documented boundary limit in io/json.hpp), a short-datetime separator index out-of-bounds (CPython slice-clamp port fixed at json.cpp parse_iso_datetime), and wrong expected offset-seconds spellings in the test (CPython isoformat drops ':00')",
+      "RED recorded: first 'cmake --build build/native-release --target migration_T05' of the implementation failed compile under -Werror (-Wunsafe-buffer-usage on byte access, -Wsign-conversion in base64/ISO paths); the first clean compile then failed ctest \u2014 '1e999' raw lexeme rejected by pinned RapidJSON's unconditional exponent scan (documented boundary limit in io/json.hpp), a short-datetime separator index out-of-bounds (CPython slice-clamp port fixed at json.cpp parse_iso_datetime), and wrong expected offset-seconds spellings in the test (CPython isoformat drops ':00')",
       "ctest --test-dir build/native-release -R '^migration_T05$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (PASS 86 + PASS 320 + PASS 18 + PASS 28166 checks)",
       "ctest --test-dir native/build -R '^migration_T05$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (same four blocks)"
     ],
-    "note": "T05 owns src/bike_sim/recording/json_codec.py in python-removal.json as a ledger row only; the Python codec remains the oracle until the T63 deletion gate. runtime::WireValue/WireObject are untouched — bike::io::Value is the cold-path input/provenance tree only. A float lexeme whose positive exponent exceeds binary64 range is a syntax error at the raw boundary (pinned RapidJSON emits NumberTooBig even with kParseNumbersAsStringsFlag); parse_recording_json rejects such tokens either way, matching json_codec's finite() outcome."
+    "note": "T05 owns src/bike_sim/recording/json_codec.py in python-removal.json as a ledger row only; the Python codec remains the oracle until the T63 deletion gate. runtime::WireValue/WireObject are untouched \u2014 bike::io::Value is the cold-path input/provenance tree only. A float lexeme whose positive exponent exceeds binary64 range is a syntax error at the raw boundary (pinned RapidJSON emits NumberTooBig even with kParseNumbersAsStringsFlag); parse_recording_json rejects such tokens either way, matching json_codec's finite() outcome."
   },
   "platform_primitives_contract": {
     "task": "T06",
     "ctest_name": "migration_T06",
     "build_target": "migration_T06",
     "kind": "executable",
-    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T06 test_t06.cpp) linked against bike_migration_test + bike_platform with BIKE_T06_EXPECT_BINDINGS/BIKE_T06_EXPECT_GUI bound to the configured graph; bike_platform (native/src/platform/{files,process,signals,provenance}.cpp) is defined in BOTH build graphs — the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt) compile the identical TUs and generate the same platform_build_identity.hpp Track-B header per configuration",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T06 test_t06.cpp) linked against bike_migration_test + bike_platform with BIKE_T06_EXPECT_BINDINGS/BIKE_T06_EXPECT_GUI bound to the configured graph; bike_platform (native/src/platform/{files,process,signals,provenance}.cpp) is defined in BOTH build graphs \u2014 the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt) compile the identical TUs and generate the same platform_build_identity.hpp Track-B header per configuration",
     "produced_apis": [
-      "bike::platform::FileHandle + open_exclusive/open_regular/write_all/sync/sync_directory/write_exclusive/create_directory/link_new/file_sha256 — native/src/platform/files.hpp + files.cpp; O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW exclusive creation whose opened object is fstat-validated as regular (the storage.py opened-object rule), EEXIST on any pre-existing name including empty files and empty directories (never adopted, never overwritten), exclusive mkdir/link publication steps, file+directory fsync, and SHA-256 after close through a fresh no-follow regular-file-checked read stream sharing bike::io::Sha256",
-      "bike::platform::ProcessResult{exit_code,out,err} + ProcessOptions{timeout_s,max_output_bytes=64MiB} + run(argv,cwd[,options]) — native/src/platform/process.hpp + process.cpp; posix_spawnp argument vectors only (no shell), the child leads its own process group, stdin is /dev/null, cwd is a child-side chdir file action (the parent working directory is never mutated), one poll loop drains stdout and stderr concurrently under per-stream byte bounds, deadline or bound overflow does killpg(SIGKILL)+waitpid on the whole group, wait status is preserved verbatim (0..255 normal, 128+signal on signal death) and a bound breach throws std::runtime_error naming the bound after the reap — never silent truncation",
-      "bike::platform::InterruptShield{deferred,note,installed} — native/src/platform/signals.hpp + signals.cpp; the deferred-SIGINT port of src/bike_sim/recording/interrupt.py: main-thread scopes install an async-signal-safe counting handler (one lock-free pointer load + one sig_atomic_t store — no allocation, no SQL, no finalization in the handler), scopes unwind LIFO restoring the previous disposition exactly, off-main-thread scopes degrade to flag holders like the source, and the registry is a fixed 16-slot table so repeated or nested scopes never allocate; repeated SIGINT inside a shielded critical section only raises deferred() — the owning thread finalizes after the section",
-      "bike::platform::executable_path/install_prefix/BuildIdentity/build_identity/execution_identity/utc_now/monotonic_seconds — native/src/platform/provenance.hpp + provenance.cpp; running-image resolution via _NSGetExecutablePath+realpath (readlink on Linux) and a bin/.. install-prefix convention that keeps executable-relative resource lookup working after the tree moves; build identity is compiled in from generated platform_build_identity.hpp (compiler id+version, effective flag string, resolved SDK, OS-arch, build type, dependency-lock sha256, migration/source-manifest.json sha256 — all auditor-reproducible file digests) plus the running image's own sha256 through file_sha256; execution_identity() digests the numerical-execution axis only, so deleting bindings never invalidates physical compatibility; utc_now() emits microsecond ISO-8601 UTC metadata while monotonic_seconds() is a process-local steady_clock receipt origin — the axes never substitute"
+      "bike::platform::FileHandle + open_exclusive/open_regular/write_all/sync/sync_directory/write_exclusive/create_directory/link_new/file_sha256 \u2014 native/src/platform/files.hpp + files.cpp; O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW exclusive creation whose opened object is fstat-validated as regular (the storage.py opened-object rule), EEXIST on any pre-existing name including empty files and empty directories (never adopted, never overwritten), exclusive mkdir/link publication steps, file+directory fsync, and SHA-256 after close through a fresh no-follow regular-file-checked read stream sharing bike::io::Sha256",
+      "bike::platform::ProcessResult{exit_code,out,err} + ProcessOptions{timeout_s,max_output_bytes=64MiB} + run(argv,cwd[,options]) \u2014 native/src/platform/process.hpp + process.cpp; posix_spawnp argument vectors only (no shell), the child leads its own process group, stdin is /dev/null, cwd is a child-side chdir file action (the parent working directory is never mutated), one poll loop drains stdout and stderr concurrently under per-stream byte bounds, deadline or bound overflow does killpg(SIGKILL)+waitpid on the whole group, wait status is preserved verbatim (0..255 normal, 128+signal on signal death) and a bound breach throws std::runtime_error naming the bound after the reap \u2014 never silent truncation",
+      "bike::platform::InterruptShield{deferred,note,installed} \u2014 native/src/platform/signals.hpp + signals.cpp; the deferred-SIGINT port of src/bike_sim/recording/interrupt.py: main-thread scopes install an async-signal-safe counting handler (one lock-free pointer load + one sig_atomic_t store \u2014 no allocation, no SQL, no finalization in the handler), scopes unwind LIFO restoring the previous disposition exactly, off-main-thread scopes degrade to flag holders like the source, and the registry is a fixed 16-slot table so repeated or nested scopes never allocate; repeated SIGINT inside a shielded critical section only raises deferred() \u2014 the owning thread finalizes after the section",
+      "bike::platform::executable_path/install_prefix/BuildIdentity/build_identity/execution_identity/utc_now/monotonic_seconds \u2014 native/src/platform/provenance.hpp + provenance.cpp; running-image resolution via _NSGetExecutablePath+realpath (readlink on Linux) and a bin/.. install-prefix convention that keeps executable-relative resource lookup working after the tree moves; build identity is compiled in from generated platform_build_identity.hpp (compiler id+version, effective flag string, resolved SDK, OS-arch, build type, dependency-lock sha256, migration/source-manifest.json sha256 \u2014 all auditor-reproducible file digests) plus the running image's own sha256 through file_sha256; execution_identity() digests the numerical-execution axis only, so deleting bindings never invalidates physical compatibility; utc_now() emits microsecond ISO-8601 UTC metadata while monotonic_seconds() is a process-local steady_clock receipt origin \u2014 the axes never substitute"
     ],
     "mandatory_cases": [
-      "paths with spaces, Unicode and shell metacharacters ('dir with space ünïçødë ; $(not-a-command)'/'païd; $(x) b.bin') round-trip byte-exact with no interpolation or normalization loss",
+      "paths with spaces, Unicode and shell metacharacters ('dir with space \u00fcn\u00ef\u00e7\u00f8d\u00eb ; $(not-a-command)'/'pa\u00efd; $(x) b.bin') round-trip byte-exact with no interpolation or normalization loss",
       "leaf symlinks rejected on create and read (O_NOFOLLOW ELOOP/EEXIST) while a symlinked directory resolves; /dev/null and missing names rejected by the opened-object regular-file check; existing empty file and empty directory destinations both fail instead of being adopted",
       "child failure preserved verbatim (exit 7, exact out/err streams); invalid argv (empty argv, empty argv[0], embedded NUL), non-directory cwd and nonpositive/nonfinite timeout are std::invalid_argument; zero-byte max_output rejected",
       "timeout: sleeping child's whole group gets SIGKILL and is reaped inside a bounded wait, result keeps 128+SIGKILL and partial streams",
-      "2 MiB stderr flood with the stdout marker written last completes — concurrent drain, no deadlock; exceeding the 4 KiB output bound throws after the group is killed and reaped",
+      "2 MiB stderr flood with the stdout marker written last completes \u2014 concurrent drain, no deadlock; exceeding the 4 KiB output bound throws after the group is killed and reaped",
       "double SIGINT inside the shield is deferred not delivered (count 2, sentinel handler untouched), the previous handler is restored on scope exit, nested shields attribute to the innermost scope, note() is the flag-holder seam off the main thread",
       "moved install tree: the binary copied under a new prefix's bin/ resolves share/bike_sim/t06-resource.txt through its own image path (child mode --t06-child-resource)",
       "provenance: compiler/flags/platform nonempty, SDK nonempty on Apple, lock+manifest 64-hex digests match the checked files, executable_sha256 equals file_sha256(executable_path()), execution_identity is a stable 64-hex digest excluding the packaging axis, utc_now matches YYYY-MM-DDTHH:MM:SS.ffffffZ, monotonic origin advances monotonically"
     ],
     "evidence": [
-      "RED recorded: 'cmake --build build/native-release --target migration_T06' first failed with 'no rule to make target' then, after CTest registration, at test_t06.cpp:10 'platform/files.hpp' file not found — the missing produced declarations (exit 2)",
+      "RED recorded: 'cmake --build build/native-release --target migration_T06' first failed with 'no rule to make target' then, after CTest registration, at test_t06.cpp:10 'platform/files.hpp' file not found \u2014 the missing produced declarations (exit 2)",
       "implementation-loop failures recorded under -Werror: posix_spawn_file_actions_addchdir_np deprecated on macOS 26 SDK (switched to the POSIX.1-2024 addchdir name behind __MAC_OS_X_VERSION_MAX_ALLOWED>=260000), -Wdeprecated-volatile on sig_atomic_t increments (plain read+store), sigemptyset is a macro (unqualified call), -Wunsafe-buffer-usage on argv[]/fputs/fwrite/atoi in child modes (span<char*> argv convention + iostream + stod/stoull/stoi), and a first legacy-graph run failing the bindings-OFF packaging axis until the expectation was bound to the configured graph via BIKE_T06_EXPECT_BINDINGS/BIKE_T06_EXPECT_GUI",
       "ctest --test-dir build/native-release -R '^migration_T06$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (PASS 1 + PASS 14 + PASS 48 + PASS 12 + PASS 14 = 89 checks)",
       "ctest --test-dir native/build -R '^migration_T06$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (same five blocks under the legacy extension graph)"
     ],
-    "note": "T06 owns no Python source rows in python-removal.json and no ported test records in this map — its deliverable is the owned platform boundary later publication/CLI/recording tasks consume (migration card: 'owns no individual Python source file in the supplied removal inventory'), so this task-scoped entry is its registration evidence. src/bike_sim/recording/interrupt.py (T42) and storage.py (T41) remain the behavioral authorities and stay in the oracle until T63. The drain loop keeps communicate()-style EOF semantics: run() returns only after the child is reaped AND both pipes hit EOF, so a held-open grandchild pipe is bounded by timeout_s exactly like subprocess.communicate. Output collection is bounded by contract — callers needing unbounded capture do not exist yet and must raise the limit explicitly rather than truncate."
+    "note": "T06 owns no Python source rows in python-removal.json and no ported test records in this map \u2014 its deliverable is the owned platform boundary later publication/CLI/recording tasks consume (migration card: 'owns no individual Python source file in the supplied removal inventory'), so this task-scoped entry is its registration evidence. src/bike_sim/recording/interrupt.py (T42) and storage.py (T41) remain the behavioral authorities and stay in the oracle until T63. The drain loop keeps communicate()-style EOF semantics: run() returns only after the child is reaped AND both pipes hit EOF, so a held-open grandchild pipe is bounded by timeout_s exactly like subprocess.communicate. Output collection is bounded by contract \u2014 callers needing unbounded capture do not exist yet and must raise the limit explicitly rather than truncate."
   },
   "writer_config_boundary_contract": {
     "task": "T07",
     "ctest_name": "migration_T07",
     "build_target": "migration_T07",
     "kind": "executable",
-    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T07 test_t07.cpp $<TARGET_OBJECTS:bike_test_allocation_faults>) linked against bike_migration_test + the Python-free core set (bike_core in the root graph, bike_native_contract_core in the legacy graph) + the engine lib + Accelerate; T07 moved stepper.cpp, writer_config.cpp, writers/rider_contacts.cpp plus rider/attachment_wrench.cpp and rider/equality_reactions.cpp (rider_contacts' link closure) into BOTH graphs' shared core object libraries — root CMakeLists.txt bike_core and native/CMakeLists.txt bike_native_contract_core compile the identical TUs, and the nanobind module now links them through ${_native_core_lib} instead of compiling stepper.cpp itself. allocation_faults.cpp is compiled once by the new OBJECT library bike_test_allocation_faults (same CMakeLists, same _native_contract_*/strict-policy flag blocks) and injected into migration_T07 and native_contract_tests via $<TARGET_OBJECTS:...> — listing it per-target put the operator new/delete + counter symbols in the ODR sweep's combined -flto -r link twice, a duplicate-definition failure the checker names for any source reaching two compile-database entries",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T07 test_t07.cpp $<TARGET_OBJECTS:bike_test_allocation_faults>) linked against bike_migration_test + the Python-free core set (bike_core in the root graph, bike_native_contract_core in the legacy graph) + the engine lib + Accelerate; T07 moved stepper.cpp, writer_config.cpp, writers/rider_contacts.cpp plus rider/attachment_wrench.cpp and rider/equality_reactions.cpp (rider_contacts' link closure) into BOTH graphs' shared core object libraries \u2014 root CMakeLists.txt bike_core and native/CMakeLists.txt bike_native_contract_core compile the identical TUs, and the nanobind module now links them through ${_native_core_lib} instead of compiling stepper.cpp itself. allocation_faults.cpp is compiled once by the new OBJECT library bike_test_allocation_faults (same CMakeLists, same _native_contract_*/strict-policy flag blocks) and injected into migration_T07 and native_contract_tests via $<TARGET_OBJECTS:...> \u2014 listing it per-target put the operator new/delete + counter symbols in the ODR sweep's combined -flto -r link twice, a duplicate-definition failure the checker names for any source reaching two compile-database entries",
     "produced_apis": [
-      "nativecfg::WriterConfig — native/src/writer_config.hpp; one std::optional per writer section (drive, cruise, suspension, brake, resistance, tire, rider_forces, rider_contacts), replacing the nanobind-side nativecfg::NativeConfig which is removed from config_types.hpp",
-      "nativecfg::decode(const bike::io::Value&) — native/src/writer_config.cpp; strict Value→WriterConfig decode over the shared generic node protocol (writer_config.hpp detail::Dict<N>/Seq<N>/section_keys/exact_at and the req_*/field readers), identical key tables and std::invalid_argument 'path: reason' diagnostics as the nanobind readers; integer lexemes are integral while float-spelled spellings (2.0) are not, bool members are not numeric, empty object decodes to no writers, schema 1 resolved-fork metadata migrates without defaults reconstruction",
-      "Stepper(const std::string&, const nativecfg::WriterConfig&) — native/src/stepper.hpp + stepper.cpp; typed construction path used by both the nanobind factory and the owned wire, rollback-safe on writer-construction failure, unchanged Stepper(path) unconfigured contract",
-      "stepper_detail::ForeignTimeCallbackVerdict/ForeignTimeCallbackProbe/foreign_time_callback_probe() — native/src/stepper.hpp; a function-local-static seam installed by NB_MODULE before any Stepper exists; the vendor-Python recognizer (mujoco.get_mjcb_time, ctypes._CFuncPtr rejection, mujoco._structs/_simulate image whitelist) moved verbatim into binding.cpp, and a null probe marks every foreign callback unsafe in the Python-free core"
+      "nativecfg::WriterConfig \u2014 native/src/writer_config.hpp; one std::optional per writer section (drive, cruise, suspension, brake, resistance, tire, rider_forces, rider_contacts), replacing the nanobind-side nativecfg::NativeConfig which is removed from config_types.hpp",
+      "nativecfg::decode(const bike::io::Value&) \u2014 native/src/writer_config.cpp; strict Value\u2192WriterConfig decode over the shared generic node protocol (writer_config.hpp detail::Dict<N>/Seq<N>/section_keys/exact_at and the req_*/field readers), identical key tables and std::invalid_argument 'path: reason' diagnostics as the nanobind readers; integer lexemes are integral while float-spelled spellings (2.0) are not, bool members are not numeric, empty object decodes to no writers, schema 1 resolved-fork metadata migrates without defaults reconstruction",
+      "Stepper(const std::string&, const nativecfg::WriterConfig&) \u2014 native/src/stepper.hpp + stepper.cpp; typed construction path used by both the nanobind factory and the owned wire, rollback-safe on writer-construction failure, unchanged Stepper(path) unconfigured contract",
+      "stepper_detail::ForeignTimeCallbackVerdict/ForeignTimeCallbackProbe/foreign_time_callback_probe() \u2014 native/src/stepper.hpp; a function-local-static seam installed by NB_MODULE before any Stepper exists; the vendor-Python recognizer (mujoco.get_mjcb_time, ctypes._CFuncPtr rejection, mujoco._structs/_simulate image whitelist) moved verbatim into binding.cpp, and a null probe marks every foreign callback unsafe in the Python-free core"
     ],
     "mandatory_cases": [
       "empty writer configuration ({}, {'schema':1}, {'schema':2}) remains valid for bare stepping; unknown top-level keys and wrong root kinds reject with path diagnostics",
@@ -34863,13 +34913,13 @@
       "allocation-failure sweeps enumerate every throwing position of nativecfg::decode and Stepper(path, WriterConfig): every armed position throws std::bad_alloc or, if survived, yields the identical typed result; unarmed retries after each sweep produce working owners"
     ],
     "evidence": [
-      "RED recorded: 'cmake --build native/build --target migration_T07' on the new test failed compile — writer_config.hpp/typed Stepper ctor were the missing produced declarations; first clean compiles then failed under -Werror (-Wunsafe-buffer-usage on lexeme end pointer — fixed via std::to_address(cend), -Wframe-larger-than on cold-path test bodies — waived via the project's NATIVE_DIAG idiom, -Wc99-designator on mixed designated/braced member init in the NbNode adapters) and at link (rider_contacts.cpp's EqualityReactions/attachment_wrench dependencies moved into both pure-core source lists); a first module build also exposed two binding-TU call sites still spelling the removed nanobind ctor (runtime_binding.cpp, test_adapter.cpp) and nb::new_'s tp_new replacement requiring the 1-arg ctor registered as a second new_ overload plus nanobind/stl/unique_ptr.h",
+      "RED recorded: 'cmake --build native/build --target migration_T07' on the new test failed compile \u2014 writer_config.hpp/typed Stepper ctor were the missing produced declarations; first clean compiles then failed under -Werror (-Wunsafe-buffer-usage on lexeme end pointer \u2014 fixed via std::to_address(cend), -Wframe-larger-than on cold-path test bodies \u2014 waived via the project's NATIVE_DIAG idiom, -Wc99-designator on mixed designated/braced member init in the NbNode adapters) and at link (rider_contacts.cpp's EqualityReactions/attachment_wrench dependencies moved into both pure-core source lists); a first module build also exposed two binding-TU call sites still spelling the removed nanobind ctor (runtime_binding.cpp, test_adapter.cpp) and nb::new_'s tp_new replacement requiring the 1-arg ctor registered as a second new_ overload plus nanobind/stl/unique_ptr.h",
       "ctest --test-dir native/build -R '^migration_T07$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (PASS 21 + PASS 14 + PASS 135 = 170 checks)",
       "ctest --test-dir build/no-python -R '^migration_T07$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (root graph, same three blocks); ctest --test-dir build/bindings-on -R '^migration_T07$': 1/1 passed (transition graph)",
-      "cmake --build native/build --target bike_native + ctest --test-dir native/build --output-on-failure: 12/12 passed — the extension relinks against the shared core objects unchanged",
-      "NATIVE_TEST_BUILD_PATH=$PWD/native/build uv run pytest tests/reference/test_native_input_contracts.py tests/reference/test_native_clock_contracts.py -q: 162 passed; tests/reference/test_native_drivetrain.py test_native_cruise.py test_native_state_restore.py -q: 333 passed — the Stepper(path[,config]) Python surface (None/non-dict 'config: expected dict', empty dict disables all writers, unknown-key paths) is unchanged"
+      "cmake --build native/build --target bike_native + ctest --test-dir native/build --output-on-failure: 12/12 passed \u2014 the extension relinks against the shared core objects unchanged",
+      "NATIVE_TEST_BUILD_PATH=$PWD/native/build uv run pytest tests/reference/test_native_input_contracts.py tests/reference/test_native_clock_contracts.py -q: 162 passed; tests/reference/test_native_drivetrain.py test_native_cruise.py test_native_state_restore.py -q: 333 passed \u2014 the Stepper(path[,config]) Python surface (None/non-dict 'config: expected dict', empty dict disables all writers, unknown-key paths) is unchanged"
     ],
-    "note": "T07 owns no Python source rows in python-removal.json and no ported test records in this map — its deliverable is the typed writer-config boundary itself (the stepper.hpp/cpp pair that T09's src/bike_sim/native/runtime.py row already lists as planned replacements gained the writer_config.hpp/cpp decode half plus test_t07.cpp, appended to that row's replacement_paths so the ledger stays complete). tools/native_config.py (T56) remains the projection oracle until the T63 deletion gate. NativeConfig is deleted outright — no alias is kept — because WriterConfig is the identical shape under the owned name. drive/policy nb-dict parse entry points stay binding-side adapters over the same shared decode, preserving extra_root_keys and root-path spellings."
+    "note": "T07 owns no Python source rows in python-removal.json and no ported test records in this map \u2014 its deliverable is the typed writer-config boundary itself (the stepper.hpp/cpp pair that T09's src/bike_sim/native/runtime.py row already lists as planned replacements gained the writer_config.hpp/cpp decode half plus test_t07.cpp, appended to that row's replacement_paths so the ledger stays complete). tools/native_config.py (T56) remains the projection oracle until the T63 deletion gate. NativeConfig is deleted outright \u2014 no alias is kept \u2014 because WriterConfig is the identical shape under the owned name. drive/policy nb-dict parse entry points stay binding-side adapters over the same shared decode, preserving extra_root_keys and root-path spellings."
   },
   "state_wire_codec_boundary_contract": {
     "task": "T08",
@@ -34878,25 +34928,25 @@
     "kind": "executable",
     "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T08 test_t08.cpp) linked against bike_migration_test + the Python-free core set (bike_core in the root graph, bike_native_contract_core in the legacy graph) + the engine lib + Accelerate; T08 added drivetrain/state_codec.cpp, rider/state_codec.cpp and rider/spindle_math.cpp (the spindle config decoder resolves torque-curve and joint-envelope validators) to BOTH core source lists and dropped spindle_math.cpp from the nanobind module list so the module reaches it through ${_native_core_lib}; compiling test_t08.cpp against state_codec.hpp in a target with no Python/nanobind include path is the include-closure contract itself",
     "produced_apis": [
-      "rider::decode_spindle_config(const bike::io::Value&) — native/src/rider/state_codec.hpp; strict Value→SpindleConfig decode with the binding's key tables, integer-lexeme strictness, finite-real gates and 'path: reason' std::invalid_argument diagnostics; strength/envelope tables route through the same spindle_math validators",
-      "rider::decode_spindle_state / encode_spindle_state — controller state wire codec; pd_split/last_branch/last_solution unsupported-warm-carry rejections preserved",
-      "rider::decode_rider_posture / encode_rider_posture, decode_rider_command, decode_named_reals, decode_joint_terms — posture/command/terms codecs mirroring spindle_wire.cpp read and dict-literal emission order",
-      "rider::decode_intent_config / decode_intent_signals / decode_intent_step / decode_intent_control / decode_intent_state and encode_intent_state / encode_intent_signals / encode_intent_control — intent wire codecs; step accepts integer-spelled lexemes only ('type(step) is not int' parity)",
-      "rider::decode_attachment_geometry / decode_attachment_entry and encode_attachment_geometry / encode_attachment_entry — attachment codecs with the rider_jac raw-vs-sample distinction and truthy observable/rotational semantics",
-      "rider::decode_rider_contacts_state / encode_rider_contacts_state — topology-gated contacts codec taking the live RiderContactWriter; exact enabled/support key sets, fixed vectors, optional tangents/anchors, settled welds, attachment samples/errors, detailed diagnostics and the all-or-none probe triple",
-      "drivetrain::decode_drive_snapshot(const bike::io::Value&) / encode_drive_snapshot(const DriveSnapshot&) — native/src/drivetrain/state_codec.hpp; field-for-field parse_state/state_dict twin over the 12-key top level, fixed-width angle storage, typed 67-lane telemetry schema (presence 0/1/2, closed labels, integer floors, open lanes), transmission snapshots, pending actuation and the five-key policies object"
+      "rider::decode_spindle_config(const bike::io::Value&) \u2014 native/src/rider/state_codec.hpp; strict Value\u2192SpindleConfig decode with the binding's key tables, integer-lexeme strictness, finite-real gates and 'path: reason' std::invalid_argument diagnostics; strength/envelope tables route through the same spindle_math validators",
+      "rider::decode_spindle_state / encode_spindle_state \u2014 controller state wire codec; pd_split/last_branch/last_solution unsupported-warm-carry rejections preserved",
+      "rider::decode_rider_posture / encode_rider_posture, decode_rider_command, decode_named_reals, decode_joint_terms \u2014 posture/command/terms codecs mirroring spindle_wire.cpp read and dict-literal emission order",
+      "rider::decode_intent_config / decode_intent_signals / decode_intent_step / decode_intent_control / decode_intent_state and encode_intent_state / encode_intent_signals / encode_intent_control \u2014 intent wire codecs; step accepts integer-spelled lexemes only ('type(step) is not int' parity)",
+      "rider::decode_attachment_geometry / decode_attachment_entry and encode_attachment_geometry / encode_attachment_entry \u2014 attachment codecs with the rider_jac raw-vs-sample distinction and truthy observable/rotational semantics",
+      "rider::decode_rider_contacts_state / encode_rider_contacts_state \u2014 topology-gated contacts codec taking the live RiderContactWriter; exact enabled/support key sets, fixed vectors, optional tangents/anchors, settled welds, attachment samples/errors, detailed diagnostics and the all-or-none probe triple",
+      "drivetrain::decode_drive_snapshot(const bike::io::Value&) / encode_drive_snapshot(const DriveSnapshot&) \u2014 native/src/drivetrain/state_codec.hpp; field-for-field parse_state/state_dict twin over the 12-key top level, fixed-width angle storage, typed 67-lane telemetry schema (presence 0/1/2, closed labels, integer floors, open lanes), transmission snapshots, pending actuation and the five-key policies object"
     ],
     "mandatory_cases": [
-      "round-trip drive/spindle/intent/signals/attachment/contacts captures byte-against canonical goldens with values_equal semantic verification (integer lexemes exact, float lexemes IEEE-754 bit-equal — -0.0 and the 2 vs 2.0 spelling distinction preserved; decoded doubles re-emit in Python repr form, e.g. -1000000000000.0 -> -1e+12)",
+      "round-trip drive/spindle/intent/signals/attachment/contacts captures byte-against canonical goldens with values_equal semantic verification (integer lexemes exact, float lexemes IEEE-754 bit-equal \u2014 -0.0 and the 2 vs 2.0 spelling distinction preserved; decoded doubles re-emit in Python repr form, e.g. -1000000000000.0 -> -1e+12)",
       "minimal variants decode every optional to absent and re-emit the same shape; member emission order mirrors the binding dict-literal update order (drive top-level, policies, telemetry schema order)",
-      "each authored invalid fixture rejects with std::invalid_argument before any live state is touched — decode is a pure function so nothing partial escapes; a subsequent valid decode is unaffected",
+      "each authored invalid fixture rejects with std::invalid_argument before any live state is touched \u2014 decode is a pure function so nothing partial escapes; a subsequent valid decode is unaffected",
       "contacts topology gate: partial probe triple and foreign settled-weld names reject against the live welded_pinned writer",
       "no nanobind/Python declaration enters the codec headers' transitive include graph (the test target carries no such include path)"
     ],
     "evidence": [
       "RED recorded: 'cmake --build native/build --target migration_T08' failed before the codec sources existed (no rule to make target, then test_t08.cpp could not name decode_drive_snapshot); first compile surfaced -Wframe-larger-than on the snapshot-heavy check bodies (fixed by boxing decoded state) and -Wunused-parameter",
       "ctest --test-dir native/build -R '^migration_T08$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (566 checks: 24 + 37 + 29 + 127 + 64 + 75 + 87 + 123)",
-      "cmake --build native/build --target migration_T05 + ctest -R '^migration_T05$': 1/1 passed — the 22 appended oracle-manifest entries (state group + config/rider_controller) validate and every declared file's sha256/bytes verifies",
+      "cmake --build native/build --target migration_T05 + ctest -R '^migration_T05$': 1/1 passed \u2014 the 22 appended oracle-manifest entries (state group + config/rider_controller) validate and every declared file's sha256/bytes verifies",
       "standalone codec-TU and header compiles under the project C++23/MuJoCo/strict-warning flags completed earlier in the task; the target-level build re-proves them inside the real graph"
     ],
     "note": "T08 owns no Python source rows itself; its produced boundaries are appended to the T09 src/bike_sim/native/runtime.py row's replacement_paths (runtime.py wires these wires together) so the ledger stays complete, matching the T07 convention. Python remains the oracle through T63."
@@ -34906,28 +34956,28 @@
     "ctest_name": "migration_T12",
     "build_target": "migration_T12",
     "kind": "executable",
-    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T12 test_t12.cpp) linked against bike_migration_test + bike_configuration; bike_configuration (native/src/configuration/validate.cpp + schema.cpp) is defined in BOTH build graphs — the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt) — and links bike_io + bike_platform + bike_rider_math. T12 introduced bike_rider_math (native/src/rider/spindle_math.cpp, one TU per graph) as the owned home of the spindle JointEnvelope/anatomical_angle math shared by bike_configuration's load_joint_envelopes coverage checks and the legacy bike_native extension; removing the extension's private compile of spindle_math.cpp keeps exactly one compile-database entry per graph so the ODR sweep sees no duplicate-definition pair.",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T12 test_t12.cpp) linked against bike_migration_test + bike_configuration; bike_configuration (native/src/configuration/validate.cpp + schema.cpp) is defined in BOTH build graphs \u2014 the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt) \u2014 and links bike_io + bike_platform + bike_rider_math. T12 introduced bike_rider_math (native/src/rider/spindle_math.cpp, one TU per graph) as the owned home of the spindle JointEnvelope/anatomical_angle math shared by bike_configuration's load_joint_envelopes coverage checks and the legacy bike_native extension; removing the extension's private compile of spindle_math.cpp keeps exactly one compile-database entry per graph so the ODR sweep sees no duplicate-definition pair.",
     "produced_apis": [
-      "bike::configuration::SimulationPhysicsConfig + EndStopConfig — native/src/configuration/model_config.hpp; every Python dataclass field in declaration order with the declared defaults/factories (timestep_s=0.0005 base default preserved; the welded profile's 0.00125 remains a profile override), SeatedClimbConfig aliasing rider::IntentConfig",
-      "bike::configuration::default_physics() / validate(const SimulationPhysicsConfig&) / schema() — model_config.hpp + validate.cpp + schema.cpp; post-init resolution order, physics-mode/drive-mode restrictions, integer-vs-bool and optional-vs-missing semantics preserved; schema() is generated from the same FieldDecl/RecordSchema tables that drive loading and validation (fields.hpp), not a second defaults table",
-      "bike::configuration::wire::validate_config / validate_drive_policies / validate_policy_modes / validate_rider_contacts — model_config.hpp + wire_decode.hpp; the resolved-wire validator port of src/bike_sim/native/schema.py with 'path: reason' diagnostics",
-      "bike::configuration::RiderSpecs + JointEnvelopeMap loaders — rider_spec.hpp; load_joint_envelopes / load_strength_profile / load_strength_coordinates / PedalIntent and the rider-posture/program records with coverage-checked strict loaders over the present internal rider joints",
-      "SuspensionInputs / SuspensionSpec / AirSpringSpecs / CoilShockSpecs / DamperClickConfig / DamperPreset / resolve_suspension — suspension_spec.hpp; preset tables, raw click values preserved on inputs while resolved damper records carry constructor-clamped clicks"
+      "bike::configuration::SimulationPhysicsConfig + EndStopConfig \u2014 native/src/configuration/model_config.hpp; every Python dataclass field in declaration order with the declared defaults/factories (timestep_s=0.0005 base default preserved; the welded profile's 0.00125 remains a profile override), SeatedClimbConfig aliasing rider::IntentConfig",
+      "bike::configuration::default_physics() / validate(const SimulationPhysicsConfig&) / schema() \u2014 model_config.hpp + validate.cpp + schema.cpp; post-init resolution order, physics-mode/drive-mode restrictions, integer-vs-bool and optional-vs-missing semantics preserved; schema() is generated from the same FieldDecl/RecordSchema tables that drive loading and validation (fields.hpp), not a second defaults table",
+      "bike::configuration::wire::validate_config / validate_drive_policies / validate_policy_modes / validate_rider_contacts \u2014 model_config.hpp + wire_decode.hpp; the resolved-wire validator port of src/bike_sim/native/schema.py with 'path: reason' diagnostics",
+      "bike::configuration::RiderSpecs + JointEnvelopeMap loaders \u2014 rider_spec.hpp; load_joint_envelopes / load_strength_profile / load_strength_coordinates / PedalIntent and the rider-posture/program records with coverage-checked strict loaders over the present internal rider joints",
+      "SuspensionInputs / SuspensionSpec / AirSpringSpecs / CoilShockSpecs / DamperClickConfig / DamperPreset / resolve_suspension \u2014 suspension_spec.hpp; preset tables, raw click values preserved on inputs while resolved damper records carry constructor-clamped clicks"
     ],
     "mandatory_cases": [
       "default_physics() reproduces every Python default and post-init resolution (physical-mode missing drive_mode resolves to 'coast', missing pitch_assist to false, coupled_task_control stays false)",
       "schema() canonical JSON equals tests/fixtures/migration/config/schema.json with declaration-order field metadata and the Python type-label spellings",
-      "exact 'path: reason' diagnostics and validation ordering — nested PhysicalDriveConfig failures surface before top-level effort-mode checks ('motor clutch requires an ideal mid-drive transmission'), the scalar() fast path raises 'invalid initial speed' for non-finite input, integer-vs-bool rejection and optional-vs-missing/explicit-null wire output",
+      "exact 'path: reason' diagnostics and validation ordering \u2014 nested PhysicalDriveConfig failures surface before top-level effort-mode checks ('motor clutch requires an ideal mid-drive transmission'), the scalar() fast path raises 'invalid initial speed' for non-finite input, integer-vs-bool rejection and optional-vs-missing/explicit-null wire output",
       "aliases resolve (grip 'weld' -> 'connect'; pedal/saddle 'weld' verbatim); welded/distributed/pneumatic resolved fixtures compare semantically with first-diff member-path reporting",
       "all shipped TOML/JSON profile fields covered exactly once; strength/envelope loaders enforce coverage of the present internal rider joints; suspension presets plus click clamping produce resolved damper records while inputs keep requested clicks"
     ],
     "evidence": [
-      "RED recorded: 'cmake --build native/build --target migration_T12' failed to compile while the configuration headers were unwritten (the produced declarations were the missing boundary); during iteration the same target also enforced -Wframe-larger-than (test_validation 77808 > 8192, test_aliases_and_resolution 17296 > 8192, test_resolved_profiles 12736 > 8192 — resolved by extracting per-case helpers so large SimulationPhysicsConfig objects do not share a frame) and linked with Undefined symbols for spindle::anatomical_angle until bike_rider_math was split out; oracle-vs-test mismatches corrected in the test itself (coupled_task_control is false, scalar() fast-path raises 'invalid initial speed', nested PhysicalDriveConfig validation precedes the top-level effort-mode diagnostic, resolved JSON member order is semantic not positional, DamperClickConfig inputs keep raw clicks while resolved dampers clamp)",
+      "RED recorded: 'cmake --build native/build --target migration_T12' failed to compile while the configuration headers were unwritten (the produced declarations were the missing boundary); during iteration the same target also enforced -Wframe-larger-than (test_validation 77808 > 8192, test_aliases_and_resolution 17296 > 8192, test_resolved_profiles 12736 > 8192 \u2014 resolved by extracting per-case helpers so large SimulationPhysicsConfig objects do not share a frame) and linked with Undefined symbols for spindle::anatomical_angle until bike_rider_math was split out; oracle-vs-test mismatches corrected in the test itself (coupled_task_control is false, scalar() fast-path raises 'invalid initial speed', nested PhysicalDriveConfig validation precedes the top-level effort-mode diagnostic, resolved JSON member order is semantic not positional, DamperClickConfig inputs keep raw clicks while resolved dampers clamp)",
       "ctest --test-dir native/build -R '^migration_T12$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (PASS 2598 checks)",
       "ctest --test-dir build/native-release -R '^migration_T12$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (0.39 s, standalone Python-free root graph)",
-      "cmake --build build/native-release (all targets) + ctest --test-dir build/native-release --output-on-failure: 9/9 tests passed — the standalone graph compiles/links bike_io, bike_platform, bike_rider_math, bike_configuration and every migration target",
-      "cmake --build native/build (all targets): 100% built including bike_native — the extension relinks spindle math through bike_rider_math unchanged",
-      "bash tools/run_tests.sh native: exit 0 — build, all sweep kinds green (frontends/tidy/cppcheck/odr/scripts/headers findings none, analyzer report-only, diagnostic-controls + context ok), ctest 13/13, check_native_contracts passed, 2957 passed / 196 warnings pytest in 861 s"
+      "cmake --build build/native-release (all targets) + ctest --test-dir build/native-release --output-on-failure: 9/9 tests passed \u2014 the standalone graph compiles/links bike_io, bike_platform, bike_rider_math, bike_configuration and every migration target",
+      "cmake --build native/build (all targets): 100% built including bike_native \u2014 the extension relinks spindle math through bike_rider_math unchanged",
+      "bash tools/run_tests.sh native: exit 0 \u2014 build, all sweep kinds green (frontends/tidy/cppcheck/odr/scripts/headers findings none, analyzer report-only, diagnostic-controls + context ok), ctest 13/13, check_native_contracts passed, 2957 passed / 196 warnings pytest in 861 s"
     ],
     "note": "T12 owns the 11 python-removal.json rows under owner_task T12; their status stays 'planned' until the T63 deletion gate and replacement_paths now also list fields.hpp and wire_decode.hpp (the shared field-metadata table and wire validator the ported records and schema both use) alongside the six brief-listed files plus test_t12.cpp. The Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
   },
@@ -34938,47 +34988,47 @@
     "kind": "executable",
     "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T09 test_t09.cpp) linked against bike_migration_test + the Python-free core set (bike_core in the root graph, bike_native_contract_core in the legacy graph) + the engine lib + Accelerate; T09 moved runtime/{step,accounting,period_buffer,presentation,status,static_brake,bootstrap,bootstrap_io,runtime}.cpp and rider/{intent,spindle_controller}.cpp into BOTH core source lists so the module reaches them through the ${_native_core_lib} link edge; compiling test_t09.cpp against runtime/runtime.hpp in a target with no Python/nanobind include path is the include-closure contract itself",
     "produced_apis": [
-      "runtime::ModelImage — owned std::vector<std::byte> model.mjb image plus the lowercase-hex sha256 the state.model_digest pins",
-      "runtime::RuntimeBootstrap — ModelImage + decoded RuntimeConfig + BootstrapState; the NativeRideRuntime ctor's single owned input",
-      "runtime::read_bootstrap(const std::filesystem::path&) — native/src/runtime/bootstrap_io.cpp; loads config.json/state.json/model.mjb, resolves the externalized capture tags ($array with dtype/shape/order/sha256, $nonfinite, $tuple/$set, $dataclass, $bytes, $path/$datetime/$date/$uuid) against capture-root-relative ancestors, verifies every payload size and digest, then runs the shared compose order",
-      "runtime::compose_bootstrap(RuntimeConfig, ModelImage, const bike::io::Value&) — the shared validation seam: the caller runs the config envelope decode at ordinal position 1, then state.model_digest extraction, artifact sha256 comparison, schema-2 writer_config decode, disposable model-image load for the model-bound state sections (dims, integration width, resolved mutable coefficients), document-level tire/drive, staged subdocuments and the state.runtime surface",
-      "runtime::NativeRideRuntime(RuntimeBootstrap) — native/src/runtime/runtime.{hpp,cpp}; ctor re-verifies sha256(image) and model_dims against the live Stepper so a fabricated bootstrap cannot pass, then decodes writer-topology-bound rider_contacts, assembles PhysicalStep and the step state, applies the ordered restore and initializes accounting; advance(target_step, const RideControl&, front, rear, std::optional<double> wall_budget_s), probe_step_inputs, snapshot, flush, prepare_samples/acknowledge_samples, accounting_state/recorded_columns/recorded_intervals, seal_episode, release_samples, set_finish_position, test_fail_at_step, reset, close — the full former binding surface on typed records",
-      "runtime::NativeRideRuntime::take_pending_warning() — the pure core holds the non-strict reference rejection as state; the adapter emits it as RuntimeWarning at the held-GIL boundary (the reset-time flush's warning survives the accounting-owner swap via a pending slot)",
-      "vread:: (native/src/runtime/value_readers.hpp) — the bike::io::Value twin of binding_readers: same acceptance set and 'path: reason' diagnostics; integer() gates on integer lexeme spelling (the JSON-safe int-vs-float distinction), real() admits the resolved $nonfinite Tagged{\"float64\"} sentinel like wire::real admitted nonfinite floats, wire_from_value() lowers a Value tree into the runtime's insertion-ordered Wire so the shared WorkHistory/ModelStatus/ReferenceMonitor from_wire consumers run unchanged",
-      "Stepper(std::span<const std::byte>[, const nativecfg::WriterConfig&]) — the owned model-image construction twin; engine::load_model_image shares the plugin rejection and framed mj_loadModelBuffer with the path face",
-      "runtime::decode_runtime_config / decode_bootstrap_state / verify_model_dims / expected_model_digest — native/src/runtime/bootstrap.{hpp,cpp}; the owned-document twins of the former binding parse_runtime_config/parse_bootstrap",
-      "runtime::compose_bootstrap_handles + emit_reference_warning — native/src/runtime/runtime_binding.{hpp,cpp}; the adapter-only seams: os.fspath artifact resolution, handle->Value materialization (string-key gate, ndarray dtype-kind gate, dataclass lowering, wide-int decimal lexemes, nonfinite sentinel) and held-GIL RuntimeWarning emission"
+      "runtime::ModelImage \u2014 owned std::vector<std::byte> model.mjb image plus the lowercase-hex sha256 the state.model_digest pins",
+      "runtime::RuntimeBootstrap \u2014 ModelImage + decoded RuntimeConfig + BootstrapState; the NativeRideRuntime ctor's single owned input",
+      "runtime::read_bootstrap(const std::filesystem::path&) \u2014 native/src/runtime/bootstrap_io.cpp; loads config.json/state.json/model.mjb, resolves the externalized capture tags ($array with dtype/shape/order/sha256, $nonfinite, $tuple/$set, $dataclass, $bytes, $path/$datetime/$date/$uuid) against capture-root-relative ancestors, verifies every payload size and digest, then runs the shared compose order",
+      "runtime::compose_bootstrap(RuntimeConfig, ModelImage, const bike::io::Value&) \u2014 the shared validation seam: the caller runs the config envelope decode at ordinal position 1, then state.model_digest extraction, artifact sha256 comparison, schema-2 writer_config decode, disposable model-image load for the model-bound state sections (dims, integration width, resolved mutable coefficients), document-level tire/drive, staged subdocuments and the state.runtime surface",
+      "runtime::NativeRideRuntime(RuntimeBootstrap) \u2014 native/src/runtime/runtime.{hpp,cpp}; ctor re-verifies sha256(image) and model_dims against the live Stepper so a fabricated bootstrap cannot pass, then decodes writer-topology-bound rider_contacts, assembles PhysicalStep and the step state, applies the ordered restore and initializes accounting; advance(target_step, const RideControl&, front, rear, std::optional<double> wall_budget_s), probe_step_inputs, snapshot, flush, prepare_samples/acknowledge_samples, accounting_state/recorded_columns/recorded_intervals, seal_episode, release_samples, set_finish_position, test_fail_at_step, reset, close \u2014 the full former binding surface on typed records",
+      "runtime::NativeRideRuntime::take_pending_warning() \u2014 the pure core holds the non-strict reference rejection as state; the adapter emits it as RuntimeWarning at the held-GIL boundary (the reset-time flush's warning survives the accounting-owner swap via a pending slot)",
+      "vread:: (native/src/runtime/value_readers.hpp) \u2014 the bike::io::Value twin of binding_readers: same acceptance set and 'path: reason' diagnostics; integer() gates on integer lexeme spelling (the JSON-safe int-vs-float distinction), real() admits the resolved $nonfinite Tagged{\"float64\"} sentinel like wire::real admitted nonfinite floats, wire_from_value() lowers a Value tree into the runtime's insertion-ordered Wire so the shared WorkHistory/ModelStatus/ReferenceMonitor from_wire consumers run unchanged",
+      "Stepper(std::span<const std::byte>[, const nativecfg::WriterConfig&]) \u2014 the owned model-image construction twin; engine::load_model_image shares the plugin rejection and framed mj_loadModelBuffer with the path face",
+      "runtime::decode_runtime_config / decode_bootstrap_state / verify_model_dims / expected_model_digest \u2014 native/src/runtime/bootstrap.{hpp,cpp}; the owned-document twins of the former binding parse_runtime_config/parse_bootstrap",
+      "runtime::compose_bootstrap_handles + emit_reference_warning \u2014 native/src/runtime/runtime_binding.{hpp,cpp}; the adapter-only seams: os.fspath artifact resolution, handle->Value materialization (string-key gate, ndarray dtype-kind gate, dataclass lowering, wide-int decimal lexemes, nonfinite sentinel) and held-GIL RuntimeWarning emission"
     ],
     "mandatory_cases": [
       "read_bootstrap loads both welded_pinned and native_start_welded captures: external $array payloads resolve under the capture-root convention with dtype/shape/order/sha256 verification, model digest/dims/integration-width pin, and the staged document inventory arrives intact",
       "NativeRideRuntime construction from the read bootstrap, a 4-step advance lands committed step 4 at 0.005s with a target reason (the welded fixture's 0.00125 timestep), snapshot parity, and reset() replaying the bootstrap bitwise with generation increment",
-      "each authored fault fixture rejects with std::invalid_argument matching the captured oracle message verbatim (control_period, digest, dims, missing_key, nonfinite, schema, unknown_key, width) — and the malformed_drive mutation keeps its recorded unexpected acceptance",
+      "each authored fault fixture rejects with std::invalid_argument matching the captured oracle message verbatim (control_period, digest, dims, missing_key, nonfinite, schema, unknown_key, width) \u2014 and the malformed_drive mutation keeps its recorded unexpected acceptance",
       "close() seals the runtime and every subsequent operation fails fast with the same runtime_error class the binding produced",
       "no nanobind/Python declaration enters runtime.hpp's transitive include graph (the test target carries no such include path)"
     ],
     "evidence": [
       "RED recorded: 'cmake --build native/build --target migration_T09' reported Not Run until the target existed; first compile surfaced -Wunsafe-buffer-usage and -Wframe-larger-than findings (fixed with span/bit_cast reads, std::to_address, boxed bootstrap temporaries and per-check-function mains)",
       "ctest --test-dir native/build -R '^migration_T09$' --output-on-failure: 1/1 passed (~16s); the same target passes in the standalone root graph build/native-release (1.1s)",
-      "BIKE_NATIVE_BUILD_PATH=$PWD/native/build uv run pytest tests/reference/test_native_ride_frontend.py test_native_research_environment.py test_native_research_capture.py -x -q: 25 passed — the earlier 25 failures were the stale-artifact provenance gate ('extension was not built from the current native source'), not behavioral",
+      "BIKE_NATIVE_BUILD_PATH=$PWD/native/build uv run pytest tests/reference/test_native_ride_frontend.py test_native_research_environment.py test_native_research_capture.py -x -q: 25 passed \u2014 the earlier 25 failures were the stale-artifact provenance gate ('extension was not built from the current native source'), not behavioral",
       "cmake --build native/build --target check_frontends + check_odr + check_scripts: clean across the 87-TU gcc frontend sweep (one real finding fixed: bootstrap_io.cpp missing its own header include, and 'expected string keys'/'numeric array dtype' diagnostics restored verbatim in the materializer)",
       "ordering fixes found in review, not tests: compose_bootstrap takes a decoded RuntimeConfig so the config envelope decodes before the artifact read like the old init-list position; advance/probe adapter lambdas check closed() before control decode; reset() lifts the reset-time flush warning into a pending slot that survives the accounting-owner swap"
     ],
-    "note": "T09's produced boundary replaces src/bike_sim/native/runtime.py's internals while the module keeps its Python API — replacement_paths on that row list every produced file including value_readers.hpp. The staged-subdocument/runtime-surface decode positions precede the topology-bound rider_contacts decode per the task's ordinal contract (the monolithic decoder interleaved them; the staged Value form makes the split explicit). Python remains the oracle through T63."
+    "note": "T09's produced boundary replaces src/bike_sim/native/runtime.py's internals while the module keeps its Python API \u2014 replacement_paths on that row list every produced file including value_readers.hpp. The staged-subdocument/runtime-surface decode positions precede the topology-bound rider_contacts decode per the task's ordinal contract (the monolithic decoder interleaved them; the staged Value form makes the split explicit). Python remains the oracle through T63."
   },
   "configuration_loading_contract": {
     "task": "T13",
     "ctest_name": "migration_T13",
     "build_target": "migration_T13",
     "kind": "executable",
-    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T13 test_t13.cpp) linked against bike_migration_test + bike_configuration + bike_platform; T13 added load.cpp, paths.cpp, profile_writer.cpp and load.hpp to the shared bike_configuration source list in BOTH build graphs — the standalone root graph (CMakeLists.txt, links bike::tomlplusplus) and the legacy binding graph (native/CMakeLists.txt, anchors the pinned tomlplusplus-3.4.0 include at BIKE_DEPENDENCY_ROOT with the same configure-time acquisition failure as RapidJSON, never a fallback search)",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T13 test_t13.cpp) linked against bike_migration_test + bike_configuration + bike_platform; T13 added load.cpp, paths.cpp, profile_writer.cpp and load.hpp to the shared bike_configuration source list in BOTH build graphs \u2014 the standalone root graph (CMakeLists.txt, links bike::tomlplusplus) and the legacy binding graph (native/CMakeLists.txt, anchors the pinned tomlplusplus-3.4.0 include at BIKE_DEPENDENCY_ROOT with the same configure-time acquisition failure as RapidJSON, never a fallback search)",
     "produced_apis": [
-      "bike::configuration::load_physics(const std::filesystem::path& file) — native/src/configuration/load.hpp + load.cpp + paths.cpp; bounded regular-file read through bike::platform::open_regular, pinned toml++ parse into bike::io::Value (parse failures re-raised as std::invalid_argument carrying the origin file and line), resolve_config_paths port resolving articulated.joint_envelope_path / articulated.joint_strength_path / equilibrium_state_file against the declaring file's directory via std::filesystem::weakly_canonical (absolute spellings untouched, never process CWD), then strict typed construction over the T12 FieldDecl/RecordSchema tables plus validate()",
-      "bike::configuration::resolve_physics(const bike::io::Value& overrides, const SimulationPhysicsConfig& base) — load.cpp; converts base to a plain Value document, requires overrides to be an object, ports _merge recursive deep-merge with null skipping and deep-copy replace, then constructs and validates the merged document — precedence defaults < configuration file < explicit overrides preserved",
-      "bike::configuration::write_physics_toml(const SimulationPhysicsConfig& config) — profile_writer.cpp; emits the '# Explicit candidate; not real-world safety validation.' banner, scalar fields before nested dotted tables in declaration order, json.dumps(ensure_ascii=True, allow_nan=False)-compatible scalar spelling including repr_double integral '.0' and finite-number rejection; returns the TOML text (exclusive destination creation stays at the platform/test boundary)"
+      "bike::configuration::load_physics(const std::filesystem::path& file) \u2014 native/src/configuration/load.hpp + load.cpp + paths.cpp; bounded regular-file read through bike::platform::open_regular, pinned toml++ parse into bike::io::Value (parse failures re-raised as std::invalid_argument carrying the origin file and line), resolve_config_paths port resolving articulated.joint_envelope_path / articulated.joint_strength_path / equilibrium_state_file against the declaring file's directory via std::filesystem::weakly_canonical (absolute spellings untouched, never process CWD), then strict typed construction over the T12 FieldDecl/RecordSchema tables plus validate()",
+      "bike::configuration::resolve_physics(const bike::io::Value& overrides, const SimulationPhysicsConfig& base) \u2014 load.cpp; converts base to a plain Value document, requires overrides to be an object, ports _merge recursive deep-merge with null skipping and deep-copy replace, then constructs and validates the merged document \u2014 precedence defaults < configuration file < explicit overrides preserved",
+      "bike::configuration::write_physics_toml(const SimulationPhysicsConfig& config) \u2014 profile_writer.cpp; emits the '# Explicit candidate; not real-world safety validation.' banner, scalar fields before nested dotted tables in declaration order, json.dumps(ensure_ascii=True, allow_nan=False)-compatible scalar spelling including repr_double integral '.0' and finite-number rejection; returns the TOML text (exclusive destination creation stays at the platform/test boundary)"
     ],
     "mandatory_cases": [
       "nested override precedence: explicit --dt/timestep override beats the file value which beats defaults; None/JSON null override values are skipped without erasing base fields; non-object overrides rejected",
-      "equivalent relative and absolute paths resolve to the same canonical asset identity; '..' segments, paths with spaces and missing named assets resolve/diagnose exactly like Python Path.resolve(strict=False) — weakly_canonical expectations, /var->/private/var canonicalization on macOS",
+      "equivalent relative and absolute paths resolve to the same canonical asset identity; '..' segments, paths with spaces and missing named assets resolve/diagnose exactly like Python Path.resolve(strict=False) \u2014 weakly_canonical expectations, /var->/private/var canonicalization on macOS",
       "write_physics_toml output reparsed by load_physics preserves the effective config; the exact banner text, dotted-table ordering and existing-destination rejection match plant_profile.write_physics_toml",
       "all shipped profiles (welded/distributed/pneumatic/legacy) and variant profiles equal their resolved JSON oracles with member-path diffs; unknown keys rejected at every nesting level; pneumatic front/rear child tables extend declared defaults",
       "malformed TOML, duplicate keys, non-table child sections, missing required fields, wrong scalar/array shapes, integer-lexeme strictness, nonfinite values and unsupported TOML values each produce stable 'path: reason' diagnostics; the missing-required Oxford-comma 'and' join matches CPython",
@@ -34989,7 +35039,7 @@
       "ctest --test-dir native/build -R '^migration_T13$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (PASS 661 checks)",
       "ctest --test-dir build/native-release -R '^migration_T13$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (0.03 s, standalone Python-free root graph)",
       "native static-analysis sweeps on the touched files: check_frontends/check_tidy/check_cppcheck/check_odr/check_scripts findings none, check_analyzer report-only alpha findings, headers + diagnostic-controls + context checks passed (context required the sibling-worktree .deps symlink to the shared dependency tree); git diff --check clean",
-      "bash tools/run_tests.sh native: NOT run for this task — the full outer gate is deferred to the post-T11 stage boundary by controller policy (a gate slot was never free: sibling worktree gates ran back-to-back for the duration). The task-level evidence above is what actually executed: focused ctest 1/1 in both build graphs, all nine sweep kinds clean, git diff --check clean"
+      "bash tools/run_tests.sh native: NOT run for this task \u2014 the full outer gate is deferred to the post-T11 stage boundary by controller policy (a gate slot was never free: sibling worktree gates ran back-to-back for the duration). The task-level evidence above is what actually executed: focused ctest 1/1 in both build graphs, all nine sweep kinds clean, git diff --check clean"
     ],
     "note": "T13 owns 2 python-removal.json rows (src/bike_sim/physics/plant_profile.py, src/bike_sim/physics/resolution.py); their status stays 'planned' until the T63 deletion gate and replacement_paths already list the five brief-named files exactly, so the ledger needed no row edit. Python sources remain the behavioral oracle. plant_profile.build_candidate stays out of scope (T26 flat_load dependency) as does cli/research.py resolve_research_physics; no environment-variable lookup or legacy package-resource search was introduced."
   },
@@ -34998,15 +35048,15 @@
     "ctest_name": "migration_T14",
     "build_target": "migration_T14",
     "kind": "executable",
-    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T14 test_t14.cpp) linked against bike_migration_test + bike_kinematics (bike_geometry arrives transitively through bike_kinematics's PUBLIC edge). bike_geometry (native/src/geometry/{specs.hpp,hardpoints.cpp,cockpit.cpp,validation.cpp}) and bike_kinematics (native/src/kinematics/{linkage_math.hpp,linkage_math.cpp,solver.hpp,solver.cpp,curves.cpp}) are defined in BOTH build graphs — the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt) — one compile-database entry per TU per graph so the ODR sweep sees no duplicate-definition pair. bike_geometry carries a PUBLIC '-framework Accelerate' edge because specs.hpp's detail::np_dot/np_norm declare the same Accelerate ILP64 CBLAS entry points the oracle's numpy resolves and curves.cpp's 2x2 np.linalg.solve reaches Accelerate's ILP64 dgesv.",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T14 test_t14.cpp) linked against bike_migration_test + bike_kinematics (bike_geometry arrives transitively through bike_kinematics's PUBLIC edge). bike_geometry (native/src/geometry/{specs.hpp,hardpoints.cpp,cockpit.cpp,validation.cpp}) and bike_kinematics (native/src/kinematics/{linkage_math.hpp,linkage_math.cpp,solver.hpp,solver.cpp,curves.cpp}) are defined in BOTH build graphs \u2014 the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt) \u2014 one compile-database entry per TU per graph so the ODR sweep sees no duplicate-definition pair. bike_geometry carries a PUBLIC '-framework Accelerate' edge because specs.hpp's detail::np_dot/np_norm declare the same Accelerate ILP64 CBLAS entry points the oracle's numpy resolves and curves.cpp's 2x2 np.linalg.solve reaches Accelerate's ILP64 dgesv.",
     "produced_apis": [
-      "bike::geometry::FrameGeometrySpecs / SuspensionHardwareSpecs / BikeSpecs — native/src/geometry/specs.hpp; every specs.py dataclass field in declaration order with declared defaults (reach 480, stack 646, head angle 64, wheelbase 1280.55, radii 372/352, fork/rear travel 180, eye-to-eye 205, stroke 65) plus the nested geometry()/suspension() properties",
-      "bike::geometry::compute_headtube_points / compute_front_axle / compute_ground_z / compute_rear_axle (specs-only and specs+front_axle overloads) / compute_trail / get_fixed_frame_points / compute_frame_angles — hardpoints.cpp; millimetre units, the headtube/axle/ground/trail/frame-angle calculator chain and the fixed-frame P0/P5/P7/P8/P9/P10/P11/P_HT_bot/BB record in dict insertion order with at()/operator[]/names() dict-key access",
-      "bike::geometry::validate_geometry — validation.cpp; the four domain checks in source order with verbatim messages ('Reach and Stack must be strictly positive.', 'Unphysical head angle: {value} deg', 'Wheelbase must be greater than reach.', 'Wheel radii must be positive.') and the true-return path",
-      "bike::geometry cockpit APIs in metres — SEATPOST_AXIS export, seatpost_top_for_saddle_z, saddle_geometry (nullopt mirrors the None default), saddle_top_z_for_height (negative-discriminant ValueError-equivalent -> std::invalid_argument), saddle_post_masses, saddle_post_center_of_mass, handlebar_grip_point, pedal_points — cockpit.cpp; Python round(x,6) correctly-rounded decimal round-trip and builtin max first-tie-wins/NaN semantics preserved",
-      "bike::kinematics::brentq(f, a, b, xtol=1e-12, rtol=1e-12, maxiter=100) + circle_circle_intersection_2d (span/Vec2/Vec3 overloads) — linkage_math.hpp/.cpp; brentq_pure ported statement-for-statement (bracket check, endpoint early returns, convergence expression, reversed-bracket direction sensitivity, NaN endpoint behavior, maxiter exhaustion return; rtol accepted but unused exactly like the source), circle intersection with 2-D/3-D center indexing, concentric/non-intersection ValueError-equivalents, boundary np.clip tolerance and sol1/sol2 ordering",
-      "bike::kinematics::HorstLinkageSolver + ReferencePoints/LinkErrors/KinematicState/KinematicTrajectory — solver.hpp/.cpp; fixed-frame and reference-point resolution, rigid-link invariants, rocker/seatstay angular offsets, _solve_pivots 9-tuple, instantaneous-LR Jacobian, state records in source dict key order, brentq wheel-travel inverse (theta_cs_0 - 0.70 .. + 0.10 bracket, xtol 1e-12), cached _stroke_table + np.interp shock-stroke inverse, solve_trajectory(n_points=101, max_travel=180.0) with the empty np.max 'zero-size array to reduction operation maximum which has no identity' ValueError and the negative-count np.linspace message",
-      "bike::kinematics::compute_instant_centers + InstantCenters — curves.cpp; per-sample coupler instant center via Accelerate ILP64 dgesv (the exact _dgesv$NEWLAPACK$ILP64 symbol the oracle's linalg resolves) with the singular-system np.nan fallback"
+      "bike::geometry::FrameGeometrySpecs / SuspensionHardwareSpecs / BikeSpecs \u2014 native/src/geometry/specs.hpp; every specs.py dataclass field in declaration order with declared defaults (reach 480, stack 646, head angle 64, wheelbase 1280.55, radii 372/352, fork/rear travel 180, eye-to-eye 205, stroke 65) plus the nested geometry()/suspension() properties",
+      "bike::geometry::compute_headtube_points / compute_front_axle / compute_ground_z / compute_rear_axle (specs-only and specs+front_axle overloads) / compute_trail / get_fixed_frame_points / compute_frame_angles \u2014 hardpoints.cpp; millimetre units, the headtube/axle/ground/trail/frame-angle calculator chain and the fixed-frame P0/P5/P7/P8/P9/P10/P11/P_HT_bot/BB record in dict insertion order with at()/operator[]/names() dict-key access",
+      "bike::geometry::validate_geometry \u2014 validation.cpp; the four domain checks in source order with verbatim messages ('Reach and Stack must be strictly positive.', 'Unphysical head angle: {value} deg', 'Wheelbase must be greater than reach.', 'Wheel radii must be positive.') and the true-return path",
+      "bike::geometry cockpit APIs in metres \u2014 SEATPOST_AXIS export, seatpost_top_for_saddle_z, saddle_geometry (nullopt mirrors the None default), saddle_top_z_for_height (negative-discriminant ValueError-equivalent -> std::invalid_argument), saddle_post_masses, saddle_post_center_of_mass, handlebar_grip_point, pedal_points \u2014 cockpit.cpp; Python round(x,6) correctly-rounded decimal round-trip and builtin max first-tie-wins/NaN semantics preserved",
+      "bike::kinematics::brentq(f, a, b, xtol=1e-12, rtol=1e-12, maxiter=100) + circle_circle_intersection_2d (span/Vec2/Vec3 overloads) \u2014 linkage_math.hpp/.cpp; brentq_pure ported statement-for-statement (bracket check, endpoint early returns, convergence expression, reversed-bracket direction sensitivity, NaN endpoint behavior, maxiter exhaustion return; rtol accepted but unused exactly like the source), circle intersection with 2-D/3-D center indexing, concentric/non-intersection ValueError-equivalents, boundary np.clip tolerance and sol1/sol2 ordering",
+      "bike::kinematics::HorstLinkageSolver + ReferencePoints/LinkErrors/KinematicState/KinematicTrajectory \u2014 solver.hpp/.cpp; fixed-frame and reference-point resolution, rigid-link invariants, rocker/seatstay angular offsets, _solve_pivots 9-tuple, instantaneous-LR Jacobian, state records in source dict key order, brentq wheel-travel inverse (theta_cs_0 - 0.70 .. + 0.10 bracket, xtol 1e-12), cached _stroke_table + np.interp shock-stroke inverse, solve_trajectory(n_points=101, max_travel=180.0) with the empty np.max 'zero-size array to reduction operation maximum which has no identity' ValueError and the negative-count np.linspace message",
+      "bike::kinematics::compute_instant_centers + InstantCenters \u2014 curves.cpp; per-sample coupler instant center via Accelerate ILP64 dgesv (the exact _dgesv$NEWLAPACK$ILP64 symbol the oracle's linalg resolves) with the singular-system np.nan fallback"
     ],
     "mandatory_cases": [
       "default BikeSpecs reproduces every specs.py default and the nested geometry()/suspension() property surfaces; fixed-frame P0/P5/P7/P8/P9/P10 literals and reference P2/P3/P4/P6/P12 defaults are verbatim",
@@ -35018,15 +35068,15 @@
       "compute_instant_centers bitwise-compares travel/ic_x/ic_z; the singular-system NaN fallback is ported verbatim but the 101-sample fixture never hits a singular 2x2 solve"
     ],
     "evidence": [
-      "RED recorded: 'cmake --build build/native-release --target migration_T14' failed exit 2 at link with 'ld: library bike_geometry not found' once the test TU compiled — the produced bike_geometry/bike_kinematics libraries were the missing boundary; during iteration the same target enforced -Wunsafe-buffer-usage (pointer arithmetic in py_round6/py_repr -> std::to_address end pointers, snprintf/strtod in py_g/py_fixed/py_round6 -> std::to_chars/std::from_chars, raw array indexing -> std::array::at), -Wsign-conversion, -Wlarge-by-value-copy (get_fixed_frame_points 216B, SaddleGeometry 96B, SolvedPivots/KinematicState/KinematicTrajectory returns — suppressed via the NATIVE_DIAG precedent from writers/tire.cpp), -Wunused-function and clang-tidy (designated initializers, cert-err58-cpp SEATPOST_AXIS init -> noexcept init, swappable params -> NOLINTNEXTLINE per test_t12 convention, member-init, cppcoreguidelines C-arrays -> std::array::data in the dgesv call)",
+      "RED recorded: 'cmake --build build/native-release --target migration_T14' failed exit 2 at link with 'ld: library bike_geometry not found' once the test TU compiled \u2014 the produced bike_geometry/bike_kinematics libraries were the missing boundary; during iteration the same target enforced -Wunsafe-buffer-usage (pointer arithmetic in py_round6/py_repr -> std::to_address end pointers, snprintf/strtod in py_g/py_fixed/py_round6 -> std::to_chars/std::from_chars, raw array indexing -> std::array::at), -Wsign-conversion, -Wlarge-by-value-copy (get_fixed_frame_points 216B, SaddleGeometry 96B, SolvedPivots/KinematicState/KinematicTrajectory returns \u2014 suppressed via the NATIVE_DIAG precedent from writers/tire.cpp), -Wunused-function and clang-tidy (designated initializers, cert-err58-cpp SEATPOST_AXIS init -> noexcept init, swappable params -> NOLINTNEXTLINE per test_t12 convention, member-init, cppcoreguidelines C-arrays -> std::array::data in the dgesv call)",
       "ctest --test-dir build/native-release -R '^migration_T14$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (PASS 70724 checks, standalone Python-free root graph)",
       "ctest --test-dir native/build -R '^migration_T14$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (legacy binding graph)",
-      "cmake --build build/native-release (all targets) + ctest --test-dir build/native-release --output-on-failure: 12/12 tests passed (105.66 s) — the standalone graph compiles/links bike_io, bike_platform, bike_rider_math, bike_configuration, bike_geometry, bike_kinematics and every migration target",
-      "cmake --build native/build (all targets): 100% built including bike_native — the legacy graph compiles/links the same geometry/kinematics TUs unchanged",
+      "cmake --build build/native-release (all targets) + ctest --test-dir build/native-release --output-on-failure: 12/12 tests passed (105.66 s) \u2014 the standalone graph compiles/links bike_io, bike_platform, bike_rider_math, bike_configuration, bike_geometry, bike_kinematics and every migration target",
+      "cmake --build native/build (all targets): 100% built including bike_native \u2014 the legacy graph compiles/links the same geometry/kinematics TUs unchanged",
       "cmake --build native/build --target check_tidy: findings none (exit 0) after the tidy-compliance fixes above",
-      "bash tools/run_tests.sh native: exit 0 — build, all sweep kinds green (frontends/tidy/cppcheck/odr/scripts/headers findings none, analyzer report-only, diagnostic-controls 0 failed, context SDK controls all passed), ctest 15/15, check_native_contracts passed, 2957 passed / 196 warnings pytest in 594 s"
+      "bash tools/run_tests.sh native: exit 0 \u2014 build, all sweep kinds green (frontends/tidy/cppcheck/odr/scripts/headers findings none, analyzer report-only, diagnostic-controls 0 failed, context SDK controls all passed), ctest 15/15, check_native_contracts passed, 2957 passed / 196 warnings pytest in 594 s"
     ],
-    "note": "T14 owns the 9 python-removal.json rows under owner_task T14 (geometry/{__init__,cockpit,hardpoints,specs,validation}.py + kinematics/{__init__,curves,linkage_math,solver}.py); their status stays 'planned' until the T63 deletion gate and replacement_paths already listed all ten produced files verbatim — no ledger row needed editing. The Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
+    "note": "T14 owns the 9 python-removal.json rows under owner_task T14 (geometry/{__init__,cockpit,hardpoints,specs,validation}.py + kinematics/{__init__,curves,linkage_math,solver}.py); their status stays 'planned' until the T63 deletion gate and replacement_paths already listed all ten produced files verbatim \u2014 no ledger row needed editing. The Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
   },
   "owned_research_bootstrap_contract": {
     "task": "T10",
@@ -35035,42 +35085,42 @@
     "kind": "native_contract_regression",
     "cmake_registration": "native/tests/migration/CMakeLists.txt (complete block after migration_T09; links bike_migration_test + bike_core + bike_engine + bike_rider_math, Accelerate on macOS, MuJoCo rpath rewrite; compiled with no nanobind/Python include path as the include-closure contract)",
     "produced_apis": [
-      "runtime::ResearchBootstrap {ride, config, tape, startup} + read_research_bootstrap(directory) + make_research(bootstrap) — native/src/runtime/research_io.{hpp,cpp} + research.hpp; the owned-record twin of the binding's staged research construction",
-      "runtime::decode_research_config / decode_noise_tape / decode_sensor_state — research_io.cpp; vread-based decoders preserving the nanobind reader acceptance set and 'path: reason' diagnostics",
-      "NativeResearchRuntime::take_pending_warning — research.{hpp,cpp}; the pure warning seam mirroring NativeRideRuntime::take_pending_warning; the adapter drains it under the GIL with PyErr_WarnEx(PyExc_RuntimeWarning) in research_binding.cpp"
+      "runtime::ResearchBootstrap {ride, config, tape, startup} + read_research_bootstrap(directory) + make_research(bootstrap) \u2014 native/src/runtime/research_io.{hpp,cpp} + research.hpp; the owned-record twin of the binding's staged research construction",
+      "runtime::decode_research_config / decode_noise_tape / decode_sensor_state \u2014 research_io.cpp; vread-based decoders preserving the nanobind reader acceptance set and 'path: reason' diagnostics",
+      "NativeResearchRuntime::take_pending_warning \u2014 research.{hpp,cpp}; the pure warning seam mirroring NativeRideRuntime::take_pending_warning; the adapter drains it under the GIL with PyErr_WarnEx(PyExc_RuntimeWarning) in research_binding.cpp"
     ],
     "mandatory_cases": [
       "read_research_bootstrap loads the delayed_bootstrap capture: research.json external $array payloads (noise tape, dropout tape, geometry vertices) resolve under the capture-root convention with dtype/shape/order/sha256 verification, and the ride bootstrap composes through T09 read_bootstrap",
       "decoded fields pin the oracle's research configuration (capture_mode, control/delay/sensor/max steps, record_decimation, timestep, track length, start position, sensor latency/sample period, IMU enable, zero dropout probability) and the startup SensorState queue",
       "make_research constructs a NativeResearchRuntime from owned records only; control windows, transitions, observations, and snapshot match the captured Python oracle transitions fixture within tolerance",
-      "the startup queue's raw observation keeps source-time time_s while SensorPipeline::read() restamps delivery time_s to the sample period boundary — the intentional timing difference is asserted, not flattened",
+      "the startup queue's raw observation keeps source-time time_s while SensorPipeline::read() restamps delivery time_s to the sample period boundary \u2014 the intentional timing difference is asserted, not flattened",
       "close() seals the runtime and every subsequent operation fails fast with the same runtime_error class the binding produced; reset() replays the bootstrap",
       "negative controls: nonexistent directory and malformed/truncated noise tape reject with the recorded diagnostics",
       "no nanobind/Python declaration enters research.hpp's transitive include graph (the test target carries no such include path)"
     ],
     "evidence": [
       "RED recorded: migration_T10 target absent until the CMake block landed; first compile surfaced -Wlarge-by-value-copy on vread::fixed<9> (fixed with a vread::vector row read + size check mirroring the binding's N=9 bound), an is_null ADL ambiguity, an int-float conversion warning, and a nodiscard misuse in the test (all fixed)",
-      "first ctest run failed one check — 'queued startup sample equals the oracle's first delivery' — because SensorPipeline::read() restamps time_s to 0.01 while the queued raw sample keeps source-time 0.0; the test now asserts the intentional delta by comparing a restamped copy",
+      "first ctest run failed one check \u2014 'queued startup sample equals the oracle's first delivery' \u2014 because SensorPipeline::read() restamps time_s to 0.01 while the queued raw sample keeps source-time 0.0; the test now asserts the intentional delta by comparing a restamped copy",
       "ctest --test-dir build/native-release -R '^migration_T10$' --output-on-failure: 1/1 passed (~1s; six check groups: 247 + 13 + 20 + 31 + 12 + 34 checks)",
       "uv run cmake -S native -B native/build && cmake --build native/build --target bike_native: extension green in the legacy graph with research.cpp + research_io.cpp compiled inside bike_native_contract_core and research_binding.cpp inside the module",
-      "NATIVE_TEST_BUILD_PATH=$PWD/native/build BIKE_NATIVE_BUILD_PATH=$PWD/native/build uv run pytest tests/reference/test_native_research_environment.py test_native_research_capture.py test_native_research_failures.py test_native_research_sensors.py test_native_research_policy.py test_native_research_programs.py -x -q: 69 passed — including RuntimeWarning parity through the new adapter drain seam",
+      "NATIVE_TEST_BUILD_PATH=$PWD/native/build BIKE_NATIVE_BUILD_PATH=$PWD/native/build uv run pytest tests/reference/test_native_research_environment.py test_native_research_capture.py test_native_research_failures.py test_native_research_sensors.py test_native_research_policy.py test_native_research_programs.py -x -q: 69 passed \u2014 including RuntimeWarning parity through the new adapter drain seam",
       "check_tidy findings fixed: bugprone-easily-swappable-parameters on decode_noise_tape (NOLINTNEXTLINE matching the codebase convention) and two bugprone-unchecked-optional-access sites in test_t10.cpp (switched to engaged(), the codebase's checked-unwrap helper)",
-      "bash tools/run_tests.sh native: exit 0 — all sweeps + contract checks green, ctest 16/16, 2957 passed / 196 warnings pytest in 615.6 s (clean-tree final run; log /tmp/t10-gate3.log)",
-      "gate note: tests/reference/test_native_check_tools.py's header-sweep cap bumped 240->360 — the sweep scales with first-party header count (112->113 headers, 792->799 probe TUs with research_io.hpp) and already ran ~241s at HEAD under gate load (MallocScribble on); measured 260s with T10 under a concurrent gate on the same machine"
+      "bash tools/run_tests.sh native: exit 0 \u2014 all sweeps + contract checks green, ctest 16/16, 2957 passed / 196 warnings pytest in 615.6 s (clean-tree final run; log /tmp/t10-gate3.log)",
+      "gate note: tests/reference/test_native_check_tools.py's header-sweep cap bumped 240->360 \u2014 the sweep scales with first-party header count (112->113 headers, 792->799 probe TUs with research_io.hpp) and already ran ~241s at HEAD under gate load (MallocScribble on); measured 260s with T10 under a concurrent gate on the same machine"
     ],
-    "note": "T10 owns no Python source rows itself; its produced boundaries are appended to the src/bike_sim/native/research.py row's replacement_paths (the module keeps its Python API through T63), matching the T08->T09 convention. The pure research boundary consumes only owned records and bike::io::Value; nanobind/Python stays in research_binding.cpp/.hpp. research.hpp no longer includes runtime_binding.hpp and research.cpp no longer calls emit_reference_warning — the pending-warning slot crosses the boundary as data."
+    "note": "T10 owns no Python source rows itself; its produced boundaries are appended to the src/bike_sim/native/research.py row's replacement_paths (the module keeps its Python API through T63), matching the T08->T09 convention. The pure research boundary consumes only owned records and bike::io::Value; nanobind/Python stays in research_binding.cpp/.hpp. research.hpp no longer includes runtime_binding.hpp and research.cpp no longer calls emit_reference_warning \u2014 the pending-warning slot crosses the boundary as data."
   },
   "seeded_random_boundary_contract": {
     "task": "T19",
     "ctest_name": "migration_T19",
     "build_target": "migration_T19",
     "kind": "executable",
-    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T19 test_t19.cpp) linked against bike_migration_test + bike_random; the bike_random STATIC library (native/src/random/{numpy_compat.hpp,numpy_compat.cpp,seed_sequence.cpp,distributions.cpp,noise_tape.cpp}) is defined in BOTH build graphs — the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt) — one compile-database entry per TU per graph. The boundary carries no Python/nanobind/numpy or third-party dependency; it reuses first-party record headers only (configuration/rider_spec.hpp, rider/rider_posture.hpp).",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T19 test_t19.cpp) linked against bike_migration_test + bike_random; the bike_random STATIC library (native/src/random/{numpy_compat.hpp,numpy_compat.cpp,seed_sequence.cpp,distributions.cpp,noise_tape.cpp}) is defined in BOTH build graphs \u2014 the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt) \u2014 one compile-database entry per TU per graph. The boundary carries no Python/nanobind/numpy or third-party dependency; it reuses first-party record headers only (configuration/rider_spec.hpp, rider/rider_posture.hpp).",
     "produced_apis": [
-      "bike::random::SeedSequence — numpy_compat.hpp + seed_sequence.cpp; bit_generator.pyx's entropy coercion to little-endian uint32 words (int path and the _coerce_to_uint32_array string element grammar: '0x'-prefixed int(x,16), DECIMAL_RE-gated int(x) including CPython whitespace/underscore/sign rules), pool_size fixed at DEFAULT_POOL_SIZE=4, the INIT_A/MULT_A hashmix + MIX_MULT_L/R mix entropy pool, get_assembled_entropy's spawn-key zero-padding rule (gh-16539), generate_state(n_words, uint32|uint64) INIT_B/MULT_B output, spawn(n_children) keys and n_children_spawned bookkeeping",
-      "bike::random::NumpyRng — numpy_compat.cpp + distributions.cpp; SeedSequence.generate_state(4, np.uint64) -> pcg64_set_seed -> pcg_setseq_128_srandom_r seeding order, the 128-bit XSL-RR step/output with emulated 64x64->128 multiply, the buffered next_uint32 half-word lane (has_uint32/uinteger, low half first), uint64_to_double, distributions.c's Ziggurat standard normal with all slow paths and draw counts, uniform/normal loc-scale transforms with the OverflowError/'scale < 0'/'high - low < 0' checks, _rand_int64's scalar+fill Lemire dispatch (rng==0, 32-bit lane at <=0xFFFFFFFF, direct next32/next64 full-range lanes, Lemire64) and _generator.pyx choice()'s kahan_sum validation + sequential cdf cumsum + right-side searchsorted",
-      "bike::random::SensorNoiseConfig / NoiseTape / SensorNoiseSource / build_noise_tape — noise_tape.cpp; sensor_noise.py's four carried config scales with source-order scalar(minimum=0.) checks, NoiseTape.__post_init__'s shape->finite->[0,1) domain order, one-parent SeedSequence(seed).spawn(2) child streams (noise=(0,), dropout=(1,)) and draw()'s fixed four normal calls + one dropout uniform per call even at zero scale or disabled IMU",
-      "bike::random::RiderRandomSpec / RiderKeyframe / RiderProgram / SampledRider / sample_rider — noise_tape.cpp; rider_random.py's five (low, high) domains in __post_init__ order with verbatim 'invalid {name}'/chain messages, then sample_rider's five uniform draws (mass, height, torso lean, pelvis pitch, human torque) on one seeded generator producing variant='articulated_planar' and a single time-0 keyframe"
+      "bike::random::SeedSequence \u2014 numpy_compat.hpp + seed_sequence.cpp; bit_generator.pyx's entropy coercion to little-endian uint32 words (int path and the _coerce_to_uint32_array string element grammar: '0x'-prefixed int(x,16), DECIMAL_RE-gated int(x) including CPython whitespace/underscore/sign rules), pool_size fixed at DEFAULT_POOL_SIZE=4, the INIT_A/MULT_A hashmix + MIX_MULT_L/R mix entropy pool, get_assembled_entropy's spawn-key zero-padding rule (gh-16539), generate_state(n_words, uint32|uint64) INIT_B/MULT_B output, spawn(n_children) keys and n_children_spawned bookkeeping",
+      "bike::random::NumpyRng \u2014 numpy_compat.cpp + distributions.cpp; SeedSequence.generate_state(4, np.uint64) -> pcg64_set_seed -> pcg_setseq_128_srandom_r seeding order, the 128-bit XSL-RR step/output with emulated 64x64->128 multiply, the buffered next_uint32 half-word lane (has_uint32/uinteger, low half first), uint64_to_double, distributions.c's Ziggurat standard normal with all slow paths and draw counts, uniform/normal loc-scale transforms with the OverflowError/'scale < 0'/'high - low < 0' checks, _rand_int64's scalar+fill Lemire dispatch (rng==0, 32-bit lane at <=0xFFFFFFFF, direct next32/next64 full-range lanes, Lemire64) and _generator.pyx choice()'s kahan_sum validation + sequential cdf cumsum + right-side searchsorted",
+      "bike::random::SensorNoiseConfig / NoiseTape / SensorNoiseSource / build_noise_tape \u2014 noise_tape.cpp; sensor_noise.py's four carried config scales with source-order scalar(minimum=0.) checks, NoiseTape.__post_init__'s shape->finite->[0,1) domain order, one-parent SeedSequence(seed).spawn(2) child streams (noise=(0,), dropout=(1,)) and draw()'s fixed four normal calls + one dropout uniform per call even at zero scale or disabled IMU",
+      "bike::random::RiderRandomSpec / RiderKeyframe / RiderProgram / SampledRider / sample_rider \u2014 noise_tape.cpp; rider_random.py's five (low, high) domains in __post_init__ order with verbatim 'invalid {name}'/chain messages, then sample_rider's five uniform draws (mass, height, torso lean, pelvis pitch, human torque) on one seeded generator producing variant='articulated_planar' and a single time-0 keyframe"
     ],
     "mandatory_cases": [
       "raw PCG64 bitstream, spawned streams, uniforms, standard normal (Ziggurat), bounded integers and choice bitwise-compared against the manifest-pinned random/* oracle fixtures (seeds 0, 1, 1234, a >u64 decimal entropy string with spawn key, and 2**63+11)",
@@ -35079,7 +35129,7 @@
       "integer bounds/errors in source order: size=0 bypasses validation without consuming state, 'high <= 0'/'low >= high'/'high < 0'/'low > high' at the endpoint flag legs, INT64_MIN/INT64_MAX and full-range intervals",
       "uniform's nonfinite-range OverflowError and 'high - low < 0'; normal's 'scale < 0' signbit check with scale=0 still consuming exactly one Ziggurat draw and NaN scale producing NaN",
       "choice's population/probability domain checks in source order ('a must be a positive integer unless no samples are taken', 'Probabilities contain NaN', 'Probabilities are not non-negative', 'Probabilities do not sum to 1. ...'), empty-p with nonzero vs zero sample counts, and the sqrt(eps) tolerance edge",
-      "SensorNoiseSource's one-parent two-child construction, the per-draw four-call normal order plus dropout uniform even at zero scales, NoiseTape's shape/finiteness/[0,1) domain checks and build_noise_tape's count domain — all bitwise-compared against research-noise fixtures",
+      "SensorNoiseSource's one-parent two-child construction, the per-draw four-call normal order plus dropout uniform even at zero scales, NoiseTape's shape/finiteness/[0,1) domain checks and build_noise_tape's count domain \u2014 all bitwise-compared against research-noise fixtures",
       "RiderRandomSpec defaults, per-field chain/scalar error messages and sample_rider's bitwise five-draw sample against rider-samples.json"
     ],
     "evidence": [
@@ -35087,26 +35137,26 @@
       "ctest --test-dir build/native-release -R '^migration_T19$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (standalone Python-free root graph)",
       "ctest --test-dir native/build -R '^migration_T19$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (legacy binding graph)",
       "source-level review against numpy mirror rev (numpy/random/{bit_generator.pyx,_pcg64.pyx,_bounded_integers.pyx.in,_generator.pyx,_common.pyx,src/pcg64/pcg64.{h,c},src/distributions/distributions.c}): seeding order, multiplier constants, buffered lane, Ziggurat tables/constants (wi/ki/fi extracted verbatim from ziggurat_constants.h), Lemire dispatch and rejection thresholds, kahan/cumsum/searchsorted ordering, SeedSequence constants and spawn-key padding all confirmed line-for-line; np.cumsum verified sequential against the pinned 2.5.2 oracle",
-      "bash tools/run_tests.sh native: exit 0 — all 9 sweeps clean (frontends/tidy/analyzer report-only alpha/cppcheck/odr/scripts/headers/diagnostic-controls/context), ctest 18/18, contract checks passed, 2957 passed / 196 warnings pytest in 1109 s"
+      "bash tools/run_tests.sh native: exit 0 \u2014 all 9 sweeps clean (frontends/tidy/analyzer report-only alpha/cppcheck/odr/scripts/headers/diagnostic-controls/context), ctest 18/18, contract checks passed, 2957 passed / 196 warnings pytest in 1109 s"
     ],
-    "note": "T19 owns 2 python-removal.json rows (src/bike_sim/sim/research/rider_random.py, src/bike_sim/sim/research/sensor_noise.py); their status stays 'planned' until the T63 deletion gate and replacement_paths already listed the six produced files verbatim — no ledger row needed editing. sensors.py's full SensorConfig belongs to T34 (F140), so SensorNoiseConfig intentionally carries only the four scales sensor_noise.py reads; random::NoiseTape mirrors runtime::NoiseTape's layout but keeps __post_init__'s distinct messages/order (the runtime twin conflates the finite and [0,1) legs). random::RiderKeyframe/RiderProgram mirror the source dataclass shape locally to keep this header free of the runtime samples chain. Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
+    "note": "T19 owns 2 python-removal.json rows (src/bike_sim/sim/research/rider_random.py, src/bike_sim/sim/research/sensor_noise.py); their status stays 'planned' until the T63 deletion gate and replacement_paths already listed the six produced files verbatim \u2014 no ledger row needed editing. sensors.py's full SensorConfig belongs to T34 (F140), so SensorNoiseConfig intentionally carries only the four scales sensor_noise.py reads; random::NoiseTape mirrors runtime::NoiseTape's layout but keeps __post_init__'s distinct messages/order (the runtime twin conflates the finite and [0,1) legs). random::RiderKeyframe/RiderProgram mirror the source dataclass shape locally to keep this header free of the runtime samples chain. Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
   },
   "model_mass_rider_suspension_contract": {
     "task": "T15",
     "ctest_name": "migration_T15",
     "build_target": "migration_T15",
     "kind": "executable",
-    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T15 test_t15.cpp) linked against bike_migration_test + bike_model + '-framework Accelerate', plus bike_core/bike_engine/bike_rider_math (standalone root graph) or bike_native_contract_core/bike_native_engine/bike_rider_math (legacy binding graph); mujoco load-name rewritten per graph. bike_model (native/src/model/{checks.hpp,mass.hpp,mass.cpp,rider_geometry.hpp,rider_geometry.cpp,suspension_setup.hpp,suspension_setup.cpp}) is defined in BOTH build graphs — the standalone root graph (CMakeLists.txt add_library(bike_model)) and the legacy binding graph (native/CMakeLists.txt) — one compile-database entry per TU per graph so the ODR sweep sees no duplicate-definition pair. Compiling test_t15.cpp against model/*.hpp is also the include-closure contract for the new headers.",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T15 test_t15.cpp) linked against bike_migration_test + bike_model + '-framework Accelerate', plus bike_core/bike_engine/bike_rider_math (standalone root graph) or bike_native_contract_core/bike_native_engine/bike_rider_math (legacy binding graph); mujoco load-name rewritten per graph. bike_model (native/src/model/{checks.hpp,mass.hpp,mass.cpp,rider_geometry.hpp,rider_geometry.cpp,suspension_setup.hpp,suspension_setup.cpp}) is defined in BOTH build graphs \u2014 the standalone root graph (CMakeLists.txt add_library(bike_model)) and the legacy binding graph (native/CMakeLists.txt) \u2014 one compile-database entry per TU per graph so the ODR sweep sees no duplicate-definition pair. Compiling test_t15.cpp against model/*.hpp is also the include-closure contract for the new headers.",
     "produced_apis": [
-      "bike::model::checks::{scalar,integer,...} — model/checks.hpp; the checks.py validation vocabulary shared by the three model TUs (float/int fast paths of the isinstance dispatch, verbatim 'invalid {name}' / '{name}: invalid integer domain' message text); focused extra file recorded so the message strings are not forked per-TU",
-      "bike::model::WheelComponent / WheelInertia / wheel_body_inertia — mass.hpp/.cpp; inertia.py's per-component ring mass/inertia decomposition (point-mass I=mr^2 accumulation, the ring_2kg_0p1_0p5_0p06.f64 fixture surface)",
-      "bike::model::XmlGeomElement / XmlInertialAttributes / XmlBodyElement + assign_component_mass / register_component / add_body_inertial — mass.cpp; component_masses.py's XML geom→body mass distribution and inertial-writer path with provenance bookkeeping",
-      "bike::model::BikeMassSpecs (component_masses(), component_provenance(), compute_wheel_rotational_inertia) / ComponentCenter / compute_component_centers_of_mass / saddle_top_z_for_rider / StaticSystemCg / static_contact_loads — mass.hpp/.cpp; mass.py's declared mass table + provenance, component CoM, static system CG, and sim/ride/mass_properties.py's compiled-model CoM/contact-load reads against wheel_contacts.mjb",
-      "bike::model::RiderGeom / RiderBody / validate_rider_body / LegChain / SeatedPose (interface_loads_n(), interface_shares()) / seated_path_masses / solve_leg_joints / LegFkResult / RiderCenter / compute_rider_centers_of_mass (both overloads) / saddle_path_apparent_mass / rider_from_args / ArticulatedPose / validate_articulated_pose — rider_geometry.hpp/.cpp; rider.py + rider_segments.py + seated_climb.py's spec→geometry resolution, declared-variant table, segment/leg-FK chains, rider CoM, seated-pose solve and apparent-mass path",
-      "bike::model::AirSpringSpecs / validate_air_spring_specs / AirSpringForceCurve / ForkAirSpring (compute_volumes, compute_pressures_pa, compute_axial_force, calibrate_psi_for_sag, compute_force_curve, fit_polynomial_mjcf, token/pressure setters) — suspension_setup.hpp/.cpp; air_spring.py's volume/pressure/axial-force model, sag calibration and the polynomial MJCF fit",
-      "bike::model::CoilShockSpecs / validate_coil_shock_specs / CoilShock (legacy_behavior toggle) — suspension_setup.hpp/.cpp; coil_shock.py's spring-force model and the legacy-behavior branch",
-      "bike::model::DamperPreset / DamperClickConfig / BaseDamper / Charger3Damper / SuperDeluxeDamper (set_clicks, get_effective_coefficients, compute_damping_components, compute_legacy_damping_force, toggle_lockout, DynoCurve records) — suspension_setup.hpp/.cpp; damper.py's click-domain model, HSC/LSC/rebound/HBO coefficient maps, dyno curves and lockout/legacy paths",
-      "bike::model::BikeSuspensionSystem (apply_preset, cycle_preset) / SuspensionTuning — suspension_setup.hpp/.cpp; tuning.py's preset table, damper/suspension assembly and cycling order"
+      "bike::model::checks::{scalar,integer,...} \u2014 model/checks.hpp; the checks.py validation vocabulary shared by the three model TUs (float/int fast paths of the isinstance dispatch, verbatim 'invalid {name}' / '{name}: invalid integer domain' message text); focused extra file recorded so the message strings are not forked per-TU",
+      "bike::model::WheelComponent / WheelInertia / wheel_body_inertia \u2014 mass.hpp/.cpp; inertia.py's per-component ring mass/inertia decomposition (point-mass I=mr^2 accumulation, the ring_2kg_0p1_0p5_0p06.f64 fixture surface)",
+      "bike::model::XmlGeomElement / XmlInertialAttributes / XmlBodyElement + assign_component_mass / register_component / add_body_inertial \u2014 mass.cpp; component_masses.py's XML geom\u2192body mass distribution and inertial-writer path with provenance bookkeeping",
+      "bike::model::BikeMassSpecs (component_masses(), component_provenance(), compute_wheel_rotational_inertia) / ComponentCenter / compute_component_centers_of_mass / saddle_top_z_for_rider / StaticSystemCg / static_contact_loads \u2014 mass.hpp/.cpp; mass.py's declared mass table + provenance, component CoM, static system CG, and sim/ride/mass_properties.py's compiled-model CoM/contact-load reads against wheel_contacts.mjb",
+      "bike::model::RiderGeom / RiderBody / validate_rider_body / LegChain / SeatedPose (interface_loads_n(), interface_shares()) / seated_path_masses / solve_leg_joints / LegFkResult / RiderCenter / compute_rider_centers_of_mass (both overloads) / saddle_path_apparent_mass / rider_from_args / ArticulatedPose / validate_articulated_pose \u2014 rider_geometry.hpp/.cpp; rider.py + rider_segments.py + seated_climb.py's spec\u2192geometry resolution, declared-variant table, segment/leg-FK chains, rider CoM, seated-pose solve and apparent-mass path",
+      "bike::model::AirSpringSpecs / validate_air_spring_specs / AirSpringForceCurve / ForkAirSpring (compute_volumes, compute_pressures_pa, compute_axial_force, calibrate_psi_for_sag, compute_force_curve, fit_polynomial_mjcf, token/pressure setters) \u2014 suspension_setup.hpp/.cpp; air_spring.py's volume/pressure/axial-force model, sag calibration and the polynomial MJCF fit",
+      "bike::model::CoilShockSpecs / validate_coil_shock_specs / CoilShock (legacy_behavior toggle) \u2014 suspension_setup.hpp/.cpp; coil_shock.py's spring-force model and the legacy-behavior branch",
+      "bike::model::DamperPreset / DamperClickConfig / BaseDamper / Charger3Damper / SuperDeluxeDamper (set_clicks, get_effective_coefficients, compute_damping_components, compute_legacy_damping_force, toggle_lockout, DynoCurve records) \u2014 suspension_setup.hpp/.cpp; damper.py's click-domain model, HSC/LSC/rebound/HBO coefficient maps, dyno curves and lockout/legacy paths",
+      "bike::model::BikeSuspensionSystem (apply_preset, cycle_preset) / SuspensionTuning \u2014 suspension_setup.hpp/.cpp; tuning.py's preset table, damper/suspension assembly and cycling order"
     ],
     "mandatory_cases": [
       "mass_specs + component_masses fixtures replay bitwise: BikeMassSpecs declared defaults, component mass table and provenance records in source order; inertia fixtures replay the wheel rotational-inertia decomposition and the ring literal bitwise",
@@ -35121,9 +35171,9 @@
       "ctest --test-dir build/native-release -R '^migration_T15$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (PASS 19542 checks, standalone Python-free root graph)",
       "ctest --test-dir native/build -R '^migration_T15$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (legacy binding graph, PASS 19542 checks)",
       "cmake --build native/build --target check_frontends / check_tidy / check_cppcheck / check_odr: findings none (exit 0); header sweep via the native check orchestrator: 120 headers / 1203 header TUs, findings none",
-      "bash tools/run_tests.sh native: exit 0 — build, all sweep kinds green (frontends/tidy/cppcheck/odr/scripts/headers findings none, analyzer report-only, diagnostic-controls 0 failed, context SDK controls all passed), ctest 18/18, check_native_contracts passed, 2957 passed / 196 warnings pytest in 1149 s"
+      "bash tools/run_tests.sh native: exit 0 \u2014 build, all sweep kinds green (frontends/tidy/cppcheck/odr/scripts/headers findings none, analyzer report-only, diagnostic-controls 0 failed, context SDK controls all passed), ctest 18/18, check_native_contracts passed, 2957 passed / 196 warnings pytest in 1149 s"
     ],
-    "note": "T15 owns the 11 python-removal.json rows under owner_task T15 (physics/{air_spring,coil_shock,component_masses,damper,inertia,mass,rider,rider_segments,seated_climb,tuning}.py + sim/ride/mass_properties.py); their status stays 'planned' until the T63 deletion gate. replacement_paths now also list model/checks.hpp — the focused shared validation-vocabulary header the three model TUs include — alongside the six brief-listed files plus test_t15.cpp. The Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
+    "note": "T15 owns the 11 python-removal.json rows under owner_task T15 (physics/{air_spring,coil_shock,component_masses,damper,inertia,mass,rider,rider_segments,seated_climb,tuning}.py + sim/ride/mass_properties.py); their status stays 'planned' until the T63 deletion gate. replacement_paths now also list model/checks.hpp \u2014 the focused shared validation-vocabulary header the three model TUs include \u2014 alongside the six brief-listed files plus test_t15.cpp. The Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
   },
   "native_encode_boundary_contract": {
     "task": "T11",
@@ -35132,11 +35182,11 @@
     "kind": "executable",
     "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T11 test_t11.cpp) linked against bike_migration_test + the Python-free core set (bike_core in the standalone root graph, bike_native_contract_core in the legacy binding graph) + bike_engine + bike_rider_math, Accelerate on macOS and the pinned MuJoCo rpath rewrite (runtime_identity resolves mj_versionString/dladdr). Compiled with no nanobind/Python include path in either graph: compiling test_t11.cpp against runtime/encode.hpp + runtime/provenance.hpp is the include-closure contract itself. T11 moved runtime/encode.cpp and runtime/provenance.cpp into BOTH core source lists and generated the standalone root graph's Track-B research_build_identity.hpp with the same manifest algorithm and context fields as the legacy graph; the optional module keeps only encode_binding.cpp (held-GIL plan materializer, Piece/row boxing, bind_provenance) plus the pre-existing samples_binding.cpp delegation.",
     "produced_apis": [
-      "runtime::EncodePlan / EncodePlanColumn / EncodePlanMask + runtime::parse_encode_plan(bike::io::Value) — runtime/encode.{hpp,cpp}; the plan parser re-expressed over value_readers.hpp (vread::) instead of nanobind handles, preserving exact-key, type, path, range-domain and channel-routing diagnostics verbatim",
-      "runtime::parse_derived_event_plan — the derived-events plan twin over the same staged Value document",
-      "runtime::encode_table_native(plan, samples, row_range) -> EncodedTable — the fixed physics/forces column emitters plus channels path routing/prefix indexing over retained PhysicalSampleData; Piece stays move-only with member_slots pointing into the piece's own child map",
-      "runtime::applied_command_rows_native / derived_event_rows_native — AppliedCommandRow (std::optional<Wire> preserving absent vs explicit-null brake demands) and DerivedEventRow (interval id, derived kind, insertion-ordered changed labels); chunked scans replay the prefix to seed state",
-      "runtime::RuntimeIdentity + runtime_identity() — provenance.{hpp,cpp} returns a pure record {mujoco_version, mujoco_library_path, native_source_sha256, build_context_json} instead of a nanobind dict; encode_binding.cpp boxes it and registers runtime_identity()"
+      "runtime::EncodePlan / EncodePlanColumn / EncodePlanMask + runtime::parse_encode_plan(bike::io::Value) \u2014 runtime/encode.{hpp,cpp}; the plan parser re-expressed over value_readers.hpp (vread::) instead of nanobind handles, preserving exact-key, type, path, range-domain and channel-routing diagnostics verbatim",
+      "runtime::parse_derived_event_plan \u2014 the derived-events plan twin over the same staged Value document",
+      "runtime::encode_table_native(plan, samples, row_range) -> EncodedTable \u2014 the fixed physics/forces column emitters plus channels path routing/prefix indexing over retained PhysicalSampleData; Piece stays move-only with member_slots pointing into the piece's own child map",
+      "runtime::applied_command_rows_native / derived_event_rows_native \u2014 AppliedCommandRow (std::optional<Wire> preserving absent vs explicit-null brake demands) and DerivedEventRow (interval id, derived kind, insertion-ordered changed labels); chunked scans replay the prefix to seed state",
+      "runtime::RuntimeIdentity + runtime_identity() \u2014 provenance.{hpp,cpp} returns a pure record {mujoco_version, mujoco_library_path, native_source_sha256, build_context_json} instead of a nanobind dict; encode_binding.cpp boxes it and registers runtime_identity()"
     ],
     "mandatory_cases": [
       "physical and forces tables bitwise vs the Python oracle: interval_id/time_s/interval_end_s/dt_s/qpos/qvel fixed columns, component/qfrc/power_w forces columns, including NaN payloads, infinities and signed zero",
@@ -35152,13 +35202,13 @@
       "RED recorded: migration_T11 target absent until the CMake block landed; the boundary split itself was the produced artifact (PlanView/PlanColumn/PlanMask/DerivedPlan parsing and wire:: readers moved off nanobind onto bike::io::Value + vread::, boxing/provenance-dict construction moved into encode_binding.cpp)",
       "ctest --test-dir build/native-release -R '^migration_T11$' --output-on-failure: 1/1 passed (standalone Python-free root graph; seven check groups: 23 + 10 + 23 + 39 + 7 + 5 + 9 checks)",
       "ctest --test-dir native/build -R '^migration_T11$' --output-on-failure: 1/1 passed (legacy binding graph)",
-      "NATIVE_TEST_BUILD_PATH/BIKE_NATIVE_BUILD_PATH differential pytest: tests/reference/test_native_encode_columns.py suite 40 passed — OwnedNativeEpisode.encode_table/applied_rows/derived_rows and runtime_identity Python API unchanged",
+      "NATIVE_TEST_BUILD_PATH/BIKE_NATIVE_BUILD_PATH differential pytest: tests/reference/test_native_encode_columns.py suite 40 passed \u2014 OwnedNativeEpisode.encode_table/applied_rows/derived_rows and runtime_identity Python API unchanged",
       "native recording lifecycle/retention suite 49 passed; native replay-recording suite 11 passed",
       "check_odr: 110 unique sources, no duplicate-definition findings (encode.cpp/provenance.cpp compile once per graph in the shared core set; encode_binding.cpp compiles only in the module)",
       "check_tidy findings fixed: bugprone-easily-swappable-parameters on the test's (start, end) sample helper (NOLINTNEXTLINE matching the codebase convention) and bugprone-unchecked-optional-access on an applied-row optional (switched to engaged(), the codebase's checked-unwrap helper); the only remaining print is the known nanobind clang-analyzer-cplusplus.Move suppression carried by the configured baseline",
-      "bash tools/run_tests.sh native: exit 0 — all sweeps + contract checks green (incl. pure_core_python_free), ctest 20/20, 2957 passed / 196 warnings pytest; sweep logs + LastTest.log + pytest-180 artifacts under par-t11 corroborate the clean-tree run"
+      "bash tools/run_tests.sh native: exit 0 \u2014 all sweeps + contract checks green (incl. pure_core_python_free), ctest 20/20, 2957 passed / 196 warnings pytest; sweep logs + LastTest.log + pytest-180 artifacts under par-t11 corroborate the clean-tree run"
     ],
-    "note": "T11 owns 2 python-removal.json rows (src/bike_sim/sim/ride/period_buffer.py F179, src/bike_sim/sim/ride/physical_samples.py F190); their status stays 'planned' until the T63 deletion gate. The produced encode_binding.hpp was appended to both rows' replacement_paths (the T10 convention — produced boundaries land in the owning row's list); the other seven produced paths were already listed verbatim. encode.hpp is pure C++ (no nanobind/Python in its transitive graph); encode.cpp parses plans through bike::io::Value + value_readers.hpp. nanobind materialization, Piece/row boxing and module registration live only in encode_binding.cpp; samples_binding.cpp delegates through encode_binding.hpp. Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
+    "note": "T11 owns 2 python-removal.json rows (src/bike_sim/sim/ride/period_buffer.py F179, src/bike_sim/sim/ride/physical_samples.py F190); their status stays 'planned' until the T63 deletion gate. The produced encode_binding.hpp was appended to both rows' replacement_paths (the T10 convention \u2014 produced boundaries land in the owning row's list); the other seven produced paths were already listed verbatim. encode.hpp is pure C++ (no nanobind/Python in its transitive graph); encode.cpp parses plans through bike::io::Value + value_readers.hpp. nanobind materialization, Piece/row boxing and module registration live only in encode_binding.cpp; samples_binding.cpp delegates through encode_binding.hpp. Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
   },
   "native_startup_wave_contract": {
     "tasks": [

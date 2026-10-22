@@ -1,0 +1,131 @@
+[
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "expected/qpos",
+  "nbytes": 416624,
+  "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
+  "offset": 0,
+  "rtol": 0.0,
+  "shape": [
+   2003,
+   26
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "close",
+  "label": "expected/qvel",
+  "nbytes": 416624,
+  "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
+  "offset": 416624,
+  "rtol": 0.0,
+  "shape": [
+   2003,
+   26
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "close",
+  "label": "expected/energy",
+  "nbytes": 48072,
+  "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
+  "offset": 833248,
+  "rtol": 0.0,
+  "shape": [
+   2003,
+   3
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "close",
+  "label": "expected/rider_positive_power_w",
+  "nbytes": 16024,
+  "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
+  "offset": 881320,
+  "rtol": 0.0,
+  "shape": [
+   2003
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "expected/attachment_violations",
+  "nbytes": 134801,
+  "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
+  "offset": 897344,
+  "rtol": null,
+  "shape": [
+   134801
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "monitor/first_failure_time_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
+  "offset": 1032145,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "monitor/first_failure_violations",
+  "nbytes": 26,
+  "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
+  "offset": 1032153,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "decimated/last_channel_keys",
+  "nbytes": 819,
+  "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
+  "offset": 1032179,
+  "rtol": null,
+  "shape": [
+   819
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "decimated/full_ids",
+  "nbytes": 1816,
+  "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
+  "offset": 1032998,
+  "rtol": null,
+  "shape": [
+   227
+  ]
+ }
+]

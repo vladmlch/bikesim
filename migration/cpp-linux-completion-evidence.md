@@ -1362,3 +1362,105 @@ All 10 nodes pass, including the pre-existing energy.constraint_work
   machine — container verification skipped per the task instruction.
 - Physics stop rule: not invoked — both causes are oracle/test
   instrumentation drift, not physical-model choices.
+
+## Task 3.22b — recording column and period-buffer references (lane/a)
+
+Batch files: `tests/reference/test_recorder_columns.py` (4),
+`test_hud_columns.py` (2), `test_period_buffer.py` (10),
+`test_frozen_force_arrays.py` (2), `test_ride_plots_html_markers.py` (3)
+— 21 records.
+
+### Dispositions
+
+- 18 `port`: recorder columns (structural/contract/invariant), the
+  parametrized HUD column test (text/orderings ported; the styled-segment
+  color assertion has no native surface), the 8 non-capture period-buffer
+  tests (analytic/contract/invariant — synthetic buffers, an in-memory
+  weld model and runtime-vs-runtime decimation invariance), frozen force
+  arrays, ride-plot HTML markers.
+- 2 `golden`: `test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms`
+  and `test_runtime_batch_matches_preserved_scalar_step_and_flush`
+  (tolerance-oracle, `golden_platforms` = darwin-arm64 + linux-aarch64).
+- 1 `drop`: `test_arm_highlight_uses_published_directional_capacity` —
+  the `orange1` styled-segment surface does not exist on the native HUD;
+  the directional-capacity data it colored still reaches the arm column
+  text, covered by `reference.hud_columns`.
+
+### Golden qualification
+
+- Source file green before capture: 10/10 nodes pass on darwin-arm64
+  (~14 s) and linux-aarch64 (~17 s, `bike-dev-pfc-lane-a` container,
+  image `bike-linux-image:port`).
+- `tests/fixtures/golden/{darwin-arm64,linux-aarch64}`: 4 node
+  sidecars (2 nodes × 2 platforms), 2.5 MiB total — far under the 20 MiB
+  budget; no orphaned node keys (each `.json` pairs its `.bin`; node keys
+  match the collected node IDs).
+- Native startup requires the oracle-settled state: `make_ride` loads
+  `tests/fixtures/migration/initial_state/<platform>/probe_welded_0005.json`
+  via `request.setup.initial_state`, so the native runtime begins from the
+  platform-specific captured pose instead of a fresh equilibrium solve
+  (the contract hash includes compiled-model arrays, hence per-platform
+  fixtures).
+- Platform-parity floor: linux-aarch64 replays the 2003-step batch
+  bitwise (native-vs-oracle max |Δ| = 0 for qpos/qvel/energy, 5.7e-14 for
+  power) and its golden keeps the source tolerances 1e-12/1e-9.
+  darwin-arm64 accumulates <=1.8e-11 in leg-dof qvel and <=1.4e-9 in
+  rider power through the delayed load-share/trim activation
+  (numba-oracle vs clang codegen; the same kernels coincide bitwise on
+  linux) — the darwin golden therefore records `atol` 1e-10/5e-9 for
+  those two entries, ~400x tighter than the oracle's own 8.5e-6/6.5e-4
+  darwin↔linux spread. qpos stays at 1e-12 (measured 6e-14) and energy at
+  1e-9 (measured 3.9e-12) on both platforms.
+
+### CTest
+
+- macOS `build/native-release`: all 5 nodes pass
+  (`reference.recorder_columns` 0.46 s, `reference.hud_columns`,
+  `reference.period_buffer` 1.92 s — 160265 checks,
+  `reference.frozen_force_arrays`, `reference.ride_plots_html_markers`).
+- Linux `root-clang` (container): all 5 nodes pass; period_buffer
+  PASS 160265 checks.
+- Flip-byte proof: `dd` one byte at offset 25500 of the darwin
+  `test_non_aligned_flush` `.bin` → test fails with
+  `FAIL …test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms
+  comparison 2 label 'expected/rider_control_keys': bytes differ`;
+  restored golden → green. (Byte 0 lives in the LSB of a `close` f64 and
+  is undetectable by design; the probe targets a bitwise entry.)
+- Linux build note: clang-18 `-Wmissing-field-initializers` requires the
+  fully-designated `RideControl` aggregate in
+  `test_recorder_columns.cpp:243` (darwin clang does not warn).
+- `native/src/runtime/accounting.{hpp,cpp}`: model-free
+  `EffortContext(config, joints, nq, nv)` + `observe_effort` overload so
+  the period-buffer test drives the identical async observation path
+  without an mjModel owner; controller-bound constructor now delegates.
+
+### Gate scope notes (pre-existing branch red, not from this batch)
+
+`bash tools/run_tests.sh native` was run on this lane; it reaches
+`check_tidy` and stops there:
+
+- `check_tidy` (LLVM 23.1.2, 334 TUs) is blocking on pre-existing
+  warnings in untouched headers (`io/value.hpp` explicit-ctor /
+  `cert-oop54-cpp` / `bugprone-signed-bitwise`, `binding_ownership.hpp`,
+  `research/policy_session.hpp`, `viz/plot.cpp`). Zero unsuppressed
+  diagnostics reference any file this batch touched; `native/tests/reference/`
+  is outside the `.clang-tidy` selection.
+- `cmake --build build/native-release` (`all`) fails at
+  `native/src/validation/drivetrain.cpp:60` —
+  `-Wframe-larger-than` (10768 > 8192) in a file this batch does not touch
+  and that does not include `runtime/accounting.hpp`; identical at
+  `a4d4cfd` by construction.
+- The ctest fallout is consequential: targets behind `bike_validation`
+  are "Not Run", and oracle-consumer tests from other batches
+  (`reference.native_drivetrain`, `native_static_brake`,
+  `golden_episode_tool`, `native_clock_contracts`,
+  `pneumatic_tire_oracle`) fail closed on fixtures not captured on this
+  lane (`FAIL fixture is not a regular file`).
+- Targeted spot-sweeps on the touched TUs: clang-tidy on
+  `runtime/accounting.cpp` reports only the pre-existing `value.hpp`
+  diagnostics; cppcheck on `accounting.cpp`/`process_pool.cpp`/`html.cpp`
+  reports only `spindle_math.hpp` `uninitMemberVarNoCtor` (untouched).
+- This lane's required gates per the Phase-3 batch procedure are the
+  per-file pytest greens, the two-platform goldens and the new CTest
+  nodes on both platforms — all green above. L2 runs in the integration
+  worktree at merge-back per D17.

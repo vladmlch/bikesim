@@ -1362,3 +1362,431 @@ All 10 nodes pass, including the pre-existing energy.constraint_work
   machine — container verification skipped per the task instruction.
 - Physics stop rule: not invoked — both causes are oracle/test
   instrumentation drift, not physical-model choices.
+
+## 2026-10-22 — Task 3.09: Realistic pedelec acceptance (0 of 4 fixed, all 4 stopped on physics rule)
+
+Scope: macOS baseline nodes in `tests/reference/test_realistic_pedelec_acceptance.py`
+(4 nodes: flat 25 km/h, motor-through-shift, 15 % climb, savage 120 m).
+
+### Reproduction (macOS, current tree)
+
+```
+PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH="$PWD/native/build" \
+uv run --frozen --group native python -m pytest -q \
+  tests/reference/test_realistic_pedelec_acceptance.py
+→ 4 failed in 518.58 s, exit 1
+```
+
+Failure signatures **bitwise-identical** to `migration/baseline-full.log`
+(these are baseline staleness, not fresh regressions; the sibling in-flight
+`_step_oracle.py`/`period_buffer`/`rider_allocation` edits do not touch this
+file's production ride path `physical_runtime._advance_physics`):
+
+- `test_flat_reaches_25_kmh_within_10_s`: speed bar passes (v_max 25.617 km/h,
+  first 25 km/h at t=9.50 s ≤ 10); `mean(60<=cadence<=115)` over steady
+  pedaling rows = **0.7602339181286549 < 0.8**.
+- `test_motor_follows_the_rider_through_a_shift_without_an_extra_cut`:
+  ≥5 shifts pass (10 shifts); first checked window (t=1.21, gear 51→45)
+  human=**11.759918366582896**, motor=**1.1022387457931235**,
+  ratio 0.0937 < 2.5.
+- `test_fifteen_percent_climb_holds_12_kmh`: speed bars pass
+  (late t≥12 s: min **12.1539 km/h ≥ 12**, mean 13.011; balance_lost 0 rows);
+  fails only `not _violations_after(rows)` — physical-gate violations from
+  interval 401 (t=0.5012 s).
+- `test_savage_is_ridden_to_the_end`: x_max = **53.00684711538005 m < 120**,
+  env.reason='duration' at 110 s.
+
+### 835a48c drift check — ruled out (this is not a stale fixture)
+
+- [source-supported] `git log`: `0ce81be` authored the file at 17:54 on the
+  welded plant; `835a48c` flipped the profile to pinned at 22:03; `1a75443`
+  ("acceptance rides for the pinned seated rider") reworked the file for the
+  pinned plant at 22:34 — the test *post-dates* the flip and has not changed
+  since (`git diff 1a75443..HEAD` empty, worktree clean).
+- [source-supported] the fixture still matches the TOML: `_config` rewrites
+  `joint_envelope_path`/`joint_strength_path` (both keys present,
+  `viewer_physics_welded.toml:110-113`); gearing `front_teeth=22/rear=51`
+  (lines 82-83) matches the "22/51" docstring; `shifting.torque_factor=0.3`,
+  `shift_cut_duration_s=0.2` (96-97) match the "30 % unload for 0.2 s"
+  docstring; `assist.engage_torque_nm=4` (74) matches the `human<4` skip;
+  Turbo gain 3.4 (spec comment, line 63) matches the 2.5 bar.
+- [source-supported] era audit `docs/superpowers/audits/2026-10-04-seated-rider-closed-form.md`
+  (lines 32-39, 82-85) records this file at **0 passed / 4 failed** on the
+  clean-source rerun at `92b124e` the same evening it was authored, with the
+  same numbers (cadence fraction 0.760234, motor-engagement family 0.5875,
+  climb speed pass + gate violations, savage stall on the plateau). The
+  acceptance slice has never been green; the audit leaves it OPEN.
+
+### Measured root-cause picture (saved ride CSVs under pytest-156 tmp dirs)
+
+- **flat cadence**: all 164 out-of-band rows are cadence >115 (none <60),
+  clustered at launch spin-up and every shift-unload transient
+  (crank rpm peaks 120-217 in 51T/45T/39T while `shift` true or just after).
+  The unloaded crank physically spins out faster than the leg loop can track.
+- **shift/motor**: during the 0.2 s window the *sensed* human torque spikes
+  ~50 N·m for ~5 rows then collapses to ~0.2 N·m against a held ~6-7 N·m
+  command; `motor_freewheel_engaged` drops out (sensor < 4 N·m engage floor)
+  for ~15/20 rows. Motor path verified per-spec [reproduced]: at t=1.25
+  motor=15.64 equals the τ=40 ms first-order lag (factor 0.221/step at
+  dt=0.01) climbing from 4.9 toward the ~50 N·m ceiling (motor.py:143-161);
+  and for crank >180 rpm the configured torque curve ceiling is 0
+  (TOML line 72). The motor is never "cut" — it follows a sensed input that
+  collapses; that collapse is the audit's unresolved delivery regression.
+- **climb/savage violations** (post-0.5 s, all chronic, first at interval 401):
+  `saddle.friction`, `saddle.normal`, `foot_*.friction/normal`, `grip_*.pull`
+  (attachment-cone budgets), `rider_strength.*` (elbow/shoulder/torso/hip/knee,
+  per-raw capacity vs per-tick held command — the Task 3.05/3.06 contract
+  gap), `rider_power.positive`/`rider_power.<joint>` (delivered positive
+  muscle power > `active_positive_power_limit_w` = 450 at evolving interval
+  states; `period_buffer.py:140-176`), `energy.constraint_work` (cumulative
+  constraint work vs 1 % budget, `period_buffer.py:254-259` — same ledger as
+  Task 3.06 class A).
+- **savage**: `balance_lost` first fires t=23.72 s at x=49.87 (speed ≈ 0);
+  bike stalls at ≈0 km/h for ~85 s on the 25 % plateau
+  (plateau x∈[38,55] mean **0.573 km/h < 6**), ends 'duration' at x=52.93.
+  The audit-era plant reached x≈58 m — a modest plant-behavior change since
+  10-04, same qualitative failure, same baseline value today.
+
+### Checks (≥2 independent, labelled)
+
+1. **reproduced**: four nodes fail; every failing value bitwise-identical to
+   `migration/baseline-full.log` (listed above).
+2. **source-supported**: test file authored/updated at `1a75443` for the
+   pinned plant after `835a48c`; all test constants map to live TOML keys;
+   audit records the same file 0/4 on 2026-10-04 at `92b124e`.
+3. **reproduced**: per-row CSV decomposition above — cadence spikes only in
+   launch/shift transients; sensed-torque collapse explains the motor ratio;
+   violations are the support/strength/power/constraint-work physical gates;
+   savage stalls on the plateau.
+4. **internal-precondition**: `AssistController.step` (motor.py:143-161) is
+   per-spec S6 — no extra shift cut exists in code; the drop-out comes from
+   the 4 N·m engage floor and the 120-180 rpm torque-curve taper acting on
+   the collapsed sensed input. `rider_power.positive`/`rider_strength.*` are
+   per-raw interval evaluations of tick-held commands (period_buffer.py:
+   140-176, `_effort_observations`), the enforcement/observation mismatch
+   already recorded under 3.05/3.06.
+
+### Physics stop rule — invoked; no fix applied
+
+Every remedy is a physical-model, monitor-contract or acceptance-threshold
+decision, so per the shared baseline procedure this task records measured
+values and asks the user. Candidate decisions:
+
+1. **Approved fix (rider-plant model work)**: close the closed-form leg-loop
+   delivery gap so commanded crank torque tracks delivered through launch and
+   shift unloads (fixes the cadence spin-out, the sensed-torque collapse and
+   much of the strength/power over-run), and give the plant 25 % plateau
+   climb capability within the balance floor. This is the audit's open
+   S4/S5/S6/G5 acceptance slice — a control-law/model change mirrored in the
+   C++ port.
+2. **Approved threshold/scope change**: e.g. exclude `shift` windows from the
+   flat test's `steady` rows or re-band the cadence bar; evaluate the motor
+   ratio against a lag-matched reference or sustained-window samples;
+   re-scope `_violations_after` to a declared post-settle subset;
+   re-define the savage reachability bar. Each needs the written physical
+   argument and user approval.
+3. **Drop**: triage the nodes in `test-port-map.json` (file is Task 3.23's
+   batch) with evidence naming the decision; no C++ node created.
+
+Note the tests run with `--diagnostic-model-limits`, so the gate violations
+are recorded diagnostics that the test asserts empty — an acceptance bar,
+not a runtime error.
+
+### Verification status
+
+- macOS: reproduction above; **no code, fixture or threshold changed**, so
+  the file still reports 4 failed.
+- Linux lane: `bike-dev-python-free-cpp` container does not exist on this
+  machine — skipped per the task instruction.
+- `docs/TESTING.md`: unchanged — the four nodes remain listed; macOS
+  baseline count stays at 17 under `failing node IDs, identical in the
+  baseline`.
+- No commit, per the task instruction.
+
+## 2026-10-21 — Task 3.07: Rider welds and planar arms (3 of 4 fixed, 1 stopped on physics rule)
+
+Nodes: `tests/test_rider_welds.py::test_held_rider_weight_is_carried_by_the_connects`,
+`::test_contact_diagnostics_carry_the_solved_weight`,
+`::test_steep_grade_saddle_shear_exceeds_friction`, and
+`tests/reference/test_planar_arms.py::test_compiled_topology_has_two_arms_and_two_grip_sites`.
+
+### Reproduction
+
+```
+PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH="$PWD/native/build" \
+  uv run --frozen --group native python -m pytest -q tests/test_rider_welds.py tests/reference/test_planar_arms.py
+```
+Before the fix: 4 failed / 11 passed in 135 s. Values bitwise-consistent with
+`migration/baseline-full.log`'s narrative: channel vertical sums 631.74 N
+(`rider_welds`) and 645.45 N (`rider`) vs the 784.8 N rider weight; the 35 %
+grade run raised `physical equilibrium did not converge after 64000 steps:
+residual=0.198165` on `rear_wheel_spin`/`crank_spin`/`pedal_*_spin`/
+`rocker_frame_pivot`; and the compiled model lacked `rider_ankle_front`/
+`rider_ankle_rear`.
+
+### Root causes (three independent)
+
+**A. Period-close sampling aliases the control-tick tremor** (the two
+held-weight nodes). The pinned plant carries a bounded tremor at the
+100 Hz control-tick rate: `apply_forces` rewrites `d.ctrl` once per
+10 ms control tick (`physical_runtime.py`, `control_clock.is_tick`) and the
+profile sets `articulated.joint_passive_damping_nms_rad = 0.0`. The
+`rider_welds`/`rider` channels keep only each period's *closing* interval
+(`period_buffer.py`: "every raw of a period reports the period's closing
+measurement"), so one sample per 10 ms aliases a 100 Hz process to a fixed
+phase — a biased estimator of the time mean. The channels themselves are
+faithful: raw `connect_*` equality multipliers sum to exactly
+`qfrc_constraint[rider_root_z]` (647.2064 = 647.2064 on the last solve).
+
+**B. Registry vs compiled-model conflation** (planar-arms node). The test
+asserted `reference_joint_names()` (the topology-invariant 11-joint
+registry) ⊆ compiled joints. On the deliberate spindle plant the ankle
+hinges are locked and not emitted: `builder.py` passes
+`locked_joints=('rider_ankle_front','rider_ankle_rear')` when
+`pedal_attachment == 'spindle'` and `articulated_rider.py` skips locked
+joints (foot pitch rides the `connect_foot_*` equalities).
+`tests/reference/test_pinned_topology.py` asserts the same absence
+(`rider_ankle_*` ids are −1) and "the seated spindle plant keeps nine
+hinges". The test was stale w.r.t. commit `21cb8e4`, exposed when
+`835a48c` repurposed the default profile to spindle/pin/connect.
+
+**C. PHYSICS STOP — no static equilibrium exists on the held 35 % grade**
+(the steep-grade node). `BrakeController` computes
+`opposing_torque(200·demand, ω, taper=1 rad/s)` per wheel — the brake
+torque fades to zero at standstill **by design** (`braking.py`: "a held
+brake at a standstill does nothing instead of reversing the bike",
+docs/RIDE.md §6). With only regularized tire friction and the engaged
+`ideal_mid_drive_freehub` tendon (observed at its boundary, LIMIT_TENDON
+row active) to resist rollback, the bike creeps forever: the equilibrium
+residual plateaus around `rear_wheel_spin` ≈ 0.20 — 0.198 after 64000
+steps (80 s sim) and 0.201 after 200000 steps (250 s sim) — it does not
+decay to zero. Meanwhile no settle-convergent grade satisfies the test's
+`would_slip` premise: grades 0.10/0.15/0.20 converge in 800 steps with
+saddle shear/normal ratios 0.38/0.46/0.54 — all below `support_mu = 0.8`;
+grade 0.25 already fails (residual 0.0589 > 0.05 at 64000 steps).
+
+### Checks (≥2 independent, labelled)
+
+1. **reproduced** (A): per-physics-step `qfrc_constraint[rider_root_z]`
+   over the episode's second half: mean 783.36 N vs weight 784.80 N,
+   instantaneous range 491–1054 N; FFT peaks at exactly 100.0 Hz and
+   300.0 Hz (control period = 8×1.25 ms). Mean over a 6 s window stays
+   784.4–784.6 N while the tremor decays (std 195 → 54 N).
+2. **reproduced** (A, per-step measurement passes verbatim assertions):
+   latched `_settled_welds`/`diagnostics` at every `sim.step` — vertical
+   sum mean 784.49 N (rel err 4e-4 < 1e-2), saddle `normal_n` min
+   333.2 N > 0.3·weight = 235.4 N, `would_separate`/`would_slip` never
+   True in any of 600+ per-step samples.
+3. **reproduced** (A, A/B isolation): the same probe on a
+   `weld`/`weld`/`connect` variant of the profile shows the identical
+   100 Hz tremor (mean 785.4 N, std 119 N) — the tremor is the pinned
+   plant's control-rate dynamics, not a connect-model artifact.
+4. **source-supported** (A): `period_buffer.py` line "every raw of a
+   period reports the period's closing measurement"; `physical_runtime.py`
+   `control_clock.is_tick`/`rider_control.write`; toml
+   `joint_passive_damping_nms_rad = 0.0`.
+5. **source-supported** (B): `builder.py` locked_joints under
+   `pedal_attachment == 'spindle'`; `articulated_rider.py` skips locked
+   joints; `test_pinned_topology.py` (passing) asserts ankles absent.
+6. **reproduced** (C): settle residual plateau 0.198 @ 64000 and
+   0.201 @ 200000 steps; wheel qpos drifts −0.0098 rad per 12000 steps
+   (perpetual creep); grade scan 0.10/0.15/0.20 converge at 800 steps,
+   0.25 fails at 0.0589, 0.35 fails at ~0.20 plateau.
+
+### Fix (tests A-group and B; written argument)
+
+- `tests/test_rider_welds.py::_held_episode` — same assertions, same
+  tolerances; only the estimator changed: latch `rider_contacts._settled_welds`
+  (resp. `rider_contacts.diagnostics`) — the exact dicts the `rider_welds`
+  (resp. `rider`) channel deep-copies at period close — at every physics
+  step via `sim.step` instead of reading one published channel sample per
+  10 ms period. Argument: the asserted invariant is the *time-mean* static
+  balance; the channel contract is the period's closing interval, a point
+  sample that aliases the control-tick tremor. Per-step latching measures
+  the same physical quantity with strictly more coverage (every step's
+  `would_separate`/`would_slip` is now checked, not every 8th).
+- `tests/reference/test_planar_arms.py` — `internal` restricted to the
+  nine hinges the spindle plant compiles (`'ankle' not in name`), matching
+  the companion contract test `test_pinned_topology.py`. Argument: the
+  11-entry registry is topology-invariant by design; the compiled set on
+  the pinned default is nine by deliberate construction (`21cb8e4`), so
+  the original subset assertion tested a stale contract, not a defect.
+
+### Physics stop rule — invoked for `test_steep_grade_saddle_shear_exceeds_friction`
+
+Measured values and candidate decisions, for a user decision:
+
+- Held 35 % grade has **no static equilibrium** in this model: brake
+  torque is zero at ω→0 by design (`braking.py`, docs/RIDE.md §6), the
+  freehub tendon sits engaged at its ratchet boundary, and the wheel
+  creeps forever — residual plateaus ≈ 0.20 on `rear_wheel_spin`
+  (0.198 @ 64 k steps, 0.201 @ 200 k steps of simulated settle).
+- No settle-convergent grade produces `saddle.would_slip`: convergent
+  grades ≤ 0.20 give shear/normal ≤ 0.54 < `support_mu` = 0.8; the
+  boundary of convergence is ~0.22–0.25 and slip needs ≳ 0.30–0.35.
+- Candidate decisions:
+  1. **Approved fix (model work)**: give the held brake a static
+     holding torque at ω→0 (removes the documented standstill fade), or
+     add tire stiction — a physics change mirrored to the C++ port.
+  2. **Approved test change**: run the scenario at a convergent grade
+     with a fixture-lowered `support_mu` (e.g. 0.4 → would_slip fires at
+     grade 0.15) — weakens the physical claim (no longer "realistic
+     saddle friction exceeded at 35 %"), needs the written argument and
+     user approval.
+  3. **Drop**: triage the node `drop` in `test-port-map.json` with this
+     evidence; no C++ node created. The `would_slip` diagnostic stays
+     exercised by the seat of the flat/rolling tests.
+
+### Verification status
+
+- macOS: same pytest command → **14 passed, 1 failed** in 133 s; the one
+  failure is the stop-ruled steep-grade node (env build raises the
+  identical `RuntimeError` — unchanged code path).
+- `docs/TESTING.md`: three fixed node IDs removed; macOS baseline count
+  updated 17 → 14; anchor sentence `failing node IDs, identical in the
+  baseline` and following `## ` heading kept verbatim.
+- Linux lane: `bike-dev-python-free-cpp` container does not exist on this
+  machine (only `bike-dev-python-free-cpp-numerics` and lane containers) —
+  skipped per the task instruction.
+- No commit, per the task instruction.
+
+## 2026-10-22 — Task 3.10: Realtime gate (0 of 2 fixed, both kept listed — genuine oracle-path throughput miss; remedy is a contract decision)
+
+Scope: macOS baseline nodes
+`tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]`
+and `[rough_uphill_extreme.toml]`.
+
+### Reproduction (macOS, current tree, node command verbatim)
+
+```
+PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH="$PWD/native/build" \
+uv run --frozen --group native python -m pytest -q \
+  'tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]' \
+  'tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_extreme.toml]'
+→ 2 failed in 52.06 s, exit 1
+```
+
+Both nodes pass `reason=='duration'`, `steps==16000`,
+`sim_seconds>=20-.00125` and fail only `factor>=1.`:
+
+- savage: `factor = 0.7809330467867478` (wall 25.61 s)
+- extreme: `factor = 0.7882564792468247` (wall 25.37 s)
+
+Failure signature identical to `migration/baseline-full.log` (same
+assert line; baseline call durations 29.89/34.55 s ≈ factor ~0.7).
+
+### Measurements — RTF per scenario per backend
+
+Machine: Apple M4 Max, 16 cores. Load caveat: lane agents saturated the
+box during the first sweep (`uptime` load average 320→8); both regimes
+recorded. Warmup protocol: one full 20 s run discarded before measured
+runs in every mode (AGENTS.md numba caveat; `.nbc` disk caches for
+py313 already warm — the A/B below shows JIT is not the gate variable).
+
+Common settings: dt=0.00125 s, `--decimate 80`, duration 20 s
+(16000 steps), `viewer_physics_welded.toml` (compliant_2d tires).
+
+| Backend / artifact | savage RTF | extreme RTF | notes |
+|---|---|---|---|
+| `build/debug/bin/bike-measure-realtime --benchmark`, load ~320, warmup 1 + runs 3 | 0.842 / **0.644** / 0.556 (median 0.644) | 0.695 / 0.815 / **0.803** (median 0.803) | all `duration_reached`, 16000 steps |
+| same binary, load ~8, warmup 1 + runs 3 | 0.881 / 0.866 / 0.859 (median **0.866**) | — | Debug build, no `-O`, extensive hardening |
+| Python accounted path (the node's `tools.measure_realtime.measure_realtime`), warm, load ~300→15 | 0.784 / 0.744 measured; **0.781** in the pytest node | 0.772 / 0.782; **0.788** in the node | step mean 1.59–1.68 ms, p50 1.52–1.62 ms vs 1.25 ms budget |
+| in-process `bike_native` (`--backend native`, `native/build`) | not measurable | — | artifact stale: compiled sha `f4867cee` ≠ source `35f8ad21`; build is unoptimized anyway (no `-O` flag, `_LIBCPP_HARDENING_MODE_EXTENSIVE`) |
+| native Release, documented | ~7.8–8.9 | — | `.scratch/perf-roadmap` issues 02/03/12, same machine class/profile/dt; no Release measure artifact exists in this tree (`build/native-release` predates Task 3.04, has no `bike-measure-realtime` target) |
+
+Strict-vs-benchmark verification [reproduced]: the same binary without
+`--benchmark` aborts at **step 4**, `outcome="invalid_controller"`,
+`first_failure=[0.005, ['energy.constraint_work']]` — the
+platform-documented baseline. `--benchmark` retains it as first_failure
+and measures the full 16000 steps; every report above carries it.
+
+### Diagnosis — node failure mode and root cause
+
+Failure mode: **factor < 1 on the Python oracle accounted path** — a
+throughput miss, not a strict-monitor abort (the node's driver sets
+`reference_monitor.strict=False` itself) and not a crash/finish.
+
+Hypothesis: the miss is structural interpreter cost of the
+deliberately-complete accounted path (~8300 Python calls per step), not
+a post-gate regression. Independent checks:
+
+1. [reproduced] Warm cProfile over 3200 steps (wall 4.82–5.12 s →
+   1.50–1.60 ms/step): cost is spread — `_close_period`/`publish_close`
+   subtree 2.10 s cum (`evaluate_attachments` ~10 pinv/period,
+   `evaluate_period`, `deepcopy` 0.56 s), `prepare_attachment_raw`
+   1.03 s cum **every step**, `tire_forces.compute_qfrc` 1.01 s,
+   `settle_welds` 0.72 s, `contact_profile.contact` 0.59 s,
+   `freeze_force` 0.29 s. Engine `mj_forward`+`mj_step` ≈ 8–10 % of step.
+   No dominant hotspot; nothing a one-line fix removes.
+2. [reproduced] njit A/B (conftest `_pin_oracle_kernels` logic, same
+   sim, 1600 warm + 3200 timed steps): njit cores 1.507 ms/step
+   (RTF 0.829) vs `*_py` twins 1.594 ms/step (RTF 0.784) — the Oct-12
+   `8ef3f78` njit conversion is ~5 % *faster*; exonerated as the
+   regression.
+3. [source-supported] The Oct-12 cluster was net optimization of this
+   exact path: `0d5818e` decimated `energy_state` (was every step),
+   `fd156a5` freeze-once, `5fcb882` spec/caching ports — yet the V3
+   baseline rerun (Oct-6 tree `1ccdfcb` re-measured recently on this
+   machine) already failed identically. The gate has been continuously
+   red on this machine since before the baseline capture; the Oct-4
+   green (`795f56c`, added with the perf work) was marginal at best.
+4. [internal-precondition → refuted] cProfile attributes 3.9 s tottime
+   to `physical_observations.py:178(sensor_channels)` — a pstats
+   aggregation artifact: the function micro-benchmarks at **1.7 µs/call**
+   standalone. Not a hotspot.
+
+### Interpretation per the task
+
+- **RTF ≥ 1 substance**: not met by either measured artifact —
+  Python oracle 0.78–0.83 warm, native **Debug** binary 0.87 quiet /
+  0.64 loaded. The realtime-relevant artifact (Release) is documented
+  at ~8× over the line in the perf roadmap but is not re-measurable in
+  this tree.
+- **Is the test wrong?** No — it faithfully encodes the release contract
+  (`docs/superpowers/plans/2026-10-03-v2-05-release.md:18`: mean factor
+  ≥ 1× on the dev machine on both tracks per `realtime.json`, i.e. this
+  accounted Python path).
+- **Is it a performance defect?** It is a real miss vs the declared
+  contract (~24 % over the 1.25 ms/step budget), with no identified
+  regression — structural cost the perf roadmap already anatomized
+  (issues 03/20) and deliberately declined to fund on this backend
+  ("Python-backend — oracle, not a product"; map.md out-of-scope:
+  "Ускорение Python-backend'а — он оракул, не продукт"). The roadmap's
+  remedy items (14 road cache, 17/19 forward dedupe, 16 flat telemetry)
+  land in the native kernel — where the Release artifact clears the bar.
+
+### Candidate decisions — stop-rule pattern invoked; no unilateral fix
+
+Every remedy is a contract/threshold decision, so per the shared
+baseline procedure this task records measurements and asks the user:
+
+1. **Re-aim the gate at the native backend** (schema-1
+   `tools/measure_realtime.py --backend native` or a Release
+   `bike-measure-realtime` artifact): aligns the pytest contract with
+   the backend the perf roadmap actually gates; needs a Release
+   artifact in-tree and user approval of the subject change.
+2. **Fund ~24 % Python-oracle per-step work** (port roadmap items
+   14/17/19/16 to Python): throwaway oracle work removed at T63,
+   bitwise-parity risk on operation order; roadmap-scoped-out.
+3. **Approved threshold change** (e.g. factor ≥ 0.75 with a tracking
+   issue): weakens the release contract — needs the written argument
+   and user approval.
+4. **Drop**: triage `drop` in `test-port-map.json` with this evidence;
+   no C++ node created (the realtime substance is then carried only by
+   the native benchmark node, Task 3.24a/3.26 `performance_contract`).
+5. **Keep listed** (chosen interim state): the miss is genuine and the
+   baseline list is the honest place for it until the user picks 1–4.
+
+### Verification status
+
+- macOS: reproduction and all measurements above; **no code, fixture or
+  threshold changed** — nodes remain red for a defensible reason.
+- `docs/TESTING.md`: unchanged — both nodes remain listed; macOS
+  baseline count stays at 14 under `failing node IDs, identical in the
+  baseline`.
+- Linux lane: `bike-dev-python-free-cpp` container does not exist on
+  this machine — skipped per the sibling tasks' precedent.
+- Scratch artifacts kept for review: `/tmp/rt-native-{savage,extreme,
+  savage-q,strict,py-node,py-quiet}/report.json`, `/tmp/rt_py_driver.py`,
+  `/tmp/rt_step_profile*.py`, `/tmp/rt_ab.py`, `/tmp/rt_micro.py`.
+- No commit, per the task instruction.

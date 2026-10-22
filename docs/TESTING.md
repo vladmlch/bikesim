@@ -800,11 +800,10 @@ by about `8.72e-5 J`; the planar-arm model lacked
 40,000 steps with residual `0.197922`. Rider-weld load checks measured about
 632 N against a 785 N rider weight.
 
-The 17 failing node IDs, identical in the baseline and current full run, are:
+The 14 failing node IDs, identical in the baseline and current full run, are:
 
 - `tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque`
 - `tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget`
-- `tests/reference/test_planar_arms.py::test_compiled_topology_has_two_arms_and_two_grip_sites`
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_flat_reaches_25_kmh_within_10_s`
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_motor_follows_the_rider_through_a_shift_without_an_extra_cut`
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_fifteen_percent_climb_holds_12_kmh`
@@ -816,8 +815,6 @@ The 17 failing node IDs, identical in the baseline and current full run, are:
 - `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]`
 - `tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock`
 - `tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only`
-- `tests/test_rider_welds.py::test_held_rider_weight_is_carried_by_the_connects`
-- `tests/test_rider_welds.py::test_contact_diagnostics_carry_the_solved_weight`
 - `tests/test_rider_welds.py::test_steep_grade_saddle_shear_exceeds_friction`
 
 ## E1 recoverable MuJoCo errors

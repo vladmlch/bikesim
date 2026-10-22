@@ -173,8 +173,11 @@ def test_compiled_topology_has_two_arms_and_two_grip_sites(tmp_path):
         site = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE,
                                      f'site_rider_grip_{side}'))
         assert data.site_xpos[site][1] == pytest.approx(sign * ARM_LATERAL_OFFSET_M, abs=.01)
-    # Eleven internal actuated joints; no actuator drives a root coordinate.
-    internal = set(reference_joint_names())
+    # The spindle plant compiles nine of the eleven registry hinges: the
+    # ankles are locked because foot pitch rides the connect_foot_*
+    # equalities (test_pinned_topology.py asserts rider_ankle_* ids are -1
+    # on this same profile). No actuator drives a root coordinate.
+    internal = {name for name in reference_joint_names() if 'ankle' not in name}
     assert internal <= {mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, j)
                         for j in range(model.njnt)}
     root_dofs = {int(model.joint(n).dofadr[0])

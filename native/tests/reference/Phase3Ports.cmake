@@ -55,6 +55,17 @@ bike_add_reference_test(motor_freewheel_topology ENGINE
 bike_add_reference_test(golden_episode_regressions ENGINE
   SOURCES test_golden_episode_regressions.cpp LIBRARIES bike_golden
   LABELS t52 episode golden slow)
+# 3.22b recording column and period-buffer references.
+bike_add_reference_test(recorder_columns ENGINE
+  SOURCES test_recorder_columns.cpp LIBRARIES bike_app LABELS t52 recording slow)
+bike_add_reference_test(hud_columns ENGINE
+  SOURCES test_hud_columns.cpp LIBRARIES bike_app bike_viewer LABELS t52 recording)
+bike_add_reference_test(period_buffer ENGINE
+  SOURCES test_period_buffer.cpp LIBRARIES bike_app LABELS t52 recording golden slow)
+bike_add_reference_test(frozen_force_arrays ENGINE
+  SOURCES test_frozen_force_arrays.cpp LIBRARIES bike_app LABELS t52 recording)
+bike_add_reference_test(ride_plots_html_markers ENGINE
+  SOURCES test_ride_plots_html_markers.cpp LIBRARIES bike_viz LABELS t52 recording)
 
 foreach(_loader_case IN ITEMS
     test_native_contract_require_control_fails_in_selected_build

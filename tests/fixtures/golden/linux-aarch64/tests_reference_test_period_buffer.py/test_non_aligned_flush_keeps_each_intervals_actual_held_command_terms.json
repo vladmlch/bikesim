@@ -1,0 +1,74 @@
+[
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "expected/qpos",
+  "nbytes": 12480,
+  "node": "tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
+  "offset": 0,
+  "rtol": 0.0,
+  "shape": [
+   60,
+   26
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "close",
+  "label": "expected/qvel",
+  "nbytes": 12480,
+  "node": "tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
+  "offset": 12480,
+  "rtol": 0.0,
+  "shape": [
+   60,
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "expected/rider_control_keys",
+  "nbytes": 125401,
+  "node": "tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
+  "offset": 24960,
+  "rtol": null,
+  "shape": [
+   125401
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "close",
+  "label": "expected/rider_control_num",
+  "nbytes": 43200,
+  "node": "tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
+  "offset": 150361,
+  "rtol": 0.0,
+  "shape": [
+   5400
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "expected/rider_control_bool",
+  "nbytes": 4320,
+  "node": "tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
+  "offset": 193561,
+  "rtol": null,
+  "shape": [
+   540
+  ]
+ }
+]

@@ -12432,7 +12432,7 @@
     "phase3_source_implementation": {
       "date": "2026-10-21",
       "status": "partial_source_implementation",
-      "scope_and_limits": "All 41 registry entries, original bounds, convergence keys/floors, mandatory-vs-diagnostic selection, complete-suite and exact-dt gates. `jobs=1` executes sequentially; source isolated worker execution for jobs 2–32 is explicitly rejected. Native versions are declared as native versions.",
+      "scope_and_limits": "All 41 registry entries, original bounds, convergence keys/floors, mandatory-vs-diagnostic selection, complete-suite and exact-dt gates. `jobs=1` executes sequentially; source isolated worker execution for jobs 2\u201332 is explicitly rejected. Native versions are declared as native versions.",
       "evidence": [
         "migration/cpp-linux-phase3-validation-review.md"
       ],
@@ -12738,7 +12738,7 @@
     "phase3_source_implementation": {
       "date": "2026-10-21",
       "status": "partial_source_implementation",
-      "scope_and_limits": "Resolution validation, interval integration, all comparison criteria, seven cases, physical seeds, periodic station projection, rows/events/metrics and finest-pair summaries. Jobs 2–16 are explicitly unavailable. Runtime rows consume each immutable finalized interval once; this differs from the source's repeated `sim.physical.sample` read after each physics step. Initial state files preserve the exact payload bytes used for their hashes.",
+      "scope_and_limits": "Resolution validation, interval integration, all comparison criteria, seven cases, physical seeds, periodic station projection, rows/events/metrics and finest-pair summaries. Jobs 2\u201316 are explicitly unavailable. Runtime rows consume each immutable finalized interval once; this differs from the source's repeated `sim.physical.sample` read after each physics step. Initial state files preserve the exact payload bytes used for their hashes.",
       "evidence": [
         "migration/cpp-linux-phase3-validation-review.md"
       ],
@@ -14910,12 +14910,10 @@
       "native/tests/reference/test_frozen_force_arrays.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.frozen_force_arrays"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "385e4bd0407e2cf9011fd9131d9ed7a4e7b0e51fd0bcf2fa9878edccf61b2af0",
     "snapshot_line_count": 28,
     "tracked": true,
@@ -14997,12 +14995,10 @@
       "native/tests/reference/test_hud_columns.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.hud_columns"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "8865dda0db2db8856794a5ca4b6e60922a84ea3af391cbc599b3d0bc2bc3917c",
     "snapshot_line_count": 46,
     "tracked": true,
@@ -16639,12 +16635,10 @@
       "native/tests/reference/test_period_buffer.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.period_buffer"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ac25448e437ab587f5ae1060f943b31fed5f29e3ba407d52969ebb08668ed95b",
     "snapshot_line_count": 397,
     "tracked": true,
@@ -16962,12 +16956,10 @@
       "native/tests/reference/test_recorder_columns.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.recorder_columns"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "88e3f9680671a9f4bbcee6f7f58c8de0d922334b65aac143ab204cb6b829f228",
     "snapshot_line_count": 95,
     "tracked": true,
@@ -17361,12 +17353,10 @@
       "native/tests/reference/test_ride_plots_html_markers.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.ride_plots_html_markers"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "a5d4f9c39067c0baea56a9f4389e4a3f80c44a1c4c5097393208c93cffd07958",
     "snapshot_line_count": 70,
     "tracked": true,

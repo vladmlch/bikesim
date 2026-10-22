@@ -1,0 +1,1503 @@
+{
+  "schema_version": 1,
+  "plan_id": "spatial-3d-native-2026-10-22",
+  "language": "ru",
+  "status": "plan_prepared_not_implemented",
+  "source": {
+    "archive_name": "repomix-output.xml(20261022-154203).zip",
+    "repomix_xml_sha256": "e52d5c41d6d97bfe4aea30d50b79232afb15c1bb2804eb8ce36e68dcd00e94b6",
+    "extracted_file_count": 2280,
+    "verified_git_base_sha": null,
+    "project_execution_performed": false
+  },
+  "proposed_integration_branch": "impl/spatial-3d-native",
+  "upstream_branch": "impl/python-free-cpp",
+  "dependency_semantics": "depends_on — готовые producer outputs для полной области задачи. decision_dependencies допускают документированный not_selected там, где задача optional. G0–G6 — внешние PFC gates; брать лишь потребляемый producer scope из master/task, не ждать всю миграцию. Независимая source preparation не закрывает verified. T63 не является общим prerequisite.",
+  "task_count": 56,
+  "required_task_count": 52,
+  "all_task_statuses": "planned",
+  "runtime_evidence_count": 0,
+  "upstream_gates": [
+    {
+      "id": "G0-source",
+      "status": "unverified_in_this_planning_run"
+    },
+    {
+      "id": "G1-core",
+      "status": "unverified_in_this_planning_run"
+    },
+    {
+      "id": "G2-startup",
+      "status": "unverified_in_this_planning_run"
+    },
+    {
+      "id": "G3-research",
+      "status": "unverified_in_this_planning_run"
+    },
+    {
+      "id": "G4-recording",
+      "status": "unverified_in_this_planning_run"
+    },
+    {
+      "id": "G5-gui",
+      "status": "unverified_in_this_planning_run"
+    },
+    {
+      "id": "G6-qualification",
+      "status": "unverified_in_this_planning_run"
+    }
+  ],
+  "validated_topological_order": [
+    "S00",
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "S07",
+    "S08",
+    "S09",
+    "S10",
+    "S13",
+    "S14",
+    "S15",
+    "S16",
+    "S17",
+    "S11",
+    "S12",
+    "S20",
+    "S21",
+    "S22",
+    "S23",
+    "S24",
+    "S25",
+    "S26",
+    "S27",
+    "S18",
+    "S19",
+    "S28",
+    "S29",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38",
+    "S39",
+    "S40",
+    "S41",
+    "S42",
+    "S43",
+    "S44",
+    "S45",
+    "S46",
+    "S47",
+    "S48",
+    "S49",
+    "S50",
+    "S51",
+    "S52",
+    "S53",
+    "S54",
+    "S55"
+  ],
+  "tasks": [
+    {
+      "id": "S00",
+      "title": "Зафиксировать базу и сохранить необходимые незакоммиченные работы",
+      "phase": 0,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-00-foundation.md",
+      "heading": "S00 — Зафиксировать базу и сохранить необходимые незакоммиченные работы",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [],
+      "decision_dependencies": [],
+      "upstream_gates": [],
+      "dependency_text": "нет; gate `G0-source`.",
+      "output_contract": "один неизменяемый `base_sha`, перечень необходимых WIP-патчей с собственными hashes/owners и решение по каждому; имя отдельной пространственной integration branch. `9c08ff1` из аудита — кандидат для сравнения, не автоматически выбранная база.",
+      "evidence": []
+    },
+    {
+      "id": "S01",
+      "title": "Зафиксировать planar-регрессии и реальные PFC gates",
+      "phase": 0,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-00-foundation.md",
+      "heading": "S01 — Зафиксировать planar-регрессии и реальные PFC gates",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S00"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G0-source"
+      ],
+      "dependency_text": "S00; `G0-source`.",
+      "output_contract": "именованные gates и набор неизменяемых planar fixtures с platform/provider/build identity. Старые количества `2105/2381 planned` и `13 source-implemented` не копировать как новый пересчёт.",
+      "evidence": []
+    },
+    {
+      "id": "S02",
+      "title": "Зафиксировать контракты, ADR и владельцев общих файлов",
+      "phase": 0,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-00-foundation.md",
+      "heading": "S02 — Зафиксировать контракты, ADR и владельцев общих файлов",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S00",
+        "S01"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G0-source"
+      ],
+      "dependency_text": "S00, S01; `G0-source`.",
+      "output_contract": "единый контракт пространства `bike::spatial::{Mode,RootKind,Config,Topology,RootBinding,BodyPose}`, `bike::terrain::{Grid3d,GridSample3d,RayHit3d}` и `bike::pneumatic3d`; существующие namespaces `runtime`/`nativecfg` сохраняются.",
+      "evidence": []
+    },
+    {
+      "id": "S03",
+      "title": "Реестр независимых физических эталонов и происхождения данных",
+      "phase": 0,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-00-foundation.md",
+      "heading": "S03 — Реестр независимых физических эталонов и происхождения данных",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S02"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G0-source"
+      ],
+      "dependency_text": "S02; `G0-source`.",
+      "output_contract": "machine-readable параметры с единицами, frame/sign convention, областью применимости и источником каждого значения; независимый analytical benchmark имеет отдельный model profile.",
+      "evidence": []
+    },
+    {
+      "id": "S04",
+      "title": "C++-тестовый контур и fail-closed evidence checks",
+      "phase": 0,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-00-foundation.md",
+      "heading": "S04 — C++-тестовый контур и fail-closed evidence checks",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S01",
+        "S02",
+        "S03"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S01–S03; `G1-core` для выполнения.",
+      "output_contract": "один явный CTest registration helper и локальные пространственные fixtures; не новый testing framework.",
+      "evidence": []
+    },
+    {
+      "id": "S05",
+      "title": "Native spatial config и отказ для неподключённых capabilities",
+      "phase": 0,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-00-foundation.md",
+      "heading": "S05 — Native spatial config и отказ для неподключённых capabilities",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S02",
+        "S04"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S02, S04; `G1-core`.",
+      "output_contract": "`bike::spatial::Config`, `Mode`, `RootKind`; полный parsed spatial request без обещания, что physics/runtime уже доступны. Публичный `implemented_capabilities` по source отличается от `qualification_pending` и release evidence.",
+      "evidence": []
+    },
+    {
+      "id": "S06",
+      "title": "Owned grid и версионированный terrain asset",
+      "phase": 1,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-01-terrain.md",
+      "heading": "S06. Owned grid и версионированный terrain asset",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S01–S05; для автономного codec достаточно замороженных contracts и native IO-зависимостей, общий rollout не нужен.",
+      "output_contract": "`read_terrain3d(std::span<const std::byte>) -> std::expected<Grid3d,std::string>` и `write_terrain3d(const Grid3d&) -> std::vector<std::byte>`. `Grid3d` владеет elevation, materials и metadata; публичные spans read-only. Все значения конечны, `dx,dy>0`, `nx,ny>=4` для bicubic. Asset fingerprint включает canonical bytes, generator version, resolved spec и seed.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S07",
+      "title": "Bicubic sampling, нормаль и границы",
+      "phase": 1,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-01-terrain.md",
+      "heading": "S07. Bicubic sampling, нормаль и границы",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S06"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S06.",
+      "output_contract": "`Grid3d::sample(double x_m,double y_m) const noexcept -> GridSample3d`; normal получается из производных той же поверхности, `normalize({-dzdx,-dzdy,1})`. `inside`/status и material выбираются независимо от extrapolation, используемой для ghost nodes.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S08",
+      "title": "Первый ray hit, касания и исчерпание бюджета",
+      "phase": 1,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-01-terrain.md",
+      "heading": "S08. Первый ray hit, касания и исчерпание бюджета",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S07"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S07.",
+      "output_contract": "`Grid3d::ray_cast(std::array<double,3> origin_m,std::array<double,3> unit_direction,double max_distance_m) const noexcept -> RayHit3d`; `QueryStatus3d::{ok,miss,outside,invalid_input,budget_exhausted,origin_below_surface}`. Hit содержит distance, world point, terrain normal и material ID. Начало ниже поверхности получает `origin_below_surface`, не `ok` с нулевым distance и не автоматически «полное сжатие шины».",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S09",
+      "title": "C++-генератор бокового рельефа и provenance",
+      "phase": 1,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-01-terrain.md",
+      "heading": "S09. C++-генератор бокового рельефа и provenance",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S06",
+        "S07",
+        "S08"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S06–S08 и существующий квалифицированный native 1D terrain/RNG контракт.",
+      "output_contract": "`generate_grid3d(const Track3dSpec&) -> Grid3d` cold API; `Track3dSpec` содержит base track, seed, grid, bank/rut/rock/root/roughness sections, material zones и `generator_version`. Результат имеет reproducible hash в пределах закреплённого numerics profile.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S10",
+      "title": "Точная extrusion как отдельный compatibility adapter",
+      "phase": 1,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-01-terrain.md",
+      "heading": "S10. Точная extrusion как отдельный compatibility adapter",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S06",
+        "S07"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S06 и S07; существующий qualified `biketyre::RoadProfile`/planar contact path. Может идти параллельно S08–S09.",
+      "output_contract": "Полный C3.2 contract: owned immutable `ProfileExtrusion3d` с `sample(double,double) const noexcept -> GridSample3d` и `ray_cast(array3,array3,double) const noexcept -> RayHit3d`; `Terrain3dKind`, `Terrain3dQueryView`, owned-variant `Terrain3dSource` с `query_view() const noexcept`. Новые общие типы объявляются в `source3d.hpp`; S11 лишь подключает владельца к runtime. Planar-matched contact adapter сохраняет прежний piecewise-linear solver.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S11",
+      "title": "Startup ownership и render asset без повторного terrain decode",
+      "phase": 1,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-01-terrain.md",
+      "heading": "S11. Startup ownership и render asset без повторного terrain decode",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S09",
+        "S10",
+        "S14",
+        "S17"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S09, S10, S14, S17; подтверждённые producer contracts G1. S11 готовит model/setup ownership; последующая S31 потребляет upstream `G2-startup` и проверяет spatial startup. S11 не зависит от завершения S18/S19/S31.",
+      "output_contract": "Один immutable terrain owner, разделяемый запросами шины, initial placement, artifact capture и viewer. `RenderGrid3d` содержит nrow/ncol, normalized elevation, world bounds/datum и physical asset fingerprint; не является источником tyre forces.",
+      "evidence": []
+    },
+    {
+      "id": "S12",
+      "title": "Terrain qualification, budgets и evidence",
+      "phase": 1,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-01-terrain.md",
+      "heading": "S12. Terrain qualification, budgets и evidence",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S06–S11.",
+      "output_contract": "Проверяемая terrain gate matrix: analytic accuracy, robustness, determinism, actual resident/peak memory, throughput и ограничения represented surfaces.",
+      "evidence": []
+    },
+    {
+      "id": "S13",
+      "title": "Descriptor топологии и преобразования координат",
+      "phase": 2,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-02-topology.md",
+      "heading": "S13 — Descriptor топологии и преобразования координат",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S02",
+        "S04",
+        "S05"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S02, S04, S05; `G1-core`.",
+      "output_contract": "`Topology`, `RootBinding`, `BodyPose`; contracts:",
+      "evidence": []
+    },
+    {
+      "id": "S14",
+      "title": "Constrained/free builders и физический steering joint",
+      "phase": 2,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-02-topology.md",
+      "heading": "S14 — Constrained/free builders и физический steering joint",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S13"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S13; `G2-startup` для model/compile controls; terrain integration следует S10.",
+      "output_contract": "native MJCF для трёх root kinds и steering actuator, model-bound descriptor; это модельный milestone, не разрешение выполнить неподключённую шину.",
+      "evidence": []
+    },
+    {
+      "id": "S15",
+      "title": "Drivetrain, сопротивление и учёт мощности при пространственном root",
+      "phase": 2,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-02-topology.md",
+      "heading": "S15 — Drivetrain, сопротивление и учёт мощности при пространственном root",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S13",
+        "S14"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S13, S14; `G1-core`, `G2-startup`.",
+      "output_contract": "корректные generalized forces и одинаковый power balance при повороте всей установки; явная support matrix transmission variants.",
+      "evidence": []
+    },
+    {
+      "id": "S16",
+      "title": "Пространственный rider, полный Jacobian и достижимый хват",
+      "phase": 2,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-02-topology.md",
+      "heading": "S16 — Пространственный rider, полный Jacobian и достижимый хват",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S13",
+        "S14",
+        "S15"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S13–S15; `G2-startup`.",
+      "output_contract": "rider follows spatial frame motion physically, сохраняя sagittal effort; минимальный дополнительный spatial shoulder swivel обеспечивает хват руля. Его torque/range/strength parameters имеют отдельную версию и provenance, не вымышленные измерения.",
+      "evidence": []
+    },
+    {
+      "id": "S17",
+      "title": "Runtime, bootstrap и state adapters без scalar-root предположений",
+      "phase": 2,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-02-topology.md",
+      "heading": "S17 — Runtime, bootstrap и state adapters без scalar-root предположений",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S13–S16; `G1-core`, `G2-startup`.",
+      "output_contract": "topology-aware adapters одного lifecycle `construct/probe/advance/snapshot/reset/close` и cold codec/identity boundaries. Список причинного состояния полный, но сам spatial writer создаёт S25, его state codec — S27. Адаптация scalar settle к constrained4 входит сюда; free-root equilibrium — S29–S31.",
+      "evidence": []
+    },
+    {
+      "id": "S18",
+      "title": "Constrained bridge с настоящей 3D-шиной",
+      "phase": 2,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-02-topology.md",
+      "heading": "S18 — Constrained bridge с настоящей 3D-шиной",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S10",
+        "S17",
+        "S25",
+        "S27"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S10, S17, S25, S27; `G1-core`, `G2-startup`.",
+      "output_contract": "measured bridge evidence на flat, `rough_uphill_savage.toml`, `alpine_rocky.toml` с matched masses/geometry/input clocks.",
+      "evidence": []
+    },
+    {
+      "id": "S19",
+      "title": "Интегрированные отрицательные проверки топологии и feature boundary",
+      "phase": 2,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-02-topology.md",
+      "heading": "S19 — Интегрированные отрицательные проверки топологии и feature boundary",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S16",
+        "S18"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S16, S18; `G1-core`, `G2-startup`.",
+      "output_contract": "закрытая topology tranche без скрытого fallback, aliasing и неподдерживаемых combinations; точный список оставшихся free startup/balance/recording gates.",
+      "evidence": []
+    },
+    {
+      "id": "S20",
+      "title": "Тор, контактные элементы и касательные frames",
+      "phase": 3,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-03-tyre.md",
+      "heading": "S20. Тор, контактные элементы и касательные frames",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S06",
+        "S07",
+        "S08",
+        "S10",
+        "S13",
+        "S14",
+        "S15"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S06–S08, S10, S13–S15; чистая geometry может разрабатываться раньше model integration.",
+      "output_contract": "`query_geometry(const TorusGrid3d&,const WheelKinematics3d&,const terrain::Terrain3dSource&,std::span<ContactElement3d>) noexcept -> CoreStatus`. Все buffers предоставлены вызывающим кодом; элемент всегда сохраняет собственный material index.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S21",
+      "title": "Нормальная finite-volume law, carcass и давление",
+      "phase": 3,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-03-tyre.md",
+      "heading": "S21. Нормальная finite-volume law, carcass и давление",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S03",
+        "S20"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S20; physical coefficient provenance из S03.",
+      "output_contract": "`update_carcass(const CarcassSpec3d&,std::span<const ContactElement3d>,double dt_s,bool advance,CarcassState3d&,std::span<NormalElement3d>) noexcept -> CoreStatus`; energy/work lanes с SI units.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S22",
+      "title": "Connected patches, split/merge и история",
+      "phase": 3,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-03-tyre.md",
+      "heading": "S22. Connected patches, split/merge и история",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S20",
+        "S21"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S20–S21.",
+      "output_contract": "`assign_patches(std::span<const ContactElement3d>,std::span<const NormalElement3d>,bool advance,PatchState3d&,std::span<Patch3d>,std::size_t& count) noexcept -> CoreStatus`; persistent ID не равен индексу текущего output span.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S23",
+      "title": "Fast brush: combined slip, camber и passivity",
+      "phase": 3,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-03-tyre.md",
+      "heading": "S23. Fast brush: combined slip, camber и passivity",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S03",
+        "S05",
+        "S21",
+        "S22"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S21–S22, coefficient contract S03/S05.",
+      "output_contract": "`update_fast_brush(const BrushSpec3d&,std::span<const Patch3d>,std::span<const std::array<double,3>> point_velocity_world_mps,double dt_s,bool advance,BrushState3d&,std::span<PatchWrench>) noexcept -> CoreStatus`; `PatchWrench` объявляется в `brush.hpp` по C4, force/couple/point имеют отдельные именованные fields.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S24",
+      "title": "Detailed bristles и сопоставление tiers",
+      "phase": 3,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-03-tyre.md",
+      "heading": "S24. Detailed bristles и сопоставление tiers",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S20",
+        "S21",
+        "S22",
+        "S23"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S20–S23.",
+      "output_contract": "`update_detailed_brush(const BrushSpec3d&,std::span<const ContactElement3d>,std::span<const NormalElement3d>,const WheelKinematics3d&,double dt_s,bool advance,BrushState3d&,std::span<PatchWrench> element_wrench_world) noexcept -> CoreStatus`.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S25",
+      "title": "Writer, generalized forces и один владелец контакта",
+      "phase": 3,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-03-tyre.md",
+      "heading": "S25. Writer, generalized forces и один владелец контакта",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S11",
+        "S13",
+        "S14",
+        "S15",
+        "S16",
+        "S17",
+        "S20",
+        "S21",
+        "S22",
+        "S23",
+        "S24"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S11, S13–S17, S20–S24; `G1-core` для runtime integration. S18/S19 потребляют writer позднее и не являются его входной зависимостью.",
+      "output_contract": "`Pneumatic3dTireWriter::try_compute_into(const mjData*,double dt_s,bool advance,std::span<double> qfrc) noexcept -> CoreStatus`, state/probe/diagnostics accessors и `TyreState3d`. Writer class размещён в `bike::pneumatic3d`.",
+      "evidence": []
+    },
+    {
+      "id": "S26",
+      "title": "Статика тормоза, contact anchors и общий grip",
+      "phase": 3,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-03-tyre.md",
+      "heading": "S26. Статика тормоза, contact anchors и общий grip",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S14",
+        "S17",
+        "S23",
+        "S24",
+        "S25"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S23–S25; standalone brake/constrained fixture из S14/S17. S18 потребляет результат позднее; координация с владельцем dirty brake fixes PFC в S01/S02.",
+      "output_contract": "`spatial::BrakeState` с front/rear latch validity, unwrapped hinge angle reference, elastic storage, previous demand, interval index; `capture_spatial_brake()`/`restore_spatial_brake(const BrakeState&)` на existing brake owner.",
+      "evidence": []
+    },
+    {
+      "id": "S27",
+      "title": "Версионированный tyre-state codec и atomic restore",
+      "phase": 3,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-03-tyre.md",
+      "heading": "S27. Версионированный tyre-state codec и atomic restore",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S02",
+        "S04",
+        "S17",
+        "S21",
+        "S22",
+        "S23",
+        "S24",
+        "S25",
+        "S26"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S17, S21–S26; общий state contract S02/S04. S19 интегрирует codec позднее и не является его входной зависимостью.",
+      "output_contract": "`encode_tyre_state(const TyreState3d&) -> std::vector<std::byte>`; `decode_tyre_state(std::span<const std::byte>,const TyreStateIdentity3d&) -> std::expected<TyreState3d,std::string>`; `TyreStateIdentity3d` содержит schema/tier/grid/capacity и fingerprints, объявляется в `state.hpp`.",
+      "evidence": []
+    },
+    {
+      "id": "S28",
+      "title": "Физическая и калибровочная квалификация шины",
+      "phase": 3,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-03-tyre.md",
+      "heading": "S28. Физическая и калибровочная квалификация шины",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S20",
+        "S21",
+        "S22",
+        "S23",
+        "S24",
+        "S25",
+        "S26",
+        "S27"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S20–S27; полный runtime gates G1/G2 нужны только для integrated часть matrix.",
+      "output_contract": "Versioned coefficient profile со статусами `measured/calibrated/inferred/provisional` по семействам коэффициентов, canonical digest, независимый qualification report и capability flag; отсутствие измерений оставляет профиль provisional.",
+      "evidence": []
+    },
+    {
+      "id": "S29",
+      "title": "Native equilibrium в tangent coordinates",
+      "phase": 4,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-04-startup-balance.md",
+      "heading": "S29. Native equilibrium в tangent coordinates",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S13",
+        "S14",
+        "S15",
+        "S16",
+        "S17",
+        "S18",
+        "S19",
+        "S25",
+        "S26",
+        "S27"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S13–S19, S25–S27; `G1-core`.",
+      "output_contract": "Existing `settle_context(SetupContext&,const EquilibriumOptions&) -> EquilibriumResult` получает spatial dispatch и optional `spatial::EquilibriumReport`; `spatial_refine(SetupContext&,int max_evaluations,double acceleration_tolerance) -> double`. Новый публичный setup service не создаётся.",
+      "evidence": []
+    },
+    {
+      "id": "S30",
+      "title": "Bootstrap hold, отпускание и старт без скрытой опоры",
+      "phase": 4,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-04-startup-balance.md",
+      "heading": "S30. Bootstrap hold, отпускание и старт без скрытой опоры",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S18",
+        "S26",
+        "S29"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S29, S18/S26; hold structure может разрабатываться параллельно S29 на fixtures.",
+      "output_contract": "`BootstrapHold::try_compute_into(const mjModel&,const mjData&,BootstrapPhase,std::span<double> qfrc) noexcept -> CoreStatus`; немутирующий `state() -> const HoldState&`; явная проверка переходов стадии.",
+      "evidence": []
+    },
+    {
+      "id": "S31",
+      "title": "Native setup, fresh/cache/import и полнота bootstrap",
+      "phase": 4,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-04-startup-balance.md",
+      "heading": "S31. Native setup, fresh/cache/import и полнота bootstrap",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S11",
+        "S27",
+        "S29",
+        "S30"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S11, S27, S29–S30; подтверждённый upstream `G2-startup`. Задача доказывает spatial startup и входит в M3, но не закрывает PFC readiness gate.",
+      "output_contract": "Существующий `SetupOwner::seal_bootstrap() -> runtime::RuntimeBootstrap` поддерживает spatial state version; `read_setup_request` принимает объявленные spatial inputs без Python. Cache identity учитывает каждую влияющую на физику версию отдельно от общей schema.",
+      "evidence": []
+    },
+    {
+      "id": "S32",
+      "title": "Внутренний steer controller, ticks, delay и restore",
+      "phase": 4,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-04-startup-balance.md",
+      "heading": "S32. Внутренний steer controller, ticks, delay и restore",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S14",
+        "S15",
+        "S16",
+        "S17",
+        "S18",
+        "S19",
+        "S25",
+        "S30",
+        "S31"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S14–S19, S25, S30–S31; проверка кинематического замыкания рук/руля S16 обязательна.",
+      "output_contract": "`SteerBalance::tick(const spatial::SteerInput&) noexcept -> double`, `state() -> const spatial::SteerState&`, `restore(const SteerState&) -> CoreStatus`; результат — внутренний рулевой момент в N·m.",
+      "evidence": []
+    },
+    {
+      "id": "S33",
+      "title": "Терминальные исходы, приоритет и достоверные метрики",
+      "phase": 4,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-04-startup-balance.md",
+      "heading": "S33. Терминальные исходы, приоритет и достоверные метрики",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S19",
+        "S25",
+        "S30",
+        "S31",
+        "S32"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S19, S25, S30–S32; consumers research/recording подключаются в позднейших фазах.",
+      "output_contract": "`evaluate_outcome(const SpatialOutcomeInput&,OutcomeState&) noexcept -> spatial::Outcome`; новый input объявляется в `outcomes.hpp` и содержит пороги/измерения/validity текущего tick. Общие `OutcomeState`, `Outcome`, `SpatialReason` и их strict codecs уже созданы S17; classifier использует их без повторного определения. Поздние research/recording consumers не создают второй classifier.",
+      "evidence": []
+    },
+    {
+      "id": "S34",
+      "title": "Отдельный физический benchmark M: Meijaard/Whipple",
+      "phase": 4,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-04-startup-balance.md",
+      "heading": "S34. Отдельный физический benchmark M: Meijaard/Whipple",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S03",
+        "S13",
+        "S14",
+        "S15",
+        "S19",
+        "S29",
+        "S30",
+        "S31"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S13–S15, S19, S29–S31; калибровка production-шины S28 не подменяет эталон идеальных контактов.",
+      "output_contract": "`make_whipple_request(const WhippleParameters&) -> model::BuildRequest`, только тестовая динамика с идеальными constraints и приведённый native Jacobian4×4; независимые reference matrices `M,C1,K0,K2` из Appendix A. `WhippleParameters` содержит все body/inertia/geometry значения Table1, g и скорость.",
+      "evidence": []
+    },
+    {
+      "id": "S35",
+      "title": "Cornering, mirror invariance и выбор timestep",
+      "phase": 4,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-04-startup-balance.md",
+      "heading": "S35. Cornering, mirror invariance и выбор timestep",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S09",
+        "S11",
+        "S28",
+        "S31",
+        "S32",
+        "S33",
+        "S34"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S28, S31–S34; площадка cornering S09/S11 и квалифицированные преобразования root/forces.",
+      "output_contract": "Именованные qualification metrics для cornering, symmetry и dt; наибольший принятый production timestep для каждого tier/profile/solver с evidence manifest. Универсальный новый default не объявляется.",
+      "evidence": []
+    },
+    {
+      "id": "S36",
+      "title": "Целевые заезды и spatial physical milestone M3",
+      "phase": 4,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-04-startup-balance.md",
+      "heading": "S36. Целевые заезды и spatial physical milestone M3",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16",
+        "S17",
+        "S18",
+        "S19",
+        "S20",
+        "S21",
+        "S22",
+        "S23",
+        "S24",
+        "S25",
+        "S26",
+        "S27",
+        "S28",
+        "S29",
+        "S30",
+        "S31",
+        "S32",
+        "S33",
+        "S34",
+        "S35"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S06–S35, upstream G1/G2. Spatial research/recording/viewer подключаются позднее с их G3/G4/G5; S36 от этих будущих consumers не зависит.",
+      "output_contract": "Детерминированная матрица сценариев и пакет end-to-end evidence: resolved input/model/terrain digests, startup result, trajectory/forces/energy, outcome, запрошенная/валидная длительность, статус калибровки и данные воспроизводимости.",
+      "evidence": []
+    },
+    {
+      "id": "S37",
+      "title": "Нативные монтаж IMU, система координат и свежая стадия измерения",
+      "phase": 5,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-05-observation-recording.md",
+      "heading": "S37 — Нативные монтаж IMU, система координат и свежая стадия измерения",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S02",
+        "S13",
+        "S14",
+        "S15",
+        "S16",
+        "S17",
+        "S18",
+        "S19",
+        "S29",
+        "S30",
+        "S31",
+        "S32",
+        "S33",
+        "S34",
+        "S35",
+        "S36"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "S02; topology/frames S13–S19; S29–S36 для интеграционных fixtures. Независимые проверки вращений и области значений можно подготовить до G2-startup.",
+      "output_contract": "`runtime::spatial::ImuTruth`, `rotate_vector(Matrix3,Vector3)`, metadata site/frame/calibration; accelerometer и gyro одной объявленной стадии измерения.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S38",
+      "title": "Observation V2, noise11 и состояние задержки/dropout",
+      "phase": 5,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-05-observation-recording.md",
+      "heading": "S38 — Observation V2, noise11 и состояние задержки/dropout",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S02",
+        "S37"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup",
+        "G3-research"
+      ],
+      "dependency_text": "S02, S37; upstream G3-research подтверждает native clock/noise/policy host. Независимые unit-тесты V2 можно подготовить до G3; интеграция ожидает доказательств готовности производителя. S38 даёт часть spatial M4.",
+      "output_contract": "объявленные `SensorObservationV2`, `NoiseTapeV2`, `SensorStateV2`, `SensorPipelineV2`; native `make_sensor_tape_v2(const SensorConfigV2&, std::string_view seed_decimal, std::int64_t count)` в `bike::research`, возвращающий `runtime::spatial::NoiseTapeV2`.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S39",
+      "title": "Нативный research dispatch и policy ABI V2",
+      "phase": 5,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-05-observation-recording.md",
+      "heading": "S39 — Нативный research dispatch и policy ABI V2",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S38"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup",
+        "G3-research"
+      ],
+      "dependency_text": "S38, upstream G3-research; существующий T35 policy ABI owner. Приемка S39 входит в spatial M4, не заменяет baseline PFC gate. Перед shared-header правками integration owner подтверждает один change-set.",
+      "output_contract": "управляемый schema dispatch существующей research session, `bike_policy_v2()` и `BikeObservationV2`; смысл управления мотором сохраняется. Балансировка рулём остаётся у внутреннего rider/plant owner, а не становится новой anti-wheelie policy.",
+      "evidence": []
+    },
+    {
+      "id": "S40",
+      "title": "Spatial truth, публикация исходов и метрики",
+      "phase": 5,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-05-observation-recording.md",
+      "heading": "S40 — Spatial truth, публикация исходов и метрики",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S19",
+        "S28",
+        "S33",
+        "S36",
+        "S39"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup",
+        "G3-research"
+      ],
+      "dependency_text": "S19, S28, S33, S36, S39; контракты transform/terrain/contact закреплены S02. S33 — единственный производитель terminal priority/dwell/latch.",
+      "output_contract": "пространственные truth fields, metric keys и публикация уже принятого terminal decision; policy observations не расширяются истиной. Второй classifier/timer не создаётся.",
+      "evidence": []
+    },
+    {
+      "id": "S41",
+      "title": "Spatial catalog, координаты и source channels",
+      "phase": 5,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-05-observation-recording.md",
+      "heading": "S41 — Spatial catalog, координаты и source channels",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S19",
+        "S37",
+        "S38",
+        "S39",
+        "S40"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup",
+        "G3-research",
+        "G4-recording"
+      ],
+      "dependency_text": "S37–S40, S19 topology и upstream G4-recording. S41/S42/S43 производят recording/replay часть spatial M4. Можно раньше проектировать schema descriptors, но не помечать их produced до upstream producer evidence.",
+      "output_contract": "schema2 descriptor и его встроенная копия, aliases с учётом топологии, явный выбор schema для всех table/encoding lookup.",
+      "evidence": [],
+      "preparation_note": "Независимую подготовку исходников/fixtures можно вести раньше полной интеграции по замороженным контрактам; verified требует перечисленных реальных producers и scoped upstream evidence."
+    },
+    {
+      "id": "S42",
+      "title": "Полное состояние, schema2 container и вложенные assets",
+      "phase": 5,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-05-observation-recording.md",
+      "heading": "S42 — Полное состояние, schema2 container и вложенные assets",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S27",
+        "S36",
+        "S38",
+        "S41"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup",
+        "G3-research",
+        "G4-recording"
+      ],
+      "dependency_text": "S27 tyre state/codec, S36 startup/steering state, S38 sensor state, S41 catalog; upstream G4-recording и existing capture/publication owner. S28 physical rigs квалифицируют state producer и обязательны для итогового M4 evidence, но не являются producer API.",
+      "output_contract": "`spatial_checkpoint=1`, schema2 container, replay contract4 recipe; bytes источника, разрешённая калибровка и начальный/конечный semantic checkpoint вложены вместе с hashes. Checkpoint оборачивает bootstrap2 и research/sensor/policy extensions; tyre/brake/steer сохраняют по одному bootstrap owner.",
+      "evidence": []
+    },
+    {
+      "id": "S43",
+      "title": "Checked replay spatial4 без ослабления comparator",
+      "phase": 5,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-05-observation-recording.md",
+      "heading": "S43 — Checked replay spatial4 без ослабления comparator",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S42"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup",
+        "G3-research",
+        "G4-recording"
+      ],
+      "dependency_text": "S42, upstream G3-research/G4-recording и existing checked-replay reconstruction owner миграции. S43 закрывает replay часть spatial M4; S44 после этой задачи закрепляет fixtures.",
+      "output_contract": "та же `ReplaySession` с явным recipe dispatch; результат содержит schema/version/provenance и path/step первого несовпадения. Inspection остаётся отдельным режимом.",
+      "evidence": []
+    },
+    {
+      "id": "S44",
+      "title": "Нативные fixtures, собственные эталоны и реестр проверок",
+      "phase": 5,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-05-observation-recording.md",
+      "heading": "S44 — Нативные fixtures, собственные эталоны и реестр проверок",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S28",
+        "S36",
+        "S37",
+        "S38",
+        "S39",
+        "S40",
+        "S41",
+        "S42",
+        "S43"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup",
+        "G3-research",
+        "G4-recording"
+      ],
+      "dependency_text": "S37–S43, S28/S36 physical gates; G1-core, G2-startup, G3-research, G4-recording.",
+      "output_contract": "машинно читаемый реестр task→requirement→test→platform→result и проверенные эталоны каждой платформы; классы сравнений отделены от физической приёмки.",
+      "evidence": []
+    },
+    {
+      "id": "S45",
+      "title": "Нативный CLI и единая цепочка разрешения конфигурации",
+      "phase": 6,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-06-application.md",
+      "heading": "S45 — Нативный CLI и единая цепочка разрешения конфигурации",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S19",
+        "S36",
+        "S39"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G2-startup",
+        "G3-research",
+        "G5-gui"
+      ],
+      "dependency_text": "S19 topology, S36 startup, S39 schema dispatch; upstream G2/G3/G5 и spatial M3/M4 fixtures. **Consumes:** S02 `bike::spatial::Config`, native `terrain::Grid3d` request и действующий `bike::cli::Arguments`. **Produces:** `--spatial planar|3d`, `--terrain3d PATH`, native resolved request; `--threads N` добавляется только S52 и до того неизвестный flag отвергается, а не принимается впустую.",
+      "output_contract": "`--spatial planar|3d`, `--terrain3d PATH`, native resolved request; `--threads N` добавляется только S52 и до того неизвестный flag отвергается, а не принимается впустую.",
+      "evidence": [],
+      "gate_scope_note": "G5 здесь означает native CLI resolution/argument contract; desktop display acceptance относится к S46/S54."
+    },
+    {
+      "id": "S46",
+      "title": "Пространственная поза, следящая камера и читаемый HUD",
+      "phase": 6,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-06-application.md",
+      "heading": "S46 — Пространственная поза, следящая камера и читаемый HUD",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S36",
+        "S40",
+        "S45"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G5-gui"
+      ],
+      "dependency_text": "free-root startup S36, spatial truth S40, CLI S45; upstream G5-gui для реального viewer. **Consumes:** `bike::spatial::BodyPose{position_world_m,quat_world_from_body_wxyz,linear_velocity_world_mps,angular_velocity_world_rad_s}` и принятый RenderFrame. **Produces:** пространственное расширение отображения и `Camera::update_spatial(mjvCamera&,const std::array<double,3>& position_world_m,std::optional<double> heading_rad)`; planar `update(x,z)` сохраняется.",
+      "output_contract": "пространственное расширение отображения и `Camera::update_spatial(mjvCamera&,const std::array<double,3>& position_world_m,std::optional<double> heading_rad)`; planar `update(x,z)` сохраняется.",
+      "evidence": []
+    },
+    {
+      "id": "S47",
+      "title": "Нативные пространственные отчёты, графики и пакетные процессы",
+      "phase": 6,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-06-application.md",
+      "heading": "S47 — Нативные пространственные отчёты, графики и пакетные процессы",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S40",
+        "S41",
+        "S42",
+        "S43",
+        "S45"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G3-research",
+        "G4-recording",
+        "G5-gui"
+      ],
+      "dependency_text": "truth S40, catalog S41, recording/replay S42/S43, вызовы S45. **Consumes:** schema2 columns с объявленными validity/frame; существующие `bike::viz::Channels`, `Report`, `Plot` и native process batch. **Produces:** `bike::viz::Report spatial_attitude_plot(const Channels&)`, пространственные отчёты и детерминированные batch job identity/summary.",
+      "output_contract": "`bike::viz::Report spatial_attitude_plot(const Channels&)`, пространственные отчёты и детерминированные batch job identity/summary.",
+      "evidence": []
+    },
+    {
+      "id": "S48",
+      "title": "Установка и переносимость без Python",
+      "phase": 6,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-06-application.md",
+      "heading": "S48 — Установка и переносимость без Python",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S43",
+        "S45",
+        "S46",
+        "S47"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G3-research",
+        "G4-recording",
+        "G5-gui"
+      ],
+      "dependency_text": "S12, S43, S45–S47 и принятые dependency/install/loader gates C++/Linux completion; upstream G1/G4/G5/G6. **Consumes:** корневой граф executable и закреплённые native providers. **Produces:** установленные пространственные возможности на квалифицированных macOS-arm64/Linux-aarch64, headless и GUI в выбранных конфигурациях.",
+      "output_contract": "установленные пространственные возможности на квалифицированных macOS-arm64/Linux-aarch64, headless и GUI в выбранных конфигурациях.",
+      "evidence": []
+    },
+    {
+      "id": "S49",
+      "title": "Пользовательские сценарии, покрытие и передача",
+      "phase": 6,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-06-application.md",
+      "heading": "S49 — Пользовательские сценарии, покрытие и передача",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S44",
+        "S45",
+        "S46",
+        "S47",
+        "S48"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G3-research",
+        "G4-recording",
+        "G5-gui"
+      ],
+      "dependency_text": "S44–S48; финальные числа производительности появятся после дополнения отчёта S50 в S54. **Consumes:** реализованные CLI/options, принятые configuration files, проверенные observations/records и платформенные доказательства. **Produces:** исполнимые пользовательские сценарии, достоверная таблица возможностей и связь task→requirement→gate, без объявления ещё не измеренного RTF.",
+      "output_contract": "исполнимые пользовательские сценарии, достоверная таблица возможностей и связь task→requirement→gate, без объявления ещё не измеренного RTF.",
+      "evidence": []
+    },
+    {
+      "id": "S50",
+      "title": "Однопоточные измерения и пространственный профиль производительности",
+      "phase": 7,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-07-performance-qualification.md",
+      "heading": "S50 — Однопоточные измерения и пространственный профиль производительности",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S28",
+        "S36"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core",
+        "G2-startup"
+      ],
+      "dependency_text": "обязательные зависимости завершения S50 — S28 и S36; через них доступны S19 и upstream G1/G2. Инструменты можно готовить раньше, после S04/S19. S50 закрывается достоверным однопоточным baseline, даже при недостигнутом RTF, после чего S51 может начаться. GUI/recording/product-измерения после S44–S49 дополняют тот же отчёт в S54 и не блокируют завершение S50. Ранний замер не объявляет ещё отсутствующие запись или GUI проверенными.",
+      "output_contract": "профиль `spatial-fast-v1`, время отдельных областей однопоточного расчёта и минимум три полных валидных запуска после прогрева. GUI и полные recording-режимы добавляет S54. Чистая функция `runtime::spatial::rtf_threshold_met(double simulated_s,double wall_s,double target)` проверяет конечность, simulated≥0, wall>0, target>0 и возвращает `simulated_s/wall_s>=target`.",
+      "evidence": [],
+      "scope_note": "depends_on относится к достоверному serial baseline. Дополнительные recording/GUI/product измерения после S44–S49 включаются в S54; низкий измеренный RTF не препятствует переходу к S51.",
+      "preparation_after": [
+        "S04",
+        "S19"
+      ]
+    },
+    {
+      "id": "S51",
+      "title": "Целесообразность и контракт детерминированного пула",
+      "phase": 7,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-07-performance-qualification.md",
+      "heading": "S51 — Целесообразность и контракт детерминированного пула",
+      "status": "planned",
+      "required_for_core_delivery": false,
+      "depends_on": [
+        "S27",
+        "S42",
+        "S50"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "однопоточный профиль S50, владение состоянием шины S27, полный checkpoint S42. При достигнутых однопоточных целях допускается `not_selected` с объяснением: продукт продолжает квалификацию без фиктивной поддержки `--threads>1`. Невыполненные цели этим решением не закрываются.",
+      "output_contract": "`IndexRange{std::size_t begin,end}`, `partition_ranges(std::size_t count,unsigned workers)->std::vector<IndexRange>` и документированное решение по измерениям; активные рабочие потоки здесь не создаются.",
+      "evidence": [],
+      "selection_rule": "Выполнить выбранную оптимизацию либо записать not_selected. S54 требует performance targets независимо от выбора; отказ от оптимизации не закрывает провал производительности."
+    },
+    {
+      "id": "S52",
+      "title": "Реализация пула и инвариантность внутри одной сборки",
+      "phase": 7,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-07-performance-qualification.md",
+      "heading": "S52 — Реализация пула и инвариантность внутри одной сборки",
+      "status": "planned",
+      "required_for_core_delivery": false,
+      "depends_on": [
+        "S27",
+        "S28",
+        "S42",
+        "S51"
+      ],
+      "decision_dependencies": [],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "решение реализовать пул S51, семантика и доказательства транзакционности шины S27/S28, checkpoint S42. Если S51 выбрал no-go либо `not_selected`, результат S52 — документированный `not_selected`; публичный N>1 недоступен. Это допустимо для S54 только при выполненных однопоточных целях.",
+      "output_contract": "`WorkerPool` в `runtime::spatial`, constructor/destructor вне hot path, прямое однопоточное выполнение и API задач:",
+      "evidence": [],
+      "selection_rule": "Выполнить выбранную оптимизацию либо записать not_selected. S54 требует performance targets независимо от выбора; отказ от оптимизации не закрывает провал производительности."
+    },
+    {
+      "id": "S53",
+      "title": "Необязательная оценка внутреннего пула MuJoCo",
+      "phase": 7,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-07-performance-qualification.md",
+      "heading": "S53 — Необязательная оценка внутреннего пула MuJoCo",
+      "status": "planned",
+      "required_for_core_delivery": false,
+      "depends_on": [
+        "S50"
+      ],
+      "decision_dependencies": [
+        "S51",
+        "S52"
+      ],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "S50, документированный результат S51/S52 и квалифицированные engine identity/API headers из G1-core. Задача не блокирует пространственную приёмку однопоточного CPU-пути; при достаточном его результате допустим `not_selected` без прототипа или измерения несуществующей реализации.",
+      "output_contract": "измеренное сравнение однопоточного engine с поддержанным внутренним пулом, отдельно от потоков шины и процессов batch.",
+      "evidence": [],
+      "selection_rule": "Выполнить выбранную оптимизацию либо записать not_selected. S54 требует performance targets независимо от выбора; отказ от оптимизации не закрывает провал производительности."
+    },
+    {
+      "id": "S54",
+      "title": "Итоговая квалификация интегрированной версии",
+      "phase": 7,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-07-performance-qualification.md",
+      "heading": "S54 — Итоговая квалификация интегрированной версии",
+      "status": "planned",
+      "required_for_core_delivery": true,
+      "depends_on": [
+        "S00",
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16",
+        "S17",
+        "S18",
+        "S19",
+        "S20",
+        "S21",
+        "S22",
+        "S23",
+        "S24",
+        "S25",
+        "S26",
+        "S27",
+        "S28",
+        "S29",
+        "S30",
+        "S31",
+        "S32",
+        "S33",
+        "S34",
+        "S35",
+        "S36",
+        "S37",
+        "S38",
+        "S39",
+        "S40",
+        "S41",
+        "S42",
+        "S43",
+        "S44",
+        "S45",
+        "S46",
+        "S47",
+        "S48",
+        "S49",
+        "S50"
+      ],
+      "decision_dependencies": [
+        "S51",
+        "S52",
+        "S53"
+      ],
+      "upstream_gates": [
+        "G0-source",
+        "G1-core",
+        "G2-startup",
+        "G3-research",
+        "G4-recording",
+        "G5-gui",
+        "G6-qualification"
+      ],
+      "dependency_text": "обязательные S00–S50; S51–S53 имеют принятую реализацию либо документированный `not_selected` при выполненных однопоточных целях; upstream G0-source→G6-qualification в относящейся к продукту части и spatial M0–M5. S55 не является зависимостью. Удаление Python T63 не самостоятельное условие spatial, но все новые пути сборки, исполнения и тестирования должны быть native.",
+      "output_contract": "отдельное решение M6 по platform/capability, воспроизводимая финальная проверка и manifest artifacts; отложенные необязательные направления перечислены явно. Решение не подменяет G6 владельца миграции.",
+      "evidence": []
+    },
+    {
+      "id": "S55",
+      "title": "Ограниченная исследовательская записка о GPU",
+      "phase": 8,
+      "document": "docs/superpowers/plans/2026-10-22-spatial-3d-native-08-gpu-research.md",
+      "heading": "S55 — Ограниченная исследовательская записка о GPU",
+      "status": "planned",
+      "required_for_core_delivery": false,
+      "depends_on": [
+        "S50"
+      ],
+      "decision_dependencies": [
+        "S51",
+        "S52"
+      ],
+      "upstream_gates": [
+        "G1-core"
+      ],
+      "dependency_text": "измеренная CPU-нагрузка S50 и документированный результат S51/S52 для выбора лучшего квалифицированного CPU-варианта; при `not_selected` это измеренный однопоточный вариант. S54 не зависит от S55. До появления данных допустим только статус `desk-review/pending-measurement`.",
+      "output_contract": "записка с независимыми решениями H1/H2/H3: `go-for-separate-design`, `no-go`, `pending-measurement`, `unsupported-host`; ни одно решение не включает GPU в продукт автоматически.",
+      "evidence": [],
+      "selection_rule": "Необязательное исследование; отсутствие S55 не блокирует S54."
+    }
+  ]
+}

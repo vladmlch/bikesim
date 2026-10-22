@@ -254,6 +254,19 @@ class PhysicalDriveConfig:
     freehub_c_nms_rad: float = .5
     bearing_c_nms_rad: float = .03
     brake_ceiling_nm: float = 200.
+    # Held-brake stiction at standstill (pad bite). The dof_frictionloss bound
+    # above is regularized by the solver, so a saturated hold still creeps;
+    # below `brake_hold_engage_radps` the brake latches the wheel angle and a
+    # spring-damper bounded by `brake_hold_torque_nm`*demand holds it -- the
+    # mechanism that parks a real bike on a grade. The latch releases past
+    # `brake_hold_release_radps` (hysteresis keeps a rolling wheel on the
+    # friction bound alone) or when the lever frees. A zero hold torque or
+    # stiffness disables the bite.
+    brake_hold_torque_nm: float = 200.
+    brake_hold_stiffness_nm_rad: float = 20000.
+    brake_hold_damping_nms_rad: float = 10.
+    brake_hold_engage_radps: float = .5
+    brake_hold_release_radps: float = 1.
     # Legacy regression topology: crank -[one-way]-> drive_shaft with motor.
     # Kept for A/B until acceptance; the real mid-drive chainring is on crank.
     motor_clutch: bool = False
@@ -296,8 +309,13 @@ class PhysicalDriveConfig:
                 raise ValueError('initial rear sprocket must belong to the cassette')
         for key in ('chain_k_n_m','freehub_k_nm_rad'):
             scalar(getattr(self,key),key,positive=True)
-        for key in ('human_torque_nm','torque_ripple','chain_c_ns_m','freehub_c_nms_rad','bearing_c_nms_rad','brake_ceiling_nm'):
+        for key in ('human_torque_nm','torque_ripple','chain_c_ns_m','freehub_c_nms_rad','bearing_c_nms_rad','brake_ceiling_nm',
+                    'brake_hold_torque_nm','brake_hold_stiffness_nm_rad','brake_hold_damping_nms_rad'):
             scalar(getattr(self,key),key,minimum=0)
+        scalar(self.brake_hold_engage_radps,'brake_hold_engage_radps',positive=True)
+        scalar(self.brake_hold_release_radps,'brake_hold_release_radps',minimum=0.)
+        if self.brake_hold_release_radps < self.brake_hold_engage_radps:
+            raise ValueError('brake hold release must not precede engage')
         scalar(self.crank_phase_rad,'initial crank phase')
         if self.torque_ripple >= 1:
             raise ValueError('torque ripple must be less than one')
@@ -402,6 +420,21 @@ class ArticulatedConfig:
     # Residual recovery-leg load on the rising flat pedal; 40–100 N is
     # an unverified engineering estimate. Zero disables this intent.
     return_foot_preload_n: float = 0.
+    # Weld-press servo on the closed-form crank task. The offset learned
+    # while coasting (the feet unweight their resting press) carries into
+    # the effort request instead of stepping the weld at onset, and while
+    # pedaling it integrates the residual between requested and delivered
+    # crank torque so systematic tracking deficit is requested rather than
+    # lost through the weld. Per-tick gain, Nm of hold per Nm of residual.
+    weld_servo_gain: float = .05
+    weld_servo_limit_nm: float = 25.
+    # Follow torque on the weld-imposed leg joint velocity, N*m*s/rad.
+    # The welds pin the feet to the pedals, so the crank imposes each leg
+    # joint's velocity through the closed loop; a joint that lags is dragged
+    # through the weld and the constraint ledger counts the drag as
+    # numerical work. This is a muscle impedance about the imposed
+    # velocity, not a kinematic lock.
+    leg_track_damping_nms_rad: float = 0.
     link_max_gap_m: float = .005
     # Bounded road preview the rider planner may see ahead of the front wheel.
     road_lookahead_m: float = 0.

@@ -53,7 +53,7 @@ inline bike::io::Value projected_writer(const cfg::AssistConfig& assist) {
 inline drivetrain::DrivePolicyConfig projected_policies(const cfg::AssistConfig& assist) {
     auto decoded = std::make_unique<nativecfg::WriterConfig>(nativecfg::decode(projected_writer(assist)));
     bt::require(decoded->drive.has_value(), "physical profile projects a drive policy");
-    return decoded->drive->policies;
+    return decoded->drive->policies; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
 
 inline cfg::AssistConfig turbo_source() {
@@ -68,7 +68,7 @@ inline drivetrain::AssistConfig turbo_config() {
 }
 
 inline double run_assist(drivetrain::AssistController& controller, double human,
-    double cadence_rpm, double speed, double seconds,
+    double cadence_rpm, double speed, double seconds, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     std::optional<double> request = std::nullopt, double dt = .001) {
     double torque = 0.;
     const auto count = static_cast<int>(std::llround(seconds / dt));
@@ -77,7 +77,7 @@ inline double run_assist(drivetrain::AssistController& controller, double human,
     return torque;
 }
 
-inline drivetrain::CadenceShifter shifter(int rear = 28, double tau = 0.) {
+inline drivetrain::CadenceShifter shifter(int rear = 28, double tau = 0.) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     drivetrain::ShiftingConfig config{
         .enabled = true,
         .cassette = {10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51},

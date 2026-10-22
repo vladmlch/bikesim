@@ -19,11 +19,11 @@ using namespace runtime::setupvalue;
 io::Value read_json(const std::filesystem::path& path) {
     const auto bytes = io::read_numpy_bytes(path);
     std::string text; text.reserve(bytes.size());
-    for (std::byte byte : bytes) text.push_back(static_cast<char>(byte));
+    for (std::byte const byte : bytes) text.push_back(static_cast<char>(byte));
     return io::parse_json(text);
 }
 void test_short_native_run_writes_measurement_schema() {
-    bt::TemporaryDirectory directory("measure-realtime");
+    bt::TemporaryDirectory const directory("measure-realtime");
     const auto output = (directory.path() / "run").string();
     // --benchmark (non-strict monitor) is the documented mode for a
     // completed measurement on this platform: strict headless runs abort at
@@ -44,13 +44,13 @@ void test_short_native_run_writes_measurement_schema() {
     bt::require(io::as_int64(field(report, "measurement_count"), "count") == 1, "one measured run");
     bt::require(io::as_array(field(report, "warmups"), "warmups").empty(), "no warmup in requested short run");
     const auto& run = io::as_array(field(report, "runs"), "runs").at(0);
-    for (std::string_view key : {"comparability", "execution", "prefix", "chunk_latency", "errors", "limitations", "identity_unchanged", "valid_prefix", "measured_ok", "per_step_latency"})
+    for (std::string_view const key : {"comparability", "execution", "prefix", "chunk_latency", "errors", "limitations", "identity_unchanged", "valid_prefix", "measured_ok", "per_step_latency"})
         bt::require(find(run, key) != nullptr, "required measurement key " + std::string(key));
-    for (std::string_view key : {"setup_wall_s", "wall_clock_s", "final_flush_wall_s", "export_wall_s", "simulated_time_s"})
+    for (std::string_view const key : {"setup_wall_s", "wall_clock_s", "final_flush_wall_s", "export_wall_s", "simulated_time_s"})
         bt::require(std::isfinite(io::as_double(field(run, key), key)), "finite timing field " + std::string(key));
-    for (std::string_view key : {"configuration_sha256", "terrain_sha256", "python_source_sha256", "versions", "timestep_s", "internal_controller_period_s", "external_policy_period_s", "max_steps", "record_decimation", "strict", "compute_slice_s", "controls"})
+    for (std::string_view const key : {"configuration_sha256", "terrain_sha256", "python_source_sha256", "versions", "timestep_s", "internal_controller_period_s", "external_policy_period_s", "max_steps", "record_decimation", "strict", "compute_slice_s", "controls"})
         bt::require(find(field(run, "comparability"), key) != nullptr, "required comparison key " + std::string(key));
-    for (std::string_view key : {"address", "realtime", "coverage"})
+    for (std::string_view const key : {"address", "realtime", "coverage"})
         (void)io::as_bool(field(field(field(report, "provenance"), "sanitizer_options"), key), key);
     bt::require(io::is_null(field(run, "per_step_latency")), "boundary timing is not relabelled per-step timing");
     bt::require(io::is_null(field(report, "headless_rtf_threshold_met")), "one short run cannot claim the performance gate");
@@ -62,7 +62,7 @@ void test_short_native_run_writes_measurement_schema() {
         "retention-off export retains the Python recorder's empty CSV schema");
 }
 void test_nonempty_output_is_rejected_before_setup() {
-    bt::TemporaryDirectory directory("measure-nonempty");
+    bt::TemporaryDirectory const directory("measure-nonempty");
     const std::string marker = "keep me\n";
     bike::platform::write_exclusive(directory.path() / "existing.txt", std::as_bytes(std::span(marker)));
     const auto path = directory.path().string();
@@ -74,7 +74,7 @@ void test_nonempty_output_is_rejected_before_setup() {
     bt::require(io::read_numpy_bytes(directory.path() / "existing.txt").size() == marker.size(), "existing file preserved");
 }
 void test_invalid_runs_and_python_backend_exit_two() {
-    bt::TemporaryDirectory directory("measure-invalid");
+    bt::TemporaryDirectory const directory("measure-invalid");
     const auto path = (directory.path() / "uncreated").string();
     for (const auto& pair : {std::pair{"--runs", "0"}, std::pair{"--backend", "python"}}) {
         const std::array<std::string_view, 4> args{"--out", path, pair.first, pair.second};

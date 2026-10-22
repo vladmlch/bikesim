@@ -49,16 +49,38 @@ public:
         if (probes.contains("static_brake")) {
             const nb::dict section = wire::mapping(
                 probes["static_brake"], "adapter.static_brake");
-            wire::exact_keys(section,
-                             wire::keys("front_dof", "rear_dof", "ceiling_nm"),
-                             {}, "adapter.static_brake");
+            wire::exact_keys(
+                section, wire::keys("front_dof", "rear_dof", "ceiling_nm"),
+                wire::keys("hold_torque_nm", "hold_stiffness_nm_rad",
+                           "hold_damping_nms_rad", "hold_engage_radps",
+                           "hold_release_radps"),
+                "adapter.static_brake");
+            BrakeHoldSpec hold;
+            const auto opt = [&](const char *key, double fallback) {
+                return section.contains(key)
+                           ? wire::finite_real(
+                                 section[key],
+                                 ("adapter.static_brake." +
+                                  std::string(key))
+                                     .c_str())
+                           : fallback;
+            };
+            hold.torque_nm = opt("hold_torque_nm", hold.torque_nm);
+            hold.stiffness_nm_rad =
+                opt("hold_stiffness_nm_rad", hold.stiffness_nm_rad);
+            hold.damping_nms_rad =
+                opt("hold_damping_nms_rad", hold.damping_nms_rad);
+            hold.engage_radps = opt("hold_engage_radps", hold.engage_radps);
+            hold.release_radps =
+                opt("hold_release_radps", hold.release_radps);
             brake_.emplace(
                 wire::integer32(section["front_dof"],
                                 "adapter.static_brake.front_dof"),
                 wire::integer32(section["rear_dof"],
                                 "adapter.static_brake.rear_dof"),
                 wire::finite_real(section["ceiling_nm"],
-                                  "adapter.static_brake.ceiling_nm"));
+                                  "adapter.static_brake.ceiling_nm"),
+                hold);
         }
         if (probes.contains("spindle_controller")) {
             const nb::dict section = wire::mapping(
@@ -441,6 +463,45 @@ public:
     }
 
     [[nodiscard]] nb::ndarray<nb::numpy, double, nb::shape<-1>>
+    static_brake_hold_qfrc(nb::handle front, nb::handle rear,
+                           bool advance) {
+        if (!brake_)
+            throw std::logic_error(
+                "adapter was built without a static_brake section");
+        return wire::owned_array<double>(brake_->hold_qfrc(
+            stepper_.model(), stepper_.data(),
+            wire::finite_real(front,
+                              "static_brake_hold_qfrc.front_demand"),
+            wire::finite_real(rear,
+                              "static_brake_hold_qfrc.rear_demand"),
+            advance));
+    }
+
+    void static_brake_reset() {
+        if (!brake_)
+            throw std::logic_error(
+                "adapter was built without a static_brake section");
+        brake_->reset();
+    }
+
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) qpos/qvel order mirrors mjModel field order, the Python adapter contract.
+    void set_wheel_state(nb::handle qpos, nb::handle qvel) {
+        stepper_.mutate([&] {
+            const auto q = wire::vector(qpos, "set_wheel_state.qpos");
+            const auto v = wire::vector(qvel, "set_wheel_state.qvel");
+            const mjModel *m = stepper_.model();
+            const mjData *d = stepper_.data();
+            if (q.size() != static_cast<std::size_t>(m->nq) ||
+                v.size() != static_cast<std::size_t>(m->nv))
+                throw std::invalid_argument(
+                    "set_wheel_state: arrays must be nq/nv sized");
+            std::ranges::copy(q, d->qpos);
+            std::ranges::copy(v, d->qvel);
+            stepper_.note_posvel_stale();
+        });
+    }
+
+    [[nodiscard]] nb::ndarray<nb::numpy, double, nb::shape<-1>>
     dof_frictionloss() const {
         const mjModel *model = stepper_.model();
         const auto row = model_access::readonly_buffer(
@@ -477,6 +538,13 @@ void bind_test_adapter(const nb::module_ &module) {
         .def("apply_static_brake", &NativeTestAdapter::apply_static_brake,
              nb::arg("front_demand").none(), nb::arg("rear_demand").none())
         .def("static_brake_solved", &NativeTestAdapter::static_brake_solved)
+        .def("static_brake_hold_qfrc",
+             &NativeTestAdapter::static_brake_hold_qfrc,
+             nb::arg("front_demand").none(), nb::arg("rear_demand").none(),
+             nb::arg("advance"))
+        .def("static_brake_reset", &NativeTestAdapter::static_brake_reset)
+        .def("set_wheel_state", &NativeTestAdapter::set_wheel_state,
+             nb::arg("qpos").none(), nb::arg("qvel").none())
         .def_prop_ro("dof_frictionloss",
                      &NativeTestAdapter::dof_frictionloss,
                      nb::rv_policy::move)

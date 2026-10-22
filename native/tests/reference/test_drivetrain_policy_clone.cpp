@@ -10,20 +10,20 @@ void test_clone_matches_deepcopy_and_shares_no_mutable_state() {
     const auto projected = drive_reference::projected_writer(physics->drive);
     auto decoded = std::make_unique<nativecfg::WriterConfig>(nativecfg::decode(projected));
     bt::require(decoded->drive.has_value(), "pinned source profile has a physical drive");
-    auto original = std::make_unique<drivetrain::PolicySet>(decoded->drive->policies);
+    auto original = std::make_unique<drivetrain::PolicySet>(decoded->drive->policies); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     auto cloned = std::make_unique<drivetrain::PolicySet>(*original);
     const auto before = policy_reference::state_text(*cloned);
 
     // The source's hub parameter skips: ideal_mid_drive uses a model-owned
     // transmission, not the elastic policy. It is documented as a drop,
     // not counted as a successfully ported mutable-policy assertion.
-    bt::require(decoded->drive->transmission_model == "ideal_mid_drive",
+    bt::require(decoded->drive->transmission_model == "ideal_mid_drive", // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
         "the clone fixture retains the source profile's absent elastic hub");
     bt::require(original->config.shifting.cassette.data() != cloned->config.shifting.cassette.data(),
         "shifting configuration owns its cassette after copying");
     bt::require(original->config.assist.torque_curve.has_value() && cloned->config.assist.torque_curve.has_value(),
         "pinned assist profile contains the source's measured torque curve");
-    bt::require(original->config.assist.torque_curve->data() != cloned->config.assist.torque_curve->data(),
+    bt::require(original->config.assist.torque_curve->data() != cloned->config.assist.torque_curve->data(), // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
         "assist configuration owns its torque curve after copying");
 
     (void)original->shifting.update(150., 150., .1);

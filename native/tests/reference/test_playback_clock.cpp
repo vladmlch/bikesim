@@ -58,7 +58,7 @@ void test_speed_keys_do_not_reuse_physical_controls() {
     const auto speed = [](int key, unsigned current) { return view::speed_for_action(view::action_for_key(view::Mode::physical, key), current); };
     bt::require(speed(295, 2) == 1 && speed(296, 2) == 4 && speed(297, 8) == 1, "F6/F7/F8 are speed controls");
     bt::require(speed(295, 1) == 1 && speed(296, 8) == 8, "speed keys saturate at supported limits");
-    for (int key : std::array<int, 7>{32, 44, 46, 'B', 'R', 'T', 'G'}) {
+    for (int const key : std::array<int, 7>{32, 44, 46, 'B', 'R', 'T', 'G'}) {
         const auto action = view::action_for_key(view::Mode::physical, key);
         bt::require(action != view::Action::slower && action != view::Action::faster && action != view::Action::normal_speed, "physical controls are separate from pacing controls");
         bt::require(speed(key, 2) == 2, "non-speed key preserves time scale");

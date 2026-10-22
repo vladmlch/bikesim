@@ -19,6 +19,7 @@ using namespace bike::validation;
 namespace io=bike::io;
 Value json(std::string_view input){return io::parse_json(input);}
 void set(Value& target,std::string name,Value item){value::set(std::get<Object>(target.data),std::move(name),std::move(item));}
+// NOLINTNEXTLINE(misc-no-recursion) recursive JSON value tree walk
 void exact_value(const Value& actual,const Value& expected,const std::string& path){
     bt::require(actual.data.index()==expected.data.index(),path+": value kind");
     if(const auto* n=std::get_if<io::Number>(&expected.data)){
@@ -27,7 +28,7 @@ void exact_value(const Value& actual,const Value& expected,const std::string& pa
     }
     if(const auto* entries=std::get_if<Object>(&expected.data)){
         bt::require(keys(actual)==keys(expected),path+": exact field inventory");
-        for(const auto& [key,item]:*entries)exact_value(get(actual,key),item,path+"."+key);return;
+        for(const auto& [key,item]:*entries){std::string next(path);next+='.';next+=key;exact_value(get(actual,key),item,next);}return;
     }
     if(const auto* entries=std::get_if<Array>(&expected.data)){
         const auto& found=io::as_array(actual,path);bt::require(found.size()==entries->size(),path+": exact shape");
@@ -46,7 +47,7 @@ void captured_tire_characterization(){
     bt::require(result.accepted,"isolated material input/finite-result contract accepted");
     exact_value(result.evidence,io::parse_json(bt::text(bt::fixture("validation/tire/verdict.json"))),"tire-characterization");
     auto bad=config;set(bad,"duration_s",value::real(.5001));bt::invalid([&]{(void)run_case("tire-characterization",bad);});
-    bad=config;set(bad,"loads_n",Value{Array{}});bt::invalid([&]{(void)run_case("tire-characterization",bad);});
+    bad=std::move(config);set(bad,"loads_n",Value{Array{}});bt::invalid([&]{(void)run_case("tire-characterization",bad);});
 }
 void material_curve_contract(){
     auto record=json(R"({"dataset_id":"synthetic-radial","source_kind":"synthetic","tyre_label":"bench",
@@ -82,7 +83,7 @@ void calibration_evidence_contract(){
     bt::invalid([&]{validate_split(json(R"([" trailing "] )"),json(R"(["holdout"] )"));});
     auto bad=data;set(bad,"measured_at",value::text("2026-02-30"));bt::invalid([&]{(void)validate_dataset(bad,true);});
     bad=data;set(bad,"sensor_uncertainty",json(R"({"force":1.0})"));bt::invalid([&]{(void)validate_dataset(bad,true);});
-    bt::require(dataset_hash(json("{\"label\":\"тест\",\"value\":1.0}"))==hash_text("{\"label\":\"\\u0442\\u0435\\u0441\\u0442\",\"value\":1.0}"),
+    bt::require(dataset_hash(json("{\"label\":\"тест\",\"value\":1.0}"))==hash_text(R"({"label":"\u0442\u0435\u0441\u0442","value":1.0})"),
         "dataset hashing preserves Python ensure_ascii and decoded float spelling");
     const std::array measured{1.,2.,3.},predicted{1.5,2.,2.5};const auto errors=holdout_metrics(measured,predicted);
     bt::require(real(errors,"bias")==0.&&real(errors,"max_abs")==.5&&real(errors,"rmse")==std::sqrt(1./6.),"holdout errors retain source reductions");

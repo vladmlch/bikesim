@@ -3,6 +3,8 @@
 Velocity damping/reset is confined to initialization. No running-step correction
 or root stabilizer is used. Failure returns a diagnostic, never a success label.
 """
+import copy
+
 import mujoco
 import numpy as np
 
@@ -137,6 +139,41 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
             jid = int(model.dof_jntid[dof])
             names.append((mujoco.mj_id2name(model,mujoco.mjtObj.mjOBJ_JOINT,jid),float(data.qacc[dof])))
         raise RuntimeError(f'physical equilibrium did not converge after {steps} steps: residual={residual:.6g}; {names}')
+    # Release consistency. The braked relaxation converges with the wheel
+    # brakes holding whatever tangential load the pose left behind -- the
+    # regularized friction bound plateaus and the angle latch pins the rest.
+    # The episode starts unbraked, so that store is released across the first
+    # intervals as constraint work the energy ledger rightfully rejects.
+    # Re-settle the pose under the released demand: the wheel brushes are
+    # adjusted to wheel statics first, then damped cycles let the chassis
+    # and weld deflections follow. When no released rest exists (a grade the
+    # standstill needs the brakes for), the held result is kept unchanged.
+    if (not cache_hit and residual <= tolerance and steps < max_steps
+            and (sim.physics_config.initial_front_brake > 0.
+                 or sim.physics_config.initial_rear_brake > 0.)):
+        from bike_sim.sim.ride.equilibrium_cache import _state_arrays, restore_state
+        held_pose = data.qpos.copy()
+        held_state = copy.deepcopy(_state_arrays(runtime))
+        held_steps = steps
+        released, used = _relax_released(
+            runtime, max_steps=min(max_steps-steps, round(15./dt)),
+            cycle=cycle, tolerance=min(tolerance, 0.01))
+        steps += used
+        if released is not None and released <= min(tolerance, 0.01):
+            residual = released
+        else:
+            # No released-brake rest exists under this track/config: keep the
+            # brake-assisted equilibrium rather than the drifted state.
+            restore_state(runtime, held_state)
+            data.qpos[:] = held_pose
+            data.qvel.fill(0.)
+            runtime.brake.reset()
+            runtime.apply_forces(active=False, advance=False,
+                                 front=sim.physics_config.initial_front_brake,
+                                 rear=sim.physics_config.initial_rear_brake)
+            mujoco.mj_forward(model, data)
+            residual = float(np.max(np.abs(data.qacc)))
+            steps = held_steps
     stroke = sim.shock_stroke_mm
     result = {'fork_travel_mm': sim.fork_travel_mm, 'shock_stroke_mm': stroke,
             'rear_travel_mm': float(sim.solver.solve_state_from_shock_stroke(stroke)['wheel_travel']),
@@ -151,3 +188,112 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
         from bike_sim.sim.ride.equilibrium_cache import save
         save(runtime, data.qpos, steps, residual)
     return result
+
+
+def _released_probe(runtime, wheel_dofs):
+    """Acceleration a wheel takes from rest under the released-brake field.
+
+    Same probe contract as the residual check above -- non-advancing, zeroed
+    velocity -- but with both brake demands at the episode's standstill-zero
+    and ``active=True`` so the rider path evaluates the same field the first
+    live interval applies (the steady-state settle field skips the crank
+    phase tracking and pedal-recovery terms the live request carries).
+    """
+    model, data = runtime.sim.model, runtime.sim.data
+    data.qvel.fill(0.)
+    runtime.apply_forces(active=True, advance=False, front=0., rear=0.)
+    mujoco.mj_forward(model, data)
+    return np.array([float(data.qacc[dof]) for dof in wheel_dofs])
+
+
+def _solve_brush_shear(runtime, wheel_dofs, probe, *, rounds=4, atol=5e-3):
+    """Newton-adjust the tangential brush deflection to released wheel statics.
+
+    The pinned-wheel relaxation leaves each brush holding the shear the brake
+    was absorbing; freed at episode start it would spin the wheel and rock the
+    chassis. The wheel free body is essentially decoupled in the two spin
+    DOFs, so a small secant solve on the released accelerations reaches the
+    same state an infinitely patient tread creep would.
+    """
+    tire = runtime.tire
+    if (tire is None or tire.config.backend != 'compliant_2d'
+            or 'front' not in tire.states or 'rear' not in tire.states):
+        return
+    states = tire.states
+
+    def set_xi(front, rear):
+        for side, xi in (('front', front), ('rear', rear)):
+            state = states[side]
+            states[side] = type(state)(float(xi), state.tangent, state.point,
+                                       state.segment, state.center)
+
+    xi = np.array([states['front'].xi, states['rear'].xi], dtype=float)
+    residual = probe()
+    for _ in range(rounds):
+        if np.abs(residual).max() <= atol:
+            break
+        jacobian = np.zeros((2, 2))
+        eps = 2e-5
+        for j in range(2):
+            trial = xi.copy(); trial[j] += eps
+            set_xi(*trial)
+            jacobian[:, j] = (probe()-residual)/eps
+        set_xi(*xi)
+        if not np.isfinite(jacobian).all() or abs(np.linalg.det(jacobian)) < 1e-9:
+            break
+        xi = xi + np.linalg.solve(jacobian, -residual)
+        if not np.isfinite(xi).all():
+            return
+        set_xi(*xi)
+        residual = probe()
+
+
+def _relax_released(runtime, *, max_steps, cycle, tolerance):
+    """Damped relaxation under the released-brake demand.
+
+    Returns ``(residual, steps_used)``; ``residual`` is ``None`` only when the
+    wheel-free-body solve left the state unusable, and non-convergence simply
+    reports the last residual so the caller can restore the held pose.
+    """
+    sim = runtime.sim
+    model, data = sim.model, sim.data
+    wheel_dofs = [runtime.address('front_wheel_spin')[1],
+                  runtime.address('rear_wheel_spin')[1]]
+
+    def probe():
+        _released_probe(runtime, wheel_dofs)
+        return float(np.max(np.abs(data.qacc)))
+
+    steps = 0
+    residual = float('inf')
+    # Alternating shear solve and damped cycles: the solve places the wheels
+    # on their released statics, the cycles let the chassis, weld deflections
+    # and the coast servo follow. A couple of rounds are enough for the flat
+    # stand; the budget bound keeps a grade (no released rest) cheap.
+    for _ in range(3):
+        if steps >= max_steps:
+            break
+        _solve_brush_shear(runtime, wheel_dofs,
+                           lambda: _released_probe(runtime, wheel_dofs))
+        while steps < max_steps:
+            for _ in range(min(cycle, max_steps-steps)):
+                runtime.apply_forces(active=True, advance=True, front=0., rear=0.)
+                interval_state = (data.qpos.copy(), data.qvel.copy())
+                mujoco.mj_step(model, data)
+                if runtime.rider_contacts is not None:
+                    runtime.rider_contacts.settle_welds(model, data, interval_state)
+                # The live interval closes with settle_actuation: the
+                # bookkeeping reads the just-solved tendon/actuator state
+                # and clears the pending interval the next advancing apply
+                # validates against.
+                runtime.drive.settle_actuation(model, data)
+                steps += 1
+                if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all():
+                    raise RuntimeError('non-finite physical equilibrium state')
+            data.qvel.fill(0.)
+            residual = probe()
+            if residual <= tolerance:
+                break
+        if residual <= tolerance:
+            break
+    return residual, steps

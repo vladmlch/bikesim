@@ -721,7 +721,7 @@ int run_context_checks(const fs::path &build) {
             const bool invoked = fs::exists(marker);
             Array invocations;
             if (invoked) {
-                std::ifstream stream(marker);
+                std::ifstream const stream(marker);
                 std::ostringstream contents;
                 contents << stream.rdbuf();
                 if (!stream) throw CheckError("cannot read Apple-tool invocations: " + marker.string());
@@ -739,7 +739,8 @@ int run_context_checks(const fs::path &build) {
             try {
                 const Value child = configured_context(result.second);
                 std::vector<fs::path> expected;
-                for (const auto &entry : entries) expected.push_back(entry.source);
+                expected.reserve(entries.size());
+for (const auto &entry : entries) expected.push_back(entry.source);
                 const auto preserved = load_entries(result.second, expected);
                 std::set<std::string> sysroot_args;
                 for (const auto &entry : preserved)
@@ -1516,7 +1517,7 @@ Value validate_provider_bindings(const fs::path &repo_root) {
     static const std::regex provider_label(
         R"binding(\b(?:__asm__|asm)\s*\(\s*"[^"\n]*(?:\$NEWLAPACK|scipy_)[^"\n]*")binding");
     for (const fs::path &path : candidates) {
-        std::ifstream stream(path, std::ios::binary);
+        std::ifstream const stream(path, std::ios::binary);
         if (!stream) throw ContractError("cannot read native source: " + path.string());
         std::ostringstream contents;
         contents << stream.rdbuf();

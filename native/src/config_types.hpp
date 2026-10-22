@@ -92,8 +92,13 @@ namespace drivetrain {
                 chain_c_ns_m{}, bearing_c_nms_rad{}, rotor_inertia_kgm2{};
         // StaticBrakeApplier's ceiling (physical_config drive section) —
         // the runtime's static-brake owner reads it; the drivetrain writer
-        // itself never does.
+        // itself never does. The brake_hold_* block is the latched standstill
+        // bite (static_braking.py) — zero torque or stiffness disables it,
+        // which is also the absent-key wire default.
         double brake_ceiling_nm{};
+        double brake_hold_torque_nm{}, brake_hold_stiffness_nm_rad{},
+                brake_hold_damping_nms_rad{};
+        double brake_hold_engage_radps = .5, brake_hold_release_radps = 1.;
         bool motor_clutch{};
     };
 

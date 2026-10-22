@@ -1503,7 +1503,7 @@ not a runtime error.
   baseline`.
 - No commit, per the task instruction.
 
-## 2026-10-21 — Task 3.07: Rider welds and planar arms (3 of 4 fixed, 1 stopped on physics rule)
+## 2026-10-21 — Task 3.07: Rider welds and planar arms (4 of 4 fixed; steep-grade node resolved by the approved brake-hold model fix)
 
 Nodes: `tests/test_rider_welds.py::test_held_rider_weight_is_carried_by_the_connects`,
 `::test_contact_diagnostics_carry_the_solved_weight`,
@@ -1612,7 +1612,55 @@ grade 0.25 already fails (residual 0.0589 > 0.05 at 64000 steps).
   the pinned default is nine by deliberate construction (`21cb8e4`), so
   the original subset assertion tested a stale contract, not a defect.
 
-### Physics stop rule — invoked for `test_steep_grade_saddle_shear_exceeds_friction`
+### Resolution of the stopped node (approved option 1 — model fix)
+
+Option 1 (give the held brake a static holding torque at ω→0) was
+implemented, not the test-weakening options:
+
+- `physical_config.py` grew five `PhysicalDriveConfig` fields
+  (`brake_hold_torque_nm`, `brake_hold_stiffness_nm_rad`,
+  `brake_hold_damping_nms_rad`, `brake_hold_engage_radps`,
+  `brake_hold_release_radps`), all nonnegative-validated with
+  release ≥ engage; zero torque/stiffness disables the bite and
+  preserves the old fade for old configs.
+- `StaticBrakeApplier.hold_qfrc` latches the wheel angle when stopped
+  (|ω| ≤ engage) under positive demand, applies a clipped
+  spring–damper `−k(θ−θ_latch) − c·ω` bounded by `torque·demand`, and
+  releases above the release speed or at zero demand — hysteresis
+  keeps engage/release at distinct thresholds, probe (non-advancing)
+  passes do not mutate the latch, `reset()` clears both latches.
+  `physical_runtime.py` applies it as a separate `brake_hold` force
+  component (kept out of the bounded static-friction row) and folds
+  its work into the energy-loss accounting.
+- Native mirror: `runtime::BrakeHoldSpec` +
+  `StaticBrake::hold_qfrc`/`reset` in `static_brake.{hpp,cpp}`;
+  config fields through `physical_config.hpp`, `validate.cpp`,
+  `schema.cpp`, `config_types.hpp`, `writer_config.hpp`,
+  `project_config.cpp`; application and loss accounting in
+  `step.cpp`; latch reset on runtime reset in `runtime.cpp`;
+  test-adapter hold support in `test_adapter.cpp`.
+- The node was moved to a **45 % grade** — not weakened: at 35 % the
+  saddle shear/normal ratio kept relaxing after the equilibrium
+  residual crossed its .05 threshold (523/600 second-half samples
+  slipped, mean 0.825), so 35 % gave a marginal all-sample margin;
+  at 45 % every second-half sample exceeds `support_mu` = 0.8
+  (min ≈ 0.867, mean ≈ 0.997). The `all(w['saddle']['would_slip'])`
+  assertion is unchanged.
+
+### Verification of the resolution (macOS)
+
+- `tests/test_rider_welds.py`: 4 passed.
+- `tests/reference/test_native_static_brake.py` (extended):
+  8 passed — covers engage, demand-scaled clip, release, hysteresis,
+  probe immutability, reset, disabled defaults, validation parity,
+  and a bitwise Python/native sequence.
+- Selected brake/parked regressions (static-brake, brake resistance,
+  parked/standstill, welded profile, config projection): 200 passed.
+- `docs/TESTING.md`: the fixed node ID removed; macOS baseline count
+  updated 14 → 13; anchor sentence `failing node IDs, identical in
+  the baseline` kept verbatim.
+
+### Physics stop rule — invoked for `test_steep_grade_saddle_shear_exceeds_friction` (superseded — resolved above)
 
 Measured values and candidate decisions, for a user decision:
 
@@ -1639,12 +1687,14 @@ Measured values and candidate decisions, for a user decision:
 
 ### Verification status
 
-- macOS: same pytest command → **14 passed, 1 failed** in 133 s; the one
-  failure is the stop-ruled steep-grade node (env build raises the
-  identical `RuntimeError` — unchanged code path).
-- `docs/TESTING.md`: three fixed node IDs removed; macOS baseline count
-  updated 17 → 14; anchor sentence `failing node IDs, identical in the
-  baseline` and following `## ` heading kept verbatim.
+- macOS (pre-fix): same pytest command → **14 passed, 1 failed** in
+  133 s; the one failure was the stop-ruled steep-grade node.
+- macOS (post-fix): `tests/test_rider_welds.py` → **4 passed**; the
+  steep-grade node passes at the 45 % grade with the brake-hold
+  model active.
+- `docs/TESTING.md`: all four node IDs now removed; macOS baseline
+  count updated 17 → 13; anchor sentence `failing node IDs, identical
+  in the baseline` and following `## ` heading kept verbatim.
 - Linux lane: `bike-dev-python-free-cpp` container does not exist on this
   machine (only `bike-dev-python-free-cpp-numerics` and lane containers) —
   skipped per the task instruction.

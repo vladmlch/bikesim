@@ -22,7 +22,7 @@ struct CaseDescription {
 [[nodiscard]] Value assess_run(const Value& summary,double required_duration_s,double minimum_progress_m=0.);
 [[nodiscard]] Value paired_summary(const Value& records);
 [[nodiscard]] std::pair<bool,std::vector<std::string>> release_gates(const Value& report);
-[[nodiscard]] std::string release_level(const Value& report);
+[[nodiscard]] std::string_view release_level(const Value& report);
 [[nodiscard]] Value select_verified_resolution(const Value& comparisons);
 [[nodiscard]] Value write_release_manifest(const std::filesystem::path& path,const Value& report,
     const std::filesystem::path& physics_profile,const Value& measurement_evidence=Value{Array{}});

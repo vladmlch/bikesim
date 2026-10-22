@@ -275,7 +275,7 @@ std::optional<fs::path> find_on_path(const std::string &name) {
             start,
             colon == std::string::npos ? std::string::npos : colon - start);
         if (directory.empty()) directory = ".";
-        const fs::path candidate = fs::path(directory) / name;
+        fs::path candidate = fs::path(directory) / name;
         if (executable_regular(candidate)) return candidate;
         if (colon == std::string::npos) break;
         start = colon + 1;

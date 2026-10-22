@@ -16,7 +16,7 @@
 
 namespace {
 
-runtime::WireObject balance_state(bool lost, double low_speed_s,
+runtime::WireObject balance_state(bool lost, double low_speed_s, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
                                   double lost_at_m = 0.) {
     runtime::WireObject balance{{"balance_lost", runtime::Wire(lost)},
                                 {"low_speed_s", runtime::Wire(low_speed_s)}};
@@ -68,10 +68,11 @@ std::size_t label_at(const std::vector<bike::viewer::HudColumn> &columns,
 // balance states {ok, low 0.3s, LOST@x=12 m}. The green/yellow/red style
 // assertion is not portable: HudColumn carries no color segment.
 void test_arm_lean_limit_and_balance_columns() {
-    const struct { runtime::WireObject state; std::string want; } cases[] = {
-        {balance_state(false, 0.), "ok"},
-        {balance_state(false, .3), "low 0.3s"},
-        {balance_state(true, .5, 12.), "LOST@x=12 m"},
+    struct Case { runtime::WireObject state; std::string want; };
+    const std::array cases{
+        Case{.state=balance_state(false, 0.), .want="ok"},
+        Case{.state=balance_state(false, .3), .want="low 0.3s"},
+        Case{.state=balance_state(true, .5, 12.), .want="LOST@x=12 m"},
     };
     for (const auto &[state, want] : cases) {
         const auto columns = bike::viewer::physical_columns(

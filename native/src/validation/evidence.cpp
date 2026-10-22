@@ -35,9 +35,9 @@ std::vector<std::byte> gzip_stored(std::string_view source) {
     // no new compression library, and genuinely readable by gzip/Python.
     std::vector<std::byte> out;
     const auto byte=[&](unsigned x){out.push_back(static_cast<std::byte>(x&255U));};
-    for(unsigned x:{0x1fU,0x8bU,8U,0U,0U,0U,0U,0U,0U,255U})byte(x);
+    for(unsigned const x:{0x1fU,0x8bU,8U,0U,0U,0U,0U,0U,0U,255U})byte(x);
     std::size_t offset=0;
-    do {
+    do { // NOLINT(cppcoreguidelines-avoid-do-while) the terminator DEFLATE block must emit even for an empty source
         const auto count=std::min<std::size_t>(65535,source.size()-offset);
         byte(offset+count==source.size()?1U:0U);
         const auto n=static_cast<unsigned>(count);byte(n);byte(n>>8U);byte(n^65535U);byte((n^65535U)>>8U);
@@ -105,7 +105,7 @@ std::string source_fingerprint(const std::filesystem::path& root) {
     };
     for(const auto& file:files){add(file.lexically_relative(root).generic_string());add(read_text(file));}
     const auto bytes=digest.finish();std::string result;constexpr std::string_view hex="0123456789abcdef";
-    for(auto b:bytes){result.push_back(hex[b>>4U]);result.push_back(hex[b&15U]);}return result;
+    for(auto const b:bytes){result.push_back(hex[b>>4U]);result.push_back(hex[b&15U]);}return result;
 }
 Value environment_contract(const std::filesystem::path& root) {
     const auto build=platform::build_identity();const auto loaded=engine::identity();
@@ -210,7 +210,7 @@ Value support_evidence(const Value& input,std::optional<double> required) {
     std::optional<double> previous,loss_start;double loss_duration=0.;
     bool model_known=!rows.empty(),numerical_known=!rows.empty(),model_valid=true,numerical_valid=true;
     bool prefix=!rows.empty()&&std::abs(real(rows.front(),"time_s"))<=1e-9;
-    auto read_out=[&](std::string_view name){return io::as_double(*io::find_member(out,name),name);};
+    auto const read_out=[&](std::string_view name){return io::as_double(*io::find_member(out,name),name);};
     std::map<std::string,std::int64_t> counts;
     for(const auto& row:rows) {
         const double start=real(row,"time_s"),end=real(row,"end_time_s");
@@ -317,7 +317,7 @@ Value resume_evidence(const Value& input,double end) {
 }
 Value timing_metrics(std::span<const double> step_ns,double dt) {
     positive(dt,"timed physics interval");if(step_ns.empty())throw std::invalid_argument("timing requires at least one completed step");
-    std::vector<double> sorted(step_ns.begin(),step_ns.end());for(double x:sorted)positive(x,"step nanoseconds");std::ranges::sort(sorted);
+    std::vector<double> sorted(step_ns.begin(),step_ns.end());for(double const x:sorted)positive(x,"step nanoseconds");std::ranges::sort(sorted);
     const auto percentile=[&](double q){const double index=static_cast<double>(sorted.size()-1)*q;const auto low=static_cast<std::size_t>(index),high=std::min(low+1,sorted.size()-1);const double fraction=index-static_cast<double>(low);const double difference=sorted[high]-sorted[low];return (fraction<.5?sorted[low]+difference*fraction:sorted[high]-difference*(1.-fraction))/1e6;};
     return Value{Object{{"step_count",value::integer(static_cast<std::int64_t>(step_ns.size()))},{"p50_step_ms",value::real(percentile(.5))},
         {"p95_step_ms",value::real(percentile(.95))},{"p99_step_ms",value::real(percentile(.99))},{"maximum_step_ms",value::real(sorted.back()/1e6)},
@@ -364,7 +364,7 @@ Value compare_metrics(const Value& a,const Value& b) {
 Value metrics_from_rows(const Value& input,double expected,std::string_view initial) {
     const auto& rows=io::as_array(input,"rows");if(rows.empty())throw std::invalid_argument("no completed physics intervals");
     Array ones,motor,human;double peak_rate=0.,max_pitch=-std::numeric_limits<double>::infinity(),residual=0.;bool valid=true,numeric_valid=true;
-    for(const auto& row:rows){auto one=io::as_object(row,"row");value::set(one,"one",value::real(1.));ones.push_back(Value{std::move(one)});auto m=io::as_object(row,"row"),h=m;
+    for(const auto& row:rows){auto one=io::as_object(row,"row");value::set(one,"one",value::real(1.));ones.push_back(Value{std::move(one)});auto m=io::as_object(row,"row"),h=m; // NOLINT(bugprone-use-after-move) m is reinitialized each iteration; the copy precedes the move
         value::set(m,"power",value::real(real(row,"motor_torque_nm")*real(row,"drive_shaft_rad_s",real(row,"crank_rad_s"))));motor.push_back(Value{std::move(m)});
         value::set(h,"power",value::real(real(row,"human_torque_nm")*real(row,"crank_rad_s")));human.push_back(Value{std::move(h)});
         peak_rate=std::max(peak_rate,std::abs(real(row,"pitch_rate_rad_s")));max_pitch=std::max(max_pitch,real(row,"pitch_rad"));residual=std::max(residual,real(row,"energy_residual_ratio"));
@@ -394,7 +394,7 @@ Value resolution_variants(const Value& times,const Value& roads,const Value& sta
         for(std::size_t j=0;j<a.size();++j){positive(a[j],"resolution value");if(i==2&&(a[j]<16.||std::trunc(a[j])!=a[j]))throw std::invalid_argument("station counts must be integers of at least sixteen");if(j&&((i!=2&&a[j]>=a[j-1])||(i==2&&a[j]<=a[j-1])))throw std::invalid_argument("time and road steps decrease; station counts increase");}}
     const double dt=t[t.size()-2],dx=x[x.size()-2],count=n[n.size()-2];Array variants;
     const auto add=[&](std::string_view axis,double d,double r,double s){variants.push_back(Value{Array{value::text(axis),value::real(d),value::real(r),value::integer(static_cast<std::int64_t>(s))}});};
-    for(double d:t)add("time",d,dx,count);for(double r:x)add("road",dt,r,count);if(include_stations)for(double s:n)add("stations",dt,dx,s);
+    for(double const d:t)add("time",d,dx,count);for(double const r:x)add("road",dt,r,count);if(include_stations)for(double const s:n)add("stations",dt,dx,s);
     return Value{Object{
         {"anchor",Value{Array{value::real(dt),value::real(dx),value::integer(static_cast<std::int64_t>(count))}}},
         {"variants",Value{std::move(variants)}}

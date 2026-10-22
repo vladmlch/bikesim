@@ -1229,6 +1229,11 @@ PhysicalStep::apply_forces_body(
         // actually changed invalidates the cached makeConstraint rows.
         if (brake_.apply(m, front, rear))
             stepper_->note_posvel_stale();
+        // The latched elastic bite at standstill; an advancing pass may
+        // latch or release, a probe reads the committed latch
+        // (static_braking.py hold_qfrc — physical_runtime.py:296).
+        std::vector<double> brake_hold =
+            brake_.hold_qfrc(m, d, front, rear, advance);
         // prepare_pedaling reads the LAST committed rear contact — the
         // durable contacts_ (previous step's final refresh or bootstrap).
         const drivetrain::RideControl drive_control{
@@ -1257,6 +1262,8 @@ PhysicalStep::apply_forces_body(
             ensure_posvel_fresh(m, d);
 
         accumulator_.clear();
+        if (std::ranges::any_of(brake_hold, [](double x) { return x != 0.; }))
+            accumulator_.add("brake_hold", brake_hold);
         const std::span<const std::string_view> susp_names =
             stepper_->suspension().component_names();
         stepper_->suspension().components_into(
@@ -2472,6 +2479,13 @@ double PhysicalStep::loss_increment(
         loss += std::max(0., -(f != nullptr ? dot(*f, velocity) : 0.)) *
             dt;
     }
+    // The elastic bite dissipates at its clip (slip) like the friction
+    // bound does; the stored spring energy never accumulates unbounded
+    // (physical_runtime.py:589-591).
+    {
+        const auto *f = ordered_at(components, "brake_hold");
+        loss += std::max(0., -(f != nullptr ? dot(*f, velocity) : 0.)) * dt;
+    }
     loss += diag_number(last, "chain_dissipation_power_w") * dt;
     loss += diag_number(last, "freehub_dissipation_power_w") * dt;
     loss += diag_number(last, "crank_clutch_dissipation_power_w") * dt;
@@ -2728,6 +2742,9 @@ void PhysicalStep::restore(const StepState &s) {
     rollback_hold_ = s.rollback_hold;
     research_accounting_valid_ = s.research_accounting_valid;
     initializing_ = s.initializing;
+    // Fresh episode, fresh bite: a stale latch would pin the wheel to an
+    // angle from a previous settle (physical_runtime.py:426-428).
+    brake_.reset();
     filters_[0].restore(s.filters[0]);
     filters_[1].restore(s.filters[1]);
     balance_monitor_.restore(s.balance);

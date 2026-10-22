@@ -373,9 +373,15 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
             std::views::counted(model.jnt_dofadr, model.njnt);
         return dofadr[static_cast<std::size_t>(joint)] + ref.dof_index;
     };
+    const auto &drive = stepper.drive().config();
     return {resolve(config.geometry.front_brake, "front"),
             resolve(config.geometry.rear_brake, "rear"),
-            stepper.drive().config().brake_ceiling_nm};
+            drive.brake_ceiling_nm,
+            BrakeHoldSpec{.torque_nm = drive.brake_hold_torque_nm,
+                          .stiffness_nm_rad = drive.brake_hold_stiffness_nm_rad,
+                          .damping_nms_rad = drive.brake_hold_damping_nms_rad,
+                          .engage_radps = drive.brake_hold_engage_radps,
+                          .release_radps = drive.brake_hold_release_radps}};
 }
 
 // The PhysicalStep assembly — pose/config/vertices decode plus the

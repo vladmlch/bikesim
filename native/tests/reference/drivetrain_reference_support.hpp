@@ -14,7 +14,7 @@ inline constexpr std::array<std::string_view, 3> kinds{
 
 // Verbatim model_xml() topology, unrelated carrier joint limit and dense /
 // sparse Jacobian variants from test_native_drivetrain.py.
-inline std::string model_xml(std::string_view kind, std::string_view mode = "crank_effort",
+inline std::string model_xml(std::string_view kind, std::string_view mode = "crank_effort", // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
                              std::string_view topology = "plain", bool sparse = false) {
     std::vector<std::string> names{"root_x", "frame_pitch", "crank_spin", "rear_carrier", "rear_wheel_spin",
         "front_wheel_spin", "pedal_front_spin", "pedal_rear_spin"};
@@ -34,18 +34,18 @@ inline std::string model_xml(std::string_view kind, std::string_view mode = "cra
     const std::string driver = topology == "clutch" ? "drive_shaft_spin" : "crank_spin";
     std::string tendon;
     if (kind == "ideal_mid_drive")
-        tendon = "<fixed name=\"ideal_mid_drive_freehub\" limited=\"true\" range=\"-100 0\"><joint joint=\"" +
-            driver + "\" coef=\"1.4166666666666667\"/><joint joint=\"rear_wheel_spin\" coef=\"-1\"/></fixed>";
+        tendon = R"(<fixed name="ideal_mid_drive_freehub" limited="true" range="-100 0"><joint joint=")" +
+            driver + R"(" coef="1.4166666666666667"/><joint joint="rear_wheel_spin" coef="-1"/></fixed>)";
     else if (kind == "geometric_ideal_mid_drive") {
-        tendon = "<fixed name=\"geometric_mid_drive_freehub\" limited=\"true\" range=\"-100 0\">";
-        for (const auto& name : names) tendon += "<joint joint=\"" + name + "\" coef=\".1\"/>";
+        tendon = R"(<fixed name="geometric_mid_drive_freehub" limited="true" range="-100 0">)";
+        for (const auto& name : names) tendon += "<joint joint=\"" + name + R"(" coef=".1"/>)";
         tendon += "</fixed>";
     }
     if (topology == "clutch") tendon += R"(<fixed name="crank_clutch" limited="true" range="-100 0"><joint joint="crank_spin" coef="1"/><joint joint="drive_shaft_spin" coef="-1"/></fixed>)";
     if (topology == "rotor") tendon += R"(<fixed name="motor_freewheel" limited="true" range="-100 0"><joint joint="rotor_spin" coef="1"/><joint joint="crank_spin" coef="-1"/></fixed>)";
-    const std::string human = mode == "crank_effort" ? "<motor name=\"human_crank\" joint=\"crank_spin\"/>" : "";
+    const std::string human = mode == "crank_effort" ? R"(<motor name="human_crank" joint="crank_spin"/>)" : "";
     const std::string motor = topology == "rotor" ? "rotor_spin" : driver;
-    return "<mujoco><option timestep=\".0002\" gravity=\"0 0 0\" jacobian=\"" + std::string(sparse ? "sparse" : "dense") + R"("/>
+    return R"(<mujoco><option timestep=".0002" gravity="0 0 0" jacobian=")" + std::string(sparse ? "sparse" : "dense") + R"("/>
     <default><geom type="sphere" size=".05" mass="1" contype="0" conaffinity="0"/><joint damping="0"/></default>
     <worldbody><body name="frame"><joint name="root_x" type="slide" axis="1 0 0"/><joint name="frame_pitch" axis="0 1 0"/><geom/>
       <body name="crank"><joint name="crank_spin" axis="0 1 0"/><geom/></body>
@@ -54,9 +54,9 @@ inline std::string model_xml(std::string_view kind, std::string_view mode = "cra
       <body name="pedal_front"><joint name="pedal_front_spin" axis="0 1 0"/><geom/></body>
       <body name="pedal_rear"><joint name="pedal_rear_spin" axis="0 1 0"/><geom/></body>)" + extra +
         "</body></worldbody><tendon>" + tendon + "</tendon><actuator>" + human +
-        "<motor name=\"mid_drive\" joint=\"" + motor + "\"/></actuator></mujoco>";
+        R"(<motor name="mid_drive" joint=")" + motor + "\"/></actuator></mujoco>";
 }
-inline cfg::PhysicalDriveConfig source(std::string_view kind = "ideal_mid_drive",
+inline cfg::PhysicalDriveConfig source(std::string_view kind = "ideal_mid_drive", // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
                                        std::string_view topology = "plain") {
     cfg::PhysicalDriveConfig result; result.transmission_model = kind; result.human_torque_nm = 20.;
     result.motor_clutch = topology == "clutch"; result.rotor_inertia_kgm2 = topology == "rotor" ? .2 : 0.;
@@ -69,7 +69,7 @@ inline Value writer_config(const cfg::PhysicalDriveConfig& source, std::string_v
     return Value{Value::Object{{"schema", integer(2)}, {"drive", std::move(drive)}}};
 }
 inline std::unique_ptr<Stepper> bare(std::string_view xml) {
-    bt::ModelFixture fixture(xml);
+    bt::ModelFixture const fixture(xml);
     const auto image = bike::initialization::capture_model_image(*fixture.model);
     return std::make_unique<Stepper>(image.mjb);
 }
@@ -94,7 +94,7 @@ inline std::unique_ptr<Stepper> pair(std::string_view kind = "ideal_mid_drive", 
                                      std::string_view topology = "plain", bool sparse = false) {
     return pair(source(kind, topology), mode, topology, sparse);
 }
-inline bt::oracle::Node node(std::string_view function, std::string_view parameters = {}) {
+inline bt::oracle::Node node(std::string_view function, std::string_view parameters = {}) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     std::string name = "tests/reference/test_native_drivetrain.py::" + std::string(function);
     if (!parameters.empty()) name += "[" + std::string(parameters) + "]";
     return bt::oracle::Node(name);
@@ -107,10 +107,11 @@ inline void scalar(bt::oracle::Node& golden, double actual, std::string_view lab
 }
 // A DriveSnapshot's range/coefficients/prepared buffers are ndarrays in
 // Python; its angles and policy/config lists remain scalar sequences.
+// NOLINTNEXTLINE(misc-no-recursion) recursive JSON value tree walk
 inline void tree(bt::oracle::Node& golden, const Value& value, const std::string& path = "$") {
     if (std::holds_alternative<Value::Object>(value.data)) {
         policy_reference::keys(golden, value, path);
-        for (const auto& key : policy_reference::sorted_keys(value)) tree(golden, field(value, key), path + "." + key);
+        for (const auto& key : policy_reference::sorted_keys(value)) { std::string next(path); next += '.'; next += key; tree(golden, field(value, key), next); }
     } else if (const auto* values = std::get_if<Value::Array>(&value.data)) {
         if (path.ends_with(".range") || path.ends_with(".coefficients") || path.ends_with(".jacobian") || path.ends_with(".qpos")) {
             std::vector<double> decoded; decoded.reserve(values->size());
@@ -124,11 +125,11 @@ inline void tree(bt::oracle::Node& golden, const Value& value, const std::string
 }
 inline Value state(const Stepper& owner) { return drivetrain::encode_drive_snapshot(owner.drive().state()); }
 inline void state(bt::oracle::Node& golden, const Stepper& owner) { tree(golden, state(owner)); }
-inline void restore(Stepper& owner, const Value& value) { owner.drive().restore(drivetrain::decode_drive_snapshot(value)); }
+inline void restore(Stepper const& owner, const Value& value) { owner.drive().restore(drivetrain::decode_drive_snapshot(value)); }
 inline Value diagnostics(const Stepper& owner, bool probe = false) {
     return field(state(owner), probe ? "probe_last" : "last");
 }
-inline Value stored_energy(Stepper& owner) {
+inline Value stored_energy(Stepper const& owner) {
     Value::Object result;
     for (const auto& [key, value] : owner.drive().stored_energy()) std::visit([&](const auto& item) {
         using T = std::decay_t<decltype(item)>;
@@ -140,7 +141,7 @@ inline Value stored_energy(Stepper& owner) {
     }, value);
     return Value{std::move(result)};
 }
-inline drivetrain::ForceComponents components(Stepper& owner, double dt, double speed,
+inline drivetrain::ForceComponents components(Stepper const& owner, double dt, double speed,
     drivetrain::RideControl control = {}, bool active = true, bool braking = false,
     bool advance = true, double sensed = 0., std::optional<drivetrain::PedalingState> pedal = {}) {
     return owner.drive().components(control, dt, speed, braking, active, advance, sensed, pedal, true, std::nullopt);
@@ -167,11 +168,11 @@ inline std::vector<double> total(const Stepper& owner, const drivetrain::ForceCo
 inline void step(Stepper& owner, const drivetrain::ForceComponents& values) {
     owner.set_inputs(owner.ctrl(), total(owner, values)); owner.step();
 }
-inline void position(Stepper& owner, std::string_view joint, double value) {
+inline void position(Stepper const& owner, std::string_view joint, double value) {
     const auto address = bike::model::joint_address(*owner.model(), joint).first;
     model_access::mutable_buffer(owner.data()->qpos, owner.model()->nq)[static_cast<std::size_t>(address)] = value;
 }
-inline void velocity(Stepper& owner, std::string_view joint, double value) {
+inline void velocity(Stepper const& owner, std::string_view joint, double value) {
     const auto address = bike::model::joint_address(*owner.model(), joint).second;
     model_access::mutable_buffer(owner.data()->qvel, owner.model()->nv)[static_cast<std::size_t>(address)] = value;
 }
@@ -182,7 +183,7 @@ inline void reset_engine_state(Stepper& owner) {
         model_access::readonly_buffer(owner.data()->qacc_warmstart, owner.model()->nv), owner.time());
     owner.forward();
 }
-inline void clear_pending(Stepper& owner) {
+inline void clear_pending(Stepper const& owner) {
     auto saved = std::make_unique<drivetrain::DriveSnapshot>(owner.drive().state());
     saved->pending_actuation.reset(); owner.drive().restore(*saved);
 }

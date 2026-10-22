@@ -3,7 +3,11 @@
 #include "static_brake.hpp"
 
 #include <algorithm>
+#include <cmath>
+#include <ranges>
+#include <span>
 #include <stdexcept>
+#include <tuple>
 
 #include "../engine_call.hpp"
 #include "../model_access.hpp"
@@ -13,13 +17,28 @@ namespace runtime {
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) dof order mirrors StaticBrakeApplier
 StaticBrake::StaticBrake(int front_dofadr, int rear_dofadr,
-                         double ceiling_nm)
+                         double ceiling_nm, BrakeHoldSpec hold)
     : front_(front_dofadr), rear_(rear_dofadr),
       ceiling_nm_(
-          validation::nonnegative(ceiling_nm, "brake torque ceiling")) {
+          validation::nonnegative(ceiling_nm, "brake torque ceiling")),
+      hold_{
+          .torque_nm =
+              validation::nonnegative(hold.torque_nm, "brake hold torque"),
+          .stiffness_nm_rad = validation::nonnegative(
+              hold.stiffness_nm_rad, "brake hold stiffness"),
+          .damping_nms_rad = validation::nonnegative(
+              hold.damping_nms_rad, "brake hold damping"),
+          .engage_radps = validation::positive(
+              hold.engage_radps, "brake hold engage speed"),
+          .release_radps = validation::nonnegative(
+              hold.release_radps, "brake hold release speed"),
+      } {
     if (std::min(front_, rear_) < 0 || front_ == rear_)
         throw std::invalid_argument(
             "brakes require two distinct valid wheel DOF addresses");
+    if (hold_.release_radps < hold_.engage_radps)
+        throw std::invalid_argument(
+            "brake hold release must not precede engage");
 }
 
 bool StaticBrake::apply(mjModel *model, double front_demand,
@@ -48,6 +67,59 @@ bool StaticBrake::apply(mjModel *model, double front_demand,
     frictionloss[fi] = front_loss;
     frictionloss[ri] = rear_loss;
     return changed;
+}
+
+std::vector<double> StaticBrake::hold_qfrc(
+    const mjModel *model, const mjData *data, double front_demand,
+    double rear_demand, bool advance) {
+    const double front =
+        validation::finite(front_demand, "front brake demand");
+    const double rear =
+        validation::finite(rear_demand, "rear brake demand");
+    std::vector<double> out(static_cast<std::size_t>(model->nv), 0.);
+    const auto dof_jntid = model_access::readonly_buffer(
+        model->dof_jntid, model->nv, "dof_jntid");
+    const auto jnt_qposadr = model_access::readonly_buffer(
+        model->jnt_qposadr, model->njnt, "jnt_qposadr");
+    const auto qpos = model_access::readonly_buffer(
+        data->qpos, model->nq, "qpos");
+    const auto qvel = model_access::readonly_buffer(
+        data->qvel, model->nv, "qvel");
+    for (const auto &[dof, demand, latch] :
+         {std::tuple{front_, front, &latch_front_},
+          std::tuple{rear_, rear, &latch_rear_}}) {
+        const double u = std::clamp(demand, 0., 1.);
+        const std::size_t di = static_cast<std::size_t>(dof);
+        const double theta = qpos[static_cast<std::size_t>(
+            jnt_qposadr[static_cast<std::size_t>(dof_jntid[di])])];
+        const double omega = qvel[di];
+        std::optional<double> latched = *latch;
+        if (advance) {
+            if (!latched.has_value()) {
+                if (u > 0. && hold_.torque_nm > 0. &&
+                    hold_.stiffness_nm_rad > 0. &&
+                    std::abs(omega) <= hold_.engage_radps) {
+                    latched = theta;
+                    *latch = latched;
+                }
+            } else if (u <= 0. || std::abs(omega) > hold_.release_radps) {
+                latched = std::nullopt;
+                *latch = std::nullopt;
+            }
+        }
+        if (!latched.has_value()) continue;
+        const double cap = hold_.torque_nm * u;
+        out[di] = std::clamp(
+            -hold_.stiffness_nm_rad * (theta - *latched) -
+                hold_.damping_nms_rad * omega,
+            -cap, cap);
+    }
+    return out;
+}
+
+void StaticBrake::reset() {
+    latch_front_ = std::nullopt;
+    latch_rear_ = std::nullopt;
 }
 
 std::pair<std::vector<double>, std::vector<double>>

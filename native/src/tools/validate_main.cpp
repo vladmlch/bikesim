@@ -36,7 +36,7 @@ void help(){std::cout<<
     "Reports carry physical validity, numerical validity, numerical parity and performance\n"
     "independently. Null means that this operation did not establish that kind of evidence.\n"
     "Exit: 0 accepted/diagnostic completion, 1 failed declared criteria, 2 invalid inputs/runtime error.\n";}
-Value numeric_value(std::string_view token,std::string_view name,bool integer){
+Value numeric_value(std::string_view token,std::string_view name,bool integer){ // NOLINT(bugprone-easily-swappable-parameters) call sites keep the declared parameter order.
     Value result=io::parse_json(token);if(integer)(void)io::as_int64(result,name);else (void)io::as_double(result,name);return result;
 }
 int report_exit(std::string_view id,const bv::Verdict& verdict){
@@ -51,6 +51,7 @@ int report_exit(std::string_view id,const bv::Verdict& verdict){
 }
 } // namespace
 
+// NOLINTNEXTLINE(bugprone-exception-escape) main catches std::exception and catch-all below emit the error envelope; residual escapes are stream failures at process exit
 int main(int argc,char** argv){
     try{
         if(argc<2){help();return 2;}
@@ -75,14 +76,14 @@ int main(int argc,char** argv){
         while(at<args.size()){
             const auto option=args[at++];if(option=="--help"||option=="-h"){help();return 0;}
             options.accept(option);
-            auto next=[&]{if(at==args.size()||args[at].starts_with("--"))throw std::invalid_argument("missing value for "+option);return args[at++];};
+            auto const next=[&]{if(at==args.size()||args[at].starts_with("--"))throw std::invalid_argument("missing value for "+option);return args[at++];};
             if(option=="--config"){input=next();continue;}if(option=="--root"){root=next();continue;}if(option=="--report"){report=next();continue;}
             if(option=="--stations"){value::set(std::get<Object>(overrides.data),"include_stations",Value{true});continue;}
             if(const auto it=strings.find(option);it!=strings.end()){value::set(std::get<Object>(overrides.data),it->second,value::text(next()));continue;}
             if(const auto it=reals.find(option);it!=reals.end()){value::set(std::get<Object>(overrides.data),it->second,numeric_value(next(),option,false));continue;}
             if(const auto it=integers.find(option);it!=integers.end()){value::set(std::get<Object>(overrides.data),it->second,numeric_value(next(),option,true));continue;}
             if(const auto it=lists.find(option);it!=lists.end()){Array entries;const bool named=option=="--cases"||option=="--scenarios";
-                while(at<args.size()&&!args[at].starts_with("--")){const auto token=args[at++];entries.push_back(named?value::text(token):numeric_value(token,option,option=="--station-counts"));}
+                while(at<args.size()&&!args[at].starts_with("--")){const auto& token=args[at++];entries.push_back(named?value::text(token):numeric_value(token,option,option=="--station-counts"));}
                 if(entries.empty())throw std::invalid_argument(option+" requires at least one value");value::set(std::get<Object>(overrides.data),it->second,Value{std::move(entries)});continue;}
             throw std::invalid_argument("unknown argument: "+option);
         }
@@ -103,6 +104,9 @@ int main(int argc,char** argv){
         std::cout<<io::recording_json(envelope)<<'\n';return report_exit(id,verdict);
     }catch(const std::exception& error){
         std::cerr<<io::recording_json(Value{Object{{"accepted",Value{false}},{"error",value::text(error.what())},
+            {"physical_validity",Value{}},{"numerical_validity",Value{}},{"numerical_parity",Value{}},{"runtime_performance",Value{}}}})<<'\n';return 2;
+    }catch(...){
+        std::cerr<<io::recording_json(Value{Object{{"accepted",Value{false}},{"error",value::text("unrecognized exception")},
             {"physical_validity",Value{}},{"numerical_validity",Value{}},{"numerical_parity",Value{}},{"runtime_performance",Value{}}}})<<'\n';return 2;
     }
 }

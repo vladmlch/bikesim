@@ -50,7 +50,7 @@ const runtime::AttachmentBudget BUDGET{
 template <class Ex, class F>
 void throws(F &&action, std::string_view needle, std::string_view message) {
     try {
-        action();
+        std::forward<F>(action)();
     } catch (const Ex &failure) {
         bt::require(needle.empty() ||
                     std::string(failure.what()).find(needle) != std::string::npos,
@@ -76,7 +76,7 @@ runtime::RawStep raw(std::int64_t i) {
 // reports at index 1.
 rider::AttachmentRaw spatial_foot(std::int64_t i) {
     rider::AttachmentRaw item;
-    const rider::DenseMatrix jac{6, 4, {
+    const rider::DenseMatrix jac{.rows=6, .columns=4, .values={
         1., 0., 0., -1.,
         0., 0., 0., 0.,
         0., 1., 0., 0.,
@@ -110,7 +110,7 @@ void test_batched_wrench_matches_scalar_and_first_violation() {
         buffer.push(std::move(step));
     }
     bt::require(buffer.full(), "the buffer reports full at capacity");
-    const rider::DenseMatrix relative{3, 4, {
+    const rider::DenseMatrix relative{.rows=3, .columns=4, .values={
         1., 0., 0., -1.,
         0., 1., 0., 0.,
         0., 0., 1., 0.}};
@@ -216,7 +216,7 @@ void test_actual_spatial_body_inputs_match_scalar_attachment_measurement() {
     const int rider = mj_name2id(model.get(), mjOBJ_BODY, "rider");
     const int bike = mj_name2id(model.get(), mjOBJ_BODY, "bike");
     bt::require(rider > 0 && bike > 0, "both bodies resolve");
-    rider::EqualityReactions reactions(model.get());
+    rider::EqualityReactions const reactions(model.get());
     rider::LeastSquaresWorkspace workspace{12, 6, 1};
     std::vector<double> scratch(static_cast<std::size_t>(model.get()->nv));
     const std::vector<double> point{0., 0., 1.}, normal{0., 0., 1.};
@@ -301,10 +301,10 @@ runtime::EffortContext effort_context(rider::SpindleConfig config, bool strength
                          .eccentric_ratio = 1.5, .source = "test"}};
     }
     return runtime::EffortContext(std::move(config),
-        {rider::SpindleController::JointEntry{"joint", 0, 0, 0}}, 1, 1);
+        {rider::SpindleController::JointEntry{.name="joint", .qpos_adr=0, .dof_adr=0, .actuator_id=0}}, 1, 1);
 }
 
-runtime::RawStep effort_raw(std::int64_t i, double qpos, double speed,
+runtime::RawStep effort_raw(std::int64_t i, double qpos, double speed, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
                             double actuator, double passive) {
     auto step = raw(i);
     step.qpos = {qpos};
@@ -413,7 +413,7 @@ struct RideRig {
     double timestep_s = 0.;
 };
 
-RideRig make_ride(double control_period_s, int record_decimation,
+RideRig make_ride(double control_period_s, int record_decimation, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
                   double duration_s) {
     auto owner = std::make_unique<research::ResearchRequest>();
     auto &request = *owner;
@@ -463,7 +463,7 @@ RideRig make_ride(double control_period_s, int record_decimation,
 
 void drain_pending(runtime::NativeRideRuntime &runtime,
                    std::vector<runtime::SamplePtr> &out) {
-    auto batch = runtime.prepare_samples();
+    auto const batch = runtime.prepare_samples();
     for (const auto &sample : batch.samples) out.push_back(sample);
     runtime.acknowledge_samples(batch);
 }
@@ -558,9 +558,9 @@ void test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms() {
             for (const auto &field : booleans)
                 flags.push_back(sw::boolean(sw::required(terms, field)) ? 1. : 0.);
         }
-        keys.emplace_back(runtime::Wire{runtime::WireObject{
+        keys.emplace_back(runtime::WireObject{
             {"bool", runtime::Wire{std::move(bool_keys)}},
-            {"num", runtime::Wire{std::move(num_keys)}}}});
+            {"num", runtime::Wire{std::move(num_keys)}}});
     }
     const auto keys_json = bike::io::canonical_json(
         bike::research::wire_value(runtime::Wire{std::move(keys)}));
@@ -743,7 +743,7 @@ void test_record_decimation_forwards_period_closing_energy() {
         "muscle_signed_j", "muscle_positive_j", "motor_signed_j",
         "motor_positive_j", "constraint_absolute_j", "constraint_signed_j",
         "solver_constraint_work_j", "electrical_work_j", "source_positive_work_j"};
-    const auto elastic_equal = [&](const runtime::WireObject &energy,
+    const auto elastic_equal = [&](const runtime::WireObject &energy, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
                                    const runtime::WireObject &expected,
                                    std::int64_t i) {
         const auto &actual_elastic = sw::object(sw::required(energy, "elastic_energy_j"));

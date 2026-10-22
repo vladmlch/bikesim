@@ -69,7 +69,7 @@ void test_capture_is_deterministic() {
 
 // tests/reference/test_golden_episode.py::test_saved_artifact_roundtrips
 void test_saved_artifact_roundtrips() {
-    bt::TemporaryDirectory temporary("golden-fifty-roundtrip");
+    bt::TemporaryDirectory const temporary("golden-fifty-roundtrip");
     auto environment = fresh(); const auto episode = capture(*environment, 50);
     const auto path = temporary.path() / "golden";
     golden::save(episode, path);
@@ -90,7 +90,7 @@ void test_replay_matches_golden_bitwise() {
 
 // tests/reference/test_episode_compare.py::test_compare_episode_on_saved_artifact
 void test_compare_episode_on_saved_artifact() {
-    bt::TemporaryDirectory temporary("golden-fifty-compare");
+    bt::TemporaryDirectory const temporary("golden-fifty-compare");
     auto original = fresh(); const auto episode = capture(*original, 50);
     const auto path = temporary.path() / "golden"; golden::save(episode, path);
     auto replay = fresh();
@@ -139,7 +139,7 @@ void test_v2_state_and_forces_recorded() {
 
 // tests/reference/test_golden_episode_v2.py::test_v2_roundtrip_and_determinism
 void test_v2_roundtrip_and_determinism() {
-    bt::TemporaryDirectory temporary("golden-v2-roundtrip");
+    bt::TemporaryDirectory const temporary("golden-v2-roundtrip");
     auto first = fresh(), second = fresh();
     const auto episode = capture(*first, 40), other = capture(*second, 40);
     state_and_force_fields(episode, other);
@@ -151,7 +151,7 @@ void test_v2_roundtrip_and_determinism() {
 
 // tests/reference/test_golden_episode_v2.py::test_exit_total_is_captured_independently_of_components
 void test_exit_total_is_captured_independently_of_components() {
-    bt::TemporaryDirectory temporary("golden-live-exit");
+    bt::TemporaryDirectory const temporary("golden-live-exit");
     auto environment = fresh();
     const auto empty = capture(*environment, 0);
     bike::model::ModelOwner model(engine::load_model_image(empty.model_image));
@@ -162,7 +162,7 @@ void test_exit_total_is_captured_independently_of_components() {
         std::vector<double> values;
         std::size_t width, count = 0;
         bool invalid_span = false;
-    } observed{std::vector<double>(3 * nv), nv, 0, false};
+    } observed{.values=std::vector<double>(3 * nv), .width=nv, .count=0, .invalid_span=false};
     // Preallocated storage and a noexcept callback keep this regression
     // from introducing a new throwing operation into the physical step.
     // The borrowed live span is never retained after the callback returns.
@@ -199,7 +199,7 @@ void test_exit_total_is_captured_independently_of_components() {
 
 // tests/reference/test_golden_episode_v2.py::test_load_old_artifact_without_exit_total[version]
 void test_load_old_artifact_without_exit_total(std::string_view version) {
-    bt::TemporaryDirectory temporary("golden-old-artifact");
+    bt::TemporaryDirectory const temporary("golden-old-artifact");
     bt::ModelFixture model(R"(<mujoco><worldbody><body><joint type="slide"/><geom size=".1"/></body></worldbody></mujoco>)");
     golden::EpisodeArtifact episode;
     const auto add = [&](std::string name, const auto &values) {

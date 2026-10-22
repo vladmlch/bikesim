@@ -290,7 +290,9 @@ def _project_drive(drive) -> dict:
             **{key:getattr(cfg,key) for key in
                ('human_torque_nm','torque_ripple','crank_phase_rad','chain_k_n_m',
                 'chain_c_ns_m','bearing_c_nms_rad','rotor_inertia_kgm2',
-                'brake_ceiling_nm')}}
+                'brake_ceiling_nm','brake_hold_torque_nm',
+                'brake_hold_stiffness_nm_rad','brake_hold_damping_nms_rad',
+                'brake_hold_engage_radps','brake_hold_release_radps')}}
 
 
 def _project(env) -> dict:

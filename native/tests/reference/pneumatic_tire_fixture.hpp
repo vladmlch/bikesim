@@ -78,10 +78,10 @@ inline constexpr std::array<std::string_view, 2> sides{"front", "rear"};
     p.tier = tier.name; p.n_rays = tier.n_rays; p.half_angle_deg = tier.half_angle_deg;
     p.discretised_brush = tier.discretised_brush; p.timestep_s = tier.timestep_s;
     p.front = bike::legacy::front_tyre(); p.rear = bike::legacy::rear_tyre();
-    p.surface = nativecfg::SurfaceSpec{surface.name, surface.mu_peak, surface.mu_slide,
-        surface.slip_stiffness_per_load, surface.stribeck_speed_mps};
+    p.surface = nativecfg::SurfaceSpec{.name=surface.name, .mu_peak=surface.mu_peak, .mu_slide=surface.mu_slide,
+        .slip_stiffness_per_load=surface.slip_stiffness_per_load, .stribeck_speed_mps=surface.stribeck_speed_mps};
     // RoadProfile.from_samples uses x[1]-x[0], not the rounded literal .005.
-    p.profile = {x.front(), x[1] - x[0], std::vector<double>(x.size(), 0.)};
+    p.profile = {.x0_m=x.front(), .dx_m=x[1] - x[0], .z_m=std::vector<double>(x.size(), 0.)};
     return out;
 }
 
@@ -163,7 +163,7 @@ inline void numeric_equal(std::span<const double> actual, std::span<const double
     return out;
 }
 inline void add_jtf(const mjModel &model, const mjData &data, std::string_view side,
-                    const std::array<double, 3> &point, const std::array<double, 3> &force,
+                    const std::array<double, 3> &point, const std::array<double, 3> &force, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
                     std::span<double> expected) {
     const int body = bike::model::required_id(model, mjOBJ_BODY, std::string(side) + "_wheel");
     const auto jacobian = bike::model::point_jacobian(model, data, body, point);

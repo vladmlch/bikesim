@@ -11,7 +11,7 @@ class Guard {
     std::atomic<bool>& flag_;
 public:
     explicit Guard(std::atomic<bool>& flag):flag_(flag){bool expected=false;if(!flag_.compare_exchange_strong(expected,true,std::memory_order_acquire))throw std::runtime_error("validation runtime operation already in progress");}
-    ~Guard(){flag_.store(false,std::memory_order_release);}Guard(const Guard&)=delete;Guard& operator=(const Guard&)=delete;
+    ~Guard(){flag_.store(false,std::memory_order_release);}Guard(const Guard&)=delete;Guard& operator=(const Guard&)=delete;Guard(Guard&&)=delete;Guard& operator=(Guard&&)=delete;
 };
 std::array<double,3> cross(const std::array<double,3>& a,const std::array<double,3>& b){return {a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]};}
 }
@@ -62,15 +62,15 @@ runtime::TruthGeometry RuntimeRigAccess::truth_geometry(runtime::NativeRideRunti
     out.root_x_qpos=static_cast<std::size_t>(mechanics::qpos(m,"root_x"));out.root_x_dof=static_cast<std::size_t>(mechanics::dof(m,"root_x"));out.root_pitch_qpos=static_cast<std::size_t>(mechanics::qpos(m,"root_pitch"));out.root_pitch_dof=static_cast<std::size_t>(mechanics::dof(m,"root_pitch"));return out;
 }
 initialization::PhysicalInitialState RuntimeRigAccess::initial_state(runtime::NativeRideRuntime& ride,const initialization::SetupRequest& request,const initialization::EquilibriumResult& eq,const Value& metadata,std::optional<int> stations) {
-    const Guard guard(ride.advancing_);ride.require_open();if(ride.committed_step_!=0||ride.stepper_->time()!=0.)throw std::invalid_argument("initial-state capture requires t=0");auto* m=ride.stepper_->model();
-    initialization::SetupContext context{.stepper=*ride.stepper_,.physical=*ride.physical_,.physics=*request.model.physics,.start_x_m=request.start_x_m,
+    const Guard guard(ride.advancing_);ride.require_open();if(ride.committed_step_!=0||ride.stepper_->time()!=0.)throw std::invalid_argument("initial-state capture requires t=0");auto const* m=ride.stepper_->model();
+    initialization::SetupContext const context{.stepper=*ride.stepper_,.physical=*ride.physical_,.physics=*request.model.physics,.start_x_m=request.start_x_m, // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
         .ground_z_m=geometry::compute_ground_z(request.model.bike)/1000.,.frame_body_id=object_id(m,mjOBJ_BODY,"frame"),.front_geom_id=object_id(m,mjOBJ_GEOM,"geom_front_contact"),.rear_geom_id=object_id(m,mjOBJ_GEOM,"geom_rear_contact"),
         .identity=get(metadata,"inputs"),.source_identity=text(metadata,"source_identity"),.provider_identity=text(metadata,"provider_identity"),.model_sha256=text(metadata,"model_sha256"),.initializing=true,.completed=true,.equilibrium=eq};
     return stations?initialization::PhysicalInitialState::project_stations(context,*stations):initialization::PhysicalInitialState::capture(context);
 }
 void RuntimeRigAccess::external_interval(runtime::NativeRideRuntime& ride,std::span<const double> values) {
     const Guard guard(ride.advancing_);ride.require_open();if(ride.committed_step_!=0)throw std::invalid_argument("external impulse fixture requires the initial interval");std::vector<double> force(values.begin(),values.end());
-    auto& physical=*ride.physical_;auto& stepper=*ride.stepper_;ride.accounting_->collect(false);physical.capture_accounted_presentation(ride.committed_presentation_);ride.accounting_->push(physical.advance_physics(0.,0.,force,{}));
+    auto& physical=*ride.physical_;auto const& stepper=*ride.stepper_;ride.accounting_->collect(false);physical.capture_accounted_presentation(ride.committed_presentation_);ride.accounting_->push(physical.advance_physics(0.,0.,force,{}));
     engine::get_state(stepper.model(),stepper.data(),ride.next_integration_state_.data(),static_cast<int>(mjSTATE_INTEGRATION));physical.capture_presentation(ride.next_presentation_);ride.committed_integration_state_.swap(ride.next_integration_state_);std::swap(ride.committed_presentation_,ride.next_presentation_);ride.committed_step_=physical.step();ride.committed_time_s_=stepper.time();
     if(physical.crash())ride.committed_outcome_="crash:"+physical.crash()->cause;ride.cache_research_boundary();if(ride.committed_outcome_)ride.flush_accounting();else if(ride.accounting_->full()){ride.accounting_->close_period();physical.capture_accounted_presentation(ride.committed_presentation_);}
 }

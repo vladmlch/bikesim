@@ -34,9 +34,9 @@ inline const Value& get(const Value& object, std::string_view key) {
     if (const auto* item = find(object, key)) return *item;
     throw std::invalid_argument("validation: missing " + std::string(key));
 }
-inline Value optional(const Value& object, std::string_view key, Value fallback = {}) {
+inline Value optional(const Value& object, std::string_view key, const Value& fallback = {}) {
     const auto* item = find(object, key);
-    return item ? *item : std::move(fallback);
+    return item ? *item : fallback;
 }
 inline bool true_value(const Value& item) {
     const auto* flag = std::get_if<bool>(&item.data);
@@ -79,7 +79,7 @@ inline double nonnegative(double x, std::string_view name) {
     if (x < 0.) throw std::invalid_argument(std::string(name) + " must be nonnegative");
     return x;
 }
-inline std::string trim(std::string s) {
+inline std::string trim(const std::string& s) {
     constexpr std::string_view whitespace = " \t\r\n\v\f";
     const auto first = s.find_first_not_of(whitespace);
     if (first == std::string::npos) return {};
@@ -113,7 +113,7 @@ inline std::string read_text(const std::filesystem::path& file) {
     // reader is format-neutral; JSON/TOML validation belongs to the caller.
     const auto bytes = io::read_numpy_bytes(file);
     if (bytes.empty()) return {};
-    return {reinterpret_cast<const char*>(bytes.data()), bytes.size()};
+    return {reinterpret_cast<const char*>(bytes.data()), bytes.size()}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte storage is reinterpreted as char for the string contract
 }
 inline std::string hash_text(std::string_view source) {
     return io::sha256(std::as_bytes(std::span(source.data(), source.size())));

@@ -14,7 +14,7 @@
 
 namespace {
 
-bike::viz::Channels channels(int n_rows, int n_shifts, int n_obstacles) {
+bike::viz::Channels channels(int n_rows, int n_shifts, int n_obstacles) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     bike::viz::Channels out;
     const auto numeric = [&](const char *name, double value) {
         out.emplace_back(name, std::vector<double>(static_cast<std::size_t>(n_rows), value));

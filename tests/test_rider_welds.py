@@ -95,6 +95,13 @@ def test_torque_sensor_reads_the_previous_solved_crank_torque(tmp_path):
 
 @pytest.mark.slow
 def test_steep_grade_saddle_shear_exceeds_friction(tmp_path):
-    """On a held 35 % grade the weld keeps the neutral rider from sliding back off the saddle."""
-    samples, _, _ = _held_episode(tmp_path, .35)
+    """On a held 45 % grade the weld keeps the neutral rider from sliding back off the saddle.
+
+    The held-brake stiction (brake_hold_* in PhysicalDriveConfig) makes a static
+    equilibrium exist at this grade, so the episode actually runs. The measured
+    asymptotic saddle shear/normal crosses support_mu=.8 at ~.33 grade; .45
+    leaves the whole sampled second half above the pad limit with margin
+    (min |tangent|/normal ~= .87).
+    """
+    samples, _, _ = _held_episode(tmp_path, .45)
     assert all(w['saddle']['would_slip'] for w in samples)

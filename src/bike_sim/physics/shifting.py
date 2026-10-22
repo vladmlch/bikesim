@@ -74,11 +74,28 @@ class CadenceShifter:
         cadence = self.cadence_ema
         if cadence > self.config.target_cadence_max_rpm:
             candidates = [teeth for teeth in self.config.cassette if teeth < self.rear_teeth]
-            selected = max(candidates) if candidates else self.rear_teeth
+            # A throw can jump several cogs: when the crank has spun far past
+            # the band the one-step shift lands the rider still overspun and
+            # the cooldown forces another wait. Take the smallest cog whose
+            # wheel-implied landing cadence still clears the band floor --
+            # the same no-hunting rule as below, applied across the throw.
+            selected = self.rear_teeth
+            for teeth in sorted(candidates):
+                if self.required_ema*teeth/self.rear_teeth >= self.config.target_cadence_min_rpm:
+                    selected = teeth
+                    break
+            if selected == self.rear_teeth and candidates:
+                selected = max(candidates)
             direction = 'up'
         elif cadence < self.config.target_cadence_min_rpm:
             candidates = [teeth for teeth in self.config.cassette if teeth > self.rear_teeth]
-            selected = min(candidates) if candidates else self.rear_teeth
+            selected = self.rear_teeth
+            for teeth in sorted(candidates, reverse=True):
+                if self.required_ema*teeth/self.rear_teeth <= self.config.target_cadence_max_rpm:
+                    selected = teeth
+                    break
+            if selected == self.rear_teeth and candidates:
+                selected = min(candidates)
             direction = 'down'
         else:
             return False

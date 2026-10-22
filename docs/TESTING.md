@@ -800,7 +800,7 @@ by about `8.72e-5 J`; the planar-arm model lacked
 40,000 steps with residual `0.197922`. Rider-weld load checks measured about
 632 N against a 785 N rider weight.
 
-The 14 failing node IDs, identical in the baseline and current full run, are:
+The 13 failing node IDs, identical in the baseline and current full run, are:
 
 - `tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque`
 - `tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget`
@@ -815,7 +815,6 @@ The 14 failing node IDs, identical in the baseline and current full run, are:
 - `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]`
 - `tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock`
 - `tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only`
-- `tests/test_rider_welds.py::test_steep_grade_saddle_shear_exceeds_friction`
 
 ## E1 recoverable MuJoCo errors
 

@@ -117,7 +117,12 @@ class PhysicalRuntime:
         self.drive = DrivetrainForceApplier(m,self.cfg.drive,self.cfg.drive_mode)
         self.resistance = ExternalResistanceApplier(m,self.cfg.resistance)
         self.brake = StaticBrakeApplier(self.address('front_wheel_spin')[1],
-            self.address('rear_wheel_spin')[1],self.cfg.drive.brake_ceiling_nm)
+            self.address('rear_wheel_spin')[1],self.cfg.drive.brake_ceiling_nm,
+            hold_torque_nm=self.cfg.drive.brake_hold_torque_nm,
+            hold_stiffness_nm_rad=self.cfg.drive.brake_hold_stiffness_nm_rad,
+            hold_damping_nms_rad=self.cfg.drive.brake_hold_damping_nms_rad,
+            hold_engage_radps=self.cfg.drive.brake_hold_engage_radps,
+            hold_release_radps=self.cfg.drive.brake_hold_release_radps)
         self.rider_contacts = self.rider_control = None
         if sim.rider.variant == 'articulated_planar':
             pose = geometry_pose(sim.rider,sim.specs)
@@ -268,11 +273,17 @@ class PhysicalRuntime:
         automatic_effort = (active and self.cfg.seated_climb.enabled
                             and control.human_torque_nm is None and control.rider_enabled)
         if self.cfg.seated_climb.enabled:
+            # The equilibrium settles under the same intent the first live
+            # tick resolves: without this the rider starts in the upright
+            # default posture and the resolved posture's PD targets shift the
+            # body at t=0, billing the difference to the weld constraints.
+            # Resolving while initializing marks step 0 once, so the first
+            # live resolve at that step reuses this intent unchanged.
             control = self.rider_intent.resolve(control, self.rider_intent_signals,
                 step=sim.steps, road_grade=road_grade_for_posture(self.rider_state.road),
                 preview_grade=road_grade_preview(self.rider_state.road),
                 lean_limit_rad=getattr(self.rider_control, 'lean_limit_rad', None),
-                active=active, advance=advance)
+                active=active or getattr(self, 'initializing', False), advance=advance)
         if advance:
             self.applied_control = control
             self._applied_control_dict = None
@@ -286,6 +297,9 @@ class PhysicalRuntime:
         d.xfrc_applied.fill(0.)
         d.ctrl.fill(0.)
         self.brake.apply(m,d,front,rear)
+        # The latched elastic bite at standstill; an advancing pass may latch
+        # or release, a probe reads the committed latch (static_braking.py).
+        brake_hold=self.brake.hold_qfrc(m,d,front,rear,advance=advance)
         rear_snapshot = sim.contacts.rear_snapshot
         pedaling = self.drive.prepare_pedaling(d, dt, control, active=active,
             advance=advance, braking=braking, model=m,
@@ -304,6 +318,8 @@ class PhysicalRuntime:
             mujoco.mj_forward(m,d)
         acc = sim.force_accumulator
         acc.clear()
+        if np.any(brake_hold):
+            acc.add('brake_hold',brake_hold)
         for name,force in sim.applier.compute_qfrc_components(m,d).items():
             acc.add(name,force)
         if external is not None:
@@ -364,7 +380,8 @@ class PhysicalRuntime:
                     support_available=availability,advance=advance,
                     dt_s=(self.control_clock.period_s if advance and
                           not getattr(self, 'initializing', False) else dt),steady_state=not active,
-                    pedal_recovery=self.cfg.seated_climb.enabled)
+                    pedal_recovery=self.cfg.seated_climb.enabled,
+                    weld_crank_torque_nm=sensed)
                 if advance:
                     self.control_clock.hold(torques)
                     if not getattr(self, 'initializing', False):
@@ -413,6 +430,9 @@ class PhysicalRuntime:
         self.rider_intent_signals = SeatedClimbSignals()
         self.applied_control = RideControl()
         self._applied_control_dict = None
+        # Fresh episode, fresh bite: a stale latch would pin the wheel to an
+        # angle from a previous settle.
+        self.brake.reset()
         self.research_accounting_valid=False
         self.live_real_time_factor=None
         self.initializing=True
@@ -573,6 +593,9 @@ class PhysicalRuntime:
                                               velocity, forces['engine_passive'])*dt
         for side in ('front','rear'):
             loss+=max(0.,-float(forces.get(side+'_static_brake',np.zeros_like(velocity))@velocity))*dt
+        # The elastic bite dissipates at its clip (slip) like the friction
+        # bound does; the stored spring energy never accumulates unbounded.
+        loss+=max(0.,-float(forces.get('brake_hold',np.zeros_like(velocity))@velocity))*dt
         loss+=self.drive.last.get('chain_dissipation_power_w',0.)*dt
         loss+=self.drive.last.get('freehub_dissipation_power_w',0.)*dt
         loss+=self.drive.last.get('crank_clutch_dissipation_power_w',0.)*dt

@@ -10,6 +10,7 @@ namespace {
 void require_keys(const Value& object, const std::set<std::string>& expected, std::string_view message) {
     if (keys(object) != expected) throw std::invalid_argument(std::string(message));
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursive JSON value tree walk
 void finite_json(const Value& item) {
     if (const auto* n = std::get_if<io::Number>(&item.data)) (void)io::number_double(*n, "metadata");
     else if (const auto* a = std::get_if<Array>(&item.data)) for (const auto& v : *a) finite_json(v);
@@ -93,7 +94,7 @@ void bicycle_metadata(const Value& p, std::string_view kind) {
 
 // physics/tire_calibration.py:16-84, tire_curve.py:17-92. The production
 // TabulatedRadial owns the identical slopes/integrals; no second material law.
-contactlaw::TabulatedRadial TireCalibration::curve() const { return contactlaw::TabulatedRadial(*material.table); }
+contactlaw::TabulatedRadial TireCalibration::curve() const { return contactlaw::TabulatedRadial(*material.table); } // NOLINT(bugprone-unchecked-optional-access) material.table is always populated by calibration_from_record
 bool TireCalibration::is_load_in_valid_range(double load_n) const {
     scalar(load_n,"load_n"); return material.valid_load_range_n[0]<=load_n && load_n<=material.valid_load_range_n[1];
 }
@@ -102,7 +103,7 @@ TireCalibration calibration_from_record(const Value& record) {
         "pressure_pa_gauge","radial_c_ns_m","deflection_m","force_n","valid_load_range_n","provenance"},
         "calibration fields must match the version-1 schema exactly");
     TireCalibration r;
-    r.material.table=nativecfg::TireTable{numbers(get(record,"deflection_m"),"deflection"),numbers(get(record,"force_n"),"elastic force")};
+    r.material.table=nativecfg::TireTable{.deflection_m=numbers(get(record,"deflection_m"),"deflection"),.force_n=numbers(get(record,"force_n"),"elastic force")};
     (void)r.curve();
     r.material.radial_c_ns_m=nonnegative(real(record,"radial_c_ns_m"),"radial_c_ns_m");
     r.material.pressure_pa_gauge=nonnegative(real(record,"pressure_pa_gauge"),"pressure_pa_gauge");
@@ -139,7 +140,7 @@ Value steady_brush_force(const nativecfg::TireParams& tire,const nativecfg::Surf
         const auto [next,f,step_loss]=contactlaw::brush_step(xi,u,speed_mps,load_n,tire.tangent_k_n_m,mu,tire.relaxation_length_m,dt_s);
         xi=next;force=f;loss+=step_loss;
     }
-    for (double x : {xi,force,loss}) if (!std::isfinite(x)) throw std::invalid_argument("nonfinite tire characterization");
+    for (double const x : {xi,force,loss}) if (!std::isfinite(x)) throw std::invalid_argument("nonfinite tire characterization");
     return Value{Object{{"slip_ratio",value::real(slip_ratio)},{"slip_mps",value::real(u)},{"force_n",value::real(force)},
         {"mu_used",value::real(mu)},{"normal_load_n",value::real(load_n)},{"loss_j",value::real(loss)},
         {"stored_energy_j",value::real(.5*tire.tangent_k_n_m*xi*xi)},
@@ -159,7 +160,7 @@ bool is_synthetic(const Value& payload) {
     std::ranges::transform(source,source.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});
     return synthetic || source.starts_with("synthetic") || source.starts_with("simulation:") || source.starts_with("fixture:");
 }
-std::string accepted_calibration_status(bool synthetic,bool holdout,bool converged,bool scope) {
+std::string_view accepted_calibration_status(bool synthetic,bool holdout,bool converged,bool scope) {
     return synthetic||!holdout||!converged||!scope ? "parameterized_unvalidated" : "validated_within_declared_scope";
 }
 std::string dataset_hash(const Value& payload) {
@@ -167,6 +168,7 @@ std::string dataset_hash(const Value& payload) {
     // datasets.py uses json.dumps(..., ensure_ascii=True), including Python
     // float repr after JSON decoding. The recording codec deliberately uses
     // UTF-8; reproduce this dataset-specific hashing boundary explicitly.
+    // NOLINTNEXTLINE(misc-no-recursion) recursive JSON value normalizer
     const auto normalize=[](const auto& self,const Value& input)->Value {
         if(const auto* n=std::get_if<io::Number>(&input.data)) {
             if(n->lexeme.find_first_of(".eE")!=std::string::npos)return value::real(io::as_double(input,"dataset number"));
@@ -177,7 +179,7 @@ std::string dataset_hash(const Value& payload) {
         return input;
     };
     const auto utf8=io::canonical_json(normalize(normalize,payload));std::string ascii;
-    const auto escape=[&](std::uint32_t cp){constexpr char hex[]="0123456789abcdef";ascii+="\\u";for(int shift:{12,8,4,0})ascii+=hex[(cp>>shift)&15U];};
+    const auto escape=[&](std::uint32_t cp){constexpr std::string_view hex{"0123456789abcdef"};ascii+="\\u";for(unsigned const shift:{12U,8U,4U,0U})ascii+=hex[(cp>>shift)&15U];};
     for(std::size_t i=0;i<utf8.size();) {
         const auto first=static_cast<unsigned char>(utf8[i++]);if(first<128){ascii+=static_cast<char>(first);continue;}
         const unsigned width=first<224?2U:first<240?3U:4U;std::uint32_t cp=first&((1U<<(7U-width))-1U);
@@ -237,6 +239,7 @@ Value holdout_metrics(std::span<const double> measured,std::span<const double> p
     if(!std::isfinite(rmse)) throw std::invalid_argument("holdout error overflow");
     return Value{Object{{"rmse",value::real(rmse)},{"max_abs",value::real(peak)},{"bias",value::real(mean(errors))}}};
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 Value calibration_report(const Value& payload,const Value& predictions,std::string_view output,
                          const Value& parameters,const Value& bounds,const Value& budget,bool allow_synthetic) {
     const auto data=validate_dataset(payload,allow_synthetic);

@@ -24,7 +24,7 @@ Value measured_run() {
 }
 void prefix(Value& run, std::string_view name, Value value) { auto p = field(run, "prefix"); set(p, name, std::move(value)); set(run, "prefix", std::move(p)); }
 void reasons(const Value& run, std::initializer_list<std::string_view> names) {
-    Array expected; for (auto name : names) expected.push_back(text(name));
+    Array expected; for (auto const name : names) expected.push_back(text(name));
     const auto result = m::steady_state_evidence(run, 30.);
     bt::require(io::canonical_json(field(result, "reasons")) == io::canonical_json(Value{expected}), "classification preserves the exact documented failure reasons and order");
     bt::require(io::as_string(field(result, "status"), "status") == (names.size() == 0 ? "eligible" : "diagnostic"), "only a complete valid measured window is eligible");
@@ -43,7 +43,7 @@ void test_changed_identity_is_not_a_valid_performance_claim() { auto run = measu
 void test_non_duration_terminal_reason_is_not_steady_state() { auto run = measured_run(); prefix(run, "reason", text("finished")); reasons(run, {"non_duration_terminal"}); }
 // tests/portability/test_performance_evidence.py::test_invalid_wall_clock_blocks_steady_state
 void test_invalid_wall_clock_blocks_steady_state() {
-    for (const auto& value : std::array{real(0.), real(-1.), Value{io::Tagged{"float64", {{"value", "nan"}}}}, Value{io::Tagged{"float64", {{"value", "+inf"}}}}}) {
+    for (const auto& value : std::array{real(0.), real(-1.), Value{io::Tagged{.kind="float64", .fields={{"value", "nan"}}}}, Value{io::Tagged{.kind="float64", .fields={{"value", "+inf"}}}}}) {
         auto run = measured_run(); set(run, "wall_clock_s", value); reasons(run, {"invalid_wall_clock"});
     }
 }
@@ -72,7 +72,7 @@ void test_zero_requested_steps_is_incomplete() { auto run = measured_run(); pref
 // tests/portability/test_performance_evidence.py::test_numerically_invalid_prefix_is_diagnostic
 void test_numerically_invalid_prefix_is_diagnostic() { auto run = measured_run(); prefix(run, "numerically_valid", Value{false}); reasons(run, {"invalid_prefix"}); }
 // tests/portability/test_performance_evidence.py::test_non_finite_simulated_window_is_insufficient
-void test_non_finite_simulated_window_is_insufficient() { auto run = measured_run(); set(run, "simulated_time_s", Value{io::Tagged{"float64", {{"value", "nan"}}}}); reasons(run, {"insufficient_simulated_window"}); }
+void test_non_finite_simulated_window_is_insufficient() { auto run = measured_run(); set(run, "simulated_time_s", Value{io::Tagged{.kind="float64", .fields={{"value", "nan"}}}}); reasons(run, {"insufficient_simulated_window"}); }
 // tests/portability/test_performance_evidence.py::test_window_minimum_has_a_narrow_equality_tolerance
 void test_window_minimum_has_a_narrow_equality_tolerance() {
     auto run = measured_run(); set(run, "simulated_time_s", real(30. - 1e-10)); reasons(run, {});
@@ -81,13 +81,15 @@ void test_window_minimum_has_a_narrow_equality_tolerance() {
 // tests/portability/test_performance_evidence.py::test_reasons_have_stable_documented_order
 void test_reasons_have_stable_documented_order() {
     auto run = measured_run(); set(run, "measured_ok", Value{false}); set(run, "valid_prefix", Value{false}); set(run, "identity_unchanged", Value{false});
-    set(run, "physics_steps", integer(4)); set(run, "simulated_time_s", real(.005)); set(run, "wall_clock_s", Value{io::Tagged{"float64", {{"value", "nan"}}}});
+    set(run, "physics_steps", integer(4)); set(run, "simulated_time_s", real(.005)); set(run, "wall_clock_s", Value{io::Tagged{.kind="float64", .fields={{"value", "nan"}}}});
     prefix(run, "steps", integer(4)); prefix(run, "reason", text("invalid_controller")); prefix(run, "model_valid", Value{false});
     reasons(run, {"measurement_failed", "invalid_prefix", "identity_changed", "incomplete_requested_prefix", "non_duration_terminal", "insufficient_simulated_window", "invalid_wall_clock"});
 }
 // tests/portability/test_performance_evidence.py::test_classification_does_not_mutate_the_run
 void test_classification_does_not_mutate_the_run() { const auto run = measured_run(); const auto before = io::canonical_json(run); (void)m::steady_state_evidence(run, 30.); bt::require(before == io::canonical_json(run), "classification is observational"); }
 } // namespace
+// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// cppcheck-suppress throwInEntryPoint
 int main() { return bt::run([] {
     test_short_invalid_prefix_is_diagnostic_not_steady_state(); test_completed_valid_window_is_eligible();
     test_changed_identity_is_not_a_valid_performance_claim(); test_non_duration_terminal_reason_is_not_steady_state();

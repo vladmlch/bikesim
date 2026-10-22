@@ -660,8 +660,16 @@ void post_init(PhysicalDriveConfig &config) {
           {"chain_c_ns_m", &PhysicalDriveConfig::chain_c_ns_m},
           {"freehub_c_nms_rad", &PhysicalDriveConfig::freehub_c_nms_rad},
           {"bearing_c_nms_rad", &PhysicalDriveConfig::bearing_c_nms_rad},
-          {"brake_ceiling_nm", &PhysicalDriveConfig::brake_ceiling_nm}})
+          {"brake_ceiling_nm", &PhysicalDriveConfig::brake_ceiling_nm},
+          {"brake_hold_torque_nm", &PhysicalDriveConfig::brake_hold_torque_nm},
+          {"brake_hold_stiffness_nm_rad", &PhysicalDriveConfig::brake_hold_stiffness_nm_rad},
+          {"brake_hold_damping_nms_rad", &PhysicalDriveConfig::brake_hold_damping_nms_rad}})
         scalar(config.*member, name, 0.);
+    scalar(config.brake_hold_engage_radps, "brake_hold_engage_radps",
+           std::nullopt, true);
+    scalar(config.brake_hold_release_radps, "brake_hold_release_radps", 0.);
+    if (config.brake_hold_release_radps < config.brake_hold_engage_radps)
+        fail("brake hold release must not precede engage");
     scalar(config.crank_phase_rad, "initial crank phase");
     if (config.torque_ripple >= 1.) fail("torque ripple must be less than one");
 }

@@ -71,7 +71,7 @@ struct ObjectList : std::vector<std::pair<std::string, V>> {
     using base = std::vector<std::pair<std::string, V>>;
     using base::base;
     ObjectList();
-    ObjectList(base members);
+    explicit ObjectList(base members);
     ObjectList(const ObjectList &other);
     ObjectList(ObjectList &&other) noexcept;
     ObjectList &operator=(const ObjectList &other);
@@ -102,7 +102,7 @@ template <class V>
 ObjectList<V>::ObjectList(ObjectList &&other) noexcept : base(std::move(other)) {}
 template <class V>
 ObjectList<V> &ObjectList<V>::operator=(const ObjectList &other) {
-    base::operator=(other);
+    if (this != &other) base::operator=(other);
     return *this;
 }
 template <class V>
@@ -182,12 +182,16 @@ inline void repr_escape_nonprintable(std::string &out, char32_t cp) {
         out.push_back(kHex[cp & 0xfU]);
     } else if (cp <= 0xffffu) {
         out.push_back('u');
-        for (int shift = 12; shift >= 0; shift -= 4)
+        for (unsigned shift = 12; ; shift -= 4) {
             out.push_back(kHex[(cp >> shift) & 0xfU]);
+            if (shift == 0) break;
+        }
     } else {
         out.push_back('U');
-        for (int shift = 28; shift >= 0; shift -= 4)
+        for (unsigned shift = 28; ; shift -= 4) {
             out.push_back(kHex[(cp >> shift) & 0xfU]);
+            if (shift == 0) break;
+        }
     }
 }
 

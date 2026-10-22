@@ -36,7 +36,7 @@ void test_oracle_parity_with_xfrc_writer(std::string_view tier) {
     auto config = std::make_unique<bike::legacy::TyreConfig>();
     config->model = "pneumatic"; config->tier = tier; config->surface = "asphalt";
     auto legacy = std::make_unique<bike::legacy::TyreForceApplier>(*legacy_rig.engine.model,
-        *config, biketyre::RoadProfile(Access::config(*legacy_rig.tire).pneumatic->profile),
+        *config, biketyre::RoadProfile(Access::config(*legacy_rig.tire).pneumatic->profile), // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
         bike::terrain::SurfaceMap::uniform("asphalt"));
     const double dt = legacy_rig.dt();
     rig.spin("front", 2.); legacy_rig.spin("front", 2.);
@@ -81,6 +81,8 @@ void test_oracle_parity_with_xfrc_writer(std::string_view tier) {
     node.done();
 }
 } // namespace
+// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// cppcheck-suppress throwInEntryPoint
 int main() { return bt::run([] {
     for (const auto tier : bike::legacy::TYRE_TIERS) test_oracle_parity_with_xfrc_writer(tier);
 }); }

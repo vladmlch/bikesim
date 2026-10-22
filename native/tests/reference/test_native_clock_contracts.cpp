@@ -50,21 +50,25 @@ void scalar(bt::oracle::Node& golden, double value) {
 }
 template<class Action> void overflow(Action&& action) {
     bool caught = false;
-    try { action(); } catch (const std::overflow_error&) { caught = true; }
+    try { std::forward<Action>(action)(); } catch (const std::overflow_error&) { caught = true; }
     bt::require(caught, "interval quotient outside int64 raises overflow_error");
 }
 struct RoundingGuard {
     int original = std::fegetround();
     RoundingGuard() { bt::require(original != -1, "fegetround supported"); }
     ~RoundingGuard() { (void)std::fesetround(original); }
+    RoundingGuard(const RoundingGuard&) = delete;
+    RoundingGuard& operator=(const RoundingGuard&) = delete;
+    RoundingGuard(RoundingGuard&&) = delete;
+    RoundingGuard& operator=(RoundingGuard&&) = delete;
 };
 constexpr std::array modes{FE_TONEAREST, FE_UPWARD, FE_DOWNWARD, FE_TOWARDZERO};
 void prove_rounding_controls() {
     bt::require(std::fesetround(FE_TONEAREST) == 0, "set nearest rounding mode");
-    volatile double one = 1., three = 3.;
+    const volatile double one = 1., three = 3.;
     const auto nearest = std::bit_cast<std::uint64_t>(one / three);
     bool moved = false;
-    for (int mode : modes) {
+    for (int const mode : modes) {
         bt::require(std::fesetround(mode) == 0, "all required rounding modes supported");
         moved = moved || std::bit_cast<std::uint64_t>(one / three) != nearest;
     }
@@ -87,9 +91,9 @@ void test_nextafter_neighbours_of_ties() {
 }
 void test_scaled_dt_quotients() {
     struct Case { double time, dt; std::int64_t expected; };
-    for (const auto& c : std::array{Case{1., 2., 0}, Case{3., 2., 2}, Case{5., 2., 2},
-        Case{7., 2., 4}, Case{.25, .5, 0}, Case{.75, .5, 2}, Case{1.25, .5, 2},
-        Case{1.75, .5, 4}, Case{.3, .1, 3}, Case{1., 3., 0}, Case{2., 3., 1}, Case{1., .00125, 800}})
+    for (const auto& c : std::array{Case{.time=1., .dt=2., .expected=0}, Case{.time=3., .dt=2., .expected=2}, Case{.time=5., .dt=2., .expected=2},
+        Case{.time=7., .dt=2., .expected=4}, Case{.time=.25, .dt=.5, .expected=0}, Case{.time=.75, .dt=.5, .expected=2}, Case{.time=1.25, .dt=.5, .expected=2},
+        Case{.time=1.75, .dt=.5, .expected=4}, Case{.time=.3, .dt=.1, .expected=3}, Case{.time=1., .dt=3., .expected=0}, Case{.time=2., .dt=3., .expected=1}, Case{.time=1., .dt=.00125, .expected=800}})
         bt::require(interval_id(c.time, c.dt) == c.expected, "scaled binary64 quotient");
 }
 void test_matches_builtin_round_on_valid_domain() {
@@ -98,7 +102,7 @@ void test_matches_builtin_round_on_valid_domain() {
     std::vector<double> cases{0., 1., 1e6, largest};
     for (int i = 0; i < 300; ++i) cases.push_back(rng.uniform(0., 1e3));
     for (int i = 0; i < 300; ++i) cases.push_back(std::floor(rng.uniform(0., 1e6)) + .5);
-    for (double dt : {1., .0005, .00125, 2.5, 37.}) for (double time : cases) {
+    for (double const dt : {1., .0005, .00125, 2.5, 37.}) for (double const time : cases) {
         const double quotient = time / dt;
         if (!std::isfinite(quotient) || quotient >= bound) continue;
         integer(golden, interval_id(time, dt), "builtin round interval");
@@ -132,7 +136,7 @@ void test_int64_upper_edge_accepted() {
 void test_ids_are_rounding_mode_independent() {
     const int original = std::fegetround();
     {
-        RoundingGuard guard;
+        RoundingGuard const guard;
         prove_rounding_controls();
         auto golden = oracle("TestIntervalId", "test_ids_are_rounding_mode_independent");
         std::vector<Pair> cases{{0., 0}, {-0., 0}, {.5, 0}, {1.5, 2}, {2.5, 2}, {3.5, 4}, {4.5, 4}, {largest, largest_id}};
@@ -140,7 +144,7 @@ void test_ids_are_rounding_mode_independent() {
             cases.emplace_back(std::nextafter(static_cast<double>(i) + .5, 0.), i);
             cases.emplace_back(std::nextafter(static_cast<double>(i) + .5, inf), i + 1);
         }
-        for (int mode : modes) {
+        for (int const mode : modes) {
             bt::require(std::fesetround(mode) == 0, "set foreign rounding mode");
             for (const auto& [q, expected] : cases)
                 bt::require(interval_id(q, 1.) == expected, "conversion independent of current FE mode");
@@ -156,7 +160,7 @@ void test_ids_are_rounding_mode_independent() {
 constexpr std::string_view cruise_xml = R"(<mujoco><option timestep="0.0005"/><worldbody><body>
   <joint name="root_x" type="slide" axis="1 0 0"/><geom type="sphere" size=".1" mass="1"/>
 </body></worldbody></mujoco>)";
-constexpr nativecfg::CruiseConfig cruise_config{25., 180., 150., 150.};
+constexpr nativecfg::CruiseConfig cruise_config{.target_speed_kmh=25., .kp_nm_per_mps=180., .ki_nm_per_mps_s=150., .torque_ceiling_nm=150.};
 void speed(bt::ModelFixture& fixture, double value) {
     model_access::mutable_buffer(fixture.data->qvel, fixture.model->nv)[static_cast<std::size_t>(fixture.dof("root_x"))] = value;
 }
@@ -181,7 +185,7 @@ void test_python_oracle_checks_timestep_only_when_integrating() {
 void test_native_matches_python_at_each_serialized_timestep() {
     auto golden = oracle("TestCruiseTimestep", "test_native_matches_python_at_each_serialized_timestep");
     std::array<double, 3> integrals{}; std::size_t index = 0;
-    for (double timestep : {.0005, .001, .0025}) {
+    for (double const timestep : {.0005, .001, .0025}) {
         bt::ModelFixture fixture(cruise_xml); fixture.model->opt.timestep = timestep;
         // Preserve the actual MJB serialization/loading boundary. The input
         // bytes are built from the same XML fixture when this test is run;
@@ -189,7 +193,7 @@ void test_native_matches_python_at_each_serialized_timestep() {
         const auto image = bike::initialization::capture_model_image(*fixture.model);
         auto config = std::make_unique<nativecfg::WriterConfig>(); config->cruise = cruise_config;
         auto native = std::make_unique<Stepper>(image.mjb, *config);
-        for (double offset : {-.2, -.05, .1, -.3, .0, -.15}) {
+        for (double const offset : {-.2, -.05, .1, -.3, .0, -.15}) {
             speed(fixture, native->cruise().state().target_speed_mps + offset);
             native->set_state(model_access::readonly_buffer(fixture.data->qpos, fixture.model->nq),
                 model_access::readonly_buffer(fixture.data->qvel, fixture.model->nv),

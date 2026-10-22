@@ -139,7 +139,7 @@ bike::io::Value comparison_key(const Settings& settings) {
 bike::io::Value chunk_statistics(std::span<const double> values) {
     using namespace setupvalue;
     std::vector<double> data(values.begin(), values.end());
-    for (double value : data) if (!std::isfinite(value) || value < 0.)
+    for (double const value : data) if (!std::isfinite(value) || value < 0.)
         throw std::invalid_argument("chunk latencies must be finite and nonnegative");
     std::ranges::sort(data);
     const auto quantile = [&](double fraction) -> Value {

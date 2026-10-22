@@ -7,24 +7,24 @@ namespace {
 using namespace policy_reference;
 
 // tests/reference/test_native_drive_policies.py::test_native_policy_api_exists
-void test_native_policy_api_exists(const Value& baseline) {
+[[gnu::noinline]] void test_native_policy_api_exists(const Value& baseline) {
     auto policy = policies(baseline);
     bt::require(sorted_keys(state(policy)) == std::vector<std::string>{"assist", "battery", "hub", "pedaling", "shifting"},
                 "native policy owner exposes all five complete snapshots");
 }
 
 // tests/reference/test_native_drive_policies.py::test_crank_torque
-void test_crank_torque() {
+[[gnu::noinline]] void test_crank_torque() {
     auto golden = node("test_crank_torque");
-    for (double mean : {-10., -0., 0., 30.})
-        for (double phase : {-23., -std::numbers::pi, -0., 0., .71, std::numbers::pi / 2., 15.})
-            for (double ripple : {0., .35, .999})
+    for (double const mean : {-10., -0., 0., 30.})
+        for (double const phase : {-23., -std::numbers::pi, -0., 0., .71, std::numbers::pi / 2., 15.})
+            for (double const ripple : {0., .35, .999})
                 scalar(golden, drivetrain::human_crank_torque(mean, phase, ripple));
     golden.done();
 }
 
 // tests/reference/test_native_drive_policies.py::test_battery_draw_matches_python
-void test_battery_draw_matches_python(const Value& baseline) {
+[[gnu::noinline]] void test_battery_draw_matches_python(const Value& baseline) {
     auto golden = node("test_battery_draw_matches_python"); tree(golden, baseline);
     auto policy = policies(baseline);
     for (const auto& [power, dt] : std::array<std::array<double, 2>, 4>{{{5., .002}, {1000., .01}, {1e9, .1}, {0., .01}}}) {
@@ -33,7 +33,7 @@ void test_battery_draw_matches_python(const Value& baseline) {
     golden.done();
 }
 
-struct PedalCase { double phase, rate, required, effort, dt; bool enabled = true, braking = false; };
+struct PedalCase { double phase{}, rate{}, required{}, effort{}, dt{}; bool enabled = true, braking = false; };
 void pedal_case(bt::oracle::Node& golden, PolicySet& policy, const PedalCase& item) {
     tree(golden, pedaling_result(policy.pedaling.update(item.phase, item.rate, item.required,
         item.effort, item.dt, item.enabled, item.braking)));
@@ -41,19 +41,19 @@ void pedal_case(bt::oracle::Node& golden, PolicySet& policy, const PedalCase& it
 }
 
 // tests/reference/test_native_drive_policies.py::test_pedaling_sequences
-void test_pedaling_sequences(const Value& baseline) {
+[[gnu::noinline]] void test_pedaling_sequences(const Value& baseline) {
     auto golden = node("test_pedaling_sequences"); tree(golden, baseline);
     auto policy = policies(baseline);
     const std::array cases{
-        PedalCase{0., 0., 0., 20., .01}, PedalCase{2., 4., 40., 20., .04},
-        PedalCase{3., 15., 120., 30., .04}, PedalCase{4., 11., 80., 30., .01},
-        PedalCase{4., -8., -30., 30., .4}, PedalCase{5., -5., -60., 30., .01, true, true},
-        PedalCase{6., -5., 0., 0., .1}, PedalCase{6., 0., 0., 30., .1, false, false}};
+        PedalCase{.phase=0., .rate=0., .required=0., .effort=20., .dt=.01}, PedalCase{.phase=2., .rate=4., .required=40., .effort=20., .dt=.04},
+        PedalCase{.phase=3., .rate=15., .required=120., .effort=30., .dt=.04}, PedalCase{.phase=4., .rate=11., .required=80., .effort=30., .dt=.01},
+        PedalCase{.phase=4., .rate=-8., .required=-30., .effort=30., .dt=.4}, PedalCase{.phase=5., .rate=-5., .required=-60., .effort=30., .dt=.01, .enabled=true, .braking=true},
+        PedalCase{.phase=6., .rate=-5., .required=0., .effort=0., .dt=.1}, PedalCase{.phase=6., .rate=0., .required=0., .effort=30., .dt=.1, .enabled=false, .braking=false}};
     for (const auto& item : cases) pedal_case(golden, policy, item);
     bike::random::NumpyRng random(934);
     for (int i = 0; i < 200; ++i) {
-        const PedalCase item{random.uniform(-40., 40.), random.uniform(-15., 15.),
-            random.uniform(-100., 130.), random.uniform(0., 65.), .007};
+        const PedalCase item{.phase=random.uniform(-40., 40.), .rate=random.uniform(-15., 15.),
+            .required=random.uniform(-100., 130.), .effort=random.uniform(0., 65.), .dt=.007};
         pedal_case(golden, policy, item);
     }
     golden.done();
@@ -71,25 +71,25 @@ void shift_case(bt::oracle::Node& golden, PolicySet& policy, const ShiftCase& it
 }
 
 // tests/reference/test_native_drive_policies.py::test_shifting[raw/ema-signed/magnitude]
-void test_shifting() {
-    for (double tau : {0., .35}) for (auto mode : {"legacy_signed", "magnitude"}) {
+[[gnu::noinline]] void test_shifting() {
+    for (double const tau : {0., .35}) for (auto mode : {"legacy_signed", "magnitude"}) {
         const auto id = std::string(tau == 0. ? "raw-" : "ema-") + (std::string_view(mode) == "legacy_signed" ? "signed" : "magnitude");
         auto golden = node("test_shifting", id);
         auto input = source(false); input.shifting.enabled = true;
         input.shifting.upshift_slip_mode = mode; input.shifting.cadence_smoothing_tau_s = tau;
         auto policy = policies(config(input));
         const std::array cases{
-            ShiftCase{100., 100., .5, true, false, true, 1.},
-            ShiftCase{100., 100., .5, true, false, true, -1.},
-            ShiftCase{60., 60., .01}, ShiftCase{60., 60., .5},
-            ShiftCase{60., 120., .5}, ShiftCase{120., 30., .5},
-            ShiftCase{100., 100., .5, true, false, false},
-            ShiftCase{100., 100., .5, false}, ShiftCase{100., 100., .5, true, true},
-            ShiftCase{-10., -10., .5}};
+            ShiftCase{.cadence=100., .required=100., .dt=.5, .pedaling=true, .braking=false, .contact=true, .slip=1.},
+            ShiftCase{.cadence=100., .required=100., .dt=.5, .pedaling=true, .braking=false, .contact=true, .slip=-1.},
+            ShiftCase{.cadence=60., .required=60., .dt=.01}, ShiftCase{.cadence=60., .required=60., .dt=.5},
+            ShiftCase{.cadence=60., .required=120., .dt=.5}, ShiftCase{.cadence=120., .required=30., .dt=.5},
+            ShiftCase{.cadence=100., .required=100., .dt=.5, .pedaling=true, .braking=false, .contact=false},
+            ShiftCase{.cadence=100., .required=100., .dt=.5, .pedaling=false}, ShiftCase{.cadence=100., .required=100., .dt=.5, .pedaling=true, .braking=true},
+            ShiftCase{.cadence=-10., .required=-10., .dt=.5}};
         for (const auto& item : cases) shift_case(golden, policy, item);
         bike::random::NumpyRng random(11);
         for (int i = 0; i < 250; ++i) {
-            const ShiftCase item{random.uniform(30., 130.), random.uniform(30., 130.), .01};
+            const ShiftCase item{.cadence=random.uniform(30., 130.), .required=random.uniform(30., 130.), .dt=.01};
             shift_case(golden, policy, item);
         }
         golden.done();
@@ -106,25 +106,25 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
 }
 
 // tests/reference/test_native_drive_policies.py::test_assist[custom/eco/tour/emtb/turbo]
-void test_assist() {
+[[gnu::noinline]] void test_assist() {
     for (auto mode : {"custom", "eco", "tour", "emtb", "turbo"}) {
         auto golden = node("test_assist", mode);
         auto input = source(false); input.assist.mode = mode;
         if (std::string_view(mode) != "custom") input.assist.profile = "bosch_cx_gen4";
         input.assist.torque_curve = std::vector<std::array<double, 2>>{{0., 80.}, {43., 71.}, {100., 35.}, {150., 0.}};
         auto policy = policies(config(input));
-        for (double shaft : {-10., 0., 10., 43., 77.7, 100., 149., 150., 170.})
-            for (double speed : {0., 6.5, -6.7, 7.}) pair(golden, policy.assist.ceiling(shaft, speed));
+        for (double const shaft : {-10., 0., 10., 43., 77.7, 100., 149., 150., 170.})
+            for (double const speed : {0., 6.5, -6.7, 7.}) pair(golden, policy.assist.ceiling(shaft, speed));
         const std::array cases{
-            AssistCase{4., 80., 0., false, .005, {}, {}}, AssistCase{30., 0., 0., false, .005, {}, {}},
-            AssistCase{30., 80., 0., true, .005, {}, {}}, AssistCase{10., 80., 0., false, .005, 0., {}},
-            AssistCase{30., 80., 6.7, false, .005, 2., 15.}, AssistCase{40., 80., 0., false, .005, {}, 150.},
-            AssistCase{100., 80., 0., false, .005, {}, {}}, AssistCase{-1., 80., 0., false, .005, {}, {}}};
+            AssistCase{.human=4., .cadence=80., .speed=0., .braking=false, .dt=.005, .cap={}, .shaft={}}, AssistCase{.human=30., .cadence=0., .speed=0., .braking=false, .dt=.005, .cap={}, .shaft={}},
+            AssistCase{.human=30., .cadence=80., .speed=0., .braking=true, .dt=.005, .cap={}, .shaft={}}, AssistCase{.human=10., .cadence=80., .speed=0., .braking=false, .dt=.005, .cap=0., .shaft={}},
+            AssistCase{.human=30., .cadence=80., .speed=6.7, .braking=false, .dt=.005, .cap=2., .shaft=15.}, AssistCase{.human=40., .cadence=80., .speed=0., .braking=false, .dt=.005, .cap={}, .shaft=150.},
+            AssistCase{.human=100., .cadence=80., .speed=0., .braking=false, .dt=.005, .cap={}, .shaft={}}, AssistCase{.human=-1., .cadence=80., .speed=0., .braking=false, .dt=.005, .cap={}, .shaft={}}};
         for (const auto& item : cases) assist_case(golden, policy, item);
         bike::random::NumpyRng random(75);
         for (int i = 0; i < 250; ++i) {
-            const AssistCase item{random.uniform(0., 100.), random.uniform(-5., 150.), random.uniform(-7., 7.),
-                false, .003, {}, random.uniform(-5., 150.)};
+            const AssistCase item{.human=random.uniform(0., 100.), .cadence=random.uniform(-5., 150.), .speed=random.uniform(-7., 7.),
+                .braking=false, .dt=.003, .cap={}, .shaft=random.uniform(-5., 150.)};
             assist_case(golden, policy, item);
         }
         golden.done();
@@ -132,24 +132,24 @@ void test_assist() {
 }
 
 // tests/reference/test_native_drive_policies.py::test_energy_helpers[disabled/enabled-lossless/copper]
-void test_energy_helpers(const Value& baseline) {
-    for (bool enabled : {false, true}) for (double copper : {0., .02}) {
+[[gnu::noinline]] void test_energy_helpers(const Value& baseline) {
+    for (bool enabled : {false, true}) for (double const copper : {0., .02}) {
         const auto id = std::string(enabled ? "enabled-" : "disabled-") + (copper == 0. ? "lossless" : "copper");
         auto golden = node("test_energy_helpers", id); tree(golden, baseline);
         auto input = baseline;
         put(input, "battery", "enabled", Value{enabled}); put(input, "battery", "copper_w_per_nm2", real(copper));
         put(input, "battery", "speed_w_per_rad_s2", real(.03)); put(input, "battery", "idle_w", real(5.));
         auto policy = policies(input);
-        for (double torque : {-0., 0., 5., 37.13, 80.}) for (double omega : {-7.3, -0., 0., 5.2}) {
+        for (double const torque : {-0., 0., 5., 37.13, 80.}) for (double const omega : {-7.3, -0., 0., 5.2}) {
             scalar(golden, electrical(policy, torque, omega, enabled));
-            for (double budget : {0., 4.99, 5., 6., 72., 500.}) scalar(golden, energy_limit(policy, torque, omega, budget));
+            for (double const budget : {0., 4.99, 5., 6., 72., 500.}) scalar(golden, energy_limit(policy, torque, omega, budget));
         }
         golden.done();
     }
 }
 
 // tests/reference/test_native_drive_policies.py::test_freehub
-void test_freehub(const Value& baseline) {
+[[gnu::noinline]] void test_freehub(const Value& baseline) {
     auto golden = node("test_freehub"); tree(golden, baseline);
     auto policy = policies(baseline);
     constexpr std::array<std::array<double, 4>, 6> cases{{
@@ -162,7 +162,7 @@ void test_freehub(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_replay_reset_and_ownership
-void test_replay_reset_and_ownership(const Value& baseline) {
+[[gnu::noinline]] void test_replay_reset_and_ownership(const Value& baseline) {
     auto golden = node("test_replay_reset_and_ownership"); tree(golden, baseline);
     auto input = baseline; auto policy = policies(input); auto old = state(policy);
     (void)policy.assist.step(30., 80., 0., false, .01); restore(policy, old); tree(golden, state(policy));
@@ -175,7 +175,7 @@ void test_replay_reset_and_ownership(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_invalid_restore_is_atomic[section]
-void test_invalid_restore_is_atomic(const Value& baseline) {
+[[gnu::noinline]] void test_invalid_restore_is_atomic(const Value& baseline) {
     for (auto section : {"pedaling", "shifting", "assist", "battery", "hub"}) {
         auto golden = node("test_invalid_restore_is_atomic", section); tree(golden, baseline);
         auto policy = policies(baseline); const auto old = state(policy); const auto before = state_text(policy);
@@ -200,12 +200,12 @@ void test_invalid_restore_is_atomic(const Value& baseline) {
 
 struct Mutation { std::string_view id, section, key, json; };
 // tests/reference/test_native_drive_policies.py::test_invalid_restore_values[case]
-void test_invalid_restore_values(const Value& baseline) {
+[[gnu::noinline]] void test_invalid_restore_values(const Value& baseline) {
     constexpr std::array cases{
-        Mutation{"battery-negative", "battery", "energy_j", "-1.0"}, Mutation{"hub-negative", "hub", "energy_j", "-1.0"},
-        Mutation{"cooldown-negative", "shifting", "cooldown_s", "-1.0"}, Mutation{"teeth-small", "shifting", "rear_teeth", "2"},
-        Mutation{"count-negative", "shifting", "shift_count", "-1"}, Mutation{"teeth-fractional", "shifting", "rear_teeth", "3.5"},
-        Mutation{"coasting-integer", "pedaling", "coasting", "1"}, Mutation{"ema-unpaired", "shifting", "cadence_ema", "10.0"}};
+        Mutation{.id="battery-negative", .section="battery", .key="energy_j", .json="-1.0"}, Mutation{.id="hub-negative", .section="hub", .key="energy_j", .json="-1.0"},
+        Mutation{.id="cooldown-negative", .section="shifting", .key="cooldown_s", .json="-1.0"}, Mutation{.id="teeth-small", .section="shifting", .key="rear_teeth", .json="2"},
+        Mutation{.id="count-negative", .section="shifting", .key="shift_count", .json="-1"}, Mutation{.id="teeth-fractional", .section="shifting", .key="rear_teeth", .json="3.5"},
+        Mutation{.id="coasting-integer", .section="pedaling", .key="coasting", .json="1"}, Mutation{.id="ema-unpaired", .section="shifting", .key="cadence_ema", .json="10.0"}};
     for (const auto& item : cases) {
         auto golden = node("test_invalid_restore_values", item.id); tree(golden, baseline);
         auto policy = policies(baseline); auto bad = state(policy); const auto before = state_text(policy);
@@ -217,7 +217,7 @@ void test_invalid_restore_values(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_config_validation
-void test_config_validation(const Value& baseline) {
+[[gnu::noinline]] void test_config_validation(const Value& baseline) {
     auto golden = node("test_config_validation"); tree(golden, baseline);
     for (auto section : {"gearing", "pedaling", "shifting", "assist", "battery"})
         for (const auto& [key, value] : bike::io::as_object(field(baseline, section), section)) {
@@ -234,12 +234,12 @@ void test_config_validation(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_projection_resolves_runtime
-void test_projection_resolves_runtime() {
+[[gnu::noinline]] void test_projection_resolves_runtime() {
     auto input = source(); input.assist.profile = "bosch_cx_gen4"; input.assist.mode = "emtb";
     auto policy = policies(config(input)); const auto& a = policy.config.assist;
     bt::require(a.max_torque == 85. && a.slew == 2125., "profile projection resolves runtime torque and slew");
     bt::require(a.profile.has_value(), "profile gain map survives projection");
-    const auto& gains = *a.profile;
+    const auto& gains = *a.profile; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     bt::require(gains.eco == .6 && gains.tour == 1.4 && gains.emtb_low == 1.4 && gains.emtb_high == 3.4 && gains.turbo == 3.4,
                 "profile projection preserves all declared gains");
     const auto document = config(input);
@@ -252,7 +252,7 @@ void test_projection_resolves_runtime() {
 }
 
 // tests/reference/test_native_drive_policies.py::test_projection_normalizes_numeric_leaves
-void test_projection_normalizes_numeric_leaves() {
+[[gnu::noinline]] void test_projection_normalizes_numeric_leaves() {
     auto input = source(false); input.battery.energy_j = 123.; input.battery.copper_w_per_nm2 = .02;
     input.shifting.shift_cooldown_s = .4;
     const auto document = config(input);
@@ -270,7 +270,7 @@ void test_projection_normalizes_numeric_leaves() {
 }
 
 // tests/reference/test_native_drive_policies.py::test_complete_reset_and_atomic_multi_policy_restore
-void test_complete_reset_and_atomic_multi_policy_restore(const Value& baseline) {
+[[gnu::noinline]] void test_complete_reset_and_atomic_multi_policy_restore(const Value& baseline) {
     auto golden = node("test_complete_reset_and_atomic_multi_policy_restore"); tree(golden, baseline);
     auto policy = policies(baseline);
     (void)policy.pedaling.update(1., 13., 120., 30., .04);
@@ -287,7 +287,7 @@ void test_complete_reset_and_atomic_multi_policy_restore(const Value& baseline) 
 }
 
 // tests/reference/test_native_drive_policies.py::test_restored_finite_snapshots_preserve_bits
-void test_restored_finite_snapshots_preserve_bits(const Value& baseline) {
+[[gnu::noinline]] void test_restored_finite_snapshots_preserve_bits(const Value& baseline) {
     auto golden = node("test_restored_finite_snapshots_preserve_bits"); tree(golden, baseline);
     auto policy = policies(baseline); auto document = state(policy);
     put(document, "pedaling", "target_phase_rad", real(-1000.));
@@ -307,7 +307,7 @@ void test_restored_finite_snapshots_preserve_bits(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette
-void test_disabled_shifter_initial_teeth_outside_cassette() {
+[[gnu::noinline]] void test_disabled_shifter_initial_teeth_outside_cassette() {
     auto golden = node("test_disabled_shifter_initial_teeth_outside_cassette");
     auto input = source(false); input.gearing.rear_teeth = 31;
     auto policy = policies(config(input)); policy.restore(policy.snapshot());
@@ -315,21 +315,21 @@ void test_disabled_shifter_initial_teeth_outside_cassette() {
 }
 
 // tests/reference/test_native_drive_policies.py::test_invalid_config_values[case]
-void test_invalid_config_values(const Value& baseline) {
+[[gnu::noinline]] void test_invalid_config_values(const Value& baseline) {
     constexpr std::array cases{
-        Mutation{"front-bool", "gearing", "front_teeth", "true"}, Mutation{"rear-fractional", "gearing", "rear_teeth", "3.1"},
-        Mutation{"pitch-zero", "gearing", "chain_pitch_m", "0.0"}, Mutation{"pedaling-bool", "pedaling", "enabled", "1"},
-        Mutation{"stop-zero", "pedaling", "stop_time_s", "0.0"}, Mutation{"resume-band", "pedaling", "resume_below_rpm", "120.0"},
-        Mutation{"shifting-bool", "shifting", "enabled", "1"}, Mutation{"cassette-duplicate", "shifting", "cassette", "[10,10]"},
-        Mutation{"cassette-bool", "shifting", "cassette", "[true,24]"}, Mutation{"cassette-empty", "shifting", "cassette", "[]"},
-        Mutation{"torque-factor", "shifting", "torque_factor", "1.1"}, Mutation{"shift-cut", "shifting", "shift_cut_duration_s", "1.0"},
-        Mutation{"slip-mode", "shifting", "upshift_slip_mode", "\"other\""}, Mutation{"tau-zero", "assist", "tau", "0.0"},
-        Mutation{"slew-zero", "assist", "slew", "0.0"}, Mutation{"gain-negative", "assist", "gain", "-1.0"},
-        Mutation{"mode-integer", "assist", "mode", "1"}, Mutation{"curve-short", "assist", "torque_curve", "[[0.0,1.0]]"},
-        Mutation{"curve-duplicate", "assist", "torque_curve", "[[0.0,1.0],[0.0,2.0]]"},
-        Mutation{"curve-negative", "assist", "torque_curve", "[[0.0,1.0],[2.0,-1.0]]"},
-        Mutation{"profile-incomplete", "assist", "profile", "{\"mode_gains\":{}}"},
-        Mutation{"battery-bool", "battery", "enabled", "1"}, Mutation{"energy-negative", "battery", "energy_j", "-1.0"}};
+        Mutation{.id="front-bool", .section="gearing", .key="front_teeth", .json="true"}, Mutation{.id="rear-fractional", .section="gearing", .key="rear_teeth", .json="3.1"},
+        Mutation{.id="pitch-zero", .section="gearing", .key="chain_pitch_m", .json="0.0"}, Mutation{.id="pedaling-bool", .section="pedaling", .key="enabled", .json="1"},
+        Mutation{.id="stop-zero", .section="pedaling", .key="stop_time_s", .json="0.0"}, Mutation{.id="resume-band", .section="pedaling", .key="resume_below_rpm", .json="120.0"},
+        Mutation{.id="shifting-bool", .section="shifting", .key="enabled", .json="1"}, Mutation{.id="cassette-duplicate", .section="shifting", .key="cassette", .json="[10,10]"},
+        Mutation{.id="cassette-bool", .section="shifting", .key="cassette", .json="[true,24]"}, Mutation{.id="cassette-empty", .section="shifting", .key="cassette", .json="[]"},
+        Mutation{.id="torque-factor", .section="shifting", .key="torque_factor", .json="1.1"}, Mutation{.id="shift-cut", .section="shifting", .key="shift_cut_duration_s", .json="1.0"},
+        Mutation{.id="slip-mode", .section="shifting", .key="upshift_slip_mode", .json="\"other\""}, Mutation{.id="tau-zero", .section="assist", .key="tau", .json="0.0"},
+        Mutation{.id="slew-zero", .section="assist", .key="slew", .json="0.0"}, Mutation{.id="gain-negative", .section="assist", .key="gain", .json="-1.0"},
+        Mutation{.id="mode-integer", .section="assist", .key="mode", .json="1"}, Mutation{.id="curve-short", .section="assist", .key="torque_curve", .json="[[0.0,1.0]]"},
+        Mutation{.id="curve-duplicate", .section="assist", .key="torque_curve", .json="[[0.0,1.0],[0.0,2.0]]"},
+        Mutation{.id="curve-negative", .section="assist", .key="torque_curve", .json="[[0.0,1.0],[2.0,-1.0]]"},
+        Mutation{.id="profile-incomplete", .section="assist", .key="profile", .json="{\"mode_gains\":{}}"},
+        Mutation{.id="battery-bool", .section="battery", .key="enabled", .json="1"}, Mutation{.id="energy-negative", .section="battery", .key="energy_j", .json="-1.0"}};
     for (const auto& item : cases) {
         auto golden = node("test_invalid_config_values", item.id); tree(golden, baseline);
         auto bad = baseline; put(bad, item.section, item.key, bike::io::parse_json(item.json));
@@ -338,7 +338,7 @@ void test_invalid_config_values(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_missing_config_sections[key]
-void test_missing_config_sections(const Value& baseline) {
+[[gnu::noinline]] void test_missing_config_sections(const Value& baseline) {
     for (auto key : {"gearing", "pedaling", "shifting", "assist", "battery", "hub_stiffness_nm_rad", "hub_damping_nm_s"}) {
         auto golden = node("test_missing_config_sections", key); tree(golden, baseline);
         auto bad = baseline; erase(bad, key); bt::invalid([&] { (void)policies(bad); }); golden.done();
@@ -346,19 +346,19 @@ void test_missing_config_sections(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_random_curve_interpolation
-void test_random_curve_interpolation(const Value& baseline) {
+[[gnu::noinline]] void test_random_curve_interpolation(const Value& baseline) {
     auto golden = node("test_random_curve_interpolation"); tree(golden, baseline);
     auto input = baseline; put(input, "assist", "max_torque", real(1e6)); put(input, "assist", "max_power", real(1e9));
     put(input, "assist", "torque_curve", bike::io::parse_json("[[0.0,80.0],[43.0,71.0],[100.0,35.0],[150.0,0.0]]"));
     auto policy = policies(input);
-    for (double rpm : {0., 43., 100., 150., -0., -1., 151.}) pair(golden, policy.assist.ceiling(rpm, 0.));
+    for (double const rpm : {0., 43., 100., 150., -0., -1., 151.}) pair(golden, policy.assist.ceiling(rpm, 0.));
     bike::random::NumpyRng random(541);
     for (int i = 0; i < 1000; ++i) pair(golden, policy.assist.ceiling(random.uniform(-10., 170.), 0.));
     golden.done();
 }
 
 // tests/reference/test_native_drive_policies.py::test_battery_nonzero_idle_remainder
-void test_battery_nonzero_idle_remainder(const Value& baseline) {
+[[gnu::noinline]] void test_battery_nonzero_idle_remainder(const Value& baseline) {
     auto golden = node("test_battery_nonzero_idle_remainder"); tree(golden, baseline);
     auto policy = policies(baseline); auto restored = policy.snapshot(); restored.battery.energy_j = .001; policy.restore(restored);
     bt::require(energy_limit(policy, 80., 0., .001 / .01) == 0., "idle loss can consume the available power budget");
@@ -366,7 +366,7 @@ void test_battery_nonzero_idle_remainder(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_config_and_python_object_deletion
-void test_config_and_python_object_deletion() {
+[[gnu::noinline]] void test_config_and_python_object_deletion() {
     auto golden = node("test_config_and_python_object_deletion");
     auto policy = [] {
         auto input = source(false); input.assist.profile = "bosch_cx_gen4"; input.assist.mode = "emtb";
@@ -377,12 +377,12 @@ void test_config_and_python_object_deletion() {
 }
 
 // tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw/mash/filtered]
-void test_pedaling_parameter_branches() {
+[[gnu::noinline]] void test_pedaling_parameter_branches() {
     struct Parameters { std::string_view id; double tau, slew, mash; };
-    constexpr std::array parameters{Parameters{"raw", 0., 0., 0.}, Parameters{"mash", 0., 0., 60.}, Parameters{"filtered", .03, 300., 0.}};
-    constexpr std::array cases{PedalCase{0., 0., 0., 20., .01}, PedalCase{1., 12., 110., 30., .03},
-        PedalCase{2., 10., 100., 30., .03}, PedalCase{3., 8., 80., 30., .04},
-        PedalCase{4., -14., -90., 30., .04}, PedalCase{5., -6., -10., 0., .5}};
+    constexpr std::array parameters{Parameters{.id="raw", .tau=0., .slew=0., .mash=0.}, Parameters{.id="mash", .tau=0., .slew=0., .mash=60.}, Parameters{.id="filtered", .tau=.03, .slew=300., .mash=0.}};
+    constexpr std::array cases{PedalCase{.phase=0., .rate=0., .required=0., .effort=20., .dt=.01}, PedalCase{.phase=1., .rate=12., .required=110., .effort=30., .dt=.03},
+        PedalCase{.phase=2., .rate=10., .required=100., .effort=30., .dt=.03}, PedalCase{.phase=3., .rate=8., .required=80., .effort=30., .dt=.04},
+        PedalCase{.phase=4., .rate=-14., .required=-90., .effort=30., .dt=.04}, PedalCase{.phase=5., .rate=-6., .required=-10., .effort=0., .dt=.5}};
     for (const auto& item : parameters) {
         auto golden = node("test_pedaling_parameter_branches", item.id);
         auto input = source(false); input.pedaling.enabled = true; input.pedaling.coast_cadence_tau_s = item.tau;
@@ -394,7 +394,7 @@ void test_pedaling_parameter_branches() {
 }
 
 // tests/reference/test_native_drive_policies.py::test_optional_config_sections
-void test_optional_config_sections(const Value& baseline) {
+[[gnu::noinline]] void test_optional_config_sections(const Value& baseline) {
     auto golden = node("test_optional_config_sections"); tree(golden, baseline);
     auto input = baseline; erase(member(input, "assist"), "profile"); erase(member(input, "assist"), "torque_curve");
     const auto policy = policies(input);
@@ -403,7 +403,7 @@ void test_optional_config_sections(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_extra_and_missing_state_sections
-void test_extra_and_missing_state_sections(const Value& baseline) {
+[[gnu::noinline]] void test_extra_and_missing_state_sections(const Value& baseline) {
     auto golden = node("test_extra_and_missing_state_sections"); tree(golden, baseline);
     auto policy = policies(baseline); const auto old = state(policy); const auto before = state_text(policy);
     std::array<Value, 3> candidates{old, old, old};
@@ -416,21 +416,21 @@ void test_extra_and_missing_state_sections(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[case]
-void test_invalid_calls_preserve_state(const Value& baseline) {
+[[gnu::noinline]] void test_invalid_calls_preserve_state(const Value& baseline) {
     struct Case { std::string_view id; std::function<void(PolicySet&)> invoke; };
     const double nan = std::numeric_limits<double>::quiet_NaN(), inf = std::numeric_limits<double>::infinity();
     const std::array cases{
-        Case{"pedal-nan", [nan](auto& p) { (void)p.pedaling.update(nan, 0., 0., 30., .01); }},
-        Case{"pedal-zero-dt", [](auto& p) { (void)p.pedaling.update(0., 0., 0., 30., 0.); }},
-        Case{"shift-zero-dt", [](auto& p) { (void)p.shifting.update(80., 80., 0.); }},
-        Case{"shift-infinite", [inf](auto& p) { (void)p.shifting.update(80., inf, .01); }},
-        Case{"assist-zero-dt", [](auto& p) { (void)p.assist.step(30., 80., 0., false, 0.); }},
-        Case{"assist-infinite", [inf](auto& p) { (void)p.assist.step(inf, 80., 0., false, .01); }},
-        Case{"battery-infinite", [inf](auto& p) { (void)p.battery.draw(inf, .01); }},
-        Case{"battery-zero-dt", [](auto& p) { (void)p.battery.draw(1., 0.); }},
-        Case{"hub-infinite", [inf](auto& p) { (void)p.hub.update(0., inf, 0., 0.); }},
-        Case{"power-infinite", [inf](auto& p) { (void)electrical(p, inf, 0., true); }},
-        Case{"limit-negative", [](auto& p) { (void)energy_limit(p, -1., 0., 100.); }}};
+        Case{.id="pedal-nan", .invoke=[nan](auto& p) { (void)p.pedaling.update(nan, 0., 0., 30., .01); }},
+        Case{.id="pedal-zero-dt", .invoke=[](auto& p) { (void)p.pedaling.update(0., 0., 0., 30., 0.); }},
+        Case{.id="shift-zero-dt", .invoke=[](auto& p) { (void)p.shifting.update(80., 80., 0.); }},
+        Case{.id="shift-infinite", .invoke=[inf](auto& p) { (void)p.shifting.update(80., inf, .01); }},
+        Case{.id="assist-zero-dt", .invoke=[](auto& p) { (void)p.assist.step(30., 80., 0., false, 0.); }},
+        Case{.id="assist-infinite", .invoke=[inf](auto& p) { (void)p.assist.step(inf, 80., 0., false, .01); }},
+        Case{.id="battery-infinite", .invoke=[inf](auto& p) { (void)p.battery.draw(inf, .01); }},
+        Case{.id="battery-zero-dt", .invoke=[](auto& p) { (void)p.battery.draw(1., 0.); }},
+        Case{.id="hub-infinite", .invoke=[inf](auto& p) { (void)p.hub.update(0., inf, 0., 0.); }},
+        Case{.id="power-infinite", .invoke=[inf](auto& p) { (void)electrical(p, inf, 0., true); }},
+        Case{.id="limit-negative", .invoke=[](auto& p) { (void)energy_limit(p, -1., 0., 100.); }}};
     for (const auto& item : cases) {
         auto golden = node("test_invalid_calls_preserve_state", item.id); tree(golden, baseline);
         auto policy = policies(baseline); const auto before = state_text(policy);
@@ -440,7 +440,7 @@ void test_invalid_calls_preserve_state(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_invalid_human_torque[nan/infinite/negative/one]
-void test_invalid_human_torque() {
+[[gnu::noinline]] void test_invalid_human_torque() {
     const double nan = std::numeric_limits<double>::quiet_NaN(), inf = std::numeric_limits<double>::infinity();
     const std::array<std::array<double, 3>, 4> cases{{{nan, 0., .35}, {1., inf, .35}, {1., 0., -1.}, {1., 0., 1.}}};
     for (const auto& item : cases)
@@ -448,7 +448,7 @@ void test_invalid_human_torque() {
 }
 
 // tests/reference/test_native_drive_policies.py::test_shifter_count_boundary_rejects_successful_increment_atomically
-void test_shifter_count_boundary_rejects_successful_increment_atomically(const Value& baseline) {
+[[gnu::noinline]] void test_shifter_count_boundary_rejects_successful_increment_atomically(const Value& baseline) {
     auto golden = node("test_shifter_count_boundary_rejects_successful_increment_atomically"); tree(golden, baseline);
     auto policy = policies(baseline); auto restored = policy.snapshot();
     restored.shifting.shift_count = std::numeric_limits<std::int32_t>::max(); restored.shifting.direction = "up"; policy.restore(restored);
@@ -461,7 +461,7 @@ void test_shifter_count_boundary_rejects_successful_increment_atomically(const V
 }
 
 // tests/reference/test_native_drive_policies.py::test_unrepresentable_count_restore_is_atomic
-void test_unrepresentable_count_restore_is_atomic(const Value& baseline) {
+[[gnu::noinline]] void test_unrepresentable_count_restore_is_atomic(const Value& baseline) {
     auto golden = node("test_unrepresentable_count_restore_is_atomic"); tree(golden, baseline);
     auto policy = policies(baseline); auto bad = state(policy); const auto before = state_text(policy);
     put(bad, "shifting", "shift_count", Value{bike::io::Number{"2147483648"}});
@@ -470,8 +470,8 @@ void test_unrepresentable_count_restore_is_atomic(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-cadence-profile]
-void test_assist_computed_crank_overflow_matches_python_state() {
-    for (bool shaft_override : {false, true}) for (double cadence : {-1e308, 1e308}) for (bool profiled : {false, true}) {
+[[gnu::noinline]] void test_assist_computed_crank_overflow_matches_python_state() {
+    for (bool shaft_override : {false, true}) for (double cadence : {-1e308, 1e308}) for (bool const profiled : {false, true}) {
         const auto id = std::string(shaft_override ? "shaft-" : "crank-") + (cadence < 0. ? "negative-" : "positive-") + (profiled ? "emtb" : "plain");
         auto golden = node("test_assist_computed_crank_overflow_matches_python_state", id);
         auto input = source(false);
@@ -491,7 +491,7 @@ void test_assist_computed_crank_overflow_matches_python_state() {
 }
 
 // tests/reference/test_native_drive_policies.py::test_assist_braking_resets_before_computed_crank_overflow
-void test_assist_braking_resets_before_computed_crank_overflow(const Value& baseline) {
+[[gnu::noinline]] void test_assist_braking_resets_before_computed_crank_overflow(const Value& baseline) {
     auto golden = node("test_assist_braking_resets_before_computed_crank_overflow"); tree(golden, baseline);
     auto policy = policies(baseline);
     scalar(golden, policy.assist.step(30., 80., 0., false, .01));
@@ -500,6 +500,8 @@ void test_assist_braking_resets_before_computed_crank_overflow(const Value& base
 }
 } // namespace
 
+// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// cppcheck-suppress throwInEntryPoint
 int main() { return bt::run([] {
     const auto baseline = policy_reference::config(policy_reference::source());
     test_native_policy_api_exists(baseline);

@@ -36,8 +36,8 @@ void test_baseline_comparison_comparability_flags() {
     auto baseline = report(); set(baseline, "git_sha", text("bbb")); set(baseline, "machine", text("other-box")); set(baseline, "effective_timestep_s", real(.002));
     const auto result = m::baseline_comparison(report(), baseline, "baseline.json");
     const auto& comparison = field(result, "comparability");
-    for (std::string_view name : {"git_sha", "machine", "effective_timestep_s"}) bt::require(!io::as_bool(field(field(comparison, name), "match"), name), "changed provenance/input prevents like-for-like classification");
-    for (std::string_view name : {"track", "physics", "record_decimation"}) bt::require(io::as_bool(field(field(comparison, name), "match"), name), "unchanged comparison fields remain explicit");
+    for (std::string_view const name : {"git_sha", "machine", "effective_timestep_s"}) bt::require(!io::as_bool(field(field(comparison, name), "match"), name), "changed provenance/input prevents like-for-like classification");
+    for (std::string_view const name : {"track", "physics", "record_decimation"}) bt::require(io::as_bool(field(field(comparison, name), "match"), name), "unchanged comparison fields remain explicit");
 }
 // tests/reference/test_measure_realtime_report.py::test_baseline_comparison_missing_key_stays_missing
 void test_baseline_comparison_missing_key_stays_missing() {
@@ -50,7 +50,7 @@ void test_baseline_comparison_missing_key_stays_missing() {
 // tests/reference/test_measure_realtime_report.py::test_baseline_comparison_rejects_unreadable_or_non_object
 void test_baseline_comparison_rejects_unreadable_or_non_object() {
     bt::invalid([] { (void)m::baseline_comparison(report(), Value{Array{integer(1), integer(2)}}, "not-object.json"); });
-    bt::TemporaryDirectory temporary("realtime-report");
+    bt::TemporaryDirectory const temporary("realtime-report");
     const std::string absent = (temporary.path() / "missing.json").string();
     const std::string out = (temporary.path() / "out").string();
     const std::array<std::string_view, 4> arguments{"--out", out, "--compare", absent};
@@ -59,20 +59,22 @@ void test_baseline_comparison_rejects_unreadable_or_non_object() {
 }
 // tests/reference/test_measure_realtime_report.py::test_native_build_provenance_reads_configured_context
 void test_native_build_provenance_reads_configured_context() {
-    bt::TemporaryDirectory temporary("realtime-context");
+    bt::TemporaryDirectory const temporary("realtime-context");
     write(temporary.path() / "native_check_context.json", R"({"compiler":{"id":"Clang","path":"/usr/bin/clang++","version":"19.0"},"sdk":{"path":"/sdk"},"libcpp_hardening":"EXTENSIVE","target_contexts":{"bike_native":{"configuration":"Release","cxx_standard":23,"cxx_extensions":false,"compile_definitions":["NDEBUG"],"compile_options":["-O2"]}}})");
     write(temporary.path() / "CMakeCache.txt", "NATIVE_SANITIZE:BOOL=ON\nNATIVE_RTSAN:BOOL=OFF\nNATIVE_COVERAGE:BOOL=OFF\nOTHER:STRING=x\n");
     const auto value = m::native_build_provenance(temporary.path());
     bt::require(io::as_string(field(field(value, "compiler"), "id"), "compiler.id") == "Clang" && io::as_string(field(value, "hardening"), "hardening") == "EXTENSIVE", "configured compiler and hardening identities are retained");
     bt::require(number(value, "cxx_standard") == 23. && !io::as_bool(field(value, "cxx_extensions"), "extensions") && io::as_string(field(value, "target_configuration"), "configuration") == "Release", "selected target context retains standard and configuration");
-    bt::require(io::canonical_json(field(value, "sanitizer_options")) == "{\"address\":true,\"coverage\":false,\"realtime\":false}" && io::is_null(field(value, "imported_extension")), "native report states actual lane options and never invents a loaded Python extension");
+    bt::require(io::canonical_json(field(value, "sanitizer_options")) == R"({"address":true,"coverage":false,"realtime":false})" && io::is_null(field(value, "imported_extension")), "native report states actual lane options and never invents a loaded Python extension");
 }
 // tests/reference/test_measure_realtime_report.py::test_native_build_provenance_degrades_without_context
 void test_native_build_provenance_degrades_without_context() {
-    bt::TemporaryDirectory temporary("realtime-no-context"); const auto value = m::native_build_provenance(temporary.path());
+    bt::TemporaryDirectory const temporary("realtime-no-context"); const auto value = m::native_build_provenance(temporary.path());
     bt::require(find(value, "context_error") != nullptr && find(value, "compiler") == nullptr, "missing build context is a recorded diagnostic, never invented provenance");
 }
 } // namespace
+// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// cppcheck-suppress throwInEntryPoint
 int main() { return bt::run([] {
     test_baseline_comparison_emits_per_metric_deltas(); test_baseline_comparison_comparability_flags();
     test_baseline_comparison_missing_key_stays_missing(); test_baseline_comparison_rejects_unreadable_or_non_object();

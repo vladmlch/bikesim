@@ -35,7 +35,7 @@ constexpr std::string_view two_inertias = R"(<mujoco>
 struct Plant {
     bt::ModelFixture engine{two_inertias};
     std::unique_ptr<drivetrain::Transmission> hub = std::make_unique<drivetrain::Transmission>(
-        engine.model.get(), drivetrain::GearingConfig{3, 3, .0127}, false,
+        engine.model.get(), drivetrain::GearingConfig{.front_teeth=3, .rear_teeth=3, .chain_pitch_m=.0127}, false,
         "motor_freewheel", "rotor_spin", "crank_spin");
     Plant() { engine::forward(engine.model.get(), engine.data.get()); hub->reset(engine.data.get()); }
     [[nodiscard]] auto velocity() { return model_access::mutable_buffer(engine.data->qvel, engine.model->nv); }
@@ -43,7 +43,7 @@ struct Plant {
         const auto q = model_access::readonly_buffer(engine.data->qpos, engine.model->nq);
         return q[0] - q[1];
     }
-    std::vector<double> advance(int steps, double control) {
+    std::vector<double> advance(int steps, double control) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
         std::vector<double> result; result.reserve(static_cast<std::size_t>(steps));
         for (int step = 0; step < steps; ++step) {
             hub->prepare(engine.data.get());
@@ -71,7 +71,7 @@ void test_crank_overruns_a_coasting_rotor_without_backdriving_it() {
     auto plant = std::make_unique<Plant>(); (void)plant->advance(200, 10.);
     const double before = plant->velocity()[0]; plant->velocity()[1] += 5.;
     const auto forces = plant->advance(200, 0.);
-    for (double force : forces) bt::require(std::abs(force) < 1e-6, "overrunning crank does not backdrive rotor");
+    for (double const force : forces) bt::require(std::abs(force) < 1e-6, "overrunning crank does not backdrive rotor");
     near(plant->velocity()[0], before, "rotor coasts", 0., 1e-9);
     near(plant->velocity()[1], before + 5., "crank keeps its overrun velocity", 0., 1e-9);
 }
@@ -81,12 +81,12 @@ void test_rotor_catches_up_and_reengages_without_lash() {
     plant->velocity()[1] += 2.; (void)plant->advance(50, 0.);
     bt::require(plant->hub->relative_rate(plant->engine.data.get()) < 0., "crank is overrunning");
     plant->hub->prepare(plant->engine.data.get());
-    near(plant->hub->state().boundary.value(), plant->relative_angle(), "ratchet tracks the overrun angle", 0., 1e-6);
+    near(plant->hub->state().boundary.value(), plant->relative_angle(), "ratchet tracks the overrun angle", 0., 1e-6); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     const auto torques = plant->advance(400, 30.);
     near(plant->velocity()[0], plant->velocity()[1], "rotor catches the crank", 1e-3);
     near(mean(std::span(torques).last(20)), 30. / 1.15, "reengaged mean crank torque", .02);
     (void)plant->advance(50, 0.); plant->hub->prepare(plant->engine.data.get());
-    near(plant->hub->state().boundary.value(), plant->relative_angle(), "unloaded ratchet has no retained lash", 0., 1e-6);
+    near(plant->hub->state().boundary.value(), plant->relative_angle(), "unloaded ratchet has no retained lash", 0., 1e-6); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     const auto reloaded = plant->advance(20, 30.);
     bt::require(*std::ranges::max_element(reloaded) > 20., "ratchet reengages immediately on reload");
 }
@@ -97,7 +97,7 @@ struct FullPlant {
 };
 // NOLINTBEGIN(modernize-make-unique) make_unique's inlined forwarding path keeps each
 // by-value result on this frame and overflows the 8192-byte budget; new T(f()) elides.
-FullPlant full_plant(bool clutch = false, double inertia = 0., double speed_kph = 0.) {
+FullPlant full_plant(bool clutch = false, double inertia = 0., double speed_kph = 0.) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     auto request = std::make_unique<bike::initialization::SetupRequest>();
     request->model.mode = "ride"; request->model.rider = cfg::RiderSpecs{};
     request->model.rider->variant = "articulated_planar";
@@ -130,7 +130,7 @@ FullPlant full_plant(bool clutch = false, double inertia = 0., double speed_kph 
     engine::set_state(engine->model(), engine->data(), bootstrap->state.integration_state.data(),
         static_cast<int>(mjSTATE_INTEGRATION));
     engine->note_posvel_stale(); engine->forward(); engine->drive().restore(bootstrap->state.drive);
-    return {std::move(*raw), std::move(engine)};
+    return {.raw=std::move(*raw), .engine=std::move(engine)};
 }
 // NOLINTEND(modernize-make-unique)
 int actuator(const Stepper& engine) {
@@ -169,7 +169,7 @@ void test_rotor_inertia_adds_a_freewheeled_rotor_body() {
     actuator_joint(engine, "rotor_spin");
     const auto rotor = static_cast<std::size_t>(bike::model::joint_address(*engine.model(), "rotor_spin").second);
     const auto crank = static_cast<std::size_t>(bike::model::joint_address(*engine.model(), "crank_spin").second);
-    auto velocity = model_access::mutable_buffer(engine.data()->qvel, engine.model()->nv);
+    auto const velocity = model_access::mutable_buffer(engine.data()->qvel, engine.model()->nv);
     near(velocity[rotor], velocity[crank], "native initial speed synchronizes rotor and crank");
     bt::require(velocity[rotor] > 0., "initial forward speed reaches the rotor");
     bt::require(model_access::readonly_buffer(engine.model()->actuator_ctrlrange, 2 * engine.model()->nu)[
@@ -181,7 +181,7 @@ void test_rotor_inertia_adds_a_freewheeled_rotor_body() {
     velocity[crank] = 60. * drive_reference::rpm_to_rad_s;
     engine.note_posvel_stale(); engine.forward();
     const drivetrain::PedalingState pedaling{.mode=drivetrain::PedalMode::pedaling,
-        .reason=drivetrain::CoastReason::none, .effort_nm=20., .required_cadence_rpm=60.};
+        .reason=drivetrain::CoastReason::none, .effort_nm=20., .required_cadence_rpm=60.}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
     (void)engine.drive().components({}, .001, 3., false, true, true, 100., pedaling, true, std::nullopt);
     // Independent linear interpolation of the source fixture's 120.1/180 rpm segment.
     const double expected = 47.7 + (150. - 120.1) * (0. - 47.7) / (180. - 120.1);
@@ -189,7 +189,7 @@ void test_rotor_inertia_adds_a_freewheeled_rotor_body() {
     near(diagnostic(engine, "motor_shaft_power_w"), expected * velocity[rotor], "motor shaft power uses rotor speed");
     bt::require(diagnostic(engine, "motor_shaft_power_w") <= 600., "rotor respects the profile power ceiling");
     engine.step();
-    for (double force : engine.drive().settle()) bt::require(std::isfinite(force), "freewheel settles finite forces");
+    for (double const force : engine.drive().settle()) bt::require(std::isfinite(force), "freewheel settles finite forces");
     bt::require(diagnostic(engine, "motor_freewheel_torque_nm") >= 0., "freewheel never transmits reverse torque");
     bt::require(diagnostic(engine, "motor_freewheel_dissipation_power_w") >= 0., "freewheel dissipation is nonnegative");
 }

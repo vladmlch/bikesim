@@ -52,7 +52,7 @@ void test_freeze_force_is_immutable_finite_and_recognised() {
     // distinction (a mutable lvalue vector vs. the const span a frozen row
     // exposes).
     std::vector<double> writeable(3, 0.);
-    std::span<const double> view{writeable};
+    std::span<const double> const view{writeable};
     static_assert(!std::is_assignable_v<decltype(view)::element_type&, double>);
 }
 

@@ -55,7 +55,7 @@ bike::io::Value compare_runs(const bike::io::Value& left, const bike::io::Value&
     for (const auto& name : keys) if (!equal(get(left_key, name), get(right_key, name))) differences.push_back(text(name));
     const auto& a = field(left, "prefix");
     const auto& b = field(right, "prefix");
-    for (std::string_view name : {"reason", "model_valid", "numerically_valid", "steps"})
+    for (std::string_view const name : {"reason", "model_valid", "numerically_valid", "steps"})
         if (!equal(field(a, name), field(b, name))) classifications.push_back(text(name));
     if (!isclose(number(a, "simulated_time_s"), number(b, "simulated_time_s")))
         classifications.push_back(text("simulated_time_s"));

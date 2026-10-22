@@ -12,26 +12,29 @@
 #include <chrono>
 #include <functional>
 #include <numbers>
+#include <utility>
 
 namespace bike::validation {
 using mechanics::metrics;
 using mechanics::bounds;
 namespace {
-// The -O0 frame budget keeps the equilibrium result, metadata and sealed
-// bootstrap temporaries in these helpers instead of the constructor frame.
-void settle_into(initialization::SetupOwner& owner,const initialization::SetupRequest& request,initialization::EquilibriumResult& equilibrium){
+// The frame budget keeps the equilibrium result, metadata and sealed
+// bootstrap temporaries in these helpers instead of the constructor
+// frame; noinline keeps the same split under optimization.
+[[gnu::noinline]] void settle_into(initialization::SetupOwner& owner,const initialization::SetupRequest& request,initialization::EquilibriumResult& equilibrium){
     equilibrium=initialization::settle(owner,request.equilibrium);
 }
-void seal_runtime_into(initialization::SetupOwner& owner,Value& metadata,std::unique_ptr<runtime::NativeRideRuntime>& runtime){
-    auto bootstrap=owner.seal_bootstrap();metadata=owner.metadata();runtime=std::make_unique<runtime::NativeRideRuntime>(std::move(bootstrap));
+[[gnu::noinline]] void seal_runtime_into(initialization::SetupOwner& owner,Value& metadata,std::unique_ptr<runtime::NativeRideRuntime>& runtime){
+    // NOLINTNEXTLINE(modernize-make-unique) make_unique's inlined forwarding path overflows the 8192-byte frame budget here
+    runtime=std::unique_ptr<runtime::NativeRideRuntime>(new runtime::NativeRideRuntime(owner.seal_bootstrap()));metadata=owner.metadata();
 }
-void seal_into(initialization::SetupRequest& request,initialization::EquilibriumResult& equilibrium,Value& metadata,std::unique_ptr<runtime::NativeRideRuntime>& runtime){
+[[gnu::noinline]] void seal_into(initialization::SetupRequest const& request,initialization::EquilibriumResult& equilibrium,Value& metadata,std::unique_ptr<runtime::NativeRideRuntime>& runtime){
     auto owner=initialization::make_setup(request);settle_into(*owner,request,equilibrium);seal_runtime_into(*owner,metadata,runtime);
 }
-configuration::SimulationPhysicsConfig profile_config(const std::filesystem::path& physics,std::optional<double> dt,const Value& overrides){
-    auto config=configuration::load_physics(physics);if(dt){positive(*dt,"timestep");config=configuration::resolve_physics(Value{Object{{"timestep_s",value::real(*dt)}}},std::move(config));}config=configuration::resolve_physics(overrides,std::move(config));return config;
+[[gnu::noinline]] configuration::SimulationPhysicsConfig profile_config(const std::filesystem::path& physics,std::optional<double> dt,const Value& overrides){
+    auto config=configuration::load_physics(physics);if(dt){positive(*dt,"timestep");config=configuration::resolve_physics(Value{Object{{"timestep_s",value::real(*dt)}}},config);}config=configuration::resolve_physics(overrides,config);return config;
 }
-model::BuildRequest profile_model(const std::filesystem::path& physics,std::optional<double> dt,const Value& overrides){
+[[gnu::noinline]] model::BuildRequest profile_model(const std::filesystem::path& physics,std::optional<double> dt,const Value& overrides){
     return mechanics::request(profile_config(physics,dt,overrides),true);
 }
 }
@@ -40,11 +43,13 @@ Simulation::Simulation(initialization::SetupRequest input):request(std::move(inp
     seal_into(request,equilibrium,metadata,runtime);
 }
 initialization::PhysicalInitialState Simulation::initial_state(std::optional<int> stations){return RuntimeRigAccess::initial_state(*runtime,request,equilibrium,metadata,stations);}
-std::unique_ptr<initialization::SetupRequest> profile_request(const std::filesystem::path& physics,const std::filesystem::path& track,std::optional<double> dt,const Value& overrides) {
+// The model/track temporaries above stay in helper frames; noinline keeps
+// this request builder's own frame out of its per-case callers.
+[[gnu::noinline]] std::unique_ptr<initialization::SetupRequest> profile_request(const std::filesystem::path& physics,const std::filesystem::path& track,std::optional<double> dt,const Value& overrides) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     auto request=std::make_unique<initialization::SetupRequest>();request->model=profile_model(physics,dt,overrides);request->track=terrain::load_track(track);request->model.field=terrain::HeightFieldSpec::for_track(request->track);
     request->asset_root=physics.parent_path();request->origin="validation:"+physics.string();return request;
 }
-runtime::RideControl resume_schedule(double time){nonnegative(time,"schedule time");return runtime::RideControl{.motor_torque_nm=0.,.human_torque_nm=time<2.||time>=4.?20.:0.};}
+runtime::RideControl resume_schedule(double time){nonnegative(time,"schedule time");return runtime::RideControl{.motor_torque_nm=0.,.human_torque_nm=time<2.||time>=4.?20.:0.};} // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
 runtime::RideControl automatic_schedule(double time){nonnegative(time,"schedule time");return {};}
 runtime::RideControl open_loop_schedule(double time){nonnegative(time,"schedule time");throw std::invalid_argument(std::string(motor_only_unsupported));}
 Value diagnostic_row(const runtime::PhysicalSampleData& sample) {
@@ -67,7 +72,7 @@ using RowSink=std::function<void(const runtime::SamplePtr&)>;
 using BoundarySink=std::function<void(const runtime::RenderFrame&)>;
 void drain(runtime::NativeRideRuntime& ride,const RowSink& sink){const auto batch=ride.prepare_samples();for(const auto& row:batch.samples)sink(row);ride.acknowledge_samples(batch);}
 void replay(Simulation& sim,const std::function<runtime::RideControl(double)>& schedule,double duration,const RowSink& sink,double front=0.,double rear=0.,const BoundarySink& boundary={},bool require_complete=true) {
-    const double dt=sim.request.model.physics->timestep_s;const auto count=steps(duration,dt,1e-9);
+    const double dt=sim.request.model.physics->timestep_s;const auto count=steps(duration,dt,1e-9); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     const auto initial=sim.runtime->snapshot();IntervalCoverage coverage(initial.step,initial.time_s);
     const auto collected=[&](const runtime::SamplePtr& sample){coverage.observe(*sample);sink(sample);};
     try {for(std::size_t i=0;i<count;++i){const auto current=sim.runtime->snapshot();const auto result=sim.runtime->advance(current.step+1,schedule(current.time_s),front,rear,{});
@@ -78,26 +83,28 @@ void replay(Simulation& sim,const std::function<runtime::RideControl(double)>& s
             drain(*sim.runtime,collected);if(result.outcome)break;}
         sim.runtime->flush();drain(*sim.runtime,collected);
         const auto final=sim.runtime->snapshot();coverage.finish(final.step,final.time_s);
-        if(require_complete&&(static_cast<std::size_t>(final.step-initial.step)!=count||final.outcome))
+        if(require_complete&&(std::cmp_not_equal(final.step-initial.step,count)||final.outcome))
             throw std::runtime_error("fixed-duration validation case ended before an outcome-free full horizon");
     }
+    // NOLINTNEXTLINE(bugprone-empty-catch) the drain is best-effort before rethrow; a flush failure must not mask the original error
     catch(...){try{sim.runtime->flush();drain(*sim.runtime,collected);}catch(...){ }throw;}
 }
 Value model_status(Simulation& sim){return research::wire_value(runtime::Wire{sim.runtime->snapshot().model_status});}
 double position(Simulation& sim){return sim.runtime->render_frame().presentation.position_m;}
 void merge(Value& out,const Value& in){for(const auto& [key,x]:io::as_object(in,"object"))value::set(std::get<Object>(out.data),key,x);}
-configuration::SimulationPhysicsConfig simple_config(double dt,std::string_view drive,double human,double mu,bool brakes,std::string_view backend,double speed){
+[[gnu::noinline]] configuration::SimulationPhysicsConfig simple_config(double dt,std::string_view drive,double human,double mu,bool brakes,std::string_view backend,double speed){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     configuration::SimulationPhysicsConfig c;c.physics_mode="physical";c.drive_mode=drive;c.timestep_s=dt;c.tires.backend=backend;c.tires.front.mu=mu;c.tires.rear.mu=mu;c.initial_speed_mps=speed;c.initial_front_brake=brakes?1.:0.;c.initial_rear_brake=brakes?1.:0.;c.drive.human_torque_nm=human;c.drive.assist.gain=0.;c.resistance.crr=0.;c.resistance.cda_m2=0.;return c;
 }
-model::BuildRequest simple_model(double dt,std::string_view rider,double speed,std::string_view drive,double human,double mu,bool brakes,std::string_view backend){
+[[gnu::noinline]] model::BuildRequest simple_model(double dt,std::string_view rider,double speed,std::string_view drive,double human,double mu,bool brakes,std::string_view backend){
     return mechanics::request(simple_config(dt,drive,human,mu,brakes,backend,speed),rider=="articulated_planar");
 }
 // Request builders return heap owners so the multi-kilobyte SetupRequest and
-// BuildRequest temporaries stay out of the per-case handler frames.
-std::unique_ptr<initialization::SetupRequest> simple_request(double dt,std::string_view rider="lumped",double speed=0.,std::string_view drive="coast",double human=0.,double mu=.8,bool brakes=false,std::string_view backend="compliant_2d") {
-    auto out=std::make_unique<initialization::SetupRequest>();out->model=simple_model(dt,rider,speed,drive,human,mu,brakes,backend);out->model.rider->variant=rider;out->track=terrain::get_preset("flat");return out;
+// BuildRequest temporaries stay out of the per-case handler frames; noinline
+// keeps the same split under optimization.
+[[gnu::noinline]] std::unique_ptr<initialization::SetupRequest> simple_request(double dt,std::string_view rider="lumped",double speed=0.,std::string_view drive="coast",double human=0.,double mu=.8,bool brakes=false,std::string_view backend="compliant_2d") {
+    auto out=std::make_unique<initialization::SetupRequest>();out->model=simple_model(dt,rider,speed,drive,human,mu,brakes,backend);out->model.rider->variant=rider;out->track=terrain::get_preset("flat");return out; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
-double expected_mass(const Simulation& sim){return sim.request.model.masses.total_bike_mass()+sim.request.model.rider->total_rider_mass();}
+double expected_mass(const Simulation& sim){return sim.request.model.masses.total_bike_mass()+sim.request.model.rider->total_rider_mass();} // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
 Value run_replay(const Value& config,const std::filesystem::path& root) {
     const auto mode=text(config,"mode","human-only");const std::array<std::string_view,7> valid{"human-only","motor40","assist","shifting","rollback","open-loop","automatic"};if(std::ranges::find(valid,mode)==valid.end())throw std::invalid_argument("unknown isolated replay factor");
@@ -115,7 +122,7 @@ Value run_replay(const Value& config,const std::filesystem::path& root) {
 }
 Value rider_factor_matrix(const Value& config,const std::filesystem::path& root) {
     const auto out=root/text(config,"output","results/rider_factors");std::filesystem::create_directories(out);struct Variant{const char* name;const char* mode;const char* track;std::optional<double> tau;};
-    const std::array<Variant,9> variants{{{"human_flat","human-only","rider_resume_flat.toml",{}},{"human_incline","human-only","rider_resume_incline.toml",{}},{"motor_40","motor40","rider_resume_flat.toml",{}},{"assist","assist","rider_resume_flat.toml",{}},{"shifting","shifting","rider_resume_flat.toml",{}},{"rollback","rollback","rider_resume_incline.toml",{}},{"active_tau0","human-only","rider_resume_flat.toml",0.},{"active_tau005","human-only","rider_resume_flat.toml",.05},{"motor_open_loop","open-loop","rider_resume_flat.toml",{}}}};
+    const std::array<Variant,9> variants{{{.name="human_flat",.mode="human-only",.track="rider_resume_flat.toml",.tau={}},{.name="human_incline",.mode="human-only",.track="rider_resume_incline.toml",.tau={}},{.name="motor_40",.mode="motor40",.track="rider_resume_flat.toml",.tau={}},{.name="assist",.mode="assist",.track="rider_resume_flat.toml",.tau={}},{.name="shifting",.mode="shifting",.track="rider_resume_flat.toml",.tau={}},{.name="rollback",.mode="rollback",.track="rider_resume_incline.toml",.tau={}},{.name="active_tau0",.mode="human-only",.track="rider_resume_flat.toml",.tau=0.},{.name="active_tau005",.mode="human-only",.track="rider_resume_flat.toml",.tau=.05},{.name="motor_open_loop",.mode="open-loop",.track="rider_resume_flat.toml",.tau={}}}};
     Value summary{Object{
         {"schema_version",value::integer(1)}, {"duration_s",value::real(10.)},
         {"resume_window_s",pair(4.,10.)}, {"synthetic",Value{true}},
@@ -136,19 +143,19 @@ namespace {
 // -Wframe-larger-than budget; Simulation and SetupRequest stay on the heap.
 RigResult ride_flat_static(std::string_view name,double dt){
     const auto sim=std::make_unique<Simulation>(std::move(*simple_request(dt,"lumped",0.,"coast",0.,.8,false,name=="flat_static_native"?"native_reference":"compliant_2d")));
-    return {RuntimeRigAccess::static_metrics(*sim->runtime,sim->metadata,expected_mass(*sim)),bounds({{"mass_error_kg",0.,1e-8},{"force_relative_error",0.,.005},{"moment_relative_error",0.,.005},{"residual_qacc",0.,.05}})};
+    return {.metrics=RuntimeRigAccess::static_metrics(*sim->runtime,sim->metadata,expected_mass(*sim)),.bounds=bounds({{"mass_error_kg",0.,1e-8},{"force_relative_error",0.,.005},{"moment_relative_error",0.,.005},{"residual_qacc",0.,.05}})};
 }
-configuration::SimulationPhysicsConfig sag_config(double dt){
+[[gnu::noinline]] configuration::SimulationPhysicsConfig sag_config(double dt){
     configuration::SimulationPhysicsConfig physics;physics.physics_mode="physical";physics.timestep_s=dt;physics.tires.backend="compliant_2d";return physics;
 }
-model::BuildRequest sag_model(double dt){
-    auto out=mechanics::request(sag_config(dt));out.rider->variant="lumped";return out;
+[[gnu::noinline]] model::BuildRequest sag_model(double dt){
+    auto out=mechanics::request(sag_config(dt));out.rider->variant="lumped";return out; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
-std::unique_ptr<initialization::SetupRequest> sag_request(double dt){
+[[gnu::noinline]] std::unique_ptr<initialization::SetupRequest> sag_request(double dt){
     auto request=std::make_unique<initialization::SetupRequest>();
     request->model=sag_model(dt);request->track=terrain::get_preset("flat");return request;
 }
-std::array<double,2> fit_requested_sag(const initialization::SetupRequest& request,const std::array<double,2>& target,const std::array<double,2>& initial){
+[[gnu::noinline]] std::array<double,2> fit_requested_sag(const initialization::SetupRequest& request,const std::array<double,2>& target,const std::array<double,2>& initial){
     return initialization::fit_sag(initialization::build_equilibrium_evaluator(request),target,initial,{10.,1000.},{400.,250000.});
 }
 RigResult ride_requested_sag(std::string_view,double dt){
@@ -158,26 +165,26 @@ RigResult ride_requested_sag(std::string_view,double dt){
     specs.fork_initial_psi=fitted[0];specs.shock_stiffness=fitted[1];const auto sim=std::make_unique<Simulation>(std::move(*request));
     auto result=RuntimeRigAccess::static_metrics(*sim->runtime,sim->metadata,expected_mass(*sim));
     merge(result,metrics({{"fork_error_mm",std::abs(sim->equilibrium.fork_travel_mm-target[0])},{"rear_error_mm",std::abs(sim->equilibrium.rear_travel_mm-target[1])},{"fork_pressure_psi",fitted[0]},{"coil_rate_n_m",fitted[1]}}));
-    return {std::move(result),bounds({{"fork_error_mm",0.,.5},{"rear_error_mm",0.,.5},{"force_relative_error",0.,.005},{"moment_relative_error",0.,.005}})};
+    return {.metrics=std::move(result),.bounds=bounds({{"fork_error_mm",0.,.5},{"rear_error_mm",0.,.5},{"force_relative_error",0.,.005},{"moment_relative_error",0.,.005}})};
 }
 RigResult ride_brake_hold(std::string_view,double dt){
     const double inf=std::numeric_limits<double>::infinity();
-    const auto request=simple_request(dt,"lumped",0.,"coast",0.,.8,true);request->track={.name="incline_10_deg",.length_m=8.,.grade_profile=terrain::GradeProfile{{{0.,std::tan(10.*std::numbers::pi/180.)},{8.,std::tan(10.*std::numbers::pi/180.)}}}};request->model.field={.ncol=1601,.radius_x_m=4.,.elevation_m=2.,.datum_z_m=.1};const auto sim=std::make_unique<Simulation>(std::move(*request));const double start=position(*sim);replay(*sim,automatic_schedule,5.,[](const auto&){},1.,1.);const auto frame=sim->runtime->render_frame();const auto account=research::wire_value(runtime::Wire{sim->runtime->accounting_state()});const auto work=optional(get(account,"history"),"work_j",empty_object());return {metrics({{"displacement_m",std::abs(frame.presentation.position_m-start)},{"speed_mps",std::abs(frame.presentation.speed_mps)},{"motor_torque_nm",std::get<double>(frame.presentation.drive.at("motor_torque_nm"))},{"front_brake_work_j",real(work,"front_static_brake",0.)},{"rear_brake_work_j",real(work,"rear_static_brake",0.)}}),bounds({{"displacement_m",0.,.001},{"motor_torque_nm",0.,0.},{"front_brake_work_j",-inf,1e-8},{"rear_brake_work_j",-inf,1e-8}})};
+    const auto request=simple_request(dt,"lumped",0.,"coast",0.,.8,true);request->track={.name="incline_10_deg",.length_m=8.,.grade_profile=terrain::GradeProfile{{{0.,std::tan(10.*std::numbers::pi/180.)},{8.,std::tan(10.*std::numbers::pi/180.)}}}};request->model.field={.ncol=1601,.radius_x_m=4.,.elevation_m=2.,.datum_z_m=.1};const auto sim=std::make_unique<Simulation>(std::move(*request));const double start=position(*sim);replay(*sim,automatic_schedule,5.,[](const auto&){},1.,1.);const auto frame=sim->runtime->render_frame();const auto account=research::wire_value(runtime::Wire{sim->runtime->accounting_state()});const auto work=optional(get(account,"history"),"work_j",empty_object());return {.metrics=metrics({{"displacement_m",std::abs(frame.presentation.position_m-start)},{"speed_mps",std::abs(frame.presentation.speed_mps)},{"motor_torque_nm",std::get<double>(frame.presentation.drive.at("motor_torque_nm"))},{"front_brake_work_j",real(work,"front_static_brake",0.)},{"rear_brake_work_j",real(work,"rear_static_brake",0.)}}),.bounds=bounds({{"displacement_m",0.,.001},{"motor_torque_nm",0.,0.},{"front_brake_work_j",-inf,1e-8},{"rear_brake_work_j",-inf,1e-8}})}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
 }
 RigResult ride_drive_low_mu(std::string_view,double dt){
     const double inf=std::numeric_limits<double>::infinity();
-    const auto sim=std::make_unique<Simulation>(std::move(*simple_request(dt,"lumped",0.,"crank_effort",80.,.1)));double slip=0.,excess=0.,human=0.,load=0.,impulse=0.;replay(*sim,automatic_schedule,.5,[&](const auto& s){const auto c=research::wire_value(runtime::Wire{s->channels});const auto& rear=get(get(c,"tires"),"rear");slip=std::max(slip,std::abs(real(rear,"slip_mps")));excess=std::max(excess,std::abs(real(rear,"tangent_force_n"))-.1*real(rear,"normal_load_n"));human=std::max(human,real(get(c,"drive"),"human_torque_nm"));load+=real(rear,"normal_load_n")*dt/.5;impulse+=real(rear,"tangent_force_n")*dt;});return {metrics({{"max_slip_mps",slip},{"friction_excess_n",excess},{"human_peak_nm",human},{"mean_rear_load_n",load},{"traction_impulse_ns",impulse},{"speed_mps",sim->runtime->render_frame().presentation.speed_mps}}),bounds({{"max_slip_mps",.1,inf},{"friction_excess_n",0.,1e-6},{"human_peak_nm",50.,inf}})};
+    const auto sim=std::make_unique<Simulation>(std::move(*simple_request(dt,"lumped",0.,"crank_effort",80.,.1)));double slip=0.,excess=0.,human=0.,load=0.,impulse=0.;replay(*sim,automatic_schedule,.5,[&](const auto& s){const auto c=research::wire_value(runtime::Wire{s->channels});const auto& rear=get(get(c,"tires"),"rear");slip=std::max(slip,std::abs(real(rear,"slip_mps")));excess=std::max(excess,std::abs(real(rear,"tangent_force_n"))-.1*real(rear,"normal_load_n"));human=std::max(human,real(get(c,"drive"),"human_torque_nm"));load+=real(rear,"normal_load_n")*dt/.5;impulse+=real(rear,"tangent_force_n")*dt;});return {.metrics=metrics({{"max_slip_mps",slip},{"friction_excess_n",excess},{"human_peak_nm",human},{"mean_rear_load_n",load},{"traction_impulse_ns",impulse},{"speed_mps",sim->runtime->render_frame().presentation.speed_mps}}),.bounds=bounds({{"max_slip_mps",.1,inf},{"friction_excess_n",0.,1e-6},{"human_peak_nm",50.,inf}})};
 }
 RigResult ride_airborne(std::string_view name,double dt){
     const auto sim=std::make_unique<Simulation>(std::move(*simple_request(dt,"articulated_planar")));const bool passive=name=="airborne_passive";const auto initial=RuntimeRigAccess::rebase_airborne(*sim->runtime,30.,0.,true,true,passive,false);const auto angular=numbers(get(initial,"angular_momentum_kg_m2_s"),"angular momentum");
-    if(passive){double maximum=0.;Value last;replay(*sim,automatic_schedule,2.,[&](const auto& sample){const auto c=research::wire_value(runtime::Wire{sample->channels});last=get(c,"endpoint_mass");const auto a=numbers(get(last,"angular_momentum_kg_m2_s"),"angular momentum");maximum=std::max(maximum,std::abs(a[1]-angular[1]));});const auto initial_com=numbers(get(initial,"com_m"),"com"),velocity=numbers(get(initial,"com_velocity_mps"),"velocity"),end=numbers(get(last,"com_m"),"end com");std::array<double,3> error{};RuntimeRigAccess::inspect(*sim->runtime,[&](const Stepper& stepper,const auto&){const auto gravity=std::span{stepper.model()->opt.gravity};for(std::size_t a=0;a<3;++a)error[a]=end[a]-(initial_com[a]+2.*velocity[a]+.5*gravity[a]*4.);});const double scale=std::max(std::abs(angular[1]),1.);return {metrics({{"relative_Ly_drift",maximum/scale},{"Ly_scale_kg_m2_s",scale},{"ballistic_position_error_m",vector_norm(error)},{"root_pitch_rad",sim->runtime->render_frame().presentation.pitch_rad}}),bounds({{"relative_Ly_drift",0.,.001},{"ballistic_position_error_m",0.,std::max(.012,10.*dt)}})};}
-    std::vector<double> incoming,force;RuntimeRigAccess::inspect(*sim->runtime,[&](const Stepper& stepper,const auto&){auto* m=stepper.model();auto* d=stepper.data();const auto nv=static_cast<std::size_t>(m->nv);incoming.resize(nv);force.resize(nv);std::vector<double> jp(3*nv),jr(3*nv);const auto body_mass=model_access::readonly_buffer(m->body_mass,m->nbody,"body_mass");for(mjtSize b=0;b<m->nbody;++b){const char* body=mj_id2name(m,mjOBJ_BODY,static_cast<int>(b));if(body&&std::string_view(body).starts_with("rider_"))continue;mj_jacBodyCom(m,d,jp.data(),jr.data(),static_cast<int>(b));for(std::size_t q=0;q<nv;++q)incoming[q]+=body_mass[static_cast<std::size_t>(b)]*jp[q];}force[static_cast<std::size_t>(mechanics::dof(m,"root_x"))]=100.;});RuntimeRigAccess::external_interval(*sim->runtime,force);double rider_p=0.,bike_p=0.,contact_force=0.,mass_error=0.,impulse_error=0.;RuntimeRigAccess::inspect(*sim->runtime,[&](const Stepper& stepper,const auto&){const auto* m=stepper.model();const auto* d=stepper.data();const auto nv=static_cast<std::size_t>(m->nv);const auto body_mass=model_access::readonly_buffer(m->body_mass,m->nbody,"body_mass"),qvel=model_access::readonly_buffer(d->qvel,m->nv,"qvel");std::vector<double> jp(3*nv),jr(3*nv);for(mjtSize b=0;b<m->nbody;++b){mj_jacBodyCom(m,d,jp.data(),jr.data(),static_cast<int>(b));const double momentum=body_mass[static_cast<std::size_t>(b)]*mechanics::matvec(jp,qvel)[0];const char* body=mj_id2name(m,mjOBJ_BODY,static_cast<int>(b));if(body&&std::string_view(body).starts_with("rider_"))rider_p+=momentum;else bike_p+=momentum;}numeric::PythonSum contact;const auto& diag=stepper.rider_contacts().state().diagnostics;for(const auto& support:diag.supports)contact.add(vector_norm(support.force_on_rider_n));for(const auto& grip:diag.grip_sides)contact.add(vector_norm(grip.force_on_rider_n));contact_force=contact.total();mass_error=std::abs(numeric::numpy_sum(body_mass)-real(initial,"mass_kg"));impulse_error=std::abs(vector_dot(incoming,qvel)-100.*dt);});return {metrics({{"rider_horizontal_momentum_kg_mps",std::abs(rider_p)},{"contact_force_n",contact_force},{"mass_change_kg",mass_error},{"bike_impulse_error_ns",impulse_error},{"endpoint_bike_momentum_error_ns",std::abs(bike_p-100.*dt)},{"bike_root_speed_mps",sim->runtime->render_frame().presentation.speed_mps}}),bounds({{"rider_horizontal_momentum_kg_mps",0.,1e-9},{"contact_force_n",0.,1e-9},{"mass_change_kg",0.,1e-10},{"bike_impulse_error_ns",0.,1e-5}})};
+    if(passive){double maximum=0.;Value last;replay(*sim,automatic_schedule,2.,[&](const auto& sample){const auto c=research::wire_value(runtime::Wire{sample->channels});last=get(c,"endpoint_mass");const auto a=numbers(get(last,"angular_momentum_kg_m2_s"),"angular momentum");maximum=std::max(maximum,std::abs(a[1]-angular[1]));});const auto initial_com=numbers(get(initial,"com_m"),"com"),velocity=numbers(get(initial,"com_velocity_mps"),"velocity"),end=numbers(get(last,"com_m"),"end com");std::array<double,3> error{};RuntimeRigAccess::inspect(*sim->runtime,[&](const Stepper& stepper,const auto&){const auto gravity=std::span{stepper.model()->opt.gravity};for(std::size_t a=0;a<3;++a)error[a]=end[a]-(initial_com[a]+2.*velocity[a]+.5*gravity[a]*4.);});const double scale=std::max(std::abs(angular[1]),1.);return {.metrics=metrics({{"relative_Ly_drift",maximum/scale},{"Ly_scale_kg_m2_s",scale},{"ballistic_position_error_m",vector_norm(error)},{"root_pitch_rad",sim->runtime->render_frame().presentation.pitch_rad}}),.bounds=bounds({{"relative_Ly_drift",0.,.001},{"ballistic_position_error_m",0.,std::max(.012,10.*dt)}})};}
+    std::vector<double> incoming,force;RuntimeRigAccess::inspect(*sim->runtime,[&](const Stepper& stepper,const auto&){auto const* m=stepper.model();auto const* d=stepper.data();const auto nv=static_cast<std::size_t>(m->nv);incoming.resize(nv);force.resize(nv);std::vector<double> jp(3*nv),jr(3*nv);const auto body_mass=model_access::readonly_buffer(m->body_mass,m->nbody,"body_mass");for(mjtSize b=0;b<m->nbody;++b){const char* body=mj_id2name(m,mjOBJ_BODY,static_cast<int>(b));if(body&&std::string_view(body).starts_with("rider_"))continue;mj_jacBodyCom(m,d,jp.data(),jr.data(),static_cast<int>(b));for(std::size_t q=0;q<nv;++q)incoming[q]+=body_mass[static_cast<std::size_t>(b)]*jp[q];}force[static_cast<std::size_t>(mechanics::dof(m,"root_x"))]=100.;});RuntimeRigAccess::external_interval(*sim->runtime,force);double rider_p=0.,bike_p=0.,contact_force=0.,mass_error=0.,impulse_error=0.;RuntimeRigAccess::inspect(*sim->runtime,[&](const Stepper& stepper,const auto&){const auto* m=stepper.model();const auto* d=stepper.data();const auto nv=static_cast<std::size_t>(m->nv);const auto body_mass=model_access::readonly_buffer(m->body_mass,m->nbody,"body_mass"),qvel=model_access::readonly_buffer(d->qvel,m->nv,"qvel");std::vector<double> jp(3*nv),jr(3*nv);for(mjtSize b=0;b<m->nbody;++b){mj_jacBodyCom(m,d,jp.data(),jr.data(),static_cast<int>(b));const double momentum=body_mass[static_cast<std::size_t>(b)]*mechanics::matvec(jp,qvel)[0];const char* body=mj_id2name(m,mjOBJ_BODY,static_cast<int>(b));if(body&&std::string_view(body).starts_with("rider_"))rider_p+=momentum;else bike_p+=momentum;}numeric::PythonSum contact;const auto& diag=stepper.rider_contacts().state().diagnostics;for(const auto& support:diag.supports)contact.add(vector_norm(support.force_on_rider_n));for(const auto& grip:diag.grip_sides)contact.add(vector_norm(grip.force_on_rider_n));contact_force=contact.total();mass_error=std::abs(numeric::numpy_sum(body_mass)-real(initial,"mass_kg"));impulse_error=std::abs(vector_dot(incoming,qvel)-100.*dt);});return {.metrics=metrics({{"rider_horizontal_momentum_kg_mps",std::abs(rider_p)},{"contact_force_n",contact_force},{"mass_change_kg",mass_error},{"bike_impulse_error_ns",impulse_error},{"endpoint_bike_momentum_error_ns",std::abs(bike_p-100.*dt)},{"bike_root_speed_mps",sim->runtime->render_frame().presentation.speed_mps}}),.bounds=bounds({{"rider_horizontal_momentum_kg_mps",0.,1e-9},{"contact_force_n",0.,1e-9},{"mass_change_kg",0.,1e-10},{"bike_impulse_error_ns",0.,1e-5}})};
 }
 RigResult ride_terrain_resolution(std::string_view,double dt){
     std::array<Value,2> results;
     for(std::size_t i=0;i<2;++i){
         const auto request=simple_request(dt,"lumped",3.);
-        request->track={.name="spatial_refinement_rig",.length_m=20.,.obstacles={{terrain::Washboard{3.,.002,2.,6}}}};
+        request->track={.name="spatial_refinement_rig",.length_m=20.,.obstacles={{.shape=terrain::Washboard{.start_m=3.,.amplitude_m=.002,.wavelength_m=2.,.n_waves=6}}}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
         request->model.field.ncol=i==0?1001:2001;request->model.field.radius_x_m=10.;const auto sim=std::make_unique<Simulation>(std::move(*request));
         std::vector<double> loads,travels;
         replay(*sim,automatic_schedule,2.,[&](const auto& sample){
@@ -185,7 +192,8 @@ RigResult ride_terrain_resolution(std::string_view,double dt){
             for(const char* side:{"front","rear"})sum.add(real(get(get(c,"tires"),side),"normal_load_n"));
             loads.push_back(sum.total());
         },0.,0.,[&](const auto& endpoint){travels.push_back(endpoint.presentation.fork_travel_mm/1000.);});
-        std::vector<double> squared;for(double x:loads)squared.push_back(x*x);
+        std::vector<double> squared;squared.reserve(loads.size());
+for(double const x:loads)squared.push_back(x*x);
         results[i]=metrics({{"mean_load_n",mean(loads)},{"rms_load_n",std::sqrt(mean(squared))},
             {"normal_impulse_ns",numeric::numpy_sum(loads)*dt},{"mean_fork_travel_m",mean(travels)}});
     }
@@ -194,14 +202,14 @@ RigResult ride_terrain_resolution(std::string_view,double dt){
         value::set(std::get<Object>(result.data),key+"_relative_change",value::real(relative_change(real(results[0],key),io::as_double(x,key),1e-4)));
         value::set(std::get<Object>(result.data),key+"_fine",x);value::set(std::get<Object>(criteria.data),key+"_relative_change",pair(0.,.02));
     }
-    return {std::move(result),std::move(criteria)};
+    return {.metrics=std::move(result),.bounds=std::move(criteria)};
 }
 RigResult ride_coast(std::string_view name,double dt){
     const double inf=std::numeric_limits<double>::infinity();
     const double duration=name=="single_edge"?2.:5.;const auto request=simple_request(dt,"lumped",3.);
-    if(name=="single_edge")request->track={.name="single_edge_rig",.length_m=20.,.obstacles={{terrain::SquareEdge{3.5,.04,.5}}}};
+    if(name=="single_edge")request->track={.name="single_edge_rig",.length_m=20.,.obstacles={{.shape=terrain::SquareEdge{.start_m=3.5,.height_m=.04,.ledge_length_m=.5}}}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
     else if(name=="road_worn")request->track=terrain::get_preset("road_worn");
-    else request->track={.name="smooth_coast_rig",.length_m=20.,.obstacles={{terrain::Washboard{3.,.002,2.,6}}}};
+    else request->track={.name="smooth_coast_rig",.length_m=20.,.obstacles={{.shape=terrain::Washboard{.start_m=3.,.amplitude_m=.002,.wavelength_m=2.,.n_waves=6}}}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
     const auto sim=std::make_unique<Simulation>(std::move(*request));const double start=position(*sim);std::vector<double> loads,travels;
     std::array<std::vector<double>,2> wheel;double maximum=0.,impulse=0.,residual=0.;std::size_t multi=0;
     replay(*sim,automatic_schedule,duration,[&](const auto& s){
@@ -214,7 +222,8 @@ RigResult ride_coast(std::string_view name,double dt){
         }
         loads.push_back(sum.total());impulse+=sum.total()*dt;multi+=multiple?1:0;
     },0.,0.,[&](const auto& endpoint){travels.push_back(endpoint.presentation.fork_travel_mm/1000.);});
-    const auto rms=[](const auto& data){std::vector<double> squares;for(double x:data)squares.push_back(x*x);return std::sqrt(mean(squares));};
+    const auto rms=[](const auto& data){std::vector<double> squares;squares.reserve(data.size());
+for(double const x:data)squares.push_back(x*x);return std::sqrt(mean(squares));};
     const auto account=research::wire_value(runtime::Wire{sim->runtime->accounting_state()});const auto& airtime=get(get(account,"history"),"airtime_s");
     Value result=metrics({{"mean_load_n",mean(loads)},{"rms_load_n",rms(loads)},{"normal_impulse_ns",impulse},
         {"mean_fork_travel_m",mean(travels)},{"distance_m",position(*sim)-start},{"energy_residual_relative",residual},
@@ -230,14 +239,14 @@ RigResult ride_coast(std::string_view name,double dt){
     auto criteria=bounds({{"distance_m",0.,inf},{"mean_load_n",0.,inf}});
     if(name=="road_worn")value::set(std::get<Object>(criteria.data),"visited_profile_span_m",pair(1e-5,inf));
     if(name=="smooth_coast")value::set(std::get<Object>(criteria.data),"energy_residual_relative",pair(0.,.01));
-    return {std::move(result),std::move(criteria)};
+    return {.metrics=std::move(result),.bounds=std::move(criteria)};
 }
 struct RideCaseHandler{std::string_view name;RigResult (*run)(std::string_view,double);};
 constexpr auto ride_handlers=std::to_array<RideCaseHandler>({
-    {"flat_static",ride_flat_static},{"flat_static_native",ride_flat_static},
-    {"requested_sag",ride_requested_sag},{"brake_hold",ride_brake_hold},{"drive_low_mu",ride_drive_low_mu},
-    {"airborne_passive",ride_airborne},{"released_rider",ride_airborne},{"terrain_resolution",ride_terrain_resolution},
-    {"smooth_coast",ride_coast},{"single_edge",ride_coast},{"road_worn",ride_coast}});
+    {.name="flat_static",.run=ride_flat_static},{.name="flat_static_native",.run=ride_flat_static},
+    {.name="requested_sag",.run=ride_requested_sag},{.name="brake_hold",.run=ride_brake_hold},{.name="drive_low_mu",.run=ride_drive_low_mu},
+    {.name="airborne_passive",.run=ride_airborne},{.name="released_rider",.run=ride_airborne},{.name="terrain_resolution",.run=ride_terrain_resolution},
+    {.name="smooth_coast",.run=ride_coast},{.name="single_edge",.run=ride_coast},{.name="road_worn",.run=ride_coast}});
 }
 RigResult ride_case(std::string_view name,double dt) {
     if(const auto found=std::ranges::find_if(ride_handlers,[&](const RideCaseHandler& handler){return handler.name==name;});found!=ride_handlers.end())return found->run(name,dt);

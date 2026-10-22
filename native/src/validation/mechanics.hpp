@@ -39,8 +39,8 @@ inline int dof(const mjModel* m,const char* name){
     return adr[static_cast<std::size_t>(object_id(m,mjOBJ_JOINT,name))];
 }
 inline void finite_state(const mjModel* m,const mjData* d) {
-    for(double v:model_access::readonly_buffer(d->qpos,m->nq,"qpos"))scalar(v,"fixture coordinates");
-    for(double v:model_access::readonly_buffer(d->qvel,m->nv,"qvel"))scalar(v,"fixture velocities");
+    for(double const v:model_access::readonly_buffer(d->qpos,m->nq,"qpos"))scalar(v,"fixture coordinates");
+    for(double const v:model_access::readonly_buffer(d->qvel,m->nv,"qvel"))scalar(v,"fixture velocities");
 }
 inline std::array<double,3> matvec(std::span<const double> matrix,std::span<const double> x) {
     if(matrix.size()!=3*x.size()||x.size()>static_cast<std::size_t>(std::numeric_limits<int>::max()))throw std::invalid_argument("fixture Jacobian dimensions");

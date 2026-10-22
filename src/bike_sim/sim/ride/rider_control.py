@@ -624,6 +624,8 @@ class ArticulatedRiderController:
     def reset_activation(self):
         self._last_branch = None
         self._last_solution = None
+        self._leg_feedforward_nm = {}
+        self._coast_hold_nm = 0.
         self.active_state=np.zeros(len(self.joints))
         self.activation_time_s=None
         self.kinematic_state=None
@@ -753,14 +755,80 @@ class ArticulatedRiderController:
             total = self.config.joint_power_limit_w*len(limited)
         return scale_to_power_budget(limited,speeds,self.config.joint_power_limit_w,total)
 
+    def _leg_feedforward(self, model, data):
+        """Inverse-dynamics torque of the weld-imposed leg motion, per joint.
+
+        The feet are pinned to the pedals, so the measured crank motion
+        imposes the leg joints' trajectory through the closed loop:
+        q_ddot = J*phi_ddot + (dJ/dphi)*phi_dot^2. The weld reads the
+        difference between applied and required joint torque, so the
+        actuators must themselves supply the bias and inertia of the imposed
+        motion; only the residual task then circulates through the
+        leg-crank-leg loop. The acceleration term is currently held at zero:
+        every solved-proximity estimate tried re-injects the weld
+        equalities' own ringing (see below).
+
+        Returns ``(feedforward_nm, jacobians)``: a torque per hip/knee leg
+        joint and the per-side loop Jacobian rows used by the allocation.
+        """
+        import mujoco
+        from bike_sim.sim.ride.leg_loop import leg_loop_jacobian
+        frame_R = data.xmat[self.frame].reshape(3,3)
+        pelvis_R = data.xmat[self.pelvis].reshape(3,3)
+        relative_R = frame_R.T@pelvis_R
+        pelvis_pitch = atan2(relative_R[0,2],relative_R[0,0])
+        crank_world = data.xanchor[model.joint('crank_spin').id]
+        spindles = {side:(frame_R.T@(data.xpos[model.body('pedal_'+side).id]-crank_world))[[0,2]]
+                    for side in ('front','rear')}
+        phase = atan2(-spindles['front'][1],spindles['front'][0])
+        rate = float(data.qvel[self.crank_spin_dof])
+        crank = np.zeros(2)
+        # Imposed leg-joint acceleration under the measured crank motion.
+        delta = 1e-3
+        jacobians = {}
+        djac = {}
+        for side in ('front','rear'):
+            hip = (frame_R.T@(data.xanchor[model.joint('rider_hip_'+side).id]
+                              -crank_world))[[0,2]]
+            jac = leg_loop_jacobian(self.leg_geometry[side],hip,crank,
+                self.crank_length_m,phase,pelvis_pitch)
+            jacobians[side] = jac
+            plus = leg_loop_jacobian(self.leg_geometry[side],hip,crank,
+                self.crank_length_m,phase+delta,pelvis_pitch)
+            minus = leg_loop_jacobian(self.leg_geometry[side],hip,crank,
+                self.crank_length_m,phase-delta,pelvis_pitch)
+            djac[side] = (np.asarray(plus)-np.asarray(minus))/(2.*delta)
+        # Crank acceleration term: held at zero. Solved qacc and rate
+        # differences carry the weld equalities' own ringing (crank inertia
+        # is ~0.014 kg*m^2, so a few N*m of weld noise is hundreds of
+        # rad/s^2), and a model-based spin-up prediction misses the
+        # drivetrain-side inertia (freehub engagement, wheel and bike mass
+        # through the chain and contact) badly enough to overshoot the loop.
+        # Until a ring-free estimate exists the feedforward covers the
+        # deterministic centripetal term only.
+        accel = 0.
+        imposed = np.zeros(model.nv)
+        for side in ('front','rear'):
+            jac = jacobians[side]
+            for i,joint in enumerate(('hip','knee')):
+                _,dof,_ = self.joints['rider_'+joint+'_'+side]
+                imposed[dof] = jac[i]*accel+djac[side][i]*rate*rate
+        inertia = np.zeros(model.nv)
+        mujoco.mj_mulM(model,data,inertia,imposed)
+        feedforward = {'rider_'+joint+'_'+side:
+            float(data.qfrc_bias[dof]+inertia[dof])
+            for side in ('front','rear') for joint in ('hip','knee')
+            for _,dof,_ in (self.joints['rider_'+joint+'_'+side],)}
+        return feedforward,jacobians
+
     def compute(self,model,data,command, *, kinematic_state=None, support_available=None,
-                advance=True, dt_s=None, steady_state=False, pedal_recovery=False):
+                advance=True, dt_s=None, steady_state=False, pedal_recovery=False,
+                weld_crank_torque_nm=None):
         if not self.spindle:
             return self._compute_legacy(model,data,command,kinematic_state=kinematic_state,
                 support_available=support_available,advance=advance,dt_s=dt_s,
                 steady_state=steady_state,pedal_recovery=pedal_recovery)
         from bike_sim.sim.ride.crank_split import leg_crank_targets,leg_shares,split_joint_torques
-        from bike_sim.sim.ride.leg_loop import leg_loop_jacobian
         from bike_sim.physics.rider_activation import activation_step
         from bike_sim.sim.ride.rider_effort import finalize_effort
         if not isinstance(command,RiderCommand):
@@ -775,6 +843,7 @@ class ArticulatedRiderController:
             if advance:
                 self.reset_activation()
             requested = {name:0. for name in self.joints}
+            self._leg_feedforward_nm = {}
             total = 0.
             jacobians = {}
             self.support_diagnostics = {'stance':{'front':False,'rear':False}}
@@ -789,22 +858,84 @@ class ArticulatedRiderController:
                         for side in ('front','rear')}
             phase = atan2(-spindles['front'][1],spindles['front'][0])
             rate = float(data.qvel[self.crank_spin_dof])
-            total = (pedal_torque_waveform(command.mean_crank_torque_nm,phase,cfg.pedal_torque_ripple)
-                     if command.mean_crank_torque_nm > 0. else
-                     float(np.clip(cfg.coasting_brake_d_nm_s_rad*(command.crank_target_rate_rad_s-rate),
-                                   -cfg.coasting_brake_limit_nm,cfg.coasting_brake_limit_nm)))
+            if command.mean_crank_torque_nm > 0.:
+                task = pedal_torque_waveform(command.mean_crank_torque_nm,phase,
+                                            cfg.pedal_torque_ripple)
+                # The press servo that zeroes pedal load while coasting keeps
+                # regulating once effort is requested: the settled offset
+                # joins the effort ramp continuously instead of stepping the
+                # weld at onset, then integrates the residual between the
+                # requested waveform and the weld-measured press so a
+                # systematic tracking deficit is requested rather than lost.
+                # The weld reading is one tick stale and the bound is wide
+                # enough to cover the deficit without touching the clamp in
+                # normal pedaling.
+                if weld_crank_torque_nm is not None and advance:
+                    self._coast_hold_nm = float(np.clip(
+                        self._coast_hold_nm+cfg.weld_servo_gain*(
+                            task-weld_crank_torque_nm),
+                        -cfg.weld_servo_limit_nm,cfg.weld_servo_limit_nm))
+                total = task+self._coast_hold_nm
+            else:
+                # Freewheeling: damp toward the coasting crank rate, and servo
+                # the weld-measured pedal press to zero. A coasting rider rests
+                # their feet on the pedals without loading the drivetrain --
+                # the welded feet are the only path by which static leg load
+                # reaches the crank, so the weld torque about crank_spin is the
+                # physical pedal-press sensor. Without this hold, settle and
+                # standstill preload the freehub against the wheel and the
+                # stored imbalance unloads as weld work the moment a held wheel
+                # is released. ``weld_crank_torque_nm`` is that sensor reading;
+                # the update is a per-tick secant step on the residual, which
+                # converges because a requested crank torque maps nearly 1:1
+                # into the measured weld moment.
+                if weld_crank_torque_nm is not None and advance:
+                    self._coast_hold_nm = float(np.clip(
+                        self._coast_hold_nm-weld_crank_torque_nm,
+                        -cfg.coasting_brake_limit_nm,cfg.coasting_brake_limit_nm))
+                total = float(np.clip(
+                    cfg.coasting_brake_d_nm_s_rad*(command.crank_target_rate_rad_s-rate)
+                    + self._coast_hold_nm,
+                    -cfg.coasting_brake_limit_nm,cfg.coasting_brake_limit_nm))
             crank = np.zeros(2)
+            # The recovery preload applies whether or not the rider is mashing:
+            # a clipped-in foot keeps the same light stance pressure through
+            # the return stroke, and without it the weld reads unloaded.
             leg_targets = leg_crank_targets(total,phase,spindles,crank,
-                cfg.return_foot_preload_n if command.mean_crank_torque_nm > 0. else 0.)
-            requested = {}; jacobians = {}
-            for side in ('front','rear'):
-                hip = (frame_R.T@(data.xanchor[model.joint('rider_hip_'+side).id]-crank_world))[[0,2]]
-                jac = leg_loop_jacobian(self.leg_geometry[side],hip,crank,
-                    self.crank_length_m,phase,pelvis_pitch)
-                jacobians[side] = jac
-                capacity = lambda joint,sign: self._directional_limit('rider_'+joint+'_'+side,data,sign)
-                torques = split_joint_torques(leg_targets[side],jac,capacity)
-                requested.update({'rider_'+joint+'_'+side:torque for joint,torque in zip(('hip','knee'),torques)})
+                cfg.return_foot_preload_n)
+            # Inverse-dynamics feedforward of the weld-imposed leg motion.
+            # The feet are pinned to the pedals, so the crank's measured
+            # motion imposes the leg joints' trajectory; feeding its inverse
+            # dynamics forward leaves the weld carrying only the requested
+            # task instead of circulating the tracking deficit through the
+            # closed leg-crank-leg loop and returning it as opposing crank
+            # torque. The stored copy is baked into this tick's held
+            # command; between ticks only the physical bounds refresh.
+            def leg_requests(jacobians):
+                out = {}
+                for side in ('front','rear'):
+                    jac = jacobians[side]
+                    capacity = lambda joint,sign: self._directional_limit(
+                        'rider_'+joint+'_'+side,data,sign)
+                    torques = split_joint_torques(leg_targets[side],jac,capacity)
+                    for i,(joint,torque) in enumerate(zip(('hip','knee'),torques)):
+                        name = 'rider_'+joint+'_'+side
+                        _,dof,_ = self.joints[name]
+                        # Velocity-domain tracking of the crank-imposed leg
+                        # motion: the weld pins the foot to the pedal, so a
+                        # joint that lags J*rate is dragged through the weld
+                        # and the constraint ledger counts the drag as
+                        # numerical work. A bounded follow torque -- muscle
+                        # impedance about the imposed velocity, not a lock --
+                        # lets the actuators carry their own imposed motion.
+                        track = cfg.leg_track_damping_nms_rad*(
+                            jac[i]*rate-float(data.qvel[dof]))
+                        out[name] = float(torque
+                            +self._leg_feedforward_nm[name]+track)
+                return out
+            self._leg_feedforward_nm,jacobians = self._leg_feedforward(
+                model,data)
+            requested = leg_requests(jacobians)
             upper = self._upper_targets(data,command.posture)
             for name,target in upper.items():
                 qa,dof,_ = self.joints[name]
@@ -1230,6 +1361,25 @@ class ArticulatedRiderController:
         if set(torques) != set(self.joints):
             raise ValueError('incomplete rider actuator command')
         values = {name:scalar(torque,'rider torque') for name,torque in torques.items()}
+        # The held plan is applied verbatim between ticks: control is a
+        # sampled system, and re-deriving terms from the mid-period state here
+        # would feed the compliance ringing straight back into the actuators.
+        # State-dependent shaping lives in compute() at the control tick; the
+        # activation lag already spreads each tick's step into a physically
+        # limited approach. What still applies every step is the bound side:
+        # directional Hill capacity is a function of the incoming joint
+        # velocity, not the velocity at the control tick: a held command must
+        # not exceed the muscle's instantaneous concentric/eccentric capacity
+        # as the limb speeds up or slows down, and the accelerating-speed gate
+        # follows the same per-step rule.
+        for name,torque in values.items():
+            _,dof,_ = self.joints[name]
+            cap = self._directional_limit(name,data,1. if torque >= 0. else -1.)
+            clipped = float(np.clip(torque,-cap,cap))
+            speed = float(data.qvel[dof])
+            if abs(speed) >= self.config.joint_speed_limit_rad_s and clipped*speed > 0.:
+                clipped = 0.
+            values[name] = clipped
         for name,torque in values.items():
             _, _, aid = self.joints[name]
             # The actuator is a pure motor: ctrl is the muscle torque itself.

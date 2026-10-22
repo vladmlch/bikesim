@@ -35,7 +35,7 @@ class NativeDriver final : public Driver {
 public:
     explicit NativeDriver(const Options& options, Clock clock) : clock_(std::move(clock)) {
         auto resolved = resolve_measurement_ride(options);
-        auto& request = resolved->setup;
+        auto const& request = resolved->setup;
         auto prepared = bike::app::prepare(std::make_unique<bike::initialization::SetupRequest>(request));
         settings_.metadata = bike::cli::launch_metadata(request, *prepared, options.seed);
         set(settings_.metadata, "execution", identity());
@@ -57,7 +57,7 @@ public:
         start();
     }
     [[nodiscard]] const Settings& settings() const override { return settings_; }
-    [[nodiscard]] Boundary boundary() const override { const auto state = runtime_->snapshot(); return {state.step, state.time_s}; }
+    [[nodiscard]] Boundary boundary() const override { const auto state = runtime_->snapshot(); return {.step=state.step, .time_s=state.time_s}; }
     [[nodiscard]] std::optional<std::string> reason() const override {
         if (terminal_) return terminal_;
         const auto state = runtime_->snapshot();
@@ -142,9 +142,10 @@ std::unique_ptr<bike::cli::ResolvedRide> resolve_measurement_ride(const Options&
     std::vector<std::string> values{"--backend", "native", "--headless", "--no-plots", "--physics-config", options.physics_config.string(),
         "--track", options.track, "--duration", bike::configuration::detail::repr_double(options.duration_s),
         "--decimate", std::to_string(options.record_decimation), "--check-policy", "diagnostic"};
-    if (options.timestep_s) { values.push_back("--timestep"); values.push_back(bike::configuration::detail::repr_double(*options.timestep_s)); }
-    if (options.seed) { values.push_back("--seed"); values.push_back(*options.seed); }
-    std::vector<std::string_view> args; for (const auto& value : values) args.emplace_back(value);
+    if (options.timestep_s) { values.emplace_back("--timestep"); values.push_back(bike::configuration::detail::repr_double(*options.timestep_s)); }
+    if (options.seed) { values.emplace_back("--seed"); values.push_back(*options.seed); }
+    std::vector<std::string_view> args; args.reserve(values.size());
+for (const auto& value : values) args.emplace_back(value);
     auto resolved = bike::cli::resolve_ride(bike::cli::parse_arguments("bike-ride", args));
     resolved->setup.runtime.strict = !options.benchmark;
     resolved->setup.runtime.record_retention = RetentionMode::off;

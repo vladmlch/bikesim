@@ -31,14 +31,14 @@ void test_bosch_profile_values_are_the_recalled_unverified_set() {
 void test_mode_gains(const drivetrain::AssistConfig& config) {
     struct Row { std::string_view mode; double human; double expected; };
     constexpr std::array rows{
-        Row{"eco", 30., .6}, Row{"tour", 30., 1.4}, Row{"turbo", 30., 3.4}, Row{"turbo", 0., 3.4},
-        Row{"emtb", 0., 1.4}, Row{"emtb", 20., 2.4}, Row{"emtb", 40., 3.4}, Row{"emtb", 80., 3.4},
-        Row{"emtb", -5., 1.4}};
+        Row{.mode="eco", .human=30., .expected=.6}, Row{.mode="tour", .human=30., .expected=1.4}, Row{.mode="turbo", .human=30., .expected=3.4}, Row{.mode="turbo", .human=0., .expected=3.4},
+        Row{.mode="emtb", .human=0., .expected=1.4}, Row{.mode="emtb", .human=20., .expected=2.4}, Row{.mode="emtb", .human=40., .expected=3.4}, Row{.mode="emtb", .human=80., .expected=3.4},
+        Row{.mode="emtb", .human=-5., .expected=1.4}};
     bt::require(config.profile.has_value(), "projected profile supplies gain table");
     for (const auto& row : rows) {
         const auto mode = drivetrain::profile_mode(row.mode);
         bt::require(mode.has_value(), "declared gain mode parses");
-        near(drivetrain::profile_gain(*config.profile, *mode, row.human), row.expected, "declared mode gain");
+        near(drivetrain::profile_gain(*config.profile, *mode, row.human), row.expected, "declared mode gain"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     }
 }
 void test_unknown_mode_is_rejected(const drivetrain::AssistConfig& config) {
@@ -55,7 +55,7 @@ void test_profile_is_frozen_and_copies_the_gain_mapping(const drivetrain::Assist
     bt::require(std::is_const_v<decltype(cfg::kBoschCxGen4)>, "published registry profile is immutable");
     auto input = config; AssistController controller(input);
     bt::require(input.profile.has_value(), "owned profile exists");
-    input.profile->turbo = 99.;
+    input.profile->turbo = 99.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     (void)controller.step(10., 60., 0., false, .001);
     near(controller.state().last_gain, 3.4, "controller owns profile data independently of caller");
     // FrozenInstanceError/TypeError on Python attribute/item assignment are
@@ -94,7 +94,7 @@ void test_pedelec_cap_is_a_permission_not_a_throttle(const drivetrain::AssistCon
     const double one_radian_per_second_rpm = 60. / (2. * std::numbers::pi);
     // The native API returns delivered torque, so the uncapped permission is
     // observed as the full 3.4*10 Nm rider request. It exposes no infinity cap.
-    auto delivered = [&](double human, double cadence, std::optional<double> cap, bool braking) {
+    auto const delivered = [&](double human, double cadence, std::optional<double> cap, bool braking) {
         AssistController c(config);
         (void)run_assist(c, human, cadence, 0., 1., cap);
         return c.step(human, cadence, 0., braking, .001, cap);

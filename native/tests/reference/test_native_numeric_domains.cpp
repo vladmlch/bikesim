@@ -22,7 +22,7 @@ namespace io = bike::io;
 using namespace runtime::setupvalue;
 template<class F> void overflow(F&& action) {
     bool caught = false;
-    try { action(); } catch (const std::overflow_error&) { caught = true; }
+    try { std::forward<F>(action)(); } catch (const std::overflow_error&) { caught = true; }
     bt::require(caught, "finite inputs whose computed result overflows raise overflow_error");
 }
 Value& member(Value& value, std::string_view key) {
@@ -49,19 +49,19 @@ constexpr std::string_view suspension_xml = R"(<mujoco><worldbody>
 nativecfg::SuspensionConfig suspension(const Value& wire) {
     const auto decoded = nativecfg::decode(wire);
     bt::require(decoded.suspension.has_value(), "fixture decodes a real suspension config");
-    return *decoded.suspension;
+    return *decoded.suspension; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
 void test_suspension_domain_is_shared() {
     bt::ModelFixture fixture(suspension_xml);
     const auto original = suspension_wire();
-    SuspensionWriter valid(fixture.model.get(), suspension(original));
+    SuspensionWriter const valid(fixture.model.get(), suspension(original));
     bt::require(valid.fork_dofadr() != valid.shock_dofadr(), "valid control reaches both suspension joints");
     const std::array positive_bad{real(0.), real(-1.), Value{io::Number{"nan"}}, Value{io::Number{"inf"}}, Value{true}};
     const std::array nonnegative_bad{real(-1.), Value{io::Number{"nan"}}, Value{io::Number{"inf"}}, Value{true}};
     const auto reject = [&](std::string_view section, std::string_view key, const auto& bad_values) {
         for (const auto& bad : bad_values) {
             auto candidate = original; set(member(member(candidate, "suspension"), section), key, bad);
-            bt::invalid([&] { SuspensionWriter rejected(fixture.model.get(), suspension(candidate)); });
+            bt::invalid([&] { SuspensionWriter const rejected(fixture.model.get(), suspension(candidate)); });
         }
     };
     for (auto key : {"stanchion_inner_diam_mm", "total_travel_mm", "pos_chamber_length_mm", "neg_chamber_length_mm", "gamma", "atm_pressure_pa"}) reject("air_spring", key, positive_bad);
@@ -94,14 +94,14 @@ void test_air_pressure_intermediate_overflow_is_shared() {
     overflow([&] { (void)writer.components(fixture.data.get()); });
 }
 void test_activated_zero_hbo_denominator_rejected() {
-    for (bool legacy : {false, true}) {
+    for (bool const legacy : {false, true}) {
         bike::model::Charger3Damper damper(2, 7, 9, 180., legacy);
         damper.hbo_start_mm = damper.total_travel_mm;
         bt::invalid([&] { (void)damper.compute_damping_force(.7, 181.); });
         bt::ModelFixture fixture(suspension_xml); auto config = suspension(suspension_wire());
         config.fork_damper.legacy_behavior = legacy;
         config.fork_damper.hbo_start_mm = config.fork_damper.total_travel_mm;
-        if (!legacy) bt::invalid([&] { SuspensionWriter rejected(fixture.model.get(), config); });
+        if (!legacy) bt::invalid([&] { SuspensionWriter const rejected(fixture.model.get(), config); });
         else {
             SuspensionWriter writer(fixture.model.get(), config);
             model_access::mutable_buffer(fixture.data->qpos, fixture.model->nq)[static_cast<std::size_t>(writer.fork_qposadr())] = .181;
@@ -129,7 +129,7 @@ void test_mutated_policy_configs_are_rejected() {
         default: throw std::logic_error("invalid fixture case");
         }
         bt::invalid([&] { drivetrain::validate(candidate); });
-        bt::invalid([&] { drivetrain::PolicySet rejected(candidate); });
+        bt::invalid([&] { drivetrain::PolicySet const rejected(candidate); });
     }
 }
 void test_policy_derived_overflow_is_shared() {
@@ -143,15 +143,15 @@ void test_policy_derived_overflow_is_shared() {
 }
 void test_cruise_longitudinal_topology_is_shared() {
     for (const auto& [kind, axis] : std::array{std::pair{"hinge", "1 0 0"}, std::pair{"slide", "0 1 0"}, std::pair{"ball", "0 0 1"}}) {
-        bt::ModelFixture fixture("<mujoco><worldbody><body><joint name=\"root_x\" type=\"" + std::string(kind) + "\" axis=\"" + axis + "\"/><geom size=\".1\" mass=\"1\"/></body></worldbody></mujoco>");
-        bt::invalid([&] { CruiseWriter rejected(fixture.model.get(), {25., 180., 150., 150.}); });
+        bt::ModelFixture fixture(R"(<mujoco><worldbody><body><joint name="root_x" type=")" + std::string(kind) + "\" axis=\"" + axis + R"("/><geom size=".1" mass="1"/></body></worldbody></mujoco>)");
+        bt::invalid([&] { CruiseWriter const rejected(fixture.model.get(), {.target_speed_kmh=25., .kp_nm_per_mps=180., .ki_nm_per_mps_s=150., .torque_ceiling_nm=150.}); });
     }
 }
 void test_brake_wheel_topology_and_actuator_target_are_shared() {
     using Row = std::tuple<const char*, const char*, const char*>;
     for (const auto& [kind, axis, target] : std::array{Row{"slide", "0 1 0", "front_wheel_spin"}, Row{"ball", "0 1 0", "front_wheel_spin"}, Row{"hinge", "0 0 1", "front_wheel_spin"}, Row{"hinge", "0 1 0", "rear_wheel_spin"}}) {
-        bt::ModelFixture fixture("<mujoco><worldbody><body><joint name=\"front_wheel_spin\" type=\"" + std::string(kind) + "\" axis=\"" + axis + "\"/><geom name=\"geom_front_contact\" type=\"sphere\" size=\".3\" mass=\"1\"/></body><body><joint name=\"rear_wheel_spin\" type=\"hinge\" axis=\"0 1 0\"/><geom name=\"geom_rear_contact\" type=\"sphere\" size=\".3\" mass=\"1\"/></body></worldbody><actuator><motor name=\"front_brake\" joint=\"" + target + "\"/><motor name=\"rear_brake\" joint=\"rear_wheel_spin\"/></actuator></mujoco>");
-        bt::invalid([&] { BrakeWriter rejected(fixture.model.get(), {200., 1.}); });
+        bt::ModelFixture fixture(R"(<mujoco><worldbody><body><joint name="front_wheel_spin" type=")" + std::string(kind) + "\" axis=\"" + axis + R"("/><geom name="geom_front_contact" type="sphere" size=".3" mass="1"/></body><body><joint name="rear_wheel_spin" type="hinge" axis="0 1 0"/><geom name="geom_rear_contact" type="sphere" size=".3" mass="1"/></body></worldbody><actuator><motor name="front_brake" joint=")" + target + R"("/><motor name="rear_brake" joint="rear_wheel_spin"/></actuator></mujoco>)");
+        bt::invalid([&] { BrakeWriter const rejected(fixture.model.get(), {.torque_ceiling_nm=200., .taper_radps=1.}); });
     }
 }
 void test_coil_force_overflow_before_publication() {
@@ -171,12 +171,12 @@ void test_rolling_and_drag_computed_overflow() {
         .wind_world_mps={}, .point_body_m={}, .frame_body="frame", .front_wheel_body="front_wheel", .rear_wheel_body="rear_wheel"};
     const std::array<double, 1> load{10.}, none{0.}; const std::array<bool, 1> working{true};
     ResistanceWriter rolling(fixture.model.get(), config);
-    auto velocity = model_access::mutable_buffer(fixture.data->qvel, fixture.model->nv);
+    auto const velocity = model_access::mutable_buffer(fixture.data->qvel, fixture.model->nv);
     velocity[static_cast<std::size_t>(fixture.dof("front_wheel_spin"))] = 1.;
-    overflow([&] { (void)rolling.components(fixture.data.get(), {load, working, .3}, {none, working, .3}); });
+    overflow([&] { (void)rolling.components(fixture.data.get(), {.patch_loads=load, .patch_working=working, .effective_radius_m=.3}, {.patch_loads=none, .patch_working=working, .effective_radius_m=.3}); });
     config.crr = 0.; ResistanceWriter drag(fixture.model.get(), config);
     std::ranges::fill(velocity, 0.); velocity[static_cast<std::size_t>(fixture.dof("root_x"))] = 1e308;
-    overflow([&] { (void)drag.components(fixture.data.get(), {none, working, .3}, {none, working, .3}); });
+    overflow([&] { (void)drag.components(fixture.data.get(), {.patch_loads=none, .patch_working=working, .effective_radius_m=.3}, {.patch_loads=none, .patch_working=working, .effective_radius_m=.3}); });
 }
 } // namespace
 int main() { return bt::run([] {

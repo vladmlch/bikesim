@@ -34,14 +34,14 @@ struct Scratch {
 };
 template<class F> void fails(F &&body, std::string_view reason) {
     bool threw = false;
-    try { body(); } catch (const std::exception &) { threw = true; }
+    try { std::forward<F>(body)(); } catch (const std::exception &) { threw = true; }
     bt::require(threw, reason);
 }
 std::string entry(int index, std::string_view label, int offset, int size,
                   std::string_view kind = "bitwise", std::string_view tolerance = "null") {
-    return "{\"index\":" + std::to_string(index) + ",\"node\":\"" + std::string(node_name) +
-        "\",\"label\":\"" + std::string(label) + "\",\"kind\":\"" + std::string(kind) +
-        "\",\"dtype\":\"<f8\",\"shape\":[" + std::to_string(size) +
+    return "{\"index\":" + std::to_string(index) + R"(,"node":")" + std::string(node_name) +
+        R"(","label":")" + std::string(label) + R"(","kind":")" + std::string(kind) +
+        R"(","dtype":"<f8","shape":[)" + std::to_string(size) +
         "],\"offset\":" + std::to_string(offset) + ",\"nbytes\":" + std::to_string(size * 8) +
         ",\"rtol\":" + std::string(tolerance) + ",\"atol\":" + std::string(tolerance) + "}";
 }
@@ -73,10 +73,10 @@ void ordered_bitwise_contract() {
     node.f64(std::span(values).subspan(1), "zero");
     node.done();
     fails([&] { node.f64(positive_zero, "extra"); }, "over-consumption fails");
-    fails([&] { bt::oracle::Node missing("tests/no.py::missing", scratch.root); }, "missing data fails closed");
+    fails([&] { bt::oracle::Node const missing("tests/no.py::missing", scratch.root); }, "missing data fails closed");
 }
 void close_and_nan_contract() {
-    Scratch scratch;
+    Scratch const scratch;
     const double nan = std::bit_cast<double>(UINT64_C(0x7ff8000000001234));
     const std::array values{1., nan, std::numeric_limits<double>::infinity()};
     scratch.write('[' + entry(0, "close", 0, 3, "close", "0.01") + ']', values);
@@ -99,16 +99,16 @@ void malformed_contract() {
     Scratch scratch;
     const std::array values{1., 2.};
     scratch.write('[' + entry(0, "one", 0, 1) + ']', values);
-    fails([&] { bt::oracle::Node node(node_name, scratch.root); }, "unindexed payload rejects");
+    fails([&] { bt::oracle::Node const node(node_name, scratch.root); }, "unindexed payload rejects");
     scratch.write('[' + entry(0, "one", 8, 1) + ']', values);
-    fails([&] { bt::oracle::Node node(node_name, scratch.root); }, "noncontiguous offsets reject");
+    fails([&] { bt::oracle::Node const node(node_name, scratch.root); }, "noncontiguous offsets reject");
     scratch.write('[' + entry(1, "one", 0, 2) + ']', values);
-    fails([&] { bt::oracle::Node node(node_name, scratch.root); }, "nonzero first index rejects");
+    fails([&] { bt::oracle::Node const node(node_name, scratch.root); }, "nonzero first index rejects");
     scratch.write("[]", std::span<const double>{});
-    fails([&] { bt::oracle::Node node(node_name, scratch.root); }, "empty capture cannot pass");
+    fails([&] { bt::oracle::Node const node(node_name, scratch.root); }, "empty capture cannot pass");
 }
 void explicit_shape_contract() {
-    Scratch scratch;
+    Scratch const scratch;
     const std::array values{1.};
     scratch.write('[' + entry(0, "vector", 0, 1) + ']', values);
     bt::oracle::Node node(node_name, scratch.root);

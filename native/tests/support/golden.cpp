@@ -60,7 +60,7 @@ std::size_t item_size(std::string_view dtype) {
     const auto suffix = dtype.find('[');
     const auto digits = dtype.substr(2, suffix == std::string_view::npos ? suffix : suffix - 2);
     const auto *end = std::to_address(digits.end());
-    const auto parsed = std::from_chars(digits.data(), end, width);
+    const auto parsed = std::from_chars(std::to_address(digits.begin()), end, width);
     if (digits.empty() || parsed.ec != std::errc{} || parsed.ptr != end)
         bad("golden dtype", "invalid element width");
     if (suffix != std::string_view::npos &&

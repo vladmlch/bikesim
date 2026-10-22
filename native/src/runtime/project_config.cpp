@@ -274,7 +274,10 @@ Value drive(const cfg::SimulationPhysicsConfig& physics_config, const Value& doc
     set(out, "drive_mode", text(physics_config.drive_mode.value()));
     for (auto key : {"transmission_model", "motor_clutch", "human_torque_nm", "torque_ripple",
          "crank_phase_rad", "chain_k_n_m", "chain_c_ns_m", "bearing_c_nms_rad",
-         "rotor_inertia_kgm2", "brake_ceiling_nm"}) set(out, key, field(input, key));
+         "rotor_inertia_kgm2", "brake_ceiling_nm", "brake_hold_torque_nm",
+         "brake_hold_stiffness_nm_rad", "brake_hold_damping_nms_rad",
+         "brake_hold_engage_radps", "brake_hold_release_radps"})
+        set(out, key, field(input, key));
     return out;
 }
 

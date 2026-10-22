@@ -90,7 +90,7 @@ void comparison_contract() {
     bt::require(!golden::same_failure(io::parse_json(R"([0.1,["one","two"]])"), io::parse_json(R"([0.1,["two","one"]])"), 0., 0.), "failure violation order remains significant");
 }
 void artifact_contract() {
-    Scratch scratch;
+    Scratch const scratch;
     // Heap — the artifact and each load result are ~1KB; this frame is held
     // under the 8192-byte budget.
     const auto episode_owner = std::make_unique<golden::EpisodeArtifact>();

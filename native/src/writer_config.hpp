@@ -1074,7 +1074,7 @@ namespace nativecfg {
         template <class N>
         [[nodiscard]] drivetrain::DriveConfig decode_drive(const Dict<N> &d) {
             drivetrain::DriveConfig c;
-            constexpr auto extra_keys = keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","chain_k_n_m","chain_c_ns_m","bearing_c_nms_rad","rotor_inertia_kgm2","motor_clutch","brake_ceiling_nm");
+            constexpr auto extra_keys = keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","chain_k_n_m","chain_c_ns_m","bearing_c_nms_rad","rotor_inertia_kgm2","motor_clutch","brake_ceiling_nm","brake_hold_torque_nm","brake_hold_stiffness_nm_rad","brake_hold_damping_nms_rad","brake_hold_engage_radps","brake_hold_release_radps");
             c.policies = decode_drive_policies(d, extra_keys);
             c.drive_mode = str(d, "drive_mode");
             c.transmission_model = str(d, "transmission_model");
@@ -1097,6 +1097,22 @@ namespace nativecfg {
                     nonnegative(num(d, "rotor_inertia_kgm2"), "rotor_inertia_kgm2");
             c.brake_ceiling_nm =
                     nonnegative(num(d, "brake_ceiling_nm"), "brake_ceiling_nm");
+            // The standstill bite keys are optional: an absent key keeps the
+            // struct default (zero torque/stiffness disables the bite —
+            // physical_config.py:265-269), so configs recorded before the
+            // feature still decode and replay their recorded behavior.
+            if (d.contains("brake_hold_torque_nm"))
+                c.brake_hold_torque_nm = nonnegative(num(d, "brake_hold_torque_nm"), "brake_hold_torque_nm");
+            if (d.contains("brake_hold_stiffness_nm_rad"))
+                c.brake_hold_stiffness_nm_rad = nonnegative(num(d, "brake_hold_stiffness_nm_rad"), "brake_hold_stiffness_nm_rad");
+            if (d.contains("brake_hold_damping_nms_rad"))
+                c.brake_hold_damping_nms_rad = nonnegative(num(d, "brake_hold_damping_nms_rad"), "brake_hold_damping_nms_rad");
+            if (d.contains("brake_hold_engage_radps"))
+                c.brake_hold_engage_radps = positive(num(d, "brake_hold_engage_radps"), "brake_hold_engage_radps");
+            if (d.contains("brake_hold_release_radps"))
+                c.brake_hold_release_radps = nonnegative(num(d, "brake_hold_release_radps"), "brake_hold_release_radps");
+            if (c.brake_hold_release_radps < c.brake_hold_engage_radps)
+                throw std::invalid_argument("brake hold release must not precede engage");
             c.motor_clutch = boolean(d, "motor_clutch");
             if (c.motor_clutch && c.rotor_inertia_kgm2 > 0.)
                 throw std::invalid_argument("rotor and clutch are exclusive");

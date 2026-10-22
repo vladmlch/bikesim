@@ -25,6 +25,8 @@ public:
     ~TemporaryDirectory() { std::error_code error; std::filesystem::remove_all(path_, error); }
     TemporaryDirectory(const TemporaryDirectory&) = delete;
     TemporaryDirectory& operator=(const TemporaryDirectory&) = delete;
+    TemporaryDirectory(TemporaryDirectory&&) = delete;
+    TemporaryDirectory& operator=(TemporaryDirectory&&) = delete;
     [[nodiscard]] const std::filesystem::path& path() const noexcept { return path_; }
 private:
     std::filesystem::path path_;

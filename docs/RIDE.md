@@ -117,6 +117,20 @@ material; see
 selection does not add elastic-chain, alternative-support or legacy drive
 support.
 
+Held brakes distinguish rolling from standstill. While a wheel turns, physical
+braking is the solved static-friction bound (`dof_frictionloss`) and the
+frictional torque fades to zero as ω→0 — a rolling held brake never reverses
+the bike. At a standstill under a pulled lever, the `brake_hold_*` drive
+fields add a separate pad bite: the wheel angle latches when |ω| drops at or
+below `brake_hold_engage_radps`, and a bounded spring–damper torque
+`−brake_hold_stiffness_nm_rad·(θ−θ_latch) − brake_hold_damping_nms_rad·ω`
+(clipped to `brake_hold_torque_nm·demand`) holds it until |ω| exceeds
+`brake_hold_release_radps` or the lever releases. The distinct engage/release
+thresholds give hysteresis, the hold reports as its own `brake_hold` force
+component and folds into energy-loss accounting, and it resets with each
+episode. Setting the hold torque or stiffness to zero disables the bite and
+preserves the legacy fade-only behaviour.
+
 The `pneumatic` tyre's model contract, fitted constants and literature targets —
 the sections the code cites as `RIDE.md §3.1`, `§4.1`, `§11.2` and `§12 item 10`,
 which this file no longer carries — live in

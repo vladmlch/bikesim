@@ -366,13 +366,14 @@ std::string validate_platform_record(Value &context) {
     if (system != "Darwin" && system != "Linux")
         throw CheckError("native check context has an unsupported platform system: " +
                          py_repr(system_value));
-    if (system != host.sysname || member_string(*platform, "host_system") != host.sysname)
+    if (system != static_cast<const char *>(host.sysname) ||
+        member_string(*platform, "host_system") != static_cast<const char *>(host.sysname))
         throw CheckError("native check platform records system=" + py_repr(system_value) +
                          " host_system=" + py_repr(member(*platform, "host_system")) +
-                         " on a '" + host.sysname + "' host");
-    if (member_string(*platform, "machine") != host.machine)
+                         " on a '" + static_cast<const char *>(host.sysname) + "' host");
+    if (member_string(*platform, "machine") != static_cast<const char *>(host.machine))
         throw CheckError("native check platform machine " + py_repr(member(*platform, "machine")) +
-                         " does not match host machine '" + host.machine + "'");
+                         " does not match host machine '" + static_cast<const char *>(host.machine) + "'");
     const Value *pointer_bits = member(*platform, "pointer_bits");
     const auto *width = pointer_bits != nullptr
                             ? std::get_if<io::Number>(&pointer_bits->data) : nullptr;

@@ -18,6 +18,7 @@
 #include <map>
 #include <sys/utsname.h>
 #include <thread>
+#include <utility>
 
 namespace bike::validation {
 namespace {
@@ -57,7 +58,7 @@ Value execute(std::string_view name,double dt){
     try{const auto result=benchmark_case(name,dt);
         for(const auto& [key,item]:io::as_object(result.metrics,"metrics"))
             if(!std::isfinite(io::tagged_double(item,key)))throw std::runtime_error("non-finite validation metric");
-        auto measured=bounded(name,result,false);const bool passed=flag(measured,"passed");
+        auto const measured=bounded(name,result,false);const bool passed=flag(measured,"passed");
         for(const char* field:{"metrics","criteria","passed"})set(row,field,get(measured,field));
         set(row,"status",value::text(diagnostic?"diagnostic":passed?"passed":"failed"));
     }catch(const std::exception& e){set(row,"metrics",empty_object());set(row,"criteria",empty_object());
@@ -76,9 +77,10 @@ std::map<std::string,std::vector<std::pair<std::string,double>>> convergence_key
     return result;
 }
 Value actual_or_null(const Value& row,std::string_view key){return optional(get(row,"metrics"),key);}
-// Extracted for the -O0 frame budget: the convergence scan, per-check try
-// bodies and climbing setup/loop temporaries each live in their own frame.
-Array benchmark_convergence(const std::vector<double>& dts,const std::vector<std::string>& chosen,const Array& rows,const std::map<std::pair<std::string,double>,std::size_t>& lookup){
+// Extracted for the frame budget: the convergence scan, per-check try
+// bodies and climbing setup/loop temporaries each live in their own
+// frame; noinline keeps the same split under optimization.
+[[gnu::noinline]] Array benchmark_convergence(const std::vector<double>& dts,const std::vector<std::string>& chosen,const Array& rows,const std::map<std::pair<std::string,double>,std::size_t>& lookup){
     Array convergence;const double coarse=dts[dts.size()-2],fine=dts.back();
     for(const auto& [name,keys]:convergence_keys()){if(std::ranges::find(chosen,name)==chosen.end())continue;
         const auto& a=rows[lookup.at({name,coarse})];const auto& b=rows[lookup.at({name,fine})];
@@ -104,7 +106,7 @@ Value mechanics_check(std::string_view kind,const std::filesystem::path& out,con
         "wheel_inertia","chain_suspension_motion","suspension_cycle","airborne_internal_actuation","incline_30_deg","brake_hold"})}}},root);
         else if(kind=="load_and_shaft"){Array cases;for(double grade:{0.,.12,.28,.35})for(const auto& [x,h]:std::array<std::pair<double,double>,2>{{{.45,.9},{.55,.8}}})
             cases.push_back(bounded(std::format("load_grade{}_com{}_{}",grade,x,h),load_transfer_rig(.00025,std::atan(grade),x,h),true));
-            for(int rear:{10,24,51})for(bool overrun:{false,true})cases.push_back(bounded(std::format("shaft_34_{}_overrun{}",rear,overrun?"True":"False"),shaft_ratio_rig(.000125,34./rear,overrun),true));
+            for(int rear:{10,24,51})for(bool const overrun:{false,true})cases.push_back(bounded(std::format("shaft_34_{}_overrun{}",rear,overrun?"True":"False"),shaft_ratio_rig(.000125,34./rear,overrun),true));
             bool passed=!cases.empty();for(const auto& c:cases)passed=passed&&flag(c,"passed");result=Value{Object{{"cases",Value{std::move(cases)}},{"passed",Value{passed}}}};write_report(artifact,result);}
         else if(kind=="drive_suspension")result=drive_suspension_comparison(Value{Object{{"output",value::text(artifact.string())}}},root);
         else if(kind=="contact")result=contact_resolution(Value{Object{{"output",value::text((out/"contact").string())}}},root);
@@ -114,8 +116,8 @@ Value mechanics_check(std::string_view kind,const std::filesystem::path& out,con
     return check;
 }
 struct ClimbingSession{std::unique_ptr<Simulation> sim;std::unique_ptr<research::PolicySession> session;std::unique_ptr<research::ResearchRun> publication;double dt=0.;};
-ClimbingSession climbing_setup(std::string_view mode,double duration,const std::filesystem::path& physics,const std::filesystem::path& track,const std::filesystem::path& out,std::int64_t repetition,Value& result){
-    const auto setup=profile_request(physics,track);const double dt=setup->model.physics->timestep_s;
+[[gnu::noinline]] ClimbingSession climbing_setup(std::string_view mode,double duration,const std::filesystem::path& physics,const std::filesystem::path& track,const std::filesystem::path& out,std::int64_t repetition,Value& result){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
+    const auto setup=profile_request(physics,track);const double dt=setup->model.physics->timestep_s; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     if(mode!="research"){ClimbingSession active;active.dt=dt;active.sim=std::make_unique<Simulation>(std::move(*setup));merge(result,active.sim->metadata);set(result,"equilibrium",get(active.sim->metadata,"equilibrium"));return active;}
     (void)steps(duration,.01,1e-9);auto request=std::make_unique<research::ResearchRequest>();request->setup=std::move(*setup);
     request->experiment.duration_s=duration;request->experiment.control_period_s=.01;request->experiment.actuator_delay_s=.005;request->experiment.record_decimation=80;
@@ -128,17 +130,18 @@ ClimbingSession climbing_setup(std::string_view mode,double duration,const std::
     active.publication=std::make_unique<research::ResearchRun>(*active.session,std::move(writer));return active;
 }
 // The snapshot/frame/transition temporaries of the control loop stay in this
-// helper's frame under the -O0 -Wframe-larger-than budget.
+// helper's frame under the -Wframe-larger-than budget; noinline keeps the
+// same split under optimization.
 struct ClimbingLoop{std::optional<std::pair<Clock::time_point,double>> warmed;double minimum_front=std::numeric_limits<double>::infinity();double gap=0.;};
-ClimbingLoop climbing_loop(ClimbingSession& active,std::size_t required,std::size_t warmup,Value& result,std::vector<double>& timings){
+[[gnu::noinline]] ClimbingLoop climbing_loop(ClimbingSession& active,std::size_t required,std::size_t warmup,Value& result,std::vector<double>& timings){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     ClimbingLoop loop;
     const auto snapshot=[&]{return active.session?active.session->environment().snapshot():active.sim->runtime->snapshot();};
     const auto frame=[&]{return active.session?active.session->environment().render_frame():active.sim->runtime->render_frame();};
-    while(snapshot().step<static_cast<std::int64_t>(required)){
-        const auto incoming=snapshot();if(incoming.step>=static_cast<std::int64_t>(warmup)&&!loop.warmed)loop.warmed=std::pair{Clock::now(),incoming.time_s};
+    while(std::cmp_less(snapshot().step,required)){
+        const auto incoming=snapshot();if(std::cmp_greater_equal(incoming.step,warmup)&&!loop.warmed)loop.warmed=std::pair{Clock::now(),incoming.time_s};
         const auto began=Clock::now();std::optional<runtime::ResearchTransition> transition;
         if(active.session)transition=active.session->advance();else (void)active.sim->runtime->advance(incoming.step+1,{},0.,0.,{});
-        const double ns=std::chrono::duration<double,std::nano>(Clock::now()-began).count();if(incoming.step>=static_cast<std::int64_t>(warmup))timings.push_back(ns);
+        const double ns=std::chrono::duration<double,std::nano>(Clock::now()-began).count();if(std::cmp_greater_equal(incoming.step,warmup))timings.push_back(ns);
         const auto current=frame();loop.minimum_front=std::min(loop.minimum_front,current.presentation.front_load_n);
         if(current.presentation.rider_present)loop.gap=std::max({loop.gap,current.presentation.supports[1].gap_m,current.presentation.supports[2].gap_m});
         const auto status=research::wire_value(runtime::Wire{current.state.model_status});
@@ -150,15 +153,15 @@ ClimbingLoop climbing_loop(ClimbingSession& active,std::size_t required,std::siz
 }
 // Post-loop snapshot, timing-metric and publication temporaries also get
 // their own frames; the final-state block likewise stays out of the handler.
-void climbing_outcome(ClimbingSession& active,const ClimbingLoop& loop,std::size_t required,double dt,Clock::time_point loop_start,Value& result,const std::vector<double>& timings){
+[[gnu::noinline]] void climbing_outcome(ClimbingSession& active,const ClimbingLoop& loop,std::size_t required,double dt,Clock::time_point loop_start,Value& result,const std::vector<double>& timings){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     const auto& warmed=loop.warmed;const auto final=active.session?active.session->environment().snapshot():active.sim->runtime->snapshot();
     set(result,"loop_wall_s",value::real(elapsed(loop_start)));set(result,"warmup_sim_s",warmed?value::real(warmed->second):Value{});
     set(result,"warmed_loop_real_time_factor",warmed?value::real((final.time_s-warmed->second)/std::max(elapsed(warmed->first),1e-12)):Value{});
-    set(result,"timing",timings.empty()?Value{}:timing_metrics(timings,active.session?.01:dt));set(result,"complete",Value{final.step==static_cast<std::int64_t>(required)});
+    set(result,"timing",timings.empty()?Value{}:timing_metrics(timings,active.session?.01:dt));set(result,"complete",Value{std::cmp_equal(final.step,required)});
     set(result,"max_pedal_gap_m",value::real(loop.gap));set(result,"min_front_load_n",std::isfinite(loop.minimum_front)?value::real(loop.minimum_front):Value{});
     if(active.publication){const auto begin=Clock::now();const auto path=active.publication->finish();set(result,"recording_write_wall_s",value::real(elapsed(begin)));set(result,"recording",path?value::text(path->string()):Value{});}
 }
-void climbing_finalize(ClimbingSession& active,Value& result){
+[[gnu::noinline]] void climbing_finalize(ClimbingSession& active,Value& result){
     const auto final=active.session?active.session->environment().snapshot():active.sim->runtime->snapshot();const auto presentation=active.session?active.session->environment().render_frame().presentation:active.sim->runtime->render_frame().presentation;
     set(result,"end_time_s",value::real(final.time_s));set(result,"end_position_m",value::real(presentation.position_m));set(result,"model_status",research::wire_value(runtime::Wire{final.model_status}));
     set(result,"final_state_sha256",value::text(io::sha256(std::as_bytes(std::span(final.integration_state)))));
@@ -185,19 +188,19 @@ Value climbing_repetition(std::string_view mode,double duration,const std::files
 std::span<const std::string_view> benchmark_case_names(){return names;}
 RigResult benchmark_case(std::string_view name,double dt){
     positive(dt,"timestep");using mechanics::bounds;const double inf=std::numeric_limits<double>::infinity();
-    if(name=="wheel_inertia")return {wheel_inertia_rig(dt),bounds({{"acceleration_relative_error",0.,.001}})};
-    if(name=="contact_event")return {contact_event_rig(dt),bounds({{"event_error_s",0.,2.*dt}})};
-    if(name=="radial_native_reference"){Object results;for(double load:{100.,300.,600.,1000.}){results.emplace_back("deflection_at_"+std::to_string(static_cast<int>(load))+"n_m",get(radial_rig(load,dt,2.,true),"effective_deflection_m"));}return {Value{std::move(results)},empty_object()};}
-    for(double load:{100.,300.,600.,1000.})if(name=="radial_"+std::to_string(static_cast<int>(load))){auto result=radial_rig(load,dt);
+    if(name=="wheel_inertia")return {.metrics=wheel_inertia_rig(dt),.bounds=bounds({{"acceleration_relative_error",0.,.001}})};
+    if(name=="contact_event")return {.metrics=contact_event_rig(dt),.bounds=bounds({{"event_error_s",0.,2.*dt}})};
+    if(name=="radial_native_reference"){Object results;for(double const load:{100.,300.,600.,1000.}){results.emplace_back("deflection_at_"+std::to_string(static_cast<int>(load))+"n_m",get(radial_rig(load,dt,2.,true),"effective_deflection_m"));}return {.metrics=Value{std::move(results)},.bounds=empty_object()};}
+    for(double const load:{100.,300.,600.,1000.})if(name=="radial_"+std::to_string(static_cast<int>(load))){auto result=radial_rig(load,dt);
         set(result,"deflection_error_m",value::real(std::abs(real(result,"deflection_m")-real(result,"expected_deflection_m"))));
-        return {result,bounds({{"deflection_error_m",0.,std::max(.0001,.02*real(result,"expected_deflection_m"))},{"speed_mps",-1e-5,1e-5}})};}
+        return {.metrics=result,.bounds=bounds({{"deflection_error_m",0.,std::max(.0001,.02*real(result,"expected_deflection_m"))},{"speed_mps",-1e-5,1e-5}})};}
     if(name=="incline_30_deg"){auto result=incline_rig(dt);set(result,"normal_relative_error",value::real(relative_change(real(result,"normal_load_n"),real(result,"expected_normal_load_n"),1.)));
         set(result,"vertical_relative_error",value::real(relative_change(real(result,"vertical_with_stand_reaction_n"),real(result,"expected_weight_n"),1.)));
-        return {std::move(result),bounds({{"normal_relative_error",0.,.005},{"vertical_relative_error",0.,.005}})};}
+        return {.metrics=std::move(result),.bounds=bounds({{"normal_relative_error",0.,.005},{"vertical_relative_error",0.,.005}})};}
     if(name=="chain_locked_geometry"){auto result=chain_locked_rig(dt);set(result,"speed_ratio_error",value::real(relative_change(real(result,"speed_ratio"),real(result,"expected_ratio"),1.)));
         set(result,"torque_ratio_error",value::real(relative_change(real(result,"torque_ratio"),real(result,"expected_ratio"),1.)));
-        return {std::move(result),bounds({{"speed_ratio_error",0.,.001},{"torque_ratio_error",0.,.001},{"power_relative_error",0.,.005}})};}
-    if(name=="chain_suspension_motion"){auto result=chain_geometry_rig();merge(result,compiled_chain_motion_rig());return {std::move(result),bounds({
+        return {.metrics=std::move(result),.bounds=bounds({{"speed_ratio_error",0.,.001},{"torque_ratio_error",0.,.001},{"power_relative_error",0.,.005}})};}
+    if(name=="chain_suspension_motion"){auto result=chain_geometry_rig();merge(result,compiled_chain_motion_rig());return {.metrics=std::move(result),.bounds=bounds({
         {"rigid_motion_extension_m",-1e-12,1e-12},{"directional_relative_error",0.,1e-7},{"compiled_jacobian_relative_error",0.,1e-7},{"linkage_force_per_tension_m",1e-5,inf}})};}
     if(name=="suspension_cycle")return suspension_cycle(dt);
     if(name=="airborne_internal_actuation")return airborne_internal_actuation(dt);
@@ -210,7 +213,7 @@ RigResult benchmark_case(std::string_view name,double dt){
     if(name=="motor_only_airborne")return momentum_rig(dt,true,"geometric_ideal_mid_drive",false);
     if(name=="actual_shaft_ratio")return shaft_ratio_rig(dt);
     if(name=="actual_freehub_overrun")return shaft_ratio_rig(dt,34./51.,true);
-    for(const char* mode:{"ideal_mid_drive","geometric_ideal_mid_drive","elastic_chain"})for(double torque:{0.,20.,40.})
+    for(const char* mode:{"ideal_mid_drive","geometric_ideal_mid_drive","elastic_chain"})for(double const torque:{0.,20.,40.})
         if(name==std::string("drive_suspension_")+mode+"_"+std::to_string(static_cast<int>(torque)))return drive_suspension_rig(dt,mode,torque);
     if(std::ranges::find(names,name)!=names.end())return ride_case(name,dt);
     throw std::invalid_argument("unknown validation benchmark case: "+std::string(name));
@@ -224,7 +227,7 @@ Value benchmark_suite(const Value& config,const std::filesystem::path& root){
     if(jobs!=1)throw std::invalid_argument("native benchmark worker isolation is not implemented; jobs must be 1");
     auto dts=numbers(optional(config,"dt_values_s",Value{Array{value::real(.0005),value::real(.00025),value::real(.000125)}}),"dt_values_s");
     if(dts.empty())throw std::invalid_argument("positive, finite, distinct timestep values required");
-    for(double dt:dts)positive(dt,"timestep");std::ranges::sort(dts,std::greater<>{});
+    for(double const dt:dts)positive(dt,"timestep");std::ranges::sort(dts,std::greater<>{});
     if(std::ranges::adjacent_find(dts)!=dts.end())throw std::invalid_argument("positive, finite, distinct timestep values required");
     const auto chosen=strings(optional(config,"cases",value::strings(std::vector<std::string>(names.begin(),names.end()))),"cases");
     if(chosen.empty()||std::set<std::string>(chosen.begin(),chosen.end()).size()!=chosen.size())throw std::invalid_argument("unknown, duplicate or empty validation case selection");
@@ -236,9 +239,9 @@ Value benchmark_suite(const Value& config,const std::filesystem::path& root){
         {"version_scope",value::text("native compiler, engine and numerical provider; Python package versions are not impersonated")},
         {"cases",Value{Array{}}},{"convergence",Value{Array{}}},{"passed",Value{false}},{"jobs",value::integer(jobs)},
         {"environment",environment},{"source_sha256",value::text(source)},
-        {"required_case_count",value::integer(static_cast<std::int64_t>(chosen.size()*dts.size()))}}};
+        {"required_case_count",value::integer(static_cast<std::int64_t>(chosen.size())*static_cast<std::int64_t>(dts.size()))}}};
     Array rows,convergence;std::map<std::pair<std::string,double>,std::size_t> lookup;
-    for(const auto& name:chosen)for(double dt:dts){lookup.emplace(std::pair{name,dt},rows.size());rows.push_back(execute(name,dt));set(report,"cases",Value{rows});write_report(out/"report.json",report);}
+    for(const auto& name:chosen)for(double const dt:dts){lookup.emplace(std::pair{name,dt},rows.size());rows.push_back(execute(name,dt));set(report,"cases",Value{rows});write_report(out/"report.json",report);}
     if(dts.size()>=2)convergence=benchmark_convergence(dts,chosen,rows,lookup);
     bool passed=true;for(const auto& row:rows)if(flag(row,"mandatory"))passed=passed&&flag(row,"passed");for(const auto& row:convergence)passed=passed&&flag(row,"passed");
     const bool unchanged=source_fingerprint(root/"native/src")==source;
@@ -277,11 +280,11 @@ Value climbing_benchmark(const Value& config,const std::filesystem::path& root){
     std::filesystem::create_directories(out);const auto source=source_fingerprint(root/"native/src");struct utsname hardware{};const bool has_hardware=::uname(&hardware)==0;
     Value report{Object{{"schema_version",value::integer(1)},{"mode",value::text(mode)},{"duration_requested_s",value::real(duration)},
         {"physics_profile",value::text(physics.string())},{"track_path",value::text(track.string())},{"source_sha256",value::text(source)},
-        {"hardware",Value{Object{{"machine",has_hardware?value::text(hardware.machine):Value{}},{"platform",has_hardware?value::text(std::string(hardware.sysname)+" "+hardware.release):Value{}},
+        {"hardware",Value{Object{{"machine",has_hardware?value::text(static_cast<const char *>(hardware.machine)):Value{}},{"platform",has_hardware?value::text(std::string(static_cast<const char *>(hardware.sysname))+" "+static_cast<const char *>(hardware.release)):Value{}},
             {"cpu_count",std::thread::hardware_concurrency()?value::integer(std::thread::hardware_concurrency()):Value{}}}}},
         {"runs",Value{Array{}}},{"passed",Value{false}}}};Array runs;
     for(std::int64_t repetition=0;repetition<repeats;++repetition){
-        auto result=climbing_repetition(mode,duration,physics,track,out,source,repetition,root);
+        auto const result=climbing_repetition(mode,duration,physics,track,out,source,repetition,root);
         runs.push_back(result);set(report,"runs",Value{runs});write_report(out/"report.json",report);
     }
     bool passed=!runs.empty();for(const auto& run:runs)passed=passed&&flag(run,"performance_passed");set(report,"passed",Value{passed});write_report(out/"report.json",report);return report;

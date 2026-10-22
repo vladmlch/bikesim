@@ -17,7 +17,7 @@ void write(const std::filesystem::path& path, const Value& value) {
 }
 Value read(const std::filesystem::path& path) {
     const auto bytes = io::read_numpy_bytes(path); std::string text; text.reserve(bytes.size());
-    for (std::byte byte : bytes) text.push_back(static_cast<char>(byte));
+    for (std::byte const byte : bytes) text.push_back(static_cast<char>(byte));
     return io::parse_json(text);
 }
 bool yes(const Value& value) { const auto* b = std::get_if<bool>(&value.data); return b != nullptr && *b; }
@@ -88,7 +88,7 @@ int measure_realtime_command(std::span<const std::string_view> arguments, std::o
         }
         auto report = annotate_report(build_report(warmups, runs), options, effective_dt);
         set(report, "provenance", provenance);
-        for (std::string_view key : {"git_sha", "working_tree_dirty", "machine"}) set(report, key, field(provenance, key));
+        for (std::string_view const key : {"git_sha", "working_tree_dirty", "machine"}) set(report, key, field(provenance, key));
         set(report, "source_sha256", field(provenance, "native_source_sha256"));
         if (!io::is_null(previous)) {
             Array checks; bool comparable = true;

@@ -165,13 +165,13 @@ void test_column_csv_and_jsonl_preserve_the_interval_row() {
     runtime::ResearchRecorder recorder(1, layout);
     std::vector<runtime::SamplePtr> samples;
     for (std::int64_t i = 0; i < 3; ++i) {
-        auto sample = make_sample(i, {
+        auto const sample = make_sample(i, {
             {"mass", runtime::WireObject{{"mass_kg", 100.},
                 {"com_m", runtime::WireArray{static_cast<double>(i), 0., 1.}},
                 {"kinetic_energy_j", 2.}, {"gravitational_energy_j", 10.}}},
             {"energy", runtime::WireObject{{"mechanical_energy_j", 12.},
                                            {"residual_j", .01}}},
-            {"component_work_j", runtime::WireObject{{"f", .5 * i}}},
+            {"component_work_j", runtime::WireObject{{"f", .5 * static_cast<double>(i)}}},
             {"scalar_array", 1.25}},
             {static_cast<double>(i), 0., .1}, {2., 0., 0.});
         samples.push_back(sample);
@@ -248,13 +248,14 @@ void test_runtime_publishes_owned_channels() {
         const auto result = runtime.advance(runtime.snapshot().step + steps,
                                             command, 0., 0., std::nullopt);
         bt::require(result.reason != "outcome", "the welded run stays rideable");
-        auto batch = runtime.prepare_samples();
+        auto const batch = runtime.prepare_samples();
         for (const auto &sample : batch.samples) published.push_back(sample);
         runtime.acknowledge_samples(batch);
     };
     collect(10);
     std::vector<std::string> snapshots;
-    for (const auto &sample : published)
+    snapshots.reserve(published.size());
+for (const auto &sample : published)
         snapshots.push_back(bike::io::canonical_json(bike::research::wire_value(
             runtime::Wire{sample->as_wire()})));
     collect(20);

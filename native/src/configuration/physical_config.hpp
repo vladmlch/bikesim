@@ -284,6 +284,13 @@ struct PhysicalDriveConfig {
     double freehub_c_nms_rad = .5;
     double bearing_c_nms_rad = .03;
     double brake_ceiling_nm = 200.;
+    // Held-brake stiction at standstill (pad bite) — physical_config.py's
+    // same-named block: a zero torque or stiffness disables it.
+    double brake_hold_torque_nm = 200.;
+    double brake_hold_stiffness_nm_rad = 20000.;
+    double brake_hold_damping_nms_rad = 10.;
+    double brake_hold_engage_radps = .5;
+    double brake_hold_release_radps = 1.;
     // Legacy regression topology: crank -[one-way]-> drive_shaft with motor.
     bool motor_clutch = false;
     // Motor inertia reflected to the crank coordinate, kg.m^2.
@@ -741,6 +748,11 @@ inline constexpr auto kPhysicalDriveConfigFields = std::to_array<FieldDecl>({
     REAL(PhysicalDriveConfig, freehub_c_nms_rad),
     REAL(PhysicalDriveConfig, bearing_c_nms_rad),
     REAL(PhysicalDriveConfig, brake_ceiling_nm),
+    REAL(PhysicalDriveConfig, brake_hold_torque_nm),
+    REAL(PhysicalDriveConfig, brake_hold_stiffness_nm_rad),
+    REAL(PhysicalDriveConfig, brake_hold_damping_nms_rad),
+    REAL(PhysicalDriveConfig, brake_hold_engage_radps),
+    REAL(PhysicalDriveConfig, brake_hold_release_radps),
     BOOL(PhysicalDriveConfig, motor_clutch),
     REAL(PhysicalDriveConfig, rotor_inertia_kgm2),
     {.name="assist", .type="<class 'bike_sim.physics.physical_config.AssistConfig'>",

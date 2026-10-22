@@ -19,7 +19,7 @@ struct TireCalibration {
 
 void validate_split(const Value& fit, const Value& holdout);
 [[nodiscard]] bool is_synthetic(const Value& payload);
-[[nodiscard]] std::string accepted_calibration_status(bool synthetic, bool holdout_passed,
+[[nodiscard]] std::string_view accepted_calibration_status(bool synthetic, bool holdout_passed,
                                                      bool converged, bool within_scope);
 [[nodiscard]] std::string dataset_hash(const Value& payload);
 [[nodiscard]] Value validate_dataset(const Value& payload, bool allow_synthetic = false);

@@ -3,6 +3,7 @@
 #include "drive_reference_support.hpp"
 #include "rider/force_requests.hpp"
 
+#include <algorithm>
 #include <array>
 #include <limits>
 #include <numeric>
@@ -19,7 +20,7 @@ constexpr std::array<double, 2> loaded{1e4, 1e4};
 double norm(const Force3& force) { return std::sqrt(force[0] * force[0] + force[1] * force[1] + force[2] * force[2]); }
 double dot(const Force3& a, const Force3& b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
 void finite(const Force3& value) {
-    for (double component : value) bt::require(std::isfinite(component), "finite pedal request component");
+    for (double const component : value) bt::require(std::isfinite(component), "finite pedal request component");
 }
 double net_torque(double phase, const rider::PedalingRequests& request) {
     double torque = 0.;
@@ -38,8 +39,8 @@ void test_waveform_mean_and_ripple() {
         values[i] = rider::pedal_torque_waveform(40., phase, .5);
     }
     near(std::accumulate(values.begin(), values.end(), 0.) / static_cast<double>(values.size()), 40., "cycle mean torque", 1e-6);
-    near(*std::max_element(values.begin(), values.end()), 60., "ripple peak");
-    near(*std::min_element(values.begin(), values.end()), 20., "ripple trough");
+    near(*std::ranges::max_element(values), 60., "ripple peak");
+    near(*std::ranges::min_element(values), 20., "ripple trough");
     bt::require(rider::pedal_torque_waveform(40., 0., 0.) == 40., "zero ripple is constant torque");
 }
 void test_waveform_rejects_invalid_ripple() {
@@ -53,7 +54,7 @@ void test_force_requests_honour_the_ripple_argument() {
                 "ripple changes force request magnitude");
 }
 void test_horizontal_power_stroke_requests_the_finite_crank_torque() {
-    for (double phase : {0., std::numbers::pi}) for (double mu : {0., .9, 5.}) {
+    for (double const phase : {0., std::numbers::pi}) for (double const mu : {0., .9, 5.}) {
         const auto forces = rider::pedaling_force_requests(phase, 40., .175, upright, loaded, mu, 0.);
         for (const auto& force : forces.force) finite(force);
         near(net_torque(phase, forces), 40., "horizontal power stroke net torque");
@@ -74,7 +75,7 @@ void test_return_foot_preload_is_a_nonnegative_force() {
     config->return_foot_preload_n = -1.; bt::invalid([&] { cfg::detail::post_init(*config); });
 }
 void test_recovery_preload_preserves_the_requested_net_crank_waveform() {
-    for (double phase : {0., .35, std::numbers::pi, std::numbers::pi + .35}) for (bool tilted : {false, true}) {
+    for (double const phase : {0., .35, std::numbers::pi, std::numbers::pi + .35}) for (bool const tilted : {false, true}) {
         const std::array<Force3, 2> normals = tilted
             ? std::array<Force3, 2>{{{.1, 0., std::sqrt(.99)}, {-.1, 0., std::sqrt(.99)}}}
             : upright;

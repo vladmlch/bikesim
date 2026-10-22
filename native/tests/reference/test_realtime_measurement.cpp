@@ -29,7 +29,7 @@ public:
         }};
     }
     const m::Settings& settings() const override { return settings_; }
-    m::Boundary boundary() const override { return {step_, static_cast<double>(step_) * .00125}; }
+    m::Boundary boundary() const override { return {.step=step_, .time_s=static_cast<double>(step_) * .00125}; }
     std::optional<std::string> reason() const override { return step_ == 4 ? std::optional<std::string>("duration_reached") : std::nullopt; }
     void start() override { state_->clock += .5; }
     void advance(std::int64_t target, double budget) override {
@@ -62,7 +62,7 @@ bool boolean(const Value& value, std::string_view key) { return io::as_bool(fiel
 
 // tests/reference/test_realtime_measurement.py::test_whole_loop_includes_boundary_and_final_flush_but_not_setup_export
 void test_whole_loop_includes_boundary_and_final_flush_but_not_setup_export() {
-    auto state = std::make_shared<State>(); const auto run = sample(state);
+    auto const state = std::make_shared<State>(); const auto run = sample(state);
     bt::require(number(run, "setup_wall_s") == 2. && number(run, "wall_clock_s") == 5.5 && number(run, "final_flush_wall_s") == 1. && number(run, "export_wall_s") == 3., "setup/export are excluded and boundary/flush are included");
     bt::require(io::canonical_json(field(run, "chunk_wall_s")) == "[2.0,2.0]", "the two measured advance calls retain their actual costs");
     bt::require(io::canonical_json(field(run, "chunk_completed_steps")) == "[2,2]", "chunk step counts describe the committed prefix");
@@ -116,7 +116,7 @@ void test_measurement_cli_keeps_profile_dt_until_explicit_override() {
     bt::require(resolved->setup.model.physics.has_value() && resolved->setup.model.physics->timestep_s == .00125, "actual profile projection retains the shipped 1.25 ms dt");
     const std::array<std::string_view, 4> override{"--out", "unused", "--dt", ".0005"};
     const auto explicit_options = m::parse_options(override);
-    bt::require(explicit_options.timestep_s == .0005 && m::resolve_measurement_ride(explicit_options)->setup.model.physics->timestep_s == .0005, "the explicit dt reaches actual profile resolution");
+    bt::require(explicit_options.timestep_s == .0005 && m::resolve_measurement_ride(explicit_options)->setup.model.physics->timestep_s == .0005, "the explicit dt reaches actual profile resolution"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
 // tests/reference/test_realtime_measurement.py::test_benchmark_mode_relaxes_only_the_monitor_and_marks_the_report
 void test_benchmark_mode_relaxes_only_the_monitor_and_marks_the_report() {
@@ -128,7 +128,7 @@ void test_benchmark_mode_relaxes_only_the_monitor_and_marks_the_report() {
     const auto benchmark_ride = m::resolve_measurement_ride(options);
     bt::require(strict_ride->setup.runtime.strict && !benchmark_ride->setup.runtime.strict, "runtime strictness follows benchmark mode");
     bt::require(strict_ride->arguments.values == benchmark_ride->arguments.values && strict_ride->arguments.supplied == benchmark_ride->arguments.supplied, "benchmark never changes projected ride arguments");
-    bt::require(io::canonical_json(bike::configuration::to_value(*strict_ride->setup.model.physics)) == io::canonical_json(bike::configuration::to_value(*benchmark_ride->setup.model.physics)), "benchmark never changes resolved physical inputs");
+    bt::require(io::canonical_json(bike::configuration::to_value(*strict_ride->setup.model.physics)) == io::canonical_json(bike::configuration::to_value(*benchmark_ride->setup.model.physics)), "benchmark never changes resolved physical inputs"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     bt::require(boolean(field(strict, "invocation"), "monitor_strict") && !boolean(field(benchmark, "invocation"), "monitor_strict"), "benchmark changes the monitor stop policy");
     bt::require(!find(strict, "limitations") && io::canonical_json(field(benchmark, "limitations")).find("never a valid-ride claim") != std::string::npos, "diagnostic benchmark reports cannot be mistaken for valid rides");
 }
@@ -139,6 +139,8 @@ void failure_keeps_prefix_and_closes_owner() {
     bt::require(!boolean(changed, "identity_unchanged") && !boolean(changed, "valid_prefix"), "changed source/artifact identity prevents a valid prefix claim");
 }
 } // namespace
+// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// cppcheck-suppress throwInEntryPoint
 int main() { return bt::run([] {
     test_whole_loop_includes_boundary_and_final_flush_but_not_setup_export();
     test_different_numerical_or_recording_settings_are_not_comparable();

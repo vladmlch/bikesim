@@ -709,9 +709,11 @@ int run_header_sweep(const fs::path &build) {
         entries_by_root;
     std::vector<fs::path> header_roots;
     fs::path compiler;
+    // entries stays in this scope: entries_by_root holds const CompileEntry*
+    // into it and is dereferenced after the setup lambda returns.
+    std::vector<CompileEntry> entries;
     const bool setup_ok = [&]() -> bool {
         Value context;
-        std::vector<CompileEntry> entries;
         std::vector<fs::path> excluded_headers;
         try {
             context = load_context(build_dir);

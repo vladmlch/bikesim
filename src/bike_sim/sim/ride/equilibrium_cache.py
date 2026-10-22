@@ -21,7 +21,7 @@ from bike_sim.terrain.trackfile import track_to_dict
 from bike_sim.validation.environment import source_fingerprint
 
 
-CACHE_VERSION = 4
+CACHE_VERSION = 5
 
 
 def _serializable(value):
@@ -114,6 +114,13 @@ def _state_arrays(runtime):
         state['state_rider_pending_release_loss'] = np.asarray(
             [rider.pending_release_loss_j], dtype=float
         )
+    control = getattr(runtime, 'rider_control', None)
+    if control is not None and getattr(control, 'spindle', False):
+        # The weld-press servo state is part of the equilibrium the pose was
+        # certified against: restoring the pose without it would release the
+        # pedal press the servo had bled off.
+        state['state_control_coast_hold_nm'] = np.asarray(
+            [control._coast_hold_nm], dtype=float)
     tire = runtime.tire
     if tire is not None and tire.config.backend == 'pneumatic':
         # The pneumatic carcass/brush state is not expressible in the xi/tangent
@@ -205,6 +212,18 @@ def restore_state(runtime, state):
             {side:grip_xi[index].copy() for index,side in enumerate(('left','right'))},
             float(pending[0]))
     elif any(key.startswith('state_rider_') for key in state):
+        return False
+    control = getattr(runtime, 'rider_control', None)
+    coast_hold = None
+    if control is not None and getattr(control, 'spindle', False):
+        try:
+            value = np.asarray(state.get('state_control_coast_hold_nm',()),dtype=float)
+        except (ValueError,TypeError):
+            return False
+        if value.shape != (1,) or not np.isfinite(value).all():
+            return False
+        coast_hold = float(value[0])
+    elif 'state_control_coast_hold_nm' in state:
         return False
     tire = runtime.tire
     tire_update=None
@@ -305,6 +324,8 @@ def restore_state(runtime, state):
     for constraint,boundary in drive_boundaries:
         constraint.boundary=boundary
         runtime.sim.model.tendon_range[constraint.tendon_id,1]=boundary
+    if coast_hold is not None:
+        control._coast_hold_nm = coast_hold
     return True
 
 

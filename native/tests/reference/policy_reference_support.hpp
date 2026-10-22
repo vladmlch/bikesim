@@ -78,10 +78,11 @@ inline void keys(bt::oracle::Node& node, const Value& value, const std::string& 
 inline void length(bt::oracle::Node& node, std::size_t count, const std::string& path) {
     json_bytes(node, Value{bike::io::Number{std::to_string(count)}}, path + "#length");
 }
+// NOLINTNEXTLINE(misc-no-recursion) recursive JSON value tree walk
 inline void tree(bt::oracle::Node& node, const Value& value, const std::string& path = "$") {
     if (std::holds_alternative<Value::Object>(value.data)) {
         keys(node, value, path);
-        for (const auto& key : sorted_keys(value)) tree(node, field(value, key), path + "." + key);
+        for (const auto& key : sorted_keys(value)) { std::string next(path); next += '.'; next += key; tree(node, field(value, key), next); }
     } else if (const auto* array = std::get_if<Value::Array>(&value.data)) {
         length(node, array->size(), path);
         for (std::size_t i = 0; i < array->size(); ++i) tree(node, (*array)[i], path + "[" + std::to_string(i) + "]");
@@ -117,6 +118,7 @@ inline Value shifting_result(const PolicySet& value) {
     set(result, "torque_factor", real(value.shifting.torque_factor()));
     return result;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) mirrors the Python oracle-node helper signature
 inline bt::oracle::Node node(std::string_view function, std::string_view parameter = {}) {
     auto name = "tests/reference/test_native_drive_policies.py::" + std::string(function);
     if (!parameter.empty()) name += "[" + std::string(parameter) + "]";

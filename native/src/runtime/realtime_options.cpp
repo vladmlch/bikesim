@@ -12,25 +12,25 @@
 namespace runtime::measurement {
 namespace {
 std::filesystem::path example(std::string_view relative) {
-    const auto local = std::filesystem::current_path() / relative;
+    auto local = std::filesystem::current_path() / relative;
     if (std::filesystem::is_regular_file(local)) return local;
-    const auto installed = bike::platform::install_prefix() / "share/bike_sim" / relative;
+    auto installed = bike::platform::install_prefix() / "share/bike_sim" / relative;
     if (std::filesystem::is_regular_file(installed)) return installed;
     const auto source = std::filesystem::path(build::source_root) / relative;
     return std::filesystem::is_regular_file(source) ? source : local;
 }
-int integer_option(std::string_view value, std::string_view name) {
+int integer_option(std::string_view value, std::string_view name) { // NOLINT(bugprone-easily-swappable-parameters) call sites keep the declared parameter order.
     int result = 0;
     const auto *end = std::to_address(value.end());
-    const auto parsed = std::from_chars(value.data(), end, result);
+    const auto parsed = std::from_chars(std::to_address(value.begin()), end, result);
     if (parsed.ec != std::errc{} || parsed.ptr != end)
         throw std::invalid_argument(std::string(name) + " requires an integer");
     return result;
 }
-double real_option(std::string_view value, std::string_view name) {
+double real_option(std::string_view value, std::string_view name) { // NOLINT(bugprone-easily-swappable-parameters) call sites keep the declared parameter order.
     double result = 0.;
     const auto *end = std::to_address(value.end());
-    const auto parsed = std::from_chars(value.data(), end, result);
+    const auto parsed = std::from_chars(std::to_address(value.begin()), end, result);
     if (parsed.ec != std::errc{} || parsed.ptr != end || !std::isfinite(result) || result <= 0.)
         throw std::invalid_argument(std::string(name) + " must be finite and positive");
     return result;
@@ -60,7 +60,7 @@ Options parse_options(std::span<const std::string_view> arguments) {
         else if (name == "--track") out.track = value;
         else if (name == "--out") out.output = value;
         else if (name == "--compare") out.compare = std::filesystem::path(value);
-        else if (name == "--seed") out.seed = bike::research::validate_seed(std::string(value));
+        else if (name == "--seed") out.seed = bike::research::validate_seed(value);
         else if (name == "--duration") out.duration_s = real_option(value, name);
         else if (name == "--dt") out.timestep_s = real_option(value, name);
         else if (name == "--runs") out.runs = integer_option(value, name);

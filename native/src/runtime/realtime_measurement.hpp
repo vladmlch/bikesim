@@ -32,7 +32,14 @@ struct Settings {
 // which work is inside each timing interval without running a simulation.
 class Driver {
 public:
+    Driver() = default;
     virtual ~Driver();
+    // Polymorphic measurement drivers are owned and moved through
+    // std::unique_ptr<Driver> factories; copying slices the interface.
+    Driver(const Driver&) = delete;
+    Driver& operator=(const Driver&) = delete;
+    Driver(Driver&&) = delete;
+    Driver& operator=(Driver&&) = delete;
     [[nodiscard]] virtual const Settings& settings() const = 0;
     [[nodiscard]] virtual Boundary boundary() const = 0;
     [[nodiscard]] virtual std::optional<std::string> reason() const = 0;

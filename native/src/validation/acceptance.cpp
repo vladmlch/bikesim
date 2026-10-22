@@ -21,7 +21,8 @@ int integer_order(std::string a,std::string b) {
     const bool na=a.starts_with('-'),nb=b.starts_with('-');
     if(na)a.erase(a.begin());if(nb)b.erase(b.begin());
     if(a=="0"&&b=="0")return 0;if(na!=nb)return na?-1:1;
-    int result=a.size()<b.size()?-1:a.size()>b.size()?1:a<b?-1:a>b?1:0;
+    const auto as=a.size(); const auto bs=b.size();
+    int const result=as<bs?-1:as>bs?1:a<b?-1:a>b?1:0;
     return na?-result:result;
 }
 int scalar_order(const Value& a,const Value& b) {
@@ -44,7 +45,7 @@ struct PairOrder {
 } // namespace
 
 // contact_acceptance.py:12-29. Invalid/missing metrics reject the criterion.
-Value check_bounds(const Value& metrics,const Value& bounds) {
+Value check_bounds(const Value& metrics,const Value& bounds) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     Object checks;
     for(const auto& [name,range]:io::as_object(bounds,"bounds")) {
         const auto& pair=io::as_array(range,name);
@@ -71,7 +72,7 @@ Value release_decision(const Value& evidence,bool require_completion) {
         {"calibration_status",value::text("unvalidated")},{"real_world_safety_claim",Value{false}}}};
 }
 // antiwheelie_reports.py:7-28.
-Value assess_run(const Value& summary,double required_duration_s,double minimum_progress_m) {
+Value assess_run(const Value& summary,double required_duration_s,double minimum_progress_m) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     positive(required_duration_s,"required duration");nonnegative(minimum_progress_m,"minimum progress");
     const double duration=nonnegative(real(summary,"duration_s",0.),"actual duration");
     const double progress=real(summary,"progress_m",0.);
@@ -125,7 +126,7 @@ std::pair<bool,std::vector<std::string>> release_gates(const Value& report) {
     for(const auto gate:required_numerical)if(!flag(report,gate))missing.emplace_back(gate);
     return {missing.empty(),std::move(missing)};
 }
-std::string release_level(const Value& report) {
+std::string_view release_level(const Value& report) {
     return release_gates(report).first?"numerically_verified_synthetic":"parameterized_unvalidated";
 }
 // reference_release.py:36-52. Select only exact measured candidates, without extrapolation.
@@ -220,11 +221,11 @@ Value classify_outcome(const Value& rows,std::optional<double> goal,bool crashed
 }
 Value scenario_definitions() {
     Array scenarios;
-    const auto add=[&](std::string name,double duration,std::optional<double> goal){
+    const auto add=[&](const std::string& name,double duration,std::optional<double> goal){
         scenarios.push_back(Value{Object{{"name",value::text(name)},{"duration_s",value::real(duration)},{"goal_x_m",goal?value::real(*goal):Value{}}}});
     };
     add("flat",5.,5.);
-    for(int percent:{5,12,20,28,35}) {
+    for(int const percent:{5,12,20,28,35}) {
         const double grade=static_cast<double>(percent)/100.;add("grade_"+std::to_string(percent)+"pct",8.,5.);
         auto& entry=std::get<Object>(scenarios.back().data);value::set(entry,"grade",value::real(grade));value::set(entry,"angle_rad",value::real(std::atan(grade)));
     }

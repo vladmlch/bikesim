@@ -15638,12 +15638,10 @@
       "native/tests/reference/test_native_pneumatic_brush.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_pneumatic_brush"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "5de0a7fc289dd40dc125af7fa98b6a906c6268f6c249b1f30cbdc9b920a48898",
     "snapshot_line_count": 893,
     "tracked": true,

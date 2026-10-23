@@ -2305,3 +2305,89 @@ retained and its WIP left in place as an orphan draft. The report's
 caveat stands: if stricter T20 gating (bitwise oracle fixtures + exact
 oracle message-text assertions) is ever wanted, it is a fresh port of
 the coherent unit the report names — not a merge of this WIP.
+
+## 2026-10-24 — Task 3.12a (lane/a): pneumatic tyre batch
+
+Batch files: `tests/reference/test_native_pneumatic_geometry.py` (14),
+`test_native_pneumatic_carcass.py` (20),
+`test_native_pneumatic_brush.py` (27) — 61 records, owner T52, labels
+`t52` `tyre`.
+
+### Dispositions
+
+- 53 `golden` (`bitwise-oracle`, `golden_platforms` = darwin-arm64 +
+  linux-aarch64): every record whose pytest emits `_golden.record`
+  comparisons.
+- 8 `port` (`contract`): records with no golden entries —
+  `test_pneumatic_intersect_edge_patches`,
+  `test_carcass_state_construction_validation`,
+  `test_relax_rejections`, `test_relax_rejection_order`,
+  `test_tread_stiffness_rejections`, `test_surface_mu_rejections`,
+  `test_lumped_brush_validation_order`,
+  `test_discretised_construction_rejection`.
+- 0 `drop`.
+
+### Golden qualification
+
+- Source files green before capture (capture env unset): 341 passed on
+  darwin-arm64 (0.89 s) and linux-aarch64 (0.70 s, `bike-dev-pfc-lane-a`
+  container, `/opt/bike-venv`).
+- Captures: 341 passed on darwin-arm64 (159.04 s) and linux-aarch64
+  (171.77 s). 318 node sidecars per platform (geometry 49, carcass 90,
+  brush 179; each `.json` pairs its `.bin`), ~11.9 MiB per platform —
+  under the 20 MiB budget; node keys match the collected node IDs.
+- Platform parity note: the NumPy wheel on darwin-arm64 lowers
+  `low + range * uniform` to a single FMA while linux-aarch64 rounds the
+  multiply and the add separately, so Python-synthesized uniforms can
+  differ by 1 ULP between platforms (e.g. carcass advect input element 2:
+  `0x4082d46435a0d5d5` darwin vs `0x4082d46435a0d5d6` linux). The C++
+  ports replay those recorded inputs through
+  `bt::oracle::Node::f64_input` instead of regenerating them, so each
+  platform's native test reproduces its own golden bitwise; no shared
+  arithmetic was re-lowered.
+
+### CTest
+
+- macOS `build/native-release`: all 3 nodes pass
+  (`reference.native_pneumatic_geometry` 0.07 s,
+  `reference.native_pneumatic_carcass` 0.14 s,
+  `reference.native_pneumatic_brush` 0.15 s).
+- Linux `/build/root-clang` (container, `clang++-18`): all 3 nodes pass.
+
+### New files
+
+- `native/tests/reference/pneumatic_reference_support.hpp` — shared
+  golden consumers and helpers (`node`, `consume_patches`,
+  `CarcassStep`, `eval_step`, `advance_step`, `run_carcass_sequence`);
+  pulls `numeric_sincos.hpp` for the `np_sin`/`np_cos` calls geometry
+  uses.
+- `native/tests/reference/test_native_pneumatic_geometry.cpp` (14
+  records), `test_native_pneumatic_carcass.cpp` (20),
+  `test_native_pneumatic_brush.cpp` (27); registrations in
+  `Phase3Ports.cmake` (labels `t52 tyre golden`; libraries `bike_app`,
+  `+bike_legacy` for carcass, `+bike_random` for brush).
+
+### Build notes
+
+- clang-18 `-Wmissing-field-initializers`: the `CarcassStep` aggregate
+  in `pneumatic_reference_support.hpp` initializes `.hits = {}`;
+  boolean golden bytes stage through `std::byte{unsigned char}` to
+  satisfy narrowing; `(void)` discards the `nodiscard`
+  `material_deflection_rate_mps` in the rejection probe; the mixed
+  `optional<double>` sweep spells out `std::optional<double>` elements
+  (init-list deduction otherwise conflicts).
+- Baseline red, untouched (pre-existing on the integration tip): the
+  Linux `root-clang` full build still stops in
+  `native/src/validation/{rider,scenarios}.cpp`
+  (`-Wmissing-field-initializers`), `native/src/validation/drivetrain.cpp`
+  (`-Wframe-larger-than`, 10768 > 8192) and
+  `test_motor_freewheel_topology.cpp`; none are touched by this batch,
+  and the three 3.12a targets compile cleanly under the same flags.
+
+### Gate scope notes
+
+- `tools/run_tests.sh native` (L3) is out of lane scope per this
+  batch's hard constraints; the required gates — per-file pytest
+  greens, two-platform captures, and the new CTest nodes green on both
+  platforms — are listed above. L3 runs in the integration worktree at
+  merge-back per D17.

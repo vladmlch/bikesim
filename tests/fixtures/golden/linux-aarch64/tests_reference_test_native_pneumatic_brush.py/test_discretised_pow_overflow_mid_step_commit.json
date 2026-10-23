@@ -1,0 +1,28 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "bristles untouched",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_pow_overflow_mid_step_commit",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "kappa committed before the pow raise",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_pow_overflow_mid_step_commit",
+  "offset": 32,
+  "rtol": null,
+  "shape": []
+ }
+]

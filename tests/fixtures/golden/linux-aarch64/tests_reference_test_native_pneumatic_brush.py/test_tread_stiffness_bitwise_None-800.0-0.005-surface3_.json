@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "wet 800.0 0.005 None",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_tread_stiffness_bitwise[None-800.0-0.005-surface3]",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

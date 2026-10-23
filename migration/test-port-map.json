@@ -11181,380 +11181,545 @@
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_relax_sweep_bitwise",
-      "line": 131,
-      "end_line": 151,
+      "line": 134,
+      "end_line": 154,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_relax_sweep_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_relax_sweep_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_relax_extreme_and_transient_bitwise",
-      "line": 154,
-      "end_line": 190,
+      "line": 157,
+      "end_line": 193,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_relax_extreme_and_transient_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_relax_extreme_and_transient_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_relax_rejections",
-      "line": 201,
-      "end_line": 211,
+      "line": 204,
+      "end_line": 214,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_relax_rejections",
+      "native_test_id": "reference.native_pneumatic_brush::test_relax_rejections",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: ported to native/tests/reference/test_native_pneumatic_brush.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_pneumatic_brush)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_relax_rejection_order",
-      "line": 214,
-      "end_line": 224,
+      "line": 217,
+      "end_line": 227,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_relax_rejection_order",
+      "native_test_id": "reference.native_pneumatic_brush::test_relax_rejection_order",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: ported to native/tests/reference/test_native_pneumatic_brush.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_pneumatic_brush)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_sigma_x_bitwise",
-      "line": 237,
-      "end_line": 240,
+      "line": 240,
+      "end_line": 243,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_sigma_x_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_sigma_x_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_tread_stiffness_bitwise",
-      "line": 248,
-      "end_line": 253,
+      "line": 251,
+      "end_line": 256,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_tread_stiffness_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_tread_stiffness_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_tread_stiffness_rejections",
-      "line": 257,
-      "end_line": 263,
+      "line": 260,
+      "end_line": 266,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_tread_stiffness_rejections",
+      "native_test_id": "reference.native_pneumatic_brush::test_tread_stiffness_rejections",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: ported to native/tests/reference/test_native_pneumatic_brush.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_pneumatic_brush)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_surface_mu_bitwise",
-      "line": 267,
-      "end_line": 277,
+      "line": 270,
+      "end_line": 280,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_surface_mu_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_surface_mu_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_surface_mu_rejections",
-      "line": 280,
-      "end_line": 289,
+      "line": 283,
+      "end_line": 292,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_surface_mu_rejections",
+      "native_test_id": "reference.native_pneumatic_brush::test_surface_mu_rejections",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: ported to native/tests/reference/test_native_pneumatic_brush.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_pneumatic_brush)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_lumped_brush_sweep_bitwise",
-      "line": 297,
-      "end_line": 321,
+      "line": 300,
+      "end_line": 324,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_lumped_brush_sweep_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_lumped_brush_sweep_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_lumped_brush_stribeck_speeds_bitwise",
-      "line": 324,
-      "end_line": 335,
+      "line": 327,
+      "end_line": 338,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_lumped_brush_stribeck_speeds_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_lumped_brush_stribeck_speeds_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_lumped_brush_early_returns_and_edges",
-      "line": 338,
-      "end_line": 373,
+      "line": 341,
+      "end_line": 376,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_lumped_brush_early_returns_and_edges",
+      "native_test_id": "reference.native_pneumatic_brush::test_lumped_brush_early_returns_and_edges",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_lumped_brush_validation_order",
-      "line": 376,
-      "end_line": 420,
+      "line": 379,
+      "end_line": 423,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_lumped_brush_validation_order",
+      "native_test_id": "reference.native_pneumatic_brush::test_lumped_brush_validation_order",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: ported to native/tests/reference/test_native_pneumatic_brush.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_pneumatic_brush)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_lumped_brush_inf_kappa_zero_load",
-      "line": 423,
-      "end_line": 437,
+      "line": 426,
+      "end_line": 440,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_lumped_brush_inf_kappa_zero_load",
+      "native_test_id": "reference.native_pneumatic_brush::test_lumped_brush_inf_kappa_zero_load",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_step_sweep_bitwise",
-      "line": 446,
-      "end_line": 473,
+      "line": 449,
+      "end_line": 480,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_step_sweep_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_step_sweep_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_multi_step_evolution_bitwise",
-      "line": 476,
-      "end_line": 506,
+      "line": 483,
+      "end_line": 513,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_multi_step_evolution_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_multi_step_evolution_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_advection_extremes_bitwise",
-      "line": 509,
-      "end_line": 542,
+      "line": 516,
+      "end_line": 551,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_advection_extremes_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_advection_extremes_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_clip_boundary_bitwise",
-      "line": 545,
-      "end_line": 581,
+      "line": 554,
+      "end_line": 590,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_clip_boundary_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_clip_boundary_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_clip_sign_and_zero_edges",
-      "line": 584,
-      "end_line": 610,
+      "line": 593,
+      "end_line": 619,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_clip_sign_and_zero_edges",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_clip_sign_and_zero_edges",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_zero_load_reset_bitwise",
-      "line": 613,
-      "end_line": 644,
+      "line": 622,
+      "end_line": 653,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_zero_load_reset_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_zero_load_reset_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_state_nan_propagation",
-      "line": 647,
-      "end_line": 674,
+      "line": 656,
+      "end_line": 683,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_state_nan_propagation",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_state_nan_propagation",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_validation_order_and_atomicity",
-      "line": 681,
-      "end_line": 762,
+      "line": 690,
+      "end_line": 771,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_validation_order_and_atomicity",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_validation_order_and_atomicity",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_pow_overflow_mid_step_commit",
-      "line": 765,
-      "end_line": 794,
+      "line": 774,
+      "end_line": 803,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_pow_overflow_mid_step_commit",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_pow_overflow_mid_step_commit",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_construction_rejection",
-      "line": 797,
-      "end_line": 806,
+      "line": 806,
+      "end_line": 815,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_construction_rejection",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_construction_rejection",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: ported to native/tests/reference/test_native_pneumatic_brush.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_pneumatic_brush)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_partial_inactive_patch_bitwise",
-      "line": 809,
-      "end_line": 842,
+      "line": 818,
+      "end_line": 851,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_partial_inactive_patch_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_partial_inactive_patch_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_single_element_bitwise",
-      "line": 845,
-      "end_line": 865,
+      "line": 854,
+      "end_line": 874,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_single_element_bitwise",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_single_element_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_brush.py",
       "source_symbol": "test_discretised_zero_kappa_inf_products",
-      "line": 868,
-      "end_line": 893,
+      "line": 877,
+      "end_line": 902,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_brush::test_discretised_zero_kappa_inf_products",
+      "native_test_id": "reference.native_pneumatic_brush::test_discretised_zero_kappa_inf_products",
       "native_source": "native/tests/reference/test_native_pneumatic_brush.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_brush green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",

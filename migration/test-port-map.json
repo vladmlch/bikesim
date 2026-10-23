@@ -11839,198 +11839,292 @@
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_ring_bitwise",
-      "line": 162,
-      "end_line": 168,
+      "line": 163,
+      "end_line": 169,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_ring_bitwise",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_ring_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_ring_narrow_angle",
-      "line": 171,
-      "end_line": 176,
+      "line": 172,
+      "end_line": 177,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_ring_narrow_angle",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_ring_narrow_angle",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_intersect_bitwise",
-      "line": 188,
-      "end_line": 198,
+      "line": 189,
+      "end_line": 201,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_intersect_bitwise",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_intersect_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_intersect_coarse_and_fine_dx",
-      "line": 201,
-      "end_line": 215,
+      "line": 204,
+      "end_line": 221,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_intersect_coarse_and_fine_dx",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_intersect_coarse_and_fine_dx",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_intersect_hub_sweep",
-      "line": 218,
-      "end_line": 236,
+      "line": 224,
+      "end_line": 245,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_intersect_hub_sweep",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_intersect_hub_sweep",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_intersect_edge_patches",
-      "line": 239,
-      "end_line": 251,
+      "line": 248,
+      "end_line": 260,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_intersect_edge_patches",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_intersect_edge_patches",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: ported to native/tests/reference/test_native_pneumatic_geometry.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_pneumatic_geometry)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_patches_empty",
-      "line": 267,
-      "end_line": 270,
+      "line": 278,
+      "end_line": 281,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_patches_empty",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_patches_empty",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_patches_single_run",
-      "line": 273,
-      "end_line": 276,
+      "line": 284,
+      "end_line": 287,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_patches_single_run",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_patches_single_run",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_patches_multi_run",
-      "line": 279,
-      "end_line": 285,
+      "line": 290,
+      "end_line": 296,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_patches_multi_run",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_patches_multi_run",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_patches_boundaries",
-      "line": 288,
-      "end_line": 296,
+      "line": 299,
+      "end_line": 307,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_patches_boundaries",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_patches_boundaries",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_patches_tiny_positive",
-      "line": 299,
-      "end_line": 305,
+      "line": 310,
+      "end_line": 316,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_patches_tiny_positive",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_patches_tiny_positive",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_patches_nonfinite",
-      "line": 308,
-      "end_line": 311,
+      "line": 319,
+      "end_line": 322,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_patches_nonfinite",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_patches_nonfinite",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_pneumatic_patches_from_intersect",
-      "line": 314,
-      "end_line": 321,
+      "line": 325,
+      "end_line": 332,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_pneumatic_patches_from_intersect",
+      "native_test_id": "reference.native_pneumatic_geometry::test_pneumatic_patches_from_intersect",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",
       "source_symbol": "test_road_profile_helpers_match_oracle_contract",
-      "line": 329,
-      "end_line": 338,
+      "line": 340,
+      "end_line": 352,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_geometry::test_road_profile_helpers_match_oracle_contract",
+      "native_test_id": "reference.native_pneumatic_geometry::test_road_profile_helpers_match_oracle_contract",
       "native_source": "native/tests/reference/test_native_pneumatic_geometry.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_geometry green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_model.py",

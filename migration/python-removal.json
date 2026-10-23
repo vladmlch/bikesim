@@ -15680,12 +15680,10 @@
       "native/tests/reference/test_native_pneumatic_geometry.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_pneumatic_geometry"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "f46bedec4d1dedd0f2005c34391341218b9779d8907c59fd17e62a530c8427c3",
     "snapshot_line_count": 338,
     "tracked": true,

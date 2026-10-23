@@ -1,0 +1,100 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "x_m",
+  "nbytes": 4000,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_road_profile_helpers_match_oracle_contract",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   500
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "height_at(-5.0)",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_road_profile_helpers_match_oracle_contract",
+  "offset": 4000,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "height_at(0.0)",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_road_profile_helpers_match_oracle_contract",
+  "offset": 4008,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "height_at(1.499)",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_road_profile_helpers_match_oracle_contract",
+  "offset": 4016,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "height_at(1.5)",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_road_profile_helpers_match_oracle_contract",
+  "offset": 4024,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "height_at(3.75)",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_road_profile_helpers_match_oracle_contract",
+  "offset": 4032,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "height_at(4.995)",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_road_profile_helpers_match_oracle_contract",
+  "offset": 4040,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "height_at(20.0)",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_road_profile_helpers_match_oracle_contract",
+  "offset": 4048,
+  "rtol": null,
+  "shape": []
+ }
+]

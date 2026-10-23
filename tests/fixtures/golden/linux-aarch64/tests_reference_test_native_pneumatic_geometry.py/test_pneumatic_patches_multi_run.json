@@ -1,0 +1,17 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "patches",
+  "nbytes": 112,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_patches_multi_run",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   14,
+   2
+  ]
+ }
+]

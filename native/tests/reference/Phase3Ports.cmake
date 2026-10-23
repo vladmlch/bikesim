@@ -33,6 +33,11 @@ bike_add_reference_test(pneumatic_tire_forces ENGINE
   SOURCES test_pneumatic_tire_forces.cpp LIBRARIES bike_app bike_legacy LABELS t52 tyre)
 bike_add_reference_test(pneumatic_tire_oracle ENGINE
   SOURCES test_pneumatic_tire_oracle.cpp LIBRARIES bike_app bike_legacy LABELS t52 tyre golden)
+# 3.12a pneumatic kernel oracle ports (T52 batch) — replay the frozen
+# two-platform goldens for geometry, carcass and brush.
+bike_add_reference_test(native_pneumatic_geometry ENGINE
+  SOURCES test_native_pneumatic_geometry.cpp LIBRARIES bike_app
+  LABELS t52 tyre golden)
 bike_add_reference_test(native_clock_contracts ENGINE
   SOURCES test_native_clock_contracts.cpp LIBRARIES bike_app bike_random LABELS t52 runtime golden)
 foreach(_drive_port IN ITEMS motor_profile cadence_shifter pedal_waveform pedaling_policy)

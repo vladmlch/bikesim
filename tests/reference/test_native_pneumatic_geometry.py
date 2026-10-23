@@ -37,6 +37,7 @@ from bike_sim.sim.ride.tyre import geometry
 from native_loader import load_native
 bike_native = load_native()
 from _bits import assert_bitwise_equal
+import _golden
 
 RAD = np.pi / 180.0
 HALF_DEG = 75.0
@@ -194,7 +195,9 @@ def test_pneumatic_intersect_bitwise(road, cx, cz, radius, expected, n_rays):
         _profile_dict(road), cx, cz, radius, n_rays, HALF_DEG)
     for name in ('r_m', 'delta_m', 'road_x_m', 'road_z_m'):
         assert_bitwise_equal(np.asarray(got[name]), getattr(want, name))
+    _golden.record(np.asarray(want.coverage_event), 'coverage_event')
     assert got['coverage_event'] == bool(want.coverage_event)
+    _golden.record(np.asarray(want.airborne), 'airborne')
     assert got['airborne'] == bool(want.airborne)
 
 
@@ -211,7 +214,10 @@ def test_pneumatic_intersect_coarse_and_fine_dx():
                 _profile_dict(road), 5.0, 0.28, RADIUS, n, HALF_DEG)
             for name in ('r_m', 'delta_m', 'road_x_m', 'road_z_m'):
                 assert_bitwise_equal(np.asarray(got[name]), getattr(want, name))
+            _golden.record(np.asarray(want.coverage_event),
+                           'coverage_event')
             assert got['coverage_event'] == bool(want.coverage_event)
+            _golden.record(np.asarray(want.airborne), 'airborne')
             assert got['airborne'] == bool(want.airborne)
 
 
@@ -232,7 +238,10 @@ def test_pneumatic_intersect_hub_sweep():
                 for name in ('r_m', 'delta_m', 'road_x_m', 'road_z_m'):
                     assert_bitwise_equal(np.asarray(got[name]),
                                       getattr(want, name))
+                _golden.record(np.asarray(want.coverage_event),
+                               'coverage_event')
                 assert got['coverage_event'] == bool(want.coverage_event)
+                _golden.record(np.asarray(want.airborne), 'airborne')
                 assert got['airborne'] == bool(want.airborne)
 
 
@@ -261,6 +270,8 @@ def _assert_patches(delta):
         np.asarray(delta, float)))
     assert got.dtype == np.int32
     assert got.shape == (len(want), 2)
+    _golden.record(np.asarray(want, dtype=np.int32).reshape(-1, 2),
+                   'patches')
     assert got.tolist() == [[int(s), int(e)] for s, e in want]
 
 
@@ -332,7 +343,10 @@ def test_road_profile_helpers_match_oracle_contract():
     over the FULL profile (end-clamped), not over a window."""
     road = _road(1.5, 0.007, np.sin(np.arange(500) * 0.013))
     full_x = road.x0_m + road.dx_m * np.arange(road.z_m.size)
+    _golden.record(np.asarray(full_x), 'x_m')
     assert road.x_m.tobytes() == full_x.tobytes()
     for q in (-5.0, 0.0, 1.499, 1.5, 3.75, 4.995, 20.0):
+        _golden.record(np.float64(np.interp(q, full_x, road.z_m)),
+                       f'height_at({q!r})')
         assert np.float64(road.height_at(q)).tobytes() == np.float64(
             np.interp(q, full_x, road.z_m)).tobytes()

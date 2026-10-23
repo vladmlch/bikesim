@@ -2280,3 +2280,28 @@ threshold change performed here.
 shared golden-input support + lint/frame-budget repairs + ledger rows,
 unioned with HEAD's post-`a4d4cfd` state (3.22b records, rider-weld/
 planar-arm physics, recaptured fixtures).
+
+## 2026-10-23 — par-t20 worktree WIP triage (D19 retention)
+
+The uncommitted WIP in sibling worktree `.worktrees/par-t20` (branch
+`task/t20`, HEAD `186856e`, ancestor of integration HEAD) was triaged
+read-only against this worktree; no files were modified in either
+tree. Full report:
+`.superpowers/sdd/2026-10-20-cpp-linux-completion/task-A2-report.md`.
+
+Verdict: every dirty item is **superseded by HEAD or diagnostic** —
+par-t20's variant is an earlier alternative draft of the T20 terrain
+boundary (virtual-hierarchy `Obstacle`, `int64_t` seeds, monolithic
+`types.hpp`); HEAD's 18-file `std::variant` design landed 2026-10-17
+(`9c940c9`) and is a strict semantic superset. The par-t20 files occupy
+the same paths and cannot compile against HEAD's API. Its 54
+`tests/fixtures/migration/terrain/` captures and the
+`_t20_capture.py`/`_t20_manifest.py` one-shot tools are diagnostic —
+their only consumer was the superseded test. **INTEGRATION NEEDED:
+none.**
+
+Per D19 (no worktree deletion/pruning) `.worktrees/par-t20` is
+retained and its WIP left in place as an orphan draft. The report's
+caveat stands: if stricter T20 gating (bitwise oracle fixtures + exact
+oracle message-text assertions) is ever wanted, it is a fresh port of
+the coherent unit the report names — not a merge of this WIP.

@@ -1,6 +1,7 @@
 // T18: source-equivalent native/config.py and native/setup.py projection.
 #include "project_config.hpp"
 #include "capabilities.hpp"
+#include "value_readers.hpp"
 #include "../diag.hpp"
 
 #include <algorithm>
@@ -20,6 +21,8 @@
 #include "../configuration/suspension_spec.hpp"
 #include "../engine_call.hpp"
 #include "../model/mapping.hpp"
+#include "../io/json.hpp"
+#include "../spatial/config.hpp"
 #include "../rider/state_codec.hpp"
 #include "../terrain/profile.hpp"
 #include "../writer_config.hpp"
@@ -41,6 +44,18 @@ cfg::SimulationPhysicsConfig physics(const mdl::BuildRequest& request) {
 cfg::RiderSpecs rider(const mdl::BuildRequest& request) {
     return request.rider.value_or(mdl::rider_from_args(
         request.include_rider ? "lumped" : "none"));
+}
+
+void require_connected_spatial(const cfg::SimulationPhysicsConfig& config) {
+    if (!config.spatial || config.spatial->mode == bike::spatial::Mode::planar) return;
+    // W17 replaces this authoring-only gate together with topology-aware live
+    // projection. Merely opening a capability row must never route 3D through
+    // the planar body/joint/profile projection below.
+    const auto report = bike::spatial::check_spatial_capability(*config.spatial, config);
+    if (!report.implemented)
+        throw std::invalid_argument("config.spatial: " +
+            (report.rejections.empty() ? std::string("spatial runtime not connected")
+                                      : report.rejections.front()));
 }
 
 std::vector<std::byte> immutable_model_image(const mjModel& model) {
@@ -379,12 +394,112 @@ bio::Value project_drive_config(const cfg::SimulationPhysicsConfig& source) {
     return field(projected, "drive");
 }
 
+bio::Value project_spatial_runtime_envelope(const cfg::SimulationPhysicsConfig& config,
+                                           const bio::Value& resolved_fields) {
+    cfg::validate(config);
+    if (!config.spatial || config.spatial->mode != bike::spatial::Mode::spatial3d)
+        throw std::invalid_argument("config.spatial: runtime2 requires spatial='3d'");
+    bike::spatial::validate_spatial_config(*config.spatial, config);
+    // This also rejects duplicate keys in caller-constructed owned Values.
+    (void)bio::canonical_json(resolved_fields);
+    const vread::Dict root{.value = &vread::mapping({&resolved_fields}, "config"), .path = "config"};
+    vread::exact(root, vread::keys("timestep_s", "control_period_s", "control_period_steps",
+        "physics_mode", "drive_mode", "strict", "measurement_decimation", "record_retention",
+        "writer_config", "rider_controller", "rider_intent", "monitors", "geometry"),
+        vread::keys("async_telemetry"));
+    const auto positive = [](const vread::Dict& d, const char* name) {
+        const double value = vread::finite_real(vread::field(d, name), d.child(name));
+        if (!(value > 0.)) vread::invalid(d.child(name), "expected positive value");
+        return value;
+    };
+    const auto nonnegative = [](const vread::Dict& d, const char* name) {
+        const double value = vread::finite_real(vread::field(d, name), d.child(name));
+        if (value < 0.) vread::invalid(d.child(name), "expected nonnegative value");
+    };
+    const auto timestep = positive(root, "timestep_s");
+    const auto control_period = positive(root, "control_period_s");
+    const auto steps = vread::integer32(vread::field(root, "control_period_steps"), root.child("control_period_steps"));
+    if (steps <= 0) vread::invalid(root.child("control_period_steps"), "expected positive integer");
+    if (timestep != config.timestep_s || control_period != config.control_period_s)
+        vread::invalid(root.child("timestep_s"), "resolved periods differ from source configuration");
+    if (std::abs(timestep * steps - control_period) > 1e-9 * control_period)
+        vread::invalid(root.child("control_period_s"), "control_period_steps * timestep_s mismatch");
+    if (vread::string(vread::field(root, "physics_mode"), root.child("physics_mode")) != "physical")
+        vread::invalid(root.child("physics_mode"), "runtime2 requires physical mode");
+    const auto& drive_mode = vread::string(vread::field(root, "drive_mode"), root.child("drive_mode"));
+    if (!config.drive_mode || drive_mode != *config.drive_mode)
+        vread::invalid(root.child("drive_mode"), "differs from source configuration");
+    (void)vread::boolean(vread::field(root, "strict"), root.child("strict"));
+    if (root.contains("async_telemetry"))
+        (void)vread::boolean(vread::field(root, "async_telemetry"), root.child("async_telemetry"));
+    if (vread::integer32(vread::field(root, "measurement_decimation"), root.child("measurement_decimation")) <= 0)
+        vread::invalid(root.child("measurement_decimation"), "expected positive integer");
+    const auto& retention = vread::string(vread::field(root, "record_retention"), root.child("record_retention"));
+    if (retention != "off" && retention != "full" && retention != "legacy")
+        vread::invalid(root.child("record_retention"), "expected 'off', 'full' or 'legacy'");
+
+    const auto& writer = field(resolved_fields, "writer_config");
+    nativecfg::validate_spatial_writer_envelope(writer);
+    const auto writer_dict = vread::section(root, "writer_config");
+    const auto& writer_spatial = field(writer, "spatial");
+    if (bio::as_string(field(writer_spatial, "root_kind"), "config.writer_config.spatial.root_kind") !=
+        bike::spatial::to_string(config.spatial->root))
+        vread::invalid("config.writer_config.spatial.root_kind", "differs from config.spatial.root");
+    // The selected 3D path needs its own tyre owner. Its coefficient object is
+    // staged data only until W25 supplies a complete typed decoder/constructor.
+    (void)vread::section(writer_dict, "tire");
+    const auto writer_drive = vread::section(writer_dict, "drive");
+    if (vread::string(vread::field(writer_drive, "drive_mode"), writer_drive.child("drive_mode")) != drive_mode)
+        vread::invalid(root.child("drive_mode"), "differs from writer_config.drive.drive_mode");
+    (void)vread::section(root, "rider_controller");
+    (void)vread::section(root, "rider_intent");
+    const auto monitors = vread::section(root, "monitors");
+    vread::exact(monitors, vread::keys("balance_floor_mps", "balance_dwell_s", "balance_grace_s", "grounded_hold_s"));
+    (void)positive(monitors, "balance_floor_mps");
+    (void)positive(monitors, "balance_dwell_s");
+    nonnegative(monitors, "balance_grace_s");
+    nonnegative(monitors, "grounded_hold_s");
+    // C7 preserves these outer field names, not planar binding semantics.
+    // This cold envelope checks names/index shapes only. W17 must decode the
+    // spatial pose/rider schemas and rebind names against the supplied model;
+    // these integers never establish portable topology identity or prove that
+    // a named joint is a one-DoF hinge on the expected spatial wheel body.
+    const auto geometry = vread::section(root, "geometry");
+    vread::exact(geometry, vread::keys("crank_length_m", "brake_dofs", "wheel_bodies", "com_marker_site", "pose"));
+    (void)positive(geometry, "crank_length_m");
+    const auto brake = vread::section(geometry, "brake_dofs");
+    vread::exact(brake, vread::keys("front", "rear"));
+    for (const auto name : {"front", "rear"}) {
+        const auto wheel = vread::section(brake, name);
+        vread::exact(wheel, vread::keys("joint", "dof_index"));
+        if (vread::string(vread::field(wheel, "joint"), wheel.child("joint")).empty())
+            vread::invalid(wheel.child("joint"), "must not be empty");
+        if (vread::integer32(vread::field(wheel, "dof_index"), wheel.child("dof_index")) < 0)
+            vread::invalid(wheel.child("dof_index"), "expected nonnegative index");
+    }
+    const auto bodies = vread::section(geometry, "wheel_bodies");
+    vread::exact(bodies, vread::keys("front", "rear"));
+    for (const auto name : {"front", "rear"})
+        if (vread::string(vread::field(bodies, name), bodies.child(name)).empty())
+            vread::invalid(bodies.child(name), "must not be empty");
+    const auto marker = vread::field(geometry, "com_marker_site");
+    if (!vread::is_none(marker)) (void)vread::string(marker, geometry.child("com_marker_site"));
+    const auto pose = vread::field(geometry, "pose");
+    if (!vread::is_none(pose)) (void)vread::mapping(pose, geometry.child("pose"));
+
+    Value out = resolved_fields;
+    set(out, "runtime_schema", integer(bike::spatial::kSpatialRuntimeSchema));
+    set(out, "spatial", bike::spatial::spatial_config_to_wire(*config.spatial));
+    return out;
+}
+
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel& model,
                                 const trn::TrackSpec& track, const ProjectionOptions& options) {
     const auto config_ptr = std::make_unique<cfg::SimulationPhysicsConfig>(physics(request));
     const auto& config = *config_ptr;
+    require_connected_spatial(config);
     track.validate();
     const auto document = cfg::detail::plain_document(cfg::to_value(config));
     auto res = field(document, "resistance");
@@ -447,6 +562,7 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
 RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& model,
                               const trn::TrackSpec& track, const ProjectionOptions& options) {
     const auto config = physics(request);
+    require_connected_spatial(config);
     const auto resolved_rider = rider(request);
     validate_native_supported(config, resolved_rider);
     if (model.opt.timestep != config.timestep_s)

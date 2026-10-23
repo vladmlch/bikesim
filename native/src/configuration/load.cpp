@@ -180,6 +180,81 @@ Value::Object merge_objects(const Value::Object& base,
     return result;
 }
 
+// Public spatial input has equivalent tyre spellings, while to_value(base)
+// always emits the preferred root tires.pneumatic_3d form. Remove only the
+// inherited semantic fields explicitly overridden through an alias. The
+// override document remains intact so contradictory declarations in that
+// same document still reach the strict spatial parser together.
+void prepare_spatial_overrides(Value& base, const Value& overrides) {
+    auto* base_object = std::get_if<Value::Object>(&base.data);
+    const auto* override_object = std::get_if<Value::Object>(&overrides.data);
+    if (base_object == nullptr || override_object == nullptr) return;
+
+    const auto erase_member = [](Value::Object& object, std::string_view key) {
+        object.erase(std::remove_if(object.begin(), object.end(),
+            [&](const auto& member) { return member.first == key; }), object.end());
+    };
+    const auto mutable_object = [](Value::Object& object, std::string_view key) {
+        for (auto& [name, value] : object)
+            if (name == key) return std::get_if<Value::Object>(&value.data);
+        return static_cast<Value::Object*>(nullptr);
+    };
+    const auto nested_object = [](const Value::Object* object, std::string_view key) {
+        const Value* value = object == nullptr ? nullptr : io::find_member(*object, key);
+        return value == nullptr ? nullptr : std::get_if<Value::Object>(&value->data);
+    };
+    const auto explicit_field = [](const Value::Object* object, std::string_view key) {
+        const Value* value = object == nullptr ? nullptr : io::find_member(*object, key);
+        return value == nullptr || io::is_null(*value) ? nullptr : value;
+    };
+
+    const Value* mode = io::find_member(*override_object, "spatial");
+    const auto* mode_name = mode == nullptr ? nullptr : std::get_if<std::string>(&mode->data);
+    if (mode_name != nullptr && *mode_name == "planar") {
+        // Explicit planar+spatial data is invalid even when the base was 3D.
+        // Reject its presence before merging, including explicit null sections.
+        // Legacy tires/backend nulls retain merge's absent-override semantics;
+        // their types and backend choice validate on the final merged document.
+        if (io::find_member(*override_object, "spatial_3d") != nullptr)
+            construct_error("spatial_3d: requires spatial='3d'");
+        if (const auto* tires = nested_object(override_object, "tires"))
+            if (io::find_member(*tires, "pneumatic_3d") != nullptr)
+                construct_error("tires.pneumatic_3d: requires spatial='3d'");
+        erase_member(*base_object, "spatial_3d");
+        if (auto* tires = mutable_object(*base_object, "tires"))
+            erase_member(*tires, "pneumatic_3d");
+        // The backend is intentionally retained: a 3D -> planar transition
+        // must explicitly choose a valid legacy backend in the override.
+        return;
+    }
+
+    auto* base_tires = mutable_object(*base_object, "tires");
+    auto* inherited = base_tires == nullptr
+        ? nullptr : mutable_object(*base_tires, "pneumatic_3d");
+    if (inherited == nullptr) return;
+
+    const auto shadow_lateral = [&](const Value* value) {
+        if (value == nullptr) return;
+        erase_member(*inherited, "lateral_coefficients");
+        // The object spelling owns both id and sha256; a string owns the id
+        // only, so an unmodified inherited digest keeps normal merge semantics.
+        if (const auto* object = std::get_if<Value::Object>(&value->data))
+            if (explicit_field(object, "sha256") != nullptr)
+                erase_member(*inherited, "lateral_coefficients_sha256");
+    };
+    const auto shadow_tyre = [&](const Value::Object* object) {
+        if (explicit_field(object, "tier") != nullptr)
+            erase_member(*inherited, "tier");
+        shadow_lateral(explicit_field(object, "lateral_coefficients"));
+        if (explicit_field(object, "lateral_coefficients_sha256") != nullptr)
+            erase_member(*inherited, "lateral_coefficients_sha256");
+    };
+    const auto* source_spatial = nested_object(override_object, "spatial_3d");
+    shadow_tyre(nested_object(nested_object(override_object, "tires"), "pneumatic_3d"));
+    shadow_tyre(nested_object(nested_object(source_spatial, "tires"), "pneumatic_3d"));
+    shadow_lateral(explicit_field(source_spatial, "lateral_coefficients"));
+}
+
 // ---- leaf decode -------------------------------------------------------------
 // Python stores raw members and rejects wrong kinds in __post_init__; the
 // typed port cannot hold a wrong kind, so the equivalent kind diagnostics
@@ -618,6 +693,42 @@ SimulationPhysicsConfig construct_simulation(const Value& values) {
     if (obj == nullptr)
         construct_error("SimulationPhysicsConfig requires a TOML table");
     SimulationPhysicsConfig config{};
+    const Value* tire_value = io::find_member(*obj, "tires");
+    const auto* tire_object = tire_value == nullptr
+        ? nullptr : std::get_if<Value::Object>(&tire_value->data);
+    const bool extension_input =
+        io::find_member(*obj, "spatial") != nullptr ||
+        io::find_member(*obj, "spatial_3d") != nullptr ||
+        (tire_object != nullptr &&
+         io::find_member(*tire_object, "pneumatic_3d") != nullptr);
+    if (extension_input) {
+        // Validate the extension against the complete public input before
+        // removing only its owned keys from the unchanged legacy decoder.
+        // That decoder still rejects every unknown legacy/nested field.
+        auto extension = bike::spatial::parse_spatial_config(values);
+        Value::Object legacy;
+        legacy.reserve(obj->size());
+        for (const auto& [key, value] : *obj) {
+            if (key == "spatial" || key == "spatial_3d") continue;
+            if (key == "tires" && tire_object != nullptr) {
+                Value::Object tires;
+                tires.reserve(tire_object->size());
+                for (const auto& [tire_key, tire_member] : *tire_object)
+                    if (tire_key != "pneumatic_3d")
+                        tires.emplace_back(tire_key, tire_member);
+                legacy.emplace_back(key, Value{.data = std::move(tires)});
+            } else {
+                legacy.emplace_back(key, value);
+            }
+        }
+        decode_record(detail::kSimulationPhysicsConfigSchema, legacy,
+                      &config, "");
+        if (extension.mode == bike::spatial::Mode::spatial3d)
+            config.spatial = std::move(extension);
+        post_init(config);
+        return config;
+    }
+    // Keep the legacy construction and its validation order untouched.
     construct_record(detail::kSimulationPhysicsConfigSchema, *obj, &config,
                      "");
     return config;
@@ -689,8 +800,9 @@ resolve_physics(const bike::io::Value& overrides,
     // encode_tree tags so the merge sees the same document shape the TOML
     // decode produces; overrides pass through plain() for symmetry (a
     // to_value-derived override document is a supported spelling).
-    const Value base_doc = detail::plain_document(to_value(base));
+    Value base_doc = detail::plain_document(to_value(base));
     const Value override_doc = detail::plain_document(overrides);
+    prepare_spatial_overrides(base_doc, override_doc);
     return construct_simulation(
         detail::merge_values(base_doc, override_doc));
 }

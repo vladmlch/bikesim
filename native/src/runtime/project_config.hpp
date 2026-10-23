@@ -27,6 +27,18 @@ void validate_native_supported(const bike::configuration::SimulationPhysicsConfi
 // retains initial gearing; live shifter state is never part of configuration.
 [[nodiscard]] bike::io::Value project_drive_config(
     const bike::configuration::SimulationPhysicsConfig&);
+// W05's model-independent authoring seam. resolved_fields contains exactly
+// the C7.0 runtime root fields except runtime_schema and spatial, with an
+// explicit schema3 writer envelope. Adds owned runtime2/spatial documents
+// after structural validation. This is not a runnable RuntimeConfig: W17
+// owns model-bound decoding/bootstrap2, and W25 owns the pneumatic3d writer.
+// Geometry keeps the C7 outer field names only: supplied names/indices are
+// unbound authoring data, and a non-null pose/rider object is not decoded here.
+// W17 must apply the spatial nested schemas and resolve model bindings anew;
+// no numeric index accepted by this seam is a portable topology identity.
+[[nodiscard]] bike::io::Value project_spatial_runtime_envelope(
+    const bike::configuration::SimulationPhysicsConfig&,
+    const bike::io::Value& resolved_fields);
 [[nodiscard]] bike::io::Value project_writer_config(
     const bike::model::BuildRequest&, const mjModel&,
     const bike::terrain::TrackSpec&, const ProjectionOptions& = {});

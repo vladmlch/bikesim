@@ -1,0 +1,2 @@
+# Must normalize to exactly default_physics(), without an extension key.
+spatial = "planar"

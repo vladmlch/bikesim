@@ -22,8 +22,9 @@
 //     'invalid {cls}: ...'), promotes a material table containing
 //     deflection_m/force_n to TabulatedTireSpec, and merges partial
 //     [tires.pneumatic.front|rear] sections onto the declared tyre defaults;
-//   * resolve_config_paths anchors joint_envelope_path, joint_strength_path
-//     and equilibrium_state_file at the declaring TOML's directory —
+//   * resolve_config_paths anchors joint_envelope_path, joint_strength_path,
+//     equilibrium_state_file and nonempty spatial_3d.terrain.path at the
+//     declaring TOML's directory —
 //     Path(directory)/file).resolve() — never the process working directory;
 //     absolute spellings pass through byte-identical.
 //
@@ -55,6 +56,10 @@ load_physics(const std::filesystem::path& file);
 // (drive_mode/pitch_assist) while an unresolved SimulationPhysicsConfig{}
 // base re-resolves them — the same asymmetry the source exposes between a
 // constructed and a declared-default `values` document.
+// Spatial tyre aliases override the corresponding inherited fields without
+// hiding contradictions within the override document. Explicit spatial=planar
+// removes inherited spatial sections; the caller must select a valid planar
+// tyre backend, and explicit planar+spatial fields remain invalid.
 [[nodiscard]] SimulationPhysicsConfig
 resolve_physics(const bike::io::Value& overrides,
                 const SimulationPhysicsConfig& base);
@@ -84,9 +89,11 @@ parse_toml_file(const std::filesystem::path& file);
 
 // resolution.py resolve_config_paths, in place: relative
 // articulated.joint_envelope_path / joint_strength_path and
-// equilibrium_state_file members are rewritten to the weakly-canonical
-// absolute spelling anchored at `directory`; absolute and null members are
-// untouched.
+// equilibrium_state_file members and nonempty spatial_3d.terrain.path are
+// rewritten to the weakly-canonical absolute spelling anchored at `directory`;
+// absolute and null members are untouched. An empty spatial terrain path
+// stays empty for kind='none'; strict source validation still rejects it for
+// a terrain kind which requires an asset.
 void resolve_config_paths(bike::io::Value& values,
                           const std::filesystem::path& directory);
 

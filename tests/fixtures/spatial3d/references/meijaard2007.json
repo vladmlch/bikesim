@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "status": "data_entered_pending_review",
+  "reference_id": "meijaard2007-benchmark",
+  "citation": {
+    "authors": [
+      "J. P. Meijaard",
+      "J. M. Papadopoulos",
+      "A. Ruina",
+      "A. L. Schwab"
+    ],
+    "title": "Linearized dynamics equations for the balance and steer of a bicycle: a benchmark and review",
+    "doi": "10.1098/rspa.2007.1857",
+    "url": "https://arendschwab.com/assets/pdf/meijaard2007linearized.pdf",
+    "year": 2007,
+    "journal": "Proceedings of the Royal Society A",
+    "volume": 463,
+    "pages": "1955-1982"
+  },
+  "license": {
+    "id": "LicenseRef-Royal-Society-2007",
+    "copyright": "The Royal Society, 2007",
+    "scope": "Numerical facts transcribed with attribution; no paper text, images, or author code redistributed.",
+    "source_location": "Published paper, p. 1955 footer"
+  },
+  "coordinate_convention": {
+    "origin": "rear ground contact P",
+    "x": "forward",
+    "y": "rider right",
+    "z": "down",
+    "inertias": "components of the symmetric inertia matrix; off-diagonal Ixz retains the published sign",
+    "source_location": "Section 3, p. 1959; equation (3.1), p. 1961"
+  },
+  "parameters": {
+    "w_m": {
+      "value": 1.02,
+      "unit": "m",
+      "source_symbol": "w",
+      "source_location": "Table 1, p. 1960, parameter w"
+    },
+    "c_m": {
+      "value": 0.08,
+      "unit": "m",
+      "source_symbol": "c",
+      "source_location": "Table 1, p. 1960, parameter c"
+    },
+    "lambda_rad": {
+      "value": 0.3141592653589793,
+      "unit": "rad",
+      "source_symbol": "lambda",
+      "source_location": "Table 1, p. 1960, parameter lambda",
+      "exact_expression": "pi/10"
+    },
+    "g_mps2": {
+      "value": 9.81,
+      "unit": "m/s^2",
+      "source_symbol": "g",
+      "source_location": "Table 1, p. 1960, parameter g"
+    },
+    "v_mps": {
+      "value": 0,
+      "unit": "m/s",
+      "source_symbol": "v",
+      "source_location": "Table 1, p. 1960: v is variable; Table 2(a), p. 1971: v=0 case selected as the W00 default"
+    },
+    "rR_m": {
+      "value": 0.3,
+      "unit": "m",
+      "source_symbol": "r_R",
+      "source_location": "Table 1, p. 1960, parameter r_R"
+    },
+    "mR_kg": {
+      "value": 2,
+      "unit": "kg",
+      "source_symbol": "m_R",
+      "source_location": "Table 1, p. 1960, parameter m_R"
+    },
+    "IRxx": {
+      "value": 0.0603,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Rxx",
+      "source_location": "Table 1, p. 1960, parameter I_Rxx"
+    },
+    "IRyy": {
+      "value": 0.12,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Ryy",
+      "source_location": "Table 1, p. 1960, parameter I_Ryy"
+    },
+    "xB_m": {
+      "value": 0.3,
+      "unit": "m",
+      "source_symbol": "x_B",
+      "source_location": "Table 1, p. 1960, parameter x_B"
+    },
+    "zB_m": {
+      "value": -0.9,
+      "unit": "m",
+      "source_symbol": "z_B",
+      "source_location": "Table 1, p. 1960, parameter z_B"
+    },
+    "mB_kg": {
+      "value": 85,
+      "unit": "kg",
+      "source_symbol": "m_B",
+      "source_location": "Table 1, p. 1960, parameter m_B"
+    },
+    "IBxx": {
+      "value": 9.2,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Bxx",
+      "source_location": "Table 1, p. 1960, parameter I_Bxx"
+    },
+    "IBxz": {
+      "value": 2.4,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Bxz",
+      "source_location": "Table 1, p. 1960, parameter I_Bxz"
+    },
+    "IByy": {
+      "value": 11,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Byy",
+      "source_location": "Table 1, p. 1960, parameter I_Byy"
+    },
+    "IBzz": {
+      "value": 2.8,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Bzz",
+      "source_location": "Table 1, p. 1960, parameter I_Bzz"
+    },
+    "xH_m": {
+      "value": 0.9,
+      "unit": "m",
+      "source_symbol": "x_H",
+      "source_location": "Table 1, p. 1960, parameter x_H"
+    },
+    "zH_m": {
+      "value": -0.7,
+      "unit": "m",
+      "source_symbol": "z_H",
+      "source_location": "Table 1, p. 1960, parameter z_H"
+    },
+    "mH_kg": {
+      "value": 4,
+      "unit": "kg",
+      "source_symbol": "m_H",
+      "source_location": "Table 1, p. 1960, parameter m_H"
+    },
+    "IHxx": {
+      "value": 0.05892,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Hxx",
+      "source_location": "Table 1, p. 1960, parameter I_Hxx"
+    },
+    "IHxz": {
+      "value": -0.00756,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Hxz",
+      "source_location": "Table 1, p. 1960, parameter I_Hxz"
+    },
+    "IHyy": {
+      "value": 0.06,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Hyy",
+      "source_location": "Table 1, p. 1960, parameter I_Hyy"
+    },
+    "IHzz": {
+      "value": 0.00708,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Hzz",
+      "source_location": "Table 1, p. 1960, parameter I_Hzz"
+    },
+    "rF_m": {
+      "value": 0.35,
+      "unit": "m",
+      "source_symbol": "r_F",
+      "source_location": "Table 1, p. 1960, parameter r_F"
+    },
+    "mF_kg": {
+      "value": 3,
+      "unit": "kg",
+      "source_symbol": "m_F",
+      "source_location": "Table 1, p. 1960, parameter m_F"
+    },
+    "IFxx": {
+      "value": 0.1405,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Fxx",
+      "source_location": "Table 1, p. 1960, parameter I_Fxx"
+    },
+    "IFyy": {
+      "value": 0.28,
+      "unit": "kg*m^2",
+      "source_symbol": "I_Fyy",
+      "source_location": "Table 1, p. 1960, parameter I_Fyy"
+    }
+  },
+  "table2": {
+    "units": {
+      "speed": "m/s",
+      "eigenvalue_real": "1/s",
+      "eigenvalue_imag": "1/s"
+    },
+    "rows": [
+      {
+        "speed_mps": 2,
+        "source_location": "Table 2(b,c), p. 1971, speed 2 m/s",
+        "eigenvalues_per_s": [
+          {
+            "mode": "weave_positive_imag",
+            "real": 2.68234517512745,
+            "imag": 1.68066296590675,
+            "source_location": "Table 2(b), p. 1971, speed 2 m/s"
+          },
+          {
+            "mode": "weave_negative_imag",
+            "real": 2.68234517512745,
+            "imag": -1.68066296590675,
+            "source_location": "Table 2(b), p. 1971, complex conjugate at speed 2 m/s"
+          },
+          {
+            "mode": "capsize",
+            "real": -3.07158645641514,
+            "imag": 0,
+            "source_location": "Table 2(c), p. 1971, speed 2 m/s"
+          },
+          {
+            "mode": "castering",
+            "real": -8.67387984831735,
+            "imag": 0,
+            "source_location": "Table 2(c), p. 1971, speed 2 m/s"
+          }
+        ]
+      },
+      {
+        "speed_mps": 6,
+        "source_location": "Table 2(b,c), p. 1971, speed 6 m/s",
+        "eigenvalues_per_s": [
+          {
+            "mode": "weave_positive_imag",
+            "real": -1.52644486584142,
+            "imag": 5.87673060598709,
+            "source_location": "Table 2(b), p. 1971, speed 6 m/s"
+          },
+          {
+            "mode": "weave_negative_imag",
+            "real": -1.52644486584142,
+            "imag": -5.87673060598709,
+            "source_location": "Table 2(b), p. 1971, complex conjugate at speed 6 m/s"
+          },
+          {
+            "mode": "capsize",
+            "real": -0.0040669007697,
+            "imag": 0,
+            "source_location": "Table 2(c), p. 1971, speed 6 m/s"
+          },
+          {
+            "mode": "castering",
+            "real": -16.08537123098026,
+            "imag": 0,
+            "source_location": "Table 2(c), p. 1971, speed 6 m/s"
+          }
+        ]
+      }
+    ],
+    "boundaries": {
+      "weave": {
+        "speed_mps": 4.29238253634111,
+        "eigenvalue_imag_per_s": 3.43503384866144,
+        "source_location": "Table 2(a), p. 1971, v_w row"
+      },
+      "capsize": {
+        "speed_mps": 6.02426201538837,
+        "eigenvalue_per_s": 0,
+        "source_location": "Table 2(a), p. 1971, v_c row"
+      }
+    }
+  },
+  "applicability": "Independent benchmark for the matching rigid four-body knife-edge, no-slip model with an uncontrolled steer. Does not qualify the pneumatic MTB model.",
+  "payload_sha256": null,
+  "payload_status": "pending_verification",
+  "verification_owner": "V01"
+}

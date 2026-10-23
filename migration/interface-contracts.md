@@ -390,3 +390,35 @@ Exact file and public-symbol mappings, authored regression sources, compatibilit
 decisions and outstanding acceptance gates are recorded in
 `recording-application-implementation.json` and
 `recording-application-review.md`. No source-deletion authorization is implied.
+
+## 12. Spatial extension — W00/W02 source contract (2026-10-23)
+
+The spatial extension is specified by
+[C0–C10](../docs/superpowers/plans/2026-10-22-spatial-3d-native-contracts.md),
+the frozen declarations in
+[W00](../docs/superpowers/plans/2026-10-22-spatial-3d-native-00-foundation.md),
+and the machine-readable [C1–C9 registry](spatial3d/contracts.json). Each
+registry entry names one accountable owner, its declaration anchor, producers,
+consumers, units and frames. The registry also fixes the required and optional
+wire keys, including fully resolved spatial configuration and typed causal
+state sections. Existing planar interfaces above remain unchanged.
+
+[ADR-0004](../docs/adr/0004-spatial-3d-native-correctness.md) is a proposal,
+not an accepted decision. W tasks author source without configuring, compiling
+or executing it. Declaration presence and source handoff do not establish
+implemented runtime capability, successful tests or physical qualification.
+The corresponding [V tasks](../docs/superpowers/plans/2026-10-22-spatial-3d-native-09-verification.md)
+own those results; required missing/null evidence fails closed.
+
+Spatial runtime2/writer3/bootstrap2 form an explicit new dispatch tuple.
+Config, terrain, tyre state, checkpoint, observation, policy ABI, catalog,
+container and replay each have their own version domain; equal version numbers
+do not couple their evolution. Missing spatial input and explicit planar mode
+retain legacy canonical bytes and the existing `(1, 1|2, 1)` tuple. The spatial
+path is native-only, while existing planar comparison obligations follow
+[ADR-0003](../docs/adr/0003-native-authoritative-python-removal.md).
+
+Later W tasks implement the owning headers; they must not invent duplicate
+declarations or silently change frozen signatures. Record concrete defects in
+[contract-deviations.md](spatial3d/contract-deviations.md) and resolve them under
+C10 with every affected producer and consumer before the V acceptance gate.

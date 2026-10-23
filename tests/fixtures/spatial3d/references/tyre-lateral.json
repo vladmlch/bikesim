@@ -1,0 +1,311 @@
+{
+  "schema_version": 1,
+  "status": "data_entered_pending_review",
+  "reference_id": "dellorto2024-tyre-lateral",
+  "citation": {
+    "authors": [
+      "G. Dell'Orto",
+      "G. Mastinu",
+      "R. Happee",
+      "J. K. Moore"
+    ],
+    "title": "Measurement of the lateral characteristics and identification of the Magic Formula parameters of city and cargo bicycle tyres",
+    "doi": "10.1080/00423114.2024.2338143",
+    "online_year": 2024,
+    "volume": 63,
+    "issue": 2,
+    "pages": "308-332",
+    "url": "https://pure.tudelft.nl/ws/portalfiles/portal/187282473/Measurement_of_the_lateral_characteristics_and_identification_of_the_Magic_Formula_parameters_of_city_and_cargo_bicycle_tyres.pdf"
+  },
+  "license": {
+    "id": "CC-BY-4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "source_location": "Article first page, copyright and license paragraph",
+    "changes": "Selected Table 2 measurements transcribed and converted to SI."
+  },
+  "quantity_semantics": {
+    "slip_angle": "0 denotes the derivative evaluation point, not a measured force sample.",
+    "cornering_stiffness": "dFy/dalpha at zero slip angle, at the stated fixed camber/load/pressure.",
+    "speed_conversion": "9.3 km/h / 3.6 = 2.5833333333333335 m/s"
+  },
+  "rows": [
+    {
+      "id": "T01-p400kPa-fz411-camber-5",
+      "tyre": "Schwalbe Balloon, Big Ben Plus (T01)",
+      "dimensions": {
+        "designation": "20 x 2.15 in",
+        "etrto": "55-406",
+        "rim": "Mach1 Kargo (Disc), 20 in, 406-25c",
+        "source_location": "Table 1, article p. 5"
+      },
+      "pressure_pa": 400000,
+      "normal_load_n": 411,
+      "speed_mps": 2.5833333333333335,
+      "surface": "VeTyT indoor flat track",
+      "slip_angle_deg": 0,
+      "slip_angle_rad": 0,
+      "camber_deg": -5,
+      "camber_rad": -0.08726646259971647,
+      "cornering_stiffness_n_per_rad": 4784.197589342374,
+      "cornering_stiffness_original_n_per_deg": 83.5,
+      "fit_convention": "Published local derivative dFy/dalpha at alpha=0 (equation 3); positive stiffness magnitude. N/deg multiplied by 180/pi. No local fit or sign convention inferred for the simulation.",
+      "uncertainty": {
+        "relative_fraction": 0.015,
+        "quantity": "cornering_stiffness",
+        "coverage_factor": null,
+        "confidence_level": null,
+        "source_location": "Section 3, article p. 5, paragraph following equation (3)",
+        "note": "Reported estimate; coverage/confidence not stated in this source. Printed values additionally rounded to 0.1 N/deg."
+      },
+      "units_original": {
+        "pressure": "kPa",
+        "normal_load": "N",
+        "speed": "km/h",
+        "slip_angle": "deg",
+        "camber": "deg",
+        "cornering_stiffness": "N/deg"
+      },
+      "source_doi": "10.1080/00423114.2024.2338143",
+      "source_location": "Table 2, article p. 7 (published p. 314), camber -5 deg row, Fz=411 N column; Table 1 dimensions; Section 3 speed; equation (3) derivative",
+      "applicability": "cross_check_only",
+      "provenance_status": "measured",
+      "status": "data_entered_pending_review",
+      "external_dataset_doi": "10.5281/zenodo.7866646",
+      "payload_sha256": null
+    },
+    {
+      "id": "T01-p400kPa-fz526-camber-5",
+      "tyre": "Schwalbe Balloon, Big Ben Plus (T01)",
+      "dimensions": {
+        "designation": "20 x 2.15 in",
+        "etrto": "55-406",
+        "rim": "Mach1 Kargo (Disc), 20 in, 406-25c",
+        "source_location": "Table 1, article p. 5"
+      },
+      "pressure_pa": 400000,
+      "normal_load_n": 526,
+      "speed_mps": 2.5833333333333335,
+      "surface": "VeTyT indoor flat track",
+      "slip_angle_deg": 0,
+      "slip_angle_rad": 0,
+      "camber_deg": -5,
+      "camber_rad": -0.08726646259971647,
+      "cornering_stiffness_n_per_rad": 6147.837141753734,
+      "cornering_stiffness_original_n_per_deg": 107.3,
+      "fit_convention": "Published local derivative dFy/dalpha at alpha=0 (equation 3); positive stiffness magnitude. N/deg multiplied by 180/pi. No local fit or sign convention inferred for the simulation.",
+      "uncertainty": {
+        "relative_fraction": 0.015,
+        "quantity": "cornering_stiffness",
+        "coverage_factor": null,
+        "confidence_level": null,
+        "source_location": "Section 3, article p. 5, paragraph following equation (3)",
+        "note": "Reported estimate; coverage/confidence not stated in this source. Printed values additionally rounded to 0.1 N/deg."
+      },
+      "units_original": {
+        "pressure": "kPa",
+        "normal_load": "N",
+        "speed": "km/h",
+        "slip_angle": "deg",
+        "camber": "deg",
+        "cornering_stiffness": "N/deg"
+      },
+      "source_doi": "10.1080/00423114.2024.2338143",
+      "source_location": "Table 2, article p. 7 (published p. 314), camber -5 deg row, Fz=526 N column; Table 1 dimensions; Section 3 speed; equation (3) derivative",
+      "applicability": "cross_check_only",
+      "provenance_status": "measured",
+      "status": "data_entered_pending_review",
+      "external_dataset_doi": "10.5281/zenodo.7866646",
+      "payload_sha256": null
+    },
+    {
+      "id": "T01-p400kPa-fz411-camber0",
+      "tyre": "Schwalbe Balloon, Big Ben Plus (T01)",
+      "dimensions": {
+        "designation": "20 x 2.15 in",
+        "etrto": "55-406",
+        "rim": "Mach1 Kargo (Disc), 20 in, 406-25c",
+        "source_location": "Table 1, article p. 5"
+      },
+      "pressure_pa": 400000,
+      "normal_load_n": 411,
+      "speed_mps": 2.5833333333333335,
+      "surface": "VeTyT indoor flat track",
+      "slip_angle_deg": 0,
+      "slip_angle_rad": 0,
+      "camber_deg": 0,
+      "camber_rad": 0,
+      "cornering_stiffness_n_per_rad": 4875.870836563305,
+      "cornering_stiffness_original_n_per_deg": 85.1,
+      "fit_convention": "Published local derivative dFy/dalpha at alpha=0 (equation 3); positive stiffness magnitude. N/deg multiplied by 180/pi. No local fit or sign convention inferred for the simulation.",
+      "uncertainty": {
+        "relative_fraction": 0.015,
+        "quantity": "cornering_stiffness",
+        "coverage_factor": null,
+        "confidence_level": null,
+        "source_location": "Section 3, article p. 5, paragraph following equation (3)",
+        "note": "Reported estimate; coverage/confidence not stated in this source. Printed values additionally rounded to 0.1 N/deg."
+      },
+      "units_original": {
+        "pressure": "kPa",
+        "normal_load": "N",
+        "speed": "km/h",
+        "slip_angle": "deg",
+        "camber": "deg",
+        "cornering_stiffness": "N/deg"
+      },
+      "source_doi": "10.1080/00423114.2024.2338143",
+      "source_location": "Table 2, article p. 7 (published p. 314), camber 0 deg row, Fz=411 N column; Table 1 dimensions; Section 3 speed; equation (3) derivative",
+      "applicability": "cross_check_only",
+      "provenance_status": "measured",
+      "status": "data_entered_pending_review",
+      "external_dataset_doi": "10.5281/zenodo.7866646",
+      "payload_sha256": null
+    },
+    {
+      "id": "T01-p400kPa-fz526-camber0",
+      "tyre": "Schwalbe Balloon, Big Ben Plus (T01)",
+      "dimensions": {
+        "designation": "20 x 2.15 in",
+        "etrto": "55-406",
+        "rim": "Mach1 Kargo (Disc), 20 in, 406-25c",
+        "source_location": "Table 1, article p. 5"
+      },
+      "pressure_pa": 400000,
+      "normal_load_n": 526,
+      "speed_mps": 2.5833333333333335,
+      "surface": "VeTyT indoor flat track",
+      "slip_angle_deg": 0,
+      "slip_angle_rad": 0,
+      "camber_deg": 0,
+      "camber_rad": 0,
+      "cornering_stiffness_n_per_rad": 6044.704738630185,
+      "cornering_stiffness_original_n_per_deg": 105.5,
+      "fit_convention": "Published local derivative dFy/dalpha at alpha=0 (equation 3); positive stiffness magnitude. N/deg multiplied by 180/pi. No local fit or sign convention inferred for the simulation.",
+      "uncertainty": {
+        "relative_fraction": 0.015,
+        "quantity": "cornering_stiffness",
+        "coverage_factor": null,
+        "confidence_level": null,
+        "source_location": "Section 3, article p. 5, paragraph following equation (3)",
+        "note": "Reported estimate; coverage/confidence not stated in this source. Printed values additionally rounded to 0.1 N/deg."
+      },
+      "units_original": {
+        "pressure": "kPa",
+        "normal_load": "N",
+        "speed": "km/h",
+        "slip_angle": "deg",
+        "camber": "deg",
+        "cornering_stiffness": "N/deg"
+      },
+      "source_doi": "10.1080/00423114.2024.2338143",
+      "source_location": "Table 2, article p. 7 (published p. 314), camber 0 deg row, Fz=526 N column; Table 1 dimensions; Section 3 speed; equation (3) derivative",
+      "applicability": "cross_check_only",
+      "provenance_status": "measured",
+      "status": "data_entered_pending_review",
+      "external_dataset_doi": "10.5281/zenodo.7866646",
+      "payload_sha256": null
+    },
+    {
+      "id": "T01-p400kPa-fz411-camber5",
+      "tyre": "Schwalbe Balloon, Big Ben Plus (T01)",
+      "dimensions": {
+        "designation": "20 x 2.15 in",
+        "etrto": "55-406",
+        "rim": "Mach1 Kargo (Disc), 20 in, 406-25c",
+        "source_location": "Table 1, article p. 5"
+      },
+      "pressure_pa": 400000,
+      "normal_load_n": 411,
+      "speed_mps": 2.5833333333333335,
+      "surface": "VeTyT indoor flat track",
+      "slip_angle_deg": 0,
+      "slip_angle_rad": 0,
+      "camber_deg": 5,
+      "camber_rad": 0.08726646259971647,
+      "cornering_stiffness_n_per_rad": 4824.304635001532,
+      "cornering_stiffness_original_n_per_deg": 84.2,
+      "fit_convention": "Published local derivative dFy/dalpha at alpha=0 (equation 3); positive stiffness magnitude. N/deg multiplied by 180/pi. No local fit or sign convention inferred for the simulation.",
+      "uncertainty": {
+        "relative_fraction": 0.015,
+        "quantity": "cornering_stiffness",
+        "coverage_factor": null,
+        "confidence_level": null,
+        "source_location": "Section 3, article p. 5, paragraph following equation (3)",
+        "note": "Reported estimate; coverage/confidence not stated in this source. Printed values additionally rounded to 0.1 N/deg."
+      },
+      "units_original": {
+        "pressure": "kPa",
+        "normal_load": "N",
+        "speed": "km/h",
+        "slip_angle": "deg",
+        "camber": "deg",
+        "cornering_stiffness": "N/deg"
+      },
+      "source_doi": "10.1080/00423114.2024.2338143",
+      "source_location": "Table 2, article p. 7 (published p. 314), camber 5 deg row, Fz=411 N column; Table 1 dimensions; Section 3 speed; equation (3) derivative",
+      "applicability": "cross_check_only",
+      "provenance_status": "measured",
+      "status": "data_entered_pending_review",
+      "external_dataset_doi": "10.5281/zenodo.7866646",
+      "payload_sha256": null
+    },
+    {
+      "id": "T01-p400kPa-fz526-camber5",
+      "tyre": "Schwalbe Balloon, Big Ben Plus (T01)",
+      "dimensions": {
+        "designation": "20 x 2.15 in",
+        "etrto": "55-406",
+        "rim": "Mach1 Kargo (Disc), 20 in, 406-25c",
+        "source_location": "Table 1, article p. 5"
+      },
+      "pressure_pa": 400000,
+      "normal_load_n": 526,
+      "speed_mps": 2.5833333333333335,
+      "surface": "VeTyT indoor flat track",
+      "slip_angle_deg": 0,
+      "slip_angle_rad": 0,
+      "camber_deg": 5,
+      "camber_rad": 0.08726646259971647,
+      "cornering_stiffness_n_per_rad": 5947.301913457945,
+      "cornering_stiffness_original_n_per_deg": 103.8,
+      "fit_convention": "Published local derivative dFy/dalpha at alpha=0 (equation 3); positive stiffness magnitude. N/deg multiplied by 180/pi. No local fit or sign convention inferred for the simulation.",
+      "uncertainty": {
+        "relative_fraction": 0.015,
+        "quantity": "cornering_stiffness",
+        "coverage_factor": null,
+        "confidence_level": null,
+        "source_location": "Section 3, article p. 5, paragraph following equation (3)",
+        "note": "Reported estimate; coverage/confidence not stated in this source. Printed values additionally rounded to 0.1 N/deg."
+      },
+      "units_original": {
+        "pressure": "kPa",
+        "normal_load": "N",
+        "speed": "km/h",
+        "slip_angle": "deg",
+        "camber": "deg",
+        "cornering_stiffness": "N/deg"
+      },
+      "source_doi": "10.1080/00423114.2024.2338143",
+      "source_location": "Table 2, article p. 7 (published p. 314), camber 5 deg row, Fz=526 N column; Table 1 dimensions; Section 3 speed; equation (3) derivative",
+      "applicability": "cross_check_only",
+      "provenance_status": "measured",
+      "status": "data_entered_pending_review",
+      "external_dataset_doi": "10.5281/zenodo.7866646",
+      "payload_sha256": null
+    }
+  ],
+  "external_datasets": [
+    {
+      "doi": "10.5281/zenodo.7866646",
+      "url": "https://zenodo.org/records/7866646",
+      "version": 1,
+      "payload_sha256": null,
+      "status": "pending_verification",
+      "license_id": null,
+      "license_status": "pending_verification",
+      "note": "Record located. Raw files not acquired or used to create these rows; article Table 2 is the immediate source. Confirm payload license and SHA-256 in V01 before reuse."
+    }
+  ],
+  "applicability": "City/cargo tyre measurements at 400 kPa on a laboratory flat track: cross-check only, not calibration of aggressive 2.8 in low-pressure MTB tyres.",
+  "verification_owner": "V01"
+}

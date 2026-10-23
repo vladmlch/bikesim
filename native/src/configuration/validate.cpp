@@ -421,14 +421,15 @@ void post_init(TireBackendConfig &config) {
     if (!in_set(config.backend,
                 std::initializer_list<std::string_view>{
                     "native_reference", "compliant_2d",
-                    "distributed_2d_reference", "pneumatic"}))
+                    "distributed_2d_reference", "pneumatic", "pneumatic_3d"}))
         fail("unknown physical tire backend");
     if (config.surface_mode != "configured" && config.surface_mode != "track")
         fail("surface_mode must be configured or track");
     if (config.surface_mode == "track" &&
         !in_set(config.backend,
                 std::initializer_list<std::string_view>{
-                    "compliant_2d", "distributed_2d_reference", "pneumatic"}))
+                    "compliant_2d", "distributed_2d_reference", "pneumatic",
+                    "pneumatic_3d"}))
         fail("track material resolution requires a compliant_2d, "
              "distributed_2d_reference or pneumatic tire backend");
     post_init(config.pneumatic);  // the body's explicit re-run
@@ -1085,6 +1086,15 @@ void post_init(SimulationPhysicsConfig &config) {
         *config.drive_mode != "crank_effort" &&
         *config.drive_mode != "articulated_effort")
         fail("drive.rotor_inertia_kgm2 requires an effort drive mode");
+    // The new backend is an input contract only. Cross-field checks belong
+    // to the owning extension; native runtime capability remains closed.
+    if (config.spatial) {
+        bike::spatial::validate_spatial_config(*config.spatial, config);
+        if (config.spatial->mode == bike::spatial::Mode::planar)
+            config.spatial.reset();
+    } else if (config.tires.backend == "pneumatic_3d") {
+        fail("tires.backend: pneumatic_3d requires spatial=3d");
+    }
 }
 
 SimulationPhysicsConfig default_physics() {

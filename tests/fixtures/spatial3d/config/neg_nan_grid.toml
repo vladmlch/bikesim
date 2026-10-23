@@ -1,0 +1,12 @@
+physics_mode = "physical"
+drive_mode = "coast"
+spatial = "3d"
+
+[spatial_3d.terrain]
+kind = "genspec"
+path = "synthetic-grid.genspec.toml"
+dx_m = nan
+dy_m = 0.01
+
+[tires]
+backend = "pneumatic_3d"

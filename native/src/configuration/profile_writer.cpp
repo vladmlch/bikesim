@@ -196,8 +196,7 @@ std::string write_physics_toml(const SimulationPhysicsConfig& config) {
     std::vector<std::string> lines{
         "# Explicit candidate; not real-world safety validation."};
     const Value document =
-        detail::plain_document(detail::as_object(
-            detail::kSimulationPhysicsConfigSchema, &config));
+        detail::plain_document(to_value(config));
     emit_table(std::get<Value::Object>(document.data), "", lines);
     std::string out;
     for (const std::string& line : lines) out += line + '\n';

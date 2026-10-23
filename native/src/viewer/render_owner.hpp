@@ -1,7 +1,9 @@
 #pragma once
 #include "../runtime/runtime.hpp"
+#include <array>
 #include <memory>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -15,6 +17,8 @@ public:
     void cycle_mode();
     void reset_preset() noexcept;
     void update(mjvCamera&, double bike_x, double bike_z);
+    void update_spatial(mjvCamera&, const std::array<double, 3>& position_world_m,
+                        std::optional<double> heading_rad);
     [[nodiscard]] std::string_view mode_name() const noexcept;
 private:
     CameraMode mode_ = CameraMode::side;

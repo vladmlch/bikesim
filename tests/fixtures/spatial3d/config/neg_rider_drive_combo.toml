@@ -1,0 +1,8 @@
+# The owning BuildRequest test supplies RiderSpecs{variant="lumped"}.
+# That rider cannot provide the articulated_effort drive mode.
+physics_mode = "physical"
+drive_mode = "articulated_effort"
+spatial = "3d"
+
+[tires]
+backend = "pneumatic_3d"

@@ -20,10 +20,12 @@
 // Allocation-failure contract: decode is a pure function — every
 // rejection or bad_alloc returns without installing anything.
 #include "writer_config.hpp"
+#include "spatial/types.hpp"
 
 #include <charconv>
 #include <cmath>
 #include <limits>
+#include <set>
 #include <system_error>
 #include <utility>
 #include <variant>
@@ -155,6 +157,86 @@ namespace nativecfg::detail {
 
 namespace nativecfg {
 
+    namespace {
+        using Value = bike::io::Value;
+
+        const Value::Object& closed_spatial_object(
+            const Value& value, std::string_view path,
+            std::span<const std::string_view> required,
+            std::span<const std::string_view> optional = {}) {
+            const auto& object = bike::io::as_object(value, path);
+            std::set<std::string_view> seen;
+            for (const auto& [key, child] : object) {
+                (void)child;
+                if (!seen.insert(key).second)
+                    detail::invalid(std::string(path) + "." + key, "duplicate key");
+                if (std::ranges::find(required, key) == required.end() &&
+                    std::ranges::find(optional, key) == optional.end())
+                    detail::invalid(std::string(path) + "." + key, "unknown key");
+            }
+            for (const auto key : required)
+                if (bike::io::find_member(object, key) == nullptr)
+                    detail::invalid(std::string(path) + "." + std::string(key), "missing required key");
+            return object;
+        }
+
+        const Value& spatial_member(const Value::Object& object,
+                                    std::string_view key, std::string_view path) {
+            const auto* value = bike::io::find_member(object, key);
+            if (value == nullptr)
+                detail::invalid(std::string(path) + "." + std::string(key), "missing required key");
+            return *value;
+        }
+
+        void spatial_digest(const Value& value, std::string_view path) {
+            const auto& digest = bike::io::as_string(value, path);
+            if (digest.size() != 64 || !std::ranges::all_of(digest, [](char c) {
+                return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+            })) detail::invalid(path, "expected 64 lowercase hexadecimal characters");
+        }
+    } // namespace
+
+    void validate_spatial_writer_envelope(const bike::io::Value& value) {
+        constexpr auto required = detail::keys("schema", "spatial");
+        constexpr auto sections = detail::keys("drive", "cruise", "suspension", "brake",
+            "resistance", "tire", "rider_forces", "rider_contacts");
+        const auto& input = bike::io::as_object(value, "config");
+        // Select a strictly integer version before interpreting the new key set.
+        if (bike::io::as_int64(spatial_member(input, "schema", "config"), "config.schema") !=
+            bike::spatial::kSpatialWriterSchema)
+            detail::invalid("config.schema", "expected spatial writer schema 3");
+        const auto& root = closed_spatial_object(value, "config", required, sections);
+        const auto& spatial = closed_spatial_object(spatial_member(root, "spatial", "config"),
+            "config.spatial", detail::keys("spatial_contract", "root_kind",
+                "topology_fingerprint", "terrain_sha256", "numeric_profile"));
+        if (bike::io::as_int64(spatial_member(spatial, "spatial_contract", "config.spatial"),
+                               "config.spatial.spatial_contract") != bike::spatial::kSpatialContract)
+            detail::invalid("config.spatial.spatial_contract", "unsupported spatial contract");
+        const auto& root_kind = bike::io::as_string(
+            spatial_member(spatial, "root_kind", "config.spatial"), "config.spatial.root_kind");
+        if (root_kind != "constrained" && root_kind != "free")
+            detail::invalid("config.spatial.root_kind", "expected 'constrained' or 'free'");
+        spatial_digest(spatial_member(spatial, "topology_fingerprint", "config.spatial"),
+                       "config.spatial.topology_fingerprint");
+        spatial_digest(spatial_member(spatial, "terrain_sha256", "config.spatial"),
+                       "config.spatial.terrain_sha256");
+        if (bike::io::as_string(spatial_member(spatial, "numeric_profile", "config.spatial"),
+                                "config.spatial.numeric_profile").empty())
+            detail::invalid("config.spatial.numeric_profile", "must not be empty");
+        for (const auto name : sections)
+            if (const auto* section = bike::io::find_member(root, name))
+                (void)bike::io::as_object(*section, "config." + std::string(name));
+        if (const auto* value_tire = bike::io::find_member(root, "tire")) {
+            const auto& tire = closed_spatial_object(*value_tire, "config.tire",
+                detail::keys("backend", "pneumatic_3d"));
+            if (bike::io::as_string(spatial_member(tire, "backend", "config.tire"),
+                                    "config.tire.backend") != "pneumatic_3d")
+                detail::invalid("config.tire.backend", "schema3 requires 'pneumatic_3d'");
+            (void)bike::io::as_object(spatial_member(tire, "pneumatic_3d", "config.tire"),
+                                     "config.tire.pneumatic_3d");
+        }
+    }
+
     drivetrain::DrivePolicyConfig decode_policy_config(const bike::io::Value& value) {
         if (!std::holds_alternative<bike::io::Value::Object>(value.data))
             detail::invalid("config", "expected dict");
@@ -169,6 +251,23 @@ namespace nativecfg {
             detail::invalid("config", "expected dict");
         if (root->empty())
             return {};
+        const auto* schema = bike::io::find_member(*root, "schema");
+        const auto* schema_number = schema == nullptr
+            ? nullptr : std::get_if<bike::io::Number>(&schema->data);
+        const bool schema3 = schema_number != nullptr && schema_number->lexeme == "3";
+        if (schema3 || bike::io::find_member(*root, "spatial") != nullptr) {
+            if (schema == nullptr) detail::invalid("config.schema", "missing required key");
+            const auto version = bike::io::as_int64(*schema, "config.schema");
+            if (version == bike::spatial::kSpatialWriterSchema) {
+                validate_spatial_writer_envelope(value);
+                detail::invalid("config.spatial",
+                    "spatial runtime not connected: schema3 writers require W25");
+            }
+            // Planar1/2 continue through their unchanged closed-key decoder;
+            // their historical rejection of a spatial member is preserved.
+            if (version != 1 && version != 2)
+                detail::invalid("config.schema", "unsupported schema " + std::to_string(version));
+        }
         return detail::decode_root(
             detail::Dict<detail::VNode>{
                 .value = detail::VNode{&value}, .path = "config"});

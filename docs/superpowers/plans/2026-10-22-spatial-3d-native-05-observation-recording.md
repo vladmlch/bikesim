@@ -126,7 +126,7 @@ tape.dropout_uniform.clear(); bt::invalid([&] { tape.validate(); });
 
 ## W39 — Native research dispatch и policy ABI V2 (← S39)
 
-**Dependencies:** W38. **Create:** `native/src/research/policy_v2_host.cpp`, `native/tests/spatial/policy_v2.cpp`, `native/tests/spatial/plugins/policy_v2_control.cpp` (shared library plugin: экспорт `bike_policy_v2`, act = константный demand, проверяет `struct_size`/schema/mask, возвращает error на NaN). **Modify:** `native/src/research/policy.{hpp,cpp}`, `plugin_policy.cpp`, `builtin_policies.cpp`, `policy_session.cpp`, `native/src/runtime/research.{hpp,cpp}`, `research_io.{hpp,cpp}`.
+**Dependencies:** W33, W38. **Create:** `native/src/research/policy_v2_host.cpp`, `native/tests/spatial/policy_v2.cpp`, `native/tests/spatial/plugins/policy_v2_control.cpp` (shared library plugin: экспорт `bike_policy_v2`, act = константный demand, проверяет `struct_size`/schema/mask, возвращает error на NaN). **Modify:** `native/src/research/policy.{hpp,cpp}`, `plugin_policy.cpp`, `builtin_policies.cpp`, `policy_session.cpp`, `native/src/runtime/research.{hpp,cpp}`, `research_io.{hpp,cpp}`.
 
 **Interfaces:** W00.9 `policy_v2.h`; `using ResearchObservation = std::variant<SensorObservation, spatial::SensorObservationV2>;` в `runtime/research.hpp`.
 

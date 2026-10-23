@@ -41,6 +41,9 @@ struct TableSpec {
     void validate() const;
     [[nodiscard]] const FieldSpec* field(std::string_view key) const noexcept;
 };
+// W00's versioned catalog contract names the existing descriptor type.
+using TableDescriptor = TableSpec;
+enum class CatalogVersion : std::uint32_t { planar1 = 1, spatial2 = 2 };
 struct JointCoords { std::string name, joint_type; std::int64_t qposadr = 0, dofadr = 0; };
 struct Coordinate {
     std::int64_t index = 0;
@@ -86,6 +89,10 @@ private:
 [[nodiscard]] const Catalog& schema_catalog();
 [[nodiscard]] const std::vector<TableSpec>& research_tables();
 [[nodiscard]] const std::vector<TableSpec>& all_tables();
+// Existing overloads remain planar1; W41 implements the explicit dispatch.
+[[nodiscard]] Catalog build_catalog(const mjModel&, CatalogVersion);
+[[nodiscard]] const Catalog& schema_catalog(CatalogVersion);
+[[nodiscard]] std::span<const TableDescriptor> all_tables(CatalogVersion);
 [[nodiscard]] const TableSpec& table_spec(std::string_view name);
 [[nodiscard]] io::Value describe_catalog(const Catalog& catalog);
 [[nodiscard]] io::Value describe_field(const FieldSpec& field);

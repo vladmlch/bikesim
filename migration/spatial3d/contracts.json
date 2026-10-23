@@ -1,0 +1,1504 @@
+{
+  "schema_version": 1,
+  "plan_id": "spatial-3d-native-2026-10-22",
+  "status": "source_written",
+  "source_authority": "docs/superpowers/plans/2026-10-22-spatial-3d-native-contracts.md",
+  "declaration_authority": "docs/superpowers/plans/2026-10-22-spatial-3d-native-00-foundation.md#W00",
+  "verification": {
+    "status": "pending_verification",
+    "tasks": [
+      "V00",
+      "V01"
+    ],
+    "execution": "not_run",
+    "evidence": []
+  },
+  "versions": {
+    "spatial_contract": 1,
+    "runtime_schema": 2,
+    "bootstrap_schema": 2,
+    "writer_schema": 3,
+    "terrain": "BKT3/1",
+    "tyre_state": 1,
+    "checkpoint": 1,
+    "sensor": 2,
+    "policy_abi": 2,
+    "catalog": 2,
+    "container": 2,
+    "replay": 4
+  },
+  "version_semantics": "Names identify independent version domains. Equal numeric values do not couple their evolution. Legacy planar dispatch and canonical bytes remain unchanged.",
+  "compatibility": {
+    "planar": {
+      "runtime_schema": 1,
+      "writer_schemas": [
+        1,
+        2
+      ],
+      "bootstrap_schema": 1,
+      "sensor": 1,
+      "sensor_value_count": 9,
+      "policy_abi": 1,
+      "catalog": 1,
+      "container": 1,
+      "replay": 3
+    },
+    "spatial": {
+      "runtime_schema": 2,
+      "writer_schema": 3,
+      "bootstrap_schema": 2,
+      "sensor": 2,
+      "sensor_value_count": 11,
+      "policy_abi": 2,
+      "catalog": 2,
+      "container": 2,
+      "replay": 4
+    },
+    "accepted_runtime_writer_bootstrap_combinations": [
+      [
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        2,
+        1
+      ],
+      [
+        2,
+        3,
+        2
+      ]
+    ],
+    "unknown_versions": "reject_before_live_mutation",
+    "canonical_planar": "absent spatial and explicit spatial=planar emit the existing representation without an extension",
+    "mixed_container_families": "rejected; create a separate run"
+  },
+  "contracts": [
+    {
+      "id": "C1",
+      "header_path": "native/src/spatial/config.hpp",
+      "namespace": "bike::spatial",
+      "types": [
+        "Mode",
+        "RootKind",
+        "TyreTier",
+        "SteerController",
+        "SteerConfig",
+        "BootstrapConfig",
+        "ImuMountConfig",
+        "TerrainRequestKind",
+        "TerrainRequest3d",
+        "Pneumatic3dConfig",
+        "Config",
+        "CapabilityReport"
+      ],
+      "functions": [
+        "parse_spatial_config",
+        "validate_spatial_config",
+        "spatial_config_to_wire",
+        "spatial_config_from_wire",
+        "check_spatial_capability",
+        "spatial_config_fingerprint_hex",
+        "runtime::project_spatial_runtime_envelope",
+        "nativecfg::validate_spatial_writer_envelope"
+      ],
+      "producer": "W05",
+      "consumers": [
+        "W06",
+        "W11",
+        "W13",
+        "W14",
+        "W16",
+        "W17",
+        "W20",
+        "W25",
+        "W28",
+        "W29",
+        "W31",
+        "W32",
+        "W36",
+        "W37",
+        "W38",
+        "W41",
+        "W42",
+        "W43",
+        "W45",
+        "W50",
+        "W54"
+      ],
+      "versions": {
+        "spatial_contract": 1,
+        "runtime_schema": 2,
+        "bootstrap_schema": 2,
+        "writer_schema": 3,
+        "terrain": "BKT3/1",
+        "tyre_state": 1,
+        "checkpoint": 1,
+        "sensor": 2,
+        "policy_abi": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4
+      },
+      "frames": [
+        "world_xyz_z_up",
+        "body_local",
+        "sensor_local"
+      ],
+      "units": [
+        "m",
+        "s",
+        "rad",
+        "deg",
+        "N",
+        "N*m",
+        "N*s/m",
+        "N*m*s/rad"
+      ],
+      "owner": "spatial-configuration",
+      "related_headers": [
+        "native/src/spatial/types.hpp",
+        "native/src/configuration/model_config.hpp",
+        "native/src/runtime/capabilities.hpp",
+        "native/src/runtime/project_config.hpp",
+        "native/src/writer_config.hpp"
+      ],
+      "api_adapters": [
+        {
+          "name": "runtime::project_spatial_runtime_envelope",
+          "header_path": "native/src/runtime/project_config.hpp",
+          "signature": "bike::io::Value runtime::project_spatial_runtime_envelope(const bike::configuration::SimulationPhysicsConfig&, const bike::io::Value& resolved_fields)",
+          "producer": "W05",
+          "implementation_status": "source_written",
+          "input": "Exact runtime2 root fields except runtime_schema and spatial; includes explicit writer3 with drive and pneumatic_3d tire objects.",
+          "output": "Owned runtime2 document with fully resolved config.spatial; no runnable RuntimeConfig or bootstrap2 is constructed.",
+          "deferred_validation": "W17 owns schema-specific pose/rider decoding, model bindings, topology identity checks and bootstrap2; W25 owns pneumatic_3d coefficients. Supplied numeric geometry indices are unbound authoring data, never portable topology identity."
+        },
+        {
+          "name": "nativecfg::validate_spatial_writer_envelope",
+          "header_path": "native/src/writer_config.hpp",
+          "signature": "void nativecfg::validate_spatial_writer_envelope(const bike::io::Value&)",
+          "producer": "W05",
+          "implementation_status": "source_written",
+          "validation": "Strict integer schema3, closed root/spatial keys, required spatial identities, object section kinds and the pneumatic_3d tire envelope.",
+          "deferred_validation": "The pneumatic_3d coefficient object is staged data pending W25; nativecfg::decode explicitly rejects schema3 after envelope validation and never invokes the planar tire reader."
+        }
+      ],
+      "additional_producers": [],
+      "status": "source_written",
+      "verification_status": "pending_verification"
+    },
+    {
+      "id": "C2",
+      "header_path": "native/src/spatial/topology.hpp",
+      "namespace": "bike::spatial",
+      "types": [
+        "BodyPose",
+        "ScalarJointBinding",
+        "RootBinding",
+        "WheelBinding",
+        "SteerBinding",
+        "Topology",
+        "EulerZyx"
+      ],
+      "functions": [
+        "bind_topology",
+        "topology_fingerprint_hex",
+        "body_pose",
+        "rotate_body_to_world",
+        "rotate_world_to_body",
+        "quat_multiply",
+        "quat_conjugate",
+        "quat_normalized",
+        "geodesic_angle_rad",
+        "euler_zyx",
+        "point_velocity_world",
+        "axis_rate"
+      ],
+      "producer": "W13",
+      "consumers": [
+        "W14",
+        "W15",
+        "W16",
+        "W17",
+        "W18",
+        "W19",
+        "W20",
+        "W25",
+        "W29",
+        "W30",
+        "W31",
+        "W34",
+        "W37",
+        "W41",
+        "W46"
+      ],
+      "versions": {
+        "spatial_contract": 1,
+        "runtime_schema": 2,
+        "bootstrap_schema": 2,
+        "writer_schema": 3,
+        "terrain": "BKT3/1",
+        "tyre_state": 1,
+        "checkpoint": 1,
+        "sensor": 2,
+        "policy_abi": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4
+      },
+      "frames": [
+        "world_xyz_z_up",
+        "body_local",
+        "wheel_hub",
+        "quaternion_wxyz_world_from_body"
+      ],
+      "units": [
+        "m",
+        "m/s",
+        "rad",
+        "rad/s"
+      ],
+      "owner": "spatial-topology",
+      "related_headers": [
+        "native/src/spatial/types.hpp",
+        "native/src/spatial/frames.hpp"
+      ],
+      "additional_producers": [
+        "W14"
+      ],
+      "status": "source_written",
+      "verification_status": "pending_verification"
+    },
+    {
+      "id": "C3",
+      "header_path": "native/src/terrain/grid3d.hpp",
+      "namespace": "bike::terrain",
+      "types": [
+        "QueryStatus3d",
+        "GridSample3d",
+        "RayHit3d",
+        "SurfaceSpec3d",
+        "Grid3dDescriptor",
+        "Grid3dMetadata",
+        "RayBudget",
+        "Grid3d",
+        "Terrain3dLoadLimits",
+        "Catmull",
+        "BicubicPatch",
+        "SurfaceEval",
+        "Poly6",
+        "RootSearchResult",
+        "Track3dSpec",
+        "ProfileExtrusion3d",
+        "Terrain3dKind",
+        "Terrain3dQueryView",
+        "Terrain3dSource",
+        "RenderResolution",
+        "RenderGrid3d"
+      ],
+      "functions": [
+        "Grid3d::create",
+        "Grid3d::sample",
+        "Grid3d::ray_cast",
+        "read_terrain3d",
+        "write_terrain3d",
+        "bicubic_patch",
+        "evaluate",
+        "line_minus_surface",
+        "earliest_root_bernstein",
+        "ray_cast_grid",
+        "read_track3d_spec",
+        "write_track3d_spec",
+        "quintic_smoothstep",
+        "generate_grid3d",
+        "ProfileExtrusion3d::create",
+        "Terrain3dSource::query_view",
+        "make_render_grid"
+      ],
+      "producer": "W06",
+      "consumers": [
+        "W07",
+        "W08",
+        "W09",
+        "W10",
+        "W11",
+        "W12",
+        "W14",
+        "W20",
+        "W25",
+        "W29",
+        "W31",
+        "W34",
+        "W36",
+        "W41",
+        "W43",
+        "W45",
+        "W46",
+        "W50",
+        "W54"
+      ],
+      "versions": {
+        "spatial_contract": 1,
+        "runtime_schema": 2,
+        "bootstrap_schema": 2,
+        "writer_schema": 3,
+        "terrain": "BKT3/1",
+        "tyre_state": 1,
+        "checkpoint": 1,
+        "sensor": 2,
+        "policy_abi": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4
+      },
+      "frames": [
+        "world_xyz_z_up",
+        "grid_row_major_iy_nx_plus_ix",
+        "cell_local_uv"
+      ],
+      "units": [
+        "m",
+        "m/s",
+        "rad",
+        "deg",
+        "dimensionless"
+      ],
+      "owner": "spatial-terrain",
+      "related_headers": [
+        "native/src/terrain/asset3d.hpp",
+        "native/src/terrain/interpolation3d.hpp",
+        "native/src/terrain/raycast3d.hpp",
+        "native/src/terrain/spec3d.hpp",
+        "native/src/terrain/generator3d.hpp",
+        "native/src/terrain/extrusion3d.hpp",
+        "native/src/terrain/source3d.hpp",
+        "native/src/terrain/render3d.hpp"
+      ],
+      "additional_producers": [
+        "W07",
+        "W08",
+        "W09",
+        "W10",
+        "W11",
+        "W12"
+      ],
+      "status": "source_written",
+      "verification_status": "pending_verification"
+    },
+    {
+      "id": "C4",
+      "header_path": "native/src/pneumatic3d/model.hpp",
+      "namespace": "bike::pneumatic3d",
+      "types": [
+        "ReasonCode3d",
+        "TorusDims",
+        "TorusGrid3d",
+        "WheelKinematics3d",
+        "FanFrame",
+        "ContactElement3d",
+        "CarcassSpec3d",
+        "NormalElement3d",
+        "Patch3d",
+        "BrushSpec3d",
+        "PatchWrench",
+        "CarcassState3d",
+        "PatchState3d",
+        "BrushState3d",
+        "TyreStateIdentity3d",
+        "TyreState3d",
+        "Pneumatic3dSpec",
+        "Pneumatic3dModel",
+        "Pneumatic3dTireWriter"
+      ],
+      "functions": [
+        "tier_dims",
+        "make_torus_grid",
+        "fan_frame",
+        "query_geometry",
+        "update_carcass",
+        "assign_patches",
+        "update_fast_brush",
+        "update_detailed_brush",
+        "Pneumatic3dModel::evaluate",
+        "Pneumatic3dModel::restore",
+        "Pneumatic3dTireWriter::try_compute_into",
+        "encode_tyre_state",
+        "decode_tyre_state",
+        "tyre_identity_to_wire",
+        "tyre_identity_from_wire",
+        "base64_canonical",
+        "base64_decode_strict"
+      ],
+      "producer": "W20",
+      "consumers": [
+        "W21",
+        "W22",
+        "W23",
+        "W24",
+        "W25",
+        "W26",
+        "W27",
+        "W28",
+        "W29",
+        "W31",
+        "W34",
+        "W35",
+        "W36",
+        "W41",
+        "W42",
+        "W43",
+        "W50",
+        "W51",
+        "W54"
+      ],
+      "versions": {
+        "spatial_contract": 1,
+        "runtime_schema": 2,
+        "bootstrap_schema": 2,
+        "writer_schema": 3,
+        "terrain": "BKT3/1",
+        "tyre_state": 1,
+        "checkpoint": 1,
+        "sensor": 2,
+        "policy_abi": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4
+      },
+      "frames": [
+        "world_xyz_z_up",
+        "wheel_hub",
+        "wheel_fan",
+        "patch_longitudinal_lateral_normal",
+        "material_cell"
+      ],
+      "units": [
+        "m",
+        "m^2",
+        "m^3",
+        "m/s",
+        "rad",
+        "rad/s",
+        "Pa",
+        "N",
+        "N*m",
+        "N/m^3",
+        "J"
+      ],
+      "owner": "spatial-tyre",
+      "related_headers": [
+        "native/src/pneumatic3d/geometry.hpp",
+        "native/src/pneumatic3d/carcass.hpp",
+        "native/src/pneumatic3d/patches.hpp",
+        "native/src/pneumatic3d/brush.hpp",
+        "native/src/pneumatic3d/bristles.hpp",
+        "native/src/pneumatic3d/state.hpp",
+        "native/src/writers/pneumatic_3d_tire.hpp",
+        "native/src/writers/writer_types.hpp"
+      ],
+      "additional_producers": [
+        "W21",
+        "W22",
+        "W23",
+        "W24",
+        "W25",
+        "W26",
+        "W27",
+        "W28"
+      ],
+      "status": "source_written",
+      "verification_status": "pending_verification"
+    },
+    {
+      "id": "C5",
+      "header_path": "native/src/spatial/bootstrap_state.hpp",
+      "namespace": "bike::spatial",
+      "types": [
+        "BootstrapPhase",
+        "HoldState",
+        "SteerState",
+        "SpatialReason",
+        "Outcome",
+        "OutcomeState",
+        "BrakeWheelLatch",
+        "BrakeState",
+        "SpatialOutcomeInput"
+      ],
+      "functions": [
+        "canonical_inactive_hold",
+        "canonical_inactive_steer",
+        "canonical_unlatched_outcome",
+        "encode_hold",
+        "decode_hold",
+        "encode_steer",
+        "decode_steer",
+        "encode_outcome",
+        "decode_outcome",
+        "encode_brake",
+        "decode_brake",
+        "canonical_released_brake",
+        "evaluate_outcome"
+      ],
+      "producer": "W17",
+      "consumers": [
+        "W18",
+        "W19",
+        "W25",
+        "W26",
+        "W27",
+        "W29",
+        "W30",
+        "W31",
+        "W32",
+        "W33",
+        "W34",
+        "W35",
+        "W36",
+        "W38",
+        "W41",
+        "W42",
+        "W43",
+        "W46"
+      ],
+      "versions": {
+        "spatial_contract": 1,
+        "runtime_schema": 2,
+        "bootstrap_schema": 2,
+        "writer_schema": 3,
+        "terrain": "BKT3/1",
+        "tyre_state": 1,
+        "checkpoint": 1,
+        "sensor": 2,
+        "policy_abi": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4
+      },
+      "frames": [
+        "world_xyz_z_up",
+        "body_local",
+        "joint_scalar",
+        "root_tangent_space"
+      ],
+      "units": [
+        "m",
+        "m/s",
+        "m/s^2",
+        "rad",
+        "rad/s",
+        "rad/s^2",
+        "s",
+        "N",
+        "N*m",
+        "J",
+        "tick"
+      ],
+      "owner": "spatial-startup-control",
+      "related_headers": [
+        "native/src/spatial/brake_state.hpp",
+        "native/src/spatial/outcomes.hpp",
+        "native/src/initialization/spatial_equilibrium.hpp",
+        "native/src/initialization/bootstrap_hold.hpp",
+        "native/src/rider/spatial_support.hpp",
+        "native/src/rider/steer_balance.hpp",
+        "native/src/model/benchmark_whipple.hpp"
+      ],
+      "additional_producers": [
+        "W26",
+        "W29",
+        "W30",
+        "W31",
+        "W32",
+        "W33",
+        "W34",
+        "W35",
+        "W36"
+      ],
+      "status": "source_written",
+      "verification_status": "pending_verification"
+    },
+    {
+      "id": "C6",
+      "header_path": "native/src/runtime/spatial_sensor_pipeline.hpp",
+      "namespace": "runtime::spatial",
+      "types": [
+        "Vector3",
+        "Matrix3",
+        "ImuTruth",
+        "SensorObservationV2",
+        "NoiseTapeV2",
+        "SensorConfigV2",
+        "SensorStateV2",
+        "SensorPipelineV2",
+        "ImuMountBinding",
+        "SpatialTruth"
+      ],
+      "functions": [
+        "rotate_vector",
+        "SensorObservationV2::validate",
+        "SensorObservationV2::as_wire",
+        "SensorObservationV2::from_wire",
+        "NoiseTapeV2::validate",
+        "SensorConfigV2::validate",
+        "SensorPipelineV2::reset",
+        "SensorPipelineV2::import_state",
+        "SensorPipelineV2::push",
+        "SensorPipelineV2::read",
+        "SensorPipelineV2::state",
+        "SensorPipelineV2::state_wire",
+        "bind_imu_mount",
+        "read_imu_truth",
+        "is_rotation_matrix",
+        "integrate_abs_slip",
+        "spatial_truth_to_wire"
+      ],
+      "producer": "W37",
+      "consumers": [
+        "W38",
+        "W39",
+        "W40",
+        "W41",
+        "W42",
+        "W43",
+        "W44",
+        "W45",
+        "W46",
+        "W47",
+        "W50",
+        "W54"
+      ],
+      "versions": {
+        "spatial_contract": 1,
+        "runtime_schema": 2,
+        "bootstrap_schema": 2,
+        "writer_schema": 3,
+        "terrain": "BKT3/1",
+        "tyre_state": 1,
+        "checkpoint": 1,
+        "sensor": 2,
+        "policy_abi": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4
+      },
+      "frames": [
+        "sensor_local",
+        "nominal_sensor",
+        "world_xyz_z_up"
+      ],
+      "units": [
+        "s",
+        "m/s^2",
+        "rad/s",
+        "N*m",
+        "m"
+      ],
+      "owner": "spatial-observation",
+      "related_headers": [
+        "native/src/runtime/spatial_sensors.hpp",
+        "native/src/runtime/spatial_truth.hpp",
+        "native/include/bike/policy_v2.h"
+      ],
+      "additional_producers": [
+        "W38",
+        "W39",
+        "W40"
+      ],
+      "status": "source_written",
+      "verification_status": "pending_verification"
+    },
+    {
+      "id": "C7",
+      "header_path": "native/src/runtime/spatial_checkpoint.hpp",
+      "namespace": "runtime::spatial",
+      "types": [
+        "SpatialCheckpoint",
+        "CheckpointStage",
+        "CheckpointStageDeleter",
+        "CheckpointStageOwner",
+        "bike::viewer::Camera"
+      ],
+      "functions": [
+        "encode_checkpoint",
+        "decode_checkpoint",
+        "stage_checkpoint",
+        "commit_checkpoint",
+        "CheckpointStageDeleter::operator()",
+        "bike::viewer::Camera::update_spatial"
+      ],
+      "producer": "W42",
+      "consumers": [
+        "W43",
+        "W44",
+        "W45",
+        "W46",
+        "W47",
+        "W48",
+        "W49",
+        "W50",
+        "W54"
+      ],
+      "versions": {
+        "spatial_contract": 1,
+        "runtime_schema": 2,
+        "bootstrap_schema": 2,
+        "writer_schema": 3,
+        "terrain": "BKT3/1",
+        "tyre_state": 1,
+        "checkpoint": 1,
+        "sensor": 2,
+        "policy_abi": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4
+      },
+      "frames": [
+        "world_xyz_z_up",
+        "body_local",
+        "sensor_local",
+        "patch_longitudinal_lateral_normal",
+        "engine_joint_specific"
+      ],
+      "units": [
+        "m",
+        "m/s",
+        "rad",
+        "rad/s",
+        "s",
+        "N",
+        "N*m",
+        "J",
+        "tick",
+        "byte"
+      ],
+      "owner": "spatial-state-recording-replay",
+      "related_headers": [
+        "native/src/spatial/types.hpp",
+        "native/src/pneumatic3d/state.hpp",
+        "native/src/recording/catalog.hpp",
+        "native/src/replay/spatial_recipe.hpp",
+        "native/src/golden/spatial_registry.hpp",
+        "native/src/viewer/camera.hpp",
+        "native/src/viewer/render_owner.hpp"
+      ],
+      "api_adapters": [
+        {
+          "name": "runtime::spatial::CheckpointStageOwner",
+          "header_path": "native/src/runtime/spatial_checkpoint.hpp",
+          "declaration": "using CheckpointStageOwner = std::unique_ptr<CheckpointStage, CheckpointStageDeleter>",
+          "deleter_signature": "void CheckpointStageDeleter::operator()(CheckpointStage*) const noexcept",
+          "stage_signature": "CheckpointStageOwner stage_checkpoint(const SpatialCheckpoint&, const ::runtime::RuntimeIdentity&)",
+          "commit_signature": "void commit_checkpoint(CheckpointStage&&, ::runtime::NativeRideRuntime&)",
+          "implementation_owner": "W42",
+          "implementation_status": "declarations_only",
+          "ownership": "The deleter is defined where the staged type is complete; the identity and live runtime are the existing ::runtime owners, not new runtime::spatial types."
+        },
+        {
+          "name": "bike::viewer::Camera::update_spatial",
+          "forwarding_header": "native/src/viewer/camera.hpp",
+          "definition_header": "native/src/viewer/render_owner.hpp",
+          "signature": "void Camera::update_spatial(mjvCamera&, const std::array<double, 3>& position_world_m, std::optional<double> heading_rad)",
+          "implementation_owner": "W46",
+          "implementation_status": "declarations_only",
+          "ownership": "The forwarding header exposes the existing Camera class; it does not introduce a second viewer owner."
+        }
+      ],
+      "additional_producers": [
+        "W17",
+        "W27",
+        "W38",
+        "W41",
+        "W43",
+        "W44",
+        "W46"
+      ],
+      "status": "source_written",
+      "verification_status": "pending_verification"
+    },
+    {
+      "id": "C8",
+      "header_path": "native/src/runtime/spatial_performance.hpp",
+      "namespace": "runtime::spatial",
+      "types": [
+        "SpatialPerformanceProfile",
+        "RegionTimings",
+        "IndexRange",
+        "ElementWork",
+        "WorkerPool"
+      ],
+      "functions": [
+        "rtf_threshold_met",
+        "partition_ranges",
+        "WorkerPool::worker_count",
+        "WorkerPool::run",
+        "WorkerPool::stop"
+      ],
+      "producer": "W50",
+      "consumers": [
+        "W51",
+        "W52",
+        "W53",
+        "W54",
+        "W55"
+      ],
+      "versions": {
+        "spatial_contract": 1,
+        "runtime_schema": 2,
+        "bootstrap_schema": 2,
+        "writer_schema": 3,
+        "terrain": "BKT3/1",
+        "tyre_state": 1,
+        "checkpoint": 1,
+        "sensor": 2,
+        "policy_abi": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4
+      },
+      "frames": [
+        "canonical_element_material_order",
+        "same_execution_artifact"
+      ],
+      "units": [
+        "s",
+        "simulated_s/wall_s",
+        "byte",
+        "thread",
+        "process"
+      ],
+      "owner": "spatial-performance",
+      "related_headers": [
+        "native/src/runtime/spatial_worker_pool.hpp",
+        "native/src/golden/spatial_registry.hpp"
+      ],
+      "additional_producers": [
+        "W51",
+        "W52",
+        "W53",
+        "W54"
+      ],
+      "status": "source_written",
+      "verification_status": "pending_verification"
+    },
+    {
+      "id": "C9",
+      "header_path": "native/tests/spatial/support/spatial_fixture.hpp",
+      "namespace": "spatial_tests",
+      "types": [
+        "RigModel",
+        "RollingConstraints",
+        "WhippleMatrices",
+        "Kkt"
+      ],
+      "functions": [
+        "fixture",
+        "text",
+        "bytes",
+        "json",
+        "sha256_hex",
+        "plane_grid",
+        "polynomial_grid",
+        "asymmetric_4x4",
+        "bump_grid",
+        "polynomial_ray_roots_highprecision",
+        "synthetic_spec",
+        "wheel_at",
+        "full_torus_area",
+        "full_torus_volume",
+        "potential_energy_fd",
+        "constrained_rig",
+        "free_rig",
+        "mixed_joint_rig",
+        "complete_state_bytes",
+        "knife_edge_constraints",
+        "reference_matrices",
+        "quadratic_eigenvalues",
+        "solve_kkt",
+        "validate_qualification"
+      ],
+      "producer": "W04",
+      "consumers": [
+        "W01",
+        "W03",
+        "W05",
+        "W06",
+        "W07",
+        "W08",
+        "W09",
+        "W10",
+        "W11",
+        "W12",
+        "W13",
+        "W14",
+        "W15",
+        "W16",
+        "W17",
+        "W18",
+        "W19",
+        "W20",
+        "W21",
+        "W22",
+        "W23",
+        "W24",
+        "W25",
+        "W26",
+        "W27",
+        "W28",
+        "W29",
+        "W30",
+        "W31",
+        "W32",
+        "W33",
+        "W34",
+        "W35",
+        "W36",
+        "W37",
+        "W38",
+        "W39",
+        "W40",
+        "W41",
+        "W42",
+        "W43",
+        "W44",
+        "W45",
+        "W46",
+        "W47",
+        "W48",
+        "W49",
+        "W50",
+        "W51",
+        "W52",
+        "W53",
+        "W54"
+      ],
+      "versions": {
+        "spatial_contract": 1,
+        "runtime_schema": 2,
+        "bootstrap_schema": 2,
+        "writer_schema": 3,
+        "terrain": "BKT3/1",
+        "tyre_state": 1,
+        "checkpoint": 1,
+        "sensor": 2,
+        "policy_abi": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4
+      },
+      "frames": [
+        "explicit_per_fixture",
+        "same_execution_artifact"
+      ],
+      "units": [
+        "explicit_per_fixture",
+        "byte",
+        "check_count"
+      ],
+      "owner": "spatial-test-harness",
+      "related_headers": [
+        "native/tests/spatial/support/terrain_fixture.hpp",
+        "native/tests/spatial/support/tyre_fixture.hpp",
+        "native/tests/spatial/support/startup_fixture.hpp",
+        "native/tests/spatial/support/meijaard_constraints.hpp",
+        "native/tests/spatial/support/meijaard_reference.hpp",
+        "native/tests/spatial/support/benchmark_linalg.hpp",
+        "native/tests/spatial/support/qualification_registry.hpp"
+      ],
+      "ownership_contracts": {
+        "RigModel": {
+          "header_path": "native/tests/spatial/support/startup_fixture.hpp",
+          "default_constructor": "RigModel() = default",
+          "destructor": "~RigModel()",
+          "copy_constructor": "RigModel(const RigModel&) = delete",
+          "copy_assignment": "RigModel& operator=(const RigModel&) = delete",
+          "move_constructor": "RigModel(RigModel&&) noexcept",
+          "move_assignment": "RigModel& operator=(RigModel&&) noexcept",
+          "implementation_owner": "W29",
+          "implementation_status": "declarations_only",
+          "ownership": "The model and data pointers have one move-only owner; W29 supplies destruction and moves that leave the source empty."
+        }
+      },
+      "additional_producers": [
+        "W07",
+        "W08",
+        "W20",
+        "W21",
+        "W29",
+        "W34",
+        "W54"
+      ],
+      "status": "source_written",
+      "verification_status": "pending_verification"
+    }
+  ],
+  "wire_contracts": {
+    "runtime_config2": {
+      "producer": "W05",
+      "required_keys": [
+        "runtime_schema",
+        "timestep_s",
+        "control_period_s",
+        "control_period_steps",
+        "physics_mode",
+        "drive_mode",
+        "strict",
+        "measurement_decimation",
+        "record_retention",
+        "writer_config",
+        "rider_controller",
+        "rider_intent",
+        "monitors",
+        "geometry",
+        "spatial"
+      ],
+      "optional_keys": [
+        "async_telemetry"
+      ],
+      "allow_unknown": false,
+      "version_field": "runtime_schema",
+      "version": 2,
+      "spatial_decoder_owner": "W17",
+      "authoring_adapter": "runtime::project_spatial_runtime_envelope",
+      "live_status": "not_connected",
+      "authoring_limit": "W05 checks the envelope and geometry field shapes only; pose/rider spatial schemas, model binding and the runtime2/writer3/bootstrap2 identity agreement remain W17 consumers."
+    },
+    "config.spatial": {
+      "producer": "W05",
+      "required_keys": [
+        "spatial_contract",
+        "mode",
+        "root",
+        "terrain",
+        "steer",
+        "bootstrap",
+        "imu",
+        "profile"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "spatial_contract",
+      "version": 1,
+      "mode": "3d"
+    },
+    "config.spatial.terrain": {
+      "producer": "W05",
+      "required_keys": [
+        "kind",
+        "path",
+        "corridor_half_width_m",
+        "max_asset_bytes",
+        "dx_m",
+        "dy_m"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "nullable_keys": [
+        "dx_m",
+        "dy_m"
+      ],
+      "kind_values": [
+        "none",
+        "grid_asset",
+        "genspec",
+        "profile_extrusion"
+      ],
+      "note": "Optional owned generation overrides are represented by explicit null when absent; imported asset identity is not silently resampled.",
+      "max_asset_bytes_domain": {
+        "minimum": 1,
+        "maximum": 9223372036854775807,
+        "reason": "Public TOML signed-64 integer round trip; uint64 owned storage."
+      }
+    },
+    "config.spatial.steer": {
+      "producer": "W05",
+      "required_keys": [
+        "range_deg",
+        "damping_nms_rad",
+        "torque_cap_nm",
+        "reaction_delay_s",
+        "controller",
+        "profile_id",
+        "profile_sha256"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "controller_values": [
+        "off",
+        "roll_heading"
+      ],
+      "torque_cap_nm": "positive finite number or strength"
+    },
+    "config.spatial.bootstrap": {
+      "producer": "W05",
+      "required_keys": [
+        "settle_time_s",
+        "release_force_limit_n",
+        "release_moment_limit_nm",
+        "hold_stiffness_n_per_m",
+        "hold_damping_ns_per_m",
+        "hold_rot_stiffness_nm_per_rad",
+        "hold_rot_damping_nms_per_rad"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false
+    },
+    "config.spatial.imu": {
+      "producer": "W05",
+      "required_keys": [
+        "mount_pos_m",
+        "mount_rpy_rad",
+        "axis_misalignment_rad",
+        "calibration_revision"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "mount_pos_m": "site_BB or three finite body-local coordinates",
+      "rotation_convention": "Rz(yaw)*Ry(pitch)*Rx(roll)"
+    },
+    "config.spatial.profile": {
+      "producer": "W05",
+      "required_keys": [
+        "corridor_half_width_m",
+        "capsize_roll_rad",
+        "tyre_tier",
+        "lateral_coefficients_id",
+        "lateral_coefficients_sha256"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "tyre_tier_values": [
+        "fast",
+        "detailed"
+      ]
+    },
+    "writer_config3": {
+      "producer": "W05",
+      "required_keys": [
+        "schema",
+        "spatial"
+      ],
+      "optional_keys": [
+        "drive",
+        "cruise",
+        "suspension",
+        "brake",
+        "resistance",
+        "tire",
+        "rider_forces",
+        "rider_contacts"
+      ],
+      "allow_unknown": false,
+      "version_field": "schema",
+      "version": 3,
+      "envelope_validator": "nativecfg::validate_spatial_writer_envelope",
+      "live_decoder_status": "explicit_rejection_pending_W25",
+      "capability_sections": "Required sections are enforced by the selected capability; W05 never opens spatial runtime."
+    },
+    "writer_config3.spatial": {
+      "producer": "W05",
+      "required_keys": [
+        "spatial_contract",
+        "root_kind",
+        "topology_fingerprint",
+        "terrain_sha256",
+        "numeric_profile"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "spatial_contract",
+      "version": 1
+    },
+    "writer_config3.tire": {
+      "producer": "W25",
+      "required_keys": [
+        "backend",
+        "pneumatic_3d"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "backend": "pneumatic_3d",
+      "nested_owner": "W25",
+      "nested_status": "pending_producer",
+      "note": "W05's authoring validator checks backend and object shape only, keeping pneumatic_3d coefficients opaque. The live writer decoder explicitly rejects schema3 until W25; the planar pneumatic reader is never used as a fallback."
+    },
+    "bootstrap2": {
+      "producer": "W17",
+      "required_keys": [
+        "schema",
+        "model_digest",
+        "model_dims",
+        "integration_state",
+        "model_mutable",
+        "tire",
+        "drive",
+        "rider_contacts",
+        "rider_controller",
+        "rider_intent",
+        "signals",
+        "runtime",
+        "spatial"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "schema",
+      "version": 2
+    },
+    "bootstrap2.tire": {
+      "producer": "W27",
+      "required_keys": [
+        "pneumatic3d_state",
+        "identity",
+        "encoding",
+        "payload"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "pneumatic3d_state",
+      "version": 1,
+      "encoding": "base64",
+      "payload_rules": "Canonical padded base64 without whitespace; the decoded binary header, dimensions and identity are independently checked."
+    },
+    "bootstrap2.tire.identity": {
+      "producer": "W27",
+      "required_keys": [
+        "schema",
+        "tier",
+        "dims",
+        "patch_capacity",
+        "topology_fingerprint_hex",
+        "config_fingerprint_hex",
+        "terrain_sha256_hex",
+        "calibration_sha256_hex"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "schema",
+      "version": 1
+    },
+    "bootstrap2.tire.identity.dims": {
+      "producer": "W27",
+      "required_keys": [
+        "n_theta_fan",
+        "n_phi",
+        "n_theta_material"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false
+    },
+    "bootstrap2.spatial": {
+      "producer": "W17",
+      "required_keys": [
+        "spatial_contract",
+        "root_kind",
+        "topology_fingerprint",
+        "terrain_sha256",
+        "calibration_sha256",
+        "bootstrap_phase",
+        "hold",
+        "brake",
+        "steer",
+        "outcome"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "spatial_contract",
+      "version": 1
+    },
+    "bootstrap2.spatial.hold": {
+      "producer": "W17",
+      "required_keys": [
+        "schema",
+        "active",
+        "reference_position_world_m",
+        "reference_quat_wxyz",
+        "last_force_world_n",
+        "last_couple_world_nm",
+        "stored_energy_j",
+        "work_j",
+        "phase",
+        "valid_mask"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "schema",
+      "version": 1,
+      "active_owner": "W30"
+    },
+    "bootstrap2.spatial.brake": {
+      "producer": "W26",
+      "required_keys": [
+        "schema",
+        "wheel",
+        "interval_index",
+        "valid_mask"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "schema",
+      "version": 1,
+      "wheel_count": 2,
+      "wheel_order": [
+        "front",
+        "rear"
+      ]
+    },
+    "bootstrap2.spatial.brake.wheel[]": {
+      "producer": "W26",
+      "required_keys": [
+        "engaged",
+        "latch_angle_rad",
+        "unwrapped_angle_rad",
+        "stored_energy_j",
+        "previous_demand"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false
+    },
+    "bootstrap2.spatial.steer": {
+      "producer": "W17",
+      "required_keys": [
+        "schema",
+        "controller",
+        "next_tick",
+        "delay_fifo_nm",
+        "fifo_head",
+        "fifo_count",
+        "profile_sha256",
+        "last_command_nm",
+        "last_applied_nm",
+        "saturated_ticks",
+        "work_j",
+        "valid_mask"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "schema",
+      "version": 1,
+      "active_owner": "W32"
+    },
+    "bootstrap2.spatial.outcome": {
+      "producer": "W17",
+      "required_keys": [
+        "schema",
+        "latched",
+        "capsize_dwell_ticks",
+        "corridor_dwell_ticks",
+        "balance_dwell_ticks",
+        "valid_mask"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "schema",
+      "version": 1,
+      "active_owner": "W33"
+    },
+    "bootstrap2.spatial.outcome.latched": {
+      "producer": "W17",
+      "required_keys": [
+        "reason",
+        "terminal",
+        "valid",
+        "tick",
+        "time_s",
+        "position_world_m",
+        "diagnostic"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false
+    },
+    "spatial_checkpoint1": {
+      "producer": "W42",
+      "required_keys": [
+        "schema",
+        "bootstrap2",
+        "research",
+        "sensor_v2",
+        "policy",
+        "identity"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "schema",
+      "version": 1,
+      "causal_owner_rule": "bootstrap2 owns engine/tyre/brake/rider/steer/outcome once; no competing copies",
+      "remaining_nested_domains": "research/policy/identity reuse the corresponding typed owner; no arbitrary keys may be accepted"
+    },
+    "sensor_observation2": {
+      "producer": "W38",
+      "required_keys": [
+        "sensor_schema_version",
+        "time_s",
+        "source_time_s",
+        "valid",
+        "valid_mask",
+        "values"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "sensor_schema_version",
+      "version": 2,
+      "value_count": 11,
+      "value_order": [
+        "accel_x",
+        "accel_y",
+        "accel_z",
+        "gyro_x",
+        "gyro_y",
+        "gyro_z",
+        "front_rad_s",
+        "rear_rad_s",
+        "crank_rad_s",
+        "motor_torque_nm",
+        "human_torque_nm"
+      ]
+    },
+    "sensor_state2": {
+      "producer": "W38",
+      "required_keys": [
+        "queue",
+        "last_time",
+        "delivery_time",
+        "startup",
+        "cursor",
+        "samples_attempted",
+        "samples_dropped"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "nullable_keys": [
+        "last_time",
+        "delivery_time",
+        "startup"
+      ],
+      "queue_element": "sensor_observation2"
+    },
+    "replay_recipe4": {
+      "producer": "W43",
+      "required_keys": [
+        "contract",
+        "terrain_kind",
+        "terrain_sha256_hex",
+        "config_spatial",
+        "checkpoint_initial",
+        "checkpoint_final",
+        "execution_identity_sha256"
+      ],
+      "optional_keys": [],
+      "allow_unknown": false,
+      "version_field": "contract",
+      "version": 4
+    }
+  },
+  "ownership_rules": [
+    "W00 owns public declarations; W producers implement them without silent signature changes.",
+    "Each C1-C9 entry has one accountable owner; additional_producers do not create duplicate state ownership.",
+    "The terrain owner outlives bound immutable query views; each hot mutable scratch owner is confined to one runtime context.",
+    "Reference/candidate bitwise comparisons require the same platform, compiler, provider, engine and execution artifact.",
+    "Zero checks, unavailable payloads, null required identities and unknown mandatory fields fail closed.",
+    "C10 changes update headers, registry, consumers and task dependencies together."
+  ],
+  "open_deviations": "migration/spatial3d/contract-deviations.md"
+}

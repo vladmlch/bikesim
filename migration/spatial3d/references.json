@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "status": "data_entered_pending_review",
+  "owner": "W03",
+  "verification_owner": "V01",
+  "references": [
+    {
+      "id": "meijaard2007-benchmark",
+      "fixture_path": "tests/fixtures/spatial3d/references/meijaard2007.json",
+      "status": "data_entered_pending_review",
+      "source_doi": "10.1098/rspa.2007.1857",
+      "source_locations": [
+        "Table 1, p. 1960",
+        "Table 2(a,b,c), p. 1971",
+        "Section 3, pp. 1959-1961"
+      ],
+      "license": {
+        "id": "LicenseRef-Royal-Society-2007",
+        "copyright": "The Royal Society, 2007",
+        "scope": "Numerical facts transcribed with attribution; no paper text, images, or author code redistributed.",
+        "source_location": "Published paper, p. 1955 footer"
+      },
+      "payload_sha256": null,
+      "payload_status": "pending_verification",
+      "consumers": [
+        "W34",
+        "V01",
+        "V06"
+      ]
+    },
+    {
+      "id": "dellorto2024-tyre-lateral",
+      "fixture_path": "tests/fixtures/spatial3d/references/tyre-lateral.json",
+      "status": "data_entered_pending_review",
+      "source_doi": "10.1080/00423114.2024.2338143",
+      "external_dataset_doi": "10.5281/zenodo.7866646",
+      "source_locations": [
+        "Table 1, article p. 5",
+        "Section 3 and equation (3), article p. 5",
+        "Table 2, article p. 7 / published p. 314"
+      ],
+      "license": {
+        "id": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "source_location": "Article first page, copyright and license paragraph",
+        "changes": "Selected Table 2 measurements transcribed and converted to SI."
+      },
+      "payload_sha256": null,
+      "payload_status": "pending_verification",
+      "applicability": "cross_check_only",
+      "consumers": [
+        "W23",
+        "W24",
+        "W28",
+        "V01",
+        "V06"
+      ]
+    }
+  ],
+  "rules": {
+    "source_numbers": "Transcribe published numerical values; never manufacture measurements from the implementation under test.",
+    "conversion": "Store original units and explicit SI conversion.",
+    "missing_payload": "Null payload identity blocks payload-based qualification; these entered tables do not assert an acquired raw dataset.",
+    "mtb_calibration": "Cross-check-only city/cargo rows cannot be selected as a calibrated MTB coefficient profile."
+  }
+}

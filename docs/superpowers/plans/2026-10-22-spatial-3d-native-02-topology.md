@@ -154,7 +154,7 @@ bt::require(rejected_restore_state_bytes == before_restore_state_bytes, "invalid
 
 ## W19 — Интегрированные отрицательные проверки топологии (← S19)
 
-**Dependencies:** W13–W18. **Create:** `native/tests/spatial/test_topology_negatives.cpp`, `docs/superpowers/audits/2026-10-22-spatial-3d-topology.md` (скелет). **Modify:** `migration/spatial3d/upstream-gates.json` (consumers V03/V05 для G1/G2), capability matrix в `capabilities.cpp` (только rows для rejections, без включения).
+**Dependencies:** W01, W13–W18. **Create:** `native/tests/spatial/test_topology_negatives.cpp`, `docs/superpowers/audits/2026-10-22-spatial-3d-topology.md` (скелет). **Modify:** `migration/spatial3d/upstream-gates.json` (consumers V03/V05 для G1/G2), capability matrix в `capabilities.cpp` (только rows для rejections, без включения).
 
 - [ ] Adversarial matrix в тесте: free root + planar tyre; constrained root + steer controller; wrong root joint kind/axis; duplicate names; actuator bound elsewhere; invalid quaternion в bootstrap2; stale `terrain_sha256`; несовместимые shoulder state/layout; модель с теми же dims, но другим body/joint order. Для каждого: `bt::invalid` + проверка field path в `what()` + отсутствие side effects (`snapshot_before == snapshot_after` байты complete-state encoder, `publication_count_before == publication_count_after`).
 - [ ] Rigid-motion covariance: поворот track/model/velocity/forces вокруг world-Z на 90° сохраняет body-frame speed, drive power и load response (1e-9); support normals rotate вместе с geometry; reverse motion; near-singular orientation → `attitude.valid=false` без NaN.

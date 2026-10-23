@@ -94,6 +94,30 @@ void resolve_config_paths(bike::io::Value& values,
         resolve_member_in_place(section, "joint_strength_path", directory);
     }
     resolve_member_in_place(root, "equilibrium_state_file", directory);
+
+    // Every source entry point uses this resolver, including setup/research
+    // callers which construct the typed configuration without load_physics.
+    // Leave invalid section kinds to the spatial parser's full-path errors.
+    Value* spatial = find_mut(root, "spatial_3d");
+    auto* spatial_object = spatial == nullptr
+        ? nullptr : std::get_if<Value::Object>(&spatial->data);
+    if (spatial_object == nullptr) return;
+    Value* terrain = find_mut(*spatial_object, "terrain");
+    auto* terrain_object = terrain == nullptr
+        ? nullptr : std::get_if<Value::Object>(&terrain->data);
+    if (terrain_object == nullptr) return;
+    Value* path = find_mut(*terrain_object, "path");
+    if (path == nullptr || io::is_null(*path)) return;
+    auto* spelling = std::get_if<std::string>(&path->data);
+    if (spelling == nullptr)
+        io::detail::kind_error("bike::configuration::resolve_config_paths",
+                               "spatial_3d.terrain.path", "string path");
+    // An empty path is the canonical kind='none' source spelling. It must
+    // remain empty so validation never turns it into a directory asset.
+    if (spelling->empty()) return;
+    const std::filesystem::path file(*spelling);
+    if (!file.is_absolute())
+        *spelling = std::filesystem::weakly_canonical(directory / file).string();
 }
 
 } // namespace detail

@@ -431,6 +431,8 @@ target_link_libraries(bike_rider_math PUBLIC Bike::Numerics)
 # profile loaders read bounded regular files through the T06 bike_platform
 # edge; the schema/wire surfaces only touch bike_io's Value tree.
 add_library(bike_configuration STATIC
+  "${_bike_native_dir}/src/spatial/types.cpp"
+  "${_bike_native_dir}/src/spatial/config.cpp"
   "${_bike_native_dir}/src/configuration/schema.cpp"
   "${_bike_native_dir}/src/configuration/validate.cpp"
   "${_bike_native_dir}/src/configuration/load.cpp"
@@ -601,6 +603,11 @@ endif()
 # after the native executables exist: the migration_T03 build target depends
 # on them.
 add_subdirectory(native/tests/migration)
+
+# Spatial W00-W05 authoring seam. Execution and qualification belong to V00/V01.
+if(BUILD_TESTING)
+  add_subdirectory(native/tests/spatial)
+endif()
 
 # Completion 3.37-3.40: root-only validation stands and evidence contracts.
 # The binding graph keeps its own migration scope until phase 4.

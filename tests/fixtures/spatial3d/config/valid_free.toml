@@ -1,0 +1,41 @@
+# W05 parsing control only; no spatial runtime or calibrated profile is claimed.
+physics_mode = "physical"
+drive_mode = "coast"
+spatial = "3d"
+timestep_s = 0.0005
+control_period_s = 0.005
+
+[spatial_3d]
+root = "free"
+corridor_half_width_m = 1.5
+capsize_roll_rad = 1.0471975511965976
+
+[spatial_3d.steer]
+controller = "roll_heading"
+range_deg = 60.0
+damping_nms_rad = 0.5
+reaction_delay_s = 0.1
+torque_cap_nm = "strength"
+profile_id = "steer-provisional-v1"
+
+[spatial_3d.bootstrap]
+settle_time_s = 80.0
+release_force_limit_n = 1.0
+release_moment_limit_nm = 1.0
+hold_stiffness_n_per_m = 2000.0
+hold_damping_ns_per_m = 200.0
+hold_rot_stiffness_nm_per_rad = 400.0
+hold_rot_damping_nms_per_rad = 40.0
+
+[spatial_3d.imu]
+mount_pos_m = "site_BB"
+mount_rpy_rad = [0.0, 0.0, 0.0]
+axis_misalignment_rad = [0.0, 0.0, 0.0]
+
+[tires]
+backend = "pneumatic_3d"
+surface_mode = "track"
+
+[tires.pneumatic_3d]
+tier = "fast"
+lateral_coefficients = "mtb-provisional-v1"

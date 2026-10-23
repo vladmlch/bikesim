@@ -2,6 +2,7 @@
 
 #include "../configuration/model_config.hpp"
 #include "../configuration/rider_spec.hpp"
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -16,6 +17,8 @@ struct CapabilityReport {
     std::vector<std::string> paths;
     std::vector<std::string> rejections;
     std::string allocation_numeric_identity;
+    // Explicit dispatch row; absence preserves the planar report contract.
+    std::optional<bike::spatial::CapabilityReport> spatial;
 };
 [[nodiscard]] CapabilityReport capabilities(
     const bike::configuration::SimulationPhysicsConfig&,

@@ -19,6 +19,7 @@
 #include "physical_config.hpp"
 #include "../io/value.hpp"
 #include "../rider/intent.hpp"
+#include "../spatial/config.hpp"
 #include <array>
 
 namespace bike::configuration {
@@ -62,6 +63,9 @@ struct SimulationPhysicsConfig {
     double equilibrium_refine_period_s = 3.;
     bool equilibrium_cache_enabled = false;
     std::optional<std::string> equilibrium_state_file;
+    // W05 extension is deliberately outside the legacy FieldDecl table.
+    // Absent and explicit planar inputs have identical legacy encoding.
+    std::optional<bike::spatial::Config> spatial;
 };
 
 // ---- public boundary -----------------------------------------------------------

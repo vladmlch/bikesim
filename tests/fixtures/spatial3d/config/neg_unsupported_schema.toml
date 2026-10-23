@@ -1,0 +1,9 @@
+physics_mode = "physical"
+drive_mode = "coast"
+spatial = "3d"
+
+[spatial_3d]
+spatial_contract = 2
+
+[tires]
+backend = "pneumatic_3d"

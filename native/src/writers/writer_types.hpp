@@ -60,6 +60,26 @@ enum class CoreStatus : std::uint8_t {
     engine_failure
 };
 
+// Spatial extension only. Existing planar telemetry and CoreStatus values
+// remain unchanged. Couple is about point_world_m, not the body origin;
+// the Jp^T F lever arm must not be included a second time in this couple.
+struct SpatialWrenchTelemetry {
+    std::array<double, 3> point_world_m{};
+    std::array<double, 3> force_world_n{};
+    std::array<double, 3> couple_world_nm{};
+    double normal_load_n = 0.;
+    double fx_n = 0.;
+    double fy_n = 0.;
+    double mz_nm = 0.;
+    double slip_ratio = 0.;
+    double slip_angle_rad = 0.;
+    double camber_rad = 0.;
+    std::uint32_t surface_id = 0;
+    std::uint64_t patch_id = 0;
+    bool valid = false;
+    double loss_j = 0.;
+};
+
 namespace drivetrain {
     // Wire payload of one diagnostic field — the variant the Python boundary
     // serializes to/from. The map stays the FFI-edge representation

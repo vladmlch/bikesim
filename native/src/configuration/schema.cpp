@@ -250,7 +250,81 @@ bike::io::Value schema() {
 }
 
 bike::io::Value to_value(const SimulationPhysicsConfig &config) {
-    return detail::as_object(detail::kSimulationPhysicsConfigSchema, &config);
+    using bike::io::Value;
+    Value result = detail::as_object(detail::kSimulationPhysicsConfigSchema,
+                                     &config);
+    if (!config.spatial ||
+        config.spatial->mode == bike::spatial::Mode::planar)
+        return result;
+
+    // The runtime wire is the single fully resolved spatial representation.
+    // Reproject its sections to public input spelling for resolve_physics,
+    // metadata and TOML round trips without extending the planar field table.
+    const Value encoded = bike::spatial::spatial_config_to_wire(*config.spatial);
+    const auto& spatial = io::as_object(encoded, "config.spatial");
+    const auto member = [&](std::string_view name) -> const Value& {
+        const Value* value = io::find_member(spatial, name);
+        if (value == nullptr)
+            throw std::logic_error("config.spatial: missing resolved field " +
+                                   std::string(name));
+        return *value;
+    };
+    const auto& profile = io::as_object(member("profile"),
+                                       "config.spatial.profile");
+    const auto profile_member = [&](std::string_view name) -> const Value& {
+        const Value* value = io::find_member(profile, name);
+        if (value == nullptr)
+            throw std::logic_error(
+                "config.spatial.profile: missing resolved field " +
+                std::string(name));
+        return *value;
+    };
+    // Optional source fields use omission; runtime wire retains exact keys.
+    const auto source_section = [](const Value& value,
+                                   std::string_view derived_key = {}) {
+        Value::Object members;
+        for (const auto& [key, field] : io::as_object(value, "spatial section")) {
+            if (key == derived_key) continue;
+            if (io::is_null(field)) continue;
+            const auto* text = std::get_if<std::string>(&field.data);
+            if (text != nullptr && text->empty() &&
+                (key == "profile_id" || key == "profile_sha256" ||
+                 key == "calibration_revision"))
+                continue;
+            members.emplace_back(key, field);
+        }
+        return Value{.data = std::move(members)};
+    };
+    Value::Object source{
+        {"root", member("root")},
+        {"corridor_half_width_m", profile_member("corridor_half_width_m")},
+        {"capsize_roll_rad", profile_member("capsize_roll_rad")},
+        {"steer", source_section(member("steer"))},
+        {"bootstrap", member("bootstrap")},
+        {"imu", source_section(member("imu"))},
+        // Public input derives this equality-constrained field from the root.
+        // Keeping it only on the resolved wire lets a root-only override
+        // update the corridor without inheriting a contradictory duplicate.
+        {"terrain", source_section(member("terrain"), "corridor_half_width_m")},
+    };
+    Value::Object tyre{
+        {"tier", profile_member("tyre_tier")},
+    };
+    for (const auto& [wire_key, input_key] :
+         {std::pair{"lateral_coefficients_id", "lateral_coefficients"},
+          std::pair{"lateral_coefficients_sha256", "lateral_coefficients_sha256"}}) {
+        const auto& value = profile_member(wire_key);
+        if (!io::as_string(value, wire_key).empty())
+            tyre.emplace_back(input_key, value);
+    }
+    auto& root = std::get<Value::Object>(result.data);
+    for (auto& [key, value] : root)
+        if (key == "tires")
+            std::get<Value::Object>(value.data).emplace_back(
+                "pneumatic_3d", Value{.data = std::move(tyre)});
+    root.emplace_back("spatial", Value{.data = std::string("3d")});
+    root.emplace_back("spatial_3d", Value{.data = std::move(source)});
+    return result;
 }
 
 // ===========================================================================

@@ -33,8 +33,11 @@ CapabilityReport implemented_capabilities(
        attachments.saddle_attachment!="flat" || attachments.grip_attachment!="spring"))
         reject("articulated","non-flat rider attachments require articulated_planar topology");
     const auto& tires=config.tires;
+    const bool spatial_requested=config.spatial &&
+        config.spatial->mode==bike::spatial::Mode::spatial3d;
     if(tires.backend!="native_reference" && tires.backend!="compliant_2d" &&
-       tires.backend!="distributed_2d_reference" && tires.backend!="pneumatic")
+       tires.backend!="distributed_2d_reference" && tires.backend!="pneumatic" &&
+       !(spatial_requested && tires.backend=="pneumatic_3d"))
         reject("tires.backend","unknown contact dispatch");
     // setup.py validate_supported:67-76 — surface_mode's supported set is
     // backend-dependent: compliant/distributed writers read the track map
@@ -45,6 +48,15 @@ CapabilityReport implemented_capabilities(
     if((tires.backend=="compliant_2d" || tires.backend=="distributed_2d_reference") &&
        tires.surface_mode!="track")
         reject("tires.surface_mode","compliant_2d/distributed_2d_reference resolve the track surface map");
+    if(spatial_requested) {
+        out.spatial=bike::spatial::check_spatial_capability(*config.spatial,config);
+        for(const auto& reason:out.spatial->rejections)
+            reject("spatial",reason);
+        // W25/W31/W36 own connection of real runtime rows. A valid input
+        // declaration cannot advertise an executable spatial simulation.
+        if(out.spatial->rejections.empty())
+            reject("spatial","spatial runtime not connected: W25/W31/W36");
+    }
     if(out.rejections.empty()) {
         out.paths={"runtime/step.cpp", "writers/drivetrain.cpp", "runtime/native_contacts.cpp"};
         if(tires.backend=="compliant_2d")out.paths.emplace_back("writers/tire.cpp");

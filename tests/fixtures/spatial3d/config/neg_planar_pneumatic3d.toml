@@ -1,0 +1,4 @@
+spatial = "planar"
+
+[tires]
+backend = "pneumatic_3d"

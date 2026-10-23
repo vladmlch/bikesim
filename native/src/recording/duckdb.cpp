@@ -94,7 +94,7 @@ void bind(duckdb_prepared_statement statement, std::span<const Value> parameters
         if (io::is_null(value)) state = duckdb_bind_null(statement, index);
         else if (const auto* boolean = std::get_if<bool>(&value.data)) state = duckdb_bind_boolean(statement, index, *boolean);
         else if (const auto* name = std::get_if<std::string>(&value.data))
-            state = duckdb_bind_varchar_length(statement, index, name->data(), static_cast<idx_t>(name->size()));
+            state = duckdb_bind_varchar_length(statement, index, name->data(), name->size());
         else if (const auto* number = std::get_if<io::Number>(&value.data)) {
             if (number->lexeme.find_first_of(".eE") == std::string::npos) {
                 if (!number->lexeme.empty() && number->lexeme.front() == '-')
@@ -131,11 +131,11 @@ void bind(duckdb_prepared_statement statement, std::span<const Value> parameters
                 values.children.push_back(native);
             }
             Logical const type(duckdb_create_logical_type(DUCKDB_TYPE_DOUBLE));
-            values.list = duckdb_create_list_value(type.value, values.children.data(), static_cast<idx_t>(values.children.size()));
+            values.list = duckdb_create_list_value(type.value, values.children.data(), values.children.size());
             if (!values.list) failed("create double list", nullptr);
             state = duckdb_bind_value(statement, index, values.list);
         } else if (const auto* bytes = std::get_if<io::Bytes>(&value.data))
-            state = duckdb_bind_blob(statement, index, bytes->value.data(), static_cast<idx_t>(bytes->value.size()));
+            state = duckdb_bind_blob(statement, index, bytes->value.data(), bytes->value.size());
         else throw std::invalid_argument("recording SQL parameters require scalar values");
         if (state == DuckDBError) failed("bind", duckdb_prepare_error(statement));
     }

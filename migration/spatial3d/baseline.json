@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "base_sha": "fe4feaa560df68bce0e15b5b0d8d76eced29a062",
+  "parent_branch": "impl/python-free-cpp",
+  "integration_branch": "impl/spatial-3d-native",
+  "tree_status": "clean_committed_tip",
+  "timestamp_utc": "2026-10-23T18:41:53Z",
+  "source_export": {
+    "archive_name": "repomix-output.xml(20261022-154203).zip",
+    "zip_sha256": "5034ba14e39387030faae72ee8dd8b0d014f7eb8a4d1c713c694ea66b85dd9c1",
+    "xml_sha256": "e52d5c41d6d97bfe4aea30d50b79232afb15c1bb2804eb8ce36e68dcd00e94b6",
+    "verified_present_at": ".worktrees/python-free-cpp/repomix-output.xml.zip",
+    "note": "Root-worktree repomix-output.xml.zip (fb6514ed115c5984bb7054d1823bd6fcbaaa27b28dae04f61f50336f68256526) is a different export; the PFC copy matches the audit hash."
+  },
+  "dependency_identities": [
+    { "path": "uv.lock", "sha256": "3fd05820e73beb2eb5210d2ff129c340ecea74b03e9d50969cfc0dd619dc04fe" },
+    { "path": "pyproject.toml", "sha256": "b7da74844ea7f43356d10e46b20f5849e5477aabfa28f02020504a9fa65ce44c" },
+    { "path": "native/dependencies.lock.json", "sha256": "d2ce0bd3a92bc51bf16ecfcaa680227716a0bf47f097a4ffe44a48eb5c075d63" },
+    { "path": "native/numerics.lock.json", "sha256": "19f542e9a581ef5b47379ab1420b6104f5bac72cf270860421c5ae5acd0539bc" },
+    { "path": "native/cmake/BikeDependencyLock.cmake", "sha256": "161a0a9a57242cdbc553f188e5ee6c98c5ce51f972d6b9bf069950fe11d3c31d" },
+    { "path": "tools/linux/acquire_deps.sh", "sha256": "8ed4b6a7eede469d5635431e4b9dfceee6c3bd04a2525f7f64674c66f0b83095" },
+    { "path": "tools/linux/extract_deps.sh", "sha256": "5a222b4c06221e571d86c16cd102e7716760949fd070848965cc224a95618462" }
+  ],
+  "wip_patches": [
+    {
+      "path": ".worktrees/python-free-cpp (open merge, staged)",
+      "patch": "migration/spatial3d/wip/lane-b-merge-staged.patch",
+      "sha256": "fb3c5a8e3e4eeb28962548c4632cea89a7e90464cdc6813581934aaa021c643b",
+      "merge_head": "879c11953639d8e90b89a82a8ae233ee14600091",
+      "auto_merge_tree": "e2c062f60b82ca72fe8596c7181158e5c7335edd",
+      "files_changed": 158,
+      "owner": "PFC lane integrator",
+      "disposition": "integrate",
+      "rationale": "lane/b numeric completion port; conflicts resolved+staged but unverified and uncommitted. PFC owner concludes and verifies; spatial ports it per master §5.4 at the port window (after W00–W04, before W05/W14 edits of shared files)."
+    },
+    {
+      "path": ".worktrees/par-t20 tracked modifications",
+      "patch": "migration/spatial3d/wip/t20-tracked.patch",
+      "sha256": "654c8bd92391e38c049a034b726fb9a0ec56b9d34ed2634d8f28ed102276dca9",
+      "owner": "task/t20",
+      "disposition": "retain_separate",
+      "rationale": "T20-generation CMake/manifest edits; superseded port, PFC versions authoritative. Provenance only."
+    },
+    {
+      "path": ".worktrees/par-t20 untracked payload (66 files)",
+      "patch": "migration/spatial3d/wip/t20-untracked-payload.tar",
+      "sha256": "4ed21f611d358d38d95639e506594236e5f557e9558524ded466c26c5e01310e",
+      "listing": "migration/spatial3d/wip/t20-untracked.txt",
+      "owner": "task/t20",
+      "disposition": "retain_separate",
+      "rationale": "Terrain sources, test_t20.cpp and 54 fixture files (tests/fixtures/migration/terrain) for the superseded T20 port plus producer scripts; zero consumers in PFC. Archive before worktree removal; not a spatial requirement."
+    },
+    {
+      "path": "wip/merge-lmp (branch, no worktree) @ a5a33f1",
+      "sha256": null,
+      "owner": "merge-lmp lane",
+      "disposition": "retain_separate",
+      "rationale": "Unexamined root-graph/numerics record work; per plan only specific requirements port to spatial, branch itself stays out."
+    },
+    {
+      "path": ".worktrees/pfc-lane-b dirty+untracked residue",
+      "sha256": null,
+      "owner": "lane/b",
+      "disposition": "retain_separate",
+      "rationale": "Pre-merge working state that lost the merge; branch tip 879c1195 is the PFC MERGE_HEAD. Keep untouched until the open merge concludes, then residue is likely discardable."
+    },
+    {
+      "path": "root worktree docs/superpowers/audits/2026-10-22-branches-worktrees/*.json (5 files)",
+      "sha256": "992ca8c0a384661748c2c4e45be657845373cab76788d2b6cb249acac128f74b, a2dcfabff6a169dc9d02bea4eb5739e2df579ee493446c6b3d292a1885cbf0a4, 9a7b59cfef625c030551a919fad8542f4e7125093153c7a993f53a748a338881, 25bc4a695e32ca294e3b76c2f2f200e7dee58c64f53a5996b0cd8399835720c2, 08c4eec7b9b748d7caa713002243084a6f068508834b5440a4fc7282b9871791",
+      "owner": "prior audit",
+      "disposition": "retain_separate",
+      "rationale": "S00 evidence sources; untracked at root, not in repomix export (phantom-appendix check passed: they exist as files but were never exported)."
+    },
+    {
+      "path": ".worktrees/python-free-cpp untracked (10 files)",
+      "sha256": null,
+      "owner": "research scratch",
+      "disposition": "retain_separate",
+      "rationale": "examples/research/_tmp_*/_diag_nb.toml, repomix-output.xml{,.zip}, audits md — scratch and export copies; cleanup candidates, not WIP input."
+    },
+    {
+      "path": ".worktrees/mujoco_clean-3d-new .devin/skills/ + .claude/ (untracked agent config)",
+      "sha256": null,
+      "owner": "local tooling",
+      "disposition": "retain_separate",
+      "rationale": "Per-machine agent config, identical across worktrees; unrelated to migration."
+    },
+    {
+      "path": "stale worktrees bikesim-wt-14 (perf/road-samples-cache), check_92b124e (detached)",
+      "sha256": null,
+      "owner": "unknown",
+      "disposition": "retain_separate",
+      "rationale": "Paths gone under /private/tmp; git records only. Prunable but left for owner decision."
+    }
+  ],
+  "missing_binary_assets": [
+    { "path": "tests/fixtures/spatial3d/planar-baseline/**", "produced_by": "V01 capture on base_sha, both platform identities", "blocks": ["V01"] },
+    { "path": "tests/fixtures/spatial3d/** (all other fixture trees)", "produced_by": "W-tasks (data-only) + V capture for measured payloads", "blocks": ["V01", "V02", "V03", "V04", "V06"] },
+    { "path": "examples/research/terrain3d_manifest.json payload hashes", "produced_by": "V02 terrain_budget_300m on both platforms", "blocks": ["V02"] },
+    { "path": "examples/spatial/cross_slope.terrain3d asset", "produced_by": "V08 native generator run + review", "blocks": ["V08"] },
+    { "path": "Meijaard reference numbers external source", "produced_by": "W03 enters data; V01 spatial.references validates", "blocks": ["V01"] },
+    { "path": "platform goldens under tests/fixtures/golden/<platform>/ for spatial", "produced_by": "V07 capture on both platforms", "blocks": ["V07", "V10"] }
+  ],
+  "notes": [
+    "impl/python-free-cpp is 8 commits ahead of origin/impl/python-free-cpp — the base is local-only.",
+    "Branch 3d-new (2 docs commits) was cherry-picked onto this branch as 3a8622f, 7f46ad7; its 'feat(spatial): W13' commit message is docs-only — no W13 code exists.",
+    "Ancestry verified by merge-base: lane/a, lane/c, task/t20, feat/drop-oracle-parity, free-cpp-cloud are all ancestors of the base — already_equivalent.",
+    "Phantom-appendix claim verified: the five 2026-10-22-branches-worktrees JSONs exist untracked at root but are absent from the repomix export, as the source audit records."
+  ]
+}

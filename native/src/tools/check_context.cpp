@@ -1094,8 +1094,17 @@ std::vector<CompileEntry> load_entries(const fs::path &build,
         }
     };
     std::set<ManifestIdentity> manifest_identities;
+    // load_source_manifest already validated this member, but this function
+    // re-reads the document through the returned struct: keep the lookup
+    // fail-closed rather than dereferencing an unproven get_if result.
+    const Value *sources_member = member(manifest.document, "sources");
     const auto *sources_value =
-        std::get_if<Array>(&member(manifest.document, "sources")->data);
+        sources_member != nullptr
+            ? std::get_if<Array>(&sources_member->data)
+            : nullptr;
+    if (sources_value == nullptr)
+        throw CheckError(
+            "native source manifest has an empty expected translation-unit set");
     std::size_t manifest_index = 0;
     for (const Value &item: *sources_value) {
         if (!std::holds_alternative<Object>(item.data))

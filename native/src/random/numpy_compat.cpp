@@ -334,10 +334,9 @@ void NumpyRng::choice(std::span<const double> probabilities,
     // per sample, upper-bound insertion over the running sum.
     for (std::int64_t &index : out) {
         const double sample = detail::next_double(impl_->bitgen);
-        index = static_cast<std::int64_t>(std::ranges::upper_bound(
-                                              cdf.begin(), cdf.end(),
-                                              sample) -
-                                          cdf.begin());
+        index = std::ranges::upper_bound(
+                    cdf.begin(), cdf.end(), sample) -
+                cdf.begin();
     }
 }
 

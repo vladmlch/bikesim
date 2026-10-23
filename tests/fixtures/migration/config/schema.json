@@ -662,6 +662,36 @@
           "type": "<class 'float'>"
         },
         {
+          "default": 200.0,
+          "default_factory": null,
+          "name": "brake_hold_torque_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 20000.0,
+          "default_factory": null,
+          "name": "brake_hold_stiffness_nm_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 10.0,
+          "default_factory": null,
+          "name": "brake_hold_damping_nms_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.5,
+          "default_factory": null,
+          "name": "brake_hold_engage_radps",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 1.0,
+          "default_factory": null,
+          "name": "brake_hold_release_radps",
+          "type": "<class 'float'>"
+        },
+        {
           "default": false,
           "default_factory": null,
           "name": "motor_clutch",
@@ -1316,6 +1346,24 @@
           "default": 0.0,
           "default_factory": null,
           "name": "return_foot_preload_n",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.05,
+          "default_factory": null,
+          "name": "weld_servo_gain",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 25.0,
+          "default_factory": null,
+          "name": "weld_servo_limit_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.0,
+          "default_factory": null,
+          "name": "leg_track_damping_nms_rad",
           "type": "<class 'float'>"
         },
         {

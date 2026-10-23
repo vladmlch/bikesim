@@ -281,6 +281,15 @@ def rider_controller_config(articulated, control) -> dict:
     file resolution; the native decoder validates the exact key set and
     never reads a path."""
     out = plain(asdict(articulated))
+    # Python-only articulated knobs the native rider controller has not
+    # ported: weld_servo_gain/weld_servo_limit_nm drive the weld-press servo
+    # and leg_track_damping_nms_rad the weld-imposed leg-velocity follow in
+    # sim/ride/rider_control.py. They stay in the declared/resolved config
+    # surface but must not cross this closed wire — the native decoder
+    # rejects unknown keys.
+    for key in ('weld_servo_gain', 'weld_servo_limit_nm',
+                'leg_track_damping_nms_rad'):
+        del out[key]
     out['strength'] = None
     out['strength_coordinates'] = {}
     out['envelopes'] = {}

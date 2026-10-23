@@ -1941,3 +1941,113 @@ Batch files: `tests/reference/test_recorder_columns.py` (4),
   per-file pytest greens, the two-platform goldens and the new CTest
   nodes on both platforms — all green above. L2 runs in the integration
   worktree at merge-back per D17.
+
+## 2026-10-23 — Task 3.11: Linux baseline residuals (3 of 3 fixed)
+
+Scope: the three retained Linux pytest nodes in `docs/development/linux.md`.
+Container: `bike-dev-python-free-cpp`, image `bike-dev-linux:24.04`
+(Ubuntu 24.04 aarch64, clang++-18, CPython 3.13.16 at `/opt/bike-venv`,
+NumPy/OpenBLAS 2.5.2). **Deviation note:** the requested
+`bike-linux-image:port` image was tried first but contains no
+`/opt/bike-deps`, so `container.sh up` could not provision `/src/.deps`;
+the qualified `bike-dev-linux:24.04` lane image was used instead.
+Selected build `/build/native-clang` (configure + full ninja build,
+447/447 targets; MuJoCo private ABI probe `BIKE_MUJOCO_ERROR_ABI_312`
+passed).
+
+Reproduction command (all three nodes red on first run):
+
+    PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH=/build/native-clang \
+      uv run --frozen --group native python -m pytest -q <node>
+
+### Node 1 — `test_publication_permission_denied_then_retry` (fixed)
+
+Root cause: the test's privilege-drop child called
+`setgroups/setgid/setuid(nobody)` *before* importing `pathlib`,
+`tempfile`, and the probe helpers. The uv-managed CPython 3.13.16 stdlib
+resolves under `/root/.local/share/uv/python/...` and `/root` is mode
+`700`, so the unprivileged child could not lazily load *any* not-yet-
+imported stdlib module — first failure
+`ModuleNotFoundError: No module named 'pathlib'`.
+
+Labeled checks:
+- [reproduced] `ModuleNotFoundError: No module named 'pathlib'` in the
+  child stderr; parent saw `returncode == 1`.
+- [source-supported/control] a control run that pre-imported `duckdb`
+  before dropping still died on the next lazy link in the chain
+  (`ModuleNotFoundError: No module named 'socket'` via `pyarrow`) —
+  proving the whole deferred import graph, not one module, must be
+  warmed while privileged.
+
+Fix (`tests/reference/test_native_platform_recording.py`, test-side only,
+assertions unchanged): new `_publication_permission_denied_warmup()`
+performs a real `synthetic_capture` → `finalize` → `Recording` round
+trip; the child imports `Path`, `TemporaryDirectory` and both helpers
+**before** `setgroups/setgid/setuid`, runs the warmup still privileged,
+then drops to `nobody` and executes the unchanged EACCES/retry probe.
+No root-based pass: `geteuid() != 0` is asserted after the drop.
+
+### Nodes 2+3 — `test_engine_failure_keeps_committed_prefix`,
+`test_fatal_engine_error_preserves_completed_prefix_and_can_reset` (fixed)
+
+Root cause: both died at `create_native_ride` on
+`ValueError: config.rider_controller.weld_servo_gain: unknown key` —
+they never reached the engine-failure path.
+`src/bike_sim/native/setup.py::rider_controller_config()` emitted every
+`asdict(articulated)` field, while
+`native/src/runtime/project_config.cpp::project_rider_controller()`
+documents and erases the same three keys
+(`weld_servo_gain`, `weld_servo_limit_nm`,
+`leg_track_damping_nms_rad`) as Python-only knobs that must not cross
+the closed native wire (the native decoder exact-key-validates and
+rejects them). The binding-side drop was simply missing.
+
+Labeled checks:
+- [reproduced] `ValueError: config.rider_controller.weld_servo_gain:
+  unknown key` raised inside `create_native_ride` in the test child,
+  before any `stepper_->forward()` call — the fatal/TLS machinery was
+  never exercised.
+- [source-supported] `project_config.cpp` `kUnportedKeys` + the
+  exact-key decoder in `native/src/rider/state_codec.cpp` establish the
+  contract: those keys are Python-only and must be removed at the
+  binding projection boundary — not ported, not decoded.
+- [internal-precondition] `NativeRideRuntime::test_failure_boundary()`
+  sets `model->opt.solver = 99` and expects `engine::EngineFailure` via
+  `engine::invoke`'s thread-local `Frame` + `_mjPRIVATE_setTlsLogHandler`
+  interception (`engine_call.cpp`/`engine_abi_312.hpp`); `advance()`
+  catches the failure, flushes owned captures, rethrows and poisons the
+  stepper until `reset()` — matching `migration_T04` fatal containment.
+  Once construction succeeded, that path behaved exactly as contracted.
+
+Fix: the owning agent's in-flight `src/bike_sim/native/setup.py` change
+landed the three-key `del out[key]` at the projection boundary (this
+task did not edit that file — flagged as another agent's). Container
+`/src` re-synced, `/build/native-clang` rebuilt (244 targets — the
+native-source stamp now matches), both nodes pass.
+
+### Green proof
+
+Container `bike-dev-python-free-cpp` (`bike-dev-linux:24.04`):
+
+    3 passed in 4.93s   (all three nodes together)
+
+macOS arm64, `native/build` (cpython-313-darwin):
+
+    3 passed in 9.61s   (all three nodes together)
+
+### Changed files
+
+- `tests/reference/test_native_platform_recording.py` — warmup helper +
+  privileged-phase imports in the drop child (test-side fix only).
+- `src/bike_sim/native/setup.py` — three-key drop, **landed by the
+  owning agent** (task constraint honored; file untouched by this task).
+- `docs/development/linux.md` — retained-failures list emptied; the
+  3-failure measurement kept as history.
+- `migration/cpp-linux-completion-evidence.md` — this section.
+
+### Remaining red
+
+None among the three baseline nodes. The final `tools/run_tests.sh
+native` container gate result is recorded below; pre-existing reds on
+this lane (unrelated files, per earlier sections) are baseline, not
+Task 3.11 scope.

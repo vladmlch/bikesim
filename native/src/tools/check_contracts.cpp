@@ -1251,8 +1251,12 @@ for (const auto &entry : entries) expected.push_back(entry.source);
                                             .lexeme)
                                 .value_or(0));
                     if (!samples.empty())
+                        // median_of sorts in place; move the dead local in —
+                        // copying also trips GCC 13 -Wnull-dereference inside
+                        // vector's uninitialized_copy on empty ranges.
                         nested("median_ns")
-                            .emplace_back(mode, vint(median_of(samples)));
+                            .emplace_back(mode,
+                                          vint(median_of(std::move(samples))));
                 }
             }
             // sizeof equality between modes is required evidence.
@@ -2443,10 +2447,12 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
         };
         const fs::path kernel_root = repo_root / "native" / "src";
         const auto is_kernel_source = [&kernel_root](const fs::path &path) {
-            std::error_code ec;
+            // Named rel_ec: a bare `ec` shadows the function-scope
+            // std::error_code above under GCC -Wshadow.
+            std::error_code rel_ec;
             const fs::path rel =
-                fs::relative(path, kernel_root, ec);
-            if (ec || rel.empty() || *rel.begin() == "..") return false;
+                fs::relative(path, kernel_root, rel_ec);
+            if (rel_ec || rel.empty() || *rel.begin() == "..") return false;
             if (rel == fs::path("stepper.cpp")) return true;
             return kernel_dirs.contains(rel.begin()->string());
         };

@@ -143,7 +143,7 @@ Value resolved_wire() {
         R"({"paths":[{"name":"probe_path","joint":"root_x","stiffness_n_m":1.0,"damping_ns_m":0.0,"preload_deflection_m":0.0,"offset_m":0.0,"unilateral":false}]})"));
     auto& surface_map = member(member(wire, "tire"), "surface_map");
     auto& sections = member(surface_map, "sections");
-    if (std::get_if<Value::Array>(&sections.data)->empty()) {
+    if (io::as_array(sections, "tire.surface_map.sections").empty()) {
         // surface=copy.deepcopy(config['tire']['surface_map']['surface'])
         const Value surface = field(surface_map, "surface");
         Value entry{Value::Object{{"start_m", real(1.)}, {"end_m", real(2.)},
@@ -166,7 +166,7 @@ void set_live(Stepper& stepper, std::vector<double> qpos,
 void set_fresh(Stepper& stepper, std::vector<double> qpos,
                std::vector<double> qvel) {
     stepper.set_state(std::move(qpos), std::move(qvel), {},
-                      std::vector<double>(static_cast<std::size_t>(pinned_qpos().size()), 0.), 0.);
+                      std::vector<double>(pinned_qpos().size(), 0.), 0.);
 }
 // python_wire_config()'s typed half: every decoded section re-validates
 // through the shared nativecfg/drivetrain validate faces.

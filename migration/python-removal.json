@@ -12432,7 +12432,7 @@
     "phase3_source_implementation": {
       "date": "2026-10-21",
       "status": "partial_source_implementation",
-      "scope_and_limits": "All 41 registry entries, original bounds, convergence keys/floors, mandatory-vs-diagnostic selection, complete-suite and exact-dt gates. `jobs=1` executes sequentially; source isolated worker execution for jobs 2–32 is explicitly rejected. Native versions are declared as native versions.",
+      "scope_and_limits": "All 41 registry entries, original bounds, convergence keys/floors, mandatory-vs-diagnostic selection, complete-suite and exact-dt gates. `jobs=1` executes sequentially; source isolated worker execution for jobs 2\u201332 is explicitly rejected. Native versions are declared as native versions.",
       "evidence": [
         "migration/cpp-linux-phase3-validation-review.md"
       ],
@@ -12738,7 +12738,7 @@
     "phase3_source_implementation": {
       "date": "2026-10-21",
       "status": "partial_source_implementation",
-      "scope_and_limits": "Resolution validation, interval integration, all comparison criteria, seven cases, physical seeds, periodic station projection, rows/events/metrics and finest-pair summaries. Jobs 2–16 are explicitly unavailable. Runtime rows consume each immutable finalized interval once; this differs from the source's repeated `sim.physical.sample` read after each physics step. Initial state files preserve the exact payload bytes used for their hashes.",
+      "scope_and_limits": "Resolution validation, interval integration, all comparison criteria, seven cases, physical seeds, periodic station projection, rows/events/metrics and finest-pair summaries. Jobs 2\u201316 are explicitly unavailable. Runtime rows consume each immutable finalized interval once; this differs from the source's repeated `sim.physical.sample` read after each physics step. Initial state files preserve the exact payload bytes used for their hashes.",
       "evidence": [
         "migration/cpp-linux-phase3-validation-review.md"
       ],
@@ -15582,20 +15582,18 @@
   },
   {
     "path": "tests/reference/test_native_numeric_completion.py",
-    "sha256": "57b73ff8fa2e6879c9a7ac93e933fb4d31315c711fb0875ffa78d5ee8e00bfcc",
-    "line_count": 959,
+    "sha256": "a2f61807dd8a3a0e04628d455c7963fce5996667ae2e73e0a92d1555283a2752",
+    "line_count": 1046,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_native_numeric_completion.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_numeric_completion"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "8759e3382f72e587d2f9432e0e4ded557f7b6e13ebfc82b2ea60eef22557ce08",
     "snapshot_line_count": 959,
     "tracked": true,

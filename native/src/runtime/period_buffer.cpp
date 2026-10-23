@@ -80,12 +80,19 @@ AttachmentSamples evaluate_attachments(const RawStep &raw,
         bool valid = true;
         for (std::size_t i = 0; i < wr.size(); ++i)
             valid = valid && std::abs(wb[i] + wr[i]) <= 1e-4 * scale + 1e-4 * std::abs(wr[i]);
-        for (const std::size_t i : std::array<std::size_t, 3>{1, 3, 5})
-            valid = valid && std::abs(wr[i]) <= 1e-6 * scale;
-        if (valid)
-            samples.emplace_back(name, rider::decompose_wrench(
-                wr, item.normal, item.kind, item.rotational, item.half_patch_m,
-                item.gap_m, item.pull_direction));
+        if (!item.spatial_frame)
+            for (const std::size_t i : std::array<std::size_t, 3>{1, 3, 5})
+                valid = valid && std::abs(wr[i]) <= 1e-6 * scale;
+        if (valid) {
+            if (item.spatial_frame)
+                samples.emplace_back(name, rider::decompose_spatial_wrench(
+                    wr, *item.spatial_frame, item.kind, item.rotational, item.half_patch_m,
+                    item.gap_m, item.pull_direction));
+            else
+                samples.emplace_back(name, rider::decompose_wrench(
+                    wr, item.normal, item.kind, item.rotational, item.half_patch_m,
+                    item.gap_m, item.pull_direction));
+        }
     }
     // evaluate_attachments visits sorted attachment names, while error
     // reporting below keeps the original raw-map insertion order.

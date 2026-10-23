@@ -88,7 +88,7 @@ namespace drivetrain {
           effort_(config_.drive_mode == "crank_effort" ||
                   config_.drive_mode == "articulated_effort"),
           geometric_hub_(config_.transmission_model == "geometric_ideal_mid_drive"),
-          geometry_(m->nv), frame_(resolve(m, mjOBJ_BODY, "frame")),
+          geometry_(m), frame_(resolve(m, mjOBJ_BODY, "frame")),
           crank_(resolve(m, mjOBJ_BODY, "crank")),
           rear_(resolve(m, mjOBJ_BODY, "rear_wheel")),
           human_actuator_(mj_name2id(m, mjOBJ_ACTUATOR, "human_crank")),
@@ -101,9 +101,8 @@ namespace drivetrain {
           shifting_scratch_(config_.policies.gearing, config_.policies.shifting),
           assist_scratch_(config_.policies.assist),
           battery_scratch_(config_.policies.battery.energy_j) {
-        if (m->nq != m->nv)
-            throw std::invalid_argument(
-                "physical chain supports scalar planar coordinates only (nq == nv)");
+        // Root/free/ball spans are independent of the scalar spin joints
+        // this writer owns. Each spin resolves its own qpos and dof address.
         for (const char *name: {
                  "crank_spin", "rear_wheel_spin", "front_wheel_spin",
                  "pedal_front_spin", "pedal_rear_spin"
@@ -114,6 +113,8 @@ namespace drivetrain {
                 .qpos = buffer(m->jnt_qposadr, m->njnt)[static_cast<std::size_t>(id)],
                 .dof = buffer(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(id)]
             };
+            model_access::require_id(j.qpos,m->nq,"drive.spin.qpos");
+            model_access::require_id(j.dof,m->nv,"drive.spin.dof");
             joints_.emplace(name, j);
             bearing_joints_.push_back(j);
         }
@@ -128,6 +129,8 @@ namespace drivetrain {
                     .qpos = buffer(m->jnt_qposadr, m->njnt)[static_cast<std::size_t>(id)],
                     .dof = buffer(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(id)]
                 };
+                model_access::require_id(j.qpos,m->nq,"drive.auxiliary.qpos");
+                model_access::require_id(j.dof,m->nv,"drive.auxiliary.dof");
                 joints_.emplace(name, j);
                 bearing_joints_.push_back(j);
             }

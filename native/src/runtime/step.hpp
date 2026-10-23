@@ -31,6 +31,7 @@
 #include "../writers/tire.hpp"
 #include "../writers/writer_types.hpp"
 #include "config.hpp"
+#include "bootstrap.hpp"
 #include "control.hpp"
 #include "static_brake.hpp"
 
@@ -59,6 +60,8 @@ struct StepConfig {
     bool rider_present = false;
     MonitorConfig monitors;
     rider::IntentConfig intent{};
+    std::optional<bike::spatial::Config> spatial;
+    std::shared_ptr<const bike::terrain::Terrain3dSource> terrain3d;
 };
 
 // constraint_forces.py ConstraintForceSnapshot — solved-limit forces for
@@ -156,6 +159,7 @@ struct StepState {
     rider::IntentSignals signals{};
     std::optional<rider::SpindleController::State> rider_controller;
     rider::RiderIntent::State rider_intent{};
+    std::optional<SpatialBootstrapState> spatial;
 };
 
 // The two-snapshot map _contacts returns ('front' then 'rear'), with
@@ -264,6 +268,15 @@ public:
     [[nodiscard]] const RuntimeContacts &contacts() const noexcept {
         return contacts_;
     }
+    [[nodiscard]] const std::optional<bike::spatial::Topology>& topology() const noexcept { return topology_; }
+    [[nodiscard]] const std::optional<SpatialBootstrapState>& spatial_state() const noexcept { return spatial_state_; }
+    [[nodiscard]] SpatialBootstrapState prepare_spatial_state(const SpatialBootstrapState&) const;
+    // Only a record returned by prepare_spatial_state may be committed here.
+    void commit_spatial_state(SpatialBootstrapState&&) noexcept;
+    [[nodiscard]] double longitudinal_speed_mps() const;
+    [[nodiscard]] double longitudinal_position_m() const;
+    [[nodiscard]] double root_pitch_rad() const;
+    [[nodiscard]] WireObject spatial_observation() const;
     void initialize_presentation(PresentationState &out) const;
     void capture_presentation(PresentationState &out) const;
     void capture_accounted_presentation(PresentationState &out) const;
@@ -420,6 +433,7 @@ private:
         bool full = false;
         std::vector<std::pair<std::string, std::vector<double>>> components;
         std::array<int, 3> warning_counts{};
+        WireObject spatial;
         // Produced by solve_tail, consumed by publish_raw.
         std::vector<std::pair<std::string, double>> constraint_powers{};
         writers::RiderSettleOutcome settle{};
@@ -441,6 +455,10 @@ private:
 
     Stepper *stepper_;
     StepConfig config_;
+    std::optional<bike::spatial::Topology> topology_;
+    // Causal state is copied through all cold boundaries. W26/W30–W33 bind
+    // their active owners to this inventory; probes never mutate it.
+    std::optional<SpatialBootstrapState> spatial_state_;
     std::vector<std::array<double, 2>> vertices_;
     RoadProfile road_profile_;  // validated/split once from vertices_
 

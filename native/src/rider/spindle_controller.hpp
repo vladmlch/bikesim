@@ -30,6 +30,7 @@
 #include "spindle_math.hpp"
 #include "response_allocation.hpp"
 #include "legacy_diagnostics.hpp"
+#include "spatial_support.hpp"
 
 namespace bike::rider { class LegacyController; }
 
@@ -67,6 +68,11 @@ struct DirectionalStrength {
 // the setup boundary appends beside the asdict fields. Path strings stay
 // informational — the parsed tables are what the controller consumes.
 struct SpindleConfig {
+    bool spatial = false;
+    // Steering has one command owner. Hand reaction is carried by connect
+    // equalities; arm effort never writes the steering actuator or DOF.
+    std::string steer_torque_owner = "actuator";
+    std::optional<bike::rider::ShoulderProfile> shoulder_profile;
     double joint_kp_nm_rad = 0.;
     double joint_kd_nms_rad = 0.;
     double joint_limit_nm = 0.;
@@ -190,6 +196,13 @@ struct SoleGoalDiagnostics {
 
 class SpindleController {
 public:
+    struct ShoulderLane { double q = 0.; double qd = 0.; };
+    struct SpatialState {
+        std::array<ShoulderLane, 2> shoulders{};
+        int arm_branch = 1;
+        std::string shoulder_profile_sha256;
+        std::string steer_torque_owner = "actuator";
+    };
     struct JointEntry {
         std::string name;
         int qpos_adr;
@@ -222,7 +235,7 @@ public:
 
     // initialize()/initialize_velocity() — static-equilibrium-time pose
     // matching only; never inside the running step.
-    void initialize(mjData *data);
+    void initialize(mjData *data, const RiderPosture* posture = nullptr);
     void initialize_velocity(mjData *data);
 
     void reset_activation();
@@ -276,8 +289,11 @@ public:
         SupportDiagnostics support_diagnostics;
         NamedEntries<SoleGoalDiagnostics> sole_goal_diagnostics;
         std::optional<bike::rider::AllocationMemory> allocation_memory;
+        std::optional<SpatialState> spatial;
     };
-    [[nodiscard]] State state() const;
+    // Data captures the physical shoulder q/qd at the checkpoint; the
+    // no-argument form retains the most recent controller observation.
+    [[nodiscard]] State state(const mjData* data = nullptr) const;
     [[nodiscard]] const NamedEntries<JointTerms> &presentation_terms() const noexcept {
         return last_terms_;
     }
@@ -294,6 +310,8 @@ public:
     // controller if allocation fails.
     void validate_state(const State &state) const;
     void commit_state(State &&state) noexcept;
+    void validate_spatial_lanes(const State&, std::span<const double> qpos,
+                                std::span<const double> qvel) const;
 
     [[nodiscard]] const std::vector<JointEntry> &joints() const {
         return joints_;
@@ -321,6 +339,7 @@ private:
     // debug stack-frame budget holds on unoptimized builds.
     void resolve_model_layout(std::span<const int> qpos_adrs,
                               std::span<const int> dof_adrs);
+    void observe_spatial_state(const mjData*);
     // _targets() spindle branch — IK goals for one leg, updates the
     // sole/IK diagnostic mirrors.
     [[nodiscard]] spindle::Vec2 leg_targets(const mjData *data,
@@ -421,6 +440,7 @@ private:
     NamedEntries<std::array<double, 3>> sole_targets_;
     double target_difference_s_ = 1e-4;
     bike::rider::AllocationMemory allocation_memory_;
+    std::optional<SpatialState> spatial_state_;
     std::unique_ptr<bike::rider::LegacyController> legacy_;
 
     std::unique_ptr<mjData, decltype(&mj_deleteData)> target_data_;

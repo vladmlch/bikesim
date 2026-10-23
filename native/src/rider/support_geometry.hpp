@@ -1,5 +1,6 @@
 #pragma once
 #include "contact_math.hpp"
+#include "spatial_support.hpp"
 #include <mujoco/mujoco.h>
 #include <span>
 #include <stdexcept>
@@ -70,4 +71,10 @@ namespace rider {
 
     void validate_planar_support_model(const mjModel *model, const mjData *data,
                                        std::span<const int> geom_ids);
+    void validate_spatial_support_model(const mjModel*, const mjData*, std::span<const int>);
+    BoxPadContact spatial_box_pad_contact(const Vec3& center, double radius,
+        const bike::spatial::BodyPose& box_pose, const Vec3& half);
+    SoleGoal project_spatial_sole_goal(const bike::spatial::BodyPose& box_pose,
+        const Vec3& half, double pad_half_length_m, double pad_radius_m,
+        double compression_m, double shear_m);
 } // namespace rider

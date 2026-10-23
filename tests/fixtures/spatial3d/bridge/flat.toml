@@ -1,0 +1,5 @@
+name = "spatial_bridge_flat"
+length_m = 120.0
+description = "W18 authored flat geometry; no captured numerical result"
+surface = "hardpack"
+grade_profile = { knots = [[0.0, 0.0], [120.0, 0.0]] }

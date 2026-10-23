@@ -1,0 +1,17 @@
+# W09 source recipe only. The legacy square edges can exceed tan(60 deg)
+# at 5 mm. The generator rejects them; V02 must resolve this explicitly.
+base_track = "rough_uphill_savage.toml"
+
+[terrain3d]
+generator_version = "grid3d-gen/1"
+seed = 0
+dx_m = 0.005
+dy_m = 0.010
+half_width_m = 1.5
+lead_in_m = 4.0
+lead_out_m = 5.0
+roughness = { sigma_m = 0.002, ell_m = 0.1 }
+banks = [{ start_x_m = 12.0, ramp_m = 6.0, angle_deg = 3.0 }, { start_x_m = 65.0, ramp_m = 8.0, angle_deg = -3.0 }, { start_x_m = 100.0, ramp_m = 5.0, angle_deg = 0.0 }]
+features = [{ kind = "rock", x_m = 24.0, y_m = 0.6, amplitude_m = 0.06, radius_x_m = 0.5, radius_y_m = 0.4, yaw_rad = 0.25 }, { kind = "rut", x_m = 70.0, y_m = -0.6, amplitude_m = 0.03, radius_x_m = 1.2, radius_y_m = 0.35, yaw_rad = -0.15 }]
+surfaces = [{ id = 1, name = "asphalt", mu_peak = 1.05, mu_slide = 0.75, slip_stiffness_per_load = 15.0, stribeck_speed_mps = 4.5 }]
+zones = []

@@ -19,6 +19,11 @@
 #include "writer_config.hpp"
 #include "writers/tire_common.hpp"
 #include "writers/writer_types.hpp"
+#include "pneumatic3d/state.hpp"
+#include "spatial/config.hpp"
+
+namespace bike::terrain { class Terrain3dSource; }
+namespace bike::pneumatic3d { class Pneumatic3dTireWriter; struct Pneumatic3dSpec; }
 
 class SuspensionWriter;
 class BrakeWriter;
@@ -331,6 +336,15 @@ public:
         return tire_ != nullptr || distributed_tire_ != nullptr ||
                pneumatic_tire_ != nullptr;
     }
+    // W17 cold ownership/state seam. W25 connects this producer to the common
+    // TireWriterView dispatch; schema3 may never install a planar substitute.
+    void install_spatial_tire(const bike::spatial::Config&,
+        std::shared_ptr<const bike::terrain::Terrain3dSource>,
+        bike::pneumatic3d::Pneumatic3dSpec,
+        bike::pneumatic3d::TyreStateIdentity3d);
+    [[nodiscard]] bool has_spatial_tire() const noexcept { return spatial_tire_ != nullptr; }
+    [[nodiscard]] bike::pneumatic3d::Pneumatic3dTireWriter& spatial_tire_writer() const;
+    void restore_spatial_tire(const bike::pneumatic3d::TyreState3d&);
 
     // ---- Owned-writer access for the runtime's physical step (plan A3) --
     // Mutable borrowed references into the Stepper-owned writers — the
@@ -498,6 +512,11 @@ private:
     std::unique_ptr<TireWriter> tire_;
     std::unique_ptr<DistributedTireWriter> distributed_tire_;
     std::unique_ptr<PneumaticTireWriter> pneumatic_tire_;
+    // Declaration order keeps the immutable terrain alive through writer
+    // destruction. The initial state is the producer's real typed state.
+    std::shared_ptr<const bike::terrain::Terrain3dSource> spatial_terrain_;
+    std::unique_ptr<bike::pneumatic3d::Pneumatic3dTireWriter> spatial_tire_;
+    std::optional<bike::pneumatic3d::TyreState3d> initial_spatial_tire_;
     std::unique_ptr<RiderForcesWriter> rider_forces_;
     std::unique_ptr<drivetrain::DrivetrainWriter> drive_;
     // T3b-1 — the model-owned RiderContactWriter plus its construction-

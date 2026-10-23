@@ -56,6 +56,8 @@ namespace rider {
     // parse_spindle_config.
     [[nodiscard]] SpindleConfig
     decode_spindle_config(const bike::io::Value &value);
+    [[nodiscard]] SpindleConfig
+    decode_spatial_spindle_config(const bike::io::Value &value);
     // Plain ArticulatedConfig members (without strength/envelope tables).
     [[nodiscard]] bike::configuration::ArticulatedConfig
     decode_articulated_config(const bike::io::Value &value);
@@ -64,6 +66,8 @@ namespace rider {
 
     [[nodiscard]] SpindlePose
     decode_spindle_pose(const bike::io::Value &value, std::string_view path);
+    [[nodiscard]] SpindlePose
+    decode_spatial_spindle_pose(const bike::io::Value &value, std::string_view path);
     [[nodiscard]] RiderPosture
     decode_rider_posture(const bike::io::Value &value, std::string_view path);
     [[nodiscard]] RiderCommand

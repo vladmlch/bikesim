@@ -216,6 +216,9 @@ namespace drivetrain {
                 driven_dof_ = absent_id, front_ = absent_id, rear_ = absent_id,
                 frame_ = absent_id;
         std::vector<int> coefficients_;
+        // nv-indexed scalar qpos mapping. Free/ball lanes stay -1 and have
+        // no fixed-tendon wrap slot; manifold snapshots retain all nq values.
+        std::vector<int> scalar_qpos_;
         OwnedData constant_, endpoint_;
         // Owned staging world: scratch_model_ mirrors the live model at each
         // coefficient-changing stage (mj_copyModel destination reuse), and

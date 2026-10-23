@@ -6,6 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <numbers>
+#include <string>
 #include <utility>
 
 namespace {
@@ -139,7 +140,26 @@ namespace drivetrain {
     GeometryWorkspace::GeometryWorkspace(mjtSize nv)
         : jp_f(checked_geometry_width(nv, 3)), jr_f(jp_f.size()), jp_r(jp_f.size()),
           jr_r(jp_f.size()), jacobian(checked_geometry_width(nv, 1)),
-          difference(checked_geometry_width(nv, 2)), coordinates(jacobian.size()) {
+          difference(checked_geometry_width(nv, 2)), coordinates(jacobian.size()),
+          jr_frame(jp_f.size()) {
+    }
+
+    GeometryWorkspace::GeometryWorkspace(const mjModel* model):GeometryWorkspace(model->nv) {
+        spatial=model->nq!=model->nv || mj_name2id(model,mjOBJ_JOINT,"root_y")>=0 ||
+            mj_name2id(model,mjOBJ_JOINT,"root_free")>=0;
+        if(spatial) {
+            centre_sites.assign(static_cast<std::size_t>(model->nbody),-1);
+            const auto site_bodies=model_access::readonly_buffer(model->site_bodyid,model->nsite);
+            for(const char* name:{"crank","rear_wheel","cassette","drive_shaft","motor_rotor"}) {
+                const int body=mj_name2id(model,mjOBJ_BODY,name);
+                const auto site_name="spatial_chain_center_"+std::string(name);
+                const int site=mj_name2id(model,mjOBJ_SITE,site_name.c_str());
+                if(site<0) continue;
+                if(body<=0 || site_bodies[static_cast<std::size_t>(site)]!=body)
+                    throw std::invalid_argument("geometry.centre_site: wrong sprocket body");
+                centre_sites[static_cast<std::size_t>(body)]=site;
+            }
+        }
     }
 
     double GeometryWorkspace::angle(const mjModel *m, const mjData *d, int body,
@@ -152,6 +172,46 @@ namespace drivetrain {
         if (m->nv < 0 || std::cmp_greater(m->nv, jacobian.size()))
             throw std::invalid_argument(
                 "geometry workspace is narrower than the model");
+        if(spatial || m->nq!=m->nv) {
+            const auto roots=model_access::readonly_buffer(m->body_rootid,m->nbody);
+            const auto parents=model_access::readonly_buffer(m->body_parentid,m->nbody);
+            const auto joint_start=model_access::readonly_buffer(m->body_jntadr,m->nbody);
+            const auto joint_count=model_access::readonly_buffer(m->body_jntnum,m->nbody);
+            const auto types=model_access::readonly_buffer(m->jnt_type,m->njnt);
+            const auto axes=model_access::readonly_buffer(m->jnt_axis,3*m->njnt);
+            const auto addresses=model_access::readonly_buffer(m->jnt_qposadr,m->njnt);
+            const auto q=model_access::readonly_buffer(d->qpos,m->nq);
+            const auto q0=model_access::readonly_buffer(m->qpos0,m->nq);
+            const int root=roots[static_cast<std::size_t>(body)];
+            model_access::require_id(root,m->nbody,"geometry.root");
+            const auto rotation=model_access::readonly_buffer(d->xmat,9*m->nbody);
+            const auto base=rotation.subspan(9*static_cast<std::size_t>(root),9);
+            const auto current=rotation.subspan(9*static_cast<std::size_t>(body),9);
+            for(const double value:base) finite(value,"geometry.root_rotation");
+            for(const double value:current) finite(value,"geometry.sprocket_rotation");
+            double axle_alignment=0.;
+            for(std::size_t row=0;row<3;++row) axle_alignment+=base[3*row+1]*current[3*row+1];
+            if(std::abs(axle_alignment-1.)>1e-9)
+                throw std::invalid_argument("transmission.geometry: sprocket axles must remain parallel in the frame");
+            double xx=0.,zx=0.;
+            for(std::size_t k=0;k<3;++k) {xx+=base[3*k]*current[3*k];zx+=base[3*k+2]*current[3*k];}
+            const double raw=std::atan2(-zx,xx);
+            if(!accumulated) return raw;
+            double reference=0.;
+            // Only internal scalar hinge coordinates unwrap sprocket turns.
+            // Free/ball components never masquerade as angular scalars.
+            for(int owner=body;owner!=root && owner>0;owner=parents[static_cast<std::size_t>(owner)]) {
+                const auto at=static_cast<std::size_t>(owner);
+                for(int j=joint_start[at];j<joint_start[at]+joint_count[at];++j) {
+                    const auto ji=static_cast<std::size_t>(j);
+                    if(types[ji]==mjJNT_HINGE && std::abs(axes[3*ji+1]-1.)<=1e-12) {
+                        const auto qa=static_cast<std::size_t>(addresses[ji]);
+                        reference+=q[qa]-q0[qa];
+                    }
+                }
+            }
+            return unwrap(raw,reference);
+        }
         const auto rotation =
                 model_access::readonly_buffer(d->xmat, 9 * m->nbody)
                 .subspan(9 * static_cast<std::size_t>(body), 9);
@@ -185,12 +245,8 @@ namespace drivetrain {
                                        const GearingConfig &gear, int front, int rear,
                                        int frame, std::optional<Vec2> angles,
                                        std::optional<double> reference, bool accumulated) {
-        // Supported scalar topology first: nq != nv is a rejected model
-        // shape, never a qpos-width overflow — nq >= nv models are valid
-        // elsewhere but not scalar-planar here.
-        if (m->nq != m->nv)
-            throw std::invalid_argument(
-                "transmission geometry needs scalar planar coordinates");
+        if(spatial || m->nq!=m->nv)
+            return evaluate_spatial(m,d,gear,front,rear,frame,angles,reference,accumulated);
         model_access::require_id(front, m->nbody, "geometry.front");
         model_access::require_id(rear, m->nbody, "geometry.rear");
         model_access::require_id(frame, m->nbody, "geometry.frame");
@@ -238,5 +294,56 @@ namespace drivetrain {
             jacobian[i] = jacobian[i] + rf * jr_f[n + i] - rr * jr_r[n + i];
         validation::derived_array(jacobian, "geometry.jacobian");
         return validation::derived(geometry.length + rf * theta_f - rr * theta_r, "geometry.coordinate");
+    }
+
+    double GeometryWorkspace::evaluate_spatial(const mjModel* m,mjData* d,
+        const GearingConfig& gear,int front,int rear,int frame,std::optional<Vec2> angles,
+        std::optional<double> reference,bool accumulated) {
+        model_access::require_id(front,m->nbody,"geometry.front");
+        model_access::require_id(rear,m->nbody,"geometry.rear");
+        model_access::require_id(frame,m->nbody,"geometry.frame");
+        const auto n=jacobian.size();
+        if(n!=static_cast<std::size_t>(m->nv)) throw std::invalid_argument("geometry workspace width");
+        const auto positions=model_access::readonly_buffer(d->xpos,3*m->nbody);
+        const auto rotations=model_access::readonly_buffer(d->xmat,9*m->nbody);
+        const auto sites=model_access::readonly_buffer(d->site_xpos,3*m->nsite);
+        const auto centre=[&](int body)->std::span<const double> {
+            const auto at=static_cast<std::size_t>(body);
+            const int site=at<centre_sites.size()?centre_sites[at]:-1;
+            return site>=0?sites.subspan(3*static_cast<std::size_t>(site),3):positions.subspan(3*at,3);
+        };
+        const auto cf=centre(front),cr=centre(rear);
+        const auto basis=rotations.subspan(9*static_cast<std::size_t>(frame),9);
+        std::array<double,3> delta{},local{},axis{};
+        for(std::size_t k=0;k<3;++k) {delta[k]=cr[k]-cf[k];axis[k]=basis[3*k+1];}
+        for(std::size_t k=0;k<3;++k) for(std::size_t row=0;row<3;++row) local[k]+=basis[3*row+k]*delta[row];
+        if(!std::isfinite(local[1]) || std::abs(local[1])>1e-9)
+            throw std::invalid_argument("transmission.geometry: sprocket sites must share the authored chain plane");
+        // The sprocket plane is attached to the frame. Global yaw/roll and
+        // translation cannot alter the internal chain coordinate.
+        const Vec2 f{0.,0.},r{local[0],local[2]},up{0.,1.};
+        const double rf=gear.chain_pitch_m*gear.front_teeth/(2.*std::numbers::pi);
+        const double rr=gear.chain_pitch_m*gear.rear_teeth/(2.*std::numbers::pi);
+        theta_f=angle(m,d,front,accumulated);theta_r=angle(m,d,rear,accumulated);
+        if(angles) {theta_f=unwrap(theta_f,(*angles)[0]);theta_r=unwrap(theta_r,(*angles)[1]);}
+        const auto geometry=chain_geometry(f,r,rf,rr,up,reference);
+        psi=geometry.psi;const auto gradient=chain_center_gradient(f,r,rf,rr,up,psi);
+        body_jacobian(m,d,jp_f,jr_f,cf,front);body_jacobian(m,d,jp_r,jr_r,cr,rear);
+        mj_jac(m,d,nullptr,jr_frame.data(),positions.subspan(3*static_cast<std::size_t>(frame),3).data(),frame);
+        for(std::size_t col=0;col<n;++col) {
+            const std::array<double,3> omega{jr_frame[col],jr_frame[n+col],jr_frame[2*n+col]};
+            const std::array<double,3> transport{omega[1]*delta[2]-omega[2]*delta[1],
+                omega[2]*delta[0]-omega[0]*delta[2],omega[0]*delta[1]-omega[1]*delta[0]};
+            double dx=0.,dz=0.,front_spin=0.,rear_spin=0.;
+            for(std::size_t row=0;row<3;++row) {
+                const auto velocity=jp_r[row*n+col]-jp_f[row*n+col]-transport[row];
+                dx+=basis[3*row]*velocity;dz+=basis[3*row+2]*velocity;
+                front_spin+=axis[row]*(jr_f[row*n+col]-jr_frame[row*n+col]);
+                rear_spin+=axis[row]*(jr_r[row*n+col]-jr_frame[row*n+col]);
+            }
+            jacobian[col]=gradient[0]*dx+gradient[1]*dz+rf*front_spin-rr*rear_spin;
+        }
+        validation::derived_array(jacobian,"geometry.jacobian");
+        return validation::derived(geometry.length+rf*theta_f-rr*theta_r,"geometry.coordinate");
     }
 } // namespace drivetrain

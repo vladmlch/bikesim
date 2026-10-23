@@ -1,0 +1,23 @@
+{
+  "schema": "spatial3d.reference-terrain/1",
+  "status": "pending_verification",
+  "qualification_tasks": ["V02", "V05"],
+  "resolution_m": [0.005, 0.010],
+  "corridor_half_width_m": 1.5,
+  "captures": [
+    {"genspec": "alpine_rocky_3d_genspec.toml", "seed": "0", "sha256": null, "platform": null, "source_sha": null, "peak_rss_bytes": null, "status": "pending_verification"},
+    {"genspec": "alpine_rocky_3d_genspec.toml", "seed": "1", "sha256": null, "platform": null, "source_sha": null, "peak_rss_bytes": null, "status": "pending_verification"},
+    {"genspec": "alpine_rocky_3d_genspec.toml", "seed": "2", "sha256": null, "platform": null, "source_sha": null, "peak_rss_bytes": null, "status": "pending_verification"},
+    {"genspec": "alpine_rocky_3d_genspec.toml", "seed": "3", "sha256": null, "platform": null, "source_sha": null, "peak_rss_bytes": null, "status": "pending_verification"},
+    {"genspec": "alpine_rocky_3d_genspec.toml", "seed": "4", "sha256": null, "platform": null, "source_sha": null, "peak_rss_bytes": null, "status": "pending_verification"},
+    {"genspec": "rough_uphill_savage_3d_genspec.toml", "seed": "0", "sha256": null, "platform": null, "source_sha": null, "peak_rss_bytes": null, "status": "pending_verification"},
+    {"genspec": "rough_uphill_savage_3d_genspec.toml", "seed": "1", "sha256": null, "platform": null, "source_sha": null, "peak_rss_bytes": null, "status": "pending_verification"},
+    {"genspec": "rough_uphill_savage_3d_genspec.toml", "seed": "2", "sha256": null, "platform": null, "source_sha": null, "peak_rss_bytes": null, "status": "pending_verification"},
+    {"genspec": "rough_uphill_savage_3d_genspec.toml", "seed": "3", "sha256": null, "platform": null, "source_sha": null, "peak_rss_bytes": null, "status": "pending_verification"},
+    {"genspec": "rough_uphill_savage_3d_genspec.toml", "seed": "4", "sha256": null, "platform": null, "source_sha": null, "peak_rss_bytes": null, "status": "pending_verification"}
+  ],
+  "source_constraints": [
+    "The legacy savage base has square edges whose sampled slope can exceed the required tan(60 degrees) generator limit. No smoothing or successful generation is claimed.",
+    "V02 records separate macOS arm64 and Linux aarch64 captures; hashes are not inferred from this source manifest."
+  ]
+}

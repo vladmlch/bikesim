@@ -331,6 +331,7 @@ void post_init(const PedalingConfig&);
 void post_init(ShiftingConfig&);
 void post_init(PhysicalDriveConfig&);
 void post_init(ResistanceConfig&);
+void post_init(ResistanceConfig&, bool spatial_mode);
 void post_init(ArticulatedConfig&);
 } // namespace detail
 
@@ -426,6 +427,11 @@ struct ArticulatedConfig {
     double balance_floor_kmh = 4.;
     double balance_dwell_s = .5;
     double balance_grace_s = 3.;
+
+    // Spatial-only source fields are projected separately from the frozen
+    // planar dataclass field table, keeping its bytes and schema unchanged.
+    std::optional<std::string> shoulder_profile;
+    std::optional<std::string> shoulder_profile_sha256;
 
     [[nodiscard]] AttachmentBudget attachment_budget() const {
         return {.foot_min_normal_n=pedal_min_normal_n, .foot_mu=foot_mu, .saddle_mu=saddle_mu,

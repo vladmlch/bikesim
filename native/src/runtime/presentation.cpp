@@ -5,6 +5,7 @@
 #include "presentation.hpp"
 #include "step.hpp"
 #include "../model_access.hpp"
+#include "../spatial/frames.hpp"
 #include "../stepper.hpp"
 #include "../drivetrain/pedaling.hpp"
 #include "../writers/drivetrain.hpp"
@@ -57,6 +58,14 @@ double body_pitch(const mjModel *model, const mjData *data, const char *name) {
     const std::size_t offset = static_cast<std::size_t>(body) * 9U;
     return degrees(std::atan2(-rotations[offset + 6U], rotations[offset]));
 }
+double spatial_body_pitch(const mjModel *model, const mjData *data, const char *name) {
+    const int body = model_access::resolve_id(model, mjOBJ_BODY, name);
+    const auto quaternions = array(data->xquat, model->nbody, 4);
+    const std::size_t offset = static_cast<std::size_t>(body) * 4U;
+    const bike::spatial::Quat rotation{quaternions[offset], quaternions[offset + 1U],
+                                     quaternions[offset + 2U], quaternions[offset + 3U]};
+    return degrees(bike::spatial::euler_zyx(rotation).pitch_rad);
+}
 Wire diagnostic(const drivetrain::Diagnostics &drive, const char *name, Wire fallback = Wire{0.}) {
     const auto found = drive.find(name);
     if (found == drive.end()) return fallback;
@@ -100,10 +109,15 @@ void PhysicalStep::initialize_presentation(PresentationState &out) const {
     if (rider_control_) {
         if (model->njnt > std::numeric_limits<int>::max())
             throw std::invalid_argument("presentation: joint count exceeds the MuJoCo ID range");
+        const auto joint_types = model_access::readonly_buffer(model->jnt_type, model->njnt);
         std::size_t length = 0;
         for (int index = 0; static_cast<mjtSize>(index) < model->njnt; ++index) {
             const char *name = mj_id2name(model, mjOBJ_JOINT, index);
             if (name != nullptr && std::string_view(name).starts_with("rider_")) {
+                // Free/ball coordinates are poses, not one scalar joint angle.
+                // Their orientation is captured from the current body below.
+                const auto kind = joint_types[static_cast<std::size_t>(index)];
+                if (topology_ && kind != mjJNT_HINGE && kind != mjJNT_SLIDE) continue;
                 out.joints.emplace_back(name, 0.);
                 out.joint_qpos_addresses.push_back(joint_qpos(model, name));
                 length += std::string_view(name).size() + 1U;
@@ -122,10 +136,13 @@ void PhysicalStep::capture_presentation(PresentationState &out) const {
     const auto v = stepper_->qvel();
     const auto &suspension = stepper_->suspension();
     out.time_s = data->time;
-    out.position_m = q[static_cast<std::size_t>(root_x_qposadr_)];
-    out.speed_mps = v[static_cast<std::size_t>(root_x_dofadr_)];
+    out.position_m = topology_ ? longitudinal_position_m()
+                              : q[static_cast<std::size_t>(root_x_qposadr_)];
+    out.speed_mps = topology_ ? longitudinal_speed_mps()
+                             : v[static_cast<std::size_t>(root_x_dofadr_)];
     out.root_x_dofadr = root_x_dofadr_;
-    out.pitch_rad = q[static_cast<std::size_t>(root_pitch_qposadr_)];
+    out.pitch_rad = topology_ ? root_pitch_rad()
+                             : q[static_cast<std::size_t>(root_pitch_qposadr_)];
     model_access::require_id(frame_body_, model->nbody, "presentation frame");
     out.z_m = array(data->xpos, model->nbody, 3)[static_cast<std::size_t>(frame_body_) * 3U + 2U];
     out.crank_phase_rad = q[static_cast<std::size_t>(crank_spin_qposadr_)];
@@ -162,9 +179,15 @@ void PhysicalStep::capture_presentation(PresentationState &out) const {
         for (const auto &[name, active] : rider_control_->presentation_ik())
             if (active) append_name(out.ik_saturated, name);
         capture_accounted_presentation(out);
-        out.root_pitch_deg = degrees(q[static_cast<std::size_t>(joint_qpos(model, "rider_root_pitch"))]);
-        out.pelvis_pitch_deg = body_pitch(model, data, "rider_pelvis");
-        out.torso_pitch_deg = body_pitch(model, data, "rider_torso");
+        if (topology_) {
+            out.pelvis_pitch_deg = spatial_body_pitch(model, data, "rider_pelvis");
+            out.root_pitch_deg = out.pelvis_pitch_deg;
+            out.torso_pitch_deg = spatial_body_pitch(model, data, "rider_torso");
+        } else {
+            out.root_pitch_deg = degrees(q[static_cast<std::size_t>(joint_qpos(model, "rider_root_pitch"))]);
+            out.pelvis_pitch_deg = body_pitch(model, data, "rider_pelvis");
+            out.torso_pitch_deg = body_pitch(model, data, "rider_torso");
+        }
         for (std::size_t i = 0; i < out.joints.size(); ++i)
             out.joints[i].second = q[static_cast<std::size_t>(out.joint_qpos_addresses[i])];
     }

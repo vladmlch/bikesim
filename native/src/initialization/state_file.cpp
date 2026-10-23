@@ -16,11 +16,24 @@
 namespace bike::initialization {
 namespace {
 const io::Value& field(const io::Value::Object& object,std::string_view key){const auto* found=io::find_member(object,key);if(!found)throw std::invalid_argument("state file: missing "+std::string(key));return *found;}
+void spatial_inventory(const StateFile& state) {
+    bool causal=false,tire=false;
+    for(const auto& [name,array]:state.arrays) {
+        if(!name.starts_with("state_native_spatial"))continue;
+        if(name!="state_native_spatial" && name!="state_native_spatial_tire")
+            throw std::invalid_argument("state file.spatial: unknown inventory member "+name);
+        if(!array.shape.empty() || array.strings().size()!=1)
+            throw std::invalid_argument("state file.spatial: expected scalar canonical JSON string");
+        if(name=="state_native_spatial")causal=true;else tire=true;
+    }
+    if(causal!=tire)throw std::invalid_argument("state file.spatial: incomplete causal/tyre inventory");
+}
 io::Value array_document(const io::NpyArray& array){
     array.validate();io::Value::Array shape;for(std::size_t const width:array.shape)shape.emplace_back(io::Number{std::to_string(width)});
     return io::Value{io::Value::Object{{"dtype",io::Value{array.dtype}},{"shape",io::Value{std::move(shape)}},{"fortran_order",io::Value{array.fortran_order}},{"bytes",io::Value{io::Bytes{array.bytes}}}}};
 }
 io::Value document(const StateFile& state){
+    spatial_inventory(state);
     if(state.schema_version!=1)throw std::invalid_argument("state file: native writer requires schema version 1");
     io::Value::Object arrays;std::set<std::string> names;std::size_t total=0;
     for(const auto& [name,array]:state.arrays){if(name.empty()||!names.insert(name).second)throw std::invalid_argument("state file: duplicate/empty array name");if(array.bytes.size()>io::kMaxNumpyBytes-total)throw std::invalid_argument("state file exceeds byte bound");total+=array.bytes.size();arrays.emplace_back(name,array_document(array));}
@@ -40,7 +53,7 @@ StateFile decode(const io::Value& value){
         const auto* bytes=std::get_if<io::Bytes>(&field(item,"bytes").data);if(!bytes)throw std::invalid_argument("state file: typed bytes required");
         if(bytes->value.size()>io::kMaxNumpyBytes-total)throw std::invalid_argument("state file: byte limit exceeded");
         total+=bytes->value.size();array.bytes=bytes->value;array.validate();state.arrays.emplace_back(name,std::move(array));
-    }return state;
+    }spatial_inventory(state);return state;
 }
 } // namespace
 const io::NpyArray& state_array(const StateFile& state,std::string_view name){

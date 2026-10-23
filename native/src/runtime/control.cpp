@@ -12,6 +12,7 @@
 
 #include "../model_access.hpp"
 #include "../engine_call.hpp"
+#include "../spatial/frames.hpp"
 #include "../tyre/profile.hpp"
 #include "../validation.hpp"
 
@@ -318,6 +319,16 @@ CrashDetector::CrashDetector(const mjModel *model,
             "pitch_limit_deg must be positive, got " +
             std::to_string(pitch_limit_deg));
     const int pitch = mj_name2id(model, mjOBJ_JOINT, "root_pitch");
+    if(pitch<0) {
+        const int root=mj_name2id(model,mjOBJ_JOINT,"root_free");
+        if(root>=0 && model->jnt_type[root]==mjJNT_FREE) {
+            spatial_body_=model->jnt_bodyid[root];
+            nq_=model->nq;
+            pitch_qposadr=root_x_qposadr=-1;
+            pitch_limit_rad=pitch_limit_deg*(std::numbers::pi/180.);
+            return;
+        }
+    }
     if (pitch < 0)
         throw std::invalid_argument(
             "model has no joint 'root_pitch'; the virtual rider acts on "
@@ -339,6 +350,17 @@ CrashDetector::CrashDetector(const mjModel *model,
 std::optional<CrashEvent>
 CrashDetector::check(const mjData *data, const RuntimeContacts &contacts) {
     if (event_.has_value()) return event_;
+    if(spatial_body_>=0) {
+        const auto offset=static_cast<std::size_t>(spatial_body_)*4;
+        const bike::spatial::Quat q{data->xquat[offset],data->xquat[offset+1],
+            data->xquat[offset+2],data->xquat[offset+3]};
+        const auto attitude=bike::spatial::euler_zyx(q);
+        const bool pitch_over=attitude.valid && std::abs(attitude.pitch_rad)>pitch_limit_rad;
+        if(pitch_over || contacts.handlebar_in_contact())
+            event_=CrashEvent{.cause=pitch_over?"pitch_over":"handlebar_contact", .time_s=data->time,
+                .position_m=data->xpos[3*spatial_body_], .pitch_rad=attitude.pitch_rad};
+        return event_;
+    }
     const auto qpos = std::views::counted(data->qpos, nq_);
     const double pitch_rad = qpos[static_cast<std::size_t>(pitch_qposadr)];
     if (std::abs(pitch_rad) > pitch_limit_rad)

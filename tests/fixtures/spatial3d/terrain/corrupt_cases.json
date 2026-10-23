@@ -1,0 +1,25 @@
+{
+  "schema": "terrain3d-corruption-matrix/v1",
+  "header_cases": [
+    {"name": "magic", "offset": 0, "width": 4, "value_decimal": "0", "error": "terrain3d.header.magic"},
+    {"name": "version", "offset": 4, "width": 4, "value_decimal": "2", "error": "terrain3d.header.version"},
+    {"name": "header size", "offset": 8, "width": 4, "value_decimal": "100", "error": "terrain3d.header.header_bytes"},
+    {"name": "dtype", "offset": 12, "width": 4, "value_decimal": "5", "error": "terrain3d.header.dtype"},
+    {"name": "nx", "offset": 16, "width": 8, "value_decimal": "3", "error": "terrain3d.header.nx"},
+    {"name": "ny", "offset": 24, "width": 8, "value_decimal": "3", "error": "terrain3d.header.ny"},
+    {"name": "x0 NaN", "offset": 32, "width": 8, "value_decimal": "9221120237041090560", "error": "terrain3d.header.x0_m"},
+    {"name": "y0 NaN", "offset": 40, "width": 8, "value_decimal": "9221120237041090560", "error": "terrain3d.header.y0_m"},
+    {"name": "dx zero", "offset": 48, "width": 8, "value_decimal": "0", "error": "terrain3d.header.dx_m"},
+    {"name": "dx NaN", "offset": 48, "width": 8, "value_decimal": "9221120237041090560", "error": "terrain3d.header.dx_m"},
+    {"name": "dy zero", "offset": 56, "width": 8, "value_decimal": "0", "error": "terrain3d.header.dy_m"},
+    {"name": "surface count", "offset": 64, "width": 8, "value_decimal": "3", "error": "terrain3d.header.surface_count"},
+    {"name": "short height section", "offset": 72, "width": 8, "value_decimal": "120", "error": "terrain3d.header.height_bytes"},
+    {"name": "long height section", "offset": 72, "width": 8, "value_decimal": "136", "error": "terrain3d.header.height_bytes"},
+    {"name": "short material section", "offset": 80, "width": 8, "value_decimal": "32", "error": "terrain3d.header.material_bytes"},
+    {"name": "long material section", "offset": 80, "width": 8, "value_decimal": "40", "error": "terrain3d.header.material_bytes"},
+    {"name": "surface section too large", "offset": 88, "width": 8, "value_decimal": "1000000", "error": "terrain3d.header.surface_json_bytes"},
+    {"name": "metadata section too large", "offset": 96, "width": 8, "value_decimal": "1000000", "error": "terrain3d.header.metadata_json_bytes"},
+    {"name": "reserved", "offset": 104, "width": 8, "value_decimal": "1", "error": "terrain3d.header.reserved"}
+  ],
+  "payload_cases": ["truncated", "trailing", "nonfinite elevation", "duplicate surface id", "unknown material id", "negative friction", "unknown surface key", "resource limits", "dimension overflow"]
+}

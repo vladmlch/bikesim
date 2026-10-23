@@ -77,6 +77,7 @@ private:
     const mjModel *m_ = nullptr; // non-owning; the Stepper outlives the writer
     nativecfg::ResistanceConfig cfg_;
     int nv_ = 0;
+    bool spatial_ = false;
     // Resolved unconditionally in the ctor via resolve_id (throws on a
     // missing body); -1 is the declared "not resolved" state — 0 is the
     // world body and must never mean absent.

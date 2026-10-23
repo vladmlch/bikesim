@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "status": "pending_verification",
+  "native_mjcf_path": "model/planar_mjcf_expected.xml",
+  "native_mjcf_sha256_hex": null,
+  "capture_source": "pre-W13 native builder; migration T16 captured_welded request",
+  "independent_compiled_reference": "tests/fixtures/migration/model/welded.xml",
+  "note": "The existing Python XML is a compiled-array oracle; it does not establish native output bytes. V03 must acquire pre-W13 native bytes on the pinned runner. W authoring did not execute a model generator."
+}

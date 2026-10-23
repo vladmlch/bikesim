@@ -318,6 +318,14 @@ bike::io::Value to_value(const SimulationPhysicsConfig &config) {
             tyre.emplace_back(input_key, value);
     }
     auto& root = std::get<Value::Object>(result.data);
+    for (auto& [key, value] : root) {
+        if (key != "articulated") continue;
+        auto& rider = std::get<Value::Object>(value.data);
+        if (config.articulated.shoulder_profile)
+            rider.emplace_back("shoulder_profile", Value{*config.articulated.shoulder_profile});
+        if (config.articulated.shoulder_profile_sha256)
+            rider.emplace_back("shoulder_profile_sha256", Value{*config.articulated.shoulder_profile_sha256});
+    }
     for (auto& [key, value] : root)
         if (key == "tires")
             std::get<Value::Object>(value.data).emplace_back(

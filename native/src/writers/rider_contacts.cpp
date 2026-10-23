@@ -26,6 +26,7 @@
 //   * `min(a,b)`/`max(a,b)` → std::min/std::max — the same two-argument
 //     keep-first-on-tie (and NaN) semantics Python's builtins have.
 #include "rider_contacts.hpp"
+#include "../spatial/frames.hpp"
 
 #include "../cblas_abi.hpp"
 #include "../contact/laws.hpp"
@@ -117,6 +118,29 @@ namespace {
     lstsq_rows_bound(const mjModel *model) noexcept {
         return model != nullptr ? model->nv : rider::lapack_int{0};
     }
+    // Return the owned W00 pose record; keep the parameter-copy diagnostic
+    // active outside these two engine-buffer readers.
+    NATIVE_DIAG_PUSH
+    NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
+    bike::spatial::BodyPose support_pose(const mjModel* model, const mjData* data, int body) {
+        bike::spatial::BodyPose pose;
+        const auto q = model_access::readonly_buffer(data->xquat, 4*model->nbody, "xquat");
+        const auto p = model_access::readonly_buffer(data->xpos, 3*model->nbody, "xpos");
+        model_access::require_id(body, model->nbody, "spatial support body");
+        std::ranges::copy(q.subspan(4*static_cast<std::size_t>(body),4),pose.quat_world_from_body_wxyz.begin());
+        std::ranges::copy(p.subspan(3*static_cast<std::size_t>(body),3),pose.position_world_m.begin());
+        return pose;
+    }
+    bike::spatial::BodyPose support_geom_pose(const mjModel* model, const mjData* data, int geom) {
+        bike::spatial::BodyPose pose;
+        const auto r = model_access::readonly_buffer(data->geom_xmat, 9*model->ngeom, "geom_xmat");
+        const auto p = model_access::readonly_buffer(data->geom_xpos, 3*model->ngeom, "geom_xpos");
+        model_access::require_id(geom, model->ngeom, "spatial support geom");
+        mju_mat2Quat(pose.quat_world_from_body_wxyz.data(),r.subspan(9*static_cast<std::size_t>(geom),9).data());
+        std::ranges::copy(p.subspan(3*static_cast<std::size_t>(geom),3),pose.position_world_m.begin());
+        return pose;
+    }
+    NATIVE_DIAG_POP
 } // namespace
 
 namespace writers {
@@ -205,6 +229,9 @@ namespace writers {
         linked_saddle_ = welded_saddle_ || pinned_saddle_;
         welded_grip_ =
             cfg_.grip_attachment == rider::GripAttachment::connect;
+        spatial_ = mj_name2id(model_, mjOBJ_JOINT, "rider_root_free") >= 0;
+        if (spatial_ && (!spindle_pedals_ || !pinned_saddle_ || !welded_grip_))
+            throw std::invalid_argument("rider.spatial.contacts: requires spindle/pin/connect equality reactions");
         if (linked_pedals_) {
             // PedalWelds/SpindlePins resolve front then rear.
             const char *const prefix =
@@ -225,12 +252,20 @@ namespace writers {
                                                    "connect_grip_left");
             grip_eq_[1] = model_access::resolve_id(model_, mjOBJ_EQUALITY,
                                                    "connect_grip_right");
+            if (spatial_) {
+                grip_bike_site_[0] = model_access::resolve_id(model_,mjOBJ_SITE,"site_grip_left");
+                grip_bike_site_[1] = model_access::resolve_id(model_,mjOBJ_SITE,"site_grip_right");
+            }
         }
         // reset(model, None): the member defaults already encode the
         // fresh-contact state — reset() exists to re-run it against data.
     }
 
     void RiderContactWriter::reset(mjData *data) {
+        if (spatial_ && data != nullptr) {
+            const std::array<int, kSupportCount> geoms{supports_[0].geom,supports_[1].geom,supports_[2].geom};
+            rider::validate_spatial_support_model(model_,data,geoms);
+        }
         // rider_contacts.py:98-123 — the field ordering matters on a throw:
         // an out-of-planar-model rejection leaves the early fields reset
         // and the energy/diagnostic fields untouched, like the oracle.
@@ -242,13 +277,18 @@ namespace writers {
         if (data != nullptr) {
             const std::array<int, kSupportCount> geoms{
                 supports_[0].geom, supports_[1].geom, supports_[2].geom};
-            rider::validate_planar_support_model(model_, data, geoms);
+            if (!spatial_) rider::validate_planar_support_model(model_, data, geoms);
             const std::span<const double> xmat =
                 model_access::readonly_buffer(
                     data->xmat, 9 * model_->nbody, "xmat");
             const rider::Mat3 steer_R = mat3_at(xmat, steer_);
             for (std::size_t side = 0; side < kSideCount; ++side) {
                 if (welded_grip_) {
+                    if (spatial_) {
+                        const auto site_pos = model_access::readonly_buffer(model_->site_pos,3*model_->nsite,"site_pos");
+                        state_.grip_anchor_local[side] = vec3_at(site_pos,grip_bike_site_[side]);
+                        continue;
+                    }
                     // model.eq_data[eq_id, 3:6] — the body2-local connect
                     // anchor, copied like the oracle's .copy().
                     const std::span<const double> eq_data =
@@ -846,7 +886,7 @@ namespace writers {
                     t.out, rider::prepare_attachment_geometry(
                                model_, data, t.eq_id, t.rider_body,
                                t.bike_body, t.point, t.normal, t.kind,
-                               t.rotational, t.half_patch_m, pull));
+                               t.rotational, t.half_patch_m, pull, t.spatial_frame));
             } catch (const std::invalid_argument &) {
                 out.errors.push_back(
                     t.out + ":unobservable_attachment_wrench");
@@ -943,7 +983,14 @@ namespace writers {
                 equality_.force_on_rider(data, eq);
             Vec3 n{};
             Vec3 tangent{};
-            if (si > 0 && spindle_pedals_) {
+            std::optional<bike::rider::SpatialSupportFrame> spatial_basis;
+            if (spatial_) {
+                const auto pose = si > 0 ? support_pose(model_,data,supports_[si].body)
+                    : support_geom_pose(model_,data,supports_[si].geom);
+                spatial_basis = bike::rider::support_frame(pose,{0.,0.,1.});
+                if (!spatial_basis->valid) throw std::invalid_argument("rider.spatial.support: invalid support frame");
+                n=spatial_basis->normal_world; tangent=spatial_basis->tangent_x_world;
+            } else if (si > 0 && spindle_pedals_) {
                 // Foot z-column (compression toward the ankle) and its
                 // in-plane perpendicular — unnormalized, as written.
                 const Mat3 foot = mat3_at(xmat, supports_[si].body);
@@ -973,8 +1020,10 @@ namespace writers {
             // — np.dot's ddot dispatch.
             const double normal =
                 blas::ddot(3, force.data(), 1, n.data(), 1);
-            const double shear =
+            double shear =
                 blas::ddot(3, force.data(), 1, tangent.data(), 1);
+            if (spatial_basis) shear = std::hypot(shear,
+                blas::ddot(3,force.data(),1,spatial_basis->tangent_y_world.data(),1));
             outcome.entries.emplace_back(
                 std::string(kSupportNames[si]),
                 RiderSettledEntry{
@@ -1089,7 +1138,12 @@ namespace writers {
         // pedal moves it to the compiled connect anchor and replaces the
         // normal with the foot's world +z column.
         target.point = vec3_at(site_xpos, ref.site);
-        if (support > 0 && spindle_pedals_) {
+        if (spatial_) {
+            const auto pose = support > 0 ? support_pose(model_,data,ref.body) : support_geom_pose(model_,data,ref.geom);
+            target.spatial_frame = bike::rider::support_frame(pose,{0.,0.,1.});
+            if (!target.spatial_frame->valid) throw std::invalid_argument("rider.spatial.support: invalid support frame");
+            target.normal=target.spatial_frame->normal_world;
+        } else if (support > 0 && spindle_pedals_) {
             const std::span<const double> xmat =
                 model_access::readonly_buffer(data->xmat,
                                               9 * model_->nbody, "xmat");
@@ -1150,6 +1204,13 @@ namespace writers {
         target.point = grip;
         target.normal = pull;
         target.pull = pull;
+        if (spatial_) {
+            const auto pose = support_pose(model_,data,steer_);
+            const auto local = bike::spatial::rotate_world_to_body(pose.quat_world_from_body_wxyz,pull);
+            target.spatial_frame = bike::rider::support_frame(pose,local);
+            if (!target.spatial_frame->valid) throw std::invalid_argument("rider.spatial.grip: invalid pull frame");
+            target.normal=target.spatial_frame->normal_world;
+        }
         return target;
     }
 
@@ -1173,7 +1234,7 @@ namespace writers {
                             model_, data, equality_, measure_qfrc_,
                             t.eq_id, t.rider_body, t.bike_body, t.point,
                             t.normal, t.kind, t.rotational,
-                            t.half_patch_m, pull, &rows));
+                            t.half_patch_m, pull, &rows, t.spatial_frame));
                 } else {
                     out.samples.emplace_back(
                         t.out,
@@ -1181,7 +1242,7 @@ namespace writers {
                             model_, data, equality_, lstsq_,
                             measure_qfrc_, t.eq_id, t.rider_body,
                             t.bike_body, t.point, t.normal, t.kind,
-                            t.rotational, t.half_patch_m, pull, &rows));
+                            t.rotational, t.half_patch_m, pull, &rows, t.spatial_frame));
                 }
             } catch (const std::invalid_argument &) {
                 out.errors.push_back(
@@ -1226,14 +1287,20 @@ namespace writers {
         const Vec3 center =
             rider::add(vec3_at(site_xpos, ref.site),
                        rider::matvec(foot, {sign * half, 0., radius}));
-        const rider::BoxPadContact contact =
-            rider::box_pad_contact_unchecked(center, radius,
+        const auto pose = spatial_ ? support_geom_pose(model_,data,ref.geom) : bike::spatial::BodyPose{};
+        const rider::BoxPadContact contact = spatial_
+            ? rider::spatial_box_pad_contact(center,radius,pose,vec3_at(geom_size,ref.geom))
+            : rider::box_pad_contact_unchecked(center, radius,
                                              vec3_at(geom_xpos, ref.geom),
                                              mat3_at(geom_xmat, ref.geom),
                                              vec3_at(geom_size, ref.geom));
         out.point = contact.point_m;
         out.normal = contact.normal;
         out.tangent = contact.tangent();
+        if (spatial_) {
+            const auto normal_local = bike::spatial::rotate_world_to_body(pose.quat_world_from_body_wxyz,contact.normal);
+            out.tangent = bike::rider::support_frame(pose,normal_local).tangent_x_world;
+        }
         out.gap = contact.gap_m;
         out.inside = contact.within_footprint;
     }

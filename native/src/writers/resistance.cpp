@@ -101,7 +101,8 @@ ResistanceWriter::ResistanceWriter(const mjModel *m,
                                    nativecfg::ResistanceConfig config)
     : m_(m), cfg_(std::move(config)),
       nv_(static_cast<int>(m->nv)) {
-    nativecfg::validate(cfg_);
+    spatial_=mj_name2id(m,mjOBJ_JOINT,"root_free")>=0 || mj_name2id(m,mjOBJ_JOINT,"root_y")>=0;
+    nativecfg::validate(cfg_,spatial_);
     // ResistanceConfig.__post_init__ (physical_config.py:275-284): scalars
     // finite + bounds, both 3-vectors finite and planar ([1] == 0).
     if (!std::isfinite(cfg_.crr) || cfg_.crr < 0.0)
@@ -121,7 +122,7 @@ ResistanceWriter::ResistanceWriter(const mjModel *m,
         if (!std::isfinite(v))
             throw std::invalid_argument(
                 "invalid shape or non-finite point_body_m");
-    if (cfg_.wind_world_mps[1] != 0.0 || cfg_.point_body_m[1] != 0.0)
+    if (!spatial_ && (cfg_.wind_world_mps[1] != 0.0 || cfg_.point_body_m[1] != 0.0))
         throw std::invalid_argument(
             "resistance configuration must be planar");
     // physical_resistance.py:13-15.
@@ -228,6 +229,13 @@ void ResistanceWriter::compute_validated(const mjData *d,
         throw std::invalid_argument(
             "resistance_components: patch_loads and patch_working must have "
             "equal length");
+
+    if(spatial_) {
+        // C4: pneumatic_3d owns rolling loss. Air drag is outside the
+        // authored spatial plant, so both legacy resistance rows are zero.
+        std::ranges::fill(rolling_,0.);std::ranges::fill(aerodynamic_,0.);
+        return;
+    }
 
     const std::span<const mjtNum> xpos =
             std::views::counted(d->xpos, model_access::kXYZ * m_->nbody);

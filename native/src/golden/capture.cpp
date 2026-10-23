@@ -269,22 +269,26 @@ private:
         // Reset restored model/writer/controller state above. Overlay the
         // artifact's explicit engine state before the first force call;
         // replay never substitutes a newly solved qpos or warmstart.
-        stepper.mutate([&] {
-            std::ranges::copy(initial.qpos, std::views::counted(data.qpos, model.nq).begin());
-            std::ranges::copy(initial.qvel, std::views::counted(data.qvel, model.nv).begin());
-            std::ranges::copy(initial.act, std::views::counted(data.act, model.na).begin());
-            std::ranges::copy(initial.ctrl, std::views::counted(data.ctrl, model.nu).begin());
-            std::ranges::copy(initial.warmstart, std::views::counted(data.qacc_warmstart, model.nv).begin());
-            data.time = initial.time.front();
-            stepper.note_posvel_stale();
-            engine::forward(&model, &data);
-            stepper.note_posvel_fresh();
-            engine::get_state(&model, &data, runtime.committed_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));
-            runtime.next_integration_state_ = runtime.committed_integration_state_;
-        });
-        runtime.physical_->capture_presentation(runtime.committed_presentation_);
-        runtime.next_presentation_ = runtime.committed_presentation_;
-        runtime.cache_research_boundary();
+        try {
+            stepper.mutate([&] {
+                std::ranges::copy(initial.qpos, std::views::counted(data.qpos, model.nq).begin());
+                std::ranges::copy(initial.qvel, std::views::counted(data.qvel, model.nv).begin());
+                std::ranges::copy(initial.act, std::views::counted(data.act, model.na).begin());
+                std::ranges::copy(initial.ctrl, std::views::counted(data.ctrl, model.nu).begin());
+                std::ranges::copy(initial.warmstart, std::views::counted(data.qacc_warmstart, model.nv).begin());
+                data.time = initial.time.front();
+                stepper.note_posvel_stale();
+                engine::forward(&model, &data);
+                stepper.note_posvel_fresh();
+                engine::get_state(&model, &data, runtime.next_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));
+            });
+            runtime.physical_->capture_presentation(runtime.next_presentation_);
+            auto boundary = runtime.capture_boundary();
+            runtime.commit_boundary(std::move(boundary));
+        } catch (...) {
+            runtime.boundary_recovery_required_ = true;
+            throw;
+        }
     }
 };
 

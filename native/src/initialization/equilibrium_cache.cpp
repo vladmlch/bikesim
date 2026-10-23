@@ -10,6 +10,8 @@
 #include "../runtime/step.hpp"
 #include "../stepper.hpp"
 #include "../writers/drivetrain.hpp"
+#include "../writers/pneumatic_3d_tire.hpp"
+#include "../runtime/setup_values.hpp"
 
 #include <algorithm>
 #include <array>
@@ -65,18 +67,52 @@ struct Material {
     std::optional<::rider::SpindleController::State> controller;
     std::vector<std::string> tire_names;
     std::vector<double> tire_row;
+    std::optional<runtime::SpatialBootstrapState> spatial;
+    std::optional<pneumatic3d::TyreState3d> tire3d;
 };
 std::unique_ptr<Material> current_material(const SetupContext& context){
     auto value=std::make_unique<Material>();value->drive=context.stepper.drive().state();
-    if(context.stepper.has_tire()){value->tire_names=context.stepper.tire_state_names();value->tire_row=context.stepper.tire_state();}
+    if(context.topology) {
+        if(!context.stepper.has_spatial_tire() || !context.physical.spatial_state())
+            throw std::invalid_argument("bootstrap.spatial.tire: producer state missing");
+        value->spatial=context.physical.spatial_state();
+        value->tire3d=context.stepper.spatial_tire_writer().state();
+    } else if(context.stepper.has_tire()){value->tire_names=context.stepper.tire_state_names();value->tire_row=context.stepper.tire_state();}
     if(context.stepper.has_rider_contacts())value->rider=std::pair{context.stepper.rider_contacts().state(),context.stepper.rider_contacts().probe()};
-    if(context.physical.rider_present())value->controller=context.physical.rider_control().state();
+    if(context.physical.rider_present())value->controller=context.physical.rider_control().state(context.topology?context.stepper.data():nullptr);
     return value;
 }
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<Material> decode_material(const SetupContext& context,const StateFile& state){
     auto storage=current_material(context);auto& next=*storage;
+    if(context.topology) {
+        if(!find(state,"state_native_drive"))
+            throw std::invalid_argument("state.spatial.drive: producer state missing");
+        if(context.physical.rider_present() && !find(state,"state_native_rider_controller"))
+            throw std::invalid_argument("state.spatial.rider_controller: producer state missing");
+        if(context.stepper.has_rider_contacts() && !find(state,"state_native_rider_contacts"))
+            throw std::invalid_argument("state.spatial.rider_contacts: producer state missing");
+        const auto causal=runtime::decode_spatial_bootstrap(io::parse_json(text(state,"state_native_spatial")));
+        if(causal.root_kind!=next.spatial->root_kind || causal.topology_fingerprint!=next.spatial->topology_fingerprint ||
+           causal.terrain_sha256!=next.spatial->terrain_sha256 || causal.calibration_sha256!=next.spatial->calibration_sha256)
+            throw std::invalid_argument("state.spatial.identity: differs from initialization owners");
+        const auto tire=io::parse_json(text(state,"state_native_spatial_tire"));
+        const auto& object=io::as_object(tire,"state.spatial.tire");
+        if(object.size()!=2)throw std::invalid_argument("state.spatial.tire: expected identity and payload");
+        const auto identity=pneumatic3d::tyre_identity_from_wire(field(object,"identity"));
+        if(io::canonical_json(pneumatic3d::tyre_identity_to_wire(identity))!=
+           io::canonical_json(pneumatic3d::tyre_identity_to_wire(next.tire3d->identity)))
+            throw std::invalid_argument("state.spatial.tire.identity: differs from configured producer");
+        const auto bytes=pneumatic3d::base64_decode_strict(io::as_string(field(object,"payload"),"state.spatial.tire.payload"));
+        if(!bytes)throw std::invalid_argument("state.spatial.tire.payload: "+bytes.error());
+        auto decoded=pneumatic3d::decode_tyre_state(*bytes,next.tire3d->identity);
+        if(!decoded)throw std::invalid_argument("state.spatial.tire.payload: "+decoded.error());
+        next.spatial=causal;next.tire3d=std::move(*decoded);
+        for(const auto& [name,array]:state.arrays){(void)array;if(name.starts_with("state_tire_"))
+            throw std::invalid_argument("state.spatial.tire: mixed planar and spatial material");}
+    } else if(find(state,"state_native_spatial") || find(state,"state_native_spatial_tire"))
+        throw std::invalid_argument("state.spatial: planar initialization cannot restore spatial material");
     if(const auto* encoded=find(state,"state_native_drive")){(void)encoded;next.drive=drivetrain::decode_drive_snapshot(io::parse_recording_json(text(state,"state_native_drive")));}
     else for(const auto& pair:{std::pair{"ideal_hub",&next.drive.ideal_hub},std::pair{"clutch",&next.drive.clutch}}){
         auto& field=*pair.second;if(!field)continue;
@@ -106,7 +142,7 @@ std::unique_ptr<Material> decode_material(const SetupContext& context,const Stat
         if(!context.physical.rider_present())throw std::invalid_argument("unexpected rider controller state");
         next.controller=::rider::decode_spindle_state(io::parse_recording_json(text(state,"state_native_rider_controller")),"state.rider_controller");
     }
-    if(context.stepper.has_tire()){
+    if(!context.topology && context.stepper.has_tire()){
         if(find(state,"state_tire_wire_names")){
             next.tire_names=state_array(state,"state_tire_wire_names").strings();shape(state_array(state,"state_tire_wire_names"),{next.tire_names.size()},"state_tire_wire_names");
             next.tire_row=doubles(state,"state_tire_wire_row",{next.tire_names.size()},true);
@@ -134,16 +170,37 @@ std::unique_ptr<Material> decode_material(const SetupContext& context,const Stat
     return storage;
 }
 NATIVE_DIAG_POP
+void validate_material(const SetupContext& context,Material& candidate,
+    std::span<const double> qpos,std::span<const double> qvel) {
+    drivetrain::validate(candidate.drive,context.stepper.drive().config(),*context.stepper.model());
+    if(candidate.controller) {
+        if(context.topology)
+            context.physical.rider_control().validate_spatial_lanes(*candidate.controller,qpos,qvel);
+        else context.physical.rider_control().validate_state(*candidate.controller);
+    }
+    if(candidate.spatial)
+        candidate.spatial=context.physical.prepare_spatial_state(*candidate.spatial);
+    if(candidate.tire3d) {
+        // Validate the actual kernel on an independent owner before any live
+        // drive/model/controller row changes. W27 owns atomic kernel restore.
+        const auto& producer=context.stepper.spatial_tire_writer();
+        pneumatic3d::Pneumatic3dModel staged(producer.model().spec(),context.terrain3d->query_view(),producer.state().identity);
+        if(staged.restore(*candidate.tire3d)!=CoreStatus::ok)
+            throw std::invalid_argument("state.spatial.tire: producer rejected staged material");
+    }
+}
 void install_material(SetupContext& context,Material& state){
     // These stages leave every live material owner unchanged. The drive's
     // existing restore completes its own validation/allocation before it
     // writes model rows; every following material commit is no-throw.
-    if(context.stepper.has_tire())context.stepper.tire_writer().prepare_state(state.tire_names,state.tire_row);
+    if(!context.topology && context.stepper.has_tire())context.stepper.tire_writer().prepare_state(state.tire_names,state.tire_row);
     if(state.controller){state.controller->activation_time_s.reset();context.physical.rider_control().validate_state(*state.controller);}
     context.stepper.mutate([&]{context.stepper.drive().restore(state.drive);});
-    if(context.stepper.has_tire())context.stepper.tire_writer().commit_prepared_state();
+    if(state.tire3d)context.stepper.restore_spatial_tire(*state.tire3d);
+    else if(context.stepper.has_tire())context.stepper.tire_writer().commit_prepared_state();
     if(state.controller)context.physical.rider_control().commit_state(std::move(*state.controller));
     if(state.rider)context.stepper.rider_contacts().assign_state(std::move(state.rider.value().first),std::move(state.rider.value().second));
+    if(state.spatial)context.physical.commit_spatial_state(std::move(*state.spatial));
     context.stepper.drive().restart_clock();
     if(context.stepper.has_rider_contacts())context.stepper.rider_contacts_restart_clock();
     context.stepper.note_posvel_stale();
@@ -177,6 +234,12 @@ std::string context_fingerprint(const SetupContext& context,bool legacy){
 std::string fingerprint(const SetupContext& context){return context_fingerprint(context,false);}
 std::string legacy_equilibrium_fingerprint(const SetupContext& context){return context_fingerprint(context,true);}
 
+void validate_equilibrium_material(const SetupContext& context,const StateFile& state,
+    std::span<const double> qpos,std::span<const double> qvel) {
+    auto candidate=decode_material(context,state);
+    validate_material(context,*candidate,qpos,qvel);
+}
+
 StateFile capture_state(const SetupContext& context,std::int64_t steps,double residual){
     if(steps<=0||!std::isfinite(residual)||residual<0.)throw std::invalid_argument("invalid equilibrium capture metadata");
     StateFile out;out.metadata=io::Value{io::Value::Object{{"provider_identity",io::Value{context.provider_identity}},{"model_sha256",io::Value{context.model_sha256}},{"source_identity",io::Value{context.source_identity}},{"mujoco",io::Value{std::string(mj_versionString())}},{"inputs",context.identity}}};
@@ -192,7 +255,12 @@ StateFile capture_state(const SetupContext& context,std::int64_t steps,double re
         out.arrays.emplace_back("state_rider_keys",io::string_array(keys,{keys.size()}));out.arrays.emplace_back("state_rider_xi",io::double_array(xi,{xi.size()}));out.arrays.emplace_back("state_rider_tangent",io::double_array(tangent,{keys.size(),3}));out.arrays.emplace_back("state_rider_tangent_valid",io::bool_array(valid,{valid.size()}));out.arrays.emplace_back("state_rider_grip_xi",io::double_array(grip,{2,3}));out.arrays.emplace_back("state_rider_enabled",io::bool_array(enabled,{enabled.size()}));out.arrays.emplace_back("state_rider_pending_release_loss",io::double_array(std::array<double,1>{r.pending_release_loss_j},{1}));
     }
     if(material.controller)put_text(out,"state_native_rider_controller",io::recording_json(::rider::encode_spindle_state(*material.controller)));
-    if(context.stepper.has_tire()){out.arrays.emplace_back("state_tire_wire_names",io::string_array(material.tire_names,{material.tire_names.size()}));out.arrays.emplace_back("state_tire_wire_row",io::double_array(material.tire_row,{material.tire_row.size()}));}
+    if(material.spatial) {
+        put_text(out,"state_native_spatial",io::canonical_json(runtime::encode_spatial_bootstrap(*material.spatial)));
+        put_text(out,"state_native_spatial_tire",io::canonical_json(io::Value{io::Value::Object{
+            {"identity",pneumatic3d::tyre_identity_to_wire(material.tire3d->identity)},
+            {"payload",io::Value{pneumatic3d::base64_canonical(pneumatic3d::encode_tyre_state(*material.tire3d))}}}}));
+    } else if(context.stepper.has_tire()){out.arrays.emplace_back("state_tire_wire_names",io::string_array(material.tire_names,{material.tire_names.size()}));out.arrays.emplace_back("state_tire_wire_row",io::double_array(material.tire_row,{material.tire_row.size()}));}
     const mjModel* m=context.stepper.model();const mjData* d=context.stepper.data();
     std::vector<double> integration(static_cast<std::size_t>(engine::state_size(m,mjSTATE_INTEGRATION)));engine::get_state(m,d,integration.data(),mjSTATE_INTEGRATION);out.arrays.emplace_back("integration_state",io::double_array(integration,{integration.size()}));
     for(const auto& item:{std::tuple{"dof_frictionloss",m->dof_frictionloss,m->nv},std::tuple{"site_pos",m->site_pos,3*m->nsite},std::tuple{"tendon_stiffness",m->tendon_stiffness,m->ntendon},std::tuple{"tendon_damping",m->tendon_damping,m->ntendon},std::tuple{"tendon_lengthspring",m->tendon_lengthspring,2*m->ntendon},std::tuple{"tendon_range",m->tendon_range,2*m->ntendon},std::tuple{"wrap_prm",m->wrap_prm,m->nwrap}}){const auto& [name,pointer,width]=item;out.arrays.emplace_back("model_"+std::string(name),io::double_array(std::views::counted(pointer,width),{static_cast<std::size_t>(width)}));}
@@ -218,11 +286,32 @@ void restore_equilibrium_state(SetupContext& context,const StateFile& state){
     if(context.stepper.time()!=0.)throw std::invalid_argument("equilibrium state restore requires a fresh t=0 setup");
     if(state.schema_version==1)settle_metadata(context,state);
     const auto q=doubles(state,"qpos",{context.stepper.qpos().size()});
+    const auto* coordinates_model=context.stepper.model();
+    for(int joint=0;joint<coordinates_model->njnt;++joint) {
+        const int type=coordinates_model->jnt_type[joint];
+        if(type!=mjJNT_FREE && type!=mjJNT_BALL)continue;
+        const auto start=static_cast<std::size_t>(coordinates_model->jnt_qposadr[joint])+(type==mjJNT_FREE?3U:0U);
+        if(start>q.size() || q.size()-start<4)throw std::invalid_argument("state.qpos.quaternion: invalid model span");
+        const double norm=std::hypot(std::hypot(q[start],q[start+1]),std::hypot(q[start+2],q[start+3]));
+        if(std::abs(norm-1.)>1e-9)throw std::invalid_argument("state.qpos.quaternion: expected unit quaternion");
+    }
     auto next=decode_material(context,state);
     mjModel* m=context.stepper.model();mjData* d=context.stepper.data();
     std::vector<double> integration(static_cast<std::size_t>(engine::state_size(m,mjSTATE_INTEGRATION)));engine::get_state(m,d,integration.data(),mjSTATE_INTEGRATION);
     const auto target_integration=state.schema_version==1?doubles(state,"integration_state",{integration.size()}):integration;
     if(!target_integration.empty()&&target_integration.front()<0.)throw std::invalid_argument("negative equilibrium integration time");
+    std::vector<double> target_velocity(static_cast<std::size_t>(m->nv),0.);
+    if(context.topology) {
+        if(state.schema_version==1) {
+            const std::unique_ptr<mjData,decltype(&mj_deleteData)> staged(engine::make_data(m),&mj_deleteData);
+            if(!staged)throw std::runtime_error("state.integration_state: cannot allocate validation arena");
+            engine::set_state(m,staged.get(),target_integration.data(),mjSTATE_INTEGRATION);
+            if(!std::ranges::equal(q,std::views::counted(staged->qpos,m->nq)))
+                throw std::invalid_argument("state.qpos: differs from integration state");
+            std::ranges::copy(std::views::counted(staged->qvel,m->nv),target_velocity.begin());
+        } else target_velocity=doubles(state,"qvel",{target_velocity.size()});
+        validate_material(context,*next,q,target_velocity);
+    }
     // All shape/finite/codec checks occur before any mutation. Model values
     // are staged too; callbacks cannot turn an invalid payload into a partial
     // coordinate restore. Engine failures are deliberately not rolled back.
@@ -233,7 +322,10 @@ void restore_equilibrium_state(SetupContext& context,const StateFile& state){
         for(auto& row:rows)std::ranges::copy(row.after,row.pointer);
         engine::set_state(m,d,target_integration.data(),mjSTATE_INTEGRATION);
         std::ranges::copy(q,std::views::counted(d->qpos,m->nq).begin());
-        std::ranges::fill(std::views::counted(d->qvel,m->nv),0.);
+        // Spatial material carries exact shoulder q/qd and must retain the
+        // same velocity lanes. The legacy equilibrium reset stays at zero.
+        if(context.topology)std::ranges::copy(target_velocity,std::views::counted(d->qvel,m->nv).begin());
+        else std::ranges::fill(std::views::counted(d->qvel,m->nv),0.);
         d->time=0.;
         context.stepper.note_posvel_stale();
     });

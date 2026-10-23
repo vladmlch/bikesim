@@ -3,6 +3,7 @@
 #include "../runtime/step.hpp"
 #include "../stepper.hpp"
 #include "../writers/suspension.hpp"
+#include "../spatial/frames.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -84,7 +85,15 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
     const auto q=context.stepper.qpos();result.fork_travel_mm=1000.*q[static_cast<std::size_t>(context.stepper.suspension().fork_qposadr())];result.shock_stroke_mm=1000.*q[static_cast<std::size_t>(context.stepper.suspension().shock_qposadr())];
     if(!context.rear_travel_from_shock_mm)throw std::invalid_argument("equilibrium rear travel requires the source linkage solver");
     result.rear_travel_mm=context.rear_travel_from_shock_mm(result.shock_stroke_mm);
-    result.root_z_m=q[static_cast<std::size_t>(joint_address(context,"root_z").qpos)];result.pitch_rad=q[static_cast<std::size_t>(joint_address(context,"root_pitch").qpos)];result.initial_crank_phase_rad=context.physics.drive.crank_phase_rad;result.settled_crank_phase_rad=q[static_cast<std::size_t>(joint_address(context,"crank_spin").qpos)];result.state_file=explicit_file;
+    if(context.topology) {
+        const auto pose=spatial::body_pose(*context.stepper.model(),*context.stepper.data(),context.topology->root);
+        result.root_z_m=pose.position_world_m[2];
+        result.pitch_rad=spatial::euler_zyx(pose.quat_world_from_body_wxyz).pitch_rad;
+    } else {
+        result.root_z_m=q[static_cast<std::size_t>(joint_address(context,"root_z").qpos)];
+        result.pitch_rad=q[static_cast<std::size_t>(joint_address(context,"root_pitch").qpos)];
+    }
+    result.initial_crank_phase_rad=context.physics.drive.crank_phase_rad;result.settled_crank_phase_rad=q[static_cast<std::size_t>(joint_address(context,"crank_spin").qpos)];result.state_file=explicit_file;
     if(context.physics.equilibrium_cache_enabled&&!cache_hit)save_equilibrium_cache(context,capture_state(context,steps,residual));
     context.equilibrium=result;context.completed=true;return result;
 }

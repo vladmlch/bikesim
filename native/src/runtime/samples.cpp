@@ -301,9 +301,16 @@ PhysicalSampleData::flat_columns(const ColumnLayout &layout) const {
     // inserts, statement order deciding repeats.
     FlatColumns assigned;
     assigned.reserve(qpos.size() + qvel.size() + 2 * powers_w.size() + 16);
-    assigned.emplace_back("x_m", qpos.at(layout.root_x_qpos));
-    assigned.emplace_back("speed_mps", qvel.at(layout.root_x_dof));
-    assigned.emplace_back("pitch_rad", qpos.at(layout.root_pitch_qpos));
+    if(layout.spatial) {
+        const auto& spatial=object(required(channels,"spatial"));
+        assigned.emplace_back("x_m",number(required(spatial,"x_m")));
+        assigned.emplace_back("speed_mps",number(required(spatial,"speed_mps")));
+        assigned.emplace_back("pitch_rad",number(required(spatial,"pitch_rad")));
+    } else {
+        assigned.emplace_back("x_m", qpos.at(layout.root_x_qpos));
+        assigned.emplace_back("speed_mps", qvel.at(layout.root_x_dof));
+        assigned.emplace_back("pitch_rad", qpos.at(layout.root_pitch_qpos));
+    }
     assigned.emplace_back("interval_start_s", time_s);
     assigned.emplace_back("interval_dt_s", dt_s());
     for (std::size_t i = 0; i < qpos.size(); ++i) {

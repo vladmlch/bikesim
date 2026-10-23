@@ -11,10 +11,14 @@
 #pragma once
 #include <cstdint>
 #include <optional>
+#include <memory>
 #include <string>
 #include <string_view>
 
 #include "../io/value.hpp"
+#include "../spatial/config.hpp"
+
+namespace bike::terrain { class Terrain3dSource; }
 
 namespace runtime {
 
@@ -78,6 +82,12 @@ struct RuntimeConfig {
     // Owned config.rider_intent document — decoded into
     // rider::IntentConfig inside the physical-step assembly.
     bike::io::Value rider_intent;
+    // Independent envelope version; the historical planar constant stays 1.
+    int schema = kRuntimeSchema;
+    std::optional<bike::spatial::Config> spatial;
+    // Runtime-only immutable owner. A saved bootstrap resolves it once;
+    // fresh setup passes the same owner used by the builder and renderer.
+    std::shared_ptr<const bike::terrain::Terrain3dSource> terrain3d;
 };
 
 } // namespace runtime

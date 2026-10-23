@@ -50,6 +50,8 @@ Value compiled_physical_metadata(const mjModel& model) {
 ResearchStartup prepare_research_startup(SetupContext& context) {
     if (!context.completed || !context.equilibrium || context.stepper.time() != 0.)
         throw std::invalid_argument("research startup requires completed t=0 equilibrium");
+    if(context.topology && context.topology->root.kind==spatial::RootKind::free6)
+        throw std::invalid_argument("research_startup.spatial.geometry: free-root research packet requires W37");
     auto& stepper = context.stepper;
     auto& physical = context.physical;
     if (physical.drive_mode() != "crank_effort" && physical.drive_mode() != "articulated_effort")
@@ -88,6 +90,13 @@ ResearchStartup prepare_research_startup(SetupContext& context) {
     result.geometry.root_pitch_dof = static_cast<std::size_t>(pitch.dof);
     result.position_m = std::views::counted(data->qpos, model->nq)[result.geometry.root_x_qpos];
     result.compiled_metadata = compiled_physical_metadata(*model);
+    if(context.terrain3d) {
+        auto& metadata=std::get<Object>(result.compiled_metadata.data);
+        metadata.emplace_back("physical_terrain_sha256",text(context.terrain3d->fingerprint_hex()));
+        metadata.emplace_back("terrain_query_source",text("canonical_terrain3d"));
+        if(context.render3d)metadata.emplace_back("terrain_render_resolution",Value{Object{
+            {"nrow",integer(context.render3d->nrow)},{"ncol",integer(context.render3d->ncol)}}});
+    }
     return result;
 }
 } // namespace bike::initialization

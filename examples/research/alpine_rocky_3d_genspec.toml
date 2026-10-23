@@ -1,0 +1,16 @@
+# Native W09 source recipe; V02 qualification and hashes are pending.
+base_track = "alpine_rocky.toml"
+
+[terrain3d]
+generator_version = "grid3d-gen/1"
+seed = 0
+dx_m = 0.005
+dy_m = 0.010
+half_width_m = 1.5
+lead_in_m = 4.0
+lead_out_m = 5.0
+roughness = { sigma_m = 0.003, ell_m = 0.08 }
+banks = [{ start_x_m = 15.0, ramp_m = 5.0, angle_deg = 5.0 }, { start_x_m = 55.0, ramp_m = 7.0, angle_deg = -4.0 }, { start_x_m = 95.0, ramp_m = 5.0, angle_deg = 0.0 }]
+features = [{ kind = "rock", x_m = 24.0, y_m = 0.45, amplitude_m = 0.08, radius_x_m = 0.6, radius_y_m = 0.4, yaw_rad = 0.3 }, { kind = "rut", x_m = 65.0, y_m = -0.35, amplitude_m = 0.04, radius_x_m = 1.2, radius_y_m = 0.3, yaw_rad = -0.2 }, { kind = "root", x_m = 90.0, y_m = 0.0, amplitude_m = 0.035, radius_x_m = 0.15, radius_y_m = 1.3, yaw_rad = 0.15 }]
+surfaces = [{ id = 1, name = "hardpack", mu_peak = 0.8, mu_slide = 0.6, slip_stiffness_per_load = 12.0, stribeck_speed_mps = 4.5 }, { id = 7, name = "scree", mu_peak = 0.45, mu_slide = 0.38, slip_stiffness_per_load = 4.5, stribeck_speed_mps = 4.5 }]
+zones = [{ surface_id = 7, x0_m = 20.0, x1_m = 35.0, y0_m = -1.5, y1_m = 1.5 }, { surface_id = 7, x0_m = 60.0, x1_m = 75.0, y0_m = -1.0, y1_m = 0.5 }]

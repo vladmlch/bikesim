@@ -35,6 +35,10 @@ namespace bike::configuration {
 // ---------------------------------------------------------------------------
 inline constexpr double kGravityMps2 = 9.81;  // GRAVITY_MPS2
 
+// Additive topology lanes; the planar kRiderJoints sequence stays untouched.
+inline constexpr std::array<std::string_view, 2> kSpatialShoulderJoints{
+    "shoulder_swivel_l", "shoulder_swivel_r"};
+
 // rider.py RIDER_VARIANTS / DEFAULT_RIDER_VARIANT.
 inline constexpr std::array<std::string_view, 4> kRiderVariants = {
     "none", "lumped", "seated", "articulated_planar"};

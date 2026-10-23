@@ -8,6 +8,7 @@
 #include "../config_validation.hpp"
 #include "../engine_call.hpp"
 #include "../model_access.hpp"
+#include "../model_topology.hpp"
 
 #include <algorithm>
 #include <array>
@@ -327,6 +328,7 @@ namespace {
         // Checked extents everywhere — -Wunsafe-buffer-usage rejects raw
         // indexing into mjModel pointer fields (same pattern as stepper.hpp).
         model_access::require_id(jid, m->njnt, "suspension joint");
+        topology::scalar_joint(m, jid, joint_name.c_str());
         const std::span<const mjtNum> range =
                 model_access::readonly_buffer(m->jnt_range, 2 * m->njnt);
         const double lo = range[2 * static_cast<std::size_t>(jid)];

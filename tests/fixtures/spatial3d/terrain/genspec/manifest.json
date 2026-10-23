@@ -1,0 +1,14 @@
+{
+  "schema": "spatial3d.terrain-genspec/1",
+  "status": "pending_verification",
+  "captures": [
+    {"platform": "macos-arm64", "fixture": "single_rock.toml", "expected_sha256": null, "source_sha": null, "status": "pending_verification"},
+    {"platform": "linux-aarch64", "fixture": "single_rock.toml", "expected_sha256": null, "source_sha": null, "status": "pending_verification"},
+    {"platform": "macos-arm64", "fixture": "single_rut.toml", "expected_sha256": null, "source_sha": null, "status": "pending_verification"},
+    {"platform": "linux-aarch64", "fixture": "single_rut.toml", "expected_sha256": null, "source_sha": null, "status": "pending_verification"},
+    {"platform": "macos-arm64", "fixture": "constant_bank.toml", "expected_sha256": null, "source_sha": null, "status": "pending_verification"},
+    {"platform": "linux-aarch64", "fixture": "constant_bank.toml", "expected_sha256": null, "source_sha": null, "status": "pending_verification"},
+    {"platform": "macos-arm64", "fixture": "mirrored.toml", "expected_sha256": null, "source_sha": null, "status": "pending_verification"},
+    {"platform": "linux-aarch64", "fixture": "mirrored.toml", "expected_sha256": null, "source_sha": null, "status": "pending_verification"}
+  ]
+}

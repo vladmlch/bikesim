@@ -427,7 +427,7 @@ OwnedResearchEpisode NativeResearchRuntime::evidence_unlocked(OwnedNativeEpisode
 OwnedResearchEpisode NativeResearchRuntime::evidence_snapshot() const {
     const ResearchGuard guard(busy_); require_open();
     OwnedNativeEpisode physical;
-    physical.generation = runtime_->physical_->generation();
+    physical.generation = runtime_->committed_generation_;
     physical.columns = runtime_->accounting_config_.columns;
     if (config_.capture_mode == ResearchCaptureMode::full)
         physical = runtime_->accounting_->seal_episode();

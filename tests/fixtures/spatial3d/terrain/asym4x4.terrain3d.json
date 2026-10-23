@@ -1,0 +1,15 @@
+{
+  "schema": "analytic-terrain3d-fixture/v1",
+  "nx": 4,
+  "ny": 4,
+  "x0_m": 0.0,
+  "y0_m": 0.0,
+  "dx_m": 1.0,
+  "dy_m": 1.0,
+  "height_formula": "0.1*ix+0.37*iy+0.01*ix*iy",
+  "ordering": "iy*nx+ix",
+  "surface_ids_author_order": [1, 7],
+  "material_ids": [1, 7, 1, 7, 1, 7, 1, 7, 1],
+  "transpose_nodes": [[1, 2], [3, 1], [0, 3]],
+  "provenance": "Analytic source data; binary BKT3 bytes are assembled only by the future C++ test run."
+}

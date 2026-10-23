@@ -4,6 +4,11 @@
 #include "terrain/detail.hpp"
 #include "io/json.hpp"
 #include "io/hash.hpp"
+#include "terrain/spec3d.hpp"
+#include "terrain/source3d.hpp"
+#include "spatial/config.hpp"
+#include <filesystem>
+#include <memory>
 
 #define BIKE_TERRAIN_SPEC_FIELDS(X) \
  X(length_m) X(grade_max) X(grade_peak) X(grade_peak_prob) \
@@ -22,6 +27,15 @@
  X(single_contact_safe) X(min_contact_radius_m) X(max_kink_deg) X(contact_window_m)
 
 namespace bike::terrain::detail {
+// Cold file dispatch. Relative base_track paths resolve against the declaring
+// genspec, never the process cwd. The returned immutable owner is shared by
+// startup, runtime and render; no terrain file is read on a warm query.
+Track3dSpec load_track3d_spec(const std::filesystem::path&);
+ProfileExtrusion3d load_profile_extrusion3d(const std::filesystem::path&,
+    double corridor_half_width_m, double resolution_m = DEFAULT_RESOLUTION_M);
+std::shared_ptr<const Terrain3dSource> load_terrain3d_source(
+    const bike::spatial::TerrainRequest3d&);
+
 inline void read_field(double& out,const bike::io::Value& value,std::string_view name){out=bike::io::as_double(value,name);}
 inline void read_field(std::int64_t& out,const bike::io::Value& value,std::string_view name){out=bike::io::as_int64(value,name);}
 inline void read_field(bool& out,const bike::io::Value& value,std::string_view name){out=bike::io::as_bool(value,name);}

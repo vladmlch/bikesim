@@ -266,3 +266,19 @@ not sustained throughput. Sustained evidence comes from the interactive runs
 above. The headless RTF threshold field alone cannot establish Track C
 acceptance: full parity/replay tests, sanitisers/inspections, actual macOS UI
 checks and 1x mean achieved RTF >= 0.95 remain separate gates.
+
+## Spatial terrain authoring status
+
+Native 3D terrain is **implemented in source; qualification is pending**.
+W06–W12 supply the immutable grid/asset, bounded queries, native generation,
+exact-profile height extrusion and separate render raster. Spatial runtime
+capability remains gated until its tyre/startup/integration producers and V
+acceptance are complete; this section does not advertise a runnable 3D ride.
+
+The source recipes `examples/research/alpine_rocky_3d_genspec.toml` and
+`rough_uphill_savage_3d_genspec.toml` refer to existing longitudinal tracks and
+add explicitly authored lateral geometry. Their manifest hashes and execution
+evidence are pending. Sharp edges in the savage base can violate the generator's
+60-degree slope bound and are rejected; the source delivery neither smooths
+those edges nor claims successful generation. See the terrain audit for V02/V05
+acceptance and the remaining contract decisions.

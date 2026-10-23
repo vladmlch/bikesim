@@ -28,6 +28,11 @@
 
 #include "../drivetrain/state_codec.hpp"
 #include "../engine_call.hpp"
+#include "../writer_config.hpp"
+#include "../rider/state_codec.hpp"
+#include "../terrain/source3d.hpp"
+#include "setup_values.hpp"
+#include <memory>
 
 namespace runtime {
 
@@ -251,13 +256,23 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
         "control_period_steps", "physics_mode", "drive_mode", "strict",
         "measurement_decimation", "record_retention", "writer_config",
         "rider_controller", "rider_intent", "monitors", "geometry");
-    vread::exact(root, required, vread::keys("async_telemetry"));
-    if (vread::integer32(vread::field(root, "runtime_schema"),
-                         root.child("runtime_schema")) != kRuntimeSchema)
+    const int version = vread::integer32(vread::field(root, "runtime_schema"),
+                                         root.child("runtime_schema"));
+    if (version == static_cast<int>(bike::spatial::kSpatialRuntimeSchema)) {
+        vread::exact(root, required, vread::keys("async_telemetry", "spatial"));
+        (void)vread::field(root, "spatial");
+    } else vread::exact(root, required, vread::keys("async_telemetry"));
+    if (version != kRuntimeSchema && version != static_cast<int>(bike::spatial::kSpatialRuntimeSchema))
         vread::invalid(root.child("runtime_schema"),
                        "unsupported runtime schema");
 
     RuntimeConfig out;
+    out.schema = version;
+    if (version == static_cast<int>(bike::spatial::kSpatialRuntimeSchema)) {
+        out.spatial = bike::spatial::spatial_config_from_wire(*vread::field(root, "spatial").value);
+        if (out.spatial->mode != bike::spatial::Mode::spatial3d)
+            vread::invalid("config.spatial.mode", "runtime2 requires spatial mode");
+    }
     out.timestep_s = positive_field(root, "timestep_s");
     out.control_period_s = positive_field(root, "control_period_s");
     out.control_period_steps =
@@ -330,6 +345,16 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
     out.geometry.com_marker_site =
         optional_string_field(geometry, "com_marker_site");
     out.geometry.pose = owned_optional(geometry, "pose");
+    if (out.spatial) {
+        validate_schema_family(out, bike::spatial::kSpatialBootstrapSchema);
+        // Anatomical pose vectors are declared body-local 3-vectors. Root
+        // world coordinates are exclusively the model-bound Topology owner.
+        if (!bio::is_null(out.geometry.pose)) {
+            (void)rider::decode_spatial_spindle_pose(out.geometry.pose, "config.geometry.pose");
+            (void)rider::decode_spatial_spindle_config(out.rider_controller);
+        } else (void)rider::decode_spindle_config(out.rider_controller);
+        (void)rider::decode_intent_config(out.rider_intent, "config.rider_intent");
+    }
     return out;
 }
 
@@ -343,17 +368,58 @@ BootstrapState decode_bootstrap_state(const bike::io::Value &state,
         "schema", "model_digest", "model_dims", "integration_state",
         "model_mutable", "tire", "drive", "rider_contacts",
         "rider_controller", "rider_intent", "signals", "runtime");
-    vread::exact(root, required);
-    if (vread::integer32(vread::field(root, "schema"), "state.schema") !=
-        kRuntimeSchema)
+    const int version = vread::integer32(vread::field(root, "schema"), "state.schema");
+    if (version == static_cast<int>(bike::spatial::kSpatialBootstrapSchema)) {
+        vread::exact(root, required, vread::keys("spatial"));
+        (void)vread::field(root, "spatial");
+    } else vread::exact(root, required);
+    if (version != kRuntimeSchema && version != static_cast<int>(bike::spatial::kSpatialBootstrapSchema))
         vread::invalid("state.schema", "unsupported bootstrap schema");
 
     BootstrapState out;
+    out.schema = version;
     out.model_digest = expected_model_digest(state);
     out.model_dims = decode_model_dims(root, model);
     out.integration_state = decode_integration_state(root, model);
     out.model_mutable = decode_model_mutable(root, model);
-    out.tire = decode_tire_state(root);
+    if (version == kRuntimeSchema) out.tire = decode_tire_state(root);
+    else {
+        out.spatial = decode_spatial_bootstrap(*vread::field(root, "spatial").value);
+        const auto tire = vread::section(root, "tire");
+        vread::exact(tire, vread::keys("pneumatic3d_state", "identity", "encoding", "payload"));
+        if (vread::integer(vread::field(tire, "pneumatic3d_state"), tire.child("pneumatic3d_state")) != 1)
+            vread::invalid(tire.child("pneumatic3d_state"), "unsupported tyre schema");
+        if (vread::string(vread::field(tire, "encoding"), tire.child("encoding")) != "base64")
+            vread::invalid(tire.child("encoding"), "expected canonical base64");
+        const auto identity = bike::pneumatic3d::tyre_identity_from_wire(*vread::field(tire, "identity").value);
+        if (identity.topology_fingerprint_hex != out.spatial->topology_fingerprint ||
+            identity.terrain_sha256_hex != out.spatial->terrain_sha256 ||
+            identity.calibration_sha256_hex != out.spatial->calibration_sha256)
+            vread::invalid(tire.child("identity"), "differs from bootstrap spatial identity");
+        const auto bytes = bike::pneumatic3d::base64_decode_strict(
+            vread::string(vread::field(tire, "payload"), tire.child("payload")));
+        if (!bytes) vread::invalid(tire.child("payload"), bytes.error());
+        auto decoded = bike::pneumatic3d::decode_tyre_state(*bytes, identity);
+        if (!decoded) vread::invalid(tire.child("payload"), decoded.error());
+        out.tire3d = std::move(*decoded);
+        // A disposable arena makes qpos offsets follow the engine's actual
+        // integration layout. No live model/data are touched by validation.
+        const std::unique_ptr<mjData, decltype(&mj_deleteData)> data(engine::make_data(&model), &mj_deleteData);
+        if (!data) throw std::runtime_error("state.integration_state: cannot allocate validation arena");
+        engine::set_state(&model, data.get(), out.integration_state.data(), mjSTATE_INTEGRATION);
+        const auto types = std::views::counted(model.jnt_type, model.njnt);
+        const auto addresses = std::views::counted(model.jnt_qposadr, model.njnt);
+        const auto q = std::views::counted(data->qpos, model.nq);
+        for (std::size_t j = 0; j < types.size(); ++j) {
+            if (types[j] != mjJNT_FREE && types[j] != mjJNT_BALL) continue;
+            const auto a = static_cast<std::size_t>(addresses[j] + (types[j] == mjJNT_FREE ? 3 : 0));
+            if (a > q.size() || q.size() - a < 4)
+                vread::invalid("state.integration_state.qpos", "quaternion span exceeds model");
+            const double norm = std::hypot(std::hypot(q[a], q[a+1]), std::hypot(q[a+2], q[a+3]));
+            if (std::abs(norm - 1.) > 1e-9)
+                vread::invalid("state.integration_state.qpos", "non-unit free/ball quaternion");
+        }
+    }
     out.drive = drivetrain::decode_drive_snapshot(
         *vread::field(root, "drive").value);
 
@@ -402,6 +468,94 @@ void verify_model_dims(const ModelDims &dims, const mjModel &model) {
             throw std::invalid_argument("state.model_dims." + key +
                                         ": model dimension mismatch");
         }
+}
+
+SpatialBootstrapState decode_spatial_bootstrap(const bio::Value& value) {
+    const vread::Dict d{.value=&vread::mapping({&value}, "state.spatial"), .path="state.spatial"};
+    vread::exact(d, vread::keys("spatial_contract", "root_kind", "topology_fingerprint",
+        "terrain_sha256", "calibration_sha256", "bootstrap_phase", "hold", "brake", "steer", "outcome"));
+    for (std::size_t i=0; i<d.size(); ++i)
+        for (std::size_t j=0; j<i; ++j)
+            if ((*d.value)[i].first==(*d.value)[j].first)
+                vread::invalid(d.child((*d.value)[i].first), "duplicate key");
+    if (vread::integer(vread::field(d,"spatial_contract"),d.child("spatial_contract")) != bike::spatial::kSpatialContract)
+        vread::invalid(d.child("spatial_contract"),"unsupported contract");
+    SpatialBootstrapState out;
+    const auto root = bike::spatial::parse_root_kind(vread::string(vread::field(d,"root_kind"),d.child("root_kind")));
+    if (!root || *root==bike::spatial::RootKind::planar3)
+        vread::invalid(d.child("root_kind"), "expected constrained or free root");
+    out.root_kind=*root;
+    const auto digest = [&](const char* name, bool allow_empty=false) {
+        const auto& s=vread::string(vread::field(d,name),d.child(name));
+        if ((!allow_empty || !s.empty()) && (s.size()!=64 || s.find_first_not_of("0123456789abcdef")!=std::string::npos))
+            vread::invalid(d.child(name), "expected lowercase SHA-256");
+        return s;
+    };
+    out.topology_fingerprint=digest("topology_fingerprint");
+    out.terrain_sha256=digest("terrain_sha256");
+    out.calibration_sha256=digest("calibration_sha256",true);
+    const auto phase=bike::spatial::parse_phase(vread::string(vread::field(d,"bootstrap_phase"),d.child("bootstrap_phase")));
+    if(!phase)vread::invalid(d.child("bootstrap_phase"),"unknown phase");
+    out.bootstrap_phase=*phase;
+    try {
+        out.hold=bike::spatial::decode_hold(*vread::field(d,"hold").value);
+        out.brake=bike::spatial::decode_brake(*vread::field(d,"brake").value);
+        out.steer=bike::spatial::decode_steer(*vread::field(d,"steer").value);
+        out.outcome=bike::spatial::decode_outcome(*vread::field(d,"outcome").value);
+    } catch(const std::invalid_argument& e) { vread::invalid("state.spatial",e.what()); }
+    if(out.hold.phase!=out.bootstrap_phase)
+        vread::invalid(d.child("hold.phase"),"differs from bootstrap_phase");
+    return out;
+}
+
+bio::Value encode_spatial_bootstrap(const SpatialBootstrapState& s) {
+    using namespace setupvalue;
+    Value value{Object{{"spatial_contract",integer(bike::spatial::kSpatialContract)},
+        {"root_kind",text(bike::spatial::to_string(s.root_kind))},
+        {"topology_fingerprint",text(s.topology_fingerprint)},
+        {"terrain_sha256",text(s.terrain_sha256)}, {"calibration_sha256",text(s.calibration_sha256)},
+        {"bootstrap_phase",text(bike::spatial::to_string(s.bootstrap_phase))},
+        {"hold",bike::spatial::encode_hold(s.hold)}, {"brake",bike::spatial::encode_brake(s.brake)},
+        {"steer",bike::spatial::encode_steer(s.steer)}, {"outcome",bike::spatial::encode_outcome(s.outcome)}}};
+    (void)decode_spatial_bootstrap(value);
+    return value;
+}
+
+void validate_schema_family(const RuntimeConfig& config, int state_schema) {
+    const auto& writer=bio::as_object(config.writer_config,"config.writer_config");
+    const auto* schema=bio::find_member(writer,"schema");
+    if(!schema)vread::invalid("config.writer_config.schema","missing required key");
+    const auto version=bio::as_int64(*schema,"config.writer_config.schema");
+    if(config.schema==kRuntimeSchema && !config.spatial && state_schema==kRuntimeSchema &&
+       (version==1||version==2))return;
+    if(config.schema!=static_cast<int>(bike::spatial::kSpatialRuntimeSchema) ||
+       state_schema!=static_cast<int>(bike::spatial::kSpatialBootstrapSchema) ||
+       version!=bike::spatial::kSpatialWriterSchema || !config.spatial ||
+       config.spatial->mode!=bike::spatial::Mode::spatial3d)
+        vread::invalid("bootstrap.schema_family","expected planar (1,1|2,1) or spatial (2,3,2)");
+    nativecfg::validate_spatial_writer_envelope(config.writer_config);
+    for(auto name:{"drive","suspension","resistance","tire"})
+        if(!bio::find_member(writer,name))vread::invalid("config.writer_config."+std::string(name),"required spatial producer");
+}
+
+void validate_spatial_identity(const RuntimeConfig& config, const SpatialBootstrapState& state,
+                               const bike::spatial::Topology& topology) {
+    if(!config.spatial)vread::invalid("config.spatial","required");
+    if(config.spatial->root!=state.root_kind || topology.root.kind!=state.root_kind)
+        vread::invalid("state.spatial.root_kind","differs from configured model topology");
+    if(topology.fingerprint_hex!=state.topology_fingerprint)
+        vread::invalid("state.spatial.topology_fingerprint","differs from rebound model");
+    if(!config.terrain3d || config.terrain3d->fingerprint_hex()!=state.terrain_sha256)
+        vread::invalid("state.spatial.terrain_sha256","differs from owned physical asset");
+    if(state.calibration_sha256!=config.spatial->tyre.lateral_coefficients_sha256)
+        vread::invalid("state.spatial.calibration_sha256","differs from configured profile");
+    const vread::Dict root{.value=&bio::as_object(config.writer_config,"config.writer_config"),.path="config.writer_config"};
+    const auto writer=vread::section(root,"spatial");
+    for(const auto& [key,expected]:std::array<std::pair<const char*,std::string>,3>{{
+        {"root_kind",std::string(bike::spatial::to_string(state.root_kind))},
+        {"topology_fingerprint",state.topology_fingerprint},{"terrain_sha256",state.terrain_sha256}}})
+        if(vread::string(vread::field(writer,key),writer.child(key))!=expected)
+            vread::invalid(writer.child(key),"differs from bootstrap/model identity");
 }
 
 } // namespace runtime

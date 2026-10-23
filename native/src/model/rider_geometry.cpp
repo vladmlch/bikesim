@@ -14,6 +14,8 @@
 
 #include "../diag.hpp"
 #include "../io/value.hpp" // io::detail Unicode-16 printability helpers
+#include "../io/json.hpp"
+#include "../platform/files.hpp"
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
 #include "../writers/pyfloat.hpp"
@@ -21,14 +23,17 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <cmath>
 #include <cstddef>
 #include <limits>
 #include <span>
 #include <stdexcept>
+#include <system_error>
 #include <string>
 #include <utility>
 #include <vector>
+#include <unistd.h>
 
 // The pose/segment records are returned by value deliberately (the
 // dict/tuple results the oracle returns); -Wlarge-by-value-copy exists
@@ -895,6 +900,39 @@ SeatedPose solve_seated_pose(const BikeSpecs &specs,
             .leg_chains = std::move(leg_chains),
     };
 }
+io::Value shoulder_profile_document(const configuration::ArticulatedConfig& config) {
+    io::Value document;
+    if (!config.shoulder_profile) {
+        document = io::parse_json(R"({"schema":1,"swivel_range_rad":0.6,"swivel_stiffness_nm_per_rad":30,"swivel_damping_nms_per_rad":3,"swivel_strength_nm":25,"provenance_status":"provisional","sha256_hex":null})");
+    } else {
+        const auto handle = platform::open_regular(*config.shoulder_profile);
+        std::string content;
+        std::array<char, 4096> buffer{};
+        for (;;) {
+            const ssize_t count = ::read(handle.get(), buffer.data(), buffer.size());
+            if (count == 0) break;
+            if (count < 0) {
+                if (errno == EINTR) continue;
+                throw std::system_error(errno, std::generic_category(), "articulated.shoulder_profile");
+            }
+            if (content.size() + static_cast<std::size_t>(count) > 256U*1024U)
+                throw std::invalid_argument("articulated.shoulder_profile: exceeds 256 KiB");
+            content.append(buffer.data(), static_cast<std::size_t>(count));
+        }
+        document = io::parse_json(content);
+    }
+    const auto profile = bike::rider::read_shoulder_profile(document);
+    if (config.shoulder_profile_sha256 && *config.shoulder_profile_sha256 != profile.sha256_hex)
+        throw std::invalid_argument("articulated.shoulder_profile_sha256: profile content mismatch");
+    for (auto& [name, member] : std::get<io::Value::Object>(document.data))
+        if (name == "sha256_hex") member = io::Value{profile.sha256_hex};
+    return document;
+}
+
+bike::rider::ShoulderProfile resolve_shoulder_profile(const configuration::ArticulatedConfig& config) {
+    return bike::rider::read_shoulder_profile(shoulder_profile_document(config));
+}
+
 NATIVE_DIAG_POP
 
 // RiderSpecs.seated_pose member ports.

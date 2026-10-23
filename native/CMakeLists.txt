@@ -210,7 +210,7 @@ add_library(bike_native_contract_core OBJECT src/stepper.cpp
   src/drivetrain/shifting.cpp src/drivetrain/motor.cpp
   src/drivetrain/freehub.cpp src/drivetrain/state_codec.cpp
   src/writers/drivetrain.cpp
-  src/writers/cruise.cpp src/tyre/profile.cpp
+  src/writers/cruise.cpp
   src/tyre/distance.cpp src/tyre/station.cpp
   src/pneumatic/geometry.cpp src/pneumatic/carcass.cpp
   src/pneumatic/brush.cpp src/pneumatic/model.cpp
@@ -333,6 +333,7 @@ add_library(bike_configuration STATIC
   src/configuration/schema.cpp src/configuration/validate.cpp
   src/configuration/load.cpp src/configuration/paths.cpp
   src/configuration/profile_writer.cpp
+  src/spatial/types.cpp src/spatial/config.cpp
   src/configuration/fields.hpp src/configuration/load.hpp
   src/configuration/model_config.hpp
   src/configuration/physical_config.hpp src/configuration/rider_spec.hpp

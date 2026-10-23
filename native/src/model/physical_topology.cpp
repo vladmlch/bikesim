@@ -23,8 +23,9 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
     if(!c.physical()) throw std::invalid_argument("physical topology cannot modify the legacy model");
     const auto& cfg=*c.physics;const auto& drive=cfg.drive;
     auto& steer=required(root,"body","steer");
-    for(auto* value:steer.direct("joint")) if(value->get("name")=="steer_joint") (void)steer.remove(value);
-    if(auto* sensors=root.child("sensor")) {
+    const bool spatial_free=c.spatial() && c.request.spatial->root==bike::spatial::RootKind::free6;
+    if(!spatial_free) for(auto* value:steer.direct("joint")) if(value->get("name")=="steer_joint") (void)steer.remove(value);
+    if(auto* sensors=root.child("sensor"); sensors && !spatial_free) {
         std::vector<Element*> remove;
         for(const auto& value:sensors->children) if(value->get("joint")=="steer_joint") remove.push_back(value.get());
         for(auto* value:remove) (void)sensors->remove(value);
@@ -148,7 +149,10 @@ void finalize_geometric_transmission(Element& root,const configuration::Simulati
     const auto driver=cfg.drive.motor_clutch?"drive_shaft_spin":"crank_spin";
     for(auto const* value:block(root,"worldbody").descendants("joint")) {
         const auto kind=value->get("type","hinge"),name=value->get("name");
-        if(kind!="slide" && kind!="hinge") throw std::invalid_argument("geometric ideal drive requires scalar planar joints");
+        if(kind!="slide" && kind!="hinge") {
+            if(cfg.spatial && cfg.spatial->mode==bike::spatial::Mode::spatial3d) continue;
+            throw std::invalid_argument("geometric ideal drive requires scalar planar joints");
+        }
         if(name.empty()) throw std::invalid_argument("geometric tendon requires named coordinates");
         tendon_joint(*freehub,name,name==driver?cfg.drive.gearing.front_radius_m():name=="rear_wheel_spin"?-cfg.drive.gearing.rear_radius_m():0.);
     }

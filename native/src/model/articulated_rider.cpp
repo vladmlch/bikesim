@@ -1,8 +1,64 @@
 #include "builder_internal.hpp"
 #include <algorithm>
+#include <numbers>
 #include <stdexcept>
 
 namespace bike::model::detail {
+namespace {
+void finish_spatial_rider(Element& root, const BuildContext& c) {
+    const auto& cfg = c.physics->articulated;
+    if (cfg.pedal_attachment != "spindle" || cfg.saddle_attachment != "pin" ||
+        cfg.grip_attachment != "connect" || cfg.coupled_task_control)
+        throw std::invalid_argument("rider.spatial: requires spindle pedals, pin saddle and connect grips");
+    const auto profile = resolve_shoulder_profile(cfg);
+    auto& pelvis = required(root, "body", "rider_pelvis");
+    for (auto* value : pelvis.direct("joint"))
+        if (value->get("name").starts_with("rider_root_")) (void)pelvis.remove(value);
+    pelvis.add("freejoint", {{"name", "rider_root_free"}});
+    auto& actuators = block(root, "actuator");
+    for (int side = 0; side < 2; ++side) {
+        const std::string suffix = side == 0 ? "left" : "right";
+        const std::string name = side == 0 ? "shoulder_swivel_l" : "shoulder_swivel_r";
+        auto& upper = required(root, "body", "rider_upper_arm_" + suffix);
+        const double range_deg = profile.swivel_range_rad * 180. / std::numbers::pi;
+        // Body Z swivel precedes the existing body Y pitch. Adding a joint
+        // to the existing segment preserves every mass, COM and inertia.
+        auto swivel = std::make_unique<Element>("joint", Attributes{
+            {"name", name}, {"type", "hinge"}, {"axis", "0 0 1"},
+            {"limited", "true"}, {"range", repr(-range_deg)+" "+repr(range_deg)},
+            {"stiffness", repr(profile.swivel_stiffness_nm_per_rad)},
+            {"damping", repr(profile.swivel_damping_nms_per_rad)}, {"springref", "0"}});
+        upper.children.insert(upper.children.begin(), std::move(swivel));
+        const std::string limits = repr(-profile.swivel_strength_nm)+" "+repr(profile.swivel_strength_nm);
+        actuators.add("motor", {{"name", "act_"+name}, {"joint", name}, {"gear", "1"},
+            {"ctrllimited", "true"}, {"ctrlrange", limits},
+            {"forcelimited", "true"}, {"forcerange", limits}});
+        auto& steer = required(root, "body", "steer");
+        const Vec3 hand = add(c.articulated->grip, {0., side == 0 ? -ARM_LATERAL_OFFSET_M : ARM_LATERAL_OFFSET_M, 0.});
+        const Vec3 steer_origin = div(c.fixed.P_HT_bot, 1000.);
+        site(steer, "site_grip_"+suffix, vec17(sub(hand, steer_origin)), ".004");
+        auto& connect = required(root, "connect", "connect_grip_"+suffix);
+        std::erase_if(connect.attributes, [](const auto& attribute) {
+            return attribute.first == "body1" || attribute.first == "body2" || attribute.first == "anchor";
+        });
+        connect.set("site1", "site_rider_grip_"+suffix);
+        connect.set("site2", "site_grip_"+suffix);
+    }
+    if (c.physics->timestep_s > .01)
+        throw std::invalid_argument("rider.spatial: attachment compliance requires timestep <= 0.01 s");
+    const double time_constant = std::clamp(c.physics->closure_time_constant_s,
+        std::max(2.*c.physics->timestep_s, .001), .02);
+    for (const char* name : {"connect_grip_left", "connect_grip_right", "connect_foot_front", "connect_foot_rear", "connect_saddle"}) {
+        auto& connect = required(root, "connect", name);
+        connect.set("solref", repr(time_constant)+" 1");
+        connect.set("solimp", "0.98 0.999 0.001 0.5 2");
+    }
+    for (const char* name : {"geom_rider_head", "geom_rider_pelvis", "geom_rider_torso"}) {
+        auto& value = required(root, "geom", name);
+        value.set("contype", "1"); value.set("conaffinity", "1");
+    }
+}
+}
 void build_articulated_rider(Element& world,const ArticulatedPose& pose,const SegmentMasses& masses,
                              const configuration::JointEnvelopeMap* envelopes,bool lock_ankles) {
     std::set<std::string> expected{"pelvis","torso","head"},actual;
@@ -100,5 +156,6 @@ void finish_rider_attachments(Element& root,const BuildContext& c) {
     for(const char* name:{"terrain","catch_plane"}) {
         auto& value=required(root,"geom",name);value.set("conaffinity",std::to_string((static_cast<unsigned>(std::stoi(value.get("conaffinity","1")))|4U)));
     }
+    if (c.spatial()) finish_spatial_rider(root, c);
 }
 } // namespace bike::model::detail

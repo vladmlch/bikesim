@@ -14,12 +14,15 @@ foreach(_spatial_path IN ITEMS "${BIKE_SPATIAL_SOURCE_ROOT}" "${BIKE_SPATIAL_FIX
 endforeach()
 configure_file(fixture_paths.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/fixture_paths.hpp" @ONLY)
 
-add_library(bike_spatial_support STATIC support/spatial_fixture.cpp)
+add_library(bike_spatial_support STATIC
+  support/spatial_fixture.cpp support/terrain_fixture.cpp support/startup_fixture.cpp)
 bike_apply_native_policy(bike_spatial_support)
 target_include_directories(bike_spatial_support PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}"
   "${CMAKE_SOURCE_DIR}/native/tests" "${CMAKE_SOURCE_DIR}/native/src")
-target_link_libraries(bike_spatial_support PUBLIC bike_io)
+target_include_directories(bike_spatial_support SYSTEM PRIVATE "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(bike_spatial_support PUBLIC
+  bike_io bike_terrain bike_spatial bike_model bike_engine)
 
 function(bike_add_spatial_test slug)
   cmake_parse_arguments(ARG "" "" "SOURCES;LIBRARIES;LABELS" ${ARGN})
@@ -48,3 +51,44 @@ bike_add_spatial_test(config SOURCES test_config.cpp
 # project_config.cpp belongs to bike_initialization, whose startup-runtime
 # interface supplies the existing core objects and engine exactly once.
 bike_rewrite_mujoco_load_name(bike_spatial_config "${BIKE_DEP_mujoco_LIBRARY}")
+
+# W06-W12: asset/query/generation and startup/render separation. The extrusion
+# comparator calls the actual legacy pneumatic ray implementation in the core.
+bike_add_spatial_test(terrain_codec SOURCES terrain_codec.cpp LIBRARIES bike_terrain LABELS terrain unit)
+bike_add_spatial_test(terrain_sampling SOURCES terrain_sampling.cpp LIBRARIES bike_terrain LABELS terrain unit)
+bike_add_spatial_test(terrain_raycast SOURCES terrain_raycast.cpp LIBRARIES bike_terrain LABELS terrain unit)
+bike_add_spatial_test(terrain_generator SOURCES terrain_generator.cpp LIBRARIES bike_terrain LABELS terrain unit)
+bike_add_spatial_test(terrain_extrusion SOURCES terrain_extrusion.cpp
+  LIBRARIES bike_terrain bike_startup_runtime LABELS terrain regression)
+bike_add_spatial_test(terrain_startup SOURCES terrain_startup.cpp
+  LIBRARIES bike_terrain bike_model bike_initialization LABELS terrain startup)
+bike_add_spatial_test(terrain_acceptance SOURCES terrain_acceptance.cpp LIBRARIES bike_terrain LABELS terrain acceptance)
+bike_add_spatial_test(terrain_budget_300m SOURCES terrain_budget_300m.cpp LIBRARIES bike_terrain LABELS terrain slow)
+
+# W13-W19: use the repository's existing startup-runtime object interface.
+# W20/W25/W27/W29 remain source dependencies for the complete runtime targets.
+bike_add_spatial_test(topology SOURCES test_topology.cpp LIBRARIES bike_spatial LABELS topology unit)
+bike_add_spatial_test(frames SOURCES test_frames.cpp LIBRARIES bike_spatial bike_model LABELS topology unit)
+bike_add_spatial_test(model SOURCES test_model.cpp LIBRARIES bike_model LABELS topology model)
+bike_add_spatial_test(force_mapping SOURCES test_force_mapping.cpp
+  LIBRARIES bike_spatial bike_startup_runtime LABELS topology force)
+bike_add_spatial_test(drive SOURCES test_drive.cpp
+  LIBRARIES bike_spatial bike_golden_test bike_initialization LABELS topology drive)
+bike_add_spatial_test(rider SOURCES test_rider.cpp
+  LIBRARIES bike_rider_spatial bike_initialization LABELS topology rider)
+bike_add_spatial_test(grip SOURCES test_grip.cpp
+  LIBRARIES bike_rider_spatial bike_initialization LABELS topology rider slow)
+bike_add_spatial_test(runtime_state SOURCES test_runtime_state.cpp
+  LIBRARIES bike_spatial bike_initialization LABELS topology lifecycle)
+bike_add_spatial_test(planar_bridge SOURCES test_planar_bridge.cpp
+  LIBRARIES bike_spatial bike_pneumatic3d bike_initialization bike_validation bike_platform LABELS bridge regression)
+bike_add_spatial_test(planar_bridge_long SOURCES test_planar_bridge_long.cpp
+  LIBRARIES bike_spatial bike_pneumatic3d bike_initialization bike_validation bike_platform LABELS bridge slow)
+bike_add_spatial_test(topology_negatives SOURCES test_topology_negatives.cpp
+  LIBRARIES bike_spatial bike_initialization bike_validation LABELS topology negative)
+
+foreach(_spatial_test IN ITEMS terrain_codec terrain_sampling terrain_raycast terrain_generator
+    terrain_extrusion terrain_startup terrain_acceptance terrain_budget_300m topology frames model
+    force_mapping drive rider grip runtime_state planar_bridge planar_bridge_long topology_negatives)
+  bike_rewrite_mujoco_load_name(bike_spatial_${_spatial_test} "${BIKE_DEP_mujoco_LIBRARY}")
+endforeach()

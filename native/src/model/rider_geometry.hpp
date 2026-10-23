@@ -35,10 +35,19 @@
 #include <vector>
 
 #include "../configuration/rider_spec.hpp" // configuration::RiderSpecs
+#include "../configuration/physical_config.hpp"
+#include "../rider/spatial_support.hpp"
 #include "../geometry/specs.hpp"           // geometry::BikeSpecs, Vec3,
                                            // SaddleGeometry
 
 namespace bike::model {
+
+// Cold profile loading is shared by model construction and runtime projection.
+// A missing path selects the same provisional coefficients as the shipped file.
+[[nodiscard]] bike::io::Value shoulder_profile_document(
+    const configuration::ArticulatedConfig&);
+[[nodiscard]] bike::rider::ShoulderProfile resolve_shoulder_profile(
+    const configuration::ArticulatedConfig&);
 
 using configuration::RiderSpecs;
 using geometry::BikeSpecs;

@@ -23,6 +23,7 @@
 #include "../model/mapping.hpp"
 #include "../io/json.hpp"
 #include "../spatial/config.hpp"
+#include "../spatial/topology.hpp"
 #include "../rider/state_codec.hpp"
 #include "../terrain/profile.hpp"
 #include "../writer_config.hpp"
@@ -48,9 +49,9 @@ cfg::RiderSpecs rider(const mdl::BuildRequest& request) {
 
 void require_connected_spatial(const cfg::SimulationPhysicsConfig& config) {
     if (!config.spatial || config.spatial->mode == bike::spatial::Mode::planar) return;
-    // W17 replaces this authoring-only gate together with topology-aware live
-    // projection. Merely opening a capability row must never route 3D through
-    // the planar body/joint/profile projection below.
+    // W17 exposes bind_spatial_runtime for fully resolved writer3 input.
+    // Automatic pneumatic3d material projection belongs to W25. Keep this
+    // production gate until that producer and later runtime owners exist.
     const auto report = bike::spatial::check_spatial_capability(*config.spatial, config);
     if (!report.implemented)
         throw std::invalid_argument("config.spatial: " +
@@ -79,6 +80,16 @@ std::vector<std::byte> immutable_model_image(const mjModel& model) {
 
 void require_request_model(const mdl::BuildRequest& request, const mjModel& model,
                            const trn::TrackSpec& track) {
+    if(request.spatial && request.spatial->mode==bike::spatial::Mode::spatial3d) {
+        if(!request.terrain3d)
+            throw std::invalid_argument("project_runtime.spatial.terrain: physical source missing");
+        auto expected=mdl::compile_mjcf(mdl::generate_mjcf(request));
+        mdl::populate_render_heightfield(*expected,trn::make_render_grid(*request.terrain3d,
+            {static_cast<std::uint32_t>(request.field.nrow),static_cast<std::uint32_t>(request.field.ncol)}));
+        if(immutable_model_image(model)!=immutable_model_image(*expected))
+            throw std::invalid_argument("project_runtime.spatial.model: differs from typed model and terrain");
+        return;
+    }
     request.field.validate();
     track.validate();
     trn::assert_track_fits(track, request.field);
@@ -350,11 +361,17 @@ bio::Value project_rider_controller(const cfg::SimulationPhysicsConfig& config,
             "rider_controller: articulated field is not an object");
     std::erase_if(*members, [](const Object::value_type& member) {
         return std::ranges::find(kUnportedKeys, member.first) !=
-               kUnportedKeys.end();
+               kUnportedKeys.end() || member.first=="shoulder_profile" || member.first=="shoulder_profile_sha256";
     });
     set(out, "strength", Value{});
     set(out, "strength_coordinates", Value{Object{}});
     set(out, "envelopes", Value{Object{}});
+    if(config.spatial && config.spatial->mode==bike::spatial::Mode::spatial3d &&
+       mj_name2id(&model,mjOBJ_BODY,"rider_pelvis")>=0) {
+        set(out,"rider.spatial",integer(1));
+        set(out,"shoulder_profile",mdl::shoulder_profile_document(config.articulated));
+        set(out,"steer_torque_owner",text("actuator"));
+    }
     std::vector<std::string_view> joints;
     for (auto const name : cfg::kRiderJoints) {
         const std::string owned(name);
@@ -495,6 +512,44 @@ bio::Value project_spatial_runtime_envelope(const cfg::SimulationPhysicsConfig& 
 
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+bio::Value project_spatial_writer_identity(const mdl::BuildRequest& request,const mjModel& model) {
+    if(!request.spatial || request.spatial->mode!=bike::spatial::Mode::spatial3d || !request.terrain3d)
+        throw std::invalid_argument("project_runtime.spatial: configured physical owners required");
+    const auto topology=bike::spatial::bind_topology(model,*request.spatial);
+    return Value{Object{{"spatial_contract",integer(bike::spatial::kSpatialContract)},
+        {"root_kind",text(bike::spatial::to_string(topology.root.kind))},
+        {"topology_fingerprint",text(topology.fingerprint_hex)},
+        {"terrain_sha256",text(request.terrain3d->fingerprint_hex())},
+        {"numeric_profile",text("binary64")}}};
+}
+
+RuntimeConfig bind_spatial_runtime(const mdl::BuildRequest& request,const mjModel& model,
+    const trn::TrackSpec& track,const bio::Value& resolved_fields) {
+    const auto config=physics(request);
+    if(!config.spatial || !request.spatial ||
+       bike::spatial::spatial_config_fingerprint_hex(*config.spatial)!=
+       bike::spatial::spatial_config_fingerprint_hex(*request.spatial))
+        throw std::invalid_argument("project_runtime.spatial: model/configuration mismatch");
+    require_request_model(request,model,track);
+    const auto envelope=project_spatial_runtime_envelope(config,resolved_fields);
+    const auto expected=project_spatial_writer_identity(request,model);
+    if(bio::canonical_json(field(field(envelope,"writer_config"),"spatial"))!=bio::canonical_json(expected))
+        throw std::invalid_argument("config.writer_config.spatial: differs from rebound model/terrain identity");
+    auto result=decode_runtime_config(envelope);
+    result.terrain3d=request.terrain3d;
+    const auto topology=bike::spatial::bind_topology(model,*request.spatial);
+    const std::array<const JointReference*,2> brakes{&result.geometry.front_brake,&result.geometry.rear_brake};
+    const std::array<std::optional<std::string>,2> bodies{result.geometry.front_wheel_body,result.geometry.rear_wheel_body};
+    for(std::size_t side=0;side<2;++side) {
+        const auto& wheel=topology.wheels[side];
+        if(brakes[side]->dof_index!=0 || mj_name2id(&model,mjOBJ_JOINT,brakes[side]->joint.c_str())!=wheel.spin.joint_id)
+            throw std::invalid_argument("config.geometry.brake_dofs: differs from spatial wheel binding");
+        if(!bodies[side] || mj_name2id(&model,mjOBJ_BODY,bodies[side]->c_str())!=wheel.wheel_body_id)
+            throw std::invalid_argument("config.geometry.wheel_bodies: differs from spatial wheel binding");
+    }
+    return result;
+}
+
 bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel& model,
                                 const trn::TrackSpec& track, const ProjectionOptions& options) {
     const auto config_ptr = std::make_unique<cfg::SimulationPhysicsConfig>(physics(request));

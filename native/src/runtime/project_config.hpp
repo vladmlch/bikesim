@@ -39,6 +39,14 @@ void validate_native_supported(const bike::configuration::SimulationPhysicsConfi
 [[nodiscard]] bike::io::Value project_spatial_runtime_envelope(
     const bike::configuration::SimulationPhysicsConfig&,
     const bike::io::Value& resolved_fields);
+// W17 model-bound counterpart. W25 supplies the real resolved writer3 tyre
+// payload; this seam binds names, fingerprints and the shared physical source
+// without promoting the still-unqualified runtime capability.
+[[nodiscard]] bike::io::Value project_spatial_writer_identity(
+    const bike::model::BuildRequest&, const mjModel&);
+[[nodiscard]] RuntimeConfig bind_spatial_runtime(
+    const bike::model::BuildRequest&, const mjModel&,
+    const bike::terrain::TrackSpec&, const bike::io::Value& resolved_fields);
 [[nodiscard]] bike::io::Value project_writer_config(
     const bike::model::BuildRequest&, const mjModel&,
     const bike::terrain::TrackSpec&, const ProjectionOptions& = {});

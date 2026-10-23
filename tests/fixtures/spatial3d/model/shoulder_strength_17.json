@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "swivel_range_rad": 0.6,
+  "swivel_stiffness_nm_per_rad": 30,
+  "swivel_damping_nms_per_rad": 3,
+  "swivel_strength_nm": 17.75,
+  "provenance_status": "provisional",
+  "sha256_hex": null
+}

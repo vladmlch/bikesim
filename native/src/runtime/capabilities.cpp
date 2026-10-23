@@ -8,11 +8,20 @@ CapabilityReport implemented_capabilities(
     const bike::configuration::SimulationPhysicsConfig& config,
     const bike::configuration::RiderSpecs& rider) {
     namespace cfg=bike::configuration;
-    cfg::validate(config);
     CapabilityReport out;
     const auto reject=[&](std::string path,std::string reason) {
         out.rejections.push_back(std::move(path)+": "+std::move(reason));
     };
+    const bool spatial_requested=config.spatial &&
+        config.spatial->mode==bike::spatial::Mode::spatial3d;
+    if(spatial_requested && config.drive.transmission_model!="elastic_chain" &&
+       config.drive.transmission_model!="ideal_mid_drive" &&
+       config.drive.transmission_model!="geometric_ideal_mid_drive") {
+        reject("drive:"+config.drive.transmission_model,"unknown spatial transmission dispatch");
+        out.reasons=out.rejections;
+        return out;
+    }
+    cfg::validate(config);
     if(config.physics_mode!="physical")
         reject("physics_mode","physical runtime requires 'physical'; legacy configurations use RideSimulation");
     if(!config.drive_mode)
@@ -33,8 +42,6 @@ CapabilityReport implemented_capabilities(
        attachments.saddle_attachment!="flat" || attachments.grip_attachment!="spring"))
         reject("articulated","non-flat rider attachments require articulated_planar topology");
     const auto& tires=config.tires;
-    const bool spatial_requested=config.spatial &&
-        config.spatial->mode==bike::spatial::Mode::spatial3d;
     if(tires.backend!="native_reference" && tires.backend!="compliant_2d" &&
        tires.backend!="distributed_2d_reference" && tires.backend!="pneumatic" &&
        !(spatial_requested && tires.backend=="pneumatic_3d"))
@@ -56,6 +63,22 @@ CapabilityReport implemented_capabilities(
         // declaration cannot advertise an executable spatial simulation.
         if(out.spatial->rejections.empty())
             reject("spatial","spatial runtime not connected: W25/W31/W36");
+        // W19 records separate release rows. A constrained or rigid-rider
+        // witness cannot accidentally enable free-root or articulated rows.
+        reject("spatial.root:"+std::string(bike::spatial::to_string(config.spatial->root)),
+            "topology source written; runtime connection and V03/V05 pending");
+        reject("spatial.tyre:pneumatic_3d/"+std::string(bike::spatial::to_string(config.spatial->tyre.tier)),
+            "real W25/W27 material producer and qualification required");
+        reject("drive:"+config.drive.transmission_model,
+            "spatial force mapping source written; V03/V05 pending");
+        reject(config.spatial->root==bike::spatial::RootKind::constrained4?
+            "spatial.steering:constrained":"spatial.steering:free",
+            "separate steering dispatch/qualification pending W31/V05");
+        reject("spatial.identity:model/topology/terrain",
+            "cold identity checks written; saved-runtime continuation pending W27/V05");
+        if(rider.variant=="articulated_planar")
+            reject("spatial.identity:shoulder",
+                "profile/layout and grip feasibility require V03; rigid-rider results do not qualify this row");
     }
     if(out.rejections.empty()) {
         out.paths={"runtime/step.cpp", "writers/drivetrain.cpp", "runtime/native_contacts.cpp"};

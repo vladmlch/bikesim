@@ -22,12 +22,20 @@
 #include "../runtime/setup_values.hpp"
 #include "../stepper.hpp"
 #include "../terrain/trackfile.hpp"
+#include "../terrain/spec_io.hpp"
 
 namespace bike::initialization {
 namespace {
 using namespace runtime::setupvalue;
 
-void populate_heightfield(mjModel const& compiled, const SetupRequest& request) {
+void populate_heightfield(mjModel& compiled, const SetupRequest& request) {
+    if(request.model.spatial && request.model.spatial->mode==spatial::Mode::spatial3d) {
+        if(!request.model.terrain3d)
+            throw std::invalid_argument("setup.spatial.terrain: physical source missing");
+        model::populate_render_heightfield(compiled,terrain::make_render_grid(*request.model.terrain3d,
+            {static_cast<std::uint32_t>(request.model.field.nrow),static_cast<std::uint32_t>(request.model.field.ncol)}));
+        return;
+    }
     const int id = model::required_id(compiled, mjOBJ_HFIELD, "road");
     const auto rows = std::views::counted(compiled.hfield_nrow, compiled.nhfield);
     const auto columns = std::views::counted(compiled.hfield_ncol, compiled.nhfield);
@@ -142,6 +150,7 @@ struct SetupOwner::Impl {
     std::optional<EquilibriumResult> result;
     std::optional<std::string> sealed_model_sha256;
     std::optional<ResearchStartup> research_startup;
+    std::optional<runtime::ModelImage> immutable_spatial_model;
     bool sealed = false;
 };
 
@@ -154,16 +163,35 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     if (!request.model.physics)
         throw std::invalid_argument("native setup requires an explicit physical configuration");
     configuration::post_init(*request.model.physics);
+    const bool spatial_requested=request.model.physics->spatial &&
+        request.model.physics->spatial->mode==spatial::Mode::spatial3d;
+    if(!spatial_requested && (request.model.terrain3d ||
+       (request.model.spatial && request.model.spatial->mode==spatial::Mode::spatial3d)))
+        throw std::invalid_argument("setup.spatial: spatial model/source requires spatial physics");
     if (request.model.mode != "ride")
         throw std::invalid_argument("native setup requires model mode 'ride'");
     auto resolved_rider = model::resolve_rider(request.model.rider ? model::RiderArg{*request.model.rider}
         : model::RiderArg{std::monostate{}}, request.model.include_rider, "lumped");
+    if(spatial_requested) {
+        const auto& spatial_config=*request.model.physics->spatial;
+        if(request.model.spatial && spatial::spatial_config_fingerprint_hex(*request.model.spatial)!=
+            spatial::spatial_config_fingerprint_hex(spatial_config))
+            throw std::invalid_argument("setup.spatial: model and physics configurations differ");
+        request.model.spatial=spatial_config;
+        if(!request.model.terrain3d)
+            request.model.terrain3d=terrain::detail::load_terrain3d_source(spatial_config.terrain);
+        if(!std::isfinite(request.start_x_m) || request.start_x_m<request.model.terrain3d->x_min_m() ||
+           request.start_x_m>request.model.terrain3d->x_max_m())
+            throw std::invalid_argument("setup.start_x_m: outside physical terrain domain");
+        if(request.model.terrain3d->half_width_m()<spatial_config.corridor_half_width_m)
+            throw std::invalid_argument("setup.spatial.corridor_half_width_m: outside physical terrain domain");
+    }
     runtime::validate_native_supported(*request.model.physics, resolved_rider);
     if (!std::isfinite(request.start_x_m))
         throw std::invalid_argument("setup start_x_m must be finite");
     request.track.validate();
     request.model.field.validate();
-    terrain::assert_track_fits(request.track, request.model.field);
+    if(!request.model.terrain3d)terrain::assert_track_fits(request.track, request.model.field);
     request.model.rider = resolved_rider;
     request.model.crank_joint = true;
     const auto compiled = model::compile_mjcf(model::generate_mjcf(request.model), request.asset_root);
@@ -171,6 +199,7 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     auto impl = std::make_unique<SetupOwner::Impl>();
     impl->config = runtime::project_runtime(request.model, *compiled, request.track, request.runtime);
     auto image = capture_model_image(*compiled);
+    if(impl->config.spatial)impl->immutable_spatial_model=image;
     impl->stepper = std::make_unique<Stepper>(image.mjb, nativecfg::decode(impl->config.writer_config));
     impl->physical = runtime::make_physical_step(*impl->stepper, impl->config);
     impl->request = std::move(request);
@@ -183,7 +212,9 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     context.front_geom_id = model::required_id(*compiled, mjOBJ_GEOM, "geom_front_contact");
     context.rear_geom_id = model::required_id(*compiled, mjOBJ_GEOM, "geom_rear_contact");
     if (impl->physical->rider_present())
-        context.rider_pose = ::rider::decode_spindle_pose(impl->config.geometry.pose, "setup.geometry.pose");
+        context.rider_pose = impl->config.spatial?
+            ::rider::decode_spatial_spindle_pose(impl->config.geometry.pose,"setup.geometry.pose"):
+            ::rider::decode_spindle_pose(impl->config.geometry.pose, "setup.geometry.pose");
     auto solver = impl->request.model.solver
         ? std::make_shared<kinematics::HorstLinkageSolver>(*impl->request.model.solver)
         : std::make_shared<kinematics::HorstLinkageSolver>(impl->request.model.bike);
@@ -206,6 +237,15 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
         engine_id.numeric_provider + "|" + platform::execution_identity();
     context.provider_identity = io::sha256(std::as_bytes(std::span{provider}));
     context.model_sha256 = image.sha256;
+    if(impl->request.model.terrain3d) {
+        context.terrain3d=impl->request.model.terrain3d;
+        context.render3d=terrain::make_render_grid(*context.terrain3d,
+            {static_cast<std::uint32_t>(impl->request.model.field.nrow),static_cast<std::uint32_t>(impl->request.model.field.ncol)});
+        context.topology=spatial::bind_topology(*impl->stepper->model(),*impl->request.model.spatial);
+        auto& inputs=std::get<Object>(context.identity.data);
+        inputs.emplace_back("spatial",spatial::spatial_config_to_wire(*impl->request.model.spatial));
+        inputs.emplace_back("physical_terrain_sha256",text(context.terrain3d->fingerprint_hex()));
+    }
     context.cache_directory = impl->request.cache_directory;
     context.initial_state = impl->request.initial_state ? &*impl->request.initial_state : nullptr;
     return std::unique_ptr<SetupOwner>(new SetupOwner(std::move(impl)));
@@ -255,7 +295,8 @@ runtime::RuntimeBootstrap SetupOwner::seal_bootstrap() {
     if (impl_->sealed) throw std::invalid_argument("setup bootstrap was already sealed");
     if (!impl_->result || !impl_->context->completed || impl_->context->initializing)
         throw std::invalid_argument("setup bootstrap requires completed equilibrium and reset");
-    auto result = capture_initialized(*impl_->stepper, *impl_->physical, impl_->config);
+    auto result = capture_initialized(*impl_->stepper, *impl_->physical, impl_->config,
+        impl_->immutable_spatial_model?&*impl_->immutable_spatial_model:nullptr);
     impl_->sealed_model_sha256 = result.model.sha256;
     impl_->sealed = true;
     return result;
@@ -273,6 +314,12 @@ io::Value SetupOwner::metadata() const {
         {"physics", configuration::to_value(context.physics)}, {"inputs", context.identity},
         {"equilibrium", impl_->result ? equilibrium_value(*impl_->result) : Value{}},
         {"sealed", Value{impl_->sealed}}};
+    if(context.terrain3d && context.render3d) {
+        fields.emplace_back("terrain3d",Value{Object{
+            {"physical_asset_sha256",text(context.terrain3d->fingerprint_hex())},
+            {"render_nrow",integer(context.render3d->nrow)}, {"render_ncol",integer(context.render3d->ncol)},
+            {"render_role",text("visual_and_crash_only")}}});
+    }
     if (context.physics.physics_mode == "physical" &&
         impl_->request.model.rider &&
         impl_->request.model.rider->variant == "articulated_planar" &&

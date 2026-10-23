@@ -59,8 +59,14 @@ namespace drivetrain {
 
     struct GeometryWorkspace {
         explicit GeometryWorkspace(mjtSize nv);
+        explicit GeometryWorkspace(const mjModel* model);
 
         std::vector<double> jp_f, jr_f, jp_r, jr_r, jacobian, difference, coordinates;
+        std::vector<double> jr_frame;
+        // Optional authored sprocket-centre sites, resolved once at cold bind.
+        // Small legacy rigs retain their explicit body-origin centres.
+        std::vector<int> centre_sites;
+        bool spatial = false;
 
         double angle(const mjModel *m, const mjData *d, int body, bool accumulated);
 
@@ -69,5 +75,8 @@ namespace drivetrain {
                         std::optional<double> psi = std::nullopt, bool accumulated = true);
 
         double theta_f{}, theta_r{}, psi{};
+    private:
+        double evaluate_spatial(const mjModel*,mjData*,const GearingConfig&,
+            int front,int rear,int frame,std::optional<Vec2>,std::optional<double>,bool);
     };
 } // namespace drivetrain

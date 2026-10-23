@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include "../configuration/model_config.hpp"
@@ -9,6 +10,8 @@
 #include "../rider/spindle_controller.hpp"
 #include "equilibrium.hpp"
 #include "finalize.hpp"
+#include "../terrain/render3d.hpp"
+#include "../spatial/topology.hpp"
 
 class Stepper;
 namespace runtime { class PhysicalStep; }
@@ -49,6 +52,9 @@ struct SetupContext {
     bool completed = false;
     std::optional<EquilibriumResult> equilibrium{};
     const PhysicalInitialState* initial_state = nullptr;
+    std::shared_ptr<const terrain::Terrain3dSource> terrain3d;
+    std::optional<terrain::RenderGrid3d> render3d;
+    std::optional<spatial::Topology> topology;
 };
 
 // Resolves a scalar joint once, rejecting missing/free/ball joints instead

@@ -373,6 +373,7 @@ public:
 
 private:
     mjtSize nq_ = 0;
+    int spatial_body_ = -1;
     std::optional<CrashEvent> event_;
 };
 

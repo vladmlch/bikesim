@@ -92,6 +92,7 @@ void resolve_config_paths(bike::io::Value& values,
         auto& section = std::get<Value::Object>(articulated->data);
         resolve_member_in_place(section, "joint_envelope_path", directory);
         resolve_member_in_place(section, "joint_strength_path", directory);
+        resolve_member_in_place(section, "shoulder_profile", directory);
     }
     resolve_member_in_place(root, "equilibrium_state_file", directory);
 

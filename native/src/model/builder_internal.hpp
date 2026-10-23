@@ -50,11 +50,14 @@ struct BuildContext {
     bool crank_joint;
     MassRegistry registry;
     [[nodiscard]] bool physical() const { return physics && physics->physics_mode=="physical"; }
+    [[nodiscard]] bool spatial() const { return request.spatial && request.spatial->mode==bike::spatial::Mode::spatial3d; }
     MassRegistry* mass_registry() { return physical()? &registry : nullptr; }
 };
 void build_visual_and_assets(Element& root);
 void build_environment(Element& world,const BuildContext& context);
 void build_terrain(Element& root,Element& world,const BuildContext& context);
+void build_terrain(Element& root,Element& world,const BuildContext& context,
+                   const terrain::RenderGrid3d& grid);
 Element& build_frame_body(Element& world,BuildContext& context);
 void build_bb_and_motor(Element& frame,BuildContext& context);
 Element& build_rear_wheel(Element& seatstay,const Vec3& axle,BuildContext& context);
@@ -66,6 +69,9 @@ void build_chain_constraint(Element& root,double ratio);
 void build_actuators(Element& root,const BuildContext& context);
 void build_sensors(Element& root,const BuildContext& context);
 void finish_physical_topology(Element& root,const BuildContext& context);
+inline constexpr int kSpatialCrashMask=1;
+inline constexpr int kSpatialTyreMask=2;
+void finish_spatial_topology(Element& root,const BuildContext& context);
 void finalize_geometric_transmission(Element& root,const configuration::SimulationPhysicsConfig& physics);
 void build_articulated_rider(Element& world,const ArticulatedPose& pose,const SegmentMasses& masses,
                              const configuration::JointEnvelopeMap* envelopes,bool lock_ankles);

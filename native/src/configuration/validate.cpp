@@ -676,6 +676,10 @@ void post_init(PhysicalDriveConfig &config) {
 }
 
 void post_init(ResistanceConfig &config) {
+    post_init(config, false);
+}
+
+void post_init(ResistanceConfig &config, bool spatial_mode) {
     scalar(config.crr, "crr", 0.);
     scalar(config.rho_kg_m3, "rho_kg_m3", 0.);
     scalar(config.cda_m2, "cda_m2", 0.);
@@ -686,12 +690,22 @@ void post_init(ResistanceConfig &config) {
         for (const double v : config.*member)
             if (!std::isfinite(v))
                 fail("invalid shape or non-finite " + std::string(name));
-        if ((config.*member)[1] != 0.)
+        if (!spatial_mode && (config.*member)[1] != 0.)
             fail("resistance configuration must be planar");
     }
 }
 
 void post_init(ArticulatedConfig &config) {
+    if (config.shoulder_profile && !nonblank(*config.shoulder_profile))
+        fail("articulated.shoulder_profile must be a nonempty path or None");
+    if (config.shoulder_profile_sha256) {
+        const auto& digest = *config.shoulder_profile_sha256;
+        if (!config.shoulder_profile || digest.size() != 64 ||
+            !std::ranges::all_of(digest, [](char c) {
+                return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+            }))
+            fail("articulated.shoulder_profile_sha256 requires a profile and lowercase SHA-256");
+    }
     scalar(config.arm_reach_fraction, "arm reach fraction", std::nullopt,
            true);
     if (!(0. < config.arm_reach_fraction && config.arm_reach_fraction < 1.))
@@ -1006,7 +1020,8 @@ void post_init(SimulationPhysicsConfig &config) {
     detail::post_init(config.end_stops);
     detail::post_init(config.tires);
     detail::post_init(config.drive);
-    detail::post_init(config.resistance);
+    detail::post_init(config.resistance, config.spatial &&
+        config.spatial->mode == bike::spatial::Mode::spatial3d);
     detail::post_init(config.articulated);
     detail::post_init(config.seated_climb);
 
@@ -1095,6 +1110,9 @@ void post_init(SimulationPhysicsConfig &config) {
     } else if (config.tires.backend == "pneumatic_3d") {
         fail("tires.backend: pneumatic_3d requires spatial=3d");
     }
+    if ((config.articulated.shoulder_profile || config.articulated.shoulder_profile_sha256) &&
+        (!config.spatial || config.spatial->mode != bike::spatial::Mode::spatial3d))
+        fail("articulated.shoulder_profile: requires spatial=3d");
 }
 
 SimulationPhysicsConfig default_physics() {

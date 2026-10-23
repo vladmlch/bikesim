@@ -226,14 +226,14 @@ namespace nativecfg {
         for (std::size_t i = 0; i < s.paths.size(); ++i)
             validate(s.paths[i], "config.rider_forces.paths." + std::to_string(i));
     }
-    inline void validate(const ResistanceConfig &s) {
+    inline void validate(const ResistanceConfig &s, bool spatial = false) {
         validation::nonnegative(s.crr, "config.resistance.crr");
         validation::nonnegative(s.rho_kg_m3, "config.resistance.rho_kg_m3");
         validation::nonnegative(s.cda_m2, "config.resistance.cda_m2");
         validation::positive(s.rolling_taper_rad_s, "config.resistance.rolling_taper_rad_s");
         for (const double value: s.wind_world_mps) validation::finite(value, "config.resistance.wind_world_mps");
         for (const double value: s.point_body_m) validation::finite(value, "config.resistance.point_body_m");
-        if (s.wind_world_mps[1] != 0. || s.point_body_m[1] != 0.) throw std::invalid_argument("config.resistance: vectors must be planar");
+        if (!spatial && (s.wind_world_mps[1] != 0. || s.point_body_m[1] != 0.)) throw std::invalid_argument("config.resistance: vectors must be planar");
     }
     inline void validate(const TireTable &s, std::string_view path = "config.tire.material.table") {
         const std::string p(path);

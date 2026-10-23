@@ -59,6 +59,25 @@ function(bike_add_native_startup native_dir)
   # graph's adapter comes from BikeNumerics.cmake's RECORD_ONLY binding.
   target_link_libraries(bike_startup_runtime INTERFACE Bike::Numerics)
 
+  # W10 reuses the unchanged legacy profile interpolation. Give that TU one
+  # small owner in both graphs; terrain must not link back to runtime objects.
+  add_library(bike_tyre_profile STATIC "${native_dir}/src/tyre/profile.cpp")
+  bike_startup_target_policy(bike_tyre_profile "${native_dir}")
+  target_link_libraries(bike_tyre_profile PUBLIC ${_startup_engine} Bike::Numerics)
+
+  add_library(bike_spatial STATIC
+    "${native_dir}/src/spatial/topology.cpp"
+    "${native_dir}/src/spatial/frames.cpp"
+    "${native_dir}/src/spatial/bootstrap_state.cpp")
+  bike_startup_target_policy(bike_spatial "${native_dir}")
+  target_link_libraries(bike_spatial PUBLIC bike_configuration ${_startup_engine} bike_io)
+
+  # Model construction consumes the profile/support math but must not acquire
+  # the controllers and runtime objects through a model -> core cycle.
+  add_library(bike_rider_spatial STATIC "${native_dir}/src/rider/spatial_support.cpp")
+  bike_startup_target_policy(bike_rider_spatial "${native_dir}")
+  target_link_libraries(bike_rider_spatial PUBLIC bike_spatial bike_io)
+
   add_library(bike_terrain STATIC
     "${native_dir}/src/terrain/profile.cpp"
     "${native_dir}/src/terrain/heightfield.cpp"
@@ -71,14 +90,29 @@ function(bike_add_native_startup native_dir)
     "${native_dir}/src/terrain/generator.cpp"
     "${native_dir}/src/terrain/alpine.cpp"
     "${native_dir}/src/terrain/presets.cpp"
-    "${native_dir}/src/terrain/trackfile.cpp")
+    "${native_dir}/src/terrain/trackfile.cpp"
+    "${native_dir}/src/terrain/grid3d.cpp"
+    "${native_dir}/src/terrain/asset3d.cpp"
+    "${native_dir}/src/terrain/interpolation3d.cpp"
+    "${native_dir}/src/terrain/raycast3d.cpp"
+    "${native_dir}/src/terrain/spec3d.cpp"
+    "${native_dir}/src/terrain/generator3d.cpp"
+    "${native_dir}/src/terrain/extrusion3d.cpp"
+    "${native_dir}/src/terrain/source3d.cpp"
+    "${native_dir}/src/terrain/render3d.cpp")
   bike_startup_target_policy(bike_terrain "${native_dir}")
-  target_link_libraries(bike_terrain PUBLIC bike_configuration bike_geometry bike_random)
+  target_link_libraries(bike_terrain PUBLIC
+    bike_configuration bike_geometry bike_random bike_io bike_platform bike_tyre_profile)
+  # The frozen W20/W25/W27 producer has no implementation in W06-W19.
+  # Its target is deliberately a forward dependency, never an empty shim.
+  target_link_libraries(${_startup_core} PUBLIC
+    bike_tyre_profile bike_spatial bike_rider_spatial bike_terrain bike_pneumatic3d)
 
   target_sources(bike_model PRIVATE
     "${native_dir}/src/model/builder.cpp"
     "${native_dir}/src/model/xml_writer.cpp"
     "${native_dir}/src/model/physical_topology.cpp"
+    "${native_dir}/src/model/spatial_topology.cpp"
     "${native_dir}/src/model/articulated_rider.cpp"
     "${native_dir}/src/model/drivetrain.cpp"
     "${native_dir}/src/model/linkage.cpp"
@@ -89,7 +123,8 @@ function(bike_add_native_startup native_dir)
     "${native_dir}/src/model/environment.cpp"
     "${native_dir}/src/model/sensors.cpp"
     "${native_dir}/src/model/mapping.cpp")
-  target_link_libraries(bike_model PUBLIC bike_terrain ${_startup_engine} bike_io)
+  target_link_libraries(bike_model PUBLIC
+    bike_terrain bike_spatial bike_rider_spatial ${_startup_engine} bike_io)
 
   # Filesystem-backed arrays depend on platform; keep them above the small
   # JSON/hash archive so platform -> io never becomes a circular edge.

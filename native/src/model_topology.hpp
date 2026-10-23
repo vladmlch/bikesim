@@ -7,6 +7,9 @@
 #include <string>
 
 namespace topology {
+    // Scalar writers retain this local guard. Spatial root ownership and
+    // independent qpos/dof spans live in spatial/topology.hpp; a model-wide
+    // nq==nv condition is not a scalar-joint validation.
     inline void scalar_joint(const mjModel *model, int id, const char *name) {
         if (id < 0 || id >= model->njnt) throw std::invalid_argument(std::string(name) + ": invalid joint ID");
         const std::span<const int> types = std::views::counted(model->jnt_type, model->njnt);

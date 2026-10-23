@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 #include "../io/npy.hpp"
 #include "../io/value.hpp"
@@ -30,6 +31,9 @@ void save_equilibrium_cache(const SetupContext&,const StateFile&);
 // writer's validated restore. Rejection restores the original owner;
 // fatal engine failures retain the Stepper poison contract.
 void restore_equilibrium_state(SetupContext&,const StateFile&);
+// Cold validation for initial-state transfer before its first model/data write.
+void validate_equilibrium_material(const SetupContext&,const StateFile&,
+    std::span<const double> qpos,std::span<const double> qvel);
 [[nodiscard]] const io::NpyArray& state_array(const StateFile&,std::string_view name);
 
 // Explicit t=0 transfer retains the target's own configuration/source

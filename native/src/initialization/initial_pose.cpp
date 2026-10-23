@@ -1,4 +1,5 @@
 #include "context.hpp"
+#include "spatial_equilibrium.hpp"
 #include "../engine_call.hpp"
 #include "../runtime/step.hpp"
 #include "../stepper.hpp"
@@ -34,6 +35,17 @@ void initialize_pose(SetupContext& context) {
     require_initializing(context);
     auto& stepper=context.stepper;
     mjModel* m=stepper.model();mjData* d=stepper.data();
+    if(context.topology) {
+        if(!context.terrain3d)throw std::invalid_argument("initial_pose.spatial.terrain: owner missing");
+        bool manifold=context.topology->root.kind==spatial::RootKind::free6;
+        for(int j=0;j<m->njnt;++j)manifold=manifold || m->jnt_type[j]==mjJNT_FREE || m->jnt_type[j]==mjJNT_BALL;
+        if(manifold) {
+            // W29 owns manifold placement; quaternion coordinates never enter
+            // the scalar root or planar pelvis placement below.
+            spatial_initial_pose(context,*context.topology,context.terrain3d->query_view(),0.,0.);
+            return;
+        }
+    }
     const auto vertices=context.physical.terrain_vertices();
     if(vertices.size()<2 || !std::isfinite(context.start_x_m) || !std::isfinite(context.ground_z_m))
         throw std::invalid_argument("initial pose requires finite source geometry and a compiled road");
@@ -50,19 +62,33 @@ void initialize_pose(SetupContext& context) {
         return static_cast<std::size_t>(std::clamp<std::ptrdiff_t>(distance-1,0,static_cast<std::ptrdiff_t>(vertices.size())-2));
     };
     auto const height=[&](double position){
+        if(context.terrain3d) {
+            const auto sample=context.terrain3d->query_view().sample(position,0.);
+            if(sample.status!=terrain::QueryStatus3d::ok)
+                throw std::invalid_argument("initial_pose.spatial.terrain: position outside physical domain");
+            return sample.height_m;
+        }
         if(position<=vertices.front()[0])return vertices.front()[1];
         if(position>=vertices.back()[0])return vertices.back()[1];
         const auto at=locate(position);
         return biketyre::np_interp(position,std::array{vertices[at][0],vertices[at+1][0]},std::array{vertices[at][1],vertices[at+1][1]});
     };
     const auto i=locate(context.start_x_m);
-    const double slope=(vertices[i+1][1]-vertices[i][1])/(vertices[i+1][0]-vertices[i][0]);
+    double slope=(vertices[i+1][1]-vertices[i][1])/(vertices[i+1][0]-vertices[i][0]);
+    if(context.terrain3d) {
+        const auto sample=context.terrain3d->query_view().sample(context.start_x_m,0.);
+        if(sample.status!=terrain::QueryStatus3d::ok || !(sample.normal_world[2]>0.))
+            throw std::invalid_argument("initial_pose.spatial.terrain: invalid start normal");
+        slope=-sample.normal_world[0]/sample.normal_world[2];
+    }
     auto stage=std::make_unique<runtime::StepState>(context.physical.state());
     stage->initializing=true;stage->contact_query={};stage->probe_query={};
     context.physical.restore(*stage);
     stepper.mutate([&]{engine::reset_data(m,d);});
     auto const q=std::views::counted(d->qpos,m->nq);
     q[static_cast<std::size_t>(x.qpos)]=context.start_x_m;
+    if(context.topology && context.topology->root.kind==spatial::RootKind::constrained4)
+        q[static_cast<std::size_t>(context.topology->root.scalar[1].qpos_adr)]=0.;
     q[static_cast<std::size_t>(z.qpos)]=height(context.start_x_m)-context.ground_z_m+.005;
     q[static_cast<std::size_t>(pitch.qpos)]=-std::atan(slope);
     stepper.note_posvel_stale();stepper.forward();

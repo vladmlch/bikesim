@@ -37,6 +37,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 #include <mujoco/mujoco.h>
@@ -49,12 +50,22 @@
 #include "../tyre/profile.hpp"
 #include "../writer_config.hpp"
 #include "../writers/drivetrain.hpp"
+#include "../writers/pneumatic_3d_tire.hpp"
+#include "../terrain/spec_io.hpp"
 #include "value_readers.hpp"
 
 namespace runtime {
 namespace {
 
 namespace bio = bike::io;
+
+std::vector<std::byte> tire_state_bytes(const Stepper& stepper) {
+    if(stepper.has_spatial_tire())return stepper.spatial_tire_writer().state_bytes();
+    if(!stepper.has_tire())return {};
+    const auto row=stepper.tire_state();
+    const auto bytes=std::as_bytes(std::span(row));
+    return {bytes.begin(),bytes.end()};
+}
 
 // environment.py crash_reason — the latched CrashEvent's outcome label.
 [[nodiscard]] std::optional<std::string>
@@ -317,6 +328,7 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
     if (!bio::is_null(bootstrap.rider_controller))
         out.rider_controller = rider::decode_spindle_state(
             bootstrap.rider_controller, "state.rider_controller");
+    out.spatial=bootstrap.spatial;
     return out;
 }
 
@@ -342,6 +354,8 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
     out.monitors = config.monitors;
     out.intent = rider::decode_intent_config(config.rider_intent,
                                              "config.rider_intent");
+    out.spatial=config.spatial;
+    out.terrain3d=config.terrain3d;
     return out;
 }
 
@@ -391,16 +405,34 @@ std::unique_ptr<PhysicalStep>
 build_physical_step(Stepper &stepper, const RuntimeConfig &config) {
     // The compiled terrain cross-section is constant model geometry — the
     // tire writer's own copy was read from this same post-forward data.
-    std::vector<std::array<double, 2>> vertices =
-        biketyre::compiled_profile_vertices(stepper.model(),
-                                            stepper.data(), "terrain");
+    std::vector<std::array<double, 2>> vertices;
+    if(config.spatial) {
+        if(!config.terrain3d)
+            throw std::invalid_argument("config.spatial.terrain: physical source missing");
+        // The legacy rider preview still consumes a centreline. Sample the
+        // canonical source, never the visual heightfield; tyre queries remain
+        // fully two-dimensional through the same immutable owner.
+        constexpr std::size_t samples=1025;
+        vertices.reserve(samples);
+        const auto query=config.terrain3d->query_view();
+        const double first=config.terrain3d->x_min_m(),last=config.terrain3d->x_max_m();
+        for(std::size_t i=0;i<samples;++i) {
+            const double x=i+1==samples?last:first+(last-first)*static_cast<double>(i)/(samples-1);
+            const auto sample=query.sample(x,0.);
+            if(sample.status!=bike::terrain::QueryStatus3d::ok)
+                throw std::invalid_argument("config.spatial.terrain: invalid physical centreline sample");
+            vertices.push_back({x,sample.height_m});
+        }
+    } else {
+        vertices=biketyre::compiled_profile_vertices(stepper.model(),stepper.data(),"terrain");
+    }
     std::optional<rider::SpindlePose> pose;
     std::optional<rider::SpindleConfig> rider_cfg;
     if (!bio::is_null(config.geometry.pose)) {
-        pose = rider::decode_spindle_pose(config.geometry.pose,
-                                          "config.geometry.pose");
-        rider_cfg = rider::decode_spindle_config(
-            config.rider_controller);
+        pose = config.spatial?rider::decode_spatial_spindle_pose(config.geometry.pose,"config.geometry.pose"):
+            rider::decode_spindle_pose(config.geometry.pose,"config.geometry.pose");
+        rider_cfg = config.spatial?rider::decode_spatial_spindle_config(config.rider_controller):
+            rider::decode_spindle_config(config.rider_controller);
     }
     return std::make_unique<PhysicalStep>(
         stepper, step_config(config), std::move(vertices),
@@ -429,12 +461,17 @@ NATIVE_DIAG_POP
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void NativeRideRuntime::init() {
+    if(config_.spatial || bootstrap_.spatial || config_.schema!=kRuntimeSchema || bootstrap_.schema!=kRuntimeSchema)
+        validate_schema_family(config_,bootstrap_.schema);
     // Ownership is already committed; the digest re-verification keeps a
     // fabricated RuntimeBootstrap honest: the image bytes — not the
     // recorded sha field — prove the model identity.
     if (bio::sha256(model_image_.mjb) != bootstrap_.model_digest)
         throw std::invalid_argument(
             "state.model_digest: model artifact bytes do not match");
+    model_image_.sha256=bootstrap_.model_digest;
+    if(config_.spatial && !config_.terrain3d)
+        config_.terrain3d=bike::terrain::detail::load_terrain3d_source(config_.spatial->terrain);
     // The writer-config decode position: exactly where the nanobind
     // adapter decoded the handle — before the model load.
     const nativecfg::WriterConfig writer_config =
@@ -443,6 +480,15 @@ void NativeRideRuntime::init() {
     // Same guarantee the decode gave at compose time — repeated against
     // the live model so a fabricated bootstrap record cannot pass.
     verify_model_dims(bootstrap_.model_dims, *stepper_->model());
+    if(config_.spatial) {
+        if(!bootstrap_.spatial || !bootstrap_.tire3d || !stepper_->has_spatial_tire())
+            throw std::invalid_argument("bootstrap.spatial.tire: producer state missing");
+        const auto topology=bike::spatial::bind_topology(*stepper_->model(),*config_.spatial);
+        validate_spatial_identity(config_,*bootstrap_.spatial,topology);
+        const auto decoded=bike::pneumatic3d::decode_tyre_state(
+            bike::pneumatic3d::encode_tyre_state(*bootstrap_.tire3d),stepper_->spatial_tire_writer().state().identity);
+        if(!decoded)throw std::invalid_argument("bootstrap.spatial.tire: "+decoded.error());
+    }
     // The ctor-side halves of the staged bootstrap decode — the positions
     // the nanobind build ran them inside init():
     //   rider_contacts decode (needs the live writer topology), then the
@@ -465,6 +511,21 @@ void NativeRideRuntime::init() {
         physical_->rider_present())
         throw std::invalid_argument(
             "state.rider_controller does not match the rider config");
+    if(bootstrap_step_state_.rider_controller) {
+        const auto& controller=*bootstrap_step_state_.rider_controller;
+        if(controller.spatial.has_value()!=config_.spatial.has_value())
+            throw std::invalid_argument("state.rider_controller.rider.spatial: runtime family mismatch");
+        physical_->rider_control().validate_state(controller);
+        if(config_.spatial) {
+            const auto* model=stepper_->model();
+            std::unique_ptr<mjData,decltype(&mj_deleteData)> staged(engine::make_data(model),&mj_deleteData);
+            if(!staged)throw std::runtime_error("bootstrap spatial rider staging allocation failed");
+            engine::set_state(model,staged.get(),bootstrap_.integration_state.data(),mjSTATE_INTEGRATION);
+            physical_->rider_control().validate_spatial_lanes(controller,
+                std::span<const double>(staged->qpos,static_cast<std::size_t>(model->nq)),
+                std::span<const double>(staged->qvel,static_cast<std::size_t>(model->nv)));
+        }
+    }
     apply_bootstrap();
     initialize_accounting();
 }
@@ -472,6 +533,11 @@ NATIVE_DIAG_POP
 
 void NativeRideRuntime::require_open() const {
     if (closed_) throw std::logic_error("NativeRideRuntime is closed");
+}
+
+void NativeRideRuntime::require_boundary_ready() const {
+    if (boundary_recovery_required_)
+        throw std::logic_error("runtime boundary capture failed; reset required");
 }
 
 void NativeRideRuntime::apply_bootstrap() {
@@ -512,7 +578,9 @@ void NativeRideRuntime::apply_bootstrap() {
         // A tire writer validates its full canonical column set, so restore
         // whenever one exists; a document carrying tire state against a
         // no-tire Stepper still reports the absent-writer error.
-        if (stepper_->has_tire() || !bootstrap_.tire.names.empty())
+        if(config_.spatial)
+            stepper_->restore_spatial_tire(*bootstrap_.tire3d);
+        else if (stepper_->has_tire() || !bootstrap_.tire.names.empty())
             stepper_->set_tire_state(bootstrap_.tire.names,
                                      bootstrap_.tire.row);
         // The runtime counters land last (the docstring's ordered restore
@@ -585,6 +653,9 @@ void NativeRideRuntime::initialize_accounting() {
     const mjModel *const model = stepper_->model();
     accounting_config_.max_dofs = static_cast<std::size_t>(model->nv);
     accounting_config_.max_qpos = static_cast<std::size_t>(model->nq);
+    if(config_.spatial) {
+        accounting_config_.columns.spatial=true;
+    } else {
     const int root_x = mj_name2id(model, mjOBJ_JOINT, "root_x");
     const int root_pitch = mj_name2id(model, mjOBJ_JOINT, "root_pitch");
     if (root_x < 0 || root_pitch < 0)
@@ -595,18 +666,25 @@ void NativeRideRuntime::initialize_accounting() {
         .root_x_qpos = static_cast<std::size_t>(qpos_addresses[static_cast<std::size_t>(root_x)]),
         .root_x_dof = static_cast<std::size_t>(dof_addresses[static_cast<std::size_t>(root_x)]),
         .root_pitch_qpos = static_cast<std::size_t>(qpos_addresses[static_cast<std::size_t>(root_pitch)])};
-    accounting_ = std::make_unique<PeriodAccounting>(accounting_config_,
+    }
+    auto accounting = std::make_unique<PeriodAccounting>(accounting_config_,
         bootstrap_accounting_state_, physical_->generation(),
         physical_->rider_present() ? &physical_->rider_control() : nullptr,
         bootstrap_rider_contacts_.has_value() ? &stepper_->rider_contacts() : nullptr);
-    committed_integration_state_ = bootstrap_.integration_state;
+    auto spare_integration = bootstrap_.integration_state;
     next_integration_state_ = bootstrap_.integration_state;
-    committed_step_ = physical_->step();
-    committed_time_s_ = stepper_->data()->time;
-    committed_outcome_ = crash_outcome(physical_->crash());
-    physical_->initialize_presentation(committed_presentation_);
-    physical_->initialize_presentation(next_presentation_);
-    cache_research_boundary();
+    auto presentation = std::make_unique<PresentationState>();
+    auto spare_presentation = std::make_unique<PresentationState>();
+    physical_->initialize_presentation(*presentation);
+    physical_->initialize_presentation(*spare_presentation);
+    auto boundary = capture_boundary();
+    // initialize_accounting is also used by the cold validation rebase path.
+    // Its previous readable boundary survives every staging failure above.
+    std::swap(next_presentation_, *presentation);
+    accounting_.swap(accounting);
+    commit_boundary(std::move(boundary));
+    next_integration_state_.swap(spare_integration);
+    std::swap(next_presentation_, *spare_presentation);
 }
 NATIVE_DIAG_POP
 
@@ -637,16 +715,41 @@ std::optional<std::string> NativeRideRuntime::outcome_reason() const {
     return committed_outcome_;
 }
 
-void NativeRideRuntime::cache_research_boundary() {
-    const auto qpos = stepper_->qpos();
-    committed_position_m_ = qpos[accounting_config_.columns.root_x_qpos];
-    committed_battery_energy_j_ = stepper_->drive().battery_energy_j();
-    committed_crash_ = physical_->crash();
-    committed_balance_ = physical_->balance_event();
+NativeRideRuntime::BoundaryState NativeRideRuntime::capture_boundary() const {
+    BoundaryState next;
+    next.generation = physical_->generation();
+    next.step = physical_->step();
+    next.time_s = stepper_->data()->time;
+    next.position_m = physical_->longitudinal_position_m();
+    next.battery_energy_j = stepper_->drive().battery_energy_j();
+    next.crash = physical_->crash();
+    next.balance = physical_->balance_event();
+    next.outcome = crash_outcome(next.crash);
+    next.spatial = physical_->spatial_state();
+    next.tire_state_bytes = tire_state_bytes(*stepper_);
+    return next;
+}
+
+void NativeRideRuntime::commit_boundary(BoundaryState&& next) noexcept {
+    static_assert(std::is_nothrow_swappable_v<PresentationState>);
+    static_assert(std::is_nothrow_swappable_v<BoundaryState>);
+    committed_integration_state_.swap(next_integration_state_);
+    std::swap(committed_presentation_, next_presentation_);
+    committed_generation_ = next.generation;
+    committed_step_ = next.step;
+    committed_time_s_ = next.time_s;
+    committed_position_m_ = next.position_m;
+    committed_battery_energy_j_ = next.battery_energy_j;
+    committed_crash_.swap(next.crash);
+    committed_balance_.swap(next.balance);
+    committed_outcome_.swap(next.outcome);
+    committed_spatial_.swap(next.spatial);
+    committed_tire_state_bytes_.swap(next.tire_state_bytes);
 }
 
 void NativeRideRuntime::advance_interval(const RideControl &command, double front, double rear,
                                         GoldenForceObservation *golden) {
+    require_boundary_ready();
     // Async closes become visible only at a main-thread step boundary. The
     // worker never changes presentation or the live controller/contact state.
     try { accounting_->collect(false); }
@@ -657,19 +760,20 @@ void NativeRideRuntime::advance_interval(const RideControl &command, double fron
     physical_->capture_accounted_presentation(committed_presentation_);
     test_failure_boundary();
     RawStep raw = physical_->advance_physics(front, rear, std::nullopt, command, golden);
-    accounting_->push(std::move(raw));
-    engine::get_state(stepper_->model(), stepper_->data(),
-        next_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));
-    physical_->capture_presentation(next_presentation_);
-    committed_integration_state_.swap(next_integration_state_);
-    std::swap(committed_presentation_, next_presentation_);
-    committed_step_ = physical_->step();
-    committed_time_s_ = stepper_->data()->time;
-    committed_outcome_ = crash_outcome(physical_->crash());
-    cache_research_boundary();
-    if (!committed_outcome_ && finish_position_m_ &&
-        committed_position_m_ >= *finish_position_m_)
-        committed_outcome_ = "end_of_track";
+    try {
+        engine::get_state(stepper_->model(), stepper_->data(),
+            next_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));
+        physical_->capture_presentation(next_presentation_);
+        auto boundary = capture_boundary();
+        if (!boundary.outcome && finish_position_m_ &&
+            boundary.position_m >= *finish_position_m_)
+            boundary.outcome = "end_of_track";
+        accounting_->push(std::move(raw));
+        commit_boundary(std::move(boundary));
+    } catch (...) {
+        boundary_recovery_required_ = true;
+        throw;
+    }
     if (committed_outcome_) flush_accounting();
     else if (accounting_->full()) {
         try { accounting_->close_period(); }
@@ -725,6 +829,7 @@ NativeRideRuntime::advance(std::int64_t target_step, const RideControl &command,
     // reading it (or advancing) must fail as reentrancy first.
     const AdvancementGuard guard(advancing_);
     require_open();
+    require_boundary_ready();
     if (target_step < committed_step_)
         throw std::invalid_argument(
             "target_step is behind the committed step");
@@ -770,6 +875,7 @@ NativeRideRuntime::probe_step_inputs(const RideControl &command,
         throw std::invalid_argument("rear_brake_demand must be finite");
     const AdvancementGuard guard(advancing_);
     require_open();
+    require_boundary_ready();
     return physical_->probe_step_inputs(command, front_brake_demand,
                                         rear_brake_demand);
 }
@@ -778,12 +884,14 @@ RuntimeSnapshot NativeRideRuntime::snapshot() const {
     const AdvancementGuard guard(advancing_);
     require_open();
     const auto &latest = accounting_->latest_sample();
-    return {.generation = physical_->generation(), .step = committed_step_,
+    return {.generation = committed_generation_, .step = committed_step_,
             .time_s = committed_time_s_, .integration_state = committed_integration_state_,
             .outcome = outcome_reason(), .latest_sample = latest,
             .view = committed_presentation_.as_wire(),
             .model_status = accounting_->state().model_status.as_wire(),
-            .first_failure = accounting_->state().monitor.first_failure};
+            .first_failure = accounting_->state().monitor.first_failure,
+            .model_sha256=model_image_.sha256, .spatial=committed_spatial_,
+            .tire_state_bytes=committed_tire_state_bytes_};
 }
 
 RenderFrame NativeRideRuntime::render_frame() const {
@@ -791,12 +899,14 @@ RenderFrame NativeRideRuntime::render_frame() const {
     require_open();
     // Copy the committed cache under ONE guard: a reset cannot split the
     // integration vector, presentation and generation across two calls.
-    RuntimeSnapshot state{.generation = physical_->generation(), .step = committed_step_,
+    RuntimeSnapshot state{.generation = committed_generation_, .step = committed_step_,
         .time_s = committed_time_s_, .integration_state = committed_integration_state_,
         .outcome = outcome_reason(), .latest_sample = accounting_->latest_sample(),
         .view = committed_presentation_.as_wire(),
         .model_status = accounting_->state().model_status.as_wire(),
-        .first_failure = accounting_->state().monitor.first_failure};
+        .first_failure = accounting_->state().monitor.first_failure,
+        .model_sha256=model_image_.sha256, .spatial=committed_spatial_,
+        .tire_state_bytes=committed_tire_state_bytes_};
     return {.state=std::move(state), .presentation=committed_presentation_, .model_sha256=model_image_.sha256};
 }
 
@@ -873,13 +983,14 @@ std::optional<std::string> NativeRideRuntime::take_pending_warning() {
 void NativeRideRuntime::reset() {
     const AdvancementGuard guard(advancing_);
     require_open();
-    if (physical_->generation() == std::numeric_limits<int>::max())
+    if (committed_generation_ == std::numeric_limits<int>::max())
         throw std::overflow_error("native runtime generation overflow");
-    const int next = physical_->generation() + 1;
+    const int next = committed_generation_ + 1;
     auto accounting = std::make_unique<PeriodAccounting>(accounting_config_,
         bootstrap_accounting_state_, next,
         physical_->rider_present() ? &physical_->rider_control() : nullptr,
         bootstrap_rider_contacts_.has_value() ? &stepper_->rider_contacts() : nullptr);
+    next_integration_state_ = bootstrap_.integration_state;
     // Like PhysicalRuntime.reset(), close the outgoing period first. A
     // strict rejection publishes that period and leaves its generation
     // intact; callers may drain it and retry reset without losing evidence.
@@ -891,18 +1002,22 @@ void NativeRideRuntime::reset() {
         pending_warning_ = accounting_->take_warning();
     // Stepper::reset is the supported recovery path for a poisoned owner.
     // The subsequent bootstrap restore replaces all its reset-time solves.
-    stepper_->reset();
-    apply_bootstrap();
-    physical_->set_generation(next);
-    accounting_ = std::move(accounting);
-    committed_integration_state_ = bootstrap_.integration_state;
-    next_integration_state_ = bootstrap_.integration_state;
-    committed_step_ = bootstrap_step_state_.step;
-    committed_time_s_ = stepper_->data()->time;
-    committed_outcome_ = crash_outcome(physical_->crash());
-    physical_->capture_presentation(committed_presentation_);
-    physical_->capture_presentation(next_presentation_);
-    cache_research_boundary();
+    try {
+        stepper_->reset();
+        apply_bootstrap();
+        physical_->capture_presentation(next_presentation_);
+        auto boundary = capture_boundary();
+        boundary.generation = next;
+        // No owning copy follows publication. A staging failure leaves snapshot
+        // generation and all other committed caches at the outgoing boundary.
+        physical_->set_generation(next);
+        accounting_.swap(accounting);
+        commit_boundary(std::move(boundary));
+        boundary_recovery_required_ = false;
+    } catch (...) {
+        boundary_recovery_required_ = true;
+        throw;
+    }
     test_failure_step_.reset();
 }
 

@@ -39,6 +39,66 @@ constexpr std::array<std::string_view, 11> kReferenceJoints{
     "rider_hip_rear", "rider_knee_rear", "rider_ankle_rear"};
 constexpr std::array<std::string_view, 2> kSides{"front", "rear"};
 constexpr std::array<std::string_view, 2> kArmSides{"left", "right"};
+constexpr std::array<std::string_view, 2> kSwivelJoints{"shoulder_swivel_l", "shoulder_swivel_r"};
+bool is_swivel(std::string_view name) noexcept {
+    return name == kSwivelJoints[0] || name == kSwivelJoints[1];
+}
+
+// Cold structural rejection precedes all mjData allocation. In particular,
+// qpos and velocity addresses have independent bounds on free-joint models.
+void validate_spatial_layout(const mjModel* model, const SpindleConfig& config) {
+    if (!config.spatial) return;
+    if (!config.shoulder_profile || config.steer_torque_owner != "actuator" || config.legacy)
+        throw std::invalid_argument("rider.spatial: profile, actuator steering owner and spindle controller required");
+    const auto& p = *config.shoulder_profile;
+    if (!std::isfinite(p.swivel_range_rad) || !(p.swivel_range_rad > 0. && p.swivel_range_rad < std::numbers::pi/2.) ||
+        !std::isfinite(p.swivel_stiffness_nm_per_rad) || p.swivel_stiffness_nm_per_rad < 0. ||
+        !std::isfinite(p.swivel_damping_nms_per_rad) || p.swivel_damping_nms_per_rad < 0. ||
+        !std::isfinite(p.swivel_strength_nm) || p.swivel_strength_nm <= 0. || p.schema != 1 ||
+        (p.provenance_status != "provisional" && p.provenance_status != "qualified") ||
+        p.sha256_hex.size() != 64 || !std::ranges::all_of(p.sha256_hex,[](char c) {
+            return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+        }))
+        throw std::invalid_argument("rider.spatial.shoulder_profile: invalid resolved profile");
+    const auto parents = model_access::readonly_buffer(model->body_parentid, model->nbody, "body_parentid");
+    if (parents.empty() || parents[0] != 0)
+        throw std::invalid_argument("rider.spatial.body_parentid: invalid world parent");
+    for (std::size_t body = 1; body < parents.size(); ++body)
+        if (parents[body] < 0 || static_cast<std::size_t>(parents[body]) >= body)
+            throw std::invalid_argument("rider.spatial.body_parentid: nonmonotonic or cyclic parent chain");
+    const auto types = model_access::readonly_buffer(model->jnt_type, model->njnt, "jnt_type");
+    const auto qpos = model_access::readonly_buffer(model->jnt_qposadr, model->njnt, "jnt_qposadr");
+    const auto dofs = model_access::readonly_buffer(model->jnt_dofadr, model->njnt, "jnt_dofadr");
+    const int root = mj_name2id(model, mjOBJ_JOINT, "rider_root_free");
+    const auto bodies = model_access::readonly_buffer(model->jnt_bodyid, model->njnt, "jnt_bodyid");
+    if (root < 0 || types[static_cast<std::size_t>(root)] != mjJNT_FREE)
+        throw std::invalid_argument("rider.spatial.rider_root_free: free pelvis required");
+    const auto r = static_cast<std::size_t>(root);
+    if (bodies[r] != mj_name2id(model,mjOBJ_BODY,"rider_pelvis"))
+        throw std::invalid_argument("rider.spatial.rider_root_free: joint must belong to pelvis");
+    if (qpos[r] < 0 || qpos[r] > model->nq-7 || dofs[r] < 0 || dofs[r] > model->nv-6)
+        throw std::invalid_argument("rider.spatial.rider_root_free: qpos/velocity block outside model");
+    for (std::size_t j = 0; j < types.size(); ++j) {
+        const int qw = types[j] == mjJNT_FREE ? 7 : types[j] == mjJNT_BALL ? 4 : 1;
+        const int vw = types[j] == mjJNT_FREE ? 6 : types[j] == mjJNT_BALL ? 3 : 1;
+        if (qpos[j] < 0 || qpos[j] > model->nq-qw || dofs[j] < 0 || dofs[j] > model->nv-vw)
+            throw std::invalid_argument("rider.spatial: invalid independent nq/nv joint spans");
+    }
+}
+
+Vec3 rotate_inverse(const std::array<double, 9>& r, const Vec3& v) {
+    return {r[0]*v[0]+r[3]*v[1]+r[6]*v[2],
+            r[1]*v[0]+r[4]*v[1]+r[7]*v[2],
+            r[2]*v[0]+r[5]*v[1]+r[8]*v[2]};
+}
+
+double relative_pitch_rate(const mjModel* model, const mjData* data,
+                           int pelvis, int frame, const std::array<double,9>& rotation) {
+    std::array<mjtNum,6> a{}, b{};
+    mj_objectVelocity(model, data, mjOBJ_BODY, pelvis, a.data(), 0);
+    mj_objectVelocity(model, data, mjOBJ_BODY, frame, b.data(), 0);
+    return (a[0]-b[0])*rotation[1] + (a[1]-b[1])*rotation[4] + (a[2]-b[2])*rotation[7];
+}
 
 // Leg arrays are keyed by (front, rear) and arm arrays by (left, right);
 // both vocabularies index the first/second slot of the same side pair.
@@ -354,9 +414,7 @@ SpindleController::SpindleController(const mjModel *model,
       coasting_target_data_(nullptr, &mj_deleteData) {
     if (model == nullptr)
         throw std::invalid_argument("spindle controller needs a model");
-    target_data_.reset(engine::make_data(model));
-    previous_target_data_.reset(engine::make_data(model));
-    coasting_target_data_.reset(engine::make_data(model));
+    validate_spatial_layout(model, config_);
     const auto qpos_adrs =
         model_access::readonly_buffer(model->jnt_qposadr, model->njnt);
     const auto dof_adrs =
@@ -365,20 +423,47 @@ SpindleController::SpindleController(const mjModel *model,
         model_access::readonly_buffer(model->jnt_limited, model->njnt);
     const auto joint_range = model_access::readonly_buffer(
         model->jnt_range, model->njnt * 2);
-    for (const auto name : kReferenceJoints) {
+    std::vector<std::string_view> reference(kReferenceJoints.begin(), kReferenceJoints.end());
+    if (config_.spatial) reference.insert(reference.end(), kSwivelJoints.begin(), kSwivelJoints.end());
+    for (const auto name : reference) {
         const int joint =
             mj_name2id(model, mjOBJ_JOINT, std::string(name).c_str());
         if (joint < 0) {
+            if (config_.spatial && !name.starts_with("rider_ankle_"))
+                throw std::invalid_argument("rider.spatial: missing joint " + std::string(name));
             locked_joints_.emplace_back(name);
             continue;
         }
         const auto j = static_cast<std::size_t>(joint);
+        if (config_.spatial && name.starts_with("rider_ankle_"))
+            throw std::invalid_argument("rider.spatial: spindle topology requires locked ankles");
         const int actuator = mj_name2id(
             model, mjOBJ_ACTUATOR,
             ("act_" + std::string(name)).c_str());
         if (actuator < 0)
             throw std::invalid_argument(
                 "missing articulated joint/actuator " + std::string(name));
+        if (config_.spatial) {
+            const auto types = model_access::readonly_buffer(model->jnt_type, model->njnt);
+            const auto transmissions = model_access::readonly_buffer(model->actuator_trntype, model->nu);
+            const auto ids = model_access::readonly_buffer(model->actuator_trnid, 2*model->nu);
+            const auto gear = model_access::readonly_buffer(model->actuator_gear, 6*model->nu);
+            if (types[j] != mjJNT_HINGE || transmissions[static_cast<std::size_t>(actuator)] != mjTRN_JOINT ||
+                ids[2*static_cast<std::size_t>(actuator)] != joint || gear[6*static_cast<std::size_t>(actuator)] != 1.)
+                throw std::invalid_argument("rider.spatial."+std::string(name)+": scalar hinge and owned unit motor required");
+            if (is_swivel(name)) {
+                const auto axes = model_access::readonly_buffer(model->jnt_axis, 3*model->njnt);
+                const auto stiffness = model_access::readonly_buffer(model->jnt_stiffness, model->njnt);
+                const auto damping = model_access::readonly_buffer(model->dof_damping, model->nv);
+                const auto& p = *config_.shoulder_profile;
+                if (axes[3*j] != 0. || axes[3*j+1] != 0. || axes[3*j+2] != 1. || !joint_limited[j] ||
+                    std::abs(joint_range[2*j]+p.swivel_range_rad) > 1e-12 ||
+                    std::abs(joint_range[2*j+1]-p.swivel_range_rad) > 1e-12 ||
+                    stiffness[j] != p.swivel_stiffness_nm_per_rad ||
+                    damping[static_cast<std::size_t>(dof_adrs[j])] != p.swivel_damping_nms_per_rad)
+                    throw std::invalid_argument("rider.spatial."+std::string(name)+": model/profile mismatch");
+            }
+        }
         joints_.push_back(JointEntry{.name = std::string(name),
                                      .qpos_adr = qpos_adrs[j],
                                      .dof_adr = dof_adrs[j],
@@ -407,13 +492,14 @@ SpindleController::SpindleController(const mjModel *model,
     // resolved joint to appear (`present=`); enforce the same coverage.
     if (config_.has_strength)
         for (const auto &joint : joints_)
-            if (!config_.strength.contains(joint.name) ||
+            if (!(config_.spatial && is_swivel(joint.name)) && (!config_.strength.contains(joint.name) ||
                 !config_.strength_coordinates.contains(joint.name))
+               )
                 throw std::invalid_argument(
                     joint.name + ": missing strength curves");
     if (!config_.envelopes.empty())
         for (const auto &joint : joints_)
-            if (!config_.envelopes.contains(joint.name))
+            if (!(config_.spatial && is_swivel(joint.name)) && !config_.envelopes.contains(joint.name))
                 throw std::invalid_argument(
                     joint.name + ": missing joint envelope");
     // joint_ranges insertion order in Python is self.joints order — the
@@ -428,6 +514,9 @@ SpindleController::SpindleController(const mjModel *model,
         envelope_lower_.push_back(range->second[0]);
         envelope_upper_.push_back(range->second[1]);
     }
+    target_data_.reset(engine::make_data(model));
+    previous_target_data_.reset(engine::make_data(model));
+    coasting_target_data_.reset(engine::make_data(model));
     reset_activation();
     resolve_model_layout(qpos_adrs, dof_adrs);
     if (config_.legacy && config_.legacy->pedal_attachment != "spindle")
@@ -477,10 +566,10 @@ void SpindleController::resolve_model_layout(
     frame_body_ = mj_name2id(model, mjOBJ_BODY, "frame");
     torso_body_ = mj_name2id(model, mjOBJ_BODY, "rider_torso");
     crank_body_ = mj_name2id(model, mjOBJ_BODY, "crank");
-    frame_pitch_dof_ = dof_adrs[static_cast<std::size_t>(
-        require_joint(model, "root_pitch"))];
-    rider_pitch_dof_ = dof_adrs[static_cast<std::size_t>(
-        require_joint(model, "rider_root_pitch"))];
+    if (!config_.spatial) {
+        frame_pitch_dof_ = dof_adrs[static_cast<std::size_t>(require_joint(model, "root_pitch"))];
+        rider_pitch_dof_ = dof_adrs[static_cast<std::size_t>(require_joint(model, "rider_root_pitch"))];
+    }
     crank_joint_ = require_joint(model, "crank_spin");
     crank_spin_dof_ =
         dof_adrs[static_cast<std::size_t>(crank_joint_)];
@@ -534,13 +623,29 @@ void SpindleController::resolve_model_layout(
             continue;
         }
         const auto base = static_cast<std::size_t>(eq) * mjNEQDATA;
+        if (config_.spatial) {
+            const int grip_site = mj_name2id(model, mjOBJ_SITE, ("site_grip_"+std::string(side)).c_str());
+            const auto types=model_access::readonly_buffer(model->eq_type,model->neq);
+            const auto object_types=model_access::readonly_buffer(model->eq_objtype,model->neq);
+            const auto first=model_access::readonly_buffer(model->eq_obj1id,model->neq);
+            const auto second=model_access::readonly_buffer(model->eq_obj2id,model->neq);
+            const auto site_bodies=model_access::readonly_buffer(model->site_bodyid,model->nsite);
+            const auto ei=static_cast<std::size_t>(eq);
+            if (grip_site < 0 || types[ei] != mjEQ_CONNECT || object_types[ei] != mjOBJ_SITE ||
+                first[ei] != grip_sites_[side_index(side)] || second[ei] != grip_site ||
+                site_bodies[static_cast<std::size_t>(grip_site)] != steer_body_)
+                throw std::invalid_argument("rider.spatial.grip: named positional hand/bar connect required");
+            const auto local = row3(model->site_pos, model->nsite*3, grip_site, "site_pos");
+            std::ranges::copy(local, weld_grip_offset_[side_index(side)].begin());
+            continue;
+        }
         const auto eq_data = model_access::readonly_buffer(
             model->eq_data, model->neq * mjNEQDATA, "eq_data");
         std::ranges::copy(eq_data.subspan(base + 3, 3).first<3>(),
                           weld_grip_offset_[side_index(side)].begin());
     }
-    validate_planar_support(model, target_data_.get(),
-                            std::span{pedal_geoms_});
+    if (config_.spatial) validate_spatial_support_model(model, target_data_.get(), std::span{pedal_geoms_});
+    else validate_planar_support(model, target_data_.get(), std::span{pedal_geoms_});
     for (const auto side : kSides) {
         const auto s = side_index(side);
         leg_geometry_[s] = spindle::leg_loop_geometry(
@@ -567,6 +672,8 @@ void SpindleController::resolve_model_layout(
     arm_lower_angle0_ = std::atan2(lower[2], lower[0]);
     arm_branch_ =
         numeric::math_sin(arm_lower_angle0_ - arm_upper_angle0_) >= 0. ? 1 : -1;
+    if (config_.spatial) spatial_state_ = SpatialState{.shoulders={}, .arm_branch=arm_branch_,
+        .shoulder_profile_sha256=config_.shoulder_profile->sha256_hex, .steer_torque_owner="actuator"};
     {
         const Vec2 goal{xz(vec_sub(pose_.grip, pose_.hip))};
         const double reach =
@@ -632,6 +739,15 @@ spindle::Vec2 SpindleController::leg_targets(const mjData *data,
     // Python chains ik_reach_limited[side] = saturated_ik[side] = False.
     named_set(saturated_ik_, key, false);
     named_set(ik_reach_limited_, key, false);
+    if (config_.spatial) {
+        const Vec3 delta = rotate_inverse(pelvis_r,
+            vec_sub(spindle_world, joint_anchor(model_, data, hip_joints_[s])));
+        if (std::abs(delta[1]) > .001) {
+            named_set(saturated_ik_, key, true);
+            named_set(ik_reach_limited_, key, true);
+        }
+        return spindle::leg_joint_q(leg_geometry_[s], {0.,0.}, {delta[0],delta[2]}, 0.);
+    }
     return spindle::leg_joint_q(leg_geometry_[s], hip,
                                 xz(spindle_world), pitch);
 }
@@ -666,7 +782,10 @@ SpindleController::upper_targets(const mjData *data,
                      (posture == nullptr ? 0. : posture->torso_lean_rad);
     const double frame_pitch = std::atan2(frame_r[2], frame_r[0]);
     const double pelvis_pitch = std::atan2(pelvis_r[2], pelvis_r[0]);
-    torso_q += spindle::wrap_angle(frame_pitch - pelvis_pitch);
+    if (config_.spatial) {
+        const auto relative = mat_t_mul(pelvis_r, frame_r);
+        torso_q += std::atan2(relative[2], relative[0]);
+    } else torso_q += spindle::wrap_angle(frame_pitch - pelvis_pitch);
     const auto torso_r_actual = body_mat(model_, data, torso_body_);
     std::vector<std::pair<std::string, double>> targets;
     targets.emplace_back("rider_torso_hinge", torso_q);
@@ -684,12 +803,14 @@ SpindleController::upper_targets(const mjData *data,
     const double cd = numeric::math_cos(delta), sd = numeric::math_sin(delta);
     const std::array<double, 9> rot{cd, 0., sd, 0., 1., 0., -sd, 0., cd};
     const Vec3 hinge = joint_anchor(model_, data, torso_joint_);
-    const auto torso_r = mat_mul(rot, torso_r_actual);
+    const auto torso_r = config_.spatial ? mat_mul(torso_r_actual, rot) : mat_mul(rot, torso_r_actual);
     std::array<Vec3, 2> shoulders{};
     for (const auto side : kArmSides) {
         const auto s = side_index(side);
-        shoulders[s] =
-            vec_add(hinge,
+        shoulders[s] = config_.spatial
+            ? vec_add(hinge, mat_vec(torso_r, rotate_inverse(torso_r_actual,
+                vec_sub(body_pos(model_, data, upper_arm_bodies_[s]), hinge))))
+            : vec_add(hinge,
                     mat_vec(rot,
                             vec_sub(body_pos(model_, data,
                                              upper_arm_bodies_[s]),
@@ -698,7 +819,14 @@ SpindleController::upper_targets(const mjData *data,
     for (const auto side : kArmSides) {
         const auto s = side_index(side);
         const Vec3 diff = vec_sub(grips[s], shoulders[s]);
-        const Vec2 arm_target = mat_t_vec_xz(torso_r, diff);
+        Vec2 arm_target = mat_t_vec_xz(torso_r, diff);
+        if (config_.spatial) {
+            const Vec3 local = rotate_inverse(torso_r, diff);
+            const double swivel = std::atan2(local[1], local[0]);
+            targets.emplace_back(std::string(kSwivelJoints[s]), swivel);
+            arm_target = {std::hypot(local[0], local[1]), local[2]};
+            arm_saturated = arm_saturated || std::abs(swivel) > config_.shoulder_profile->swivel_range_rad;
+        }
         const auto ik = spindle::two_link_ik(
             arm_target, arm_upper_m_, arm_lower_m_, arm_branch_);
         arm_saturated = arm_saturated || ik.saturated;
@@ -785,19 +913,19 @@ void SpindleController::initialize_velocity(mjData *data) {
     }
 }
 
-void SpindleController::initialize(mjData *data) {
+void SpindleController::initialize(mjData *data, const RiderPosture* posture) {
     if (legacy_) { legacy_->initialize(*data); return; }
     engine::forward(model_, data);
     reset_activation();
     const auto qpos = model_access::mutable_buffer(
         data->qpos, model_->nq, "qpos");
     // Pose the torso first, then solve the arms about that actual shoulder.
-    auto upper = upper_targets(data, nullptr);
+    auto upper = upper_targets(data, posture);
     qpos[static_cast<std::size_t>(
         joints_[joint_index("rider_torso_hinge")].qpos_adr)] =
         upper.front().second;
     engine::forward(model_, data);
-    upper = upper_targets(data, nullptr);
+    upper = upper_targets(data, posture);
     for (const auto &[name, value] : upper) {
         qpos[static_cast<std::size_t>(
             joints_[joint_index(name)].qpos_adr)] = value;
@@ -818,6 +946,7 @@ void SpindleController::initialize(mjData *data) {
                 joints_[leg_joint_index_[s][k]].qpos_adr)] = targets[k];
     }
     engine::forward(model_, data);
+    if (config_.spatial) observe_spatial_state(data);
 }
 
 std::pair<std::vector<double>, double>
@@ -848,6 +977,7 @@ double SpindleController::strength_capacity(const std::string &name,
                                             double angle_rad,
                                             double velocity_rad_s,
                                             double torque_nm) const {
+    if (config_.spatial && is_swivel(name)) return config_.shoulder_profile->swivel_strength_nm;
     if (!config_.has_strength || torque_nm == 0.)
         return std::numeric_limits<double>::infinity();
     const int direction = torque_nm > 0. ? 1 : -1;
@@ -866,6 +996,7 @@ double SpindleController::strength_capacity(const std::string &name,
 
 double SpindleController::anatomical_joint_angle(const std::string &name,
                                                  double qpos_value) const {
+    if (config_.spatial && is_swivel(name)) return qpos_value;
     const auto found = config_.strength_coordinates.find(name);
     if (found == config_.strength_coordinates.end())
         throw std::out_of_range(name);
@@ -931,6 +1062,8 @@ double SpindleController::directional_limit(const std::string &name,
                                             const mjData *data,
                                             double sign) const {
     const JointEntry &entry = joints_[joint_index(name)];
+    if (config_.spatial && is_swivel(name))
+        return std::min(config_.joint_limit_nm, config_.shoulder_profile->swivel_strength_nm);
     if (!config_.has_strength)
         return config_.joint_limit_nm;
     const auto qpos = model_access::readonly_buffer(
@@ -994,7 +1127,9 @@ SpindleController::finalize_effort(mjData *data,
                                                       torques.end());
     for (std::size_t i = 0; i < n; ++i) {
         speeds[i] = qvel[static_cast<std::size_t>(joints_[i].dof_adr)];
-        passive[i] = -config_.passive_damping_nms_rad() * speeds[i];
+        const double damping = config_.spatial && is_swivel(joints_[i].name)
+            ? config_.shoulder_profile->swivel_damping_nms_per_rad : config_.passive_damping_nms_rad();
+        passive[i] = -damping * speeds[i];
     }
     const bool enabled = config_.activation_tau_s > 0. ||
                          config_.active_positive_power_limit_w.has_value() ||
@@ -1139,6 +1274,9 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         const double rel02 = relative_r[2];
         const double rel00 = relative_r[0];
         const double pelvis_pitch = std::atan2(rel02, rel00);
+        const double pitch_rate = config_.spatial
+            ? relative_pitch_rate(model_, data, pelvis_body_, frame_body_, frame_r)
+            : qvel[static_cast<std::size_t>(rider_pitch_dof_)]-qvel[static_cast<std::size_t>(frame_pitch_dof_)];
         const Vec3 crank_world = joint_anchor(model_, data, crank_joint_);
         std::array<Vec2, 2> spindles{};
         for (const auto side : kSides) {
@@ -1211,11 +1349,7 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             const double torque =
                 name == "rider_torso_hinge"
                     ? config_.joint_kp_nm_rad * pelvis_pitch +
-                          config_.joint_kd_nms_rad *
-                              (qvel[static_cast<std::size_t>(
-                                   rider_pitch_dof_)] -
-                               qvel[static_cast<std::size_t>(
-                                   frame_pitch_dof_)])
+                          config_.joint_kd_nms_rad * pitch_rate
                     : config_.joint_kp_nm_rad *
                               spindle::wrap_angle(
                                   target -
@@ -1290,6 +1424,7 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                               delivered[i] >= 0. ? 1. : -1.));
         out.emplace_back(joints_[i].name, delivered[i]);
     }
+    if (config_.spatial && advance) observe_spatial_state(data);
     return out;
 }
 
@@ -1300,6 +1435,11 @@ void SpindleController::write(
             return named_find(torques, j.name) != nullptr;
         }))
         throw std::invalid_argument("incomplete rider actuator command");
+    if (config_.spatial)
+        for (const auto& [name, torque] : torques) {
+            (void)joint_index(name);
+            (void)validation::finite(torque, "rider.spatial.torque");
+        }
     const auto ctrl = model_access::mutable_buffer(
         data->ctrl, model_->nu, "ctrl");
     for (const auto &joint : joints_) {
@@ -1379,7 +1519,7 @@ EffortDiagnostics SpindleController::solved_effort(
     return effort_diagnostics_;
 }
 
-SpindleController::State SpindleController::state() const {
+SpindleController::State SpindleController::state(const mjData* data) const {
     State out;
     out.enabled = enabled_;
     out.command_enabled = command_enabled_;
@@ -1401,7 +1541,29 @@ SpindleController::State SpindleController::state() const {
     out.support_diagnostics = support_diagnostics_;
     out.sole_goal_diagnostics = sole_goal_diagnostics_;
     if (legacy_) out.allocation_memory = allocation_memory_;
+    out.spatial = spatial_state_;
+    if (out.spatial && data != nullptr) {
+        const auto qpos = model_access::readonly_buffer(data->qpos, model_->nq, "qpos");
+        const auto qvel = model_access::readonly_buffer(data->qvel, model_->nv, "qvel");
+        for (std::size_t side = 0; side < 2; ++side) {
+            const auto& joint = joints_[joint_index(std::string(kSwivelJoints[side]))];
+            out.spatial->shoulders[side] = {.q=qpos[static_cast<std::size_t>(joint.qpos_adr)],
+                .qd=qvel[static_cast<std::size_t>(joint.dof_adr)]};
+        }
+    }
     return out;
+}
+
+void SpindleController::observe_spatial_state(const mjData* data) {
+    if (!spatial_state_) return;
+    const auto qpos=model_access::readonly_buffer(data->qpos,model_->nq,"qpos");
+    const auto qvel=model_access::readonly_buffer(data->qvel,model_->nv,"qvel");
+    for (const auto& joint:joints_) {
+        if (!is_swivel(joint.name)) continue;
+        const std::size_t side=joint.name==kSwivelJoints[0]?0:1;
+        spatial_state_->shoulders[side]={.q=qpos[static_cast<std::size_t>(joint.qpos_adr)],
+            .qd=qvel[static_cast<std::size_t>(joint.dof_adr)]};
+    }
 }
 
 void SpindleController::restore(const State &state) {
@@ -1411,6 +1573,16 @@ void SpindleController::restore(const State &state) {
 }
 
 void SpindleController::validate_state(const State &state) const {
+    if (state.spatial.has_value() != config_.spatial)
+        throw std::invalid_argument("rider_controller.rider.spatial: incompatible model/state family");
+    if (state.spatial) {
+        if (state.spatial->arm_branch != arm_branch_ || state.spatial->steer_torque_owner != "actuator" ||
+            state.spatial->shoulder_profile_sha256 != config_.shoulder_profile->sha256_hex)
+            throw std::invalid_argument("rider_controller.rider.spatial: arm branch, profile or steering owner mismatch");
+        for (const auto& lane : state.spatial->shoulders)
+            if (!std::isfinite(lane.q) || !std::isfinite(lane.qd))
+                throw std::invalid_argument("rider_controller.shoulder_swivel: nonfinite q/qd");
+    }
     if (state.active_state.size() != joints_.size())
         throw std::invalid_argument(
             "rider_controller.active_state: incorrect sequence width");
@@ -1449,6 +1621,21 @@ void SpindleController::commit_state(State &&state) noexcept {
     support_diagnostics_ = std::move(state.support_diagnostics);
     sole_goal_diagnostics_ = std::move(state.sole_goal_diagnostics);
     allocation_memory_ = state.allocation_memory ? std::move(*state.allocation_memory) : bike::rider::AllocationMemory{};
+    spatial_state_ = std::move(state.spatial);
+}
+
+void SpindleController::validate_spatial_lanes(const State& candidate,
+    std::span<const double> qpos, std::span<const double> qvel) const {
+    validate_state(candidate);
+    if (!config_.spatial) return;
+    if (qpos.size() != static_cast<std::size_t>(model_->nq) || qvel.size() != static_cast<std::size_t>(model_->nv))
+        throw std::invalid_argument("rider_controller.rider.spatial: independent nq/nv width mismatch");
+    for (std::size_t side = 0; side < 2; ++side) {
+        const auto& joint = joints_[joint_index(std::string(kSwivelJoints[side]))];
+        const auto& lane = candidate.spatial->shoulders[side];
+        if (lane.q != qpos[static_cast<std::size_t>(joint.qpos_adr)] || lane.qd != qvel[static_cast<std::size_t>(joint.dof_adr)])
+            throw std::invalid_argument("rider_controller."+std::string(kSwivelJoints[side])+": differs from integration state");
+    }
 }
 
 } // namespace rider

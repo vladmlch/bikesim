@@ -89,6 +89,11 @@ struct RuntimeSnapshot {
     WireObject view;
     WireObject model_status;
     std::optional<ReferenceFailure> first_failure;
+    std::string model_sha256;
+    std::optional<SpatialBootstrapState> spatial;
+    // Owned committed tyre material bytes. Spatial is the W27 canonical codec;
+    // planar is the legacy double row for same-process observational equality.
+    std::vector<std::byte> tire_state_bytes;
 };
 
 // An owned presentation boundary. The digest identifies the compiled model,
@@ -177,13 +182,29 @@ private:
     friend class bike::validation::RuntimeRigAccess;
     void advance_interval(const RideControl &command, double front, double rear,
                           GoldenForceObservation *golden = nullptr);
-    void cache_research_boundary();
+    // All owning copies are captured before accounting/publication. Together
+    // with the next integration/presentation buffers, this is one boundary.
+    struct BoundaryState {
+        int generation = 0;
+        std::int64_t step = 0;
+        double time_s = 0.;
+        double position_m = 0.;
+        double battery_energy_j = 0.;
+        std::optional<CrashEvent> crash;
+        std::optional<BalanceLostEvent> balance;
+        std::optional<std::string> outcome;
+        std::optional<SpatialBootstrapState> spatial;
+        std::vector<std::byte> tire_state_bytes;
+    };
+    [[nodiscard]] BoundaryState capture_boundary() const;
+    void commit_boundary(BoundaryState&&) noexcept;
     void flush_accounting();
     double committed_position_m_ = 0.;
     double committed_battery_energy_j_ = 0.;
     std::optional<CrashEvent> committed_crash_;
     std::optional<BalanceLostEvent> committed_balance_;
     void require_open() const;
+    void require_boundary_ready() const;
     // The ctor's decode/build/restore half — its own frame keeps the
     // stack-budget sweep green on unoptimized builds.
     void init();
@@ -215,9 +236,15 @@ private:
     std::vector<double> committed_integration_state_;
     std::vector<double> next_integration_state_;
     PresentationState committed_presentation_, next_presentation_;
+    int committed_generation_ = 0;
     std::int64_t committed_step_ = 0;
     double committed_time_s_ = 0.;
     std::optional<std::string> committed_outcome_;
+    std::optional<SpatialBootstrapState> committed_spatial_;
+    std::vector<std::byte> committed_tire_state_bytes_;
+    // Physics/reset may complete before an owning capture fails. Keep the
+    // preceding snapshot readable, but require reset before further inputs.
+    bool boundary_recovery_required_ = false;
     std::optional<double> finish_position_m_;
     std::optional<std::int64_t> test_failure_step_;
     // reset() replaces the accounting owner mid-flight; a warning raised

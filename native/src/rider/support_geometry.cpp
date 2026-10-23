@@ -2,6 +2,7 @@
 
 #include "../diag.hpp"
 #include "../model_access.hpp"
+#include "../spatial/frames.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -331,5 +332,98 @@ namespace rider {
             std::ranges::copy(rotations.subspan(9 * id, 9), r.begin());
             validate_box(origin, r, half);
         }
+    }
+    void validate_spatial_support_model(const mjModel* model, const mjData* data,
+                                        std::span<const int> geoms) {
+        if (model == nullptr || data == nullptr)
+            throw std::invalid_argument("rider.spatial.support: model and data required");
+        const auto parents = model_access::readonly_buffer(model->body_parentid, model->nbody);
+        for (std::size_t body = 1; body < parents.size(); ++body)
+            if (parents[body] < 0 || static_cast<std::size_t>(parents[body]) >= body)
+                throw std::invalid_argument("rider.spatial.support: invalid or cyclic parent chain");
+        const auto types = model_access::readonly_buffer(model->geom_type, model->ngeom);
+        const auto sizes = model_access::readonly_buffer(model->geom_size, 3*model->ngeom);
+        const auto positions = model_access::readonly_buffer(data->geom_xpos, 3*model->ngeom);
+        const auto rotations = model_access::readonly_buffer(data->geom_xmat, 9*model->ngeom);
+        for (int geom : geoms) {
+            model_access::require_id(geom, model->ngeom, "rider.spatial.support.geom");
+            const auto g = static_cast<std::size_t>(geom);
+            if (types[g] != mjGEOM_BOX)
+                throw std::invalid_argument("rider.spatial.support: box required");
+            Mat3 r{};
+            std::ranges::copy(rotations.subspan(9*g, 9), r.begin());
+            for (std::size_t i = 0; i < 3; ++i) {
+                if (!std::isfinite(positions[3*g+i]) || !std::isfinite(sizes[3*g+i]) || sizes[3*g+i] <= 0.)
+                    throw std::invalid_argument("rider.spatial.support: invalid box dimensions or position");
+                for (std::size_t j = 0; j < 3; ++j) {
+                    if (!std::isfinite(r[3*i+j]) || std::abs(dot(column(r,i),column(r,j))-(i==j?1.:0.)) > 1e-9)
+                        throw std::invalid_argument("rider.spatial.support: proper rotation required");
+                }
+            }
+            const double determinant = r[0]*(r[4]*r[8]-r[5]*r[7])-r[1]*(r[3]*r[8]-r[5]*r[6])+r[2]*(r[3]*r[7]-r[4]*r[6]);
+            if (std::abs(determinant-1.) > 1e-9)
+                throw std::invalid_argument("rider.spatial.support: reflected box frame");
+        }
+    }
+
+    BoxPadContact spatial_box_pad_contact(const Vec3& center, double radius,
+        const bike::spatial::BodyPose& pose, const Vec3& half) {
+        validate_vector(center, "rider.spatial.pad.center");
+        validate_vector(half, "rider.spatial.box.half");
+        validate_vector(pose.position_world_m, "rider.spatial.box.position");
+        validate_scalar(radius, "rider.spatial.pad.radius");
+        if (radius <= 0. || !std::ranges::all_of(half, [](double x) { return x > 0.; }))
+            throw std::invalid_argument("rider.spatial.pad: positive dimensions required");
+        if (!bike::rider::support_frame(pose, {0.,0.,1.}).valid)
+            throw std::invalid_argument("rider.spatial.box: unit quaternion required");
+        const auto local = bike::spatial::rotate_world_to_body(pose.quat_world_from_body_wxyz,
+            subtract(center, pose.position_world_m));
+        Vec3 closest{}, delta{};
+        for (std::size_t i = 0; i < 3; ++i) {
+            closest[i] = std::clamp(local[i], -half[i], half[i]);
+            delta[i] = local[i]-closest[i];
+        }
+        double distance = std::hypot(delta[0], delta[1], delta[2]);
+        Vec3 normal{};
+        if (distance > 1e-14) {
+            for (std::size_t i = 0; i < 3; ++i) normal[i] = delta[i]/distance;
+        } else {
+            // Resolve ties toward local +Z, independently of world gravity.
+            std::size_t face = 2;
+            for (std::size_t i = 0; i < 2; ++i)
+                if (half[i]-std::abs(local[i]) < half[face]-std::abs(local[face])) face = i;
+            normal[face] = local[face] < 0. ? -1. : 1.;
+            closest[face] = normal[face]*half[face];
+            distance = -(half[face]-std::abs(local[face]));
+        }
+        const auto frame = bike::rider::support_frame(pose, normal);
+        return {.point_m=add(pose.position_world_m, bike::spatial::rotate_body_to_world(pose.quat_world_from_body_wxyz, closest)),
+            .normal=frame.normal_world, .gap_m=distance-radius,
+            .within_width=std::abs(local[1]) <= half[1]+radius,
+            .within_footprint=std::abs(local[0]) <= half[0]+radius && std::abs(local[1]) <= half[1]+radius};
+    }
+
+    SoleGoal project_spatial_sole_goal(const bike::spatial::BodyPose& pose, const Vec3& half,
+        double length, double radius, double compression, double shear) {
+        validate_pad(length, radius, compression);
+        validate_scalar(shear, "rider.spatial.sole.shear");
+        validate_vector(half, "rider.spatial.sole.half");
+        validate_vector(pose.position_world_m, "rider.spatial.sole.position");
+        const auto frame = bike::rider::support_frame(pose, {0.,0.,1.});
+        if (!frame.valid || !std::ranges::all_of(half, [](double x) { return x > 0.; }) || length > half[0])
+            throw UnreachableSoleTarget("rider.spatial.sole: pad exceeds support footprint or invalid frame");
+        const double actual_shear = std::clamp(shear, -half[0]+length, half[0]-length);
+        // The sole is a body-local two-pad support. Its goal is measured
+        // along local normal, so roll/yaw do not become a world-Z height.
+        const double actual_compression = std::min(compression, radius);
+        SoleGoal out{.goal=add(pose.position_world_m,
+            add(multiply(frame.normal_world, half[2]-actual_compression),
+                multiply(frame.tangent_x_world, actual_shear))),
+            .diagnostic={.requested_compression_m=compression, .applied_compression_m=actual_compression,
+                .requested_shear_m=shear, .applied_shear_m=actual_shear,
+                .saturated=actual_shear!=shear || actual_compression!=compression, .limiting_reasons={}}};
+        if (actual_shear != shear) out.diagnostic.limiting_reasons.emplace_back("support_footprint");
+        if (actual_compression != compression) out.diagnostic.limiting_reasons.emplace_back("pad_compression");
+        return out;
     }
 } // namespace rider

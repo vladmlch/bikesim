@@ -15,6 +15,7 @@
 #include "../rider/state_codec.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../stepper.hpp"
+#include "../writers/pneumatic_3d_tire.hpp"
 
 namespace bike::initialization {
 namespace {
@@ -148,7 +149,10 @@ runtime::ModelImage capture_model_image(const mjModel& model) {
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
-    runtime::PhysicalStep const& physical, const runtime::RuntimeConfig& config) {
+    runtime::PhysicalStep const& physical, const runtime::RuntimeConfig& config,
+    const runtime::ModelImage* immutable_spatial_model) {
+    if(config.spatial && (!stepper.has_spatial_tire() || !physical.spatial_state()))
+        throw std::invalid_argument("bootstrap.spatial.tire: producer state missing");
     const auto state_ptr = std::make_unique<runtime::StepState>(physical.state());
     const auto& state = *state_ptr;
     if (state.step != 0 || stepper.time() != 0.)
@@ -157,7 +161,17 @@ runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
         throw std::invalid_argument("bootstrap capture requires a completed physical reset");
     const auto& m = *stepper.model();
     const auto& d = *stepper.data();
-    auto image = capture_model_image(m);
+    runtime::ModelImage image;
+    if(config.spatial) {
+        if(!immutable_spatial_model || !physical.topology() ||
+           immutable_spatial_model->sha256!=physical.topology()->model_sha256_hex ||
+           io::sha256(immutable_spatial_model->mjb)!=immutable_spatial_model->sha256)
+            throw std::invalid_argument("bootstrap.spatial.model: immutable model image missing or mismatched");
+        // Mutable friction/site/tendon rows are restored by the existing
+        // bootstrap inventories. They must not change model/topology identity.
+        image=*immutable_spatial_model;
+        runtime::validate_spatial_identity(config,*state.spatial,*physical.topology());
+    } else image=capture_model_image(m);
     const auto size = engine::state_size(&m, mjSTATE_INTEGRATION);
     if (size < 0) throw std::invalid_argument("invalid integration-state size");
     std::vector<double> integration(static_cast<std::size_t>(size));
@@ -188,7 +202,7 @@ runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
     // convention) rather than the writer schema names.
     Array tire_names;
     Array tire_row;
-    if (stepper.has_tire()) {
+    if (!config.spatial && stepper.has_tire()) {
         for (const auto& name : stepper.tire_state_names()) tire_names.push_back(text(name));
         const auto row = stepper.tire_state();
         tire_row.reserve(row.size());
@@ -198,19 +212,31 @@ runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
     if (stepper.has_rider_contacts()) contacts_state = ::rider::encode_rider_contacts_state(
         stepper.rider_contacts().state(), stepper.rider_contacts().probe());
     Object doc_obj;
-    doc_obj.emplace_back("schema", integer(runtime::kRuntimeSchema));
+    doc_obj.emplace_back("schema", integer(config.spatial?spatial::kSpatialBootstrapSchema:runtime::kRuntimeSchema));
     doc_obj.emplace_back("model_digest", text(image.sha256));
     doc_obj.emplace_back("model_dims", std::move(dims));
     doc_obj.emplace_back("integration_state", reals(integration));
     doc_obj.emplace_back("model_mutable", Value{Object{{"dof_frictionloss", Value{std::move(friction)}},
         {"site_pos", Value{std::move(sites)}}}});
-    doc_obj.emplace_back("tire", Value{Object{{"names", Value{std::move(tire_names)}}, {"row", Value{std::move(tire_row)}}}});
+    if(config.spatial) {
+        const auto& tire=stepper.spatial_tire_writer().state();
+        if(tire.identity.topology_fingerprint_hex!=state.spatial->topology_fingerprint ||
+           tire.identity.terrain_sha256_hex!=state.spatial->terrain_sha256 ||
+           tire.identity.calibration_sha256_hex!=state.spatial->calibration_sha256)
+            throw std::invalid_argument("bootstrap.spatial.tire.identity: differs from causal owners");
+        doc_obj.emplace_back("tire",Value{Object{
+            {"pneumatic3d_state",integer(pneumatic3d::kPneumatic3dStateVersion)},
+            {"identity",pneumatic3d::tyre_identity_to_wire(tire.identity)},
+            {"encoding",text("base64")},
+            {"payload",text(pneumatic3d::base64_canonical(pneumatic3d::encode_tyre_state(tire)))}}});
+    } else doc_obj.emplace_back("tire", Value{Object{{"names", Value{std::move(tire_names)}}, {"row", Value{std::move(tire_row)}}}});
     doc_obj.emplace_back("drive", drivetrain::encode_drive_snapshot(stepper.drive().state()));
     doc_obj.emplace_back("rider_contacts", std::move(contacts_state));
     doc_obj.emplace_back("rider_controller", state.rider_controller ? ::rider::encode_spindle_state(*state.rider_controller) : Value{});
     doc_obj.emplace_back("rider_intent", ::rider::encode_intent_state(state.rider_intent));
     doc_obj.emplace_back("signals", ::rider::encode_intent_signals(state.signals));
     doc_obj.emplace_back("runtime", runtime_state(state, config));
+    if(config.spatial)doc_obj.emplace_back("spatial",runtime::encode_spatial_bootstrap(*state.spatial));
     Value const document{std::move(doc_obj)};
     // Decode into the exact same owned state used by the captured-file path.
     return runtime::compose_bootstrap(config, std::move(image), document);

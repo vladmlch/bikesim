@@ -425,6 +425,7 @@ namespace writers {
             rider::Vec3 point{};
             rider::Vec3 normal{};
             std::optional<rider::Vec3> pull; // grips only
+            std::optional<bike::rider::SpatialSupportFrame> spatial_frame;
         };
         [[nodiscard]] std::optional<AttachmentTarget>
         support_target(std::size_t support, const mjData *data) const;
@@ -467,6 +468,7 @@ namespace writers {
 
         const mjModel *model_;
         rider::RiderContactsConfig cfg_;
+        bool spatial_ = false;
         // Resolved literal ids (RiderContactApplier.__init__, lines 60-81).
         int frame_ = -1;
         int steer_ = -1;
@@ -475,6 +477,7 @@ namespace writers {
         std::array<int, kSideCount> forearm_{-1, -1};
         std::array<int, kSideCount> shoulder_{-1, -1};
         std::array<int, kSideCount> grip_site_{-1, -1};
+        std::array<int, kSideCount> grip_bike_site_{-1, -1};
         std::array<SupportRef, kSupportCount> supports_{};
         // Attachment discriminators (lines 84-95).
         bool spindle_pedals_ = false;

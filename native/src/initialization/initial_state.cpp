@@ -55,6 +55,11 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     add("qpos0",m->qpos0,m->nq);add("body_mass",m->body_mass,m->nbody);add("body_inertia",m->body_inertia,3*m->nbody,3);add("body_ipos",m->body_ipos,3*m->nbody,3);add("body_pos",m->body_pos,3*m->nbody,3);add("body_quat",m->body_quat,4*m->nbody,4);add("jnt_axis",m->jnt_axis,3*m->njnt,3);add("jnt_pos",m->jnt_pos,3*m->njnt,3);add("jnt_range",m->jnt_range,2*m->njnt,2);add("dof_armature",m->dof_armature,m->nv);add("actuator_gear",m->actuator_gear,6*m->nu,6);add("actuator_ctrlrange",m->actuator_ctrlrange,2*m->nu,2);add("eq_solref",m->eq_solref,2*m->neq,2);add("eq_solimp",m->eq_solimp,5*m->neq,5);
     bio::Value::Array limited;for(auto const value:std::views::counted(m->jnt_limited,m->njnt))limited.push_back(bio::Value{value!=0});compiled.emplace_back("jnt_limited",bio::Value{std::move(limited)});
     const auto& identity=bio::as_object(context.identity,"initial state identity");
+    if(context.topology) {
+        if(!context.terrain3d)throw std::invalid_argument("initial_state.spatial.terrain: physical source missing");
+        compiled.emplace_back("topology_fingerprint",string(context.topology->fingerprint_hex));
+        compiled.emplace_back("physical_terrain_sha256",string(context.terrain3d->fingerprint_hex()));
+    }
     return hash(bio::Value{bio::Value::Object{{"physics",std::move(physics)},{"specs",plain(field(identity,"specs"))},{"mass",plain(field(identity,"mass_specs"))},{"rider",plain(field(identity,"rider"))},{"start_x_m",real(context.start_x_m)},{"joints",bio::Value{std::move(joints)}},{"compiled",bio::Value{std::move(compiled)}},{"envelope_sha256",context.physics.articulated.joint_envelope_path?string(platform::file_sha256(*context.physics.articulated.joint_envelope_path)):bio::Value{}}}});
 }
 
@@ -79,15 +84,30 @@ bio::NpyArray material_array(const bio::Value& document){
     if(dtype!="float64"&&dtype!="float32"&&dtype!="<f8"&&dtype!=">f8"&&dtype!="<f4"&&dtype!="f8"&&dtype!="f4")throw std::invalid_argument("unsupported initial material dtype");
     std::vector<double> values;for(const auto& item:flat)values.push_back(bio::is_null(item)?std::numeric_limits<double>::quiet_NaN():bio::as_double(item,"material float"));return bio::double_array(values,std::move(shape));
 }
-StateFile material_state(const bio::Value::Object& payload){StateFile state;state.schema_version=0;const auto q=vector(field(payload,"qpos"),"qpos");state.arrays.emplace_back("qpos",bio::double_array(q,{q.size()}));for(const auto& [name,value]:bio::as_object(field(payload,"material"),"material")){if(!name.starts_with("state_"))throw std::invalid_argument("unknown initial material member");state.arrays.emplace_back(name,material_array(value));}return state;}
+StateFile material_state(const bio::Value::Object& payload){StateFile state;state.schema_version=0;const auto q=vector(field(payload,"qpos"),"qpos"),v=vector(field(payload,"qvel"),"qvel");state.arrays.emplace_back("qpos",bio::double_array(q,{q.size()}));state.arrays.emplace_back("qvel",bio::double_array(v,{v.size()}));for(const auto& [name,value]:bio::as_object(field(payload,"material"),"material")){if(!name.starts_with("state_"))throw std::invalid_argument("unknown initial material member");state.arrays.emplace_back(name,material_array(value));}return state;}
 void put_array(StateFile& state,std::string name,bio::NpyArray array){for(auto& [key,value]:state.arrays)if(key==name){value=std::move(array);return;}state.arrays.emplace_back(std::move(name),std::move(array));}
 std::optional<double> optional_real(const bio::Value& value,std::string_view name){return bio::is_null(value)?std::nullopt:std::optional<double>(bio::as_double(value,name));}
 
 bio::Value equilibrium_value(const EquilibriumResult& r){return bio::Value{bio::Value::Object{{"fork_travel_mm",real(r.fork_travel_mm)},{"shock_stroke_mm",real(r.shock_stroke_mm)},{"rear_travel_mm",real(r.rear_travel_mm)},{"root_z_m",real(r.root_z_m)},{"pitch_rad",real(r.pitch_rad)},{"steps",integer(r.steps)},{"residual_qacc",real(r.residual_qacc)},{"cache_hit",bio::Value{r.cache_hit}},{"initial_crank_phase_rad",real(r.initial_crank_phase_rad)},{"settled_crank_phase_rad",real(r.settled_crank_phase_rad)}}};}
 EquilibriumResult equilibrium(const bio::Value& value){const auto& o=bio::as_object(value,"equilibrium");EquilibriumResult r;r.fork_travel_mm=bio::as_double(field(o,"fork_travel_mm"),"fork travel");r.shock_stroke_mm=bio::as_double(field(o,"shock_stroke_mm"),"shock stroke");r.rear_travel_mm=bio::as_double(field(o,"rear_travel_mm"),"rear travel");r.root_z_m=bio::as_double(field(o,"root_z_m"),"root z");r.pitch_rad=bio::as_double(field(o,"pitch_rad"),"pitch");r.steps=bio::as_int64(field(o,"steps"),"steps");r.residual_qacc=bio::as_double(field(o,"residual_qacc"),"residual");if(r.steps<=0||r.residual_qacc<0.)throw std::invalid_argument("invalid transferred equilibrium evidence");if(const auto* p=bio::find_member(o,"initial_crank_phase_rad"))r.initial_crank_phase_rad=bio::as_double(*p,"crank phase");if(const auto* p=bio::find_member(o,"settled_crank_phase_rad"))r.settled_crank_phase_rad=bio::as_double(*p,"settled crank phase");return r;}
+StateFile stage_transfer_material(const SetupContext&,const bio::Value::Object&);
 void validated(const SetupContext& context,const bio::Value::Object& p){
     guard(context);if(bio::as_int64(field(p,"schema_version"),"schema_version")!=1||bio::as_string(field(p,"contract_sha256"),"contract_sha256")!=contract(context))throw std::invalid_argument("initial-state physical model contract differs (only timestep/road mesh may vary)");
-    (void)vector(field(p,"qpos"),"qpos",context.stepper.qpos().size());(void)vector(field(p,"qvel"),"qvel",context.stepper.qvel().size());(void)vector(field(p,"qacc_warmstart"),"qacc_warmstart",context.stepper.qvel().size());
+    const auto q=vector(field(p,"qpos"),"qpos",context.stepper.qpos().size());const auto v=vector(field(p,"qvel"),"qvel",context.stepper.qvel().size());(void)vector(field(p,"qacc_warmstart"),"qacc_warmstart",context.stepper.qvel().size());
+    if(context.topology) {
+        const auto* model=context.stepper.model();
+        for(int joint=0;joint<model->njnt;++joint) {
+            const int type=model->jnt_type[joint];
+            if(type!=mjJNT_FREE && type!=mjJNT_BALL)continue;
+            const auto start=static_cast<std::size_t>(model->jnt_qposadr[joint])+(type==mjJNT_FREE?3U:0U);
+            if(start>q.size() || q.size()-start<4)throw std::invalid_argument("initial_state.qpos.quaternion: invalid span");
+            const double norm=std::hypot(std::hypot(q[start],q[start+1]),std::hypot(q[start+2],q[start+3]));
+            if(std::abs(norm-1.)>1e-9)throw std::invalid_argument("initial_state.qpos.quaternion: expected unit quaternion");
+        }
+        // Validate the final overlaid drive/controller/anchors, not just the
+        // inner material document, before prepare resets any live owner.
+        validate_equilibrium_material(context,stage_transfer_material(context,p),q,v);
+    }
     const auto x=vector(field(p,"road_x"),"road_x"),z=vector(field(p,"road_z"),"road_z",x.size());if(x.empty()||x.size()>1048576)throw std::invalid_argument("invalid initial support road");
     for(std::size_t i=0;i<x.size();++i)if((i>0&&x[i]<=x[i-1])||std::abs(height(context.physical.terrain_vertices(),x[i])-z[i])>2e-7)throw std::invalid_argument("initial support road differs; solve an independent equilibrium");
 }
@@ -104,8 +124,31 @@ void stage_drive_material(const SetupContext& context,const bio::Value::Object& 
 void stage_controller_material(const SetupContext& context,const bio::Value::Object& p,StateFile& material){
     if(!context.physical.rider_present())return;
     auto controller=std::make_unique<::rider::SpindleController::State>(context.physical.rider_control().state());
+    if(context.topology) {
+        const auto encoded=state_array(material,"state_native_rider_controller").strings();
+        if(encoded.size()!=1)throw std::invalid_argument("initial_state.rider_controller: producer state missing");
+        *controller=::rider::decode_spindle_state(bio::parse_recording_json(encoded.front()),"initial_state.rider_controller");
+    }
     const auto active=vector(field(p,"active_state"),"active_state",controller->active_state.size());controller->active_state=active;controller->activation_time_s.reset();
     put_array(material,"state_native_rider_controller",bio::string_array(std::array<std::string,1>{bio::recording_json(::rider::encode_spindle_state(*controller))},{}));
+}
+StateFile stage_transfer_material(const SetupContext& context,const bio::Value::Object& p){
+    StateFile material=material_state(p);
+    stage_drive_material(context,p,material);
+    stage_controller_material(context,p,material);
+    if(context.stepper.has_rider_contacts()&&!context.stepper.rider_contacts().welded_grip()){
+        std::array<std::optional<::rider::Vec3>,2> anchors;
+        const auto& root=bio::as_object(field(p,"grip_anchor_local"),"grip_anchor_local");
+        for(std::size_t side=0;side<2;++side){
+            const auto& value=field(root,writers::kSideNames[side]);
+            if(!bio::is_null(value)){const auto cells=vector(value,"grip anchor",3);anchors[side]=::rider::Vec3{cells[0],cells[1],cells[2]};}
+        }
+        std::vector<double> values;std::vector<bool> present;
+        for(const auto& anchor:anchors){present.push_back(anchor.has_value());for(std::size_t axis=0;axis<3;++axis)values.push_back(anchor?(*anchor)[axis]:0.);}
+        put_array(material,"state_native_grip_anchors",bio::double_array(values,{2,3}));
+        put_array(material,"state_native_grip_anchors_valid",bio::bool_array(present,{2}));
+    }
+    return material;
 }
 } // namespace
 
@@ -136,22 +179,7 @@ PhysicalInitialState PhysicalInitialState::capture(const SetupContext& context){
 
 void PhysicalInitialState::restore(SetupContext& context)const{
     auto const value=payload();const auto& p=bio::as_object(value,"initial state");validated(context,p);require_initializing(context);
-    StateFile material=material_state(p);
-    stage_drive_material(context,p,material);
-    stage_controller_material(context,p,material);
-    std::optional<std::array<std::optional<::rider::Vec3>,2>> anchors;
-    if(context.stepper.has_rider_contacts()&&!context.stepper.rider_contacts().welded_grip()){
-        anchors.emplace();const auto& root=bio::as_object(field(p,"grip_anchor_local"),"grip_anchor_local");
-        for(std::size_t side=0;side<2;++side){const auto& item=field(root,writers::kSideNames[side]);if(!bio::is_null(item)){const auto a=vector(item,"grip anchor",3);(*anchors)[side]=::rider::Vec3{a[0],a[1],a[2]};}}
-    }
-    if(anchors) {
-        // Stage anchors into the same complete rider record as all other
-        // material. No state copy or allocation follows material commit.
-        std::vector<double> values;std::vector<bool> present;
-        for(const auto& anchor:*anchors){present.push_back(anchor.has_value());for(std::size_t axis=0;axis<3;++axis)values.push_back(anchor?(*anchor)[axis]:0.);} // NOLINT(bugprone-unchecked-optional-access) the ternary guards engagement
-        put_array(material,"state_native_grip_anchors",bio::double_array(values,{2,3}));
-        put_array(material,"state_native_grip_anchors_valid",bio::bool_array(present,{2}));
-    }
+    StateFile material=stage_transfer_material(context,p);
     const auto q=vector(field(p,"qpos"),"qpos"),v=vector(field(p,"qvel"),"qvel"),warm=vector(field(p,"qacc_warmstart"),"qacc_warmstart");
     // Decode every field before invoking the shared transactional material
     // restore. No coordinate is written before material validation succeeds.

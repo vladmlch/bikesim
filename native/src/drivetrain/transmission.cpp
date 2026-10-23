@@ -73,11 +73,11 @@ namespace drivetrain {
           endpoint_(geometric ? engine::make_data(model) : nullptr),
           scratch_model_(clone_model(model)),
           scratch_data_(engine::make_data(scratch_model_.get())),
-          geometry_(model->nv),
+          geometry_(model),
           prepared_storage_{
               .phi = 0., .time = 0.,
               .jacobian = std::vector<double>(static_cast<std::size_t>(geometric ? model->nv : 0)),
-              .qpos = std::vector<double>(static_cast<std::size_t>(geometric ? model->nv : 0))
+              .qpos = std::vector<double>(static_cast<std::size_t>(geometric ? model->nq : 0))
           },
           force_(static_cast<std::size_t>(model->nv)),
           multipliers_(static_cast<std::size_t>(model->njmax > 0 ? model->njmax : 0)),
@@ -100,6 +100,10 @@ namespace drivetrain {
         driven_qpos_ =
                 buffer(model->jnt_qposadr, model->njnt)[static_cast<std::size_t>(wj)];
         driven_dof_ = buffer(model->jnt_dofadr, model->njnt)[static_cast<std::size_t>(wj)];
+        model_access::require_id(driver_qpos_,model->nq,"transmission.driver.qpos");
+        model_access::require_id(driver_dof_,model->nv,"transmission.driver.dof");
+        model_access::require_id(driven_qpos_,model->nq,"transmission.driven.qpos");
+        model_access::require_id(driven_dof_,model->nv,"transmission.driven.dof");
         state_.ratio = static_cast<double>(gear.front_teeth) / gear.rear_teeth;
         state_.rear_teeth = gear.rear_teeth;
         if (geometric) {
@@ -107,6 +111,18 @@ namespace drivetrain {
             rear_ = resolve(model, mjOBJ_BODY, "rear_wheel");
             frame_ = resolve(model, mjOBJ_BODY, "frame");
             coefficients_.assign(force_.size(), -1);
+            scalar_qpos_.assign(force_.size(), -1);
+            const auto types=buffer(model->jnt_type,model->njnt);
+            const auto qaddresses=buffer(model->jnt_qposadr,model->njnt);
+            const auto vaddresses=buffer(model->jnt_dofadr,model->njnt);
+            for(int joint=0;joint<model->njnt;++joint) {
+                const auto ji=static_cast<std::size_t>(joint);
+                if(types[ji]!=mjJNT_HINGE && types[ji]!=mjJNT_SLIDE) continue;
+                const int qadr=qaddresses[ji],vadr=vaddresses[ji];
+                model_access::require_id(qadr,model->nq,"transmission.scalar.qpos");
+                model_access::require_id(vadr,model->nv,"transmission.scalar.dof");
+                scalar_qpos_[static_cast<std::size_t>(vadr)]=qadr;
+            }
         }
         const int start = buffer(model->tendon_adr,
                                  model->ntendon)[static_cast<std::size_t>(tendon_)],
@@ -122,6 +138,7 @@ namespace drivetrain {
             }
             const int joint = buffer(model->wrap_objid, model->nwrap)[at];
             if (geometric) {
+                topology::scalar_joint(model,joint,"transmission.tendon_joint");
                 const auto dof = static_cast<std::size_t>(buffer(
                     model->jnt_dofadr, model->njnt)[static_cast<std::size_t>(joint)]);
                 if (coefficients_.at(dof) >= 0)
@@ -131,10 +148,9 @@ namespace drivetrain {
                 coefficients_.push_back(i);
         }
         if (geometric) {
-            if (model->nq != model->nv ||
-                std::ranges::find(coefficients_, -1) != coefficients_.end())
-                throw std::invalid_argument("geometric tendon must contain every scalar "
-                    "model coordinate exactly once");
+            for(std::size_t dof=0;dof<coefficients_.size();++dof)
+                if((scalar_qpos_[dof]>=0)!=(coefficients_[dof]>=0))
+                    throw std::invalid_argument("geometric tendon must contain every scalar model coordinate exactly once");
         } else if (coefficients_.size() != 1)
             throw std::invalid_argument("ideal freehub needs one driver joint coefficient");
         // The first commit's state_⇄update.state swap hands the live
@@ -198,8 +214,22 @@ namespace drivetrain {
     void Transmission::linearize_candidate(const mjData *data,
                                            TransmissionUpdate &update, double phi) {
         const auto q = buffer(data->qpos, model_->nq);
+        double linear_coordinate=0.;
+        if(!geometry_.spatial) linear_coordinate=dot(geometry_.jacobian,q);
+        else {
+            for(std::size_t dof=0;dof<geometry_.jacobian.size();++dof) {
+                if(scalar_qpos_[dof]>=0) linear_coordinate+=geometry_.jacobian[dof]*q[static_cast<std::size_t>(scalar_qpos_[dof])];
+                else {
+                    if(std::abs(geometry_.jacobian[dof])>1e-12)
+                        throw std::invalid_argument("transmission.geometry: internal nonscalar coordinate cannot be represented by a fixed tendon");
+                    // A rigid root does no internal chain work. Remove only
+                    // roundoff cancellation on these analytically zero lanes.
+                    geometry_.jacobian[dof]=0.;
+                }
+            }
+        }
         const double upper = validation::derived(
-            engaged(update.state.boundary) - phi + dot(geometry_.jacobian, q),
+            engaged(update.state.boundary) - phi + linear_coordinate,
             "transmission.upper_bound");
         update.coefficients.assign(geometry_.jacobian.begin(), geometry_.jacobian.end());
         update.state.coefficients = update.coefficients;
@@ -232,7 +262,7 @@ namespace drivetrain {
         update.coefficients.clear();
         const auto prm = buffer(model_->wrap_prm, model_->nwrap);
         for (int const index: coefficients_)
-            update.coefficients.push_back(prm[static_cast<std::size_t>(index)]);
+            update.coefficients.push_back(index<0?0.:prm[static_cast<std::size_t>(index)]);
         update.state.coefficients = update.coefficients;
         const auto range = buffer(model_->tendon_range, 2 * model_->ntendon)
                 .subspan(2 * static_cast<std::size_t>(tendon_), 2);
@@ -286,7 +316,7 @@ namespace drivetrain {
         const auto prm = buffer(model_->wrap_prm, model_->nwrap);
         bool changed = false;
         for (std::size_t i = 0; i < coefficients_.size(); ++i)
-            if (prm[static_cast<std::size_t>(coefficients_[i])] != update.coefficients[i])
+            if (coefficients_[i]>=0 && prm[static_cast<std::size_t>(coefficients_[i])] != update.coefficients[i])
                 changed = true;
         if (!changed)
             return;
@@ -298,7 +328,7 @@ namespace drivetrain {
             sync_scratch_data(data);
         const auto candidate = buffer(scratch_model_->wrap_prm, scratch_model_->nwrap);
         for (std::size_t i = 0; i < coefficients_.size(); ++i)
-            candidate[static_cast<std::size_t>(coefficients_[i])] = update.coefficients[i];
+            if(coefficients_[i]>=0) candidate[static_cast<std::size_t>(coefficients_[i])] = update.coefficients[i];
         engine::set_const(scratch_model_.get(), scratch_data_.get());
         std::ranges::copy(update.range,
                           buffer(scratch_model_->tendon_range,
@@ -414,6 +444,7 @@ namespace drivetrain {
         const auto prm = buffer(model_->wrap_prm, model_->nwrap);
         bool changed = false;
         for (std::size_t i = 0; i < coefficients_.size(); ++i) {
+            if(coefficients_[i]<0) continue;
             auto &c = prm[static_cast<std::size_t>(coefficients_[i])];
             if (c != update.coefficients[i]) {
                 c = update.coefficients[i];
@@ -518,7 +549,9 @@ namespace drivetrain {
         std::ranges::copy(buffer(d->qpos, model_->nq), endpoint_->qpos);
         const double endpoint = geometry(endpoint_.get());
         const auto q = buffer(d->qpos, model_->nq);
-        for (std::size_t i = 0; i < displacement_.size(); ++i)
+        if(geometry_.spatial)
+            mj_differentiatePos(model_,displacement_.data(),1.,p.qpos.data(),q.data());
+        else for (std::size_t i = 0; i < displacement_.size(); ++i)
             displacement_[i] = q[i] - p.qpos[i];
         const double defect = endpoint - p.phi - dot(p.jacobian, displacement_),
                 work = dot(force_, displacement_);
@@ -597,7 +630,7 @@ namespace drivetrain {
         s.coefficients.clear();
         for (int const index: coefficients_)
             s.coefficients.push_back(
-                buffer(model_->wrap_prm, model_->nwrap)[static_cast<std::size_t>(index)]);
+                index<0?0.:buffer(model_->wrap_prm, model_->nwrap)[static_cast<std::size_t>(index)]);
     }
 
     TransmissionSnapshot Transmission::state() const {
@@ -623,8 +656,11 @@ namespace drivetrain {
         finite(s.last_tension_n, "last tension");
         if (s.coefficients.size() != coefficients_.size())
             throw std::invalid_argument("transmission coefficient width");
-        for (double const c: s.coefficients)
-            finite(c, "transmission coefficient");
+        for (std::size_t i=0;i<s.coefficients.size();++i) {
+            finite(s.coefficients[i], "transmission coefficient");
+            if(coefficients_[i]<0 && s.coefficients[i]!=0.)
+                throw std::invalid_argument("transmission.coefficients: nonscalar lane must be zero");
+        }
         for (double const r: s.range)
             finite(r, "transmission range");
         // Only a geometric shift sets shift_pending (linearize runs in the
@@ -633,7 +669,7 @@ namespace drivetrain {
             throw std::invalid_argument("transmission shift_pending");
         if (s.prepared) {
             const auto &p = *s.prepared;
-            if (!geometric_ || !s.boundary || p.qpos.size() != force_.size() ||
+            if (!geometric_ || !s.boundary || p.qpos.size() != static_cast<std::size_t>(model_->nq) ||
                 p.jacobian.size() != force_.size())
                 throw std::invalid_argument("prepared transmission width");
             finite(p.phi, "prepared phi");
@@ -642,6 +678,23 @@ namespace drivetrain {
                 finite(x, "prepared qpos");
             for (double const x: p.jacobian)
                 finite(x, "prepared Jacobian");
+            if(geometry_.spatial) {
+                const auto types=buffer(model_->jnt_type,model_->njnt);
+                const auto addresses=buffer(model_->jnt_qposadr,model_->njnt);
+                for(std::size_t joint=0;joint<types.size();++joint) {
+                    if(types[joint]!=mjJNT_FREE && types[joint]!=mjJNT_BALL) continue;
+                    const auto start=static_cast<std::size_t>(addresses[joint])+(types[joint]==mjJNT_FREE?3U:0U);
+                    if(start>p.qpos.size() || p.qpos.size()-start<4)
+                        throw std::invalid_argument("prepared transmission quaternion span");
+                    const double norm=std::hypot(std::hypot(p.qpos[start],p.qpos[start+1]),
+                        std::hypot(p.qpos[start+2],p.qpos[start+3]));
+                    if(std::abs(norm-1.)>1e-9)
+                        throw std::invalid_argument("prepared transmission quaternion must be unit length");
+                }
+                for(std::size_t dof=0;dof<coefficients_.size();++dof)
+                    if(coefficients_[dof]<0 && p.jacobian[dof]!=0.)
+                        throw std::invalid_argument("prepared transmission Jacobian has a nonscalar lane");
+            }
         }
     }
 

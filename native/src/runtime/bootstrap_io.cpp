@@ -31,6 +31,8 @@
 #include "../io/json.hpp"
 #include "../writer_config.hpp"
 #include "runtime.hpp"
+#include "value_readers.hpp"
+#include "../terrain/spec_io.hpp"
 
 #include <algorithm>
 #include <array>
@@ -387,11 +389,21 @@ RuntimeBootstrap compose_bootstrap(RuntimeConfig config, ModelImage model,
     // from the same bytes).
     RuntimeBootstrap out;
     out.config = std::move(config);
+    // Select the family before loading an engine or decoding a writer. The
+    // planar branch below retains its historical decode order.
+    if (out.config.schema == static_cast<int>(bike::spatial::kSpatialRuntimeSchema) || out.config.spatial) {
+        const auto& state_object = bio::as_object(state, "state");
+        const auto* state_version = bio::find_member(state_object, "schema");
+        if (!state_version) io_invalid("state.schema", "missing required key");
+        const auto version = bio::as_int64(*state_version, "state.schema");
+        if (version < 1 || version > 2) io_invalid("state.schema", "unsupported bootstrap schema");
+        validate_schema_family(out.config, static_cast<int>(version));
+    }
     const std::string expected = expected_model_digest(state);
     if (bio::sha256(model.mjb) != expected)
         throw std::invalid_argument(
             "state.model_digest: model artifact bytes do not match");
-    static_cast<void>(nativecfg::decode(out.config.writer_config));
+    if (!out.config.spatial) static_cast<void>(nativecfg::decode(out.config.writer_config));
     const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> image_model(
         engine::load_model_image(model.mjb),
         &mj_deleteModel);
@@ -399,6 +411,17 @@ RuntimeBootstrap compose_bootstrap(RuntimeConfig config, ModelImage model,
         throw std::invalid_argument(
             "model.mjb: failed to load the model image");
     out.state = decode_bootstrap_state(state, *image_model);
+    validate_schema_family(out.config, out.state.schema);
+    if (out.config.spatial) {
+        if (!out.state.spatial || !out.state.tire3d)
+            io_invalid("state.spatial.tire", "producer state missing");
+        if (!out.config.terrain3d)
+            out.config.terrain3d = bike::terrain::detail::load_terrain3d_source(out.config.spatial->terrain);
+        const auto topology = bike::spatial::bind_topology(*image_model, *out.config.spatial);
+        validate_spatial_identity(out.config, *out.state.spatial, topology);
+        if (out.state.tire3d->identity.tier != out.config.spatial->tyre.tier)
+            io_invalid("state.tire.identity.tier", "differs from configured tyre tier");
+    }
     out.model = std::move(model);
     return out;
 }

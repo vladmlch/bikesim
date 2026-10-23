@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "status": "pending_verification",
+  "producer_dependencies": ["W10", "W17", "W25", "W27"],
+  "paired_request": {
+    "planar_backend": "pneumatic",
+    "spatial_backend": "pneumatic_3d",
+    "root": "constrained4",
+    "terrain": "profile_extrusion",
+    "rider": "none",
+    "tier": "fast",
+    "longitudinal_parameters": "same complete stock front/rear TyreSpecs input; surface_mode=track; no overrides",
+    "timestep_s": 0.00125,
+    "control_period_s": 0.005,
+    "initial_speed_mps": 6.0,
+    "start_x_m": 2.0,
+    "seed_decimal": "0",
+    "initial_state_tolerance": 1e-12,
+    "initial_state_policy": "require common scalar joint positions/velocities to agree; all extra constrained coordinates zero; no hidden rebase",
+    "grounded_hold_s": 0.005,
+    "measurement_decimation": 1,
+    "record_retention": "full",
+    "async_telemetry": false,
+    "fresh_equilibrium_tolerance": 1e-8,
+    "equilibrium_cache_enabled": false,
+    "initial_front_brake": 0.0,
+    "initial_rear_brake": 0.0,
+    "drive_mode": "crank_effort",
+    "transmission_model": "ideal_mid_drive",
+    "assist_gain": 0.0,
+    "resistance_crr": 0.0,
+    "resistance_cda_m2": 0.0
+  },
+  "demand_trace_semantics": "piecewise constant by incoming physics step; the same table drives both backends; later entries remain authored inputs for the 10 s case",
+  "demand_trace": [
+    {"step": 0, "human_torque_nm": 0.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.0},
+    {"step": 160, "human_torque_nm": 8.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.0},
+    {"step": 400, "human_torque_nm": 20.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.0},
+    {"step": 800, "human_torque_nm": 0.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.1},
+    {"step": 1200, "human_torque_nm": 0.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.0},
+    {"step": 1600, "human_torque_nm": 20.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.0},
+    {"step": 2400, "human_torque_nm": 0.0, "motor_torque_nm": 0.0, "front_brake": 0.05, "rear_brake": 0.05},
+    {"step": 3200, "human_torque_nm": 25.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.0},
+    {"step": 4800, "human_torque_nm": 0.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.0},
+    {"step": 5600, "human_torque_nm": 15.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.0},
+    {"step": 6400, "human_torque_nm": 0.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.08},
+    {"step": 7200, "human_torque_nm": 0.0, "motor_torque_nm": 0.0, "front_brake": 0.0, "rear_brake": 0.0}
+  ],
+  "acceptance": {
+    "normal_load_rms_weight_fraction": 0.02,
+    "distance_absolute_m": 0.01,
+    "distance_planar_fraction": 0.01,
+    "torque_impulse_absolute_nms": 0.01,
+    "torque_impulse_planar_fraction": 0.01,
+    "contact_transition_max_step_delta": 1,
+    "persistence_configured_windows": 1,
+    "static_total_lateral_force_n": 1e-9,
+    "static_load_weight_fraction": 1e-6,
+    "outcomes_equal": true,
+    "short_duration_s": 2.0,
+    "long_duration_s": 10.0
+  },
+  "fixtures": [
+    {"id": "flat", "track": "tests/fixtures/spatial3d/bridge/flat.toml", "weight_n": null, "terrain_sha256": null, "results": null, "status": "pending_verification"},
+    {"id": "rough_uphill_savage", "track": "examples/research/rough_uphill_savage.toml", "weight_n": null, "terrain_sha256": null, "results": null, "status": "pending_verification"},
+    {"id": "alpine_rocky", "track": "examples/research/alpine_rocky.toml", "weight_n": null, "terrain_sha256": null, "results": null, "status": "pending_verification"}
+  ],
+  "executions": [
+    {"platform": "macos-arm64", "execution_identity": null, "source_manifest_sha256": null, "short_results": null, "long_results": null, "status": "pending_verification"},
+    {"platform": "linux-aarch64", "execution_identity": null, "source_manifest_sha256": null, "short_results": null, "long_results": null, "status": "pending_verification"}
+  ]
+}

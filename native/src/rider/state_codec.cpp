@@ -1185,6 +1185,37 @@ namespace {
         return owner.member(name);
     }
 
+    // The frozen spatial frame is returned by value, like the pose readers.
+    NATIVE_DIAG_PUSH
+    NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
+    [[nodiscard]] bike::rider::SpatialSupportFrame decode_support_frame(const VNode& value, std::string_view path) {
+        const auto d = mapping(value,path);
+        ncd::exact(d,keys("normal_world","tangent_x_world","tangent_y_world"));
+        bike::rider::SpatialSupportFrame frame{
+            .normal_world=fixed<3>(d["normal_world"],path),
+            .tangent_x_world=fixed<3>(d["tangent_x_world"],path),
+            .tangent_y_world=fixed<3>(d["tangent_y_world"],path), .valid=true};
+        const std::array axes{frame.tangent_x_world,frame.tangent_y_world,frame.normal_world};
+        for (std::size_t i=0; i<3; ++i) for (std::size_t j=0; j<3; ++j) {
+            double product=0.;
+            for (std::size_t k=0; k<3; ++k) product+=axes[i][k]*axes[j][k];
+            if (!std::isfinite(product) || std::abs(product-(i==j?1.:0.)) > 1e-9)
+                invalid(path,"orthonormal spatial support frame required");
+        }
+        const auto& a=axes[0]; const auto& b=axes[1]; const auto& c=axes[2];
+        const double handed=(a[1]*b[2]-a[2]*b[1])*c[0]+(a[2]*b[0]-a[0]*b[2])*c[1]+(a[0]*b[1]-a[1]*b[0])*c[2];
+        if (handed < 1.-1e-9) invalid(path,"right-handed spatial support frame required");
+        return frame;
+    }
+    NATIVE_DIAG_POP
+    [[nodiscard]] bio::Value support_frame_value(const bike::rider::SpatialSupportFrame& frame) {
+        if (!frame.valid) invalid("attachment.spatial_frame","valid frame required");
+        return bio::Value{bio::Value::Object{
+            {"normal_world",vector_value(frame.normal_world)},
+            {"tangent_x_world",vector_value(frame.tangent_x_world)},
+            {"tangent_y_world",vector_value(frame.tangent_y_world)}}};
+    }
+
     [[nodiscard]] AttachmentGeometry decode_geometry_doc(
         const VNode &owner) {
         AttachmentGeometry g;
@@ -1243,6 +1274,12 @@ namespace {
         }
         g.pull_direction = optional_vector(
             attachment_field(owner, "pull_direction"), "pull_direction");
+        if (owner.contains("spatial_frame")) {
+            g.spatial_frame=decode_support_frame(owner.member("spatial_frame"),"attachment.spatial_frame");
+            if (g.rider_jac.rows!=6 || g.bike_jac.rows!=6 ||
+                g.rider_jac.columns!=g.rider_columns.size() || g.bike_jac.columns!=g.bike_columns.size())
+                invalid("attachment.spatial_frame","full 6-row Jacobians and matching dof columns required");
+        }
         return g;
     }
 
@@ -1260,6 +1297,7 @@ namespace {
         out.emplace_back("gap_m", real_value(r.gap_m));
         out.emplace_back("pull_direction",
                          optional_vector_value(r.pull_direction));
+        if (r.spatial_frame) out.emplace_back("spatial_frame",support_frame_value(*r.spatial_frame));
         return bio::Value{std::move(out)};
     }
 
@@ -1624,11 +1662,11 @@ namespace {
             return d[name];
         };
         if (is_raw) {
-            ncd::exact(d,
+            ncd::exact_at(d,
                           keys("rider_jac", "rider_qfrc", "bike_jac",
                                "bike_qfrc", "observable", "normal", "kind",
                                "rotational", "half_patch_m", "gap_m",
-                               "pull_direction"));
+                               "pull_direction"), keys("spatial_frame"), path);
             AttachmentRaw raw;
             raw.rider_jac = dense_matrix_arg(field_at("rider_jac"),
                                              path + ".rider_jac");
@@ -1648,6 +1686,12 @@ namespace {
             raw.gap_m = field_at("gap_m").finite_real(path + ".gap_m");
             raw.pull_direction = optional_vector(
                 field_at("pull_direction"), path + ".pull_direction");
+            if (d.contains("spatial_frame")) {
+                raw.spatial_frame=decode_support_frame(d["spatial_frame"],path+".spatial_frame");
+                if (raw.rider_jac.rows!=6 || raw.bike_jac.rows!=6 ||
+                    raw.rider_jac.columns!=raw.rider_qfrc.size() || raw.bike_jac.columns!=raw.bike_qfrc.size())
+                    invalid(path,"spatial attachment requires full 6-row Jacobians and matching velocity widths");
+            }
             return raw;
         }
         ncd::exact(d,
@@ -1962,6 +2006,32 @@ bike::configuration::ArticulatedConfig decode_articulated_config(const bio::Valu
         bio::Value{bio::Value::Object{{"articulated",value}}}).articulated;
 }
 
+SpindleConfig decode_spatial_spindle_config(const bio::Value& value) {
+    constexpr std::string_view path = "config.rider_controller";
+    const auto& members = bio::as_object(value, path);
+    const Dict d = mapping(VNode{&value}, path);
+    if (!d.contains("rider.spatial") || d["rider.spatial"].integer(path) != 1)
+        invalid("config.rider_controller.rider.spatial", "expected version 1");
+    if (!d.contains("steer_torque_owner") || d["steer_torque_owner"].string(path) != "actuator")
+        invalid("config.rider_controller.steer_torque_owner", "expected actuator");
+    if (!d.contains("shoulder_profile"))
+        invalid("config.rider_controller.shoulder_profile", "resolved profile required");
+    const auto profile = bike::rider::read_shoulder_profile(*d["shoulder_profile"].value);
+    if (d["pedal_attachment"].string(path) != "spindle" ||
+        d["saddle_attachment"].string(path) != "pin" ||
+        d["grip_attachment"].string(path) != "connect" || d["coupled_task_control"].boolean(path))
+        invalid("config.rider_controller.rider.spatial", "requires spindle/pin/connect attachments and uncoupled control");
+    bio::Value::Object legacy;
+    for (const auto& [name, member] : members)
+        if (name != "rider.spatial" && name != "steer_torque_owner" && name != "shoulder_profile")
+            legacy.emplace_back(name, member);
+    auto config = decode_spindle_config(bio::Value{std::move(legacy)});
+    config.spatial = true;
+    config.shoulder_profile = profile;
+    config.steer_torque_owner = "actuator";
+    return config;
+}
+
 // ---- spindle controller -----------------------------------------------------
 
 SpindlePose decode_spindle_pose(const bio::Value &value,
@@ -1985,6 +2055,26 @@ SpindlePose decode_spindle_pose(const bio::Value &value,
     pose.pedal_rear = point3(d["pedal_rear"], path);
     // saddle/head_center/ankle_* are validated present by the key gate but
     // unused by the spindle path.
+    return pose;
+}
+
+SpindlePose decode_spatial_spindle_pose(const bio::Value& value, std::string_view path) {
+    const auto pose = decode_spindle_pose(value, path);
+    const auto& object = bio::as_object(value, path);
+    // Spatial geometry is the neutral body-local reference skeleton. Reject
+    // nonfinite unused points too; world yaw/roll belongs to integration state.
+    for (const auto& [name, member] : object) {
+        const auto point = fixed<3>(VNode{&member}, std::string(path)+"."+name);
+        if (!std::ranges::all_of(point, [](double x) { return std::isfinite(x); }))
+            invalid(path, "finite body-local points required");
+        if (std::abs(point[1]-pose.hip[1]) > 1e-12)
+            invalid(path, "neutral skeleton must lie in its body XZ plane");
+    }
+    for (const auto& segment : {std::pair{pose.shoulder,pose.elbow}, std::pair{pose.elbow,pose.grip},
+                               std::pair{pose.hip,pose.shoulder}}) {
+        if (std::hypot(segment.first[0]-segment.second[0], segment.first[2]-segment.second[2]) <= 1e-10)
+            invalid(path, "nondegenerate neutral segments required");
+    }
     return pose;
 }
 
@@ -2050,8 +2140,36 @@ JointTerms decode_joint_terms(const bio::Value &value,
 SpindleController::State decode_spindle_state(const bio::Value &value,
                                               std::string_view path) {
     const Dict d = mapping(VNode{&value}, path);
-    ncd::exact(d, kStateRequiredKeys);
+    constexpr auto extension = keys("rider.spatial", "shoulder_swivel_l", "shoulder_swivel_r",
+        "spatial_arm_branch", "shoulder_profile_sha256", "steer_torque_owner");
+    ncd::exact_at(d, kStateRequiredKeys, extension, path);
     SpindleController::State state;
+    const bool spatial = d.contains("rider.spatial");
+    for (const auto key : extension)
+        if (d.contains(key) != spatial) invalid(std::string(path)+"."+std::string(key), "complete rider.spatial extension required");
+    if (spatial) {
+        if (d["rider.spatial"].integer(path) != 1) invalid(path, "unsupported rider.spatial version");
+        const auto count = d["active_state"].sequence(path).size();
+        if (count != 11) invalid(std::string(path)+".active_state", "spatial spindle requires 11 controlled joints");
+        SpindleController::SpatialState extension_state;
+        extension_state.arm_branch = d["spatial_arm_branch"].integer32(path);
+        if (extension_state.arm_branch != -1 && extension_state.arm_branch != 1)
+            invalid(std::string(path)+".spatial_arm_branch", "expected fixed IK branch -1 or +1");
+        extension_state.steer_torque_owner = d["steer_torque_owner"].string(path);
+        if (extension_state.steer_torque_owner != "actuator") invalid(path, "steering command owner must be actuator");
+        extension_state.shoulder_profile_sha256 = d["shoulder_profile_sha256"].string(path);
+        if (extension_state.shoulder_profile_sha256.size() != 64 ||
+            !std::ranges::all_of(extension_state.shoulder_profile_sha256, [](char c) {
+                return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+            })) invalid(std::string(path)+".shoulder_profile_sha256", "lowercase SHA-256 required");
+        for (std::size_t i = 0; i < 2; ++i) {
+            const std::string lane = i == 0 ? "shoulder_swivel_l" : "shoulder_swivel_r";
+            const auto pair = mapping(d[lane], std::string(path)+"."+lane);
+            ncd::exact(pair, keys("q", "qd"));
+            extension_state.shoulders[i] = {.q=pair["q"].finite_real(path), .qd=pair["qd"].finite_real(path)};
+        }
+        state.spatial = std::move(extension_state);
+    }
     state.enabled = d["enabled"].boolean(path);
     state.command_enabled = d["command_enabled"].boolean(path);
     state.active_state = vector(d["active_state"], path);
@@ -2123,6 +2241,17 @@ bio::Value encode_spindle_state(const SpindleController::State &state) {
     out.emplace_back("sole_goal_diagnostics",
                      sole_goal_diagnostics_value(
                          state.sole_goal_diagnostics));
+    if (state.spatial) {
+        out.emplace_back("rider.spatial", integer_value(1));
+        for (std::size_t i = 0; i < 2; ++i) {
+            const auto& lane = state.spatial->shoulders[i];
+            out.emplace_back(i == 0 ? "shoulder_swivel_l" : "shoulder_swivel_r",
+                bio::Value{bio::Value::Object{{"q",real_value(lane.q)}, {"qd",real_value(lane.qd)}}});
+        }
+        out.emplace_back("spatial_arm_branch", integer_value(state.spatial->arm_branch));
+        out.emplace_back("shoulder_profile_sha256", bio::Value{state.spatial->shoulder_profile_sha256});
+        out.emplace_back("steer_torque_owner", bio::Value{state.spatial->steer_torque_owner});
+    }
     return bio::Value{std::move(out)};
 }
 
@@ -2404,6 +2533,7 @@ bio::Value encode_attachment_geometry(const AttachmentGeometry &g) {
     out.emplace_back("half_patch_m", real_value(g.half_patch_m));
     out.emplace_back("pull_direction",
                      optional_vector_value(g.pull_direction));
+    if (g.spatial_frame) out.emplace_back("spatial_frame",support_frame_value(*g.spatial_frame));
     return bio::Value{std::move(out)};
 }
 

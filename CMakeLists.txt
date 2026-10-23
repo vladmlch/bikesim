@@ -124,7 +124,6 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/drivetrain/state_codec.cpp"
   "${_bike_native_dir}/src/writers/drivetrain.cpp"
   "${_bike_native_dir}/src/writers/cruise.cpp"
-  "${_bike_native_dir}/src/tyre/profile.cpp"
   "${_bike_native_dir}/src/tyre/distance.cpp"
   "${_bike_native_dir}/src/tyre/station.cpp"
   "${_bike_native_dir}/src/pneumatic/geometry.cpp"

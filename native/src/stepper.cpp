@@ -16,6 +16,7 @@
 #include "writers/tire.hpp"
 #include "writers/distributed_tire.hpp"
 #include "writers/pneumatic_tire.hpp"
+#include "writers/pneumatic_3d_tire.hpp"
 #include "writers/drivetrain.hpp"
 
 // The stepper.hpp view scratch is literal-sized (the writer constants live
@@ -178,7 +179,44 @@ void Stepper::install_writers(const nativecfg::WriterConfig &config) {
     }
 }
 
+void Stepper::install_spatial_tire(const bike::spatial::Config& config,
+    std::shared_ptr<const bike::terrain::Terrain3dSource> terrain,
+    bike::pneumatic3d::Pneumatic3dSpec spec,
+    bike::pneumatic3d::TyreStateIdentity3d identity) {
+    require_healthy();
+    if(config.mode!=bike::spatial::Mode::spatial3d || !terrain)
+        throw std::invalid_argument("stepper.spatial.tire: spatial configuration and terrain required");
+    if(has_tire() || has_spatial_tire())
+        throw std::invalid_argument("stepper.spatial.tire: a contact producer is already installed");
+    const auto topology=bike::spatial::bind_topology(*m_,config);
+    if(identity.topology_fingerprint_hex!=topology.fingerprint_hex ||
+       identity.terrain_sha256_hex!=terrain->fingerprint_hex() ||
+       identity.calibration_sha256_hex!=config.tyre.lateral_coefficients_sha256)
+        throw std::invalid_argument("stepper.spatial.tire.identity: differs from bound owners");
+    auto producer=std::make_unique<bike::pneumatic3d::Pneumatic3dTireWriter>(
+        *m_,topology,std::move(spec),*terrain,std::move(identity));
+    auto initial=producer->state();
+    // All validation/allocation is complete before the ownership commit.
+    initial_spatial_tire_.emplace(std::move(initial));
+    spatial_terrain_=std::move(terrain);
+    spatial_tire_=std::move(producer);
+}
+
+bike::pneumatic3d::Pneumatic3dTireWriter& Stepper::spatial_tire_writer() const {
+    require_healthy();
+    if(!spatial_tire_)
+        throw std::invalid_argument("bootstrap.spatial.tire: producer state missing");
+    return *spatial_tire_;
+}
+
+void Stepper::restore_spatial_tire(const bike::pneumatic3d::TyreState3d& state) {
+    auto& producer=spatial_tire_writer();
+    if(producer.restore(state)!=CoreStatus::ok)
+        throw std::invalid_argument("bootstrap.spatial.tire: producer state rejected");
+}
+
 Stepper::~Stepper() {
+    spatial_tire_.reset();
     rider_contacts_.reset();
     drive_.reset();
     if (d_) mj_deleteData(d_);
@@ -300,6 +338,8 @@ void Stepper::reset() {
         if (tire_) tire_->reset();
         if (distributed_tire_) distributed_tire_->reset();
         if (pneumatic_tire_) pneumatic_tire_->reset();
+        if (spatial_tire_ && spatial_tire_->restore(*initial_spatial_tire_) != CoreStatus::ok)
+            throw std::invalid_argument("stepper.spatial.tire: initial producer state rejected");
         if (cruise_) cruise_->reset();
         // reset(model, data) on the post-forward pose — re-anchors grips and
         // revalidates the planar support topology like the oracle applier.
@@ -583,6 +623,18 @@ void Stepper::set_state(std::span<const double> qpos,
     check_finite(qvel, "set_state", "qvel");
     check_finite(act, "set_state", "act");
     check_finite(warmstart, "set_state", "warmstart");
+    for (int joint=0; joint<m_->njnt; ++joint) {
+        const int type=m_->jnt_type[joint];
+        if(type!=mjJNT_FREE && type!=mjJNT_BALL) continue;
+        const auto start=static_cast<std::size_t>(m_->jnt_qposadr[joint])+
+            (type==mjJNT_FREE?3U:0U);
+        if(start>qpos.size() || qpos.size()-start<4)
+            throw std::invalid_argument("set_state.qpos.quaternion: span escapes model");
+        const double norm=std::hypot(std::hypot(qpos[start],qpos[start+1]),
+            std::hypot(qpos[start+2],qpos[start+3]));
+        if(std::abs(norm-1.)>1e-9)
+            throw std::invalid_argument("set_state.qpos.quaternion: expected unit quaternion");
+    }
     validation::nonnegative(time, "set_state.time");
     // Callers may pass our own views, including cross-buffer aliases (e.g.
     // qacc as warmstart). Snapshot EVERY input before resetting any mjData
@@ -612,6 +664,8 @@ void Stepper::set_state(std::span<const double> qpos,
             if (tire_) tire_->reset();
             if (distributed_tire_) distributed_tire_->reset();
             if (pneumatic_tire_) pneumatic_tire_->reset();
+            if (spatial_tire_ && spatial_tire_->restore(*initial_spatial_tire_) != CoreStatus::ok)
+                throw std::invalid_argument("stepper.spatial.tire: initial producer state rejected");
             if (cruise_) cruise_->reset();
             if (rider_contacts_) rider_contacts_->reset(d_);
         } catch (...) {

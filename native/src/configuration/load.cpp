@@ -706,17 +706,40 @@ SimulationPhysicsConfig construct_simulation(const Value& values) {
         // removing only its owned keys from the unchanged legacy decoder.
         // That decoder still rejects every unknown legacy/nested field.
         auto extension = bike::spatial::parse_spatial_config(values);
+        std::optional<std::string> shoulder_path, shoulder_digest;
         Value::Object legacy;
         legacy.reserve(obj->size());
         for (const auto& [key, value] : *obj) {
             if (key == "spatial" || key == "spatial_3d") continue;
-            if (key == "tires" && tire_object != nullptr) {
+            if (key == "resistance" && extension.mode == bike::spatial::Mode::spatial3d) {
+                // Spatial vectors are still decoded by the same strict
+                // schema, but their Y component belongs to the spatial
+                // parent. The legacy child constructor has no mode context.
+                const auto* resistance = std::get_if<Value::Object>(&value.data);
+                if (resistance == nullptr)
+                    construct_error("ResistanceConfig requires a TOML table");
+                decode_record(detail::kResistanceConfigSchema, *resistance,
+                              &config.resistance, "resistance");
+                detail::post_init(config.resistance, true);
+            } else if (key == "tires" && tire_object != nullptr) {
                 Value::Object tires;
                 tires.reserve(tire_object->size());
                 for (const auto& [tire_key, tire_member] : *tire_object)
                     if (tire_key != "pneumatic_3d")
                         tires.emplace_back(tire_key, tire_member);
                 legacy.emplace_back(key, Value{.data = std::move(tires)});
+            } else if (key == "articulated" && std::holds_alternative<Value::Object>(value.data)) {
+                Value::Object articulated;
+                for (const auto& [rider_key, rider_member] : std::get<Value::Object>(value.data)) {
+                    if (rider_key == "shoulder_profile" || rider_key == "shoulder_profile_sha256") {
+                        if (extension.mode != bike::spatial::Mode::spatial3d)
+                            construct_error("articulated." + rider_key + ": requires spatial='3d'");
+                        auto& target = rider_key == "shoulder_profile" ? shoulder_path : shoulder_digest;
+                        if (!io::is_null(rider_member))
+                            target = io::as_string(rider_member, "articulated." + rider_key);
+                    } else articulated.emplace_back(rider_key, rider_member);
+                }
+                legacy.emplace_back(key, Value{std::move(articulated)});
             } else {
                 legacy.emplace_back(key, value);
             }
@@ -725,6 +748,9 @@ SimulationPhysicsConfig construct_simulation(const Value& values) {
                       &config, "");
         if (extension.mode == bike::spatial::Mode::spatial3d)
             config.spatial = std::move(extension);
+        config.articulated.shoulder_profile = std::move(shoulder_path);
+        config.articulated.shoulder_profile_sha256 = std::move(shoulder_digest);
+        detail::post_init(config.articulated);
         post_init(config);
         return config;
     }

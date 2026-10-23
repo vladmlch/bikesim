@@ -34,6 +34,10 @@
 #include "../writers/drivetrain.hpp"
 #include "../writers/rider_contacts.hpp"
 #include "config.hpp"
+#include "../spatial/bootstrap_state.hpp"
+#include "../spatial/brake_state.hpp"
+#include "../spatial/topology.hpp"
+#include "../pneumatic3d/state.hpp"
 
 namespace runtime {
 
@@ -71,6 +75,26 @@ struct TireStateRow {
     std::vector<double> row;
 };
 
+// Causal owners share this record across capture, reset and initial-state
+// transfer. The tyre has one separate typed material owner, never a row cast.
+struct SpatialBootstrapState {
+    bike::spatial::RootKind root_kind = bike::spatial::RootKind::constrained4;
+    std::string topology_fingerprint;
+    std::string terrain_sha256;
+    std::string calibration_sha256;
+    bike::spatial::BootstrapPhase bootstrap_phase = bike::spatial::BootstrapPhase::settling;
+    bike::spatial::HoldState hold = bike::spatial::canonical_inactive_hold();
+    bike::spatial::BrakeState brake = bike::spatial::canonical_released_brake();
+    bike::spatial::SteerState steer = bike::spatial::canonical_inactive_steer();
+    bike::spatial::OutcomeState outcome = bike::spatial::canonical_unlatched_outcome();
+};
+
+[[nodiscard]] SpatialBootstrapState decode_spatial_bootstrap(const bike::io::Value&);
+[[nodiscard]] bike::io::Value encode_spatial_bootstrap(const SpatialBootstrapState&);
+void validate_schema_family(const RuntimeConfig&, int bootstrap_schema);
+void validate_spatial_identity(const RuntimeConfig&, const SpatialBootstrapState&,
+                               const bike::spatial::Topology&);
+
 struct BootstrapState {
     std::string model_digest;
     ModelDims model_dims;
@@ -94,6 +118,9 @@ struct BootstrapState {
     // Scalars the runtime itself consumes, lifted out of `runtime`.
     std::int64_t step = 0;
     int generation = 0;
+    int schema = kRuntimeSchema;
+    std::optional<SpatialBootstrapState> spatial;
+    std::optional<bike::pneumatic3d::TyreState3d> tire3d;
 };
 
 // Reads state.model_digest — validated presence + string type only. The

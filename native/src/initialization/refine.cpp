@@ -1,4 +1,5 @@
 #include "context.hpp"
+#include "spatial_equilibrium.hpp"
 #include "../engine_call.hpp"
 #include "../numerics/least_squares.hpp"
 #include "../runtime/step.hpp"
@@ -21,10 +22,15 @@ double refine_equilibrium(SetupContext& context,int max_evaluations,double accel
         throw std::invalid_argument("invalid equilibrium refinement budget or tolerance");
     auto& stepper=context.stepper;
     mjModel* m=stepper.model();mjData* d=stepper.data();
-    if(m->nq!=m->nv)throw std::invalid_argument("physical equilibrium requires scalar planar coordinates");
+    for(int joint=0;joint<m->njnt;++joint)
+        if(m->jnt_type[joint]!=mjJNT_HINGE && m->jnt_type[joint]!=mjJNT_SLIDE) {
+            if(context.topology)return spatial_refine(context,max_evaluations,acceleration_tolerance);
+            throw std::invalid_argument("equilibrium.refine: non-scalar joint requires spatial descriptor");
+        }
     const auto n=static_cast<std::size_t>(m->nv);
     const std::vector<double> q0(stepper.qpos().begin(),stepper.qpos().end());
-    const auto root_x=static_cast<std::size_t>(joint_address(context,"root_x").qpos);
+    const auto root_x=static_cast<std::size_t>(context.topology?
+        context.topology->root.scalar[0].dof_adr:joint_address(context,"root_x").dof);
     // NOLINTNEXTLINE(modernize-make-unique) make_unique's inlined forwarding path overflows the 8192-byte frame budget here
     const auto incoming_drive=std::unique_ptr<drivetrain::DriveSnapshot>{new drivetrain::DriveSnapshot(stepper.drive().state())};
     // NOLINTNEXTLINE(modernize-make-unique) same frame-budget constraint
@@ -39,8 +45,12 @@ double refine_equilibrium(SetupContext& context,int max_evaluations,double accel
     const auto dof_jnt=std::views::counted(m->dof_jntid,m->nv);
     const auto joint_type=std::views::counted(m->jnt_type,m->njnt);
     for(std::size_t i=0;i<n;++i)if(i!=root_x){
-        qids.push_back(i);x0.push_back(q0[i]);
-        scales.push_back(joint_type[static_cast<std::size_t>(dof_jnt[i])]==mjJNT_SLIDE?.05:.2);
+        const auto joint=static_cast<std::size_t>(dof_jnt[i]);
+        const auto qa=m->jnt_qposadr[joint],va=m->jnt_dofadr[joint];
+        if(qa<0 || qa>=m->nq || va<0 || va>=m->nv || static_cast<std::size_t>(va)!=i)
+            throw std::invalid_argument("equilibrium.refine: scalar joint span escapes model");
+        qids.push_back(static_cast<std::size_t>(qa));x0.push_back(q0[static_cast<std::size_t>(qa)]);
+        scales.push_back(joint_type[joint]==mjJNT_SLIDE?.05:.2);
     }
     if(stepper.has_tire()&&!stepper.tire_writer().is_pneumatic())
         for(std::size_t i=0;i<tire_names.size();++i)

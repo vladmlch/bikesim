@@ -51,6 +51,7 @@ struct ColumnLayout {
     std::size_t root_x_qpos = 0;
     std::size_t root_x_dof = 0;
     std::size_t root_pitch_qpos = 0;
+    bool spatial = false;
 };
 
 struct ConstraintSnapshot;

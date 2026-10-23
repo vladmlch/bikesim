@@ -311,12 +311,13 @@ namespace rider {
         // Newton third law then planarity, in that order, on the RIDER
         // wrench.
         void check_newton_and_planarity(std::span<const double> bike_wrench,
-                                        std::span<const double> rider_wrench) {
+                                        std::span<const double> rider_wrench, bool spatial = false) {
             const double scale = std::max(1., norm(first3(rider_wrench)));
             if (!all_close(bike_wrench, negated(rider_wrench), 1e-4,
                            1e-4 * scale))
                 throw std::invalid_argument(
                     "attachment wrenches fail Newton third law");
+            if (spatial) return;
             const std::array<double, 3> out_of_plane{
                 at(rider_wrench, 1), at(rider_wrench, 3),
                 at(rider_wrench, 5)};
@@ -390,6 +391,21 @@ namespace rider {
                                               "eq_type");
             const std::int64_t index = wrapped_index(eq_id, m->neq);
             if (types[static_cast<std::size_t>(index)] == mjEQ_CONNECT) {
+                const auto object_types = model_access::readonly_buffer(m->eq_objtype, m->neq, "eq_objtype");
+                if (object_types[static_cast<std::size_t>(index)] == mjOBJ_SITE) {
+                    const auto first = model_access::readonly_buffer(m->eq_obj1id, m->neq, "eq_obj1id");
+                    const auto second = model_access::readonly_buffer(m->eq_obj2id, m->neq, "eq_obj2id");
+                    const int site_a = first[static_cast<std::size_t>(index)], site_b = second[static_cast<std::size_t>(index)];
+                    model_access::require_id(site_a, m->nsite, "attachment.site1");
+                    model_access::require_id(site_b, m->nsite, "attachment.site2");
+                    const auto owner = model_access::readonly_buffer(m->site_bodyid, m->nsite, "site_bodyid");
+                    if (owner[static_cast<std::size_t>(site_a)] != body_rider || owner[static_cast<std::size_t>(site_b)] != body_bike)
+                        throw std::invalid_argument("attachment sites belong to different bodies");
+                    const auto points = model_access::readonly_buffer(d->site_xpos, 3*m->nsite, "site_xpos");
+                    const auto a = points.subspan(3*static_cast<std::size_t>(site_a),3);
+                    const auto b = points.subspan(3*static_cast<std::size_t>(site_b),3);
+                    return {{a[0],a[1],a[2]}, {b[0],b[1],b[2]}};
+                }
                 // A soft connect's force acts at each body's own
                 // compiled anchor — evaluating both bodies at the shared
                 // point would invent a moment from the anchor gap.
@@ -438,7 +454,8 @@ namespace rider {
         int body_bike, std::span<const double> point,
         std::span<const double> normal, std::string kind, bool rotational,
         double half_patch_m,
-        const std::optional<std::vector<double>> &pull_direction) {
+        const std::optional<std::vector<double>> &pull_direction,
+        const std::optional<bike::rider::SpatialSupportFrame>& spatial_frame) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
         const auto [rider_point, bike_point] =
             attachment_points(m, d, eq_id, body_rider, body_bike, point,
@@ -459,7 +476,7 @@ namespace rider {
             .kind = std::move(kind),
             .rotational = rotational,
             .half_patch_m = half_patch_m,
-            .pull_direction = pull_direction};
+            .pull_direction = pull_direction, .spatial_frame = spatial_frame};
     }
 
     AttachmentRaw attachment_raw_from_geometry(
@@ -488,7 +505,7 @@ namespace rider {
             if (!geometry.observable)
                 throw std::invalid_argument(
                     "in-plane attachment force is not observable");
-            check_newton_and_planarity(bike_wrench, rider_wrench);
+            check_newton_and_planarity(bike_wrench, rider_wrench, geometry.spatial_frame.has_value());
         }
         EqualityRowMap local_rows;
         const double gap_m = attachment_gap(
@@ -505,7 +522,7 @@ namespace rider {
             .rotational = geometry.rotational,
             .half_patch_m = geometry.half_patch_m,
             .gap_m = gap_m,
-            .pull_direction = geometry.pull_direction};
+            .pull_direction = geometry.pull_direction, .spatial_frame = geometry.spatial_frame};
     }
 
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional
@@ -517,7 +534,8 @@ namespace rider {
         std::span<const double> point, std::span<const double> normal,
         std::string kind, bool rotational, double half_patch_m,
         const std::optional<std::vector<double>> &pull_direction,
-        const EqualityRowMap *rows) {
+        const EqualityRowMap *rows,
+        const std::optional<bike::rider::SpatialSupportFrame>& spatial_frame) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
         reactions.equality_qfrc_into(d, eq_id, qfrc_scratch);
         const auto [rider_point, bike_point] =
@@ -546,7 +564,7 @@ namespace rider {
             .rotational = rotational,
             .half_patch_m = half_patch_m,
             .gap_m = gap_m,
-            .pull_direction = pull_direction};
+            .pull_direction = pull_direction, .spatial_frame = spatial_frame};
     }
 
     std::vector<double> recover_wrench(LeastSquaresWorkspace &workspace,
@@ -610,6 +628,20 @@ namespace rider {
         return out;
     }
 
+    DenseMatrix relative_spatial_jacobian(const mjModel* model, const mjData* data,
+        int body_a, int body_b, std::span<const double> point, bool rotational) {
+        if (point.size() != 3 || !all_finite(point) || body_a <= 0 || body_b <= 0 ||
+            body_a >= model->nbody || body_b >= model->nbody || body_a == body_b)
+            throw std::invalid_argument("spatial attachment: distinct bodies and finite 3D point required");
+        const Vec3 world{point[0],point[1],point[2]};
+        const auto a = body_jacobian(model,data,body_a,world);
+        const auto b = body_jacobian(model,data,body_b,world);
+        DenseMatrix out{.rows=rotational?6U:3U, .columns=a.columns, .values={}};
+        out.values.resize(out.rows*out.columns);
+        for (std::size_t i = 0; i < out.values.size(); ++i) out.values[i]=a.values[i]-b.values[i];
+        return out;
+    }
+
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional
     // args mirror the oracle's attachment_wrench call order.
     std::vector<double> attachment_wrench(
@@ -619,9 +651,14 @@ namespace rider {
         int eq_id, int body_a, int body_b, std::span<const double> point,
         bool rotational) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
-        const DenseMatrix jac =
-            relative_planar_jacobian(m, d, body_a, body_b, point,
-                                     rotational);
+        DenseMatrix jac;
+        if (mj_name2id(m, mjOBJ_JOINT, "rider_root_free") >= 0) {
+            const auto [pa,pb] = attachment_points(m,d,eq_id,body_a,body_b,point,rotational);
+            const auto a = body_jacobian(m,d,body_a,pa), b = body_jacobian(m,d,body_b,pb);
+            jac.rows=rotational?6U:3U; jac.columns=a.columns;
+            jac.values.resize(jac.rows*jac.columns);
+            for (std::size_t i=0; i<jac.values.size(); ++i) jac.values[i]=a.values[i]-b.values[i];
+        } else jac = relative_planar_jacobian(m, d, body_a, body_b, point, rotational);
         reactions.equality_qfrc_into(d, eq_id, qfrc_scratch);
         return recover_wrench(workspace, jac, qfrc_scratch);
     }
@@ -662,7 +699,8 @@ namespace rider {
         std::span<const double> point, std::span<const double> normal,
         const std::string &kind, bool rotational, double half_patch_m,
         const std::optional<std::vector<double>> &pull_direction,
-        const EqualityRowMap *rows) {
+        const EqualityRowMap *rows,
+        const std::optional<bike::rider::SpatialSupportFrame>& spatial_frame) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
         reactions.equality_qfrc_into(d, eq_id, qfrc_scratch);
         const auto [rider_point, bike_point] =
@@ -677,10 +715,12 @@ namespace rider {
         if (shares_support(rider.columns, bike.columns))
             throw std::invalid_argument(
                 "attachment bodies share kinematic support");
-        check_newton_and_planarity(bike.wrench, rider.wrench);
+        check_newton_and_planarity(bike.wrench, rider.wrench, spatial_frame.has_value());
         EqualityRowMap local_rows;
         const double gap_m = attachment_gap(
             d, attachment_index(d, reactions, rows, eq_id, local_rows));
+        if (spatial_frame) return decompose_spatial_wrench(rider.wrench, *spatial_frame,
+            kind, rotational, half_patch_m, gap_m, pull_direction);
         return decompose_wrench(rider.wrench, normal, kind, rotational,
                                 half_patch_m, gap_m, pull_direction);
     }
@@ -739,5 +779,28 @@ namespace rider {
                                 .gap_m = gap_m,
                                 .pull_n = pull_n,
                                 .half_patch_m = half_patch_m};
+    }
+    AttachmentSample decompose_spatial_wrench(std::span<const double> wrench,
+        const bike::rider::SpatialSupportFrame& frame, const std::string& kind,
+        bool rotational, double half_patch_m, double gap_m,
+        const std::optional<std::vector<double>>& pull_direction) {
+        if (!frame.valid || wrench.size() != 6 || !all_finite(wrench))
+            throw std::invalid_argument("spatial attachment: finite 6D wrench and support frame required");
+        const auto project = [&](std::size_t offset, const Vec3& axis) {
+            return wrench[offset]*axis[0]+wrench[offset+1]*axis[1]+wrench[offset+2]*axis[2];
+        };
+        const double normal = project(0,frame.normal_world);
+        const double shear = std::hypot(project(0,frame.tangent_x_world), project(0,frame.tangent_y_world));
+        const double moment = rotational ? std::hypot(project(3,frame.tangent_x_world),project(3,frame.tangent_y_world)) : 0.;
+        double pull = 0.;
+        if (pull_direction) {
+            if (pull_direction->size() != 3 || !all_finite(*pull_direction) || norm(*pull_direction) <= 1e-12)
+                throw std::invalid_argument("spatial attachment: finite nonzero pull direction required");
+            const auto& axis = *pull_direction;
+            if (-(wrench[0]*axis[0]+wrench[1]*axis[1]+wrench[2]*axis[2]) > 0.)
+                pull = std::hypot(wrench[0],wrench[1],wrench[2]);
+        }
+        return {.kind=kind, .normal_n=normal, .tangent_n=shear, .moment_nm=moment,
+            .gap_m=gap_m, .pull_n=pull, .half_patch_m=half_patch_m};
     }
 } // namespace rider

@@ -3,6 +3,9 @@
 #include "configuration/load.hpp"
 #include "configuration/wire_decode.hpp"
 #include "platform/files.hpp"
+#include "terrain/asset3d.hpp"
+#include "terrain/generator3d.hpp"
+#include <sys/stat.h>
 #include <algorithm>
 #include <toml++/toml.hpp>
 #include <algorithm>
@@ -111,14 +114,20 @@ std::optional<std::string> integer_seed_token(std::string_view token){
     const auto first=decimal.find_first_not_of('0');decimal=first==std::string::npos?"0":decimal.substr(first);
     return negative&&decimal!="0"?"-"+decimal:decimal;
 }
-std::string read_track_text(const std::filesystem::path& path){
+std::string read_track_text(const std::filesystem::path& path,std::uint64_t limit=bike::io::kMaxJsonBytes){
+    if(limit==0 || limit>static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+        throw TrackFileError("spatial_3d.terrain.max_asset_bytes: outside supported range");
+    limit=std::min(limit,static_cast<std::uint64_t>(bike::io::kMaxJsonBytes));
     auto handle=bike::platform::open_regular(path);std::string out;std::array<char,4096> buffer{};
     for(;;){
         const auto n=::read(handle.get(),buffer.data(),buffer.size());
         if(n<0){if(errno==EINTR)continue;throw std::system_error(errno,std::generic_category(),"read track");}
         if(n==0)break;
         const auto count=static_cast<std::size_t>(n);
-        if(count>bike::io::kMaxJsonBytes-out.size())throw TrackFileError("track document exceeds the 512 MiB input limit");
+        if(count>static_cast<std::size_t>(limit)-out.size())
+            throw TrackFileError(limit==static_cast<std::uint64_t>(bike::io::kMaxJsonBytes)
+                ? "track document exceeds the 512 MiB input limit"
+                : "track document exceeds its input byte limit");
         const auto chunk=std::span(buffer).first(count);out.append(chunk.begin(),chunk.end());
     }handle.close();return out;
 }
@@ -388,6 +397,8 @@ std::vector<Obstacle> carve_roughness(std::vector<Obstacle> obstacles){
     defects.insert(defects.end(),carved.begin(),carved.end());std::ranges::stable_sort(defects,order);return defects;
 }
 TrackSpec track_from_dict(const Value& data,std::optional<std::string> seed,std::optional<double> length){
+    if (detail::member(data,"terrain3d"))
+        throw TrackFileError("terrain3d: a spatial document requires load_terrain3d_source; a planar TrackSpec cannot own it");
     const auto* name=detail::member(data,"name");if(!name||!std::holds_alternative<std::string>(name->data)||bike::io::as_string(*name,"name").empty())throw TrackFileError("track file needs a non-empty 'name'");
     const auto* length_value=detail::member(data,"length_m");const double size=length?*length:length_value?float_value(*length_value,"length_m"):0.;
     if(!std::isfinite(size)||size<=0.)throw TrackFileError("track file needs a positive 'length_m'");
@@ -435,4 +446,148 @@ std::string dump_track(const TrackSpec& track){
 std::filesystem::path save_track(const TrackSpec& track,const std::filesystem::path& path){
     const auto text=dump_track(track);std::ofstream file;file.exceptions(std::ios::badbit|std::ios::failbit);file.open(path,std::ios::binary|std::ios::trunc);file.write(text.data(),static_cast<std::streamsize>(text.size()));file.close();return path;
 }
+
+namespace detail {
+namespace {
+Value spatial_document(const std::filesystem::path& path,std::uint64_t limit) {
+    const auto text = read_track_text(path,limit);
+    const auto first = text.find_first_not_of(" \r\n\t");
+    return first != std::string::npos && text[first] == '{' ? bike::io::parse_json(text) : parse_track_toml(text,path.string());
+}
+std::vector<std::byte> read_spatial_bytes(const std::filesystem::path& path, std::uint64_t limit) {
+    if (limit == 0 || limit > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()) ||
+        limit > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+        throw TrackFileError("spatial_3d.terrain.max_asset_bytes: outside supported range");
+    auto file = bike::platform::open_regular(path);
+    struct stat stat{};
+    if (::fstat(file.get(), &stat) != 0) throw std::system_error(errno,std::generic_category(),"terrain3d fstat");
+    if (stat.st_size < 0 || static_cast<std::uint64_t>(stat.st_size) > limit)
+        throw TrackFileError("spatial_3d.terrain.path: file exceeds max_asset_bytes");
+    std::vector<std::byte> out;
+    out.reserve(static_cast<std::size_t>(stat.st_size));
+    std::array<std::byte, 65536> buffer{};
+    for (;;) {
+        const auto count = ::read(file.get(), buffer.data(), buffer.size());
+        if (count < 0) { if (errno == EINTR) continue; throw std::system_error(errno,std::generic_category(),"read terrain3d"); }
+        if (count == 0) break;
+        const auto size = static_cast<std::size_t>(count);
+        if (size > static_cast<std::size_t>(limit) - out.size())
+            throw TrackFileError("spatial_3d.terrain.path: file grew beyond max_asset_bytes");
+        out.insert(out.end(), buffer.begin(), buffer.begin() + static_cast<std::ptrdiff_t>(size));
+    }
+    file.close();
+    return out;
+}
+}
+
+static Track3dSpec load_track3d_spec_limited(const std::filesystem::path& path,std::uint64_t limit) {
+    auto document = spatial_document(path,limit);
+    (void)bike::io::as_object(document,"terrain3d.document");
+    auto& object = std::get<Value::Object>(document.data);
+    auto base = std::ranges::find_if(object, [](const auto& entry) { return entry.first == "base_track"; });
+    if (base == object.end()) throw TrackFileError("terrain3d.base_track: required");
+    if (const auto* relative = std::get_if<std::string>(&base->second.data)) {
+        if (relative->empty() || relative->find('\0') != std::string::npos)
+            throw TrackFileError("terrain3d.base_track: invalid path");
+        const std::filesystem::path declared(*relative);
+        const auto resolved = declared.is_absolute() ? declared : path.parent_path() / declared;
+        base->second = spatial_document(resolved.lexically_normal(),limit);
+        if (bike::io::find_member(bike::io::as_object(base->second,"terrain3d.base_track"),"terrain3d"))
+            throw TrackFileError("terrain3d.base_track: nested spatial genspec is not a longitudinal base");
+    }
+    return read_track3d_spec(document);
+}
+
+Track3dSpec load_track3d_spec(const std::filesystem::path& path) {
+    return load_track3d_spec_limited(path,bike::io::kMaxJsonBytes);
+}
+
+static ProfileExtrusion3d load_profile_extrusion3d_limited(const std::filesystem::path& path, double half_width, double resolution,std::uint64_t limit) {
+    const auto text = read_track_text(path,limit);
+    const auto document = parse_track_toml(text,path.string());
+    const auto track = track_from_dict(document);
+    const auto vertices = profile(track,resolution);
+    std::vector<double> x, z;
+    x.reserve(vertices.size()); z.reserve(vertices.size());
+    for (const auto& point : vertices) { x.push_back(point[0]); z.push_back(point[1]); }
+    const auto mapping = track.surface_map();
+    const auto source_surfaces = mapping.surfaces();
+    std::vector<SurfaceSpec3d> surfaces;
+    for (std::size_t i = 0; i < source_surfaces.size(); ++i) {
+        const auto& source = source_surfaces[i];
+        surfaces.push_back({static_cast<std::uint32_t>(i + 1),source.name,source.mu_peak,source.mu_slide,
+            source.slip_stiffness_per_load,source.stribeck_speed_mps,source.description});
+    }
+    std::vector<std::uint32_t> ids;
+    ids.reserve(vertices.size() - 1);
+    for (std::size_t i = 0; i + 1 < vertices.size(); ++i) {
+        const auto& surface = mapping.at(vertices[i][0]);
+        const auto entry = std::ranges::find_if(surfaces,[&](const auto& value) { return value.name == surface.name; });
+        if (entry == surfaces.end()) throw TrackFileError("terrain3d.extrusion.surface: unresolved legacy surface");
+        ids.push_back(entry->id);
+    }
+    auto extrusion = ProfileExtrusion3d::create(std::move(x),std::move(z),std::move(ids),std::move(surfaces),half_width,
+        Value{Value::Object{{"resolved_track",document},{"source_utf8",Value{text}},{"resolution_m",number(resolution)}}});
+    if (!extrusion) throw TrackFileError(extrusion.error());
+    return std::move(*extrusion);
+}
+
+ProfileExtrusion3d load_profile_extrusion3d(const std::filesystem::path& path,double half_width,double resolution) {
+    return load_profile_extrusion3d_limited(path,half_width,resolution,bike::io::kMaxJsonBytes);
+}
+
+std::shared_ptr<const Terrain3dSource> load_terrain3d_source(const bike::spatial::TerrainRequest3d& request) {
+    using Kind = bike::spatial::TerrainRequestKind;
+    if (request.kind == Kind::none) throw TrackFileError("spatial_3d.terrain: required");
+    if (request.path.empty() || request.path.string().find('\0') != std::string::npos)
+        throw TrackFileError("spatial_3d.terrain.path: required path without NUL");
+    positive(request.corridor_half_width_m,"spatial_3d.terrain.corridor_half_width_m");
+    if(request.max_asset_bytes==0 || request.max_asset_bytes>static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()))
+        throw TrackFileError("spatial_3d.terrain.max_asset_bytes: outside supported range");
+    if (request.dx_m) positive(*request.dx_m,"spatial_3d.terrain.dx_m");
+    if (request.dy_m) positive(*request.dy_m,"spatial_3d.terrain.dy_m");
+    std::shared_ptr<const Terrain3dSource> owner;
+    switch (request.kind) {
+    case Kind::grid_asset: {
+        if (request.dx_m || request.dy_m) throw TrackFileError("spatial_3d.terrain: grid overrides cannot modify an immutable asset");
+        const auto payload = read_spatial_bytes(request.path,request.max_asset_bytes);
+        auto grid = read_terrain3d(payload,{request.max_asset_bytes,100'000'000});
+        if (!grid) throw TrackFileError(grid.error());
+        owner = std::make_shared<const Terrain3dSource>(std::move(*grid));
+        break;
+    }
+    case Kind::genspec: {
+        auto spec = load_track3d_spec_limited(request.path,request.max_asset_bytes);
+        if (request.dx_m) spec.dx_m = *request.dx_m;
+        if (request.dy_m) spec.dy_m = *request.dy_m;
+        if (spec.half_width_m != request.corridor_half_width_m)
+            throw TrackFileError("spatial_3d.terrain.corridor_half_width_m: genspec mismatch");
+        const auto base = track_from_dict(spec.base_track_spec);
+        const double nx = std::floor(base.length_m / spec.dx_m) + 1.;
+        const double ny = std::floor(2. * spec.half_width_m / spec.dy_m) + 1.;
+        const double minimum_bytes = 112. + 8. * nx * ny + 4. * (nx - 1.) * (ny - 1.);
+        if (!std::isfinite(minimum_bytes) || minimum_bytes > static_cast<double>(request.max_asset_bytes))
+            throw TrackFileError("spatial_3d.terrain.max_asset_bytes: generated payload exceeds limit");
+        auto grid = generate_grid3d(spec);
+        if (write_terrain3d(grid).size() > request.max_asset_bytes)
+            throw TrackFileError("spatial_3d.terrain.max_asset_bytes: generated canonical asset exceeds limit");
+        owner = std::make_shared<const Terrain3dSource>(std::move(grid));
+        break;
+    }
+    case Kind::profile_extrusion:
+        if (request.dy_m) throw TrackFileError("spatial_3d.terrain.dy_m: exact profile extrusion has no lateral sampling interval");
+        owner = std::make_shared<const Terrain3dSource>(load_profile_extrusion3d_limited(request.path,
+            request.corridor_half_width_m,request.dx_m.value_or(DEFAULT_RESOLUTION_M),request.max_asset_bytes));
+        break;
+    case Kind::none: throw TrackFileError("spatial_3d.terrain: required");
+    default: throw TrackFileError("spatial_3d.terrain.kind: invalid request kind");
+    }
+    if (owner->half_width_m() != request.corridor_half_width_m)
+        throw TrackFileError("spatial_3d.terrain.corridor_half_width_m: asset mismatch");
+    if (const auto* grid = owner->grid(); grid && (grid->descriptor().y0_m != -request.corridor_half_width_m ||
+        grid->y_max_m() != request.corridor_half_width_m))
+        throw TrackFileError("spatial_3d.terrain: grid must cover the centred corridor exactly");
+    return owner;
+}
+} // namespace detail
 } // namespace bike::terrain

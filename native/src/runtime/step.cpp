@@ -21,6 +21,7 @@
 #include "../drivetrain/pedaling.hpp"
 #include "../engine_call.hpp"
 #include "../numeric_sum.hpp"
+#include "../spatial/frames.hpp"
 #include "../rider/rider_posture.hpp"
 #include "../rider/response_codec.hpp"
 #include "value_readers.hpp"
@@ -230,6 +231,19 @@ double snapshot_axis_moment(const TireSnapshot &s) {
         const double moment = rz * f[0] - rx * f[2];
         acc.add(p.native_world_force_n || p.couple_world_nm[1] != 0.
             ? moment + p.couple_world_nm[1] : moment);
+    }
+    return acc.total();
+}
+double snapshot_axis_moment(const TireSnapshot& s,const bike::spatial::Vec3& axis) {
+    NeumaierSum acc;
+    for(const auto& p:s.patches) {
+        const auto force=patch_world_force(p);
+        const bike::spatial::Vec3 r{p.point_m[0]-s.wheel_axis_m[0],
+            p.point_m[1]-s.wheel_axis_m[1],p.point_m[2]-s.wheel_axis_m[2]};
+        const bike::spatial::Vec3 moment{r[1]*force[2]-r[2]*force[1]+p.couple_world_nm[0],
+            r[2]*force[0]-r[0]*force[2]+p.couple_world_nm[1],
+            r[0]*force[1]-r[1]*force[0]+p.couple_world_nm[2]};
+        acc.add(moment[0]*axis[0]+moment[1]*axis[1]+moment[2]*axis[2]);
     }
     return acc.total();
 }
@@ -680,7 +694,7 @@ double engine_passive_loss_power(const mjModel *model,
             continue;
         if (jtype[u] != mjJNT_HINGE && jtype[u] != mjJNT_SLIDE)
             throw std::invalid_argument(
-                "spring accounting requires scalar planar joints");
+                "spring accounting requires scalar hinge or slide joints");
         const int qa = qposadr[u], va = dofadr[u];
         force[static_cast<std::size_t>(va)] +=
             jstiff[u] *
@@ -1012,9 +1026,23 @@ PhysicalStep::PhysicalStep(
     drive_ctrl_adr_ = mj_name2id(m, mjOBJ_ACTUATOR, "rear_drive");
     cg_site_id_ = mj_name2id(m, mjOBJ_SITE, "site_CG");
     frame_body_ = mj_name2id(m, mjOBJ_BODY, "frame");
-    root_x_qposadr_ = joint_qposadr(m, "root_x");
-    root_x_dofadr_ = joint_dofadr(m, "root_x");
-    root_pitch_qposadr_ = joint_qposadr(m, "root_pitch");
+    if(config_.spatial) {
+        topology_=bike::spatial::bind_topology(*m,*config_.spatial);
+        if(!config_.terrain3d)
+            throw std::invalid_argument("runtime.spatial.terrain: physical source missing");
+        spatial_state_.emplace();
+        spatial_state_->root_kind=topology_->root.kind;
+        spatial_state_->topology_fingerprint=topology_->fingerprint_hex;
+        spatial_state_->terrain_sha256=config_.terrain3d->fingerprint_hex();
+        spatial_state_->calibration_sha256=config_.spatial->tyre.lateral_coefficients_sha256;
+        // FREE qpos and velocity spans have different widths. Legacy scalar
+        // addresses are invalid sentinels and never used on this branch.
+        root_x_qposadr_=root_x_dofadr_=root_pitch_qposadr_=-1;
+    } else {
+        root_x_qposadr_ = joint_qposadr(m, "root_x");
+        root_x_dofadr_ = joint_dofadr(m, "root_x");
+        root_pitch_qposadr_ = joint_qposadr(m, "root_pitch");
+    }
     shock_stroke_jnt_ = mj_name2id(m, mjOBJ_JOINT, "shock_stroke");
     crank_spin_qposadr_ = joint_qposadr(m, "crank_spin");
     crank_spin_dof_ = joint_dofadr(m, "crank_spin");
@@ -1078,6 +1106,41 @@ PhysicalStep::PhysicalStep(
     component_out_.assign(nv, 0.);
     mul_scratch_.assign(nv, 0.);
     measurement_decimation_ = config_.measurement_decimation;
+}
+
+double PhysicalStep::longitudinal_speed_mps() const {
+    if(!topology_)return stepper_->data()->qvel[root_x_dofadr_];
+    const auto pose=bike::spatial::body_pose(*stepper_->model(),*stepper_->data(),topology_->root);
+    auto heading=bike::spatial::rotate_body_to_world(pose.quat_world_from_body_wxyz,{1.,0.,0.});
+    const double length=std::hypot(heading[0],heading[1]);
+    // At a vertical heading there is no horizontal longitudinal axis.
+    // Keep the observable finite and expose its invalidity beside attitude.
+    if(length<=1e-12)return 0.;
+    return (heading[0]*pose.linear_velocity_world_mps[0]+
+            heading[1]*pose.linear_velocity_world_mps[1])/length;
+}
+double PhysicalStep::longitudinal_position_m() const {
+    if(!topology_)return stepper_->data()->qpos[root_x_qposadr_];
+    return bike::spatial::body_pose(*stepper_->model(),*stepper_->data(),topology_->root).position_world_m[0];
+}
+double PhysicalStep::root_pitch_rad() const {
+    if(!topology_)return stepper_->data()->qpos[root_pitch_qposadr_];
+    return bike::spatial::euler_zyx(bike::spatial::body_pose(
+        *stepper_->model(),*stepper_->data(),topology_->root).quat_world_from_body_wxyz).pitch_rad;
+}
+WireObject PhysicalStep::spatial_observation() const {
+    if(!topology_)return {};
+    const auto pose=bike::spatial::body_pose(*stepper_->model(),*stepper_->data(),topology_->root);
+    const auto attitude=bike::spatial::euler_zyx(pose.quat_world_from_body_wxyz);
+    const auto heading=bike::spatial::rotate_body_to_world(pose.quat_world_from_body_wxyz,{1.,0.,0.});
+    return {{"position_world_m",wire_vec3(pose.position_world_m)},
+        {"quat_world_from_body_wxyz",wire_array(pose.quat_world_from_body_wxyz)},
+        {"linear_velocity_world_mps",wire_vec3(pose.linear_velocity_world_mps)},
+        {"angular_velocity_world_rad_s",wire_vec3(pose.angular_velocity_world_rad_s)},
+        {"x_m",Wire(pose.position_world_m[0])}, {"lateral_displacement_m",Wire(pose.position_world_m[1])},
+        {"speed_mps",Wire(longitudinal_speed_mps())}, {"speed_valid",Wire(std::hypot(heading[0],heading[1])>1e-12)},
+        {"roll_rad",Wire(attitude.roll_rad)}, {"pitch_rad",Wire(attitude.pitch_rad)},
+        {"yaw_rad",Wire(attitude.yaw_rad)}, {"attitude_valid",Wire(attitude.valid)}};
 }
 
 // ---- forward/step deduplication ----------------------------------------
@@ -1331,8 +1394,7 @@ PhysicalStep::apply_forces_body(
         const drivetrain::TickInputs tick_inputs{
             .control = drive_control,
             .dt = dt,
-            .speed = buf(d->qvel, m->nv)[static_cast<std::size_t>(
-                root_x_dofadr_)],
+            .speed = longitudinal_speed_mps(),
             .sensed = sensed,
             .braking = braking,
             .active = active,
@@ -1546,9 +1608,10 @@ RawStep PhysicalStep::advance_body(
         const double t = d->time;
         std::vector<double> q = buffer_copy(d->qpos, m->nq);
         std::vector<double> v = buffer_copy(d->qvel, m->nv);
+        auto spatial_pre=spatial_observation();
         const bool braking = front > 0. || rear > 0.;
         const double hold = rollback_brake_demand(
-            buf(d->qvel, m->nv)[static_cast<std::size_t>(root_x_dofadr_)],
+            longitudinal_speed_mps(),
             &control);
         if (hold > 0.) {
             front = std::max(front, hold);
@@ -1629,7 +1692,8 @@ RawStep PhysicalStep::advance_body(
                            .mass0 = std::move(mass0),
                            .full = full,
                            .components = std::move(components),
-                           .warning_counts = warning_counts});
+                           .warning_counts = warning_counts,
+                           .spatial = std::move(spatial_pre)});
 }
 
 RawStep PhysicalStep::solve_tail(SolvedInputs in) {
@@ -1925,6 +1989,7 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         channels.emplace_back("suspension", Wire(std::move(suspension)));
         channels.emplace_back("sensors", Wire(sensors));
         channels.emplace_back("mass", Wire(mass0));
+        if(topology_)channels.emplace_back("spatial",Wire(std::move(in.spatial)));
         if (contact_crash.has_value())
             channels.emplace_back("contact_crash_cause",
                                   Wire(*contact_crash));
@@ -2030,9 +2095,9 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
                 .cause = *contact_crash,
                 .time_s = t,
                 .position_m =
-                    q[static_cast<std::size_t>(root_x_qposadr_)],
+                    topology_?longitudinal_position_m():q[static_cast<std::size_t>(root_x_qposadr_)],
                 .pitch_rad =
-                    q[static_cast<std::size_t>(
+                    topology_?root_pitch_rad():q[static_cast<std::size_t>(
                         root_pitch_qposadr_)]});
         crash_detector_.check(d, contacts_);
         update_compiled_com_marker();
@@ -2228,8 +2293,24 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
                        : contact_query_.rear_id)]);
         const auto jac =
             point_jacobian(m, d, body, s.wheel_axis_m);
-        const double omega =
+        double omega =
             dot(std::span<const double>(jac.jr).subspan(nv, nv), qvel);
+        double relative_omega=qvel[static_cast<std::size_t>(wheel_spin_dofs_[i])];
+        bike::spatial::Vec3 axle{0.,1.,0.};
+        if(topology_) {
+            const auto& wheel=topology_->wheels[i];
+            const auto qa=static_cast<std::size_t>(wheel.hub_body_id)*4;
+            axle=bike::spatial::rotate_body_to_world(
+                {d->xquat[qa],d->xquat[qa+1],d->xquat[qa+2],d->xquat[qa+3]},wheel.axle_axis_hub);
+            const auto hub_jac=point_jacobian(m,d,wheel.hub_body_id,s.wheel_axis_m);
+            bike::spatial::Vec3 child{},parent{};
+            for(std::size_t a=0;a<3;++a) {
+                child[a]=dot(std::span<const double>(jac.jr).subspan(a*nv,nv),qvel);
+                parent[a]=dot(std::span<const double>(hub_jac.jr).subspan(a*nv,nv),qvel);
+            }
+            omega=child[0]*axle[0]+child[1]*axle[1]+child[2]*axle[2];
+            relative_omega=bike::spatial::axis_rate(child,parent,axle);
+        }
         const std::array<double, 3> velocity = {
             dot(std::span<const double>(jac.jp).subspan(0, nv), qvel),
             dot(std::span<const double>(jac.jp).subspan(nv, nv), qvel),
@@ -2309,11 +2390,10 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
         wire_set(side, "effective_radius_m", Wire(s.effective_radius_m));
         wire_set(side, "wheel_axis_m", wire_vec3(s.wheel_axis_m));
         wire_set(side, "wheel_axis_moment_nm",
-                 Wire(snapshot_axis_moment(s)));
+                 Wire(topology_?snapshot_axis_moment(s,axle):snapshot_axis_moment(s)));
         wire_set(side, "omega_abs_rad_s", Wire(omega));
         wire_set(side, "omega_rel_rad_s",
-                 Wire(qvel[static_cast<std::size_t>(
-                     wheel_spin_dofs_[i])]));
+                 Wire(relative_omega));
         wire_set(side, "slip_mps", Wire(slip));
         wire_set(side, "slip_ratio",
                  Wire(-slip / std::max(std::abs(roll_speed), .1)));
@@ -2369,7 +2449,8 @@ WireObject PhysicalStep::stored_terms() const {
     const auto qpos_spring = buf(m->qpos_spring, m->nq);
     for (int j = 0; j < m->njnt; ++j) {
         const std::size_t u = static_cast<std::size_t>(j);
-        if (jnt_stiff[u] == 0.)
+        if (jnt_stiff[u] == 0. ||
+            (m->jnt_type[j]!=mjJNT_HINGE && m->jnt_type[j]!=mjJNT_SLIDE))
             continue;
         const int qa = jnt_qposadr[u];
         const double q =
@@ -2558,12 +2639,11 @@ double PhysicalStep::loss_increment(
 WireObject PhysicalStep::balance_channel(double front, double rear,
                                        bool braking,
                                        bool rider_enabled) {
-    const mjModel *m = stepper_->model();
     const mjData *d = stepper_->data();
     balance_monitor_.update(
         d->time,
-        buf(d->qpos, m->nq)[static_cast<std::size_t>(root_x_qposadr_)],
-        buf(d->qvel, m->nv)[static_cast<std::size_t>(root_x_dofadr_)],
+        longitudinal_position_m(),
+        longitudinal_speed_mps(),
         rider_control_.has_value() && rider_enabled && front < .5 &&
             rear < .5 && !braking);
     return balance_monitor_.observation();
@@ -2724,12 +2804,38 @@ StepState PhysicalStep::state() const {
     s.energy = energy_;
     s.signals = intent_signals_;
     if (rider_control_.has_value())
-        s.rider_controller = rider_control_->state();
+        s.rider_controller = rider_control_->state(topology_?stepper_->data():nullptr);
     s.rider_intent = rider_intent_.state();
+    s.spatial=spatial_state_;
     return s;
 }
 
+SpatialBootstrapState PhysicalStep::prepare_spatial_state(const SpatialBootstrapState& state) const {
+    if(!topology_ || !config_.spatial || !config_.terrain3d)
+        throw std::invalid_argument("state.spatial: spatial owners are absent");
+    auto staged=decode_spatial_bootstrap(encode_spatial_bootstrap(state));
+    if(staged.root_kind!=topology_->root.kind ||
+       staged.topology_fingerprint!=topology_->fingerprint_hex ||
+       staged.terrain_sha256!=config_.terrain3d->fingerprint_hex() ||
+       staged.calibration_sha256!=config_.spatial->tyre.lateral_coefficients_sha256)
+        throw std::invalid_argument("state.spatial.identity: differs from live owners");
+    return staged;
+}
+
+void PhysicalStep::commit_spatial_state(SpatialBootstrapState&& state) noexcept {
+    spatial_state_=std::move(state);
+}
+
 void PhysicalStep::restore(const StepState &s) {
+    if(s.rider_controller && rider_control_) {
+        if(s.rider_controller->spatial.has_value()!=topology_.has_value())
+            throw std::invalid_argument("state.rider_controller.rider.spatial: topology/state family mismatch");
+        rider_control_->validate_state(*s.rider_controller);
+    }
+    if(s.spatial.has_value()!=topology_.has_value())
+        throw std::invalid_argument("state.spatial: topology/state family mismatch");
+    std::optional<SpatialBootstrapState> staged_spatial;
+    if(s.spatial)staged_spatial=prepare_spatial_state(*s.spatial);
     step_ = s.step;
     generation_ = s.generation;
     measurement_decimation_ = s.measurement_decimation;
@@ -2757,6 +2863,7 @@ void PhysicalStep::restore(const StepState &s) {
     if (s.rider_controller.has_value() && rider_control_.has_value())
         rider_control_->restore(*s.rider_controller);
     rider_intent_.restore(s.rider_intent);
+    spatial_state_=std::move(staged_spatial);
     // The interval-local captures are not wire-serialized (setup.py's
     // state inventory omits them): they repopulate on the first step
     // exactly like the oracle's first interval does.

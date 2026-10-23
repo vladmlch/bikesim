@@ -9,6 +9,10 @@ std::string generate_mjcf(const BuildRequest& request) {
     using namespace detail;
     auto physics=request.physics?
         std::make_unique<configuration::SimulationPhysicsConfig>(*request.physics):nullptr;
+    if(request.spatial && request.spatial->mode==bike::spatial::Mode::spatial3d) {
+        if(!physics) throw std::invalid_argument("spatial_3d: physical configuration required");
+        physics->spatial=request.spatial;
+    }
     if(physics) configuration::post_init(*physics);
     const bool physical=physics && physics->physics_mode=="physical";
     if(physical && request.mode!="ride") throw std::invalid_argument("physical configuration requires ride mode");
@@ -74,6 +78,7 @@ std::string generate_mjcf(const BuildRequest& request) {
             add_rider_actuators(root,context.physics->articulated);
             finish_rider_attachments(root,context);
         }
+        if(context.spatial()) finish_spatial_topology(root,context);
         finalize_geometric_transmission(root,*context.physics);
     }
     return xml::document(root);

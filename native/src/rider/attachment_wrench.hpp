@@ -33,6 +33,7 @@
 #include "contact_math.hpp"
 #include "equality_reactions.hpp"
 #include "least_squares.hpp"
+#include "spatial_support.hpp"
 
 namespace rider {
 
@@ -62,6 +63,7 @@ namespace rider {
         bool rotational = false;
         double half_patch_m = 0.;
         std::optional<std::vector<double>> pull_direction;
+        std::optional<bike::rider::SpatialSupportFrame> spatial_frame = std::nullopt;
     };
 
     // attachment_wrench.AttachmentRaw — every solved measurement input,
@@ -78,6 +80,7 @@ namespace rider {
         double half_patch_m = 0.;
         double gap_m = 0.;
         std::optional<std::vector<double>> pull_direction;
+        std::optional<bike::rider::SpatialSupportFrame> spatial_frame = std::nullopt;
     };
 
     // attachment_budget.AttachmentSample — the projected budget sample:
@@ -134,7 +137,8 @@ namespace rider {
         int body_rider, int body_bike, std::span<const double> point,
         std::span<const double> normal, std::string kind, bool rotational,
         double half_patch_m,
-        const std::optional<std::vector<double>> &pull_direction);
+        const std::optional<std::vector<double>> &pull_direction,
+        const std::optional<bike::rider::SpatialSupportFrame>& spatial_frame = std::nullopt);
 
     // attachment_raw_from_geometry — frozen jacobians/columns + current
     // qfrc/gap. `validate_wrench` controls the spatial block EXACTLY like
@@ -160,7 +164,8 @@ namespace rider {
         std::span<const double> normal, std::string kind, bool rotational,
         double half_patch_m,
         const std::optional<std::vector<double>> &pull_direction,
-        const EqualityRowMap *rows = nullptr);
+        const EqualityRowMap *rows = nullptr,
+        const std::optional<bike::rider::SpatialSupportFrame>& spatial_frame = std::nullopt);
 
     // recover_wrench — solve relative_jacobian^T w = qfrc; requires full
     // column rank of the TRANSPOSED matrix (rank == jac.rows) and an
@@ -180,6 +185,8 @@ namespace rider {
                              int body_a, int body_b,
                              std::span<const double> point,
                              bool rotational);
+    [[nodiscard]] DenseMatrix relative_spatial_jacobian(const mjModel*, const mjData*,
+        int body_a, int body_b, std::span<const double> point, bool rotational);
 
     // attachment_wrench — the solved planar wrench applied BY body_b ON
     // body_a at `point`.
@@ -216,7 +223,8 @@ namespace rider {
                       double half_patch_m,
                       const std::optional<std::vector<double>>
                           &pull_direction,
-                      const EqualityRowMap *rows = nullptr);
+                      const EqualityRowMap *rows = nullptr,
+                      const std::optional<bike::rider::SpatialSupportFrame>& spatial_frame = std::nullopt);
 
     // decompose_wrench — the support-frame projection producing an
     // AttachmentSample. `wrench` is indexed like a numpy vector
@@ -228,4 +236,8 @@ namespace rider {
                      double half_patch_m, double gap_m,
                      const std::optional<std::vector<double>>
                          &pull_direction);
+    [[nodiscard]] AttachmentSample decompose_spatial_wrench(
+        std::span<const double> wrench, const bike::rider::SpatialSupportFrame& frame,
+        const std::string& kind, bool rotational, double half_patch_m, double gap_m,
+        const std::optional<std::vector<double>>& pull_direction);
 } // namespace rider

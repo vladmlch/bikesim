@@ -2160,6 +2160,20 @@ native` container gate result is recorded below; pre-existing reds on
 this lane (unrelated files, per earlier sections) are baseline, not
 Task 3.11 scope.
 
+### Gate bookkeeping (2026-10-23, appended post-hoc)
+
+The sentence above announced a container `tools/run_tests.sh native`
+gate result "recorded below". It was never written — the original
+session was cut off before the gate ran or before its output was
+appended, and no result text exists to recover. No gate verdict is
+claimed here. What this section does record is per-node green proof
+for all three retained Linux nodes (container
+`bike-dev-python-free-cpp`: `3 passed in 4.93s`; macOS `native/build`:
+`3 passed in 9.61s`), re-confirmed at `fe4feaa` on linux-aarch64 by
+`migration/baseline-refresh-2026-10-23.md` (`3 passed in 20.97s`).
+The full `native` container gate therefore remains owed and is tracked
+for the next L2/L3 checkpoint.
+
 ## 2026-10-23 — Task 3.21a (lane/b) merge-back: numeric completion
 
 Merge of `lane/b` (`174686e` test port, `bc7f185` lint/frame blockers,

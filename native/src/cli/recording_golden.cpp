@@ -39,9 +39,10 @@ struct Arguments {
         if (found == options.end() || found->second.empty()) throw ParseError("missing --" + name);
         return found->second;
     }
-    std::string get(const std::string &name, std::string fallback) const {
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) named-option lookup; (name, fallback) order is the get-default idiom
+    std::string get(const std::string &name, const std::string &fallback) const {
         const auto found = options.find(name);
-        return found == options.end() ? std::move(fallback) : found->second;
+        return found == options.end() ? fallback : found->second;
     }
 };
 Arguments parse(std::span<const std::string_view> args) {
@@ -58,7 +59,8 @@ Arguments parse(std::span<const std::string_view> args) {
         if (!allowed.contains(key)) throw ParseError("unknown option --" + key);
         std::string value;
         if (equal == std::string_view::npos) {
-            if (++i == args.size() || args[i].starts_with("--")) throw ParseError("--" + key + " expects a value");
+            ++i;
+            if (i == args.size() || args[i].starts_with("--")) throw ParseError("--" + key + " expects a value");
             value = args[i];
         } else value = token.substr(equal + 1);
         if (!out.options.emplace(key, std::move(value)).second) throw ParseError("duplicate --" + key);

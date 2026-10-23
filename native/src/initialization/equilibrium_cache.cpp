@@ -66,6 +66,8 @@ struct Material {
     std::vector<std::string> tire_names;
     std::vector<double> tire_row;
 };
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<Material> current_material(const SetupContext& context){
     auto value=std::make_unique<Material>();value->drive=context.stepper.drive().state();
     if(context.stepper.has_tire()){value->tire_names=context.stepper.tire_state_names();value->tire_row=context.stepper.tire_state();}
@@ -73,6 +75,7 @@ std::unique_ptr<Material> current_material(const SetupContext& context){
     if(context.physical.rider_present())value->controller=context.physical.rider_control().state();
     return value;
 }
+NATIVE_DIAG_POP
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<Material> decode_material(const SetupContext& context,const StateFile& state){

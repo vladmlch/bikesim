@@ -1,6 +1,7 @@
 // Task 3.19: tests/reference/test_assist_controller.py, all 22 functions.
 // Constants and tolerances below are the source's analytic assertions.
 #include "drive_reference_support.hpp"
+#include "diag.hpp"
 #include "support/temporary_directory.hpp"
 #include "cli/application.hpp"
 #include "io/json.hpp"
@@ -146,6 +147,8 @@ void test_controller_rejects_invalid_parameters(const drivetrain::AssistConfig& 
     const auto array_mode = bike::io::parse_json(R"({"drive":{"assist":{"mode":[]}}})");
     bt::invalid([&] { (void)cfg::detail::construct_config(array_mode); });
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_assist_config_exposes_profile_torque_limit() {
     auto profile = drive_reference::turbo_source(); profile.max_torque = 1.;
     cfg::AssistConfig plain; plain.max_torque = 27.;
@@ -209,3 +212,4 @@ int main() { return bt::run([] {
     test_profile_controller_can_be_copied_for_read_only_force_probes(config);
     test_physical_cli_assist_selects_mode_without_replacing_the_toml_profile();
 }); }
+NATIVE_DIAG_POP

@@ -99,16 +99,35 @@ io::NpyArray optional_array(const io::NpzArchive &archive, std::string_view key,
     if (const auto *array = find(archive, key)) return *array;
     return io::double_array(std::span<const double>{}, std::move(shape));
 }
+// Data-bounded recursion over the decoded Value tree; each level consumes a
+// strictly smaller subtree.
+// NOLINTNEXTLINE(misc-no-recursion)
 void flatten(const Value &value, const std::string &path, Row &out) {
     if (const auto *object = std::get_if<Value::Object>(&value.data)) {
-        for (const auto &[name, child] : *object) flatten(child, path.empty() ? name : path + '.' + name, out);
+        for (const auto &[name, child] : *object) {
+            std::string next = path;
+            if (!next.empty()) next += '.';
+            next += name;
+            flatten(child, next, out);
+        }
     } else if (const auto *array = std::get_if<Value::Array>(&value.data)) {
-        for (std::size_t i = 0; i < array->size(); ++i) flatten((*array)[i], path + '.' + std::to_string(i), out);
+        for (std::size_t i = 0; i < array->size(); ++i) {
+            std::string next = path;
+            next += '.';
+            next += std::to_string(i);
+            flatten((*array)[i], next, out);
+        }
     } else set(out, path, scalar(value));
 }
+// NOLINTNEXTLINE(misc-no-recursion)
 void flatten_storage(const Value &value, const std::string &path, Value::Object &out) {
     if (const auto *object = std::get_if<Value::Object>(&value.data)) {
-        for (const auto &[name, child] : *object) flatten_storage(child, path.empty() ? name : path + '.' + name, out);
+        for (const auto &[name, child] : *object) {
+            std::string next = path;
+            if (!next.empty()) next += '.';
+            next += name;
+            flatten_storage(child, next, out);
+        }
     } else set(out, path, value);
 }
 std::optional<double> numeric(const Leaf &leaf) {
@@ -432,7 +451,7 @@ std::vector<std::string> compare_rows(const std::vector<Row> &golden,
                 " golden=" + display(a) + " candidate=" + display(b));
         }
         // Python stops after a whole row once there are more than 50 diffs.
-        if (differences.size() > 50) { differences.push_back("…truncated"); break; }
+        if (differences.size() > 50) { differences.emplace_back("…truncated"); break; }
     }
     return differences;
 }

@@ -14853,7 +14853,7 @@
         {
           "bytes": 23378,
           "path": "initial_state/welded_flat.json",
-          "sha256": "b144ab3a96a34756e49a35a9a1e7d51dd11fbcd1bbb11066e05607350174c184"
+          "sha256": "5440b82ab3476629a0e279eafad86fd3646ca1504d3c94b7a5b7474526e04d51"
         }
       ],
       "group": "bootstrap",

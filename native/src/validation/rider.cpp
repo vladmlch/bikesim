@@ -1,4 +1,5 @@
 #include "mechanics.hpp"
+#include "../diag.hpp"
 #include "../rider/state_codec.hpp"
 #include "../writers/rider_contacts.hpp"
 #include <numbers>
@@ -58,6 +59,8 @@ Momentum system_momentum(const mjModel* m,const mjData* d) {
     return out;
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 RigResult momentum_rig(double dt,bool active,std::string_view transmission,std::optional<bool> rider_active) {
     const bool enabled=rider_active.value_or(active);const auto bike=momentum_bike(dt,transmission);
     auto* m=bike->model();auto* d=bike->data();auto rider=controller(*bike);rider->initialize(d);
@@ -92,6 +95,7 @@ RigResult momentum_rig(double dt,bool active,std::string_view transmission,std::
         bounds({{"impulse_residual_ratio",0.,.001},{"angular_residual_ratio",0.,.001},{"shaft_power_identity_error_w",0.,1e-10},{"root_actuator_force_n",0.,0.},{"ground_contact_count",0.,0.},
             {"peak_motor_torque_nm",active?1e-8:0.,active?20.:0.},{"motor_shaft_work_j",active?1e-8:0.,active?inf:0.}})};
 }
+NATIVE_DIAG_POP
 
 RigResult airborne_internal_actuation(double dt) {
     const auto bike=airborne_bike(dt);auto* m=bike->model();auto* d=bike->data();auto rider=controller(*bike);rider->initialize(d);

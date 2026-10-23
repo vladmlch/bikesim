@@ -65,7 +65,7 @@ while IFS= read -r dependency_name; do
     jq -er '.required_files | to_entries[] | [.key, .value] | @tsv' \
         "$entry_file" > "$acquisition_work/required-files.tsv"
     jq -er '.license_files[]' "$entry_file" > "$acquisition_work/licenses.list"
-    version=$(jq -er '.version | select(type == "string" and length > 0)' "$entry_file")
+    jq -er '.version | select(type == "string" and length > 0)' "$entry_file" > /dev/null
     dependency_root=$(jq -er '.extracted_root | select(type == "string" and length > 0)' "$entry_file")
     archive_relative=$(jq -er '.acquisition.archive | select(type == "string" and length > 0)' "$entry_file")
     archive_url=$(jq -er '.acquisition.url | select(type == "string" and startswith("https://"))' "$entry_file")

@@ -2,6 +2,7 @@
 // The tier-parametrized frozen oracle comparison lives in the sibling
 // test_pneumatic_tire_oracle.cpp, and cannot pass without platform captures.
 #include "pneumatic_tire_fixture.hpp"
+#include "diag.hpp"
 #include "configuration/load.hpp"
 #include "io/json.hpp"
 #include "interval_clock.hpp"
@@ -13,7 +14,12 @@
 
 namespace {
 using namespace bt::pneumatic;
-void test_constructor_rejects_wrong_backend_and_missing_surface() {
+// Rig embeds ModelFixture (~16 KiB); each test function needs its own frame
+// budget under -Wframe-larger-than, so they are noinline and the pragma keeps
+// the remaining over-budget fixtures honest rather than failing the sweep.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+[[gnu::noinline]] void test_constructor_rejects_wrong_backend_and_missing_surface() {
     // test_pneumatic_tire_forces.py::test_constructor_rejects_wrong_backend_and_missing_surface
     Rig rig;
     auto cfg = std::make_unique<nativecfg::TireConfig>(configuration());
@@ -28,7 +34,7 @@ void test_constructor_rejects_wrong_backend_and_missing_surface() {
     *cfg = configuration(); cfg->surface_mode = "track"; cfg->pneumatic->surface.reset();
     rejects([&] { PneumaticTireWriter bad(rig.engine.model.get(), rig.engine.data.get(), *cfg); }, "config.tire.surface_map");
 }
-void test_constructor_validates_contact_geom_contype_and_radius() {
+[[gnu::noinline]] void test_constructor_validates_contact_geom_contype_and_radius() {
     // test_pneumatic_tire_forces.py::test_constructor_validates_contact_geom_contype_and_radius
     Rig rig;
     const auto geom = static_cast<std::size_t>(bike::model::required_id(*rig.engine.model, mjOBJ_GEOM, "geom_rear_contact"));
@@ -45,7 +51,7 @@ void test_constructor_validates_contact_geom_contype_and_radius() {
     rejects([] { Rig bad("fast", .0005, .004, 5.,
         R"(<geom name="geom_rear_hub" type="cylinder" fromto="0 -0.07 0 0 0.07 0" size="0.02" mass="0"/>)"); }, "collisions must be disabled");
 }
-void test_qfrc_sanity_on_a_physical_model() {
+[[gnu::noinline]] void test_qfrc_sanity_on_a_physical_model() {
     // test_pneumatic_tire_forces.py::test_qfrc_sanity_on_a_physical_model
     auto request = std::make_unique<bike::model::BuildRequest>();
     request->mode = "ride"; request->include_rider = false;
@@ -89,7 +95,7 @@ void test_qfrc_sanity_on_a_physical_model() {
     for (std::size_t i = 0; i < qfrc.size(); ++i)
         bt::require(std::abs(qfrc[i] - expected[i]) <= 1e-8 + 1e-9 * std::abs(expected[i]), "physical per-patch J^T F");
 }
-void test_snapshot_schema_and_signed_slip() {
+[[gnu::noinline]] void test_snapshot_schema_and_signed_slip() {
     // test_pneumatic_tire_forces.py::test_snapshot_schema_and_signed_slip
     Rig rig; (void)rig.advance();
     const auto &front = rig.tire->snapshot_storage()[0], &rear = rig.tire->snapshot_storage()[1];
@@ -128,7 +134,7 @@ void test_snapshot_schema_and_signed_slip() {
     bt::require(rig.tire->diagnostic_storage()[1].surface == "asphalt" && rig.tire->diagnostic_storage()[1].airborne,
         "rear diagnostic material and airborne flag");
 }
-void test_state_wire_names_and_round_trip() {
+[[gnu::noinline]] void test_state_wire_names_and_round_trip() {
     // test_pneumatic_tire_forces.py::test_state_wire_names_and_round_trip
     Rig rig;
     const auto n = static_cast<std::size_t>(bike::legacy::tier_spec("fast").n_rays), width = (n + 1) / 2;
@@ -155,7 +161,7 @@ void test_state_wire_names_and_round_trip() {
     rejects<std::runtime_error>([&] { copy.tire->set_state(bogus, zero); }, "front.ray.000.bogus");
     rejects<std::runtime_error>([&] { copy.tire->set_state(names, std::span(row).first(row.size() - 1)); }, "cells for");
 }
-void test_detailed_tier_bristle_wire() {
+[[gnu::noinline]] void test_detailed_tier_bristle_wire() {
     // test_pneumatic_tire_forces.py::test_detailed_tier_bristle_wire
     Rig rig("detailed"); (void)rig.advance();
     const auto &names = rig.tire->state_names(); const auto row = rig.tire->state();
@@ -177,13 +183,13 @@ void test_detailed_tier_bristle_wire() {
     for (std::size_t i = 0; i < 64; ++i)
         bt::require(std::isnan(fast_row[column(fast.tire->state_names(), std::format("front.ray.{:03}.bristle_m", i))]), "fast bristles remain NaN");
 }
-void test_detailed_tier_leaves_model_timestep_untouched() {
+[[gnu::noinline]] void test_detailed_tier_leaves_model_timestep_untouched() {
     // test_pneumatic_tire_forces.py::test_detailed_tier_leaves_model_timestep_untouched
     Rig rig("detailed", .0007);
     bt::require(Access::config(*rig.tire).pneumatic->tier == "detailed", "detailed tier selected");
     bt::require(rig.engine.model->opt.timestep == .0007, "writer does not rewrite model timestep");
 }
-void test_set_state_rejects_out_of_contract_cells() {
+[[gnu::noinline]] void test_set_state_rejects_out_of_contract_cells() {
     // test_pneumatic_tire_forces.py::test_set_state_rejects_out_of_contract_cells
     Rig rig("detailed"); (void)rig.advance();
     const auto &names = rig.tire->state_names(); const auto row = rig.tire->state();
@@ -210,7 +216,7 @@ void test_set_state_rejects_out_of_contract_cells() {
     bad[column(fast.tire->state_names(), "front.ray.000.bristle_m")] = 0.;
     rejects<std::runtime_error>([&] { fast.tire->set_state(fast.tire->state_names(), bad); }, "must be NaN on the lumped tier");
 }
-void test_rim_event_wire_round_trip() {
+[[gnu::noinline]] void test_rim_event_wire_round_trip() {
     // test_pneumatic_tire_forces.py::test_rim_event_wire_round_trip
     Rig rig("fast", .0005, .055); (void)rig.advance();
     const auto &names = rig.tire->state_names(); const auto row = rig.tire->state();
@@ -221,7 +227,7 @@ void test_rim_event_wire_round_trip() {
     const auto &rim = Access::wheel(*copy.tire, 0).carcass_state();
     bt::require(rim.rim_strike_active() && rim.rim_event_x_m() == Access::wheel(*rig.tire, 0).carcass_state().rim_event_x_m(), "rim semantic state rebuilt");
 }
-void test_probe_leaves_state_and_clock_untouched() {
+[[gnu::noinline]] void test_probe_leaves_state_and_clock_untouched() {
     // test_pneumatic_tire_forces.py::test_probe_leaves_state_and_clock_untouched
     Rig rig; (void)rig.advance();
     const auto before = rig.tire->state(); const auto *identity = &Access::wheel(*rig.tire, 0);
@@ -234,7 +240,7 @@ void test_probe_leaves_state_and_clock_untouched() {
     bt::require(snapshots[0].has_value() && snapshots[1].has_value(), "probe publishes both wheels");
     rejects([&] { (void)rig.advance(); }, "once per increasing timestamp");
 }
-void test_interval_gate_and_restart_clock() {
+[[gnu::noinline]] void test_interval_gate_and_restart_clock() {
     // test_pneumatic_tire_forces.py::test_interval_gate_and_restart_clock
     Rig rig; (void)rig.advance();
     rejects([&] { (void)rig.advance(); }, "once per increasing timestamp");
@@ -243,7 +249,7 @@ void test_interval_gate_and_restart_clock() {
     rig.tire->restart_clock(); (void)rig.advance();
     bt::require(Access::clock(*rig.tire) == rig.engine.data->time, "restart allows same time once");
 }
-void test_reset_clears_history_and_counters() {
+[[gnu::noinline]] void test_reset_clears_history_and_counters() {
     // test_pneumatic_tire_forces.py::test_reset_clears_history_and_counters
     Rig rig; (void)rig.advance();
     bt::require(rig.tire->snapshots_committed() && Access::wheel(*rig.tire, 0).carcass_state().initialized(), "pre-reset committed state");
@@ -254,7 +260,7 @@ void test_reset_clears_history_and_counters() {
     for (std::size_t side = 0; side < sides.size(); ++side) unloaded_state(Access::wheel(*rig.tire, side));
     (void)rig.advance(); bt::require(rig.tire->diagnostic_storage()[0].normal_load_n > 0., "reset supports clean same-time retry");
 }
-void test_stored_energy_matches_committed_counter() {
+[[gnu::noinline]] void test_stored_energy_matches_committed_counter() {
     // test_pneumatic_tire_forces.py::test_stored_energy_matches_committed_counter
     Rig rig("detailed", .0005, .004, rear_radius() - .004); rig.spin("rear", 2.);
     bt::require(rig.tire->stored_energy(rig.engine.data.get()) > 0., "loaded pose already stores energy");
@@ -266,7 +272,7 @@ void test_stored_energy_matches_committed_counter() {
     rig.engine.data->time += rig.dt(); (void)rig.advance();
     bt::require(rig.tire->stored_energy(rig.engine.data.get()) == rig.tire->elastic_energy_j(), "second-step energy equality");
 }
-void test_failure_atomicity_restores_front_state() {
+[[gnu::noinline]] void test_failure_atomicity_restores_front_state() {
     // test_pneumatic_tire_forces.py::test_failure_atomicity_restores_front_state
     Rig rig("fast", .0005, .004, rear_radius() - .004);
     Access::rear_count_control(*rig.tire, true);
@@ -279,7 +285,7 @@ void test_failure_atomicity_restores_front_state() {
     Rig clean("fast", .0005, .004, rear_radius() - .004);
     numeric_equal(actual, clean.advance()); numeric_equal(rig.tire->state(), clean.tire->state(), true);
 }
-void test_determinism_across_identical_rigs() {
+[[gnu::noinline]] void test_determinism_across_identical_rigs() {
     // test_pneumatic_tire_forces.py::test_determinism_across_identical_rigs
     Rig a, b;
     for (auto *rig : {&a, &b}) {
@@ -293,6 +299,7 @@ void test_determinism_across_identical_rigs() {
     numeric_equal(a.tire->probe_qfrc(a.engine.data.get(), a.dt()), b.tire->probe_qfrc(b.engine.data.get(), b.dt()));
     numeric_equal(a.tire->state(), b.tire->state(), true);
 }
+NATIVE_DIAG_POP
 } // namespace
 int main() { return bt::run([] {
     test_constructor_rejects_wrong_backend_and_missing_surface();

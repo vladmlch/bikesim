@@ -1,4 +1,5 @@
 #include "mechanics.hpp"
+#include "../diag.hpp"
 #include "acceptance.hpp"
 #include "evidence.hpp"
 #include "../drivetrain/chain.hpp"
@@ -57,6 +58,8 @@ std::unique_ptr<mechanics::BikeStand> chain_bike(){
 }
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 RigResult drive_suspension_rig(double dt,std::string_view mode,double torque,double stroke,double duration) {
     if(!std::isfinite(torque)||torque<0.||torque>40.)throw std::invalid_argument("fixture torque range is 0..40 Nm");
     const auto fixture=std::make_unique<Fixture>(dt,mode,stroke);auto* m=fixture->bike.model();auto* d=fixture->bike.data();auto& drive=*fixture->drive;auto& suspension=*fixture->suspension;
@@ -99,6 +102,7 @@ RigResult drive_suspension_rig(double dt,std::string_view mode,double torque,dou
         {"root_actuator_force",root_actuation},{"native_contact_count",static_cast<double>(contacts)},{"frame_pitch_initial_rad",initial_pitch}}),
         bounds({{"delivered_torque_error_nm",0.,1e-10},{"initial_closure_error_m",0.,1e-7},{"root_actuator_force",0.,0.},{"native_contact_count",0.,0.}})};
 }
+NATIVE_DIAG_POP
 
 Value drive_suspension_comparison(const Value& config,const std::filesystem::path& root) {
     const auto dt= numbers(optional(config,"dt_values",Value{Array{value::real(.0003125),value::real(.00015625)}}),"dt_values");if(dt.empty())throw std::invalid_argument("positive steps required");for(double x:dt)positive(x,"dt");

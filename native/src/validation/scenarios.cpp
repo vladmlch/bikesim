@@ -1,4 +1,5 @@
 #include "scenarios.hpp"
+#include "../diag.hpp"
 #include "mechanics.hpp"
 #include "acceptance.hpp"
 #include "evidence.hpp"
@@ -35,15 +36,21 @@ model::BuildRequest profile_model(const std::filesystem::path& physics,std::opti
     return mechanics::request(profile_config(physics,dt,overrides),true);
 }
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 Simulation::Simulation(initialization::SetupRequest input):request(std::move(input)) {
     request.runtime.record_retention=runtime::RetentionMode::full;request.runtime.measurement_decimation=1;request.runtime.async_telemetry=false;
     seal_into(request,equilibrium,metadata,runtime);
 }
+NATIVE_DIAG_POP
 initialization::PhysicalInitialState Simulation::initial_state(std::optional<int> stations){return RuntimeRigAccess::initial_state(*runtime,request,equilibrium,metadata,stations);}
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<initialization::SetupRequest> profile_request(const std::filesystem::path& physics,const std::filesystem::path& track,std::optional<double> dt,const Value& overrides) {
     auto request=std::make_unique<initialization::SetupRequest>();request->model=profile_model(physics,dt,overrides);request->track=terrain::load_track(track);request->model.field=terrain::HeightFieldSpec::for_track(request->track);
     request->asset_root=physics.parent_path();request->origin="validation:"+physics.string();return request;
 }
+NATIVE_DIAG_POP
 runtime::RideControl resume_schedule(double time){nonnegative(time,"schedule time");return runtime::RideControl{.motor_torque_nm=0.,.human_torque_nm=time<2.||time>=4.?20.:0.};}
 runtime::RideControl automatic_schedule(double time){nonnegative(time,"schedule time");return {};}
 runtime::RideControl open_loop_schedule(double time){nonnegative(time,"schedule time");throw std::invalid_argument(std::string(motor_only_unsupported));}

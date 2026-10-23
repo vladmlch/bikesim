@@ -1,4 +1,5 @@
 #include "evidence.hpp"
+#include "../diag.hpp"
 #include "../runtime/setup_values.hpp"
 #include <algorithm>
 #include <cmath>
@@ -55,6 +56,8 @@ io::Value physical_summary(const runtime::OwnedResearchEpisode& episode) {
     return out;
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 io::Value summarize(const runtime::OwnedResearchEpisode& episode) {
     namespace wire = runtime::sample_wire;
     const auto& s = episode.evaluation;
@@ -125,6 +128,7 @@ io::Value summarize(const runtime::OwnedResearchEpisode& episode) {
     set(out, "recording_extents", std::move(extents)); set(out, "research_replay_contract", integer(3));
     return out;
 }
+NATIVE_DIAG_POP
 
 runtime::WireArray recording_batch(const runtime::OwnedResearchEpisode& episode, std::string_view stream,
                                    std::int64_t start, std::int64_t limit) {

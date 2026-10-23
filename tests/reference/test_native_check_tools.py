@@ -1430,18 +1430,25 @@ def _gnu_family_driver() -> Path | None:
     return None
 
 
-def _write_broken_profdata(tmp_path: Path) -> Path:
-    """An llvm-profdata stand-in that identifies and launches but refuses
-    every merge — a resolved-but-incompatible coverage tool."""
+def _write_broken_profdata(tmp_path: Path, driver: Path) -> Path:
+    """An llvm-profdata stand-in that identifies with a compiler-compatible
+    LLVM major (required to pass CoverageTools.cmake's resolution gate) and
+    launches but refuses every merge — a resolved-but-incompatible coverage
+    tool. The merge refusal echoes the invoked path so the configure output
+    carries the tool the caller selected."""
+    banner = native_toolchain.inspect_tool(driver)["version"]
+    major = re.search(r"version ([0-9]+)", banner)
+    if major is None:
+        raise ValueError(f"cannot read LLVM major from {driver} banner: {banner!r}")
     tool = tmp_path / "broken-llvm-profdata"
     tool.write_text(
         "#!/bin/sh\n"
         'if [ "${1:-}" = "--version" ]; then\n'
-        "  printf 'broken LLVM version 99.0.0\\n'\n"
+        f"  printf 'broken LLVM version {major.group(1)}.0.0\\n'\n"
         "  exit 0\n"
         "fi\n"
         "if [ \"${1:-}\" = \"merge\" ]; then\n"
-        "  printf 'broken-llvm-profdata: incompatible profile format\\n' >&2\n"
+        "  printf '%s: incompatible profile format\\n' \"$0\" >&2\n"
         "  exit 7\n"
         "fi\n"
         "exit 5\n"
@@ -1526,7 +1533,7 @@ def test_requested_coverage_fails_when_the_tool_chain_cannot_merge(
     driver = _coverage_capable_driver()
     if driver is None:
         pytest.skip("no clang toolchain with qualified coverage tools on this host")
-    broken = _write_broken_profdata(tmp_path)
+    broken = _write_broken_profdata(tmp_path, driver)
     configured, _ = configure_native(
         tmp_path,
         f"-DCMAKE_CXX_COMPILER={driver}",
@@ -1641,10 +1648,11 @@ def run_controller_kind(kind: str, *, timeout: int = 180) -> subprocess.Complete
 
 def test_standalone_header_sweep_compiles_first_party_headers() -> None:
     # The sweep compiles every first-party header in every library
-    # target's context: 228 headers x ~32 contexts = 7194 header TUs and
-    # ~40 min on this machine (each new native library adds another
-    # context — the matrix has grown ~7x since the first calibration).
-    result = run_controller_kind("headers", timeout=3600)
+    # target's context: 257 headers x ~34 contexts = 8826 header TUs and
+    # ~85-90 min on this machine (each new native library adds another
+    # context — the matrix has grown ~7x since the first calibration, and
+    # the serial probe loop's duration scales with it).
+    result = run_controller_kind("headers", timeout=7200)
 
     assert result.returncode == 0, result.stdout + result.stderr
     summary = json.loads(

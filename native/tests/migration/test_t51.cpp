@@ -3,6 +3,7 @@
 #include "batch/plan.hpp"
 #include "io/json.hpp"
 #include "platform/files.hpp"
+#include "../../src/diag.hpp"
 #include <chrono>
 #include <filesystem>
 #include <random>
@@ -113,6 +114,8 @@ struct Directory {
 };
 }
 int main(int argc, char** argv) {
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     // bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
     // cppcheck-suppress throwInEntryPoint
     return bt::run([&] {
@@ -160,4 +163,5 @@ int main(int argc, char** argv) {
         bt::require(stopped[0].exit_code == 130 && stopped[1].exit_code == 130, "cancellation signals/reaps active child and prevents queued launch");
         bt::require(std::filesystem::current_path() != output.path, "process pool leaves parent cwd unchanged");
     });
+NATIVE_DIAG_POP
 }

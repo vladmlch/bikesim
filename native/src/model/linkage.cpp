@@ -63,6 +63,8 @@ void shock_assembly(Element& yoke,const Vec3& p6,const Vec3& p7,BuildContext& c)
 }
 } // namespace
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void build_steering_and_fork(Element& frame,BuildContext& c) {
     const auto p11=div(c.fixed.P11,1000.),ht=div(c.fixed.P_HT_bot,1000.);
     const auto fa=div(geometry::compute_front_axle(c.request.bike),1000.);
@@ -103,6 +105,7 @@ void build_steering_and_fork(Element& frame,BuildContext& c) {
         register_component(c.mass_registry(),"front_wheel",wheel.direct("inertial"));
     }
 }
+NATIVE_DIAG_POP
 
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")

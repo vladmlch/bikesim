@@ -2,6 +2,7 @@
 // Capture-only source changes give every tree leaf a stable label. This test
 // intentionally fails when either platform's real capture is still missing.
 #include "policy_reference_support.hpp"
+#include "diag.hpp"
 
 namespace {
 using namespace policy_reference;
@@ -14,7 +15,11 @@ void test_native_policy_api_exists(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_crank_torque
-void test_crank_torque() {
+// Large decoded/config fixtures keep individual frames over the 8192-byte
+// -Wframe-larger-than budget; functions are noinline so main stays small.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+[[gnu::noinline]] void test_crank_torque() {
     auto golden = node("test_crank_torque");
     for (double mean : {-10., -0., 0., 30.})
         for (double phase : {-23., -std::numbers::pi, -0., 0., .71, std::numbers::pi / 2., 15.})
@@ -71,7 +76,7 @@ void shift_case(bt::oracle::Node& golden, PolicySet& policy, const ShiftCase& it
 }
 
 // tests/reference/test_native_drive_policies.py::test_shifting[raw/ema-signed/magnitude]
-void test_shifting() {
+[[gnu::noinline]] void test_shifting() {
     for (double tau : {0., .35}) for (auto mode : {"legacy_signed", "magnitude"}) {
         const auto id = std::string(tau == 0. ? "raw-" : "ema-") + (std::string_view(mode) == "legacy_signed" ? "signed" : "magnitude");
         auto golden = node("test_shifting", id);
@@ -106,7 +111,7 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
 }
 
 // tests/reference/test_native_drive_policies.py::test_assist[custom/eco/tour/emtb/turbo]
-void test_assist() {
+[[gnu::noinline]] void test_assist() {
     for (auto mode : {"custom", "eco", "tour", "emtb", "turbo"}) {
         auto golden = node("test_assist", mode);
         auto input = source(false); input.assist.mode = mode;
@@ -234,7 +239,7 @@ void test_config_validation(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_projection_resolves_runtime
-void test_projection_resolves_runtime() {
+[[gnu::noinline]] void test_projection_resolves_runtime() {
     auto input = source(); input.assist.profile = "bosch_cx_gen4"; input.assist.mode = "emtb";
     auto policy = policies(config(input)); const auto& a = policy.config.assist;
     bt::require(a.max_torque == 85. && a.slew == 2125., "profile projection resolves runtime torque and slew");
@@ -252,7 +257,7 @@ void test_projection_resolves_runtime() {
 }
 
 // tests/reference/test_native_drive_policies.py::test_projection_normalizes_numeric_leaves
-void test_projection_normalizes_numeric_leaves() {
+[[gnu::noinline]] void test_projection_normalizes_numeric_leaves() {
     auto input = source(false); input.battery.energy_j = 123.; input.battery.copper_w_per_nm2 = .02;
     input.shifting.shift_cooldown_s = .4;
     const auto document = config(input);
@@ -307,7 +312,7 @@ void test_restored_finite_snapshots_preserve_bits(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette
-void test_disabled_shifter_initial_teeth_outside_cassette() {
+[[gnu::noinline]] void test_disabled_shifter_initial_teeth_outside_cassette() {
     auto golden = node("test_disabled_shifter_initial_teeth_outside_cassette");
     auto input = source(false); input.gearing.rear_teeth = 31;
     auto policy = policies(config(input)); policy.restore(policy.snapshot());
@@ -366,7 +371,7 @@ void test_battery_nonzero_idle_remainder(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_config_and_python_object_deletion
-void test_config_and_python_object_deletion() {
+[[gnu::noinline]] void test_config_and_python_object_deletion() {
     auto golden = node("test_config_and_python_object_deletion");
     auto policy = [] {
         auto input = source(false); input.assist.profile = "bosch_cx_gen4"; input.assist.mode = "emtb";
@@ -377,7 +382,7 @@ void test_config_and_python_object_deletion() {
 }
 
 // tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw/mash/filtered]
-void test_pedaling_parameter_branches() {
+[[gnu::noinline]] void test_pedaling_parameter_branches() {
     struct Parameters { std::string_view id; double tau, slew, mash; };
     constexpr std::array parameters{Parameters{"raw", 0., 0., 0.}, Parameters{"mash", 0., 0., 60.}, Parameters{"filtered", .03, 300., 0.}};
     constexpr std::array cases{PedalCase{0., 0., 0., 20., .01}, PedalCase{1., 12., 110., 30., .03},
@@ -440,7 +445,7 @@ void test_invalid_calls_preserve_state(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_invalid_human_torque[nan/infinite/negative/one]
-void test_invalid_human_torque() {
+[[gnu::noinline]] void test_invalid_human_torque() {
     const double nan = std::numeric_limits<double>::quiet_NaN(), inf = std::numeric_limits<double>::infinity();
     const std::array<std::array<double, 3>, 4> cases{{{nan, 0., .35}, {1., inf, .35}, {1., 0., -1.}, {1., 0., 1.}}};
     for (const auto& item : cases)
@@ -470,7 +475,7 @@ void test_unrepresentable_count_restore_is_atomic(const Value& baseline) {
 }
 
 // tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-cadence-profile]
-void test_assist_computed_crank_overflow_matches_python_state() {
+[[gnu::noinline]] void test_assist_computed_crank_overflow_matches_python_state() {
     for (bool shaft_override : {false, true}) for (double cadence : {-1e308, 1e308}) for (bool profiled : {false, true}) {
         const auto id = std::string(shaft_override ? "shaft-" : "crank-") + (cadence < 0. ? "negative-" : "positive-") + (profiled ? "emtb" : "plain");
         auto golden = node("test_assist_computed_crank_overflow_matches_python_state", id);
@@ -534,3 +539,4 @@ int main() { return bt::run([] {
     test_assist_computed_crank_overflow_matches_python_state();
     test_assist_braking_resets_before_computed_crank_overflow(baseline);
 }); }
+NATIVE_DIAG_POP

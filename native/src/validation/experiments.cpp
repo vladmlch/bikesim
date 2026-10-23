@@ -1,4 +1,5 @@
 #include "scenarios.hpp"
+#include "../diag.hpp"
 #include "mechanics.hpp"
 #include "acceptance.hpp"
 #include "evidence.hpp"
@@ -54,6 +55,8 @@ std::unique_ptr<initialization::SetupRequest> fidelity_request(std::string_view 
     request->track=case_track(name);request->model.field=research::research_field(request->track,dx);request->asset_root=profile.parent_path();request->initial_state=std::move(initial);
     return request;
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<Simulation> make_fidelity(std::string_view name,double dt,double dx,int n,std::string_view backend,std::string_view transmission,const std::filesystem::path& profile,std::optional<initialization::PhysicalInitialState> initial={}) {
     if(name=="motor_ramp_grade")throw std::invalid_argument(std::string(motor_only_unsupported));
     const auto request=fidelity_request(name,dt,dx,n,backend,transmission,profile,std::move(initial));
@@ -62,6 +65,7 @@ std::unique_ptr<Simulation> make_fidelity(std::string_view name,double dt,double
         set(eq,"initial_condition_fixture",Value{Object{{"airborne_height_increment_m",value::real(.12)},{"vertical_velocity_mps",value::real(-.5)}}});set(sim->metadata,"equilibrium",std::move(eq));}
     return sim;
 }
+NATIVE_DIAG_POP
 Value run_fidelity_case(Simulation& sim,std::string_view name,std::string_view shared_hash) {
     const double duration=case_duration(name),dt=sim.request.model.physics->timestep_s;const auto count=steps(duration,dt,1e-9);const auto initial=sim.initial_state();
     Value report{Object{{"case",value::text(name)},{"metadata",sim.metadata},{"equilibrium",get(sim.metadata,"equilibrium")},
@@ -188,6 +192,8 @@ void reference_run(Simulation& sim,const Value& item,Array& rows,Value& record){
     set(record,"outcome",std::move(outcome));if(!rows.empty())set(record,"metrics",metrics_from_rows(Value{rows},duration,text(record,"initial_state_sha256")));
     set(record,"observer",research::wire_value(runtime::Wire{tracker.metrics()}));
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 Value reference_scenario(const Value& item,const configuration::SimulationPhysicsConfig& base,const Value& config,const std::filesystem::path& root,const std::filesystem::path& out,std::map<std::pair<double,double>,initialization::PhysicalInitialState>& seeds){
     const auto name=text(item,"name");Value record{Object{{"scenario",item},{"rows",Value{Array{}}}}};Array rows;const auto start=Clock::now();
     try{const bool moving=name=="bump"||name=="crest"||name=="step_4cm"||name=="step_6cm"||name=="two_support"||name=="recontact";const auto key=std::pair{moving?2.:0.,real(item,"grade",0.)};
@@ -203,6 +209,7 @@ Value reference_scenario(const Value& item,const configuration::SimulationPhysic
     std::erase_if(std::get<Object>(record.data),[](const auto& entry){return entry.first=="rows";});set(record,"file",value::text(file));set(record,"interval_count",value::integer(static_cast<std::int64_t>(rows.size())));
     return record;
 }
+NATIVE_DIAG_POP
 Array contact_fits(const configuration::HingeDensity& density){
     const auto depths=geometry::detail::np_linspace(.001,.012,12);std::vector<double> linear;for(double x:depths)linear.push_back(130000.*x);Array fits;
     const std::array<std::pair<std::string,std::vector<double>>,2> targets{{{"synthetic-original-linear-radial-130000",linear},{"synthetic-density-identifiability",numerics::flat_load(depths,.37,density,1024).force}}};

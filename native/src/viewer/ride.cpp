@@ -1,4 +1,5 @@
 #include "session.hpp"
+#include "../diag.hpp"
 #include "glfw_context.hpp"
 #include "hud.hpp"
 #include "pacer.hpp"
@@ -20,6 +21,8 @@ bool gui_available() noexcept {
     return false;
 #endif
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const ViewerOptions& options) {
     if (!hooks.frame || !hooks.advance || !hooks.terminal)
         throw std::invalid_argument("viewer session requires frame, advance and terminal callbacks");
@@ -164,6 +167,7 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
     renderer->close();
     return result;
 }
+NATIVE_DIAG_POP
 RunResult run_ride(runtime::NativeRideRuntime& ride,const ViewerOptions& options,
     runtime::RideControl control,const LifecycleHooks& lifecycle) {
     double front=0.,rear=0.;

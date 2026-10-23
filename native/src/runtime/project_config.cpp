@@ -4,6 +4,7 @@
 #include "../diag.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -321,6 +322,21 @@ bio::Value project_rider_controller(const cfg::SimulationPhysicsConfig& config,
                                     const mjModel& model) {
     auto const document = cfg::detail::plain_document(cfg::to_value(config));
     auto out = field(document, "articulated");
+    // weld_servo_gain/weld_servo_limit_nm/leg_track_damping_nms_rad are
+    // declared Python-only rider-controller knobs the native controller has
+    // not ported: they belong to the resolved config surface but must not
+    // cross this closed wire — decode_spindle_config validates exact keys.
+    // native/setup.py rider_controller_config drops the same three.
+    static constexpr std::array<std::string_view, 3> kUnportedKeys{
+        "weld_servo_gain", "weld_servo_limit_nm", "leg_track_damping_nms_rad"};
+    auto* members = std::get_if<Object>(&out.data);
+    if (members == nullptr)
+        throw std::invalid_argument(
+            "rider_controller: articulated field is not an object");
+    std::erase_if(*members, [](const Object::value_type& member) {
+        return std::ranges::find(kUnportedKeys, member.first) !=
+               kUnportedKeys.end();
+    });
     set(out, "strength", Value{});
     set(out, "strength_coordinates", Value{Object{}});
     set(out, "envelopes", Value{Object{}});

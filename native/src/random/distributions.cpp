@@ -308,7 +308,7 @@ std::uint64_t lemire64(detail::Bitgen &bitgen, std::uint64_t rng) {
 double detail::standard_normal(Bitgen &bitgen) {
     for (;;) {
         const std::uint64_t r = next64(bitgen);
-        const std::size_t idx = static_cast<std::size_t>(r & 0xffU);
+        const std::size_t idx = r & 0xffU;
         const std::uint64_t shifted = r >> 8U;
         const std::uint64_t sign = shifted & 0x1U;
         const std::uint64_t rabs = (shifted >> 1U) & 0x000fffffffffffffULL;

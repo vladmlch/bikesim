@@ -406,6 +406,14 @@ struct ArticulatedConfig {
     double pedal_torque_ripple = .35;
     // Residual recovery-leg load on the rising flat pedal; zero disables it.
     double return_foot_preload_n = 0.;
+    // Weld-press servo gain/hold limit and weld-imposed leg-velocity follow
+    // damping — physical_config.py's same-named block. Declared and validated
+    // here so the mirror stays complete (schema()/to_value()/contract), but
+    // the native rider controller has not ported those knobs: the closed
+    // config.rider_controller wire drops them in project_rider_controller.
+    double weld_servo_gain = .05;
+    double weld_servo_limit_nm = 25.;
+    double leg_track_damping_nms_rad = 0.;
     double link_max_gap_m = .005;
     // Bounded road preview the rider planner may see ahead of the front wheel.
     double road_lookahead_m = 0.;
@@ -853,6 +861,9 @@ inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
     REAL(ArticulatedConfig, pedal_scrape_fraction),
     REAL(ArticulatedConfig, pedal_torque_ripple),
     REAL(ArticulatedConfig, return_foot_preload_n),
+    REAL(ArticulatedConfig, weld_servo_gain),
+    REAL(ArticulatedConfig, weld_servo_limit_nm),
+    REAL(ArticulatedConfig, leg_track_damping_nms_rad),
     REAL(ArticulatedConfig, link_max_gap_m),
     REAL(ArticulatedConfig, road_lookahead_m),
     {.name="joint_strength_path", .type="str | None", .kind=FieldKind::OptionalText,

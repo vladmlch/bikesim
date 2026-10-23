@@ -44,7 +44,7 @@ Logical logical(const FieldSpec& field) {
 for (const auto& owner : owners) types.push_back(owner.handle);
         labels.reserve(names.size());
 for (const auto& name : names) labels.push_back(name.c_str());
-        Logical structure(duckdb_create_struct_type(types.data(), labels.data(), static_cast<idx_t>(types.size())));
+        Logical structure(duckdb_create_struct_type(types.data(), labels.data(), types.size()));
         if (field.dtype == "struct") return structure;
         if (field.dtype == "struct[]") return Logical(duckdb_create_list_type(structure.handle));
         Logical const key(duckdb_create_logical_type(DUCKDB_TYPE_VARCHAR));
@@ -61,7 +61,7 @@ for (const auto& name : names) labels.push_back(name.c_str());
 }
 struct Chunk {
     duckdb_data_chunk handle = nullptr;
-    explicit Chunk(std::span<duckdb_logical_type> types) : handle(duckdb_create_data_chunk(types.data(), static_cast<idx_t>(types.size()))) { if (!handle) failed("create data chunk"); }
+    explicit Chunk(std::span<duckdb_logical_type> types) : handle(duckdb_create_data_chunk(types.data(), types.size())) { if (!handle) failed("create data chunk"); }
     ~Chunk() { if (handle) duckdb_destroy_data_chunk(&handle); }
     Chunk(const Chunk&) = delete; Chunk& operator=(const Chunk&) = delete;
     Chunk(Chunk&&) = delete; Chunk& operator=(Chunk&&) = delete;
@@ -103,7 +103,7 @@ void validity(duckdb_vector vector, const Piece& piece, std::size_t first, std::
 void strings(duckdb_vector vector, const std::vector<std::string>& values, std::size_t first, std::size_t count) {
     for (std::size_t row = 0; row < count; ++row) {
         const auto& s = values[first+row];
-        duckdb_vector_assign_string_element_len(vector, static_cast<idx_t>(row), s.data(), static_cast<idx_t>(s.size()));
+        duckdb_vector_assign_string_element_len(vector, static_cast<idx_t>(row), s.data(), s.size());
     }
 }
 void fill(duckdb_vector, const Piece&, const FieldSpec&, std::size_t, std::size_t);
@@ -128,7 +128,7 @@ std::pair<std::size_t,std::size_t> list_extent(duckdb_vector vector, const Piece
     if (duckdb_list_vector_reserve(vector, static_cast<idx_t>(elements)) == DuckDBError ||
         duckdb_list_vector_set_size(vector, static_cast<idx_t>(elements)) == DuckDBError) failed("list child allocation");
     for (std::size_t row = 0; row < count; ++row) {
-        entries[row].offset = static_cast<idx_t>(static_cast<std::size_t>(p.offsets[first+row]) - begin);
+        entries[row].offset = static_cast<std::size_t>(p.offsets[first+row]) - begin;
         entries[row].length = static_cast<idx_t>(p.offsets[first+row+1] - p.offsets[first+row]);
     }
     return {begin, elements};
@@ -210,7 +210,7 @@ void append_pieces(Connection const& connection, const TableSpec& spec, const ru
     types.reserve(owners.size());
 for (const auto& owner : owners) types.push_back(owner.handle);
     Chunk const chunk(types); Appender appender(connection.handle(), spec.name);
-    const auto maximum = static_cast<std::size_t>(duckdb_vector_size());
+    const std::size_t maximum = duckdb_vector_size();
     if (!maximum) failed("zero vector size");
     const auto rows = static_cast<std::size_t>(batch.rows);
     for (std::size_t first = 0; first < rows;) {

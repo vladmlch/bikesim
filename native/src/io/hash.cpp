@@ -11,7 +11,7 @@
 namespace bike::io {
 
 void Sha256::update(std::span<const std::byte> bytes) noexcept {
-    total_ += static_cast<std::uint64_t>(bytes.size());
+    total_ += bytes.size();
     while (!bytes.empty()) {
         const std::size_t take =
             std::min(bytes.size(), block_.size() - pending_);

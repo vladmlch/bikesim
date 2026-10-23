@@ -1430,18 +1430,33 @@ def _gnu_family_driver() -> Path | None:
     return None
 
 
-def _write_broken_profdata(tmp_path: Path) -> Path:
-    """An llvm-profdata stand-in that identifies and launches but refuses
-    every merge — a resolved-but-incompatible coverage tool."""
+def _write_broken_profdata(tmp_path: Path, driver: Path) -> Path:
+    """An llvm-profdata stand-in that resolves but refuses every merge —
+    a resolved-but-incompatible coverage tool.
+
+    The banner must report the selected compiler's LLVM major:
+    ``CoverageTools.cmake::_bike_coverage_describe`` rejects any tool whose
+    ``--version`` major differs from ``CMAKE_CXX_COMPILER_VERSION``'s major
+    before the format probe runs, so a major-mismatched stand-in fails at
+    resolution and never reaches ``control-merge``. With a compatible major
+    the override resolves, the instrumented control compiles/runs, and the
+    merge step itself is the stage that must fail — the assertion below then
+    exercises the real merge-stage rejection. The merge diagnostic echoes
+    ``$0`` so the configure output names the stand-in's full path."""
+    record = native_toolchain.inspect_tool(driver)
+    major_match = re.search(r"(\d+)(?:\.\d+)+", record["version"])
+    if major_match is None:
+        raise ValueError(f"no dotted version in {record['version']!r}")
+    major = major_match.group(1)
     tool = tmp_path / "broken-llvm-profdata"
     tool.write_text(
         "#!/bin/sh\n"
         'if [ "${1:-}" = "--version" ]; then\n'
-        "  printf 'broken LLVM version 99.0.0\\n'\n"
+        f"  printf 'broken LLVM version {major}.0.0\\n'\n"
         "  exit 0\n"
         "fi\n"
         "if [ \"${1:-}\" = \"merge\" ]; then\n"
-        "  printf 'broken-llvm-profdata: incompatible profile format\\n' >&2\n"
+        '  printf \'%s: incompatible profile format\\n\' "$0" >&2\n'
         "  exit 7\n"
         "fi\n"
         "exit 5\n"
@@ -1526,7 +1541,7 @@ def test_requested_coverage_fails_when_the_tool_chain_cannot_merge(
     driver = _coverage_capable_driver()
     if driver is None:
         pytest.skip("no clang toolchain with qualified coverage tools on this host")
-    broken = _write_broken_profdata(tmp_path)
+    broken = _write_broken_profdata(tmp_path, driver)
     configured, _ = configure_native(
         tmp_path,
         f"-DCMAKE_CXX_COMPILER={driver}",

@@ -191,9 +191,9 @@
       },
       "files": [
         {
-          "bytes": 9394,
+          "bytes": 9686,
           "path": "config/resolved/welded.json",
-          "sha256": "e2ff08bcd2ff1ae044ef8e0fee707d21f7fa3774acf89542ba966ac870ef5c9b"
+          "sha256": "05fa92af892c592815957efba587e0780d1eb6c23cad67bd2e7b2030c0ff9853"
         }
       ],
       "group": "config",
@@ -215,9 +215,9 @@
       },
       "files": [
         {
-          "bytes": 9406,
+          "bytes": 9698,
           "path": "config/resolved/distributed.json",
-          "sha256": "82bcb04737662ca31ede0c09bf8aef68d59bce97d817c597f71e9bd05d2c6898"
+          "sha256": "008c9dff0e3256b8af159bec777c2832520bbce2d2e0653685c3855a9192acef"
         }
       ],
       "group": "config",
@@ -239,9 +239,9 @@
       },
       "files": [
         {
-          "bytes": 9526,
+          "bytes": 9818,
           "path": "config/resolved/pneumatic.json",
-          "sha256": "e7e3718e524c8e034b0e58f9c1aaa7aafad80effb8c37cf3c20481577d58579f"
+          "sha256": "ffcf6cd58bbed76f4ba2a2f75a1db4f86836a9879dfe344fc9da29f96f28b279"
         }
       ],
       "group": "config",
@@ -268,9 +268,9 @@
           "sha256": "7906b7f121c426e61d0cb916611fae6943ec2faf25963b70270f1b28c6478525"
         },
         {
-          "bytes": 9393,
+          "bytes": 9685,
           "path": "config/variant_elastic_chain.resolved.json",
-          "sha256": "84c9b9a5c3cb52b38e6b8036191373759d3dbf3bcf66b17510b0d5a3d7fbd2b6"
+          "sha256": "f4fbc22289c2957f18f7faa0002d6ba182b22cdef37acf11dc08129b48cf79a1"
         }
       ],
       "group": "config",
@@ -323,9 +323,9 @@
           "sha256": "737c97dd518d1a1b752d96e9c838f7792f6e1908f32f467b1c93a58cfddcbb5f"
         },
         {
-          "bytes": 9391,
+          "bytes": 9683,
           "path": "config/variant_alt_support.resolved.json",
-          "sha256": "7c7cd53973d99c176031ff4fdeb2d6d59f69661e83bd0ca821dde607d8d0838f"
+          "sha256": "bec4fe6c6363ea9b887b869612d627562735141d357516c0a1874c63342f0b09"
         }
       ],
       "group": "config",
@@ -353,9 +353,9 @@
           "sha256": "93894b289d3d07ebad201cd5ac963a365a25f9cd3c55cc5608856359482a1119"
         },
         {
-          "bytes": 9394,
+          "bytes": 9686,
           "path": "config/variant_grip_weld_coercion.resolved.json",
-          "sha256": "e2ff08bcd2ff1ae044ef8e0fee707d21f7fa3774acf89542ba966ac870ef5c9b"
+          "sha256": "05fa92af892c592815957efba587e0780d1eb6c23cad67bd2e7b2030c0ff9853"
         }
       ],
       "group": "config",
@@ -377,9 +377,9 @@
       },
       "files": [
         {
-          "bytes": 44785,
+          "bytes": 46093,
           "path": "config/schema.json",
-          "sha256": "b2e426987067a891b5e37f00a0662be6b2479d51735d9cf23900624d24c2997a"
+          "sha256": "065e4af84d569e6556356819164c39f38247fdf63d72b73390e0b7492b4d4fe2"
         }
       ],
       "group": "config",
@@ -14634,24 +14634,24 @@
         {
           "bytes": 5792840,
           "path": "bootstrap/native_start_welded/model.mjb",
-          "sha256": "0ade549d8988078bce2f201707f04a71017a90be4ec980b54d5d6658f7ab39ec"
+          "sha256": "da3148c80ba4ae3f8a776d402678d6f49c8e6ba27ac8047b445ef446d73f2ed9"
         },
         {
-          "bytes": 25830,
+          "bytes": 26032,
           "path": "bootstrap/native_start_welded/config.json",
-          "sha256": "482486246cc4e413ad9aa68e70456443689aa0b317fa9ab004dec0cf77c30d7d"
+          "sha256": "f305f039b5e0bd5382d4b023d781b2c4972c941fb89244f5496532749f644367"
         },
         {
-          "bytes": 32654,
+          "bytes": 33140,
           "path": "bootstrap/native_start_welded/state.json",
-          "sha256": "f88dc026347b96c332891225a2ba7ce2e4ac436b12db9df3d7e2e31c9c0cd478"
+          "sha256": "c3e4a3480e19fd8747e33984f3b6dfab9ffb80ccbf380846be442243b4d8cd9f"
         },
         {
           "bytes": 2336,
           "dtype": "<f8",
           "order": "C",
           "path": "bootstrap/native_start_welded/state.arrays/a000.f64",
-          "sha256": "b09194c01090310a8759a18a958b985220e88d87790ad4cc17ad9206bb260dad",
+          "sha256": "5758c0c2ed404a10fdc0f1b564c2c70d466413717194e663da071922dc84c8dd",
           "shape": [
             292
           ]
@@ -14661,7 +14661,7 @@
           "dtype": "<f8",
           "order": "C",
           "path": "bootstrap/native_start_welded/state.arrays/a001.f64",
-          "sha256": "2493a88a20e20369209e5d516b42a040e212567b23a76d0e7d9db7521d1df503",
+          "sha256": "e8867c791ceb0736d72c649719ce0ec02e7556f263b356c1f3bef51a04be8575",
           "shape": [
             3
           ]
@@ -14671,7 +14671,7 @@
           "dtype": "<f8",
           "order": "C",
           "path": "bootstrap/native_start_welded/state.arrays/a002.f64",
-          "sha256": "aaa70fd8c2e913405343c728814974c7e8ad43835e2068d2ab151dc9ccc1e570",
+          "sha256": "4c8d3994904381cc8eb5ce5cf5f2be93fb7122bb122a0adfbbf09561a33be1c2",
           "shape": [
             22
           ]
@@ -14681,7 +14681,7 @@
           "dtype": "<f8",
           "order": "C",
           "path": "bootstrap/native_start_welded/state.arrays/a003.f64",
-          "sha256": "409af86427f0f6e74266fbd14ce311f1bbfb1476822e6f7711dc2d582807de8b",
+          "sha256": "501a8afa04c5ef83185a38d77fa2f7fc491d1075c8fad4a3230dd429c73ed980",
           "shape": [
             2
           ]
@@ -14801,7 +14801,7 @@
           "dtype": "<f8",
           "order": "C",
           "path": "bootstrap/native_start_welded/state.arrays/a015.f64",
-          "sha256": "c8dea082c4c95bbcf87232b3d5553013ad7f7ef23e22b17058f8a7bf53c36c78",
+          "sha256": "9ea54d84fe806f0a3267296e5b67b83fdf3ba9aa3648962883cf672361708531",
           "shape": [
             9
           ]
@@ -14811,7 +14811,7 @@
           "dtype": "<f8",
           "order": "C",
           "path": "bootstrap/native_start_welded/state.arrays/a016.f64",
-          "sha256": "c8dea082c4c95bbcf87232b3d5553013ad7f7ef23e22b17058f8a7bf53c36c78",
+          "sha256": "9ea54d84fe806f0a3267296e5b67b83fdf3ba9aa3648962883cf672361708531",
           "shape": [
             9
           ]
@@ -14821,7 +14821,7 @@
           "dtype": "<f8",
           "order": "C",
           "path": "bootstrap/native_start_welded/integration.f64",
-          "sha256": "b09194c01090310a8759a18a958b985220e88d87790ad4cc17ad9206bb260dad",
+          "sha256": "b7e2d0ae18dfc688393aeca7a887469572fe648e4ce987031ac6af9d38dfd06d",
           "shape": [
             292
           ]
@@ -14829,7 +14829,7 @@
         {
           "bytes": 351,
           "path": "bootstrap/native_start_welded/meta.json",
-          "sha256": "a697f8116e227efde5c46e79e716dda9265ae983982e92c15a0316600d23d746"
+          "sha256": "9e7cc825c26acdb27ad5bca1a28c1afa448c98f755ac61ad50d5c9fad2a2dfb8"
         }
       ],
       "group": "bootstrap",
@@ -14840,8 +14840,8 @@
         }
       ],
       "name": "bootstrap/native_start_welded",
-      "notes": "startup outputs for the matching frozen-flat request",
-      "produced_by": "ride pipeline for requests/welded_flat.toml",
+      "notes": "startup outputs for the matching frozen-flat request; integration.f64 pins the native startup vector bitwise \u2014 leg ctrl slots 87-90 are 0 because the weld-imposed leg feedforward is unported in the native spindle controller",
+      "produced_by": "ride pipeline for requests/welded_flat.toml; integration.f64 is the native prepare->snapshot vector (bike::app::prepare + make_ride + snapshot) capturing the restored t=0, not the Python post-init capture: b21c63e's leg feedforward/preload are Python-only, so indices 87-90 (leg muscle ctrl) are zero here by design",
       "recipe": "RCP-01"
     },
     {
@@ -14851,9 +14851,9 @@
       },
       "files": [
         {
-          "bytes": 23378,
+          "bytes": 23544,
           "path": "initial_state/welded_flat.json",
-          "sha256": "b144ab3a96a34756e49a35a9a1e7d51dd11fbcd1bbb11066e05607350174c184"
+          "sha256": "d5685e8b07942a4e9b6357811d5d83b1dc012ff190ca934422da2dbbcd382638"
         }
       ],
       "group": "bootstrap",

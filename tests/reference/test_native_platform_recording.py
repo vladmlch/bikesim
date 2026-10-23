@@ -270,23 +270,30 @@ def test_publication_permission_denied_then_retry(tmp_path):
     explicit retry publishes it once — no duplicated episodes or events."""
     if hasattr(os, 'geteuid') and os.geteuid() == 0:
         # Root bypasses the mode bits this regression must exercise. A fresh
-        # child drops all groups and its UID before importing the probe and
-        # creates its own temporary tree; root-owned pytest parents are never
-        # made writable or chowned. Missing privilege support is a failure,
-        # not a successful skip of the EACCES contract (completion 3.11).
+        # child imports and warms the probe's full lazy import surface while
+        # still privileged — the managed interpreter's stdlib resolves under
+        # a root-owned prefix, so an unprivileged child cannot even reach
+        # pathlib — then drops all groups and its UID before creating its
+        # own temporary tree; root-owned pytest parents are never made
+        # writable or chowned. Missing privilege support is a failure, not a
+        # successful skip of the EACCES contract (completion 3.11).
         import pwd
         account = pwd.getpwnam('nobody')
         script = r'''
 import os
 import sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
+sys.path.insert(0, sys.argv[3])
+from test_native_platform_recording import (
+    _publication_permission_denied_probe,
+    _publication_permission_denied_warmup)
+with TemporaryDirectory(prefix='bike-eacces-warm-') as warm:
+    _publication_permission_denied_warmup(Path(warm))
 os.setgroups([])
 os.setgid(int(sys.argv[1]))
 os.setuid(int(sys.argv[2]))
 assert os.geteuid() != 0, 'permission probe still has root privileges'
-from pathlib import Path
-from tempfile import TemporaryDirectory
-sys.path.insert(0, sys.argv[3])
-from test_native_platform_recording import _publication_permission_denied_probe
 with TemporaryDirectory(prefix='bike-eacces-') as directory:
     _publication_permission_denied_probe(Path(directory))
 print('unprivileged EACCES and explicit publication retry passed')
@@ -299,6 +306,22 @@ print('unprivileged EACCES and explicit publication retry passed')
         assert 'unprivileged EACCES and explicit publication retry passed' in child.stdout
         return
     _publication_permission_denied_probe(tmp_path)
+
+
+def _publication_permission_denied_warmup(tmp_path):
+    """Resolve the probe's lazy imports while the caller is still privileged.
+
+    One real ``synthetic_capture`` → ``finalize`` → ``Recording`` round trip
+    pulls the deferred ``duckdb``/``pyarrow`` chain (and its stdlib
+    dependencies) into ``sys.modules``, so a later ``setuid`` child never
+    touches the interpreter's root-owned stdlib prefix again.
+    """
+    capture = support.synthetic_capture(
+        rows=[sample_row(0, start=0., dt=.001)],
+        events=[InputEvent(0, 0, 'episode_start', 0., 0, None, {})])
+    run_directory = capture.finalize(tmp_path)
+    with Recording(run_directory) as saved:
+        assert saved.episode_ids == (0,)
 
 
 def _publication_permission_denied_probe(tmp_path):

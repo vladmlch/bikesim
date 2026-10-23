@@ -37,6 +37,12 @@
 
 #if defined(__APPLE__)
 #include <crt_externs.h>
+#else
+// POSIX process environment. Declared at global scope deliberately: a
+// block-scope `extern char **environ` inside bike::checks would declare
+// bike::checks::environ — a namespaced entity that does not exist — and
+// strict C++23 (__STRICT_ANSI__) hides unistd.h's own declaration.
+extern char **environ; // NOLINT(readability-redundant-declaration)
 #endif
 
 namespace bike::checks {
@@ -468,8 +474,6 @@ std::map<std::string, std::string> environ_copy() {
     std::map<std::string, std::string> result;
 #if defined(__APPLE__)
     char *const *environ = *_NSGetEnviron();
-#else
-    extern char **environ; // NOLINT(readability-redundant-declaration)
 #endif
     // POSIX environ is a null-terminated C array — the terminator bounds the
     // walk; there is no sized-container spelling for it. The pragma is clang
@@ -625,7 +629,16 @@ std::vector<Suppression> load_suppressions(const fs::path &path) {
             throw CheckError("incomplete analysis suppression entry " +
                              std::to_string(index) + ": " + path.string());
         const auto text_of = [&](const std::string &field) {
-            return std::get<std::string>(member(*object, field)->data);
+            // `complete` already proved every field a string, but the lookup
+            // itself must stay fail-closed — GCC 13 -Wnull-dereference also
+            // cannot prove member() non-null through this lambda.
+            const Value *value = member(*object, field);
+            if (value == nullptr ||
+                !std::holds_alternative<std::string>(value->data))
+                throw CheckError("incomplete analysis suppression entry " +
+                                 std::to_string(index) + ": " +
+                                 path.string());
+            return std::get<std::string>(value->data);
         };
         const bool nonempty =
             std::ranges::all_of(kFields,

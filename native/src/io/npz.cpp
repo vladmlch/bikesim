@@ -116,7 +116,7 @@ NpzArchive parse_npz(std::span<const std::byte> input){
         if(integer(input,pos,4)!=0x02014b50U)bad("invalid central member header");
         const auto flags=integer(input,pos+8,2),method=integer(input,pos+10,2),crc=integer(input,pos+16,4);
         std::uint64_t compressed=integer(input,pos+20,4),expanded=integer(input,pos+24,4),local=integer(input,pos+42,4);
-        const auto name_length=static_cast<std::size_t>(integer(input,pos+28,2)),extra_length=static_cast<std::size_t>(integer(input,pos+30,2)),comment_length=static_cast<std::size_t>(integer(input,pos+32,2));
+        const std::size_t name_length=integer(input,pos+28,2),extra_length=integer(input,pos+30,2),comment_length=integer(input,pos+32,2);
         if(flags&~std::uint64_t{0x080e})bad("encrypted or unsupported ZIP flags");
         if(method!=0&&method!=8)bad("only stored/DEFLATE members are supported");
         if(integer(input,pos+34,2)!=0)bad("member lies on another disk");
@@ -125,12 +125,12 @@ NpzArchive parse_npz(std::span<const std::byte> input){
         const std::string name=member_name(input.subspan(pos+46,name_length));if(!names.insert(name).second)bad("duplicate archive member");
         if(expanded==0xffffffffU||compressed==0xffffffffU||local==0xffffffffU){
             bool found=false;std::size_t at=pos+46+name_length,limit=at+extra_length;
-            while(at+4<=limit){const auto tag=integer(input,at,2);const auto size=static_cast<std::size_t>(integer(input,at+2,2));at+=4;if(size>limit-at)bad("truncated extra field");if(tag==1){found=true;std::size_t z=at;auto const get=[&](){if(z+8>at+size)bad("truncated ZIP64 extra");const auto result=integer(input,z,8);z+=8;return result;};if(expanded==0xffffffffU)expanded=get();if(compressed==0xffffffffU)compressed=get();if(local==0xffffffffU)local=get();break;}at+=size;}if(!found)bad("missing ZIP64 member sizes");
+            while(at+4<=limit){const auto tag=integer(input,at,2);const std::size_t size=integer(input,at+2,2);at+=4;if(size>limit-at)bad("truncated extra field");if(tag==1){found=true;std::size_t z=at;auto const get=[&](){if(z+8>at+size)bad("truncated ZIP64 extra");const auto result=integer(input,z,8);z+=8;return result;};if(expanded==0xffffffffU)expanded=get();if(compressed==0xffffffffU)compressed=get();if(local==0xffffffffU)local=get();break;}at+=size;}if(!found)bad("missing ZIP64 member sizes");
         }
         if(expanded>kMaxNumpyBytes-total||compressed>kMaxNumpyBytes||expanded>std::max<std::uint64_t>(1024,compressed*10000U)||local>central_offset||central_offset-local<30)bad("member exceeds resource bounds");
         const std::size_t lp=static_cast<std::size_t>(local);
         if(integer(input,lp,4)!=0x04034b50U||integer(input,lp+6,2)!=flags||integer(input,lp+8,2)!=method)bad("local/central header mismatch");
-        const auto local_name=static_cast<std::size_t>(integer(input,lp+26,2)),local_extra=static_cast<std::size_t>(integer(input,lp+28,2));
+        const std::size_t local_name=integer(input,lp+26,2),local_extra=integer(input,lp+28,2);
         const std::size_t payload=lp+30+local_name+local_extra;
         if(payload>central_offset||compressed>central_offset-payload||local_name!=name_length||member_name(input.subspan(lp+30,local_name))!=name)bad("local member extent/name mismatch");
         extents.emplace_back(lp,payload+static_cast<std::size_t>(compressed));

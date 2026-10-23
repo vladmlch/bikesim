@@ -123,7 +123,7 @@ NpyArray parse_npy(std::span<const std::byte> data){
     const unsigned int major=std::to_integer<unsigned int>(data[6]),minor=std::to_integer<unsigned int>(data[7]);
     if(major<1||major>3||minor!=0)bad("unsupported NPY version");
     const std::size_t prefix=major==1?10:12;if(data.size()<prefix)bad("truncated header");
-    const auto length=static_cast<std::size_t>(bits(data.subspan(8,prefix-8),true));
+    const std::size_t length=bits(data.subspan(8,prefix-8),true);
     if(length>65536||length>data.size()-prefix)bad("truncated or oversized header");
     std::string header;header.reserve(length);for(std::byte const b:data.subspan(prefix,length))header.push_back(static_cast<char>(std::to_integer<unsigned char>(b)));
     if(header.empty()||header.back()!='\n')bad("header must end with newline");

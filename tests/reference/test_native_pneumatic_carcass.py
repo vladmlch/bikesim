@@ -36,6 +36,7 @@ from bike_sim.sim.ride.tyre import carcass, geometry
 from native_loader import load_native
 bike_native = load_native()
 from _bits import assert_bitwise_equal
+import _golden
 
 RAD = np.pi / 180.0
 HALF_DEG = 75.0
@@ -125,6 +126,8 @@ def _assert_state_bitwise(native_state, oracle_state, msg=''):
         assert_bitwise_equal(np.asarray(native_state[k]),
                              getattr(oracle_state, k), f'{msg} state.{k}')
     for k in _STATE_BOOL_KEYS:
+        _golden.record(np.asarray(bool(getattr(oracle_state, k))),
+                       f'{msg} state.{k}')
         assert bool(native_state[k]) == bool(getattr(oracle_state, k)), \
             f'{msg} state.{k}'
     for k in _STATE_FLOAT_KEYS:
@@ -149,8 +152,12 @@ def _assert_result_bitwise(got, want, msg=''):
     for k in _RESULT_FLOAT_KEYS:
         assert_bitwise_equal(float(got[k]), float(getattr(want, k)),
                              f'{msg} result.{k}')
+    _golden.record(np.asarray(bool(want.rim_strike_active)),
+                   f'{msg} result.rim_strike_active')
     assert bool(got['rim_strike_active']) == bool(want.rim_strike_active), \
         f'{msg} result.rim_strike_active'
+    _golden.record(np.asarray(want.rim_event is not None),
+                   f'{msg} result.rim_event')
     if want.rim_event is None:
         assert got['rim_event'] is None, f'{msg} result.rim_event'
     else:
@@ -400,6 +407,9 @@ def test_carcass_advect_bitwise(n, shift):
     np.interp's branches."""
     rng = np.random.default_rng(n)
     values = rng.uniform(-1e3, 1e3, n)
+    # rng.uniform's low + range*next transform contracts to fmadd on
+    # the darwin wheel but not the linux one — replay the frozen row.
+    _golden.record(values, 'input.values')
     dtheta, dt = 0.11, 0.004
     omega = shift * dtheta / dt if shift != 0.0 else 0.0
     want = _advect_oracle(values, omega, dt, dtheta)
@@ -468,6 +478,10 @@ def test_carcass_math_probes_bitwise():
     ys[: xs.size // 7] = 0.0
     want_tanh = np.tanh(xs)
     want_hypot = np.hypot(xs, ys)
+    # The uint64-derived probe rows are replayed verbatim by the C++
+    # port (the rng.integers high bound does not fit the int64 API).
+    _golden.record(xs, 'input.xs')
+    _golden.record(ys, 'input.ys')
     got = bike_native._debug_pneumatic_math(xs, ys)
     assert_bitwise_equal(np.asarray(got['tanh']), want_tanh)
     assert_bitwise_equal(np.asarray(got['hypot']), want_hypot)
@@ -495,6 +509,9 @@ def test_carcass_saturation_and_patch_shapes_bitwise(n_rays):
     delta[c - 4:c + 5] = 0.05 + 0.01 * rng.uniform(0.0, 1.0, 9)
     road_x = np.cumsum(np.full(n_rays, 0.001)) + 4.9
     road_z = rng.uniform(-0.05, -0.02, n_rays)
+    # rng.uniform's low + range*next transform is platform-contracted —
+    # replay the frozen rows (hits3's drawn road_z likewise).
+    _golden.record(road_z, 'input.road_z')
     hits1 = _synth_hits(n_rays, delta, rng, road_x, road_z)
     oracle_state = carcass.CarcassState(n_rays)
     native_state = _fresh_state_dict(n_rays)
@@ -528,6 +545,8 @@ def test_carcass_saturation_and_patch_shapes_bitwise(n_rays):
     delta3[n_rays - 1] = 0.015
     delta3[n_rays // 3] = 0.03      # single-ray patch mid-ring
     hits3 = _synth_hits(n_rays, delta3, rng)
+    _golden.record(np.asarray(hits3['road_z_m']),
+                   'input.hits3 road_z_m')
     want = carcass.evaluate_carcass(ring, _oracle_hits(hits3), tyre,
                                     oracle_state, dt_s=0.002,
                                     omega_radps=0.0, speed_mps=0.0)
@@ -555,6 +574,8 @@ def _valid_evaluate_args(n_rays):
     delta = np.zeros(n_rays)
     delta[n_rays // 2] = 0.01
     hits = _synth_hits(n_rays, delta)
+    # The drawn road_z row is wheel-contraction divergent — freeze it.
+    _golden.record(np.asarray(hits['road_z_m']), 'input.road_z_m')
     return spec, hits
 
 
@@ -741,12 +762,16 @@ def test_carcass_first_step_initialized_branch():
     delta = np.zeros(n_rays)
     delta[30:35] = 0.02
     hits = _synth_hits(n_rays, delta)
+    # The drawn road_z row is wheel-contraction divergent — freeze it.
+    _golden.record(np.asarray(hits['road_z_m']), 'input.road_z_m')
     state = carcass.CarcassState(n_rays)
     want = carcass.evaluate_carcass(ring, _oracle_hits(hits), tyre,
                                     state, dt_s=0.002, omega_radps=5.0,
                                     speed_mps=2.0)
+    _golden.record(np.zeros(n_rays), 'first-step material_rate_mps +0.0')
     assert want.material_rate_mps.tobytes() == np.zeros(
         n_rays).tobytes()
+    _golden.record(np.zeros(n_rays), 'first-step maxwell_force_n +0.0')
     assert want.maxwell_force_n.tobytes() == np.zeros(n_rays).tobytes()
     got = _native_step(_spec_dict(tyre), n_rays, hits,
                        _fresh_state_dict(n_rays), 0.002, 5.0, 2.0)
@@ -754,6 +779,8 @@ def test_carcass_first_step_initialized_branch():
     _assert_state_bitwise(got['state'], state, 'first-step')
     # And the second step now takes the initialized branch.
     hits2 = _synth_hits(n_rays, delta * 1.1)
+    _golden.record(np.asarray(hits2['road_z_m']),
+                   'input.hits2 road_z_m')
     want = carcass.evaluate_carcass(ring, _oracle_hits(hits2), tyre,
                                     state, dt_s=0.002, omega_radps=5.0,
                                     speed_mps=2.0)
@@ -798,6 +825,8 @@ def test_carcass_negative_zero_delta_and_inf_hits():
     delta[10] = -0.0
     delta[11] = 0.01
     hits = _synth_hits(n_rays, delta)
+    # The drawn road_z row is wheel-contraction divergent — freeze it.
+    _golden.record(np.asarray(hits['road_z_m']), 'input.road_z_m')
     state = carcass.CarcassState(n_rays)
     want = carcass.evaluate_carcass(ring, _oracle_hits(hits), tyre,
                                     state, dt_s=0.002, omega_radps=3.0,

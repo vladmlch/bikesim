@@ -1,0 +1,30 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.values",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_advect_bitwise[1.0-256]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_advect_bitwise[1.0-256]",
+  "offset": 2048,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ }
+]

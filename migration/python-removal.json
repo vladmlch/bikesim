@@ -15659,12 +15659,10 @@
       "native/tests/reference/test_native_pneumatic_carcass.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_pneumatic_carcass"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "e17adfddc6a9b907e57ac8277518dd88ab5624fa78a60dee4d80cad1a3d8d973",
     "snapshot_line_count": 868,
     "tracked": true,

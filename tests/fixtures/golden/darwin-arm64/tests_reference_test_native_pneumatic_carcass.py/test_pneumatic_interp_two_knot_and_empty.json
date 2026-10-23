@@ -1,0 +1,62 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_pneumatic_interp_two_knot_and_empty",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "len2 x=0.25",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_pneumatic_interp_two_knot_and_empty",
+  "offset": 8,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "len2 x=0.5",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_pneumatic_interp_two_knot_and_empty",
+  "offset": 16,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "len2 x=0.75",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_pneumatic_interp_two_knot_and_empty",
+  "offset": 24,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "len2 x=np.float64(0.9999999999999999)",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_pneumatic_interp_two_knot_and_empty",
+  "offset": 32,
+  "rtol": null,
+  "shape": []
+ }
+]

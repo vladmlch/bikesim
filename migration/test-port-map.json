@@ -11559,282 +11559,418 @@
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_progressive_load_unload_bitwise",
-      "line": 249,
-      "end_line": 260,
+      "line": 256,
+      "end_line": 267,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_progressive_load_unload_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_progressive_load_unload_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_rim_strike_bitwise",
-      "line": 264,
-      "end_line": 299,
+      "line": 271,
+      "end_line": 306,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_rim_strike_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_rim_strike_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_airborne_landed_bitwise",
-      "line": 303,
-      "end_line": 316,
+      "line": 310,
+      "end_line": 323,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_airborne_landed_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_airborne_landed_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_advance_unloaded_sequence_bitwise",
-      "line": 320,
-      "end_line": 353,
+      "line": 327,
+      "end_line": 360,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_advance_unloaded_sequence_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_advance_unloaded_sequence_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_material_rate_bitwise",
-      "line": 362,
-      "end_line": 371,
+      "line": 369,
+      "end_line": 378,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_material_rate_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_material_rate_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_material_rate_edges",
-      "line": 375,
-      "end_line": 384,
+      "line": 382,
+      "end_line": 391,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_material_rate_edges",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_material_rate_edges",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_advect_bitwise",
-      "line": 397,
-      "end_line": 407,
+      "line": 404,
+      "end_line": 417,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_advect_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_advect_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_advect_zero_omega_copy",
-      "line": 410,
-      "end_line": 414,
+      "line": 420,
+      "end_line": 424,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_advect_zero_omega_copy",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_advect_zero_omega_copy",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_empty_rows",
-      "line": 417,
-      "end_line": 442,
+      "line": 427,
+      "end_line": 452,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_empty_rows",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_empty_rows",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_math_probes_bitwise",
-      "line": 449,
-      "end_line": 473,
+      "line": 459,
+      "end_line": 487,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_math_probes_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_math_probes_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_saturation_and_patch_shapes_bitwise",
-      "line": 481,
-      "end_line": 538,
+      "line": 495,
+      "end_line": 557,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_saturation_and_patch_shapes_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_saturation_and_patch_shapes_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_invalid_inputs_bitwise_atomicity",
-      "line": 562,
-      "end_line": 667,
+      "line": 583,
+      "end_line": 688,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_invalid_inputs_bitwise_atomicity",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_invalid_inputs_bitwise_atomicity",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_advance_unloaded_validation",
-      "line": 670,
-      "end_line": 722,
+      "line": 691,
+      "end_line": 743,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_advance_unloaded_validation",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_advance_unloaded_validation",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_state_construction_validation",
-      "line": 725,
-      "end_line": 732,
+      "line": 746,
+      "end_line": 753,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_state_construction_validation",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_state_construction_validation",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: ported to native/tests/reference/test_native_pneumatic_carcass.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_pneumatic_carcass)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_first_step_initialized_branch",
-      "line": 735,
-      "end_line": 763,
+      "line": 756,
+      "end_line": 790,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_first_step_initialized_branch",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_first_step_initialized_branch",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_multistep_mixed_speed_spin_bitwise",
-      "line": 767,
-      "end_line": 787,
+      "line": 794,
+      "end_line": 814,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_multistep_mixed_speed_spin_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_multistep_mixed_speed_spin_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_carcass_negative_zero_delta_and_inf_hits",
-      "line": 790,
-      "end_line": 808,
+      "line": 817,
+      "end_line": 837,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_carcass_negative_zero_delta_and_inf_hits",
+      "native_test_id": "reference.native_pneumatic_carcass::test_carcass_negative_zero_delta_and_inf_hits",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_pneumatic_interp_single_knot_bitwise",
-      "line": 815,
-      "end_line": 828,
+      "line": 844,
+      "end_line": 857,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_pneumatic_interp_single_knot_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_pneumatic_interp_single_knot_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_pneumatic_interp_multi_knot_bitwise",
-      "line": 831,
-      "end_line": 844,
+      "line": 860,
+      "end_line": 873,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_pneumatic_interp_multi_knot_bitwise",
+      "native_test_id": "reference.native_pneumatic_carcass::test_pneumatic_interp_multi_knot_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_carcass.py",
       "source_symbol": "test_pneumatic_interp_two_knot_and_empty",
-      "line": 847,
-      "end_line": 868,
+      "line": 876,
+      "end_line": 897,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_carcass::test_pneumatic_interp_two_knot_and_empty",
+      "native_test_id": "reference.native_pneumatic_carcass::test_pneumatic_interp_two_knot_and_empty",
       "native_source": "native/tests/reference/test_native_pneumatic_carcass.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "migration/cpp-linux-phase3-source-review.md",
+        "2026-10-24 3.12a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_carcass green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_geometry.py",

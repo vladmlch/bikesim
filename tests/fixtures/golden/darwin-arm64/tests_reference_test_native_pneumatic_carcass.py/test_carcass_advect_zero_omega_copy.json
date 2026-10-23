@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_advect_zero_omega_copy",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ }
+]

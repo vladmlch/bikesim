@@ -36,6 +36,11 @@ public:
                    std::string_view label);
     void bytes(std::span<const std::byte> actual, std::string_view dtype,
                std::span<const std::size_t> shape, std::string_view label);
+    // Captured-input entries (label prefix "input." by convention): the
+    // oracle froze the values a port must replay rather than compare.
+    // Consumes the next entry, requiring a bitwise little-endian f8
+    // payload, and returns its decoded doubles in C order.
+    [[nodiscard]] std::vector<double> f64_input(std::string_view label);
     void done() const;
 private:
     [[nodiscard]] const Entry &next(std::string_view label) const;

@@ -1,0 +1,7030 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "compliant.files",
+  "nbytes": 824,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   103
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "compliant.file::config.json",
+  "nbytes": 25800,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 824,
+  "rtol": null,
+  "shape": [
+   3225
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "compliant.file::state.json",
+  "nbytes": 32120,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 26624,
+  "rtol": null,
+  "shape": [
+   4015
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a000.f64",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 58744,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a001.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61080,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a002.f64",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61104,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a003.f64",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61280,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a004.f64",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61296,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a005.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61304,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a006.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61328,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a007.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61352,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a008.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61376,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a009.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61400,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a010.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61424,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a011.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61448,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a012.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61472,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a013.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61496,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a014.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61520,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a015.f64",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61544,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "compliant.file::state.arrays/a016.f64",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61616,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "compliant#keys",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61688,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "compliant.front#keys",
+  "nbytes": 549,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 61704,
+  "rtol": null,
+  "shape": [
+   549
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "compliant.front.backend",
+  "nbytes": 14,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62253,
+  "rtol": null,
+  "shape": [
+   14
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "close",
+  "label": "compliant.front.branch_release_loss_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62267,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "close",
+  "label": "compliant.front.brush_loss_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62275,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "compliant.front.controller_grounded",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62283,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "close",
+  "label": "compliant.front.effective_radius_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62287,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "close",
+  "label": "compliant.front.friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62295,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "compliant.front.geometric_contact",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62303,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "compliant.front.multi_support",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62307,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "close",
+  "label": "compliant.front.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62312,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "close",
+  "label": "compliant.front.normal_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62320,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "close",
+  "label": "compliant.front.normal_vertical_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62328,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "close",
+  "label": "compliant.front.omega_abs_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62336,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "close",
+  "label": "compliant.front.omega_rel_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62344,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "compliant.front.outside_material_load_range",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62352,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "compliant.front.patches#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62357,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "compliant.front.patches[0]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62358,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "compliant.front.patches[0].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62471,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "close",
+  "label": "compliant.front.patches[0].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62472,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "close",
+  "label": "compliant.front.patches[0].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62480,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "close",
+  "label": "compliant.front.patches[0].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62488,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "compliant.front.patches[0].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62496,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "close",
+  "label": "compliant.front.patches[0].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62497,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "close",
+  "label": "compliant.front.patches[0].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62505,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "close",
+  "label": "compliant.front.patches[0].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62513,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "close",
+  "label": "compliant.front.patches[0].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62521,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "compliant.front.patches[0].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62529,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "close",
+  "label": "compliant.front.patches[0].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62530,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "close",
+  "label": "compliant.front.patches[0].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62538,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "close",
+  "label": "compliant.front.patches[0].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62546,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "close",
+  "label": "compliant.front.patches[0].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62554,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "compliant.front.patches[0].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62562,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "close",
+  "label": "compliant.front.patches[0].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62571,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "compliant.front.patches[0].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62579,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "close",
+  "label": "compliant.front.patches[0].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62580,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "close",
+  "label": "compliant.front.patches[0].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62588,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "close",
+  "label": "compliant.front.patches[0].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62596,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "close",
+  "label": "compliant.front.penetration_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62604,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "close",
+  "label": "compliant.front.radial_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62612,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "compliant.front.raw_contact",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62620,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "close",
+  "label": "compliant.front.shear_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62624,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "close",
+  "label": "compliant.front.slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62632,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "close",
+  "label": "compliant.front.slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62640,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "compliant.front.supports_multiple_contacts",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62648,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "compliant.front.surface",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62653,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "close",
+  "label": "compliant.front.tangent_center_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62662,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "close",
+  "label": "compliant.front.tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62670,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "close",
+  "label": "compliant.front.unloaded_radius_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62678,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "close",
+  "label": "compliant.front.vertical_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62686,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "compliant.front.wheel_axis_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62694,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "close",
+  "label": "compliant.front.wheel_axis_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62695,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "close",
+  "label": "compliant.front.wheel_axis_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62703,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "close",
+  "label": "compliant.front.wheel_axis_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62711,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "close",
+  "label": "compliant.front.wheel_axis_moment_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62719,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "compliant.front.world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62727,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "close",
+  "label": "compliant.front.world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62728,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "close",
+  "label": "compliant.front.world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62736,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "close",
+  "label": "compliant.front.world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62744,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "compliant.rear#keys",
+  "nbytes": 549,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 62752,
+  "rtol": null,
+  "shape": [
+   549
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "compliant.rear.backend",
+  "nbytes": 14,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63301,
+  "rtol": null,
+  "shape": [
+   14
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "close",
+  "label": "compliant.rear.branch_release_loss_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63315,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "close",
+  "label": "compliant.rear.brush_loss_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63323,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "compliant.rear.controller_grounded",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63331,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "close",
+  "label": "compliant.rear.effective_radius_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63335,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "close",
+  "label": "compliant.rear.friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63343,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "compliant.rear.geometric_contact",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63351,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "compliant.rear.multi_support",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63355,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "close",
+  "label": "compliant.rear.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63360,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "close",
+  "label": "compliant.rear.normal_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63368,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "close",
+  "label": "compliant.rear.normal_vertical_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63376,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "close",
+  "label": "compliant.rear.omega_abs_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63384,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "close",
+  "label": "compliant.rear.omega_rel_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63392,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "compliant.rear.outside_material_load_range",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63400,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "compliant.rear.patches#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63405,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "compliant.rear.patches[0]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63406,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "compliant.rear.patches[0].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63519,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63520,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63528,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63536,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "compliant.rear.patches[0].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63544,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63545,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63553,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63561,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63569,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "compliant.rear.patches[0].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63577,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63578,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 107,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63586,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63594,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63602,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "compliant.rear.patches[0].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63610,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63619,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "compliant.rear.patches[0].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63627,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63628,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63636,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "close",
+  "label": "compliant.rear.patches[0].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63644,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "close",
+  "label": "compliant.rear.penetration_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63652,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "close",
+  "label": "compliant.rear.radial_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63660,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "compliant.rear.raw_contact",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63668,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "close",
+  "label": "compliant.rear.shear_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63672,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "close",
+  "label": "compliant.rear.slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63680,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "close",
+  "label": "compliant.rear.slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63688,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "compliant.rear.supports_multiple_contacts",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63696,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "compliant.rear.surface",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63701,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "close",
+  "label": "compliant.rear.tangent_center_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63710,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "close",
+  "label": "compliant.rear.tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63718,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "close",
+  "label": "compliant.rear.unloaded_radius_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63726,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "close",
+  "label": "compliant.rear.vertical_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63734,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "compliant.rear.wheel_axis_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63742,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "close",
+  "label": "compliant.rear.wheel_axis_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63743,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "close",
+  "label": "compliant.rear.wheel_axis_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63751,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "close",
+  "label": "compliant.rear.wheel_axis_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63759,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "close",
+  "label": "compliant.rear.wheel_axis_moment_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63767,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "compliant.rear.world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63775,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "close",
+  "label": "compliant.rear.world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63776,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "close",
+  "label": "compliant.rear.world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63784,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "close",
+  "label": "compliant.rear.world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63792,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "distributed.files",
+  "nbytes": 832,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 63800,
+  "rtol": null,
+  "shape": [
+   104
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "distributed.file::config.json",
+  "nbytes": 27896,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 64632,
+  "rtol": null,
+  "shape": [
+   3487
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "distributed.file::state.json",
+  "nbytes": 60624,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 92528,
+  "rtol": null,
+  "shape": [
+   7578
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a000.f64",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 153152,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a001.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 155488,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a002.f64",
+  "nbytes": 8192,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 155512,
+  "rtol": null,
+  "shape": [
+   1024
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a003.f64",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163704,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a004.f64",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163720,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a005.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163728,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a006.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163752,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a007.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163776,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a008.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163800,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a009.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163824,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a010.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163848,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a011.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163872,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a012.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163896,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a013.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163920,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a014.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163944,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a015.f64",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 163968,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "distributed.file::state.arrays/a016.f64",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164040,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "distributed#keys",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164112,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "distributed.front#keys",
+  "nbytes": 633,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164128,
+  "rtol": null,
+  "shape": [
+   633
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "close",
+  "label": "distributed.front.active_station_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164761,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "distributed.front.backend",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164769,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "close",
+  "label": "distributed.front.brush_loss_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164795,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "distributed.front.calibration_status",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164803,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "distributed.front.capability_status",
+  "nbytes": 46,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164829,
+  "rtol": null,
+  "shape": [
+   46
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "distributed.front.controller_grounded",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164875,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "close",
+  "label": "distributed.front.effective_radius_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164879,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "distributed.front.geometric_contact",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164887,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "close",
+  "label": "distributed.front.max_patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164891,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "distributed.front.multi_support",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164899,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "close",
+  "label": "distributed.front.nonsmooth_station_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164904,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "close",
+  "label": "distributed.front.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164912,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "close",
+  "label": "distributed.front.normal_vertical_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164920,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "close",
+  "label": "distributed.front.omega_abs_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164928,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "close",
+  "label": "distributed.front.omega_rel_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164936,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "distributed.front.outside_material_deflection_range",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164944,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "distributed.front.outside_material_load_range",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164949,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "distributed.front.patches#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164954,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[0]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 164955,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[0].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165068,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "close",
+  "label": "distributed.front.patches[0].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165069,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "close",
+  "label": "distributed.front.patches[0].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165077,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "close",
+  "label": "distributed.front.patches[0].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165085,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[0].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165093,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "close",
+  "label": "distributed.front.patches[0].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165094,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "close",
+  "label": "distributed.front.patches[0].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165102,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "close",
+  "label": "distributed.front.patches[0].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165110,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "close",
+  "label": "distributed.front.patches[0].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165118,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[0].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165126,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "close",
+  "label": "distributed.front.patches[0].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165127,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "close",
+  "label": "distributed.front.patches[0].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165135,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "close",
+  "label": "distributed.front.patches[0].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165143,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "close",
+  "label": "distributed.front.patches[0].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165151,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[0].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165159,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "close",
+  "label": "distributed.front.patches[0].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165168,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[0].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165176,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "close",
+  "label": "distributed.front.patches[0].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165177,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "close",
+  "label": "distributed.front.patches[0].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165185,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "close",
+  "label": "distributed.front.patches[0].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165193,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[1]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165201,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[1].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165314,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 200,
+  "kind": "close",
+  "label": "distributed.front.patches[1].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165315,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "close",
+  "label": "distributed.front.patches[1].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165323,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 202,
+  "kind": "close",
+  "label": "distributed.front.patches[1].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165331,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[1].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165339,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 204,
+  "kind": "close",
+  "label": "distributed.front.patches[1].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165340,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "close",
+  "label": "distributed.front.patches[1].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165348,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 206,
+  "kind": "close",
+  "label": "distributed.front.patches[1].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165356,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 207,
+  "kind": "close",
+  "label": "distributed.front.patches[1].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165364,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[1].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165372,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 209,
+  "kind": "close",
+  "label": "distributed.front.patches[1].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165373,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "close",
+  "label": "distributed.front.patches[1].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165381,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "close",
+  "label": "distributed.front.patches[1].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165389,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 212,
+  "kind": "close",
+  "label": "distributed.front.patches[1].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165397,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[1].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165405,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 214,
+  "kind": "close",
+  "label": "distributed.front.patches[1].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165414,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[1].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165422,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 216,
+  "kind": "close",
+  "label": "distributed.front.patches[1].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165423,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 217,
+  "kind": "close",
+  "label": "distributed.front.patches[1].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165431,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "close",
+  "label": "distributed.front.patches[1].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165439,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[2]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165447,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[2].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165560,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 221,
+  "kind": "close",
+  "label": "distributed.front.patches[2].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165561,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 222,
+  "kind": "close",
+  "label": "distributed.front.patches[2].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165569,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 223,
+  "kind": "close",
+  "label": "distributed.front.patches[2].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165577,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 224,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[2].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165585,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 225,
+  "kind": "close",
+  "label": "distributed.front.patches[2].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165586,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 226,
+  "kind": "close",
+  "label": "distributed.front.patches[2].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165594,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 227,
+  "kind": "close",
+  "label": "distributed.front.patches[2].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165602,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 228,
+  "kind": "close",
+  "label": "distributed.front.patches[2].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165610,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[2].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165618,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 230,
+  "kind": "close",
+  "label": "distributed.front.patches[2].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165619,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 231,
+  "kind": "close",
+  "label": "distributed.front.patches[2].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165627,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 232,
+  "kind": "close",
+  "label": "distributed.front.patches[2].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165635,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 233,
+  "kind": "close",
+  "label": "distributed.front.patches[2].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165643,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[2].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165651,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 235,
+  "kind": "close",
+  "label": "distributed.front.patches[2].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165660,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 236,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[2].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165668,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 237,
+  "kind": "close",
+  "label": "distributed.front.patches[2].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165669,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 238,
+  "kind": "close",
+  "label": "distributed.front.patches[2].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165677,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 239,
+  "kind": "close",
+  "label": "distributed.front.patches[2].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165685,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[3]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165693,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[3].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165806,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 242,
+  "kind": "close",
+  "label": "distributed.front.patches[3].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165807,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 243,
+  "kind": "close",
+  "label": "distributed.front.patches[3].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165815,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 244,
+  "kind": "close",
+  "label": "distributed.front.patches[3].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165823,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 245,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[3].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165831,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 246,
+  "kind": "close",
+  "label": "distributed.front.patches[3].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165832,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 247,
+  "kind": "close",
+  "label": "distributed.front.patches[3].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165840,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 248,
+  "kind": "close",
+  "label": "distributed.front.patches[3].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165848,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 249,
+  "kind": "close",
+  "label": "distributed.front.patches[3].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165856,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 250,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[3].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165864,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 251,
+  "kind": "close",
+  "label": "distributed.front.patches[3].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165865,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 252,
+  "kind": "close",
+  "label": "distributed.front.patches[3].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165873,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 253,
+  "kind": "close",
+  "label": "distributed.front.patches[3].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165881,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 254,
+  "kind": "close",
+  "label": "distributed.front.patches[3].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165889,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 255,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[3].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165897,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 256,
+  "kind": "close",
+  "label": "distributed.front.patches[3].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165906,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 257,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[3].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165914,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 258,
+  "kind": "close",
+  "label": "distributed.front.patches[3].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165915,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 259,
+  "kind": "close",
+  "label": "distributed.front.patches[3].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165923,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 260,
+  "kind": "close",
+  "label": "distributed.front.patches[3].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165931,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 261,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[4]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 165939,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 262,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[4].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166052,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 263,
+  "kind": "close",
+  "label": "distributed.front.patches[4].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166053,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 264,
+  "kind": "close",
+  "label": "distributed.front.patches[4].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166061,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 265,
+  "kind": "close",
+  "label": "distributed.front.patches[4].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166069,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 266,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[4].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166077,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 267,
+  "kind": "close",
+  "label": "distributed.front.patches[4].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166078,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 268,
+  "kind": "close",
+  "label": "distributed.front.patches[4].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166086,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 269,
+  "kind": "close",
+  "label": "distributed.front.patches[4].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166094,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 270,
+  "kind": "close",
+  "label": "distributed.front.patches[4].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166102,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 271,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[4].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166110,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 272,
+  "kind": "close",
+  "label": "distributed.front.patches[4].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166111,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 273,
+  "kind": "close",
+  "label": "distributed.front.patches[4].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166119,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 274,
+  "kind": "close",
+  "label": "distributed.front.patches[4].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166127,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 275,
+  "kind": "close",
+  "label": "distributed.front.patches[4].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166135,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 276,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[4].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166143,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 277,
+  "kind": "close",
+  "label": "distributed.front.patches[4].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166152,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 278,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[4].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166160,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 279,
+  "kind": "close",
+  "label": "distributed.front.patches[4].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166161,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 280,
+  "kind": "close",
+  "label": "distributed.front.patches[4].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166169,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 281,
+  "kind": "close",
+  "label": "distributed.front.patches[4].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166177,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 282,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[5]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166185,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 283,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[5].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166298,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 284,
+  "kind": "close",
+  "label": "distributed.front.patches[5].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166299,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 285,
+  "kind": "close",
+  "label": "distributed.front.patches[5].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166307,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 286,
+  "kind": "close",
+  "label": "distributed.front.patches[5].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166315,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 287,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[5].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166323,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 288,
+  "kind": "close",
+  "label": "distributed.front.patches[5].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166324,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 289,
+  "kind": "close",
+  "label": "distributed.front.patches[5].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166332,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 290,
+  "kind": "close",
+  "label": "distributed.front.patches[5].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166340,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 291,
+  "kind": "close",
+  "label": "distributed.front.patches[5].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166348,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 292,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[5].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166356,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 293,
+  "kind": "close",
+  "label": "distributed.front.patches[5].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166357,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 294,
+  "kind": "close",
+  "label": "distributed.front.patches[5].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166365,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 295,
+  "kind": "close",
+  "label": "distributed.front.patches[5].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166373,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 296,
+  "kind": "close",
+  "label": "distributed.front.patches[5].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166381,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 297,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[5].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166389,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 298,
+  "kind": "close",
+  "label": "distributed.front.patches[5].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166398,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 299,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[5].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166406,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 300,
+  "kind": "close",
+  "label": "distributed.front.patches[5].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166407,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 301,
+  "kind": "close",
+  "label": "distributed.front.patches[5].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166415,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 302,
+  "kind": "close",
+  "label": "distributed.front.patches[5].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166423,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 303,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[6]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166431,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 304,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[6].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166544,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 305,
+  "kind": "close",
+  "label": "distributed.front.patches[6].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166545,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 306,
+  "kind": "close",
+  "label": "distributed.front.patches[6].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166553,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 307,
+  "kind": "close",
+  "label": "distributed.front.patches[6].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166561,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 308,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[6].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166569,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 309,
+  "kind": "close",
+  "label": "distributed.front.patches[6].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166570,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 310,
+  "kind": "close",
+  "label": "distributed.front.patches[6].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166578,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 311,
+  "kind": "close",
+  "label": "distributed.front.patches[6].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166586,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 312,
+  "kind": "close",
+  "label": "distributed.front.patches[6].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166594,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 313,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[6].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166602,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 314,
+  "kind": "close",
+  "label": "distributed.front.patches[6].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166603,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 315,
+  "kind": "close",
+  "label": "distributed.front.patches[6].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166611,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 316,
+  "kind": "close",
+  "label": "distributed.front.patches[6].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166619,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 317,
+  "kind": "close",
+  "label": "distributed.front.patches[6].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166627,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 318,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[6].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166635,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 319,
+  "kind": "close",
+  "label": "distributed.front.patches[6].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166644,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 320,
+  "kind": "bitwise",
+  "label": "distributed.front.patches[6].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166652,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 321,
+  "kind": "close",
+  "label": "distributed.front.patches[6].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166653,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 322,
+  "kind": "close",
+  "label": "distributed.front.patches[6].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166661,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 323,
+  "kind": "close",
+  "label": "distributed.front.patches[6].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166669,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 324,
+  "kind": "close",
+  "label": "distributed.front.penetration_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166677,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 325,
+  "kind": "close",
+  "label": "distributed.front.radial_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166685,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 326,
+  "kind": "bitwise",
+  "label": "distributed.front.raw_contact",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166693,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 327,
+  "kind": "close",
+  "label": "distributed.front.shear_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166697,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 328,
+  "kind": "close",
+  "label": "distributed.front.slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166705,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 329,
+  "kind": "close",
+  "label": "distributed.front.slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166713,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 330,
+  "kind": "close",
+  "label": "distributed.front.station_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166721,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 331,
+  "kind": "bitwise",
+  "label": "distributed.front.supports_multiple_contacts",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166729,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 332,
+  "kind": "close",
+  "label": "distributed.front.tangent_center_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166733,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 333,
+  "kind": "close",
+  "label": "distributed.front.tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166741,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 334,
+  "kind": "close",
+  "label": "distributed.front.unloaded_radius_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166749,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 335,
+  "kind": "close",
+  "label": "distributed.front.vertical_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166757,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 336,
+  "kind": "bitwise",
+  "label": "distributed.front.wheel_axis_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166765,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 337,
+  "kind": "close",
+  "label": "distributed.front.wheel_axis_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166766,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 338,
+  "kind": "close",
+  "label": "distributed.front.wheel_axis_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166774,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 339,
+  "kind": "close",
+  "label": "distributed.front.wheel_axis_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166782,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 340,
+  "kind": "close",
+  "label": "distributed.front.wheel_axis_moment_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166790,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 341,
+  "kind": "bitwise",
+  "label": "distributed.front.world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166798,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 342,
+  "kind": "close",
+  "label": "distributed.front.world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166799,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 343,
+  "kind": "close",
+  "label": "distributed.front.world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166807,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 344,
+  "kind": "close",
+  "label": "distributed.front.world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166815,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 345,
+  "kind": "bitwise",
+  "label": "distributed.rear#keys",
+  "nbytes": 633,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 166823,
+  "rtol": null,
+  "shape": [
+   633
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 346,
+  "kind": "close",
+  "label": "distributed.rear.active_station_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167456,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 347,
+  "kind": "bitwise",
+  "label": "distributed.rear.backend",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167464,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 348,
+  "kind": "close",
+  "label": "distributed.rear.brush_loss_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167490,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 349,
+  "kind": "bitwise",
+  "label": "distributed.rear.calibration_status",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167498,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 350,
+  "kind": "bitwise",
+  "label": "distributed.rear.capability_status",
+  "nbytes": 46,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167524,
+  "rtol": null,
+  "shape": [
+   46
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 351,
+  "kind": "bitwise",
+  "label": "distributed.rear.controller_grounded",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167570,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 352,
+  "kind": "close",
+  "label": "distributed.rear.effective_radius_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167574,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 353,
+  "kind": "bitwise",
+  "label": "distributed.rear.geometric_contact",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167582,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 354,
+  "kind": "close",
+  "label": "distributed.rear.max_patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167586,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 355,
+  "kind": "bitwise",
+  "label": "distributed.rear.multi_support",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167594,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 356,
+  "kind": "close",
+  "label": "distributed.rear.nonsmooth_station_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167599,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 357,
+  "kind": "close",
+  "label": "distributed.rear.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167607,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 358,
+  "kind": "close",
+  "label": "distributed.rear.normal_vertical_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167615,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 359,
+  "kind": "close",
+  "label": "distributed.rear.omega_abs_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167623,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 360,
+  "kind": "close",
+  "label": "distributed.rear.omega_rel_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167631,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 361,
+  "kind": "bitwise",
+  "label": "distributed.rear.outside_material_deflection_range",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167639,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 362,
+  "kind": "bitwise",
+  "label": "distributed.rear.outside_material_load_range",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167644,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 363,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167649,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 364,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[0]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167650,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 365,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[0].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167763,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 366,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167764,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 367,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167772,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 368,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167780,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 369,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[0].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167788,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 370,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167789,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 371,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167797,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 372,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167805,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 373,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167813,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 374,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[0].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167821,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 375,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167822,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 376,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167830,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 377,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167838,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 378,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167846,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 379,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[0].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167854,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 380,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167863,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 381,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[0].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167871,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 382,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167872,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 383,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167880,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 384,
+  "kind": "close",
+  "label": "distributed.rear.patches[0].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167888,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 385,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[1]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 167896,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 386,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[1].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168009,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 387,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168010,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 388,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168018,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 389,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168026,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 390,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[1].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168034,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 391,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168035,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 392,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168043,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 393,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168051,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 394,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168059,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 395,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[1].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168067,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 396,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168068,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 397,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168076,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 398,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168084,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 399,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168092,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 400,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[1].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168100,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 401,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168109,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 402,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[1].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168117,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 403,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168118,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 404,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168126,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 405,
+  "kind": "close",
+  "label": "distributed.rear.patches[1].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168134,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 406,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[2]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168142,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 407,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[2].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168255,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 408,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168256,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 409,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168264,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 410,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168272,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 411,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[2].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168280,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 412,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168281,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 413,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168289,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 414,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168297,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 415,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168305,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 416,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[2].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168313,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 417,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168314,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 418,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168322,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 419,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168330,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 420,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168338,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 421,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[2].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168346,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 422,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168355,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 423,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[2].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168363,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 424,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168364,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 425,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168372,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 426,
+  "kind": "close",
+  "label": "distributed.rear.patches[2].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168380,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 427,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[3]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168388,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 428,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[3].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168501,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 429,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168502,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 430,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168510,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 431,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168518,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 432,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[3].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168526,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 433,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168527,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 434,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168535,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 435,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168543,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 436,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168551,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 437,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[3].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168559,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 438,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168560,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 439,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168568,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 440,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168576,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 441,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168584,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 442,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[3].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168592,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 443,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168601,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 444,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[3].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168609,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 445,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168610,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 446,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168618,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 447,
+  "kind": "close",
+  "label": "distributed.rear.patches[3].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168626,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 448,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[4]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168634,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 449,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[4].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168747,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 450,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168748,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 451,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168756,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 452,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168764,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 453,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[4].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168772,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 454,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168773,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 455,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168781,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 456,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168789,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 457,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168797,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 458,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[4].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168805,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 459,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168806,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 460,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168814,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 461,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168822,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 462,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168830,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 463,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[4].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168838,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 464,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168847,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 465,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[4].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168855,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 466,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168856,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 467,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168864,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 468,
+  "kind": "close",
+  "label": "distributed.rear.patches[4].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168872,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 469,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[5]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168880,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 470,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[5].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168993,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 471,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 168994,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 472,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169002,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 473,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169010,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 474,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[5].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169018,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 475,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169019,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 476,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169027,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 477,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169035,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 478,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169043,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 479,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[5].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169051,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 480,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169052,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 481,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169060,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 482,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169068,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 483,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169076,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 484,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[5].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169084,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 485,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169093,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 486,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[5].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169101,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 487,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169102,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 488,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169110,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 489,
+  "kind": "close",
+  "label": "distributed.rear.patches[5].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169118,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 490,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[6]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169126,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 491,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[6].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169239,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 492,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169240,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 493,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169248,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 494,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169256,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 495,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[6].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169264,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 496,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169265,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 497,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169273,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 498,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169281,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 499,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169289,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 500,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[6].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169297,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 501,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169298,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 502,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169306,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 503,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169314,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 504,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169322,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 505,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[6].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169330,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 506,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169339,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 507,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[6].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169347,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 508,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169348,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 509,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169356,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 510,
+  "kind": "close",
+  "label": "distributed.rear.patches[6].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169364,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 511,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[7]#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169372,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 512,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[7].couple_world_nm#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169485,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 513,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].couple_world_nm[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169486,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 514,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].couple_world_nm[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169494,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 515,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].couple_world_nm[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169502,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 516,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[7].normal#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169510,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 517,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].normal[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169511,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 518,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].normal[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169519,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 519,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].normal[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169527,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 520,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169535,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 521,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[7].point_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169543,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 522,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].point_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169544,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 523,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].point_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169552,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 524,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].point_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169560,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 525,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169568,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 526,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[7].source_geom",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169576,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 527,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169585,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 528,
+  "kind": "bitwise",
+  "label": "distributed.rear.patches[7].world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169593,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 529,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169594,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 530,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169602,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 531,
+  "kind": "close",
+  "label": "distributed.rear.patches[7].world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169610,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 532,
+  "kind": "close",
+  "label": "distributed.rear.penetration_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169618,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 533,
+  "kind": "close",
+  "label": "distributed.rear.radial_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169626,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 534,
+  "kind": "bitwise",
+  "label": "distributed.rear.raw_contact",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169634,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 535,
+  "kind": "close",
+  "label": "distributed.rear.shear_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169638,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 536,
+  "kind": "close",
+  "label": "distributed.rear.slip_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169646,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 537,
+  "kind": "close",
+  "label": "distributed.rear.slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169654,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 538,
+  "kind": "close",
+  "label": "distributed.rear.station_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169662,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 539,
+  "kind": "bitwise",
+  "label": "distributed.rear.supports_multiple_contacts",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169670,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 540,
+  "kind": "close",
+  "label": "distributed.rear.tangent_center_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169674,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 541,
+  "kind": "close",
+  "label": "distributed.rear.tangent_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169682,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 542,
+  "kind": "close",
+  "label": "distributed.rear.unloaded_radius_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169690,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 543,
+  "kind": "close",
+  "label": "distributed.rear.vertical_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169698,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 544,
+  "kind": "bitwise",
+  "label": "distributed.rear.wheel_axis_m#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169706,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 545,
+  "kind": "close",
+  "label": "distributed.rear.wheel_axis_m[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169707,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 546,
+  "kind": "close",
+  "label": "distributed.rear.wheel_axis_m[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169715,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 547,
+  "kind": "close",
+  "label": "distributed.rear.wheel_axis_m[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169723,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 548,
+  "kind": "close",
+  "label": "distributed.rear.wheel_axis_moment_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169731,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 549,
+  "kind": "bitwise",
+  "label": "distributed.rear.world_force_n#length",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169739,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 550,
+  "kind": "close",
+  "label": "distributed.rear.world_force_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169740,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 551,
+  "kind": "close",
+  "label": "distributed.rear.world_force_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169748,
+  "rtol": 1e-09,
+  "shape": []
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 552,
+  "kind": "close",
+  "label": "distributed.rear.world_force_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_tire_channel_parity_across_backends",
+  "offset": 169756,
+  "rtol": 1e-09,
+  "shape": []
+ }
+]

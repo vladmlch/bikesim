@@ -177,7 +177,10 @@ void Node::f64_close(std::span<const double> actual, std::string_view label) {
         const bool equal = actual[i] == expected || (std::isnan(actual[i]) && std::isnan(expected)) ||
             (std::isfinite(actual[i]) && std::isfinite(expected) &&
              std::abs(actual[i] - expected) <= entry.atol + entry.rtol * std::abs(expected));
-        bt::require(equal, context() + " label '" + entry.label + "' element " + std::to_string(i) + ": outside recorded tolerance");
+        bt::require(equal, context() + " label '" + entry.label + "' element " + std::to_string(i) +
+            ": actual=" + hex(std::bit_cast<std::uint64_t>(actual[i])) +
+            " expected=" + hex(std::bit_cast<std::uint64_t>(expected)) +
+            ": outside recorded tolerance");
     }
     ++cursor_;
 }
@@ -197,6 +200,15 @@ void Node::bytes(std::span<const std::byte> actual, std::string_view dtype,
     bt::require(entry.kind == "bitwise" && entry.dtype == dtype && std::ranges::equal(entry.shape, shape), context() + ": kind, dtype or shape differs");
     bt::require(std::ranges::equal(entry.bytes, actual), context() + " label '" + entry.label + "': bytes differ");
     ++cursor_;
+}
+std::vector<double> Node::f64_input(std::string_view label) {
+    const auto &entry = next(label);
+    bt::require(entry.kind == "bitwise" && entry.dtype == "<f8", context() + ": expected bitwise binary64 input");
+    std::vector<double> result(entry.bytes.size() / 8);
+    for (std::size_t i = 0; i < result.size(); ++i)
+        result[i] = std::bit_cast<double>(bits(entry, i));
+    ++cursor_;
+    return result;
 }
 void Node::done() const {
     bt::require(cursor_ == entries_.size(), context() + ": unconsumed captured comparisons remain");

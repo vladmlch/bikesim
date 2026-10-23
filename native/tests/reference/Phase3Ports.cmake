@@ -22,6 +22,9 @@ bike_add_reference_test(native_static_brake ENGINE
   SOURCES test_native_static_brake.cpp LIBRARIES bike_app LABELS t52 runtime golden)
 bike_add_reference_test(native_numeric_domains ENGINE
   SOURCES test_native_numeric_domains.cpp LIBRARIES bike_app LABELS t52 numerics)
+bike_add_reference_test(native_numeric_completion ENGINE
+  SOURCES test_native_numeric_completion.cpp LIBRARIES bike_app
+  LABELS t52 numerics golden)
 bike_add_reference_test(native_kernel_contracts ENGINE
   SOURCES test_native_kernel_contracts.cpp LIBRARIES bike_app LABELS t52 numerics)
 bike_add_reference_test(pneumatic_tire_config ENGINE

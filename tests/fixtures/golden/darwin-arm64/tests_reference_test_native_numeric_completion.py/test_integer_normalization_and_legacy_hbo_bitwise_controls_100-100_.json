@@ -1,0 +1,30 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_numeric_completion.py::test_integer_normalization_and_legacy_hbo_bitwise_controls[100-100]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_numeric_completion.py::test_integer_normalization_and_legacy_hbo_bitwise_controls[100-100]",
+  "offset": 208,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ }
+]

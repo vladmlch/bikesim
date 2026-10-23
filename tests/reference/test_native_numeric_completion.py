@@ -1,5 +1,7 @@
 """F2 domains at mutable Python boundaries and corresponding native owners."""
 import copy
+import json
+from collections.abc import Mapping
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -9,8 +11,80 @@ import pytest
 
 from native_loader import load_native
 from _bits import assert_bitwise_equal
+import _golden
 from test_native_input_contracts import resolved, at
 from test_native_numeric_domains import python_suspension
+
+
+def _record_tree_close(expected, path='root', *, atol=1e-9, rtol=1e-9):
+    """Freeze the oracle half of an assert_tree_close comparison.
+
+    Structural records (sorted #keys, #length) let the C++ port replay the
+    key-set and arity contracts; numeric leaves record close-kind f64 with
+    the same tolerances the assertion applies; discrete leaves freeze as
+    canonical JSON bytes."""
+    from bike_sim.sim.ride.physical_samples import plain
+    expected = plain(expected)
+    if isinstance(expected, Mapping):
+        payload = json.dumps(sorted(expected), ensure_ascii=False,
+                             separators=(',', ':')).encode('utf-8')
+        _golden.record(np.frombuffer(payload, dtype=np.uint8), path + '#keys')
+        for key in sorted(expected):
+            _record_tree_close(expected[key], f'{path}.{key}', atol=atol, rtol=rtol)
+    elif isinstance(expected, (list, tuple)):
+        _golden.record(np.frombuffer(str(len(expected)).encode('ascii'), dtype=np.uint8),
+                       path + '#length')
+        for index, value in enumerate(expected):
+            _record_tree_close(value, f'{path}[{index}]', atol=atol, rtol=rtol)
+    elif isinstance(expected, bool) or expected is None or isinstance(expected, str):
+        payload = json.dumps(expected, ensure_ascii=False,
+                             separators=(',', ':'), allow_nan=False).encode('utf-8')
+        _golden.record(np.frombuffer(payload, dtype=np.uint8), path)
+    else:
+        _golden.record(np.asarray(expected, dtype=np.float64), path,
+                       kind='close', rtol=rtol, atol=atol)
+
+
+def _record_bootstrap(sim, side, committed_name, tmp_path):
+    """Freeze the oracle's complete t=0 runtime inventory as golden inputs.
+
+    The live reset's settled state is platform-dependent (libm/settle code
+    paths differ ~1e-6 between darwin-arm64 and linux-aarch64), so neither
+    committed bootstrap fixture is the oracle's own seed. The canonical
+    config.json/state.json documents travel as input entries; the C++ port
+    materializes them next to the committed model.mjb (model-field drift
+    measures ~1e-13 in the trajectory, inside every comparison tolerance)
+    and replays the same platform-faithful start."""
+    import hashlib
+    import sys
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(root / 'tools' / 'migration'))
+    from capture_reference import FixtureWriter, write_canonical
+    from bike_sim.native.setup import capture_bootstrap
+    stage = tmp_path / f'bootstrap-{side}'
+    stage.mkdir(exist_ok=True)
+    boot = capture_bootstrap(sim, stage)
+    # The state document's model digest is re-pointed at the committed
+    # model image so the port validates digest-first and skips a 5.8 MiB
+    # model payload whose content barely differs.
+    committed = root / 'tests/fixtures/migration/bootstrap' / committed_name
+    boot.state['model_digest'] = hashlib.sha256(
+        (committed / 'model.mjb').read_bytes()).hexdigest()
+    writer = FixtureWriter(stage)
+    records = write_canonical(writer, 'config.json', boot.config)
+    records += write_canonical(writer, 'state.json', boot.state)
+    manifest = json.dumps(
+        [{'name': record['path'], 'bytes': record['bytes']}
+         for record in records],
+        separators=(',', ':')).encode('utf-8')
+    _golden.record(np.frombuffer(
+        manifest + b' ' * (-len(manifest) % 8)).view('<f8'), f'{side}.files')
+    for record in records:
+        blob = (stage / record['path']).read_bytes()
+        _golden.record(np.frombuffer(
+            blob + b'\x00' * (-len(blob) % 8)).view('<f8'),
+            f"{side}.file::{record['path']}")
 
 
 @pytest.mark.parametrize('key', ['piston_area_m2', 'token_volume_m3', 'base_pos_volume_m3', 'base_neg_volume_m3'])
@@ -663,6 +737,11 @@ def test_cruise_target_rejects_zero_dimensional_scalar(resolved):
 def test_brake_and_cruise_numpy_numeric_controls(resolved):
     from bike_sim.sim.ride.cruise import CruiseController
     env, path, wire = resolved
+    # The resolved env sits one episode step past t=0; the brake channel
+    # reads its wheel speeds, so the port replays the captured state.
+    _golden.record(env.sim.data.qpos, 'input.qpos')
+    _golden.record(env.sim.data.qvel, 'input.qvel')
+    _golden.record(env.sim.data.qacc_warmstart, 'input.qacc_warmstart')
     native = load_native().Stepper(path, wire)
     native.set_state(env.sim.data.qpos, env.sim.data.qvel, env.sim.data.act, env.sim.data.qacc_warmstart, 0.)
     demands = (np.float64(-.5), np.float64(1.5))
@@ -933,6 +1012,7 @@ def test_tire_channel_parity_across_backends(tmp_path, native_module):
         'max_patch_count', 'outside_material_deflection_range'}
     # compliant_2d — the established wire, unchanged by the new keys.
     sim = make_python_ride()
+    _record_bootstrap(sim, 'compliant', 'welded', tmp_path)
     native = create_native_ride(sim, strict=False, record_decimation=1)
     period = sim.physical.control_clock.steps_per_period
     for target in range(1, period + 1):
@@ -940,6 +1020,7 @@ def test_tire_channel_parity_across_backends(tmp_path, native_module):
         native.advance(target, command)
     oracle = sim.physical.sample.channels['tires']
     got = native.snapshot().latest_sample.channels['tires']
+    _record_tree_close(oracle, 'compliant')
     assert_tree_close(got, oracle)
     for side in ('front', 'rear'):
         assert set(got[side]) == set(oracle[side])
@@ -947,6 +1028,7 @@ def test_tire_channel_parity_across_backends(tmp_path, native_module):
     native.close()
     # distributed_2d_reference — the declared multi-contact wire.
     env = _env(tmp_path)
+    _record_bootstrap(env.sim, 'distributed', 'distributed_rocky', tmp_path)
     ride = create_native_ride(env.sim, strict=False, record_decimation=1)
     period = env.sim.physical.control_clock.steps_per_period
     for target in range(1, period + 1):
@@ -954,6 +1036,7 @@ def test_tire_channel_parity_across_backends(tmp_path, native_module):
         ride.advance(target, command)
     oracle = env.sim.physical.sample.channels['tires']
     got = ride.snapshot().latest_sample.channels['tires']
+    _record_tree_close(oracle, 'distributed')
     assert_tree_close(got, oracle)
     for side in ('front', 'rear'):
         assert set(got[side]) == set(oracle[side])

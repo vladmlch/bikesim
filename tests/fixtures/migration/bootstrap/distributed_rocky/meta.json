@@ -1,0 +1,20 @@
+{
+ "integration_width": 292,
+ "model_dims": {
+  "na": 0,
+  "nbody": 28,
+  "neq": 7,
+  "ngeom": 94,
+  "njnt": 26,
+  "nq": 26,
+  "nsensor": 17,
+  "nsensordata": 31,
+  "nsite": 33,
+  "ntendon": 1,
+  "nu": 12,
+  "nv": 26,
+  "nwrap": 2
+ },
+ "model_sha256": "836e894a4720710f53f7d0ed23c4958ded97cd5562dc4c89546e1a7fe9fdf573",
+ "provenance": "test_native_distributed_tire._env: viewer_physics_distributed.toml + alpine_rocky.toml, decimation=1"
+}

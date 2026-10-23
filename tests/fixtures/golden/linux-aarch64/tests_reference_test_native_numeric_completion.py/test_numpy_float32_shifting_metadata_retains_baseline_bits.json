@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f4",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_numeric_completion.py::test_numpy_float32_shifting_metadata_retains_baseline_bits",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

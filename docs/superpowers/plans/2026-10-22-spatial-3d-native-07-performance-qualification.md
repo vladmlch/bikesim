@@ -1,65 +1,39 @@
-# Spatial 3D Native — производительность, детерминизм и квалификация Implementation Plan
+# Spatial 3D Native — 07. Производительность, детерминизм и квалификация (W-фаза: W50–W54)
 
-> **Для исполнителей:** использовать superpowers:subagent-driven-development (рекомендуется) или superpowers:executing-plans для последовательного выполнения задач; отмечать шаги через `- [ ]`. При отсутствии этих skills сохранить независимое ревью и проверку критериев. Наличие кода не означает, что измерения выполнены.
+> **Для исполнителей:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development (рекомендуется) или superpowers:executing-plans. Все задачи — **one-shot write** tooling/validators/pool-кода против frozen headers W00 (`00-foundation.md` §W00.9 `spatial_performance.hpp`, `spatial_worker_pool.hpp`; W00.11 `qualification_registry.hpp`). Запрещены configure/build/compile/ctest/запуск/измерения/санитайзеры. Измерения, решения go/no-go и итоговая квалификация — `09-verification.md` V09 (S50–S53) и V10 (S54).
 
-**Goal:** Измерить исходную однопоточную реализацию, добавлять параллелизм только при доказанной пользе и завершить пространственную квалификацию на macOS/Linux.
+**Goal:** Написать measurement driver/report/profile, детерминированный контракт пула и его реализацию, probe engine pool, qualification validator и скелеты evidence — целиком, без запуска.
 
-**Architecture:** Один детерминированный C++-шаг и один владелец состояния MuJoCo. Возможный пул шины вычисляет независимые результаты элементов в заранее назначенных ячейках; суммирование и фиксацию выполняет владелец в неизменном порядке. Параллельные процессы пакета, потоки шины внутри шага и внутренний пул MuJoCo — три независимых параметра, измеряемые отдельно.
+**Architecture:** Один детерминированный C++-шаг и один владелец `mjData`. Пул вычисляет независимые элементы шины в заранее назначенных ячейках; суммирование и commit — владелец в неизменном порядке. Процессы batch, потоки шины и внутренний пул MuJoCo — три независимых параметра.
 
-**Tech Stack:** C++23; существующий `bike-measure-realtime`; нативные инструменты эталонов и fixtures; корневой CMake; RTSan/ASan и квалифицированный TSan на Linux; монотонные часы; CTest и тестовый контур `bt`.
+**Tech Stack:** C++23; существующий `bike-measure-realtime` (`native/cmake/RealtimeMeasurement.cmake`, `runtime/realtime_measurement.cpp:35–112`, `realtime_report.cpp:92–108`, `realtime_driver.cpp:37–56,139–157`); монотонные часы; `bt`.
 
-**Spec:** `../specs/2026-10-22-spatial-3d-native-design.md`, `2026-10-22-spatial-3d-native-master.md`, `2026-10-22-spatial-3d-native-contracts.md`; приёмка шины S28, запуска и физики S36, fixtures S44, передача приложения S49.
+**Spec:** `../specs/2026-10-22-spatial-3d-native-design.md`; contracts C8; приёмка шины W28/V06, физики W36/V06, fixtures W44/V07, приложения W49/V08.
 
 ## Общие ограничения
 
-- При написании плана измерения, тесты, CMake, приложения и проверки санитайзеров не запускались. Все числа ниже — критерии будущей приёмки, не измеренный результат.
-- Цель уровня `fast`: медианный RTF без окна ≥2.0, достигнутый средний RTF с окном ≥1.0 при целевом темпе 1×; точные оборудование, конфигурация и протокол записываются. Этот результат не обещается для любой Linux-машины.
-- При неизменных сборке, численном провайдере и исходниках повторные запуски и разные количества потоков должны побитово сохранять физическое состояние, силы и сенсоры. Межплатформенные эталоны отдельные согласно ADR0003.
-- Смысл и пороги старых planar-измерений сохраняются; новый пространственный профиль имеет собственную версию.
-- Один поток остаётся режимом по умолчанию до измеренного улучшения и полной проверки детерминизма и санитайзеров; N=1 не создаёт рабочие потоки.
-- `--benchmark` может измерять диагностический невалидный префикс, но не закрывает приёмку корректного заезда или его скорости.
-- Изменение dt, отключение физики, снижение детализации шины или точности требуют повторной физической приёмки затронутых режимов.
-- Запрещены атомарные операции над float, непостоянный порядок результатов, RNG, зависящий от расписания, и дерево суммирования, зависящее от числа потоков. Разбиение по N не меняет порядок арифметики.
-- Поток с `mjData` остаётся единственным владельцем; работники пула не изменяют общий MuJoCo state и не вызывают глобальные callbacks.
-- Отсутствующий инструмент или неработающая среда исполнения блокирует проверку. Успешная компиляция с TSan не доказывает работу его runtime.
-- G0–G6 — upstream gates производителей PFC; S54 использует их и отдельно закрывает spatial M6. S50 означает достоверный отчёт измерений, даже при недостигнутом RTF; достижение цели проверяется в M6, поэтому медленный исходный вариант не блокирует S51.
+- Цель уровня `fast` (проверяется V09/V10): медианный headless RTF ≥2.0; с окном достигнутый средний RTF ≥1.0 при темпе 1×. Числа ниже — критерии, не измерения.
+- Один поток — default; N=1 не создаёт рабочие потоки. Запрещены float atomics, непостоянный порядок результатов, RNG по расписанию, дерево суммирования от числа потоков.
+- `BikeCompilerPolicy.cmake:343–349` документирует аварийное завершение TSan на arm64-Darwin; `NATIVE_TSAN` опции нет — W52 добавляет её только для Linux preset.
+- `--benchmark` может измерять невалидный префикс, но не закрывает приёмку.
+- W51/W52/W53 пишут код **полностью** (pool, probe) — решение `not_selected` принимает V09 по измерениям; неиспользованный код при `not_selected` удаляется в V09 отдельным коммитом (не остаётся dead code в продукте).
 
-## Факты текущего дерева, меняющие старый P7
+---
 
-`bike-measure-realtime` уже существует (`native/cmake/RealtimeMeasurement.cmake`). Полное измеряемое время включает вызовы advance, накладные расходы цикла и завершающий flush; подготовка и экспорт показаны отдельно (`runtime/realtime_measurement.cpp:35–112`). Задержка порции из нескольких шагов не равна p95 одного шага.
+## W50 — Measurement driver, профиль и отчёт (← S50)
 
-Текущий отчёт требует хотя бы один прогрев и три измеренных запуска, отдельно проверяет сопоставимость и валидность префиксов. Пороги headless≥1 и пока неподтверждённый GUI≥0.95 относятся к старому профилю (`realtime_report.cpp:92–108`). Пространственные цели 2/1 публикуются отдельно. Короткий аварийно завершённый эпизод не доказывает realtime, даже если отношение simulated/wall велико.
+**Dependencies:** W28, W36 (fixture/demand trace), W19. **Create:** `native/src/runtime/spatial_performance.cpp`, `native/tests/spatial/performance_report.cpp`, `docs/superpowers/audits/2026-10-22-spatial-3d-performance.md` (скелет: profile identity, таблица runs, regions — все `pending V09`). **Modify:** `native/src/runtime/{realtime_measurement.cpp,realtime_report.cpp,realtime_options.cpp,realtime_provenance.cpp,realtime_driver.cpp}`, `native/src/viewer/pacer.{hpp,cpp}`, `docs/perf.md`.
 
-`native/cmake/BikeCompilerPolicy.cmake:343–349` документирует аварийное завершение TSan на arm64-Darwin; существующей опции `NATIVE_TSAN` нет. Обещание старого P7 «TSan на M4» заменяется квалифицированным Linux-прогоном с реальным отрицательным контролем. `tools/run_tests.sh full` уже включает предварительные native-проверки (`:147–152`); два одинаковых полных прогона подряд не нужны.
+**Interfaces:** W00.9 `rtf_threshold_met`, `SpatialPerformanceProfile`, `RegionTimings`.
 
-Существующий `NativeDriver` в `runtime/realtime_driver.cpp:37–56,139–157` зависит от CLI, `request.track.length_m`, `start_x_m`, старого `finish_x` и `terrain_vertices.npy`. Для раннего пространственного замера S50 вводит вход через готовый native request из S36. Подключение публичных новых CLI-опций и полной записи следует S45/S42.
-
-## Точные режимы сравнения
-
-| Проверка | Что фиксировано | Что сравнивается | Не является доказательством |
-|---|---|---|---|
-| Однопоточный повтор | Сборка, провайдер, конфигурация, seed, assets | Побитово: состояние, строки сил, сенсоров и управления | Физической точности |
-| Потоки N1/2/4/8 | Всё кроме количества работников шины | Те же bytes, включая полный checkpoint | Межплатформенного побитового совпадения |
-| macOS и Linux | Одна физическая спецификация | Эталоны каждой платформы и физические допуски | Общего побитового потока |
-| RTF | Полный валидный заезд с одинаковыми границами | Модельное время / объявленное реальное время | Корректности по одному времени |
-| Темп 1× | Целевая частота и фиксированное число шагов | Достигнутый RTF, долг, опоздания, частота отрисовки | Предельной скорости без окна |
-| Checked replay | Совместимая execution identity | Два объявленных правила сравнения и полное состояние | Независимой физической валидации |
-
-## S50 — Однопоточные измерения и пространственный профиль производительности
-
-**Dependencies:** обязательные зависимости завершения S50 — S28 и S36; через них доступны S19 и upstream G1/G2. Инструменты можно готовить раньше, после S04/S19. S50 закрывается достоверным однопоточным baseline, даже при недостигнутом RTF, после чего S51 может начаться. GUI/recording/product-измерения после S44–S49 дополняют тот же отчёт в S54 и не блокируют завершение S50. Ранний замер не объявляет ещё отсутствующие запись или GUI проверенными.
-
-**Files:** Create `native/src/runtime/spatial_performance.{hpp,cpp}`, `native/tests/spatial/performance_report.cpp`; Modify `native/src/runtime/{realtime_measurement.cpp,realtime_report.cpp,realtime_options.cpp,realtime_provenance.cpp,realtime_driver.cpp}`, `native/src/viewer/pacer.{hpp,cpp}`, `docs/perf.md`; Create evidence `docs/superpowers/audits/2026-10-22-spatial-3d-performance.md`.
-
-**Consumes:** валидный native `SetupRequest` и программа воздействий S36, identities конфигурации и fixture, существующий интерфейс measurement `Driver`. **Produces:** профиль `spatial-fast-v1`, время отдельных областей однопоточного расчёта и минимум три полных валидных запуска после прогрева. GUI и полные recording-режимы добавляет S54. Чистая функция `runtime::spatial::rtf_threshold_met(double simulated_s,double wall_s,double target)` проверяет конечность, simulated≥0, wall>0, target>0 и возвращает `simulated_s/wall_s>=target`.
-
-- [ ] Добавить в существующий `NativeDriver` холодный конструктор с owned `std::unique_ptr<bike::initialization::SetupRequest>`, `Options` и `Clock`; он получает fixture S36 напрямую, подготавливает `NativeRideRuntime` и не вызывает CLI/research session. Spatial-ветка использует S33 outcomes, длительность/число шагов, объявленные progress/corridor/domain limits и `Terrain3dKind`; не применяет planar `finish_x` и не требует 1D `terrain_vertices.npy`. Публичный measurement CLI и полные assets подключить после S45/S42 через тот же driver.
-- [ ] Добавить в отчёт ID профиля, root/tier/размеры сетки/dt, режимы сенсоров и записи, числа процессов/потоков шины/потоков MuJoCo, hashes исходников/конфигурации/калибровки и провайдера численных вычислений. Смысл старого planar-отчёта сохранить.
-- [ ] Зафиксировать маршрут и длительность ≥30 s измеряемой симуляции; выполнить хотя бы один полный прогрев и три измеренных запуска с одинаковой identity и валидным префиксом. Подготовку, загрузку terrain, прогрев кэшей и экспорт измерять отдельно; завершающий flush входит в полное время заезда.
-- [ ] Измерять доступные области без изменения физической арифметики: terrain/rays, обновление и суммирование элементов, шаг MuJoCo, rider/steer и учёт энергии. Области sensor/research, запись и UI, ещё отсутствующие в раннем fixture S36, пометить pending для S54; их отсутствие не удерживает S50 открытой. Указать накладные расходы измерения; инструментированные замеры не заменяют итоговое время Release-заезда.
-- [ ] Измерить медианный headless RTF относительно цели ≥2.0 на объявленном оборудовании; сохранить каждое значение, причину завершения, число шагов, валидность и диагностику. Non-strict запуск помогает диагностике, но не закрывает квалификацию скорости.
-- [ ] Оценить чувствительность к уже доступным dt/tier/retention-режимам, сохраняя разные конфигурации раздельно. Ещё отсутствующие recording/GUI режимы пометить pending для дополнения в S54, без удержания S50 открытой. Снижение разрешения требует повторной физической проверки terrain/шины перед признанием ускорения.
-- [ ] Добавить тесты отчёта с управляемыми часами: нулевое/нечисловое время, раннее падение, несовместимая identity, единственный запуск, неверная маркировка задержки порции. Commit `perf(spatial): measured serial baseline and profile`.
+- [ ] `rtf_threshold_met(sim, wall, target)`: finite, `sim>=0`, `wall>0`, `target>0` иначе `std::invalid_argument`; `return sim/wall >= target`.
+- [ ] `realtime_driver.cpp`: холодный конструктор `NativeDriver(std::unique_ptr<bike::initialization::SetupRequest>, Options, Clock)` — готовит `NativeRideRuntime` напрямую, без CLI/research session; spatial ветка: завершение по W33 outcomes/duration/steps, limits progress/corridor/domain, `Terrain3dKind`; без planar `finish_x` и `terrain_vertices.npy`. Публичный measurement CLI с `--spatial/--terrain3d` (W45) — тот же driver.
+- [ ] `realtime_report.cpp`: поля `profile` (`SpatialPerformanceProfile`), `regions` (`RegionTimings` с `*_pending` флагами), `runs[]{rtf, terminal_reason, steps, valid, warmup:bool}`, `median_rtf`, `target_met:bool|null`; прежний planar смысл сохранён; требование ≥1 warmup и ≥3 measured runs одной identity; non-strict run помечается `diagnostic`.
+- [ ] `realtime_measurement.cpp`: regions измеряются монотонными часами вокруг terrain/rays, tyre elements, engine step, rider/steer, accounting без изменения арифметики; `sensors/recording/ui` → `pending=true` если отсутствуют в fixture; полное время включает финальный flush; подготовка/загрузка/warmup/экспорт — отдельно; overhead инструментирования — отдельное поле.
+- [ ] `realtime_options.cpp`: `--profile spatial-fast-v1`, duration ≥30 s по умолчанию для spatial; `pacer.cpp`: учёт долга/опозданий/frame rate в отчёт (используется V10 для GUI measurement).
+- [ ] `performance_report.cpp`: `rtf_threshold_met(30,15,2)==true`, `(30,15.1,2)==false`, `(30,0,2)` → `bt::invalid`; отчёт с управляемыми часами: нулевое/NaN время → reject; раннее падение → `valid=false` и исключение из median; несовместимая identity двух runs → reject; единственный run → `target_met=null`; неверная маркировка задержки порции (batch latency ≠ p95 шага) → reject.
+- [ ] CMake: `bike_add_spatial_test(performance_report SOURCES performance_report.cpp LIBRARIES bike_runtime bike_spatial)`.
+- [ ] Коммит `perf(spatial): W50 serial measurement driver and report`, `Verification: pending V09`.
 
 ```cpp
 bt::require(runtime::spatial::rtf_threshold_met(30., 15., 2.), "headless target inclusive");
@@ -67,91 +41,55 @@ bt::require(!runtime::spatial::rtf_threshold_met(30., 15.1, 2.), "no threshold r
 bt::invalid([] { (void)runtime::spatial::rtf_threshold_met(30., 0., 2.); });
 ```
 
-**Acceptance S50:** полный валидный префикс, записанное оборудование и честные границы измерения дают завершённый исходный отчёт, даже если RTF ниже цели. Цель получает failed/pending; S51 может устранять измеренное узкое место. Только M6 требует достигнутую скорость. **Failure/rollback:** повреждённый или физически невалидный запуск остаётся диагностическим и не квалифицирует realtime. dt и физические коэффициенты автоматически не меняются.
+## W51 — Детерминированный контракт пула: ranges и ownership (← S51)
 
-## S51 — Целесообразность и контракт детерминированного пула
+**Dependencies:** W50, W27. **Create:** `native/src/runtime/spatial_worker_pool_ranges.cpp` (только `partition_ranges`), `native/tests/spatial/worker_ranges.cpp`, раздел «Decision» в performance audit (`decision: pending V09`, критерии go/no-go записаны заранее).
 
-**Dependencies:** однопоточный профиль S50, владение состоянием шины S27, полный checkpoint S42. При достигнутых однопоточных целях допускается `not_selected` с объяснением: продукт продолжает квалификацию без фиктивной поддержки `--threads>1`. Невыполненные цели этим решением не закрываются.
+**Interfaces:** W00.9 `IndexRange`, `partition_ranges`.
 
-**Files:** добавить раздел решения в performance audit. Только при выбранной оптимизации Create `native/src/runtime/spatial_worker_pool.hpp`, `native/tests/spatial/worker_ranges.cpp`; Modify точку разбиения модуля шины S20–S28. CMake меняет integration owner; `not_selected` не требует неиспользуемых production units.
-
-**Consumes:** известное при construction количество элементов, неизменяемый снимок входов и заранее назначенные выходные ячейки. **Produces:** `IndexRange{std::size_t begin,end}`, `partition_ranges(std::size_t count,unsigned workers)->std::vector<IndexRange>` и документированное решение по измерениям; активные рабочие потоки здесь не создаются.
-
-- [ ] Выделить измеренную независимую область, её долю полного времени и размер работ. Сопоставить теоретический предел ускорения с фактическими накладными расходами; большое число потоков само по себе не критерий.
-- [ ] Зафиксировать канонический индекс `(wheel,ring,longitudinal,lateral)` по контракту шины. Диапазоны могут зависеть от N, но каждый элемент пишет только в свою ячейку; суммирование и сопоставление patch выполняются в одном исходном порядке.
-- [ ] Реализовать сбалансированное непрерывное разбиение `begin=count*i/N`, `end=count*(i+1)/N` через безопасные quotient/remainder операции без overflow. workers0 отклоняется; N>count допускает пустые диапазоны; каждый элемент назначается ровно один раз. Разбиение вычисляется вне hot path.
-- [ ] Задать владение: общие входы неизменяемы, scratch отдельный у каждого работника, общий mutable mjData запрещён; только владелец суммирует, прикладывает и фиксирует результат. Статусы ошибок собираются по каноническим индексам; первая ошибка отменяет commit всей операции.
-- [ ] Описать жизненный цикл start/ready/run/idle/stop и защиту счётчиков от overflow; внутри run не создаются потоки и не растут vectors. Выбор ограниченного spin/park/yield обосновать реальным RTSan и политикой ожидания вне hot path.
-- [ ] Выбрать пул только если измеренное ускорение полного заезда сохраняется после dispatch/barrier расходов и решает нехватку производительности либо даёт оправдывающий сложность запас. Опубликовать основание и порог до измерений S52.
-- [ ] Выполнить проверки диапазонов и независимое ревью конкурентного выполнения; commit `design(spatial): deterministic element work ownership`.
+- [ ] `partition_ranges(count, workers)`: `workers==0` → `std::invalid_argument`; `begin = (count*i)/N`, `end = (count*(i+1))/N` через `std::uint64_t` с проверкой `count <= UINT64_MAX/N` (иначе — деление с остатком: `q=count/N, r=count%N`, первые `r` диапазонов длиной `q+1`); `N>count` → пустые диапазоны допустимы; каждый элемент ровно один раз.
+- [ ] Канонический индекс элемента `(wheel, ring, longitudinal, lateral)` → линейный `((wheel*n_theta_fan)+it)*n_phi+ip` — документируется комментарием в `spatial_worker_pool.hpp` (без изменения header: комментарий добавляется в `.cpp`), порядок суммирования — по линейному индексу.
+- [ ] Audit «Decision»: критерии — пул выбирается только если измеренное ускорение полного заезда после dispatch/barrier сохраняется и решает недостачу RTF либо даёт ≥20% запаса; иначе `not_selected`.
+- [ ] `worker_ranges.cpp`: `partition_ranges(7,3)` → 3 диапазона, `front().begin==0`, `back().end==7`, стыки без overlap/hole; `(7,0)` → `bt::invalid`; `(0,4)` → четыре пустых; `(5,8)` → пять единичных и три пустых; `(UINT64_MAX/2, 3)` без overflow.
+- [ ] CMake: `bike_add_spatial_test(worker_ranges SOURCES worker_ranges.cpp LIBRARIES bike_runtime)`.
+- [ ] Коммит `design(spatial): W51 deterministic element work ownership`, `Verification: pending V09`.
 
 ```cpp
 const auto ranges = runtime::spatial::partition_ranges(7, 3);
-bt::require(ranges.size() == 3 && ranges.front().begin == 0 && ranges.back().end == 7,
-            "ranges cover the complete element set");
-for (std::size_t i=1; i<ranges.size(); ++i)
-    bt::require(ranges[i-1].end == ranges[i].begin, "no overlap or hole");
+bt::require(ranges.size() == 3 && ranges.front().begin == 0 && ranges.back().end == 7, "ranges cover the complete element set");
+for (std::size_t i=1; i<ranges.size(); ++i) bt::require(ranges[i-1].end == ranges[i].begin, "no overlap or hole");
 bt::invalid([] { (void)runtime::spatial::partition_ranges(7, 0); });
 ```
 
-**Acceptance:** выбранный контракт фиксирует детерминированную арифметику, транзакционную ошибку и ёмкости; `not_selected` обоснован достигнутыми однопоточными целями и отсутствием нужды в оптимизации. **Failure/rollback:** если расходы превышают выигрыш, сохранить один поток и записать S52 `not_selected` с причиной. Недостигнутая скорость остаётся failed/pending. Принятый, но игнорируемый flag не считается поддержкой пула.
+## W52 — Реализация пула и тест инвариантности (← S52)
 
-## S52 — Реализация пула и инвариантность внутри одной сборки
+**Dependencies:** W51, W25–W28, W42. **Create:** `native/src/runtime/spatial_worker_pool.cpp`, `native/tests/spatial/worker_pool.cpp`, `native/tests/spatial/thread_invariance.cpp` (label `slow`). **Modify:** `native/src/pneumatic3d/model.cpp` (точка разбиения: `query_geometry`+`update_carcass` по ranges через `ElementWork`; `assign_patches`/brush/суммирование — владелец), `native/src/cli/{argument_contracts.inc,configuration.cpp}` (`--threads N`, default 1, upper bound 64, provenance), native check context/policy (`BIKE_NONBLOCKING` аннотация только после V09 RTSan — здесь не ставить), `CMakePresets.json` + `native/cmake/BikeCompilerPolicy.cmake` (опция `NATIVE_TSAN` для Linux preset `linux-tsan`, на Darwin — `message(FATAL_ERROR "TSan runtime unsupported on arm64-Darwin")`).
 
-**Dependencies:** решение реализовать пул S51, семантика и доказательства транзакционности шины S27/S28, checkpoint S42. Если S51 выбрал no-go либо `not_selected`, результат S52 — документированный `not_selected`; публичный N>1 недоступен. Это допустимо для S54 только при выполненных однопоточных целях.
+**Interfaces:** W00.9 `WorkerPool`, `ElementWork`.
 
-**Files:** Create `native/src/runtime/spatial_worker_pool.cpp`, `native/tests/spatial/worker_pool.cpp`, `thread_invariance.cpp`; Modify пространственный writer шины, `native/src/cli/{argument_contracts.inc,configuration.cpp}`, native check context/policy, `CMakePresets.json` и `native/cmake/BikeCompilerPolicy.cmake` для отдельной квалифицированной проверки TSan.
-
-**Consumes:** диапазоны и неизменяемые входы S51. **Produces:** `WorkerPool` в `runtime::spatial`, constructor/destructor вне hot path, прямое однопоточное выполнение и API задач:
-
-```cpp
-using ElementWork = void (*)(void* context, std::size_t begin, std::size_t end) noexcept;
-class WorkerPool {
-public:
-    explicit WorkerPool(unsigned threads);
-    ~WorkerPool();
-    WorkerPool(const WorkerPool&) = delete;
-    WorkerPool& operator=(const WorkerPool&) = delete;
-    unsigned worker_count() const noexcept; // excludes caller; N1 -> 0
-    void run(std::span<const IndexRange>, ElementWork, void* context);
-    void stop(); // вне hot path; join, владелец исключает одновременный run
-};
-```
-
-- [ ] Реализовать постоянных работников с подтверждением готовности и гарантированным join; ошибка construction присоединяет уже созданные потоки. Run вызывает только владелец; одновременные run/stop запрещены, неправильный вызов обнаруживается до публикации generation.
-- [ ] Заранее выделить status/scratch/ranges; noexcept callback записывает численную ошибку в назначенную ячейку. Исключения и allocation через std::function не пересекают hot boundary. Аннотация nonblocking появляется только после фактического доказательства RTSan.
-- [ ] Выполнить range0 у вызывающего потока и остальные диапазоны у работников, дождаться всех, суммировать канонические ячейки у владельца. Фиксировать только полный успешный результат; ошибка позднего элемента оставляет состояние шины и контроллера неизменным.
-- [ ] Проверить `--threads` на положительное представимое значение с установленной верхней границей и записать его в provenance. Default1 сохраняется; N1 не создаёт работников. Документировать конкуренцию с процессами batch; автоматическое число по hardware_concurrency не навязывать.
-- [ ] Выполнить N1/2/4/8 на flat extrusion, rough/cross-slope, торможении с рулением, нескольких patches и уровне detailed. Побитово сравнить полное состояние, силы, сенсоры, contact keys и дальнейшие checkpoints; исключить только реальное время и метаданные числа потоков.
-- [ ] Проверить повторные generations, ошибку запуска, stop/join, пустые диапазоны, границы счётчиков и отрицательный контроль гонки. Linux TSan квалифицировать отдельно; неработающий arm64-Darwin runtime не получает passed. Нужны активный RTSan artifact и проверки самого пула.
-- [ ] Повторить полную нагрузку S50 относительно одного потока; сохранить поддержку только при измеренной пользе и инвариантности. Commit `perf(spatial): qualified deterministic tyre workers`.
+- [ ] `WorkerPool::Impl`: `threads−1` постоянных `std::thread`, `std::mutex`+`std::condition_variable`, generation counter (`std::uint64_t`), `ready` подтверждение каждого worker при старте (join уже созданных при ошибке construction); `run(ranges, work, ctx)`: range 0 выполняет caller, остальные — workers по generation; ожидание всех; statuses собираются в заранее выделенный `std::vector<std::uint8_t>`; `stop()` — идемпотентный join вне hot path; одновременные `run/stop` → `std::logic_error` до публикации generation. `threads==0` → `std::invalid_argument`; `worker_count() = threads−1`.
+- [ ] `model.cpp`: `ElementWork` thunk над `(TorusGrid3d, WheelKinematics3d, view, elements span, carcass spec/state, normals span)` — только запись в свои ячейки; владелец после `run` проверяет statuses, затем `assign_patches`/brush/сумма в линейном порядке; ошибка любого элемента → `committed_` неизменен.
+- [ ] `--threads`: положительное представимое, `<=64`; в provenance `tyre_threads`; `hardware_concurrency` не используется для default.
+- [ ] `worker_pool.cpp`: `WorkerPool serial(1)` → `worker_count()==0`; `WorkerPool(0)` → `bt::invalid`; `serial.stop(); serial.stop();` идемпотентно; повторные generations (1000 run) со счётчиком; пустые диапазоны; `run` с `work`, пишущим в ячейки — сумма равна serial; concurrent `run` из второго потока → `std::logic_error` (проверяется `try/catch`, не `bt::invalid`); негативный race control — намеренно общая ячейка в test-only work даёт различающийся результат (документирует, что тест способен поймать гонку; ожидается нестабильный результат → `bt::require(detected_race_or_equal)` только как smoke, основная проверка в TSan V09).
+- [ ] `thread_invariance.cpp`: N∈{1,2,4,8} на flat extrusion, rough/cross-slope genspec, braking+steering, несколько patches, detailed tier → побайтно равны `complete_state_bytes`, `qfrc`, sensors, contact keys, последующие checkpoints; исключены только wall time и `tyre_threads` metadata.
+- [ ] CMake: `bike_add_spatial_test(worker_pool SOURCES worker_pool.cpp LIBRARIES bike_runtime bike_pneumatic3d)`, `bike_add_spatial_test(thread_invariance SOURCES thread_invariance.cpp LIBRARIES bike_runtime bike_pneumatic3d bike_initialization bike_spatial LABELS slow)`.
+- [ ] Коммит `perf(spatial): W52 deterministic tyre worker pool`, `Verification: pending V09`.
 
 ```cpp
 runtime::spatial::WorkerPool serial(1);
 bt::require(serial.worker_count() == 0, "serial mode creates no background workers");
 bt::invalid([] { runtime::spatial::WorkerPool invalid(0); });
-serial.stop(); serial.stop(); // документированное идемпотентное закрытие вне hot path
+serial.stop(); serial.stop();
 ```
 
-**Acceptance:** всё причинное состояние инвариантно к N, санитайзеры действительно работают, полный заезд ускорен. **Failure/rollback:** сохранить однопоточный default и убрать объявление неподтверждённых режимов; не менять порядок суммирования или допуск ради совпадения.
+## W53 — Probe внутреннего пула MuJoCo (← S53)
 
-## S53 — Необязательная оценка внутреннего пула MuJoCo
+**Dependencies:** W50, W52. **Create:** `native/tests/spatial/engine_pool_probe.cpp` (label `perf`), раздел «Engine pool» в performance audit (`decision: pending V09`). **Modify:** нет production файлов (hook в engine ownership/factory добавляется только при положительном решении V09).
 
-**Dependencies:** S50, документированный результат S51/S52 и квалифицированные engine identity/API headers из G1-core. Задача не блокирует пространственную приёмку однопоточного CPU-пути; при достаточном его результате допустим `not_selected` без прототипа или измерения несуществующей реализации.
-
-**Files:** добавить раздел оценки и выбора в performance audit; при выбранном эксперименте Create `native/tests/spatial/engine_pool_probe.cpp`; при положительном решении Modify существующие engine ownership/factory и runtime provenance. Граф продукта не меняется при no-go/`not_selected`.
-
-**Consumes:** headers/runtime закреплённой версии MuJoCo и одна полная модельная нагрузка. **Produces:** измеренное сравнение однопоточного engine с поддержанным внутренним пулом, отдельно от потоков шины и процессов batch.
-
-- [ ] Найти поддержанный API в поставляемых headers выбранной сборки и записать точные объявления, version/hash. Не копировать по памяти старое `mju_threadpool(mjData*,int)` и не предполагать наличие `mjThreadPool` по названию P7.
-- [ ] Выписать владение model/data/pool и порядок уничтожения по закреплённому API. До эксперимента проверить scratch каждого model/data и ограничения callbacks; общий mutable mjData между внешними работниками запрещён.
-- [ ] Сохранить однопоточный engine по умолчанию. Добавить выбранную конфигурацию пула только в тест; неподдержанный API/profile даёт явную ошибку, без скрытого fallback в результате измерения.
-- [ ] Раздельно измерить сочетания tyre1/engine1, tyreN/engine1, tyre1/engineN, tyreN/engineN при одном процессе. Записать конкуренцию потоков за ядра и полный валидный префикс.
-- [ ] Проверить повторные запуски одной сборки и побитовое состояние при разных потоках с обоими уровнями шины. Если внутреннее суммирование engine меняет bits, оптимизация не проходит действующий контракт; допуск replay не заменяет точное сравнение.
-- [ ] Сохранить путь продукта только при ускорении полного заезда ≥10% относительно лучшего уже квалифицированного режима с однопоточным engine, неизменности состояния и доказанной безопасности санитайзеров/engine. Иначе удалить экспериментальный runtime hook и сохранить записку с результатами.
-- [ ] Провести независимое ревью engine ownership и commit с решением. Необязательность задачи не превращает неуспешный эксперимент в поддержанную возможность.
-
-Добавить в probe native helper `bool qualifies_engine_pool(double baseline_wall_s,double candidate_wall_s,bool same_bits)`: времена конечны и положительны; результат `same_bits && candidate_wall_s<=0.90*baseline_wall_s`.
+- [ ] `engine_pool_probe.cpp`: читать поставляемый `mujoco/mujoco.h` locked версии и использовать реально объявленный API (`mju_threadPoolCreate`/`mju_bindThreadPool` или иной — W-исполнитель открывает header и записывает точные declarations и `mjVERSION_HEADER` в комментарий теста; при отсутствии API — тест `bt::require(false, "engine thread pool API not present in locked MuJoCo <version>")` как явный negative). Helper `bool qualifies_engine_pool(double baseline_wall_s, double candidate_wall_s, bool same_bits)` локально в тесте: finite, `>0`, `return same_bits && candidate <= 0.90*baseline`; `(10,8,false)==false`, `(10,9,true)==true`, `(10,0,true)` → `bt::invalid`.
+- [ ] Probe (выполняется V09): одна полная модельная нагрузка; сочетания tyre1/engine1, tyreN/engine1, tyre1/engineN, tyreN/engineN; побайтное сравнение состояния при разных engine threads; печать JSON.
+- [ ] CMake: `bike_add_spatial_test(engine_pool_probe SOURCES engine_pool_probe.cpp LIBRARIES bike_runtime bike_engine LABELS perf)`.
+- [ ] Коммит `perf(spatial): W53 engine pool probe`, `Verification: pending V09`.
 
 ```cpp
 bt::require(!qualifies_engine_pool(10., 8., false), "speed cannot override byte mismatch");
@@ -159,57 +97,33 @@ bt::require(qualifies_engine_pool(10., 9., true), "ten percent full-run gain qua
 bt::invalid([] { (void)qualifies_engine_pool(10., 0., true); });
 ```
 
-**Acceptance:** явный `not_selected` с причиной либо supported/no-go на основании реальных измерений; исследовательский пул engine не включается в продукт без доказательств. **Failure/rollback:** вернуть однопоточный engine, сохранить ранее принятые результаты и записать причину. Смена версии engine или переход на GPU сюда не входят.
+## W54 — Qualification validator и evidence skeleton (← S54)
 
-## S54 — Итоговая квалификация интегрированной версии
+**Dependencies:** W44, W49, W50. **Create:** `docs/superpowers/audits/2026-10-22-spatial-3d-qualification.md` (скелет: identity кандидата `null`, таблица milestones M0–M6 и gates G0–G6 со статусом `pending`), `native/tests/spatial/support/qualification_registry.cpp`, `native/tests/spatial/qualification_registry.cpp`, `migration/spatial3d/qualification.json` (`qualification_schema=1`, `status:"pending"`, `milestones[M0..M6]{status:"pending",evidence:[]}`, `upstream_gates[G0..G6]{status:"pending"}`, `identity:null`). **Modify:** `docs/{RIDE.md,TESTING.md,perf.md}` — ссылки на qualification doc.
 
-**Dependencies:** обязательные S00–S50; S51–S53 имеют принятую реализацию либо документированный `not_selected` при выполненных однопоточных целях; upstream G0-source→G6-qualification в относящейся к продукту части и spatial M0–M5. S55 не является зависимостью. Удаление Python T63 не самостоятельное условие spatial, но все новые пути сборки, исполнения и тестирования должны быть native.
+**Interfaces:** W00.11 `spatial_tests::validate_qualification`.
 
-**Files:** Create `docs/superpowers/audits/2026-10-22-spatial-3d-qualification.md`, `native/tests/spatial/support/qualification_registry.hpp`, `native/tests/spatial/qualification_registry.cpp`; Modify реестр S44, статусы master, `docs/{RIDE.md,TESTING.md,perf.md}`. Validator живёт в test-support, не добавляет API симулятора; посторонняя чистка исходников не выполняется.
-
-**Consumes:** точные интегрированные SHA/config/source payload, исполняемые файлы каждой платформы, upstream G0–G6 и все пространственные доказательства. **Produces:** отдельное решение M6 по platform/capability, воспроизводимая финальная проверка и manifest artifacts; отложенные необязательные направления перечислены явно. Решение не подменяет G6 владельца миграции.
-
-- [ ] Зафиксировать identity кандидата после обновлений PFC и разобраться с принятым dirty payload. Identity включает исходники, зависимости, compiler, provider и config; старые логи другой версии остаются историческими, не текущим pass.
-- [ ] Выполнить оставшиеся адресные регрессии, затем обязательные native/physics проверки на стабилизированном кандидате. `full` уже содержит native preflight; отдельный spatial CTest и исключённые slow/audit/package/gui/perf entries перечислить явно. Ноль тестов, skips и missing fixtures считаются ошибками.
-- [ ] Проверить физические доказательства по порядку: terrain/raycast; нагрузка/slip/camber/энергия/совместные пределы шины; free root/steer/внутренняя реакция райдера; equilibrium/снятие hold; применимость независимого эталона; сходимость; сохранность planar. Успешная отрисовка эти проверки не заменяет.
-- [ ] Проверить пользовательскую цепочку одной версии: installed native config→terrain→startup→ride/research→record schema2→inspect→checked recipe4→offline report→batch. Сохранить planar controls schema1/ABI1; пространственная цепочка не требует Python.
-- [ ] Выполнить детерминированные тесты полного состояния и поддержанные санитайзеры. Дополнить ранний отчёт S50 измерениями итогового продукта после S44–S49: CLI, запись включена/выключена, headless и реальный viewer с моделью/terrain. Для viewer при цели 1× требуются средний достигнутый RTF ≥1.0, долг/опоздания и частота кадров; для headless — медианный RTF ≥2.0. Это обязанность S54, не условие раннего завершения S50. Диагностические неуспешные префиксы исключить из квалификации скорости.
-- [ ] На macOS-arm64 и Linux-aarch64 записать отдельные эталоны и квалифицированные identities зависимостей; межплатформенное побитовое совпадение не заявлять. Непроверенный измерительный host получает pending, без переноса чужого положительного результата.
-- [ ] Опубликовать pass/fail/blocked каждой проверки с точными логами и первой ошибкой; отмечать задачу только после pass. Слияние кандидата следует workflow master после ревью доказательств.
-
-Создаваемый test-support validator: `void spatial_tests::validate_qualification(const bike::io::Value&)`. Он требует root `qualification_schema=1`, непустые milestones M0–M6, отдельные `upstream_gates` G0–G6, известный статус, identity artifact и ссылки на доказательства для `passed`. Проверка документа результатов не заменяет фактическое выполнение самих gates.
+- [ ] `validate_qualification(value)`: root `qualification_schema==1`; `status ∈ {pending,passed,failed,blocked}`; `milestones` непуст и содержит ровно M0–M6; `upstream_gates` ровно G0–G6; `status=="passed"` требует `identity` (source_sha, dependency hashes, compiler, provider, config) non-null и у каждой milestone `status=="passed"` с непустым `evidence[]` (пути/hashes); иначе `std::invalid_argument` с путём.
+- [ ] `qualification_registry.cpp`: `{"qualification_schema":1,"status":"passed","milestones":[],"upstream_gates":[]}` → `bt::invalid`; валидный `pending` документ (из `migration/spatial3d/qualification.json`) проходит; `passed` без identity → reject; `passed` с milestone `pending` → reject; дубликат milestone → reject.
+- [ ] CMake: `bike_add_spatial_test(qualification_registry SOURCES qualification_registry.cpp LIBRARIES bike_io)`; `qualification_registry.cpp` support → `bike_spatial_support`.
+- [ ] Коммит `test(spatial): W54 qualification validator and evidence skeleton`, `Verification: pending V10`.
 
 ```cpp
-const auto false_pass = bike::io::parse_json(
-    R"({"qualification_schema":1,"status":"passed","milestones":[],"upstream_gates":[]})");
+const auto false_pass = bike::io::parse_json(R"({"qualification_schema":1,"status":"passed","milestones":[],"upstream_gates":[]})");
 bt::invalid([&] { spatial_tests::validate_qualification(false_pass); });
 ```
 
-**Acceptance:** все обязательные проверки актуальны и пройдены; S51–S53 могут быть `not_selected`, если один поток выполняет все цели скорости. S55 остаётся независимой необязательной запиской. **Failure/rollback:** остаться на последнем принятом интегрированном commit; исправить причину в задаче-владельце и повторить затронутые и обязательные финальные проверки. Нельзя менять fixture, допуск или статус только ради зелёного результата.
+## Точные режимы сравнения (используются V09/V10)
 
-## Доказательства пространственной квалификации поверх upstream gates
+| Проверка | Фиксировано | Сравнивается | Не доказывает |
+|---|---|---|---|
+| Однопоточный повтор | сборка, провайдер, config, seed, assets | побитно: state, forces, sensors, control | физической точности |
+| Потоки N1/2/4/8 | всё кроме tyre workers | те же bytes + полный checkpoint | cross-platform |
+| macOS и Linux | одна физическая спецификация | эталоны каждой платформы + физические допуски | общего побитового потока |
+| RTF | полный валидный заезд | sim time / wall | корректности |
+| Темп 1× | целевая частота, число шагов | достигнутый RTF, долг, опоздания, frame rate | предельной скорости |
+| Checked replay | совместимая identity | два правила comparator + полное состояние | независимой валидации |
 
-| Spatial milestone | Обязательное доказательство | Upstream / ограничения вывода |
-|---|---|---|
-| M0 — база | Снимок, база, dirty payload, контракты и владение | Upstream G0; Git ancestry не выдумывается из Repomix |
-| M1 — компоненты | Аналитические тесты terrain/шины/топологии и roundtrip состояния | Upstream G1; не доказывает устойчивую поездку |
-| M2 — constrained | Запуск prepared/fresh constrained и planar bridge | Upstream G1/G2; free-root физика отдельно |
-| M3 — свободная механика | Нет scored hold; руление/хват, сходимость и физические стенды | Upstream G2; запись/replay/UI ещё не закрыты |
-| M4 — исследовательский стенд | Sensor2/ABI2/FIFO/state; catalog2/container2; checked recipe4 | Upstream G3/G4; anti-wheelie policy не заявляется |
-| M5 — приложение | Установленные CLI/viewer/batch/reports и чтение старых записей | Upstream G5/G6; реальный GUI отдельно от проверок данных |
-| M6 — квалифицированный профиль | Физика, воспроизводимость, безопасность и скорость итоговой версии на каждой платформе | Upstream G0–G6; необязательные направления и неподдержанные профили перечислены |
+## Передача
 
-## Когда задача считается завершённой
-
-Наличие реализации не означает verified. Измерение того же кода с другой identity провайдера не обновляет прежний pass. Изменения порядка силовой арифметики, dt, сетки, калибровки, checkpoint, потоков или частоты сенсоров требуют повторить относящиеся к ним физические и детерминированные проверки, затем одну актуальную интеграционную проверку. Повторы без конкретного оставшегося риска не требуются.
-
-## Будущие команды адресной проверки
-
-```bash
-cmake --build build/native-release --target bike_spatial_performance_report bike_spatial_worker_ranges
-ctest --test-dir build/native-release -R '^spatial\.(performance_report|worker_ranges)$' --no-tests=error --output-on-failure
-cmake --build build/native-release --target bike_spatial_thread_invariance
-ctest --test-dir build/native-release -R '^spatial\.thread_invariance$' --no-tests=error --output-on-failure
-```
-
-Targets `worker_ranges`/`thread_invariance` существуют только при выбранной реализации S51/S52; ветка `not_selected` проверяет отказ для неподдерживаемого `--threads` существующим CLI-тестом. Не вызывать отсутствующие необязательные targets. Публичная команда измерения использует поддержанные S45 config/track flags и выбор профиля S50; её подключают после S45/S42. Ранний замер использует native request S36, как описано в S50. Несуществующий `--threads` не включается в команды.
+W50–W54 передают V09 инструменты измерения и пул, V10 — validator и скелеты evidence. Числа (2.0/1.0 RTF, 10% engine gain, N-invariance) получают статус только после измерений в V09/V10.

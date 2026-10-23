@@ -1,10 +1,13 @@
 #include "builder_internal.hpp"
+#include "../diag.hpp"
 #include "../engine_call.hpp"
 #include <array>
 #include <limits>
 #include <stdexcept>
 
 namespace bike::model {
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::string generate_mjcf(const BuildRequest& request) {
     using namespace detail;
     auto physics=request.physics?
@@ -78,6 +81,7 @@ std::string generate_mjcf(const BuildRequest& request) {
     }
     return xml::document(root);
 }
+NATIVE_DIAG_POP
 
 void ModelDeleter::operator()(mjModel* model) const noexcept { if(model) mj_deleteModel(model); }
 namespace {

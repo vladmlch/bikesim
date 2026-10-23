@@ -493,7 +493,8 @@ PolicySnapshot decode_policy_snapshot(const bio::Value& value) {
     auto decoded = std::make_unique<DriveSnapshot>();
     decode_policies(mapping(VNode{&value}, "state"), *decoded);
     if (!decoded->hub) throw std::invalid_argument("state.hub: expected dict");
-    return {.pedaling=decoded->pedaling, .shifting=decoded->shifting, .assist=decoded->assist, .battery=decoded->battery, .hub=*decoded->hub};
+    return {.pedaling = decoded->pedaling, .shifting = decoded->shifting, .assist = decoded->assist,
+            .battery = decoded->battery, .hub = *decoded->hub};
 }
 
 bio::Value encode_policy_snapshot(const PolicySnapshot& state) {

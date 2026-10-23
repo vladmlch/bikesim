@@ -1,6 +1,7 @@
 // benchmarks.py:1-240, antiwheelie_bench.py:1-133,
 // climbing_benchmark.py:1-166. Cold orchestration over the actual native model.
 #include "scenarios.hpp"
+#include "../diag.hpp"
 #include "acceptance.hpp"
 #include "evidence.hpp"
 #include "mechanics.hpp"
@@ -166,6 +167,8 @@ struct ClimbingLoop{std::optional<std::pair<Clock::time_point,double>> warmed;do
     set(result,"end_time_s",value::real(final.time_s));set(result,"end_position_m",value::real(presentation.position_m));set(result,"model_status",research::wire_value(runtime::Wire{final.model_status}));
     set(result,"final_state_sha256",value::text(io::sha256(std::as_bytes(std::span(final.integration_state)))));
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 Value climbing_repetition(std::string_view mode,double duration,const std::filesystem::path& physics,const std::filesystem::path& track,const std::filesystem::path& out,const std::string& source,std::int64_t repetition,const std::filesystem::path& root){
     Value result{Object{{"repetition",value::integer(repetition)},{"complete",Value{false}},{"error",Value{}}}};
     ClimbingSession active;const auto setup_start=Clock::now();std::vector<double> timings;
@@ -183,6 +186,7 @@ Value climbing_repetition(std::string_view mode,double duration,const std::files
         !false_value(optional(status,"numerically_valid"))&&!io::is_null(rtf)&&io::as_double(rtf,"real time factor")>=1.&&unchanged;
     set(result,"performance_passed",Value{passed});write_report(out/std::format("run-{:04}.json",repetition),result);return result;
 }
+NATIVE_DIAG_POP
 } // namespace
 
 std::span<const std::string_view> benchmark_case_names(){return names;}

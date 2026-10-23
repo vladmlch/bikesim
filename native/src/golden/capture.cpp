@@ -68,8 +68,9 @@ Value snapshots(const runtime::GoldenForceObservation &observation) {
     Value::Object out;
     constexpr std::array<std::string_view, 2> names{"front", "rear"};
     for (std::size_t side = 0; side < names.size(); ++side) {
-        if (!observation.tire_snapshots[side]) continue;
-        const auto &snapshot = *observation.tire_snapshots[side]; // NOLINT(bugprone-unchecked-optional-access) guarded by the disengaged-continue directly above
+        const auto &slot = observation.tire_snapshots[side];
+        if (!slot.has_value()) continue;
+        const auto &snapshot = *slot;
         Value::Array patches;
         for (const auto &patch : snapshot.patches) patches.push_back(Value{Value::Object{
             {"normal_load_n", number(patch.normal_load_n)}, {"tangent_force_n", number(patch.tangent_force_n)},
@@ -130,7 +131,7 @@ void arrays(EpisodeArtifact &episode, const std::vector<runtime::GoldenForceObse
     episode.qfrc_applied = stack(&runtime::GoldenForceObservation::qfrc_applied, nv);
     std::vector<double> times;
     times.reserve(records.size());
-for (const auto &record : records) times.push_back(record.time_s);
+    for (const auto &record : records) times.push_back(record.time_s);
     episode.state_time = io::double_array(times, {count});
     for (const auto &record : records) {
         for (const auto &[name, unused] : record.components) {
@@ -180,7 +181,7 @@ public:
             throw std::invalid_argument("golden capture requires a fresh physical t=0 state");
         if (env.episode_->window || env.episode_->delivery_pending)
             throw std::invalid_argument("golden capture cannot interrupt a pending research control");
-        auto  const&stepper = *runtime.stepper_;
+        const auto &stepper = *runtime.stepper_;
         const auto &model = *stepper.model();
         const auto minimum_width = static_cast<std::size_t>(model.nq + 3 * model.nv + model.na + model.nu + 1);
         if (minimum_width && controls.size() > io::kMaxNumpyBytes / sizeof(double) / minimum_width)

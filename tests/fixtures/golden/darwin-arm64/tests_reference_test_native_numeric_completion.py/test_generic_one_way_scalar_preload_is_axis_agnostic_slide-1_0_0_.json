@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_numeric_completion.py::test_generic_one_way_scalar_preload_is_axis_agnostic[slide-1 0 0]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ }
+]

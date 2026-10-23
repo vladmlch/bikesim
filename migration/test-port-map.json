@@ -9954,13 +9954,16 @@
       "line": 17,
       "end_line": 28,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_air_specs_mutated_geometry_rejected",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -9968,13 +9971,16 @@
       "line": 32,
       "end_line": 37,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_air_pressure_properties_revalidate",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -9982,13 +9988,16 @@
       "line": 40,
       "end_line": 48,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_air_specs_mutated_token_limit_rejected",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -9996,13 +10005,16 @@
       "line": 53,
       "end_line": 62,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_invalid_tire_material_rejected",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10010,13 +10022,16 @@
       "line": 66,
       "end_line": 82,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_mutated_surface_map_rejected",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10024,13 +10039,16 @@
       "line": 87,
       "end_line": 95,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_mutated_drive_config_rejected_before_model_writes",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10038,13 +10056,16 @@
       "line": 99,
       "end_line": 115,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_drivetrain_wheel_topology_shared",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10052,13 +10073,16 @@
       "line": 119,
       "end_line": 132,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_drivetrain_actuator_target_shared",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10066,13 +10090,16 @@
       "line": 136,
       "end_line": 151,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_shock_component_overflow_shared",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10080,13 +10107,16 @@
       "line": 155,
       "end_line": 172,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_chain_computation_overflow_shared",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10094,13 +10124,16 @@
       "line": 176,
       "end_line": 200,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_policy_intermediate_overflow_shared",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10108,13 +10141,16 @@
       "line": 203,
       "end_line": 220,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_cruise_overflow_preserves_finite_telemetry",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10122,13 +10158,16 @@
       "line": 224,
       "end_line": 229,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_native_damper_errors_name_full_field_path",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10136,13 +10175,16 @@
       "line": 238,
       "end_line": 244,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_nested_numeric_errors_name_full_field_path",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10150,13 +10192,16 @@
       "line": 247,
       "end_line": 252,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_end_stop_strict_types_and_computation_overflow",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10164,13 +10209,16 @@
       "line": 314,
       "end_line": 321,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_remaining_s4_scalar_field_matrix",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10178,13 +10226,16 @@
       "line": 325,
       "end_line": 332,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_remaining_s4_positive_field_zero",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10192,13 +10243,16 @@
       "line": 335,
       "end_line": 340,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_s4_matrix_valid_configuration",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10206,13 +10260,16 @@
       "line": 344,
       "end_line": 352,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_unicode_blank_tire_provenance_shared",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10220,13 +10277,16 @@
       "line": 356,
       "end_line": 361,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_resistance_requires_physical_bodies",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10234,13 +10294,16 @@
       "line": 366,
       "end_line": 377,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_cassette_ordered_integer_contract",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10248,13 +10311,16 @@
       "line": 381,
       "end_line": 391,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_mutated_tire_parameters_rejected",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10262,13 +10328,16 @@
       "line": 394,
       "end_line": 399,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_damper_mutated_denominator_rejected_by_setter",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10276,13 +10345,16 @@
       "line": 417,
       "end_line": 424,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_s4_relationship_matrix",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10290,13 +10362,16 @@
       "line": 429,
       "end_line": 440,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_rider_path_scalar_matrix_shared",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10304,13 +10379,16 @@
       "line": 444,
       "end_line": 454,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_invalid_motor_profile_relationships_rejected",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10318,13 +10396,16 @@
       "line": 457,
       "end_line": 467,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_bearing_force_overflow_before_return_and_telemetry",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10332,13 +10413,16 @@
       "line": 470,
       "end_line": 483,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_chain_dissipation_overflow_before_telemetry",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10346,13 +10430,16 @@
       "line": 486,
       "end_line": 507,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_suspension_total_overflow_before_telemetry",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10360,13 +10447,16 @@
       "line": 510,
       "end_line": 520,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_end_stop_mutated_config_rejected",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10374,13 +10464,16 @@
       "line": 523,
       "end_line": 542,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_tire_two_wheel_loss_overflow_before_publication",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10388,13 +10481,19 @@
       "line": 546,
       "end_line": 569,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_integer_normalization_and_legacy_hbo_bitwise_controls",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-22: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_numeric_completion green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10402,13 +10501,16 @@
       "line": 572,
       "end_line": 575,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_air_unreachable_declared_travel_remains_usable",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10416,13 +10518,16 @@
       "line": 578,
       "end_line": 586,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_air_calibration_denominator_overflow_before_pressure_commit",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10430,13 +10535,16 @@
       "line": 589,
       "end_line": 594,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_air_force_curve_energy_overflow_before_publication",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10444,13 +10552,16 @@
       "line": 597,
       "end_line": 605,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_air_calibration_and_curve_valid_controls",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10458,13 +10569,16 @@
       "line": 609,
       "end_line": 618,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_battery_cap_numerator_overflow_before_saturation",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10472,13 +10586,16 @@
       "line": 622,
       "end_line": 631,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_mutated_zero_dimensional_cassette_is_value_error",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10486,13 +10603,16 @@
       "line": 637,
       "end_line": 649,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_brake_and_cruise_scalars_reject_original_types",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10500,13 +10620,16 @@
       "line": 652,
       "end_line": 660,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_cruise_target_rejects_zero_dimensional_scalar",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10514,13 +10637,19 @@
       "line": 663,
       "end_line": 675,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_brake_and_cruise_numpy_numeric_controls",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-22: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_numeric_completion green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10528,13 +10657,16 @@
       "line": 680,
       "end_line": 693,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_end_stop_unloading_overflow_before_clamp",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10542,13 +10674,16 @@
       "line": 699,
       "end_line": 707,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_damper_constructor_original_type_class",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10556,13 +10691,16 @@
       "line": 710,
       "end_line": 716,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_assist_constructor_revalidates_mutated_profile",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10570,13 +10708,16 @@
       "line": 719,
       "end_line": 724,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_assist_constructor_profile_slew_overflow_before_publication",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10584,13 +10725,16 @@
       "line": 731,
       "end_line": 737,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_damper_constructor_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10598,13 +10742,16 @@
       "line": 740,
       "end_line": 743,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_air_pressure_override_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10612,13 +10759,16 @@
       "line": 746,
       "end_line": 750,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_assist_ceiling_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10626,13 +10776,16 @@
       "line": 753,
       "end_line": 759,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_assist_metadata_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10640,13 +10793,16 @@
       "line": 762,
       "end_line": 768,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_pedaling_metadata_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10654,13 +10810,16 @@
       "line": 771,
       "end_line": 780,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_shifting_metadata_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10668,13 +10827,16 @@
       "line": 785,
       "end_line": 788,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_damper_station_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10682,13 +10844,16 @@
       "line": 791,
       "end_line": 798,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_rider_metadata_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10696,13 +10861,16 @@
       "line": 801,
       "end_line": 804,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_end_stop_metadata_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10710,13 +10878,16 @@
       "line": 807,
       "end_line": 811,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_end_stop_force_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10724,13 +10895,16 @@
       "line": 815,
       "end_line": 822,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_surface_law_retains_baseline_bits",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10738,13 +10912,16 @@
       "line": 825,
       "end_line": 829,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_numpy_float32_surface_map_query_retains_baseline_branch",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10752,13 +10929,16 @@
       "line": 833,
       "end_line": 857,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_generic_one_way_scalar_preload_is_axis_agnostic",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10766,13 +10946,19 @@
       "line": 860,
       "end_line": 870,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_zero_disable_policy_fields_remain_bitwise_valid",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-22: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_numeric_completion green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10780,13 +10966,16 @@
       "line": 873,
       "end_line": 916,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_python_free_typed_numeric_validators",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-22: ported to native/tests/reference/test_native_numeric_completion.cpp; CTest reference.native_numeric_completion green on darwin-arm64 and linux-aarch64; pytest file 545 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_numeric_completion.py",
@@ -10794,13 +10983,20 @@
       "line": 919,
       "end_line": 963,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_numeric_completion::test_tire_channel_parity_across_backends",
+      "native_test_id": "reference.native_numeric_completion",
       "native_source": "native/tests/reference/test_native_numeric_completion.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-22: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_numeric_completion green on both platforms",
+        "2026-10-22: oracle t=0 bootstrap recorded as golden input entries; the live reset is platform-dependent so the port materializes the recorded config/state documents beside the committed model.mjb and replays the same start"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_domains.py",

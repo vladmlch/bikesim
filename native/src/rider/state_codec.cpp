@@ -2413,6 +2413,8 @@ bio::Value encode_attachment_entry(const wc::RiderAttachmentEntry &entry) {
 
 // ---- rider contacts state -----------------------------------------------------
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::pair<wc::RiderContactsState, std::optional<wc::RiderContactsProbe>>
 decode_rider_contacts_state(const bio::Value &value,
                             const wc::RiderContactWriter &w) {
@@ -2533,6 +2535,7 @@ decode_rider_contacts_state(const bio::Value &value,
     }
     return {std::move(st), std::move(probe)};
 }
+NATIVE_DIAG_POP
 
 bio::Value encode_rider_contacts_state(
     const wc::RiderContactsState &s,

@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_numeric_completion.py::test_mutated_drive_config_rejected_before_model_writes[chain_k_n_m-0.0]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ }
+]

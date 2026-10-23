@@ -705,13 +705,13 @@ int run_header_sweep(const fs::path &build) {
     }();
     std::vector<fs::path> headers;
     std::map<std::string, std::set<std::string>> reaching;
+    // entries must outlive setup_ok: entries_by_root stores pointers into it
+    // and the probe loop dereferences them after the lambda returns.
+    std::vector<CompileEntry> entries;
     std::map<std::string, std::map<std::string, const CompileEntry *>>
         entries_by_root;
     std::vector<fs::path> header_roots;
     fs::path compiler;
-    // entries stays in this scope: entries_by_root holds const CompileEntry*
-    // into it and is dereferenced after the setup lambda returns.
-    std::vector<CompileEntry> entries;
     const bool setup_ok = [&]() -> bool {
         Value context;
         std::vector<fs::path> excluded_headers;

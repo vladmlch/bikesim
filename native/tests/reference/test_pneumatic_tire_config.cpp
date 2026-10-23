@@ -3,6 +3,7 @@
 // member; their native contracts are compile-time assignment rejection plus
 // the same malformed-table rejection at the real configuration ingress.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "configuration/load.hpp"
 #include "io/json.hpp"
 #include "research/environment.hpp"
@@ -15,6 +16,11 @@
 namespace {
 namespace cfg = bike::configuration;
 namespace io = bike::io;
+// Decoded config records are multi-kilobyte; test functions are noinline so
+// main's lambda stays under -Wframe-larger-than, and the pragma covers the
+// few individual frames that still exceed 8192 bytes.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 cfg::SimulationPhysicsConfig resolve(std::string_view document) {
     return cfg::detail::construct_config(io::parse_json(document));
 }
@@ -141,6 +147,7 @@ void stock(const cfg::TyreSpecs &value, const cfg::TyreSpecs &expected) {
         "track material resolution requires a compliant_2d, distributed_2d_reference or pneumatic tire backend");
     rejects([] { (void)resolve(R"({"tires":{"pneumtic":{}}})"); }, "unknown TireBackendConfig parameter");
 }
+NATIVE_DIAG_POP
 } // namespace
 int main() { return bt::run([] {
     test_pneumatic_section_defaults_to_fast_stock_tyres();

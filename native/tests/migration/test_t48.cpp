@@ -1,5 +1,6 @@
 // T48 owned render-replica contracts. Written for later execution; no test or
 // engine command was run while implementing this migration wave.
+#include "diag.hpp"
 #include "support/migration_test.hpp"
 #include "viewer/render_owner.hpp"
 #include "initialization/capture.hpp"
@@ -29,6 +30,8 @@ constexpr std::string_view scene = R"XML(<mujoco>
   </fixed></tendon>
 </mujoco>)XML";
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void replica_contracts() {
     auto model = bike::model::compile_mjcf(scene);
     std::unique_ptr<mjData, decltype(&mj_deleteData)> data(engine::make_data(model.get()), mj_deleteData);
@@ -102,5 +105,6 @@ void replica_contracts() {
     auto invalid_image = image; invalid_image.sha256 = std::string(64, '0');
     bt::invalid([&] { bike::viewer::RenderOwner const rejected(invalid_image); });
 }
+NATIVE_DIAG_POP
 }
 int main() { return bt::run(replica_contracts); }

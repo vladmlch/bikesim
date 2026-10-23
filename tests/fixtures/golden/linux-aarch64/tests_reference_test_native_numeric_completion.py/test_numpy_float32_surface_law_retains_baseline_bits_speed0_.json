@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_numpy_float32_surface_law_retains_baseline_bits[speed0]",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

@@ -39,7 +39,8 @@ struct Arguments {
         if (found == options.end() || found->second.empty()) throw ParseError("missing --" + name);
         return found->second;
     }
-    std::string get(const std::string &name, const std::string& fallback) const { // NOLINT(bugprone-easily-swappable-parameters) call sites keep the declared parameter order.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) named-option lookup; (name, fallback) order is the get-default idiom
+    std::string get(const std::string &name, const std::string &fallback) const {
         const auto found = options.find(name);
         return found == options.end() ? fallback : found->second;
     }

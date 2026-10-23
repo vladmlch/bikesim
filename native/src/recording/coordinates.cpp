@@ -1,4 +1,5 @@
 #include "catalog.hpp"
+#include "../diag.hpp"
 #include <array>
 #include <limits>
 #include <stdexcept>
@@ -12,6 +13,8 @@ std::string_view CoordinateCatalog::force_unit(std::size_t index) const {
     return "n/a";
 }
 const std::string& CoordinateCatalog::velocity_unit(std::size_t index) const { return dof.at(index).unit; }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 Catalog build_catalog(std::span<const JointCoords> joints, std::span<const ScalarAlias> scalars) {
     CoordinateCatalog coordinates;
     for (const auto& joint : joints) {
@@ -67,6 +70,7 @@ Catalog build_catalog(std::span<const JointCoords> joints, std::span<const Scala
     alias("component_work_j.{component}", "channel_energy.component_work_j", "schema-2 work object member");
     return {schema_catalog().table_order(), std::move(coordinates), std::move(aliases)};
 }
+NATIVE_DIAG_POP
 Catalog build_catalog(std::span<const JointCoords> joints) {
     static const std::array<ScalarAlias, 3> aliases{{{.alias="x_m", .kind="qpos", .joint="root_x"}, {.alias="speed_mps", .kind="dof", .joint="root_x"}, {.alias="pitch_rad", .kind="qpos", .joint="root_pitch"}}};
     return build_catalog(joints, aliases);

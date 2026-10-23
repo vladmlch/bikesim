@@ -34,7 +34,8 @@ public:
         pedaling.reset(); shifting.reset(); assist.reset(); battery.reset(); hub.reset();
     }
     [[nodiscard]] PolicySnapshot snapshot() const {
-        return {.pedaling=pedaling.state(), .shifting=shifting.state(), .assist=assist.state(), .battery=battery.state(), .hub=hub.state()};
+        return {.pedaling = pedaling.state(), .shifting = shifting.state(), .assist = assist.state(),
+                .battery = battery.state(), .hub = hub.state()};
     }
     void restore(const PolicySnapshot& source) {
         auto next = *this;

@@ -1942,6 +1942,114 @@ Batch files: `tests/reference/test_recorder_columns.py` (4),
   nodes on both platforms — all green above. L2 runs in the integration
   worktree at merge-back per D17.
 
+## 2026-10-22 — Task 3.21a: Numeric completion references ported (T52, batch `t52` / `numerics`)
+
+### Scope
+
+`tests/reference/test_native_numeric_completion.py` — 61 map records triaged
+42 `port` / 4 `golden` / 15 `drop` (np.float32 marshalling and pure-Python
+runtime state internals; no C++ behavior lost). Port lives at
+`native/tests/reference/test_native_numeric_completion.cpp`, registered as
+`reference.native_numeric_completion` via `native/tests/reference/Phase3Ports.cmake`
+(labels `reference`, `numerics`, `t52`, `golden`).
+
+### Source implementation
+
+- One C++ function per pytest function; parameterized nodes as C++ tables/loops.
+- `Python OverflowError` mapped to `std::overflow_error` / `drivetrain::ArithmeticError`;
+  all overflow checks verify rejection happens before state/telemetry publication.
+- Bitwise controls compare binary64 bit patterns; close controls use the recorded
+  `f64_close` tolerance semantics of `bt::oracle::Node`.
+- Golden labels/node names match Python node identities exactly; every golden
+  node ends in `golden.done()` so unconsumed entries fail.
+
+### Platform bootstrap fix (root cause of the only cross-platform failure)
+
+`test_tire_channel_parity_across_backends` built the C++ ride from the committed
+Darwin-derived bootstrap, while Python's `create_native_ride(sim)` materializes
+a platform-dependent reset state. The two platform oracles differ legitimately
+(~8e-9 at `compliant.front.patches[0].tangent_force_n`); MuJoCo libraries were
+verified byte-identical between `.deps` and the wheel. Fix: the Python test now
+records the canonical `config.json`/`state.json` bootstrap documents as golden
+input entries (model.mjb stays the committed fixture); the C++ port materializes
+them into a temp dir and loads `runtime::read_bootstrap(stage.path())`, replaying
+the same platform-faithful t=0 start on each platform. No tolerance was widened.
+
+### Verification
+
+- macOS arm64 pytest: `PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH=<native/build>` → **545 passed**.
+- Linux aarch64 pytest (`bike-dev-pfc-lane-b`, `/build/native-clang` ext): → **545 passed**.
+- Golden capture both platforms (`BIKE_GOLDEN_CAPTURE`), file key
+  `tests_reference_test_native_numeric_completion.py`; recorded node IDs vs
+  collected pytest node IDs: no real orphans (two apparent mismatches were
+  line-wrap artifacts); total golden footprint ≈ 1.1 MiB (< 20 MiB budget).
+- Native executable: **PASS 16663 checks** on macOS arm64 and Linux aarch64.
+- `ctest -R '^reference.native_numeric_completion$'`: 1/1 pass macOS (`native/build/release`),
+  1/1 pass Linux (`/build/root-clang`).
+- Negative proof: one `.bin` payload byte flipped → failure
+  `comparison 0 label '$#keys': bytes differ`; byte restored → PASS 16663.
+- `native/tests/support/golden.cpp` diagnostic now prints actual vs expected
+  binary64 hex on close-mismatch (no semantic change).
+
+### Ledger
+
+- `migration/test-port-map.json`: all 61 records carry disposition + dated evidence;
+  4 golden rows list `golden_platforms: [darwin-arm64, linux-aarch64]`.
+- `migration/python-removal.json`: row status `replacement_landed`,
+  `replacement_paths` = the C++ test, `verification_ids` = the CTest name;
+  sha256/line_count refreshed for the capture-site edits (959 → 1046 lines).
+- Python oracle stays in place until T63 per ADR-0003.
+
+### Supporting fixes landed in the same batch (required for a green `native` gate)
+
+- `native/src/tools/check_frontends.cpp`: `std::vector<CompileEntry> entries`
+  moved out of the `setup_ok` lambda — `entries_by_root` stored
+  `const CompileEntry*` into it and the header probe loop dereferenced the
+  pointers after the lambda returned (dangling; produced corrupted
+  `could not replace trans…` errors in the standalone-headers control).
+- `-Wframe-larger-than` baseline: `NATIVE_DIAG_PUSH`/`IGNORE` +
+  `[[gnu::noinline]]` around large decoded-config/test frames (~20 files);
+  EOF newlines; shellcheck fix in `tools/linux/acquire_deps.sh`
+  (unused `version`); designated initializers for `PolicySnapshot`;
+  `explicit` `ObjectList` ctor + self-assign guard + unsigned `char32_t`
+  shifts in `io/value.hpp`; misc clang-tidy repairs in
+  `cli/recording_golden.cpp`, `golden/capture.cpp`, `golden/episode.cpp`,
+  `viz/plot.cpp`, `binding_ownership.hpp`, `research/policy_session.hpp`.
+- `tests/fixtures/migration/initial_state/welded_flat.json` recaptured via
+  the Python oracle (`PhysicalInitialState.capture`, same path as
+  `tools/migration/capture_reference.py`). The fixture's `contract_sha256`
+  (`b7e29233…`) predated post-capture contract-input changes (PHASE 1/3:
+  `geometry/specs.hpp`, `model/mass.cpp`, `model/rider_geometry.cpp`,
+  BLAS/LAPACK provider split); current oracle computes `7a9d4527…`.
+  Verified pre-existing at HEAD via stash+rebuild+rerun: `migration_T25`
+  failed identically without this batch's changes. Recaptured payload is
+  field-for-field identical except `contract_sha256`/`source_sha256` —
+  all state values bitwise equal — and `migration_T25` passes (141 s),
+  confirming C++↔Python contract parity under current code.
+  `migration/oracle-manifest.json` entry `initial_state/welded_flat.json`
+  re-pinned to the recaptured digest
+  (`b144ab3a…` → `5440b82a…`; byte count unchanged at 23378);
+  `migration_T05` live-manifest verification passes after the update.
+- `tests/reference/test_native_check_tools.py` two pre-existing repairs
+  (files byte-identical to HEAD; failures reproduce independently of this
+  batch, both introduced by `ef66e96 PHASE 3` / matrix growth):
+  - `_write_broken_profdata` emitted `LLVM version 99.0.0`, which the new
+    compiler-compatible-LLVM-major resolution gate in
+    `native/cmake/CoverageTools.cmake:39` now rejects before the merge
+    probe runs, so `test_requested_coverage_fails_when_the_tool_chain_cannot_merge`
+    never saw `merge`/`str(broken)` in the configure output. The stub now
+    reports the selected driver's LLVM major (via
+    `native_toolchain.inspect_tool`) and echoes `$0` on merge refusal —
+    resolution succeeds, `control-merge` fails with the tool path in the
+    diagnostics: focused node passes in 9.7 s.
+  - `test_standalone_header_sweep_compiles_first_party_headers` ran its
+    in-test `native_checks.py --kind headers` subprocess under
+    `timeout=3600`; at 257 headers × ~34 contexts (8826 header TUs,
+    ~85–90 min serial on this host) the timeout systematically kills the
+    sweep (observed 3600.01 s TimeoutExpired, ~6562 probes logged).
+    Timeout recalibrated to 7200 s with an updated size comment; the
+    timeout guards hangs, not a performance contract.
+
 ## 2026-10-23 — Task 3.11: Linux baseline residuals (3 of 3 fixed)
 
 Scope: the three retained Linux pytest nodes in `docs/development/linux.md`.

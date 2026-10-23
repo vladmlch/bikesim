@@ -61,8 +61,10 @@ public:
     PlaybackClock(bool) = delete;
     void rebase(double now_s, std::int64_t step);
     void set_scale(int scale, double now_s, std::int64_t step);
-    void set_scale(bool scale, double now_s, std::int64_t step) = delete; // NOLINT(bugprone-easily-swappable-parameters) call sites keep the declared parameter order.
-    void set_scale(double scale, double now_s, std::int64_t step) = delete; // NOLINT(bugprone-easily-swappable-parameters) call sites keep the declared parameter order.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) deleted overload pins the live signature's (scale, now_s, step) order
+    void set_scale(bool scale, double now_s, std::int64_t step) = delete;
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) deleted overload pins the live signature's (scale, now_s, step) order
+    void set_scale(double scale, double now_s, std::int64_t step) = delete;
     void set_paused(bool paused, double now_s, std::int64_t step);
     [[nodiscard]] std::int64_t target(double now_s, std::int64_t completed_step);
     [[nodiscard]] double debt_s() const noexcept { return debt_s_; }

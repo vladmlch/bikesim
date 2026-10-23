@@ -1,0 +1,82 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.qpos",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_numeric_completion.py::test_brake_and_cruise_numpy_numeric_controls",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.qvel",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_numeric_completion.py::test_brake_and_cruise_numpy_numeric_controls",
+  "offset": 208,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.qacc_warmstart",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_numeric_completion.py::test_brake_and_cruise_numpy_numeric_controls",
+  "offset": 416,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_numeric_completion.py::test_brake_and_cruise_numpy_numeric_controls",
+  "offset": 624,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_brake_and_cruise_numpy_numeric_controls",
+  "offset": 640,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_completion.py::test_brake_and_cruise_numpy_numeric_controls",
+  "offset": 648,
+  "rtol": null,
+  "shape": []
+ }
+]

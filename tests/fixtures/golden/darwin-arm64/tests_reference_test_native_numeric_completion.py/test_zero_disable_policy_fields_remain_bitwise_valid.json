@@ -1,0 +1,72 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 57,
+  "node": "tests/reference/test_native_numeric_completion.py::test_zero_disable_policy_fields_remain_bitwise_valid",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   57
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "$.chain",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_numeric_completion.py::test_zero_disable_policy_fields_remain_bitwise_valid",
+  "offset": 57,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "$.drive_bearings",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_numeric_completion.py::test_zero_disable_policy_fields_remain_bitwise_valid",
+  "offset": 121,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "$.freehub",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_numeric_completion.py::test_zero_disable_policy_fields_remain_bitwise_valid",
+  "offset": 185,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "$.ideal_transmission",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_numeric_completion.py::test_zero_disable_policy_fields_remain_bitwise_valid",
+  "offset": 249,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ }
+]

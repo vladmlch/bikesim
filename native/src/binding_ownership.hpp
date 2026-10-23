@@ -1,8 +1,7 @@
 #pragma once
 #include <utility>
 
-
-    namespace wire::detail {
+namespace wire::detail {
         // Ownership staging shared by every owned array (and by the
         // contract test's forced-failure seam): make_owner is invoked while
         // the unique_ptr still holds the allocation, so a throwing owner
@@ -16,5 +15,4 @@
             auto *const data = std::forward<Storage>(storage).release();
             return std::pair{data, std::move(owner)};
         }
-    }
-
+} // namespace wire::detail

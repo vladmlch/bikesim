@@ -1,4 +1,5 @@
 #include "setup_owner.hpp"
+#include "../diag.hpp"
 
 #include <algorithm>
 #include <array>
@@ -41,6 +42,8 @@ terrain::TrackSpec load_track_for_setup(const std::filesystem::path& file,
     return terrain::track_from_dict(document, override);
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 SetupRequest read_setup_request(const std::filesystem::path& file, bool skip_initial_state) {
     try {
         const auto document = configuration::detail::parse_toml_file(file);
@@ -107,3 +110,4 @@ SetupRequest read_setup_request(const std::filesystem::path& file, bool skip_ini
 }
 
 } // namespace bike::initialization
+NATIVE_DIAG_POP

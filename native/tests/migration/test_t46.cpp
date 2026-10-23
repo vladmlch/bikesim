@@ -2,6 +2,7 @@
 #include "recording_reader_test_support.hpp"
 #include "recording_fixture.hpp"
 #include "cli/recording.hpp"
+#include "diag.hpp"
 #include "platform/argv.hpp"
 #include "platform/process.hpp"
 #include <sstream>
@@ -34,6 +35,8 @@ void analyst_process(const std::filesystem::path& executable, const std::string&
     const auto exported_process=process({"export",path,"--episode","0","--table","metrics","--format","csv","--output",process_export.string()});
     bt::require(exported_process.exit_code==0&&bt::text(process_export).find("9007199254740993")!=std::string::npos,"standalone export writes actual exact-integer CSV output");
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void analyst(const std::filesystem::path& executable) {
     recording_reader_test::Directory const tmp;
     bt::require(command({"--help"}).code==0,"analyst help does not open a recording");
@@ -64,6 +67,7 @@ void analyst(const std::filesystem::path& executable) {
     bt::require(command({"window",path,"--episode","0","--start","nan(payload)","--end",".003","--fields","x_m"}).code==2,"implementation NaN payload syntax is not a source CLI float token");
     analyst_process(executable,path,json.out,tmp.path);
 }
+NATIVE_DIAG_POP
 }
 int main(int argc,char** argv){return bt::run([&]{
     const auto arguments=bike::platform::main_arguments(argc,argv);

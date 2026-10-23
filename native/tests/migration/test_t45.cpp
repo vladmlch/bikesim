@@ -1,4 +1,5 @@
 // Reports, lossless explicit export and legacy bundle integrity. Not run.
+#include "diag.hpp"
 #include "recording_reader_test_support.hpp"
 #include "recording_fixture.hpp"
 #include "recording/reader.hpp"
@@ -35,6 +36,8 @@ void reports_and_exports() {
     const auto limited=rec::export_data(reader,0,"metrics","jsonl",tmp.path/"limited.jsonl",1);
     bt::require(count(field(limited,"rows"))==1,"explicit export limit applies only when requested");
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void legacy_integrity() {
     namespace replay=bike::replay;
     recording_reader_test::Directory tmp;
@@ -71,5 +74,6 @@ void legacy_integrity() {
     bt::invalid([&]{(void)replay::export_legacy(nonfinite,tmp.path/"nonfinite");});
     bt::require(!std::filesystem::exists(tmp.path/"nonfinite"/"replay.json"),"a failed legacy projection never publishes its readiness manifest");
 }
+NATIVE_DIAG_POP
 }
 int main(){return bt::run([]{reports_and_exports();legacy_integrity();});}

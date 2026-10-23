@@ -4,6 +4,7 @@
 // Decimal/date/time/datetime/timedelta/base64), the shared SHA-256 and the
 // strict oracle-manifest/provenance layer — mirroring
 // tests/reference/test_recording_values.py and json_codec.py's domains.
+#include "diag.hpp"
 #include "support/migration_test.hpp"
 #include "io/json.hpp"
 #include <array>
@@ -365,6 +366,8 @@ void checks_json() {
 
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void checks_recording() {
     using namespace bike::io;
     // ---- nonfinite JSON tokens are a recording-codec error ---------------
@@ -509,6 +512,7 @@ void checks_recording() {
                 subnormal.find(R"(E-324"})") != std::string::npos,
             "Decimal(denormal) expands exactly to E-324");
     }
+NATIVE_DIAG_POP
     tag_invalid(R"({"$bike_recording":"decimal","value":"1e1000000000000000000"})");
     tag_invalid(R"({"$bike_recording":"decimal","value":"10e999999999999999999"})");
     tag_invalid(R"({"$bike_recording":"decimal","value":"1e-1999999999999999998"})");

@@ -1,4 +1,5 @@
 #include "application.hpp"
+#include "../diag.hpp"
 #include "../configuration/load.hpp"
 #include "../model/rider_geometry.hpp"
 #include "../runtime/setup_values.hpp"
@@ -185,6 +186,8 @@ void validate_research_arguments(const Arguments& args) {
         if (value && (!std::isfinite(*value) || *value < 0.)) throw ArgumentError("control torque must be finite and nonnegative");
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& args) {
     validate_research_arguments(args);
     auto owner = std::make_unique<research::ResearchRequest>();
@@ -239,4 +242,5 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     request.experiment.validate(); request.sensors.validate(); request.programs.validate();
     return owner;
 }
+NATIVE_DIAG_POP
 } // namespace bike::cli

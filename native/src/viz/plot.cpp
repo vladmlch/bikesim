@@ -21,7 +21,7 @@
 namespace bike::viz {
 namespace {
 struct FileCloser {
-    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) FILE ownership is carried by the unique_ptr deleter contract; gsl::owner is unavailable
+    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) gsl::owner is unavailable; the deleter is the ownership boundary
     void operator()(std::FILE *file) const noexcept { (void)std::fclose(file); }
 };
 } // namespace

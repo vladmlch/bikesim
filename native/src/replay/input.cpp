@@ -1,4 +1,5 @@
 #include "input_detail.hpp"
+#include "../diag.hpp"
 #include "../recording/catalog.hpp"
 #include "../recording/encoding.hpp"
 
@@ -54,6 +55,8 @@ std::vector<Value> stream(const recording::Recording& reader, const recording::T
     }
     return out;
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 ReplayInput database_input(const std::filesystem::path& path, std::optional<std::int64_t> episode) {
     const recording::Recording reader(path);
     const auto selected = reader.episode(episode, true);
@@ -140,6 +143,7 @@ ReplayInput database_input(const std::filesystem::path& path, std::optional<std:
     out.metrics = maybe(out.summary, "episode_metrics");
     return out;
 }
+NATIVE_DIAG_POP
 } // namespace
 ReplayInput load_replay_input(const std::filesystem::path& path, std::optional<std::int64_t> episode) {
     for (auto name : {"manifest.json", "run.duckdb", "UNSEALED"})

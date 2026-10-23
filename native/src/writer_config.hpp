@@ -939,6 +939,8 @@ namespace nativecfg {
 
         // ---- drivetrain section (drive_binding.cpp's parse body, T07's
         // shared-decode host) -------------------------------------------
+        NATIVE_DIAG_PUSH
+        NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         template <class N>
         [[nodiscard]] drivetrain::DrivePolicyConfig decode_drive_policies(
             const Dict<N> &input,
@@ -1065,6 +1067,7 @@ namespace nativecfg {
             out.hub_damping_nm_s = nonnegative(num(input, "hub_damping_nm_s"), input.child("hub_damping_nm_s"));
             return out;
         }
+        NATIVE_DIAG_POP
 
         // config.drive itself: the policy subtree plus the drive-only
         // scalars — the cross-field exclusion rules (rotor/clutch

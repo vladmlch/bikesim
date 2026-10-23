@@ -2159,3 +2159,110 @@ None among the three baseline nodes. The final `tools/run_tests.sh
 native` container gate result is recorded below; pre-existing reds on
 this lane (unrelated files, per earlier sections) are baseline, not
 Task 3.11 scope.
+
+## 2026-10-23 — Task 3.21a (lane/b) merge-back: numeric completion
+
+Merge of `lane/b` (`174686e` test port, `bc7f185` lint/frame blockers,
+`879c119` ledgers+evidence) into `impl/python-free-cpp` at `fe4feaa`
+via `git merge --no-ff lane/b` (D17 L2 in this worktree).
+
+### Ledger verification
+
+`migration/test-port-map.json` parses; **2381 records**; the 61 records
+for `tests/reference/test_native_numeric_completion.py` disposition
+**42 port / 4 golden / 15 drop**, `golden_platforms =
+{darwin-arm64, linux-aarch64}` on all four golden rows. HEAD-side
+post-`a4d4cfd` records all preserved (3.22b batch: period_buffer 10,
+recorder_columns 4, ride_plots_html_markers 3, frozen_force_arrays 2,
+hud_columns 2). `python-removal.json` keeps HEAD rows + the
+numeric-completion replacement row; `oracle-manifest.json` keeps HEAD's
+newer `welded_flat.json` pin (`d5685e8b`, 23544 B). Resolution was
+per-record/per-hunk — no wholesale side selection; `git ls-files -u`
+empty, no conflict markers, all `NATIVE_DIAG_PUSH/POP` pairs balance.
+
+### Green proof (merge node)
+
+macOS arm64:
+
+    ctest --test-dir build/native-release \
+      -R '^reference\.native_numeric_completion$' --output-on-failure
+    # 1/1 Passed 1.53 s
+    build/native-release/native/tests/reference/reference.native_numeric_completion
+    # PASS 16663 checks
+
+Linux aarch64, container `bike-dev-python-free-cpp` (`bike-dev-linux:24.04`,
+clang++-18, `/build/root-clang`):
+
+    tools/linux/container.sh ctest root-clang \
+      -R '^reference\.native_numeric_completion$' --output-on-failure
+    # 1/1 Passed 0.41 s (labels golden, numerics, reference, t52)
+
+### L2 block results (macOS + Linux)
+
+- `cmake --build native/build` + `ctest --test-dir native/build -j8`:
+  60/62 — `migration_T09` (`integration vector resolves bitwise`),
+  `migration_T29` (`config.rider_controller.weld_servo_gain: unknown key`).
+- `cmake --build build/native-release` + `ctest -j8`: 92/102 — adds
+  `migration_T56` (shellcheck-0.11.0 stderr-format environment drift),
+  `reference.golden_episode_tool` (3.03 goldens not yet captured) and the
+  documented `FAIL fixture is not a regular file` family
+  (`native_static_brake`, `pneumatic_tire_oracle`, `native_clock_contracts`,
+  `native_drive_policies`, `native_drivetrain`), `reference.period_buffer`
+  (initial-state contract — inputs identical to `fe4feaa`).
+- `tools/run_native_checks.sh native/build`: `frontends` passed
+  (334 TUs, 0 findings); `tidy` passed (334 TUs, 1 benign third-party
+  nanobind moved-from finding — identical to the `fe4feaa` baseline).
+  Remaining kinds in flight.
+- `tools/run_native_checks.sh build/native-release`: stops at
+  `frontends` (14 records with findings — the documented pre-existing
+  set `validate_main` + 10 `validation/*` TUs + `test_t54` +
+  `test_motor_freewheel_topology`, plus **one new finding in this
+  batch's file**: `test_native_numeric_completion.cpp:169`
+  `-Wuseless-cast` under the g++-16 frontend probe). The lane file also
+  trips GCC `-Wnull-dereference` on the unguarded
+  `std::get_if(...)->empty()` at `:146`. Both are repaired in `c7e5718`
+  `fix(native): clear g++-frontend findings in numeric completion port`
+  (cast dropped; `io::as_array` kind-checked read — fail-loud
+  preserved); probe rc=0 and `PASS 16663 checks` re-verified on macOS
+  after the edit, and on Linux after container re-sync (ctest 0.35 s).
+- `container.sh exec tools/run_native_checks.sh /build/root-clang`:
+  stops at `frontends` for the same pre-existing TU set (the root-clang
+  build itself stops at the 5 `-Wmissing-field-initializers` TUs above).
+- Linux `native-clang`: build green; ctest 50/62 (T03/T04/T09/T14/T15/
+  T16/T18/T20/T25/T29/T31/T32 — ULP/contract/library-hash drift on
+  merge-invariant paths, identical at `fe4feaa`).
+- Linux `native-gcc`: build stops at 3 pre-existing frame-budget TUs
+  (`test_t24/t25/t34.cpp`, byte-identical to `fe4feaa`).
+- Linux `root-clang`: build stops at 5 HEAD-side TUs on
+  `-Werror=missing-field-initializers` (Linux-clang-only warning class,
+  documented in the 3.22b section); the merge node's TU/executable
+  builds and passes (above).
+- `container.sh exec tools/run_native_checks.sh /build/root-clang`: <TBD>.
+
+### Parity pytest (transitional gate — ADR-0003)
+
+    PYTHONPATH=tests/reference \
+    NATIVE_TEST_BUILD_PATH=$PWD/native/build \
+    uv run --frozen --group native python -m pytest -q \
+      tests/reference/test_native_numeric_completion.py
+    # 543 passed, 2 failed, 4 warnings in ~11 s
+
+Both failures are HEAD-side live-oracle drift, not merge regressions:
+`test_numpy_float32_shifting_metadata_retains_baseline_bits` (expected
+`rear_teeth==18`, native/old rule yields 14 — `src/bike_sim/physics/
+shifting.py` was rewritten to multi-cog landing-cadence by `b21c63e`
+while `native/src/drivetrain/shifting.cpp` still implements the previous
+rule) and `test_tire_channel_parity_across_backends`
+(`root.front.penetration_m` — the same `energy.constraint_work`
+reference-monitor family documented red at `fe4feaa` in the A3 baseline
+refresh). The C++ golden node stays green: native still matches the
+frozen lane-base oracle bitwise; live Python moved past it. Flagged as
+stale-golden divergence for the owning task — no recapture or
+threshold change performed here.
+
+### Changed files (this merge)
+
+158 paths: lane/b's 3.21a test port + goldens + bootstrap fixture +
+shared golden-input support + lint/frame-budget repairs + ledger rows,
+unioned with HEAD's post-`a4d4cfd` state (3.22b records, rider-weld/
+planar-arm physics, recaptured fixtures).

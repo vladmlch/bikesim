@@ -802,8 +802,8 @@ by about `8.72e-5 J`; the planar-arm model lacked
 
 The 13 failing node IDs, identical in the baseline and current full run, are:
 
-- `tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque`
-- `tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget`
+- `tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque` — resolved-in-refresh: measured PASS at `fe4feaa` on 2026-10-23 (`migration/baseline-refresh-2026-10-23.md`); retained for the historical record.
+- `tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget` — resolved-in-refresh: measured PASS at `fe4feaa` on 2026-10-23 (`migration/baseline-refresh-2026-10-23.md`); retained for the historical record.
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_flat_reaches_25_kmh_within_10_s`
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_motor_follows_the_rider_through_a_shift_without_an_extra_cut`
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_fifteen_percent_climb_holds_12_kmh`
@@ -815,6 +815,11 @@ The 13 failing node IDs, identical in the baseline and current full run, are:
 - `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]`
 - `tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock`
 - `tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only`
+
+2026-10-23 refresh (`migration/baseline-refresh-2026-10-23.md`, measured at
+`fe4feaa`): the two annotated nodes now pass; the other 11 nodes remain
+failing with deterministic signatures, so the live residual is 11 nodes.
+The list above is kept as the historical baseline record.
 
 ## E1 recoverable MuJoCo errors
 

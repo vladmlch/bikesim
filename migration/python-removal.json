@@ -15531,7 +15531,8 @@
   "verification_ids": [
    "migration_T53",
    "source_assertion_map",
-   "release_capability_matrix"
+   "release_capability_matrix",
+   "reference.native_input_contracts"
   ],
   "deletion_gate": "T63 after T61/T62 and row-specific evidence",
   "status": "planned",

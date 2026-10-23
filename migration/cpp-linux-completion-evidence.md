@@ -2305,3 +2305,113 @@ retained and its WIP left in place as an orphan draft. The report's
 caveat stands: if stricter T20 gating (bitwise oracle fixtures + exact
 oracle message-text assertions) is ever wanted, it is a fresh port of
 the coherent unit the report names — not a merge of this WIP.
+
+## 2026-10-2x — Task 3.28: drivetrain atomicity + input-contract references (T52 batch labels `t52`/`contracts`; port-map `owner_task: T53` rows)
+
+### Scope
+
+`tests/reference/test_native_atomicity.py` (21 records) and
+`tests/reference/test_native_input_contracts.py` (32 records) triaged per
+`migration/test-port-map.json`.
+
+- Atomicity: **16 port / 5 drop** — the five `test_python_*` records are
+  live-oracle mirror twins of ported contracts (probe atomicity, rejected
+  prepare/compute/settle, sparse settle); no native coverage lost. Port
+  lives at `native/tests/reference/test_native_atomicity.cpp`, registered
+  as `reference.native_atomicity` (labels `reference`, `contracts`, `t52`).
+- Input contracts: **8 port / 7 drop / 17 planned (STOPPED)**. Port lives at
+  `native/tests/reference/test_native_input_contracts.cpp`, registered as
+  `reference.native_input_contracts` (same labels). Drops are nanobind /
+  NumPy-boundary contracts (ndarray argument readers, bound-method
+  signature checks, dict-key typing) — no C++ behavior is lost; each drop
+  evidence row names the coverage.
+- **No golden records in this batch** — every ported contract compares
+  native frozen state against native frozen state, literals or analytic
+  values; no Python oracle value is captured. Consequently no
+  `tests/fixtures/golden/` additions and no `oracle-manifest.json` change.
+
+### STOPPED records (17, `resolved` fixture)
+
+All 17 remaining input-contract nodes take the module-scoped `resolved`
+fixture, which builds `test_native_suspension.py::_golden` and currently
+fails during setup at the documented savage-plant equilibrium defect:
+
+    RuntimeError: physical equilibrium did not converge after 64000 steps:
+    residual=0.094603; [('front_wheel_spin', -0.09460...), ...]
+
+— the same physics-stop signature as the 2026-10-23 baseline refresh
+(`migration/baseline-refresh-2026-10-23.md`, 11 remaining red nodes;
+savage equilibrium residual 0.094603 after 64000 steps). The committed
+`tests/fixtures/migration/bootstrap/welded_pinned` alternative was
+evaluated and rejected: its `writer_config` predates the `brake_hold_*`
+schema fields (added in `b21c63e`, required by `src/bike_sim/native/
+schema.py`) and it is not a `PhysicalInitialState` document, so rehoming
+`resolved` on it would change test semantics — a separate fixture-refresh
+task, not this batch. Records stay `planned` with explicit evidence rows;
+`test_schema_migration_preserves_resolved_fork_force` is noted as the
+would-be golden (`assert_bitwise_equal` vs the damper oracle).
+
+### Verification
+
+- macOS arm64 (`build/native-release`):
+  `ctest -R '^reference\.native_atomicity$'` → **1/1 PASS (1.18 s)**;
+  `ctest -R '^reference\.native_input_contracts$'` → **1/1 PASS (0.03 s)**.
+- Linux aarch64 (`bike-dev-pfc-lane-c` container, `/build/root-clang`,
+  clang++-18 — the GCC `root` graph hits a documented
+  `-Werror=null-dereference` false positive in shared test support):
+  `ctest -R '^reference\.native_atomicity$'` → **1/1 PASS (0.04 s)**;
+  `ctest -R '^reference\.native_input_contracts$'` → **1/1 PASS (0.01 s)**.
+- Required parity pytest:
+
+      PYTHONPATH=tests/reference \
+      NATIVE_TEST_BUILD_PATH=$PWD/native/build \
+      uv run --frozen --group native python -m pytest -q \
+        tests/reference/test_native_atomicity.py \
+        tests/reference/test_native_input_contracts.py
+      # 78 passed, 59 errors in 135.67 s
+
+  All 59 errors are `resolved`-fixture setup failures (the stopped nodes
+  above); zero test failures. This matches the batch baseline exactly and
+  is reported as-is — the suite is not claimed green while the fixture is
+  baseline-red.
+
+### Native implementation notes
+
+- Atomicity ports reuse `drivetrain_reference_support.hpp`: standalone
+  MuJoCo drivetrain pairs (`pair`/`shifted_pair`), `spin` republish via
+  `set_state`+`forward`, `Frozen` = canonical_json(drive snapshot) +
+  bit-exact qpos/qvel/ctrl spans + prepared-storage {generations,
+  capacity}; rejections compared bit-exact and identical-retry diagnostics
+  compared textually. `same_bits` is byte comparison (`std::as_bytes`),
+  so NaN payloads and −0.0 stay distinct.
+- Contract ports exercise `nativecfg::decode`/`decode_policy_config`,
+  `configuration::wire::validate_config`/`validate_drive_policies`,
+  `drivetrain::decode_drive_snapshot` (restore path) and
+  `drivetrain::human_crank_torque` — the same code the nanobind readers
+  reach after marshalling.
+- `test_control_and_recursive_state_keys_are_value_errors`'s
+  `drive_components({key: 1.})` half stays with the parity suite: the
+  closed control-key check lives in the binding's `nb::dict → RideControl`
+  reader (`drive_binding.cpp:182`) and has no Value-level decoder.
+- `[[gnu::noinline]]` on the six contract bodies keeps each by-value
+  `Value` snapshot in its own frame under `-Wframe-larger-than` (the
+  established `native/tests/migration/` pattern); atomicity fits inside
+  the dispatcher pragma used by `test_native_drivetrain.cpp`.
+
+### Ledger
+
+- `migration/test-port-map.json`: 24 `port`, 12 `drop`, 17 `planned` rows
+  with dated evidence; no `golden` rows this batch.
+- `migration/python-removal.json`: `test_native_atomicity.py` →
+  `replacement_landed` (`verification_ids` = `reference.native_atomicity`);
+  `test_native_input_contracts.py` stays `planned` (17 stopped records)
+  with `reference.native_input_contracts` added to `verification_ids`.
+- `migration/oracle-manifest.json`: unchanged (no new fixtures or
+  captures).
+- Python oracle stays in place until T63 per ADR-0003.
+
+### Owner-task naming
+
+The batch instructions and labels use `t52`; the port-map rows carry
+`owner_task: T53` (as assigned at T01 enumeration). Documented rather than
+rewritten — owner_task left as recorded.

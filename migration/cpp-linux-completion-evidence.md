@@ -2226,7 +2226,16 @@ clang++-18, `/build/root-clang`):
 - `tools/run_native_checks.sh native/build`: `frontends` passed
   (334 TUs, 0 findings); `tidy` passed (334 TUs, 1 benign third-party
   nanobind moved-from finding — identical to the `fe4feaa` baseline).
-  Remaining kinds in flight.
+  Remaining kinds completed post-merge (`### Review fix` below):
+  `analyzer` passed (334 TUs, findings report-only — alpha checkers;
+  suppressions `cplusplus.Move=3`, `cplusplus.NewDelete=2`),
+  `cppcheck` passed (334 TUs, findings none), `odr` passed (334 TUs,
+  g++-16 `-flto -Wodr` merge, findings none), `scripts` passed
+  (18 scripts, shellcheck clean), `headers` passed (257 headers,
+  8826 header-TUs, findings none), `diagnostic-controls` passed
+  (6 controls, 0 failed), `context` passed (SDK-selection and
+  libc++-hardening controls green), `contracts` passed (12 checks —
+  see the loader-provenance note below).
 - `tools/run_native_checks.sh build/native-release`: stops at
   `frontends` (14 records with findings — the documented pre-existing
   set `validate_main` + 10 `validation/*` TUs + `test_t54` +
@@ -2240,8 +2249,9 @@ clang++-18, `/build/root-clang`):
   preserved); probe rc=0 and `PASS 16663 checks` re-verified on macOS
   after the edit, and on Linux after container re-sync (ctest 0.35 s).
 - `container.sh exec tools/run_native_checks.sh /build/root-clang`:
-  stops at `frontends` for the same pre-existing TU set (the root-clang
-  build itself stops at the 5 `-Wmissing-field-initializers` TUs above).
+  stops at `frontends` for the pre-existing TU set (the root-clang
+  build itself stops at the 5 `-Wmissing-field-initializers` TUs
+  above; measured composition in the re-probe bullet below).
 - Linux `native-clang`: build green; ctest 50/62 (T03/T04/T09/T14/T15/
   T16/T18/T20/T25/T29/T31/T32 — ULP/contract/library-hash drift on
   merge-invariant paths, identical at `fe4feaa`).
@@ -2251,7 +2261,28 @@ clang++-18, `/build/root-clang`):
   `-Werror=missing-field-initializers` (Linux-clang-only warning class,
   documented in the 3.22b section); the merge node's TU/executable
   builds and passes (above).
-- `container.sh exec tools/run_native_checks.sh /build/root-clang`: <TBD>.
+- `container.sh exec tools/run_native_checks.sh /build/root-clang`
+  (re-probed 2026-10-23 on the synced merged tree, frontends run
+  `20261023T202639Z`): rc=1, stops at `frontends` — 15 of 383 records
+  with findings under `/usr/bin/g++` 13.3.0: the documented
+  pre-existing 13 (`tools/validate_main.cpp` + the 10 `validation/`
+  TUs `acceptance`/`benchmark`/`drivetrain`/`evidence`/`experiments`/
+  `registry`/`rider`/`rigs`/`runtime_access`/`scenarios` +
+  `tests/migration/test_t54.cpp` +
+  `tests/reference/test_motor_freewheel_topology.cpp`, on
+  `-Werror=misleading-indentation` /
+  `-Werror=missing-field-initializers` / `-Werror=useless-cast` — the
+  same classes that stop the root-clang build above) plus
+  `tests/reference/test_native_drivetrain.cpp` and this batch's
+  `tests/reference/test_native_numeric_completion.cpp`, both failing
+  only on the pre-existing HEAD-side
+  `drivetrain_reference_support.hpp:196-197` `-Wuseless-cast` (header
+  added by `b21c63e`, byte-identical at `fe4feaa`; the warning is
+  Linux-spelling-only — on darwin `uint64_t` is `unsigned long long`,
+  distinct from `size_t`, so the cast is not useless there). The lane
+  TU surfaces that pre-existing header finding; the lane file's own
+  `test_native_numeric_completion.cpp:169` `-Wuseless-cast` was
+  already repaired in `c7e5718`.
 
 ### Parity pytest (transitional gate — ADR-0003)
 
@@ -2280,6 +2311,61 @@ threshold change performed here.
 shared golden-input support + lint/frame-budget repairs + ledger rows,
 unioned with HEAD's post-`a4d4cfd` state (3.22b records, rider-weld/
 planar-arm physics, recaptured fixtures).
+
+### Review fix (2026-10-23)
+
+Post-merge completion of the sweep record above: the merge report had
+left the `native/build` kinds after `tidy` "in flight" (the merge
+session's `analyzer` run `20261023T190300Z` was cut before writing a
+summary — superseded by the completed run below) and the root-clang
+container sweep as an unresolved placeholder. All commands run in
+this worktree on
+`f930423` content via
+`build/native-release/bin/bike-native-checks --kind <kind> --build
+native/build` (the per-kind invocation `tools/run_native_checks.sh`
+itself issues); per-kind summaries under
+`native/build/native_check_summaries/<kind>.json`, logs under
+`native/build/native_check_logs/<kind>/<run>/`. `cmake --build
+native/build -j10` was re-verified green first; `tools/run_tests.sh
+native` (L3) was not run.
+
+- `analyzer` run `20261023T202621Z`: rc=0 — 334 TUs,
+  `finding_status: report-only` (alpha checkers only), suppressions
+  `cplusplus.Move=3`, `cplusplus.NewDelete=2`.
+- `cppcheck` run `20261023T204718Z`: rc=0 — 334 TUs, findings none.
+- `odr` run `20261023T204719Z`: rc=0 — 334 TUs, findings none.
+- `scripts` run `20261023T204050Z`: rc=0 — 18 scripts, shellcheck
+  0.11.0 clean.
+- `headers` run `20261023T205824Z`: rc=0 — 257 headers, 8826
+  header-TUs, findings none.
+- `diagnostic-controls` run `20261023T204053Z`: rc=0 — 6 controls,
+  0 failed.
+- `context` run `20261023T204058Z`: rc=0 — `explicit_sdk` /
+  `missing_sdk` / `default_sdk` / `default_sdk_fallback` /
+  `libcpp_hardening` controls green.
+- `contracts`: rc=0 — all 12 checks passed. The kind requires
+  `native/build/native_test_provenance.json`, which the L3 preflight
+  produces via its extension-import step; produced here by the same
+  mechanism and nothing else:
+  `PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH=$PWD/native/build
+  NATIVE_TEST_PROVENANCE_PATH=$PWD/native/build/native_test_provenance.json
+  uv run --frozen --group native python -c 'from native_loader import
+  load_native; print(load_native().__file__)'` (schema-1 record for
+  the selected `bike_native.cpython-313-darwin.so`), then the kind ran
+  green on it.
+- Container re-probe: `tools/linux/container.sh sync`, then
+  `tools/linux/container.sh exec tools/run_native_checks.sh
+  /build/root-clang` — resolved outcome recorded in the L2 bullet
+  above (rc=1 at `frontends`, 15/383 records, composition named
+  there; nothing lane-authored among the findings — the lane TU only
+  surfaces a pre-existing HEAD-side header cast).
+
+No already-green check was re-run for the record: `frontends`
+(`20261023T183535Z`) and `tidy` (`20261023T184113Z`) stand on the
+merge-session runs over the merged 334-TU selection. Deferred: none —
+all produced kinds resolved; the only still-red sweep is the
+documented pre-existing `frontends` set on `build/native-release` and
+`/build/root-clang` named above.
 
 ## 2026-10-23 — par-t20 worktree WIP triage (D19 retention)
 

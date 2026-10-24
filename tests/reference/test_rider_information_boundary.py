@@ -153,13 +153,19 @@ def test_same_kinematic_state_same_command(tmp_path):
     command = RiderCommand(0., enabled=True)
     availability = {'saddle': True, 'front': True, 'rear': True, 'grip': True}
 
+    # Non-advancing probes: the once-per-timestamp activation contract
+    # (rider_effort.py finalize_effort) makes a second committing call at the
+    # same data.time a contract violation, and an advancing first call would
+    # shift the activation state the second call then sees.
     first = controller.compute(model, data, command, kinematic_state=state,
-                               support_available=availability, dt_s=.001)
+                               support_available=availability, dt_s=.001,
+                               advance=False)
     # Corrupt every privileged channel the old path used to leak through.
     data.efc_force[:] = 1e9
     data.qfrc_constraint[:] = -1e9
     physical.rider_contacts.diagnostics['front_pedal']['normal_load_n'] = 1e9
     physical.rider_contacts.diagnostics['saddle']['normal_load_n'] = 1e9
     second = controller.compute(model, data, command, kinematic_state=state,
-                               support_available=availability, dt_s=.001)
+                               support_available=availability, dt_s=.001,
+                               advance=False)
     assert first == pytest.approx(second)

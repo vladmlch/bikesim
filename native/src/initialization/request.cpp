@@ -4,11 +4,14 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <filesystem>
 #include <ranges>
 #include <stdexcept>
+#include <system_error>
 #include "../configuration/load.hpp"
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
+#include "../platform/provenance.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../terrain/trackfile.hpp"
 
@@ -84,7 +87,18 @@ SetupRequest read_setup_request(const std::filesystem::path& file, bool skip_ini
         physics.equilibrium_cache_enabled =
             io::as_bool(field(document, "use_equilibrium_cache"), "use_equilibrium_cache");
         if (!skip_initial_state && find(document, "initial_state_file")) {
-            const auto state_file = path(document, "initial_state_file", base);
+            auto state_file = path(document, "initial_state_file", base);
+            // Explicit-t0 transfer documents and native equilibrium state
+            // files are platform-bound (the contract pins compiled-model
+            // arrays and the payload is platform solver output): a same-named
+            // capture inside a sibling directory keyed by the running
+            // platform supersedes the shared spelling, so one request
+            // document resolves correctly on every platform.
+            std::error_code keyed_error;
+            if (const auto keyed = state_file.parent_path() / platform::key() /
+                    state_file.filename();
+                std::filesystem::is_regular_file(keyed, keyed_error))
+                state_file = keyed;
             const auto bytes = io::read_numpy_bytes(state_file);
             std::string source;
             source.reserve(bytes.size());

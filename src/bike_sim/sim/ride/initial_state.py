@@ -27,6 +27,11 @@ def _contract(sim,*,station_count=None):
     for name in ('timestep_s','equilibrium_cache_enabled','equilibrium_state_file',
                  'equilibrium_refine_after_s','equilibrium_refine_period_s'):
         cfg.pop(name,None)
+    # The resolved paths are worktree-absolute spellings; the contract binds
+    # the file CONTENT so a stored transfer validates from any checkout.
+    articulated=cfg['articulated']
+    envelope_path=articulated.pop('joint_envelope_path')
+    strength_path=articulated.pop('joint_strength_path')
     m=sim.model
     return _hash({'physics':cfg,'specs':asdict(sim.specs),'mass':asdict(sim.mass_specs),
         'rider':asdict(sim.rider),'start_x_m':sim.start_x_m,
@@ -34,8 +39,10 @@ def _contract(sim,*,station_count=None):
         'compiled':{n:getattr(m,n).tolist() for n in ('qpos0','body_mass','body_inertia','body_ipos',
                     'body_pos','body_quat','jnt_axis','jnt_pos','jnt_range','jnt_limited',
                     'dof_armature','actuator_gear','actuator_ctrlrange','eq_solref','eq_solimp')},
-        'envelope_sha256': None if cfg['articulated']['joint_envelope_path'] is None else
-          hashlib.sha256(Path(cfg['articulated']['joint_envelope_path']).read_bytes()).hexdigest()})
+        'envelope_sha256': None if envelope_path is None else
+          hashlib.sha256(Path(envelope_path).read_bytes()).hexdigest(),
+        'strength_sha256': None if strength_path is None else
+          hashlib.sha256(Path(strength_path).read_bytes()).hexdigest()})
 
 
 def _guard(runtime):
@@ -77,7 +84,7 @@ class PhysicalInitialState:
         road_x=np.linspace(min(centers)-.5,max(centers)+.5,513)
         state={k:{'dtype':str(v.dtype),'shape':list(v.shape),'values':_json_cells(v.tolist())} for k,v in _state_arrays(r).items()}
         drive=r.drive
-        payload={'schema_version':1,'contract_sha256':_contract(sim),
+        payload={'schema_version':2,'contract_sha256':_contract(sim),
             'qpos':d.qpos.tolist(),'qvel':d.qvel.tolist(),'qacc_warmstart':d.qacc_warmstart.tolist(),
             'road_x':road_x.tolist(),'road_z':np.interp(road_x,vertices[:,0],vertices[:,1]).tolist(),
             'material':state,'equilibrium':copy.deepcopy(sim.equilibrium),
@@ -143,7 +150,7 @@ class PhysicalInitialState:
 
     def _validated(self,runtime):
         _guard(runtime);p=self.payload;sim=runtime.sim;m=sim.model
-        if p.get('schema_version')!=1 or p.get('contract_sha256')!=_contract(sim):
+        if p.get('schema_version')!=2 or p.get('contract_sha256')!=_contract(sim):
             raise ValueError('initial-state physical model contract differs (only timestep/road mesh may vary)')
         for name,size in (('qpos',m.nq),('qvel',m.nv),('qacc_warmstart',m.nv)):
             a=np.asarray(p[name],float)

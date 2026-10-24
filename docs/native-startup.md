@@ -195,6 +195,15 @@ its fresh-start choice into the reader so that a discarded request
 
 - `physics_file`, `track_file` and `initial_state_file` resolve relative to the
   directory containing the request document.
+- `initial_state_file` names platform-bound artifacts: the explicit-t0
+  contract pins compiled-model arrays and the payload is platform solver
+  output. When the resolved file's directory contains a same-named file
+  inside a subdirectory keyed by the running platform
+  (`platform.system().lower() + "-" + platform.machine()`, e.g.
+  `darwin-arm64` or `linux-aarch64`), that platform capture supersedes the
+  shared spelling. One request document therefore resolves correctly on
+  every captured platform; an uncaptured platform still sees the shared
+  spelling and fails closed on a missing file.
 - Asset paths inside a physics document resolve relative to that physics
   document. For example, its rider envelope and strength JSON files stay beside
   the physics TOML when that directory is moved.

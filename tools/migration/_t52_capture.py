@@ -14,7 +14,7 @@ document through request.setup.initial_state — the same adopt-the-pose path
 initial_state_file exercises for requests/welded_flat.toml — and let
 prepare_research_startup replay the identical t=0 startup on top.
 
-The document is schema_version 1: qpos/qvel/qacc_warmstart, the road support
+The document is schema_version 2: qpos/qvel/qacc_warmstart, the road support
 row, the material state arrays, the rider active_state and the equilibrium
 metadata, keyed by contract_sha256 (which excludes timestep, so the same
 document serves every --dt the tests pin).

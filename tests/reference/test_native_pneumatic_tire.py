@@ -179,7 +179,19 @@ def _fixture_save_env(env, physics_path, name, initial_state_json):
     if target is None:
         return
     target.mkdir(parents=True, exist_ok=True)
-    (target / 'physics.toml').write_bytes(Path(physics_path).read_bytes())
+    # _pneumatic_config resolved the articulated asset paths absolutely for
+    # its tmp_path TOML; the checked-in bundle rewrites them relative to the
+    # bundle directory (same convention as track_file) so the contract's
+    # file-content digests resolve on every checkout, not only the
+    # capturing worktree.
+    physics_text = Path(physics_path).read_text()
+    for key in ('joint_envelope_path', 'joint_strength_path'):
+        physics_text = re.sub(
+            rf'{key} = "([^"]+)"',
+            lambda m: (f'{key} = "'
+                       f'{os.path.relpath(Path(m.group(1)).resolve(), target)}"'),
+            physics_text)
+    (target / 'physics.toml').write_text(physics_text)
     (target / 'request.toml').write_text(_ENV_REQUEST)
     (target / 'initial_state.json').write_text(initial_state_json)
 

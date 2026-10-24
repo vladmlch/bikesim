@@ -14851,21 +14851,21 @@
       },
       "files": [
         {
-          "bytes": 23544,
-          "path": "initial_state/welded_flat.json",
-          "sha256": "d5685e8b07942a4e9b6357811d5d83b1dc012ff190ca934422da2dbbcd382638"
+          "bytes": 23545,
+          "path": "initial_state/darwin-arm64/welded_flat.json",
+          "sha256": "bd5972a260fff31406bd622e5a89e5d7402b915dc087883ffcb516e2796c5b99"
         }
       ],
       "group": "bootstrap",
       "inputs": [
         {
-          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/requests/welded_flat.toml",
+          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/tests/fixtures/migration/requests/welded_flat.toml",
           "sha256": "32143e14a69e96ee5d0c65f4398980deda2eb52e9c7aa9084270fdc330712c16"
         }
       ],
-      "name": "initial_state/welded_flat.json",
-      "notes": "t=0 state transferred by requests/welded_flat.toml",
-      "produced_by": "PhysicalInitialState.capture on a welded-flat cache-hit build",
+      "name": "initial_state/darwin-arm64/welded_flat.json",
+      "notes": "t=0 state transferred by requests/welded_flat.toml \u2014 schema_version 2 (contract binds envelope/strength file content, not worktree-absolute paths); platform-bound payload captured under the golden platform key and preferred by the request reader's platform-sibling convention",
+      "produced_by": "tools/migration/_t25_capture.py: PhysicalInitialState.capture on a welded-flat cache-hit build",
       "recipe": "RCP-01"
     },
     {

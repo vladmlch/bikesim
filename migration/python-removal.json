@@ -15692,12 +15692,10 @@
       "native/tests/reference/test_native_pneumatic_model.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_pneumatic_model"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "9d2966dc27f1099ad94b691e902da7cc7df502a6957b2581e5db50bafba8d20f",
     "snapshot_line_count": 1058,
     "tracked": true,
@@ -15713,12 +15711,10 @@
       "native/tests/reference/test_native_pneumatic_tire.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_pneumatic_tire"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b7426715315e9713179b86d9a6afd30f4154885346ad6a510b1111a2ab3f3ea9",
     "snapshot_line_count": 965,
     "tracked": true,
@@ -15734,12 +15730,10 @@
       "native/tests/reference/test_native_pneumatic_wire.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_pneumatic_wire"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "674fdcc9c44bbcccbaafe4642b0e54ab3e86e13f384bb243d421db1e42d7a480",
     "snapshot_line_count": 378,
     "tracked": true,

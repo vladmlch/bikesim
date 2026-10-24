@@ -1,0 +1,3328 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "shape atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "shape atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 512,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "shape atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1024,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "shape atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1536,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "shape atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1537,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "shape atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1538,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "shape atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1546,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "shape atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1554,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "shape atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1562,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "shape atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1570,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "shape atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1578,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "shape atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1586,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "shape atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1602,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "shape atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1610,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "shape atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1611,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "shape atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1755,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 1763,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 2275,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 2787,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3299,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3300,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3301,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3309,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3317,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3325,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3333,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3341,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3349,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3365,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3373,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3374,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "shape-vel atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3518,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 3526,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 4038,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 4550,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5062,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5063,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5064,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5072,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5080,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5088,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5096,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5104,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5112,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5128,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5136,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5137,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "nan-hub atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5281,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5289,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 5801,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6313,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6825,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6826,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6827,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6835,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6843,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6851,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6859,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6867,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6875,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6891,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6899,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 6900,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "inf-hub atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 7044,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 7052,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 7564,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8076,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8588,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8589,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8590,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8598,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8606,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8614,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8622,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8630,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8638,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8654,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8662,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8663,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "nan-vel atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8807,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 8815,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 9327,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 9839,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10351,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10352,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10353,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10361,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10369,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10377,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10385,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10393,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10401,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10417,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10425,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10426,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "inf-vel atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10570,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 10578,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 11090,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 11602,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12114,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12115,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12116,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12124,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12132,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12140,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12148,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12156,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12164,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12180,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12188,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12189,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "nan-omega atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12333,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12341,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 12853,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13365,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13877,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13878,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13879,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13887,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13895,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13903,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13911,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13919,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13927,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13943,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13951,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 13952,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "inf-omega atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 14096,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 14104,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 14616,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15128,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15640,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15641,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15642,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15650,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15658,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15666,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15674,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15682,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15690,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15706,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15714,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15715,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "zero-dt atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15859,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 15867,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 16379,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 16891,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17403,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17404,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17405,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17413,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17421,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17429,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17437,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17445,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17453,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17469,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17477,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17478,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "neg-dt atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17622,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 17630,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 18142,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 18654,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19166,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19167,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19168,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19176,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19184,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19192,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19200,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19208,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19216,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19232,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19240,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19241,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "nan-dt atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19385,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19393,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 19905,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20417,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20929,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20930,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20931,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20939,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20947,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20955,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20963,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20971,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20979,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 20995,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21003,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21004,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "inf-dt atomicity patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21148,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "silent dt tyre_name",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21156,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "silent dt hub_position_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21182,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "silent dt hub_velocity_world_mps",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21206,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "silent dt force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21230,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "silent dt pressure_bar",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21254,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "silent dt omega_forward_radps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21262,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "silent dt normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21270,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "silent dt support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21278,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "silent dt mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21286,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "silent dt contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21294,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "silent dt slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21302,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "silent dt transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21310,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "silent dt dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21318,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "silent dt fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21326,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "silent dt rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21327,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "silent dt coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21328,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "silent dt airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21329,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "silent dt rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21330,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "silent dt patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21331,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "post-failure tyre_name",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21339,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "post-failure hub_position_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21365,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "post-failure hub_velocity_world_mps",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21389,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "post-failure force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21413,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "post-failure pressure_bar",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21437,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "post-failure omega_forward_radps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21445,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "post-failure normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21453,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "bitwise",
+  "label": "post-failure support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21461,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "post-failure mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21469,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "post-failure contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21477,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 221,
+  "kind": "bitwise",
+  "label": "post-failure slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21485,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 222,
+  "kind": "bitwise",
+  "label": "post-failure transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21493,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 223,
+  "kind": "bitwise",
+  "label": "post-failure dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21501,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 224,
+  "kind": "bitwise",
+  "label": "post-failure fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21509,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 225,
+  "kind": "bitwise",
+  "label": "post-failure rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21510,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 226,
+  "kind": "bitwise",
+  "label": "post-failure coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21511,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 227,
+  "kind": "bitwise",
+  "label": "post-failure airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21512,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 228,
+  "kind": "bitwise",
+  "label": "post-failure rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21513,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "post-failure patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21514,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 230,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] rays",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21522,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 231,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] surface_name",
+  "nbytes": 7,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21538,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 232,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] normal_force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21545,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 233,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] tangent_world",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21569,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21593,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 235,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] centroid_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21617,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 236,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21641,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 237,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21649,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 238,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] tangential_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21657,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 239,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21665,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21673,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21681,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 242,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21689,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 243,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] sliding_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21697,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 244,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] slip_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21705,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 245,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21713,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 246,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21721,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 247,
+  "kind": "bitwise",
+  "label": "post-failure patches[0] fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21729,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 248,
+  "kind": "bitwise",
+  "label": "post-failure carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 21730,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 249,
+  "kind": "bitwise",
+  "label": "post-failure carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 22242,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 250,
+  "kind": "bitwise",
+  "label": "post-failure carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 22754,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 251,
+  "kind": "bitwise",
+  "label": "post-failure carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23266,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 252,
+  "kind": "bitwise",
+  "label": "post-failure carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23267,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 253,
+  "kind": "bitwise",
+  "label": "post-failure carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23268,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 254,
+  "kind": "bitwise",
+  "label": "post-failure carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23276,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 255,
+  "kind": "bitwise",
+  "label": "post-failure carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23284,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 256,
+  "kind": "bitwise",
+  "label": "post-failure carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23292,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 257,
+  "kind": "bitwise",
+  "label": "post-failure carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23300,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 258,
+  "kind": "bitwise",
+  "label": "post-failure patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23308,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 259,
+  "kind": "bitwise",
+  "label": "post-failure patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23316,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 260,
+  "kind": "bitwise",
+  "label": "post-failure patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23332,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 261,
+  "kind": "bitwise",
+  "label": "post-failure patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23340,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 262,
+  "kind": "bitwise",
+  "label": "post-failure patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23341,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 263,
+  "kind": "bitwise",
+  "label": "post-failure patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_validation_bitwise_atomicity[tier1]",
+  "offset": 23485,
+  "rtol": null,
+  "shape": []
+ }
+]

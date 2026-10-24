@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "names",
+  "nbytes": 17621,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_state_wire_schema_and_round_trip",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   17621
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.row",
+  "nbytes": 5760,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_state_wire_schema_and_round_trip",
+  "offset": 17621,
+  "rtol": null,
+  "shape": [
+   720
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "state round trip",
+  "nbytes": 5760,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_state_wire_schema_and_round_trip",
+  "offset": 23381,
+  "rtol": null,
+  "shape": [
+   720
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "state re-round trip",
+  "nbytes": 5760,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_state_wire_schema_and_round_trip",
+  "offset": 29141,
+  "rtol": null,
+  "shape": [
+   720
+  ]
+ }
+]

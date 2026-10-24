@@ -1,0 +1,3040 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "step 0 tyre_name",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "step 0 hub_position_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 26,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "step 0 hub_velocity_world_mps",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 50,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "step 0 force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 74,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "step 0 pressure_bar",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 98,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "step 0 omega_forward_radps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 106,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "step 0 normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 114,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "step 0 support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 122,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "step 0 mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 130,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "step 0 contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 138,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "step 0 slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 146,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "step 0 transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 154,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "step 0 dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 162,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "step 0 fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 170,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "step 0 rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 171,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "step 0 coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 172,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "step 0 airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 173,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "step 0 rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 174,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "step 0 patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 175,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] rays",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 183,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] surface_name",
+  "nbytes": 7,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 199,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] normal_force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 206,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] tangent_world",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 230,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 254,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] centroid_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 278,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 302,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 310,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] tangential_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 318,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 326,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 334,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 342,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 350,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] sliding_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 358,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] slip_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 366,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 374,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 382,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "step 0 patches[0] fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 390,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "step 0 carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 391,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "step 0 carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 903,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "step 0 carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1415,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "step 0 carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1927,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "step 0 carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1928,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "step 0 carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1929,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "step 0 carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1937,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "step 0 carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1945,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "step 0 carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1953,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "step 0 carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1961,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "step 0 patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1969,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "step 0 patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1977,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "step 0 patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 1993,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "step 0 patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2001,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "step 0 patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 168,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2002,
+  "rtol": null,
+  "shape": [
+   21
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "step 0 patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2170,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "step 1 tyre_name",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2178,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "step 1 hub_position_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2204,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "step 1 hub_velocity_world_mps",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2228,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "step 1 force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2252,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "step 1 pressure_bar",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2276,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "step 1 omega_forward_radps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2284,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "step 1 normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2292,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "step 1 support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2300,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "step 1 mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2308,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "step 1 contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2316,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "step 1 slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2324,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "step 1 transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2332,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "step 1 dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2340,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "step 1 fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2348,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "step 1 rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2349,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "step 1 coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2350,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "step 1 airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2351,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "step 1 rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2352,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "step 1 patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2353,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] rays",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2361,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] surface_name",
+  "nbytes": 7,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2377,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] normal_force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2384,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] tangent_world",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2408,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2432,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] centroid_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2456,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2480,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2488,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] tangential_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2496,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2504,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2512,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2520,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2528,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] sliding_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2536,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] slip_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2544,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2552,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2560,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "step 1 patches[0] fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2568,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "step 1 carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 2569,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "step 1 carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 3081,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "step 1 carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 3593,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "step 1 carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4105,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "step 1 carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4106,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "step 1 carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4107,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "step 1 carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4115,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "step 1 carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4123,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "step 1 carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4131,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "step 1 carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4139,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "step 1 patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4147,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "step 1 patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4155,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "step 1 patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4171,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "step 1 patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4179,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "step 1 patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4180,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "step 1 patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4356,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "step 2 tyre_name",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4364,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "step 2 hub_position_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4390,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "step 2 hub_velocity_world_mps",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4414,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "step 2 force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4438,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "step 2 pressure_bar",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4462,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "step 2 omega_forward_radps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4470,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "step 2 normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4478,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "step 2 support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4486,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "step 2 mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4494,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "step 2 contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4502,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "step 2 slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4510,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "step 2 transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4518,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "step 2 dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4526,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "step 2 fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4534,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "step 2 rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4535,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "step 2 coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4536,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "step 2 airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4537,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "step 2 rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4538,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "step 2 patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4539,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] rays",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4547,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] surface_name",
+  "nbytes": 7,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4563,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] normal_force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4570,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] tangent_world",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4594,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4618,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] centroid_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4642,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4666,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4674,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] tangential_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4682,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4690,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4698,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4706,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4714,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] sliding_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4722,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] slip_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4730,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4738,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4746,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "step 2 patches[0] fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4754,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "step 2 carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 4755,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "step 2 carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 5267,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "step 2 carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 5779,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "step 2 carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6291,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "step 2 carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6292,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "step 2 carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6293,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "step 2 carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6301,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "step 2 carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6309,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "step 2 carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6317,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "step 2 carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6325,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "step 2 patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6333,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "step 2 patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6341,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "step 2 patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6357,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "step 2 patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6365,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "step 2 patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6366,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "step 2 patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6542,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "step 3 tyre_name",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6550,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "step 3 hub_position_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6576,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "step 3 hub_velocity_world_mps",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6600,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "step 3 force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6624,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "step 3 pressure_bar",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6648,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "step 3 omega_forward_radps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6656,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "step 3 normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6664,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "step 3 support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6672,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "step 3 mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6680,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "step 3 contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6688,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "step 3 slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6696,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "step 3 transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6704,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "step 3 dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6712,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "step 3 fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6720,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "step 3 rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6721,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "step 3 coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6722,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "step 3 airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6723,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "step 3 rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6724,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "step 3 patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6725,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] rays",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6733,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] surface_name",
+  "nbytes": 7,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6749,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] normal_force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6756,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] tangent_world",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6780,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6804,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] centroid_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6828,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6852,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6860,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] tangential_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6868,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6876,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6884,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6892,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6900,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] sliding_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6908,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] slip_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6916,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6924,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6932,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "step 3 patches[0] fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6940,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "step 3 carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 6941,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "step 3 carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 7453,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "step 3 carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 7965,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "step 3 carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8477,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "step 3 carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8478,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "step 3 carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8479,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "step 3 carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8487,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "step 3 carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8495,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "step 3 carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8503,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "step 3 carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8511,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "step 3 patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8519,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "step 3 patch_states[0] key",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8527,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "step 3 patch_states[0] kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8543,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "step 3 patch_states[0] detailed",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8551,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "step 3 patch_states[0] detailed.bristle_deflection_m",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8552,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "step 3 patch_states[0] detailed.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8728,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "reset tyre_name",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8736,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "reset hub_position_world_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8762,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "reset hub_velocity_world_mps",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8786,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "reset force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8810,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "reset pressure_bar",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8834,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "reset omega_forward_radps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8842,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "bitwise",
+  "label": "reset normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8850,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "reset support_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8858,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "reset mean_deflection_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8866,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 221,
+  "kind": "bitwise",
+  "label": "reset contact_length_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8874,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 222,
+  "kind": "bitwise",
+  "label": "reset slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8882,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 223,
+  "kind": "bitwise",
+  "label": "reset transient_slip_ratio",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8890,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 224,
+  "kind": "bitwise",
+  "label": "reset dissipated_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8898,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 225,
+  "kind": "bitwise",
+  "label": "reset fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8906,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 226,
+  "kind": "bitwise",
+  "label": "reset rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8907,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 227,
+  "kind": "bitwise",
+  "label": "reset coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8908,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 228,
+  "kind": "bitwise",
+  "label": "reset airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8909,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "reset rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8910,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 230,
+  "kind": "bitwise",
+  "label": "reset patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8911,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 231,
+  "kind": "bitwise",
+  "label": "reset carcass.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 8919,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 232,
+  "kind": "bitwise",
+  "label": "reset carcass.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 9431,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 233,
+  "kind": "bitwise",
+  "label": "reset carcass.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 9943,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "reset carcass.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 10455,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 235,
+  "kind": "bitwise",
+  "label": "reset carcass.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 10456,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 236,
+  "kind": "bitwise",
+  "label": "reset carcass.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 10457,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 237,
+  "kind": "bitwise",
+  "label": "reset carcass.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 10465,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 238,
+  "kind": "bitwise",
+  "label": "reset carcass.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 10473,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 239,
+  "kind": "bitwise",
+  "label": "reset carcass.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 10481,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "reset carcass.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 10489,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "reset patch_states",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_model.py::test_model_reset_bitwise[tier1]",
+  "offset": 10497,
+  "rtol": null,
+  "shape": []
+ }
+]

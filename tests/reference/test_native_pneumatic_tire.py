@@ -1,5 +1,7 @@
 """Native pneumatic tyre writer: config, bitwise per-state parity, state wire, probe, energy."""
 import copy
+import json
+import os
 import re
 from pathlib import Path
 
@@ -11,6 +13,7 @@ from native_loader import load_native
 bike_native = load_native()
 
 from _bits import assert_bitwise_equal
+import _golden
 from test_native_brake_resistance import _restore
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -19,6 +22,77 @@ ROOT = Path(__file__).resolve().parents[2]
 # writer the same production-shaped env the distributed tests exercise.
 PNEUMATIC_BASE = ROOT / 'examples/research/viewer_physics_distributed.toml'
 ROCKY = 'examples/research/alpine_rocky.toml'
+
+
+def _record_string(value, label):
+    """A str captured as a |u1 bytes entry — the C++ port byte-compares it."""
+    _golden.record(np.frombuffer(str(value).encode(), np.uint8), label)
+
+
+def _record_input_string(value, label):
+    """A str consumed as a C++ input: text rides the golden stream as a
+    <f8 array of char codes so Node.f64_input can reconstruct the exact
+    bytes before json-parse."""
+    _golden.record(np.frombuffer(str(value).encode(), np.uint8)
+                   .astype(np.float64), label)
+
+
+def _record_int(value, label):
+    """A Python int/bool captured as <i8 — the C++ port consumes the slot
+    index/count as a signed integer entry."""
+    _golden.record(np.asarray(int(value), np.int64), label)
+
+
+def _fixture_dir(name):
+    """tests/fixtures/golden/pneumatic_tire/<name>/ inside an active capture
+    — the platform-shared input bundle the C++ port reads via
+    bt::oracle::root(). Returns None outside capture."""
+    root = os.environ.get('BIKE_GOLDEN_CAPTURE')
+    return None if root is None else Path(root) / 'pneumatic_tire' / name
+
+
+def _platform_fixture_dir(name):
+    """tests/fixtures/golden/<platform>/pneumatic_tire/<name>/ — captured
+    runtime artifacts (episodes, post-equilibrium state payloads) whose
+    bytes are platform-dependent: numba/LLVM codegen differs between
+    darwin-arm64 and linux-aarch64, so each platform owns its bundle."""
+    root = os.environ.get('BIKE_GOLDEN_CAPTURE')
+    return None if root is None else \
+        Path(root) / _golden.platform_key() / 'pneumatic_tire' / name
+
+
+def _fixture_save_episode(ep, model, name):
+    """Persist a golden_episode artifact for the C++ replay — gated on the
+    capture env so a normal run writes nothing. The episode rows are the
+    live platform pipeline's output, so the bundle is per-platform."""
+    target = _platform_fixture_dir(f'episodes/{name}')
+    if target is None:
+        return
+    from tools.golden_episode import save
+    save(ep, target, model)
+
+
+def _fixture_save_bytes(payload, *parts):
+    target = _fixture_dir(parts[0])
+    if target is None:
+        return
+    target.mkdir(parents=True, exist_ok=True)
+    (target / parts[1]).write_bytes(payload)
+
+
+def _fixture_save_wire(wire, name):
+    _fixture_save_bytes(
+        (json.dumps(wire, sort_keys=True) + '\n').encode(),
+        name, 'wire.json')
+
+
+def _platform_fixture_save_wire(wire, name):
+    """The env wire rides the per-platform bundle with its sibling inputs."""
+    target = _platform_fixture_dir(name)
+    if target is None:
+        return
+    target.mkdir(parents=True, exist_ok=True)
+    (target / 'wire.json').write_text(json.dumps(wire, sort_keys=True) + '\n')
 
 
 def _pneumatic_config(tmp_path, tier='fast'):
@@ -60,12 +134,81 @@ def _model_path(tmp_path, env):
     return path
 
 
-def _golden(tmp_path, steps=40, tier='fast'):
+# The C++ port rebuilds the env_fast environment from a checked-in-style
+# research request: the physics.toml _pneumatic_config generated, an
+# explicit-t0 initial_state.json captured post-equilibrium (the native
+# solver's iterate is not required to be the oracle's bitwise), and this
+# request.toml mirroring _env()'s CLI arguments (--physics-config +
+# --track-file alpine_rocky + --duration 1 + --dt .00125 + --rider
+# articulated_planar + --seed 0 + --diagnostic-model-limits + the parser
+# defaults). track_file is relative from the platform fixture dir.
+_ENV_REQUEST = '''\
+request_schema = 1
+physics_file = "physics.toml"
+track_file = "../../../../../../examples/research/alpine_rocky.toml"
+model_mode = "ride"
+rider_variant = "articulated_planar"
+seed_decimal = "0"
+use_equilibrium_cache = false
+duration_s = 1.0
+control_period_s = 0.01
+actuator_delay_s = 0.005
+sensor_delay_s = 0.01
+check_policy = "diagnostic"
+capture_mode = "legacy"
+initial_state_file = "initial_state.json"
+
+[overrides]
+timestep_s = 0.00125
+
+[experiment]
+record_decimation = 80
+'''
+
+
+def _fixture_save_env(env, physics_path, name, initial_state_json):
+    """Persist the request bundle the C++ port feeds
+    bike::research::make_environment: physics TOML, request TOML and the
+    oracle's settled t=0 state as a PhysicalInitialState document (taken
+    by the caller before the first step — capture is a t=0 gate)."""
+    # The request bundle is per-platform: initial_state.json is
+    # post-equilibrium pipeline output (platform-dependent bytes), and
+    # request.toml resolves it relative to its own directory, so the
+    # whole bundle lives under <platform>/pneumatic_tire/<name>/.
+    target = _platform_fixture_dir(name)
+    if target is None:
+        return
+    target.mkdir(parents=True, exist_ok=True)
+    (target / 'physics.toml').write_bytes(Path(physics_path).read_bytes())
+    (target / 'request.toml').write_text(_ENV_REQUEST)
+    (target / 'initial_state.json').write_text(initial_state_json)
+
+
+def _drive_episode(tmp_path, steps=40, tier='fast'):
     from tools.golden_episode import capture_episode, save
+    from tools.native_config import project
     from bike_sim.sim.ride.control import RideControl
     env = _env(tmp_path, tier=tier)
+    # PhysicalInitialState.capture is a t=0 gate — take it before the
+    # episode drive leaves t=0 (its own _guard enforces steps == 0).
+    initial_state = None
+    if tier == 'fast' and steps == 40 and _fixture_dir('x') is not None:
+        from bike_sim.sim.ride.initial_state import PhysicalInitialState
+        initial_state = PhysicalInitialState.capture(env.sim).payload_json
     ep = capture_episode(env, steps, RideControl(human_torque_nm=35.))
     save(ep, tmp_path / 'g', env.sim.model)
+    # The 40-step capture is the fixture episode: rows [0, N) of the
+    # shorter-parity tests are its deterministic prefix, so only the full
+    # run publishes it (and the shared env wire/model inputs) — the C++
+    # port replays its first N rows per test.
+    if tier == 'fast' and steps == 40:
+        _fixture_save_episode(ep, env.sim.model, 'fast40')
+        # The episode bundle's model.mjb IS the env model (identical
+        # bytes) — the C++ port reads that copy, so env_fast carries no
+        # second model image.
+        _platform_fixture_save_wire(project(env), 'env_fast')
+        _fixture_save_env(env, tmp_path / 'physics.toml', 'env_fast',
+                          initial_state)
     return env, tmp_path / 'g'
 
 
@@ -81,6 +224,7 @@ def test_config_projection_carries_the_pneumatic_section(tmp_path):
     from tools.native_config import project
     env = _env(tmp_path, duration='.01')
     cfg = project(env)
+    _platform_fixture_save_wire(cfg, 'env_fast')
     tire = cfg['tire']
     assert tire['backend'] == 'pneumatic'
     assert 'material' not in tire['front'] and set(tire['front']) == {
@@ -93,8 +237,15 @@ def test_config_projection_carries_the_pneumatic_section(tmp_path):
     assert p['half_angle_deg'] == tier.half_angle_deg
     assert p['discretised_brush'] == tier.discretised_brush
     assert p['timestep_s'] == tier.timestep_s
+    # The resolved tier row as the golden gate the C++ port replays.
+    _golden.record(np.asarray(
+        [float(tier.n_rays), tier.half_angle_deg,
+         float(tier.discretised_brush), tier.timestep_s]), 'tier')
     assert 'surface' not in p                    # track resolution, not a name
     assert p['profile']['dx_m'] > 0. and len(p['profile']['z_m']) >= 2
+    _golden.record(np.asarray(
+        [p['profile']['x0_m'], p['profile']['dx_m'],
+         float(len(p['profile']['z_m']))]), 'profile')
     assert 'surface_map' in tire                 # the track map rode the wire
     bike_native.Stepper(str(_model_path(tmp_path, env)), cfg)
 
@@ -103,6 +254,7 @@ def test_config_rejects_bad_pneumatic_sections(tmp_path):
     from tools.native_config import project
     env = _env(tmp_path, duration='.01')
     good = project(env)
+    _platform_fixture_save_wire(good, 'env_fast')
     model = str(_model_path(tmp_path, env))
     mutants = (
         lambda c: c['tire'].pop('pneumatic'),
@@ -130,11 +282,13 @@ def test_pneumatic_state_wire_schema_and_round_trip(tmp_path):
     for _ in range(40):
         env.sim.step()
     st = bike_native.Stepper(str(_model_path(tmp_path, env)), project(env))
+    _platform_fixture_save_wire(project(env), 'env_fast')
     applier = env.sim.physical.tire
     names = list(st.tire_state_names)
     n = TIERS['fast'].n_rays
     width = (n + 1) // 2
     assert names == applier.state_names()
+    _record_string('\n'.join(applier.state_names()), 'names')
     assert len(names) == 2 * (4 * n + 8 + 3 * width)
     assert names[:4] == ['front.ray.000.delta_prev_m',
                          'front.ray.000.elastic_prev_n',
@@ -147,6 +301,7 @@ def test_pneumatic_state_wire_schema_and_round_trip(tmp_path):
     assert names[-1] == f'rear.patch.{width - 1:02d}.kappa_prime'
     # The committed 40-step state round-trips bitwise through the writer.
     row = applier.state_dict()['row']
+    _golden.record(np.asarray(row), 'input.row')
     st.set_tire_state(names, row)
     assert_bitwise_equal(np.asarray(st.tire_state()), row, 'state round trip')
     st.set_tire_state(names, st.tire_state())
@@ -165,8 +320,11 @@ def test_pneumatic_state_rejections_are_atomic(tmp_path):
     for _ in range(20):
         env.sim.step()
     st = bike_native.Stepper(str(_model_path(tmp_path, env)), project(env))
+    _platform_fixture_save_wire(project(env), 'env_fast')
     names = list(st.tire_state_names)
     committed = np.asarray(st.tire_state())
+    _golden.record(committed, 'input.committed')
+    _record_string('\n'.join(names), 'names')
     with pytest.raises(RuntimeError, match='rear.patch'):
         st.set_tire_state(names[:-1], committed[:-1])
     with pytest.raises(RuntimeError, match='unknown column'):
@@ -200,6 +358,10 @@ def _assert_snapshots_equal(native, row, k):
     assert set(native) == set(row) == {'front', 'rear'}
     for side in ('front', 'rear'):
         snap, want = native[side], row[side]
+        _record_int(want['interval_id'], f'{side}.interval_id step {k}')
+        _record_string(want['backend'], f'{side}.backend step {k}')
+        _golden.record(np.asarray(bool(want['geometric_contact'])),
+                       f'{side}.geometric_contact step {k}')
         assert snap['interval_id'] == want['interval_id']
         assert snap['backend'] == want['backend'] == 'pneumatic'
         assert snap['geometric_contact'] == bool(want['geometric_contact'])
@@ -208,8 +370,11 @@ def _assert_snapshots_equal(native, row, k):
         assert_bitwise_equal(snap['effective_radius_m'],
                              float(want['effective_radius_m']),
                              f'{side}.effective_radius_m step {k}')
+        _record_int(len(want['patches']), f'{side}.patches step {k}')
         assert len(snap['patches']) == len(want['patches'])
         for i, (p, w) in enumerate(zip(snap['patches'], want['patches'])):
+            _golden.record(np.asarray(bool(w['working_surface'])),
+                           f'{side}.patches[{i}].working_surface step {k}')
             assert bool(p['working_surface']) == bool(w['working_surface'])
             for f in ('normal_load_n', 'tangent_force_n', 'slip_mps'):
                 assert_bitwise_equal(p[f], float(w[f]),
@@ -228,7 +393,14 @@ def _assert_diagnostics_equal(native, oracle, k):
             if isinstance(w, float):
                 assert_bitwise_equal(got[key], w,
                                      f'{side}.{key} step {k}')
+            elif isinstance(w, str):
+                _record_string(w, f'{side}.{key} step {k}')
+                assert got[key] == w, f'{side}.{key} step {k}'
+            elif isinstance(w, bool):
+                _golden.record(np.asarray(w), f'{side}.{key} step {k}')
+                assert got[key] == w, f'{side}.{key} step {k}'
             else:
+                _record_int(w, f'{side}.{key} step {k}')
                 assert got[key] == w, f'{side}.{key} step {k}'
 
 
@@ -247,6 +419,8 @@ def _run_golden_parity(env, g):
     names = list(ep.tire_state_names)
     assert tuple(st.tire_state_names) == tuple(applier.state_names()) \
         == tuple(names)
+    _record_string('\n'.join(names), 'names')
+    _record_string('\n'.join(ep.force_names), 'force_names')
     dt = float(ref.opt.timestep)
     for k in range(len(ep.state_qpos)):
         _restore(ref, dref, ep, k)
@@ -295,7 +469,7 @@ def test_pneumatic_qfrc_bitwise(tmp_path):
     """Golden per-state parity on alpine_rocky: the consumed-state wire
     rows, qfrc vectors, evolved wire, contact snapshots and diagnostics —
     bitwise against the manifest and the live Python applier."""
-    env, g = _golden(tmp_path, steps=40, tier='fast')
+    env, g = _drive_episode(tmp_path, steps=40, tier='fast')
     _run_golden_parity(env, g)
 
 
@@ -377,11 +551,16 @@ def test_pneumatic_golden_episode_event_rich(tmp_path):
     transitions. Every step still passes the shared golden parity —
     qfrc, wire, snapshots, diagnostics and the energy counters."""
     from tools.golden_episode import capture_episode, load_episode, save
+    from tools.native_config import project
     from bike_sim.sim.ride.control import RideControl
     env = _event_env(tmp_path)
     ep = capture_episode(env, 280, RideControl(human_torque_nm=35.))
     g = tmp_path / 'ge'
     save(ep, g, env.sim.model)
+    _fixture_save_episode(ep, env.sim.model, 'event280')
+    _fixture_save_bytes((g / 'model.mjb').read_bytes(),
+                        'env_event', 'model.mjb')
+    _platform_fixture_save_wire(project(env), 'env_event')
     _run_golden_parity(env, g)
     ep = load_episode(g)
     diag = ep.manifest['tire_diagnostics']
@@ -435,7 +614,7 @@ def test_pneumatic_golden_reset_restore_mid_run(tmp_path):
     the golden stream bitwise — mirrored by applier.reset() + set_state."""
     from tools.golden_episode import load_episode
     from tools.native_config import project
-    env, g = _golden(tmp_path, steps=30)
+    env, g = _drive_episode(tmp_path, steps=30)
     ep = load_episode(g)
     ref = mujoco.MjModel.from_binary_path(str(g / 'model.mjb'))
     dref = mujoco.MjData(ref)
@@ -480,7 +659,7 @@ def test_pneumatic_golden_failure_atomicity(tmp_path):
     resumes bitwise afterwards."""
     from tools.golden_episode import load_episode
     from tools.native_config import project
-    env, g = _golden(tmp_path, steps=24)
+    env, g = _drive_episode(tmp_path, steps=24)
     ep = load_episode(g)
     ref = mujoco.MjModel.from_binary_path(str(g / 'model.mjb'))
     dref = mujoco.MjData(ref)
@@ -590,6 +769,10 @@ def _assert_live_snapshots(native, oracle, k):
     assert set(native) == set(oracle)
     for side, snap in native.items():
         want = oracle[side]
+        _record_int(want.interval_id, f'{side}.interval_id tick {k}')
+        _record_string(want.backend, f'{side}.backend tick {k}')
+        _golden.record(np.asarray(bool(want.geometric_contact)),
+                       f'{side}.geometric_contact tick {k}')
         assert snap['interval_id'] == want.interval_id
         assert snap['backend'] == want.backend == 'pneumatic'
         assert snap['geometric_contact'] == want.geometric_contact
@@ -598,8 +781,11 @@ def _assert_live_snapshots(native, oracle, k):
         assert_bitwise_equal(snap['effective_radius_m'],
                              want.effective_radius_m,
                              f'{side}.effective_radius_m tick {k}')
+        _record_int(len(want.patches), f'{side}.patches tick {k}')
         assert len(snap['patches']) == len(want.patches)
         for i, (p, w) in enumerate(zip(snap['patches'], want.patches)):
+            _golden.record(np.asarray(bool(w.working_surface)),
+                           f'{side}.patches[{i}].working_surface tick {k}')
             assert bool(p['working_surface']) == bool(w.working_surface)
             for f in ('normal_load_n', 'tangent_force_n', 'slip_mps'):
                 assert_bitwise_equal(p[f], getattr(w, f),
@@ -641,7 +827,10 @@ def test_pneumatic_qfrc_bitwise_detailed_tier(tmp_path):
     mjb = tmp_path / 'rig.mjb'
     mujoco.mj_saveModel(model, str(mjb), None)
     st = bike_native.Stepper(str(mjb), _pneumatic_wire(cfg_tires, profile))
+    _fixture_save_bytes(mjb.read_bytes(), 'rig_detailed', 'model.mjb')
+    _fixture_save_wire(_pneumatic_wire(cfg_tires, profile), 'rig_detailed')
     names = list(applier.state_names())
+    _record_string('\n'.join(names), 'names')
     n = 256
     assert tuple(st.tire_state_names) == tuple(names)
     assert len(names) == 2 * (4 * n + 8 + 3 * ((n + 1) // 2))
@@ -663,6 +852,15 @@ def test_pneumatic_qfrc_bitwise_detailed_tier(tmp_path):
         data.time = k * dt
         mujoco.mj_forward(model, data)
         row = applier.state_dict()['row']             # the consumed seed
+        _golden.record(np.asarray(row), f'input.seed {k}')
+        # The scripted mjData row is the Stepper's deterministic input —
+        # qpos/qvel/act/warmstart/time packed so the C++ port replays the
+        # identical pose without an env.
+        _golden.record(np.asarray(
+            np.concatenate([np.asarray(data.qpos), np.asarray(data.qvel),
+                            np.asarray(data.act),
+                            np.asarray(data.qacc_warmstart),
+                            [float(data.time)]])), f'input.state {k}')
         st.set_state(np.asarray(data.qpos), np.asarray(data.qvel),
                      np.asarray(data.act),
                      np.asarray(data.qacc_warmstart), float(data.time))
@@ -736,7 +934,11 @@ def test_pneumatic_rig_event_sweep_detailed_tier(tmp_path):
     mujoco.mj_saveModel(model, str(mjb), None)
     st = bike_native.Stepper(
         str(mjb), _pneumatic_wire(cfg_tires, profile, surface_map))
+    _fixture_save_bytes(mjb.read_bytes(), 'rig_events', 'model.mjb')
+    _fixture_save_wire(_pneumatic_wire(cfg_tires, profile, surface_map),
+                       'rig_events')
     names = list(applier.state_names())
+    _record_string('\n'.join(names), 'names')
     assert tuple(st.tire_state_names) == tuple(names)
     front_x = _joint_adr(model, 'front_root_x', 'qpos')
     front_z = _joint_adr(model, 'front_root_z', 'qpos')
@@ -779,6 +981,12 @@ def test_pneumatic_rig_event_sweep_detailed_tier(tmp_path):
         data.time = (k + 1) * dt
         mujoco.mj_forward(model, data)
         row = applier.state_dict()['row']             # the consumed seed
+        _golden.record(np.asarray(row), f'input.seed {k}')
+        _golden.record(np.asarray(
+            np.concatenate([np.asarray(data.qpos), np.asarray(data.qvel),
+                            np.asarray(data.act),
+                            np.asarray(data.qacc_warmstart),
+                            [float(data.time)]])), f'input.state {k}')
         st.set_state(np.asarray(data.qpos), np.asarray(data.qvel),
                      np.asarray(data.act),
                      np.asarray(data.qacc_warmstart), float(data.time))
@@ -838,11 +1046,12 @@ def test_pneumatic_probe_and_clock(tmp_path, native_module):
     from tools.native_config import project
     from bike_sim.native.runtime import create_native_ride
     from bike_sim.sim.ride.control import RideControl
-    env, g = _golden(tmp_path, steps=5)
+    env, g = _drive_episode(tmp_path, steps=5)
     ep = load_episode(g)
     ref = mujoco.MjModel.from_binary_path(str(g / 'model.mjb'))
     st = bike_native.Stepper(str(g / 'model.mjb'), project(env))
     names = list(ep.tire_state_names)
+    _record_string('\n'.join(names), 'names')
     dt = float(ref.opt.timestep)
     st.set_state(ep.state_qpos[2], ep.state_qvel[2], ep.state_act[2],
                  ep.state_warmstart[2], float(ep.state_time[2]))
@@ -875,6 +1084,7 @@ def test_pneumatic_probe_and_clock(tmp_path, native_module):
     command = RideControl()
     try:
         period = probe_env.sim.physical.control_clock.steps_per_period
+        _golden.record(np.asarray(float(period)), 'input.period')
         for target in range(1, period + 1):
             probe_env.sim.step(control=command)
             native.advance(target, command)
@@ -888,13 +1098,19 @@ def test_pneumatic_probe_and_clock(tmp_path, native_module):
         expected = probe_env.sim.force_accumulator.components
         before = native.snapshot()
         probe = native.probe_step_inputs(command)
+        _record_string('\n'.join(expected), 'probe component names')
         assert list(probe['components']) == list(expected)
         for name, force in expected.items():
+            _record_string(name, f'probe name {name}')
             assert_bitwise_equal(np.asarray(probe['components'][name]),
                                  np.asarray(force), f'probe {name}')
         # Probe output is published through probe_snapshots only — the
         # committed boundary and the published sample do not move.
         after = native.snapshot()
+        _record_int(after.step, 'probe after.step')
+        _golden.record(np.asarray(before.latest_sample is not None),
+                       'probe has_sample')
+        _record_int(before.latest_sample.interval_id, 'probe interval_id')
         assert after.step == before.step == period
         assert before.latest_sample is not None
         assert (after.latest_sample.interval_id
@@ -926,6 +1142,14 @@ def test_pneumatic_observations_declare_multi_contact(tmp_path, native_module):
             assert tires[side]['normal_load_n'] > 0.
             assert tires[side]['patch_count'] >= 1
             assert tires[side]['surface']
+            _record_string(tires[side]['backend'], f'{side}.backend')
+            _golden.record(
+                np.asarray(bool(tires[side]['supports_multiple_contacts'])),
+                f'{side}.supports_multiple_contacts')
+            _golden.record(np.asarray(float(tires[side]['normal_load_n'])),
+                           f'{side}.normal_load_n')
+            _record_int(tires[side]['patch_count'], f'{side}.patch_count')
+            _record_string(tires[side]['surface'], f'{side}.surface')
     finally:
         native.close()
         env.close()
@@ -937,7 +1161,7 @@ def test_pneumatic_stored_energy_and_counters(tmp_path):
     post-commit counters — bitwise against the live oracle's attributes."""
     from tools.golden_episode import load_episode
     from tools.native_config import project
-    env, g = _golden(tmp_path, steps=20)
+    env, g = _drive_episode(tmp_path, steps=20)
     ep = load_episode(g)
     ref = mujoco.MjModel.from_binary_path(str(g / 'model.mjb'))
     dref = mujoco.MjData(ref)

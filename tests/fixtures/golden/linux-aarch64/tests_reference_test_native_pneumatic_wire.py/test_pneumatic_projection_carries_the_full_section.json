@@ -1,0 +1,72 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "tier",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_pneumatic_projection_carries_the_full_section",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "front_spec",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_pneumatic_projection_carries_the_full_section",
+  "offset": 32,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "front_spec.name",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_pneumatic_projection_carries_the_full_section",
+  "offset": 168,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "rear_spec",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_pneumatic_projection_carries_the_full_section",
+  "offset": 194,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "rear_spec.name",
+  "nbytes": 28,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_pneumatic_projection_carries_the_full_section",
+  "offset": 330,
+  "rtol": null,
+  "shape": [
+   28
+  ]
+ }
+]

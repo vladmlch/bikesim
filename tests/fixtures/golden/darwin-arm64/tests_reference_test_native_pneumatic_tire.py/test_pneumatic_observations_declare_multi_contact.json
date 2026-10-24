@@ -1,0 +1,130 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "front.backend",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_observations_declare_multi_contact",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "front.supports_multiple_contacts",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_observations_declare_multi_contact",
+  "offset": 9,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "front.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_observations_declare_multi_contact",
+  "offset": 10,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "front.patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_observations_declare_multi_contact",
+  "offset": 18,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "front.surface",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_observations_declare_multi_contact",
+  "offset": 26,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "rear.backend",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_observations_declare_multi_contact",
+  "offset": 34,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "rear.supports_multiple_contacts",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_observations_declare_multi_contact",
+  "offset": 43,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "rear.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_observations_declare_multi_contact",
+  "offset": 44,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "rear.patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_observations_declare_multi_contact",
+  "offset": 52,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "rear.surface",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_observations_declare_multi_contact",
+  "offset": 60,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ }
+]

@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "surface.name",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_named_surface_overrides_the_track_map_on_the_wire",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ }
+]

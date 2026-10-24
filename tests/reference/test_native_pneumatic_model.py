@@ -62,6 +62,50 @@ from bike_sim.terrain.surface import (
 from native_loader import load_native
 bike_native = load_native()
 from _bits import assert_bitwise_equal
+import _golden
+
+
+def _record_string(value, label):
+    """A str captured as a |u1 bytes entry — the C++ port byte-compares it."""
+    _golden.record(np.frombuffer(value.encode(), np.uint8), label)
+
+
+def _record_input_string(value, label):
+    """A str consumed as a C++ input: the JSON/bytes payload rides the
+    golden stream as a <f8 array of char codes so Node.f64_input can
+    reconstruct the exact bytes."""
+    _golden.record(np.frombuffer(value.encode(), np.uint8)
+                   .astype(np.float64), label)
+
+
+def _record_input_state(state, prefix):
+    """A {carcass, patch_states} wire dict captured as ordered <f8 inputs:
+    the three carcass rings, the seven flag/rim scalars, the patch count,
+    then per patch {start, stop, kappa_prime, detailed flag, bristle row,
+    detailed kappa_prime}."""
+    _golden.record(np.asarray(
+        np.concatenate([state['carcass'][k]
+                        for k in _CARCASS_ARRAY_KEYS]),
+        dtype=np.float64), f'{prefix}.carcass')
+    _golden.record(np.asarray(
+        [float(state['carcass'][k]) for k in _CARCASS_BOOL_KEYS] +
+        [float(state['carcass'][k]) for k in _CARCASS_FLOAT_KEYS],
+        dtype=np.float64), f'{prefix}.flags')
+    _golden.record(np.asarray(float(len(state['patch_states'])),
+                   dtype=np.float64), f'{prefix}.patch_states')
+    for i, slot in enumerate(state['patch_states']):
+        detailed = slot['detailed']
+        _golden.record(np.asarray(
+            [float(slot['start']), float(slot['stop']),
+             float(slot['kappa_prime']), float(detailed is not None)],
+            dtype=np.float64), f'{prefix}.patch.{i}.meta')
+        if detailed is not None:
+            _golden.record(np.asarray(detailed['bristle_deflection_m'],
+                           dtype=np.float64),
+                           f'{prefix}.patch.{i}.bristle')
+            _golden.record(np.asarray(float(detailed['kappa_prime']),
+                           dtype=np.float64),
+                           f'{prefix}.patch.{i}.detailed_kappa_prime')
 
 FAST = TIERS['fast']
 DETAIL = TIERS['detailed']
@@ -206,6 +250,7 @@ def _assert_rim_event(got_ev, want_ev, msg):
 
 
 def _assert_outputs_bitwise(got, want, msg=''):
+    _record_string(want.tyre_name, f'{msg} tyre_name')
     assert got['tyre_name'] == want.tyre_name, f'{msg} tyre_name'
     for k in _WHEEL_ARRAY_KEYS:
         assert_bitwise_equal(np.asarray(got[k]), getattr(want, k),
@@ -214,14 +259,23 @@ def _assert_outputs_bitwise(got, want, msg=''):
         assert_bitwise_equal(float(got[k]), float(getattr(want, k)),
                              f'{msg} {k}')
     for k in _WHEEL_BOOL_KEYS:
+        _golden.record(np.asarray(bool(getattr(want, k))),
+                       f'{msg} {k}')
         assert bool(got[k]) == bool(getattr(want, k)), f'{msg} {k}'
+    _golden.record(np.asarray(want.rim_event is not None),
+                   f'{msg} rim_event')
     _assert_rim_event(got['rim_event'], want.rim_event, msg)
+    _golden.record(np.asarray(len(want.patches), np.int64),
+                   f'{msg} patches')
     assert len(got['patches']) == len(want.patches), \
         f'{msg} patches {len(got["patches"])} != {len(want.patches)}'
     for i, (gp, wp) in enumerate(zip(got['patches'], want.patches)):
         pmsg = f'{msg} patches[{i}]'
+        _golden.record(np.asarray([wp.ray_start, wp.ray_stop],
+                                  np.int64), f'{pmsg} rays')
         assert gp['ray_start'] == wp.ray_start, f'{pmsg} ray_start'
         assert gp['ray_stop'] == wp.ray_stop, f'{pmsg} ray_stop'
+        _record_string(wp.surface_name, f'{pmsg} surface_name')
         assert gp['surface_name'] == wp.surface_name, \
             f'{pmsg} surface_name'
         for k in _PATCH_ARRAY_KEYS:
@@ -230,6 +284,8 @@ def _assert_outputs_bitwise(got, want, msg=''):
         for k in _PATCH_FLOAT_KEYS:
             assert_bitwise_equal(float(gp[k]), float(getattr(wp, k)),
                                  f'{pmsg} {k}')
+        _golden.record(np.asarray(bool(wp.fully_sliding)),
+                       f'{pmsg} fully_sliding')
         assert bool(gp['fully_sliding']) == bool(wp.fully_sliding), \
             f'{pmsg} fully_sliding'
 
@@ -240,6 +296,8 @@ def _assert_carcass_state_bitwise(native_state, oracle_state, msg=''):
                              getattr(oracle_state, k),
                              f'{msg} carcass.{k}')
     for k in _CARCASS_BOOL_KEYS:
+        _golden.record(np.asarray(bool(getattr(oracle_state, k))),
+                       f'{msg} carcass.{k}')
         assert bool(native_state[k]) == bool(getattr(oracle_state, k)), \
             f'{msg} carcass.{k}'
     for k in _CARCASS_FLOAT_KEYS:
@@ -253,15 +311,21 @@ def _assert_state_bitwise(native_state, oracle_model, msg=''):
                                   oracle_model.carcass_state, msg)
     got = native_state['patch_states']
     want = _oracle_state_dict(oracle_model)['patch_states']
+    _golden.record(np.asarray(len(want), np.int64),
+                   f'{msg} patch_states')
     assert len(got) == len(want), \
         f'{msg} patch_states {len(got)} != {len(want)}'
     for i, (gs, ws) in enumerate(zip(got, want)):
         smsg = f'{msg} patch_states[{i}]'
+        _golden.record(np.asarray([ws['start'], ws['stop']], np.int64),
+                       f'{smsg} key')
         assert gs['start'] == ws['start'] and gs['stop'] == ws['stop'], \
             f'{smsg} key'
         assert_bitwise_equal(float(gs['kappa_prime']),
                              float(ws['kappa_prime']),
                              f'{smsg} kappa_prime')
+        _golden.record(np.asarray(ws['detailed'] is not None),
+                       f'{smsg} detailed')
         if ws['detailed'] is None:
             assert gs['detailed'] is None, f'{smsg} detailed'
         else:
@@ -807,6 +871,8 @@ def test_model_rolling_loss_signs_bitwise(tier):
         losses.append(_tread_loss_force(
             _tread_loss_crr_at_pressure(tyre), p.normal_load_n,
             omega_row, v_x))
+        _golden.record(np.asarray(v_x), f'{tag} loss.v_x')
+        _golden.record(np.asarray(losses[-1]), f'{tag} loss.force')
 
     _run_sequence(tyre, tier, road, _uniform_map(), rows, check)
     # Forward/reverse rolling produce opposite signed losses; the

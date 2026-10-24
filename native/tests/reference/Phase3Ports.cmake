@@ -44,6 +44,14 @@ bike_add_reference_test(native_pneumatic_carcass ENGINE
 bike_add_reference_test(native_pneumatic_brush ENGINE
   SOURCES test_native_pneumatic_brush.cpp LIBRARIES bike_app bike_random
   LABELS t52 tyre golden)
+# 3.12b pneumatic remainder — the direct model API, the wire/projection
+# layer and the writer end-to-end episodes, all on frozen two-platform
+# goldens (fixture bundles under tests/fixtures/golden/<platform>/
+# pneumatic_tire/ carry the episode/model/wire artifacts the writer port
+# replays).
+bike_add_reference_test(native_pneumatic_model ENGINE
+  SOURCES test_native_pneumatic_model.cpp LIBRARIES bike_app bike_legacy
+  bike_random LABELS t52 tyre golden)
 bike_add_reference_test(native_clock_contracts ENGINE
   SOURCES test_native_clock_contracts.cpp LIBRARIES bike_app bike_random LABELS t52 runtime golden)
 foreach(_drive_port IN ITEMS motor_profile cadence_shifter pedal_waveform pedaling_policy)

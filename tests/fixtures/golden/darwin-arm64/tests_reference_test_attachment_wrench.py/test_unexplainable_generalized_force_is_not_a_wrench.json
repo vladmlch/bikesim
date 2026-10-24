@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "error",
+  "nbytes": 52,
+  "node": "tests/reference/test_attachment_wrench.py::test_unexplainable_generalized_force_is_not_a_wrench",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   52
+  ]
+ }
+]

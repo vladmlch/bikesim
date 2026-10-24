@@ -1,0 +1,16 @@
+[
+ {
+  "atol": 1e-08,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "lam",
+  "nbytes": 16,
+  "node": "tests/reference/test_attachment_wrench.py::test_connect_recovers_force_only[force1]",
+  "offset": 0,
+  "rtol": 1e-08,
+  "shape": [
+   2
+  ]
+ }
+]

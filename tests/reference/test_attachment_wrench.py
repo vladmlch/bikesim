@@ -1,6 +1,7 @@
 import mujoco
 import numpy as np
 import pytest
+import _golden
 from bike_sim.sim.ride.attachment_wrench import (
     equality_qfrc, recover_wrench, relative_planar_jacobian,
     prepare_attachment_geometry, attachment_raw_from_geometry, attachment_raw)
@@ -13,19 +14,27 @@ def test_wrench_preserves_virtual_work():
     qforce = jac.T @ expected
     actual = recover_wrench(jac, qforce)
     velocity = np.array([.2, -.1, .3, .4])
+    _golden.record(expected, 'recovered wrench', kind='close',
+                   rtol=1e-7, atol=1e-10)
     np.testing.assert_allclose(actual, expected, atol=1e-10)
+    _golden.record(np.float64(qforce @ velocity), 'virtual work',
+                   kind='close', rtol=1e-5, atol=1e-8)
     assert np.isclose(actual @ (jac @ velocity), qforce @ velocity)
 
 
 def test_rank_deficiency_is_not_silently_reported_as_zero_force():
-    with pytest.raises(ValueError, match='rank'):
+    with pytest.raises(ValueError, match='rank') as e:
         recover_wrench(np.zeros((2, 4)), np.zeros(4))
+    _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                   'error')
 
 
 def test_unexplainable_generalized_force_is_not_a_wrench():
     jac = np.array([[1., 0., 0., -1.], [0., 1., 0., 0.]])
-    with pytest.raises(ValueError, match='explain'):
+    with pytest.raises(ValueError, match='explain') as e:
         recover_wrench(jac, np.array([1., 0., 0., 1.]))
+    _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                   'error')
 
 
 def _pair_model(equality_xml):
@@ -103,15 +112,22 @@ def test_weld_recovers_solved_wrench_and_work(force):
     wrench, jac, eq_id = _recover(model, data, 'w', rotational=True)
     lam = _lambda(model, data, eq_id)
     # Translational rows are unscaled: recovered force equals the multipliers.
+    _golden.record(lam[[0, 2]], 'lam translational', kind='close',
+                   rtol=1e-8, atol=1e-8)
     np.testing.assert_allclose(wrench[:2], lam[[0, 2]], rtol=1e-8, atol=1e-8)
     # The weld's sin(t/2) residual halves the physical moment in lambda_m
     # (exact at zero misalignment; the solref spring lets the pose drift).
+    _golden.record(np.float64(.5*lam[4]), 'halved moment', kind='close',
+                   rtol=1e-3, atol=1e-3)
     assert np.isclose(wrench[2], .5*lam[4], rtol=1e-3, atol=1e-3)
     # Physical oracle: after settling the weld balances the applied wrench.
     np.testing.assert_allclose(wrench, [-force[0], -force[1], -torque],
                                rtol=.05, atol=2.)
     qfrc_eq = equality_qfrc(model, data, eq_id)
+    _golden.record(qfrc_eq, 'qfrc_eq', kind='close', rtol=1e-8, atol=1e-8)
     np.testing.assert_allclose(jac.T @ wrench, qfrc_eq, rtol=1e-8, atol=1e-8)
+    _golden.record(np.float64(qfrc_eq @ data.qvel), 'virtual work',
+                   kind='close', rtol=1e-5, atol=1e-8)
     assert np.isclose(wrench @ (jac @ data.qvel), qfrc_eq @ data.qvel)
 
 
@@ -126,6 +142,7 @@ def test_connect_recovers_force_only(force):
         mujoco.mj_step(model, data)
     wrench, jac, eq_id = _recover(model, data, 'c', rotational=False)
     lam = _lambda(model, data, eq_id)
+    _golden.record(lam[[0, 2]], 'lam', kind='close', rtol=1e-8, atol=1e-8)
     np.testing.assert_allclose(wrench, lam[[0, 2]], rtol=1e-8, atol=1e-8)
     # A pin answers force only; the applied couple spins the rider freely.
     np.testing.assert_allclose(wrench, [-force[0], -force[1]],
@@ -163,6 +180,8 @@ def test_contact_rows_do_not_corrupt_equality_selection():
     assert np.any(data.efc_type[:n] != int(mujoco.mjtConstraint.mjCNSTR_EQUALITY))
     wrench, jac, eq_id = _recover(model, data, 'w', rotational=True)
     lam = _lambda(model, data, eq_id)
+    _golden.record(lam[[0, 2]], 'lam translational', kind='close',
+                   rtol=1e-8, atol=1e-8)
     np.testing.assert_allclose(wrench[:2], lam[[0, 2]], rtol=1e-8, atol=1e-8)
     np.testing.assert_allclose(wrench[:2], [-55., -70.], rtol=.05, atol=2.)
 
@@ -192,8 +211,15 @@ def test_prepared_attachment_raw_matches_interval_state_recovery():
         rotational=True, rows=rows)
     data.qpos[:], data.qvel[:] = saved_qpos, saved_qvel
     mujoco.mj_kinematics(model, data); mujoco.mj_comPos(model, data)
-    np.testing.assert_allclose(fast.rider_jac, slow.rider_jac, atol=1e-12, rtol=0.)
-    np.testing.assert_allclose(fast.bike_jac, slow.bike_jac, atol=1e-12, rtol=0.)
-    np.testing.assert_allclose(fast.rider_qfrc, slow.rider_qfrc, atol=1e-12, rtol=0.)
-    np.testing.assert_allclose(fast.bike_qfrc, slow.bike_qfrc, atol=1e-12, rtol=0.)
+    for name in ('rider_jac', 'bike_jac', 'rider_qfrc', 'bike_qfrc'):
+        _golden.record(getattr(fast, name), f'fast {name}', kind='close',
+                       rtol=0., atol=1e-12)
+        _golden.record(getattr(slow, name), f'slow {name}', kind='close',
+                       rtol=0., atol=1e-12)
+        np.testing.assert_allclose(getattr(fast, name), getattr(slow, name),
+                                   atol=1e-12, rtol=0.)
+    _golden.record(np.float64(fast.gap_m), 'fast gap_m', kind='close',
+                   rtol=1e-6, atol=1e-12)
+    _golden.record(np.float64(slow.gap_m), 'slow gap_m', kind='close',
+                   rtol=1e-6, atol=1e-12)
     assert fast.gap_m == pytest.approx(slow.gap_m, abs=1e-12)

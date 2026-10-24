@@ -1,0 +1,16 @@
+[
+ {
+  "atol": 1e-08,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "lam translational",
+  "nbytes": 16,
+  "node": "tests/reference/test_attachment_wrench.py::test_contact_rows_do_not_corrupt_equality_selection",
+  "offset": 0,
+  "rtol": 1e-08,
+  "shape": [
+   2
+  ]
+ }
+]

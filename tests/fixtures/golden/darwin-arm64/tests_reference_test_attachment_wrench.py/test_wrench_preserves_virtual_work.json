@@ -1,0 +1,28 @@
+[
+ {
+  "atol": 1e-10,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "recovered wrench",
+  "nbytes": 24,
+  "node": "tests/reference/test_attachment_wrench.py::test_wrench_preserves_virtual_work",
+  "offset": 0,
+  "rtol": 1e-07,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": 1e-08,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "close",
+  "label": "virtual work",
+  "nbytes": 8,
+  "node": "tests/reference/test_attachment_wrench.py::test_wrench_preserves_virtual_work",
+  "offset": 24,
+  "rtol": 1e-05,
+  "shape": []
+ }
+]

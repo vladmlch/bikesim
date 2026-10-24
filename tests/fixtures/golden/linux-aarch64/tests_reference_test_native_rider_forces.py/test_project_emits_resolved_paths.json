@@ -1,0 +1,238 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.dims",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "expected.path0.name",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 24,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "expected.path0.joint",
+  "nbytes": 112,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 120,
+  "rtol": null,
+  "shape": [
+   14
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "expected.path0",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 232,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "expected.path1.name",
+  "nbytes": 88,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 280,
+  "rtol": null,
+  "shape": [
+   11
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "expected.path1.joint",
+  "nbytes": 104,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 368,
+  "rtol": null,
+  "shape": [
+   13
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "expected.path1",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 472,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "expected.path2.name",
+  "nbytes": 80,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 520,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "expected.path2.joint",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 600,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "expected.path2",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 696,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "expected.path3.name",
+  "nbytes": 120,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 744,
+  "rtol": null,
+  "shape": [
+   15
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "expected.path3.joint",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 864,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "expected.path3",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 1000,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "expected.path4.name",
+  "nbytes": 112,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 1048,
+  "rtol": null,
+  "shape": [
+   14
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "expected.path4.joint",
+  "nbytes": 128,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 1160,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "expected.path4",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 1288,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "expected.nv",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths",
+  "offset": 1336,
+  "rtol": null,
+  "shape": []
+ }
+]

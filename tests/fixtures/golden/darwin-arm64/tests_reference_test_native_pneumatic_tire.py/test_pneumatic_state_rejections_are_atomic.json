@@ -1,0 +1,44 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.committed",
+  "nbytes": 5760,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_state_rejections_are_atomic",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   720
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "names",
+  "nbytes": 17621,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_state_rejections_are_atomic",
+  "offset": 5760,
+  "rtol": null,
+  "shape": [
+   17621
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "rejected restores preserve the state wire",
+  "nbytes": 5760,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_state_rejections_are_atomic",
+  "offset": 23381,
+  "rtol": null,
+  "shape": [
+   720
+  ]
+ }
+]

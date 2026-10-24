@@ -55,6 +55,9 @@ bike_add_reference_test(native_pneumatic_model ENGINE
 bike_add_reference_test(native_pneumatic_wire ENGINE
   SOURCES test_native_pneumatic_wire.cpp LIBRARIES bike_app bike_random
   LABELS t52 tyre golden)
+bike_add_reference_test(native_pneumatic_tire ENGINE
+  SOURCES test_native_pneumatic_tire.cpp LIBRARIES bike_app bike_random
+  bike_golden LABELS t52 tyre golden slow)
 bike_add_reference_test(native_clock_contracts ENGINE
   SOURCES test_native_clock_contracts.cpp LIBRARIES bike_app bike_random LABELS t52 runtime golden)
 foreach(_drive_port IN ITEMS motor_profile cadence_shifter pedal_waveform pedaling_policy)

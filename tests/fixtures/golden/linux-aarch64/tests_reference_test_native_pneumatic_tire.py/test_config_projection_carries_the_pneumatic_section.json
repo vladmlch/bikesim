@@ -1,0 +1,30 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "tier",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_config_projection_carries_the_pneumatic_section",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "profile",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_config_projection_carries_the_pneumatic_section",
+  "offset": 32,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

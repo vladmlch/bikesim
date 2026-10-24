@@ -15713,12 +15713,10 @@
       "native/tests/reference/test_native_pneumatic_tire.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_pneumatic_tire"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b7426715315e9713179b86d9a6afd30f4154885346ad6a510b1111a2ab3f3ea9",
     "snapshot_line_count": 965,
     "tracked": true,

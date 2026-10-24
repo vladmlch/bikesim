@@ -12919,13 +12919,19 @@
       "line": 80,
       "end_line": 99,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_config_projection_carries_the_pneumatic_section",
+      "native_test_id": "reference.native_pneumatic_tire::test_config_projection_carries_the_pneumatic_section",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_config_projection_carries_the_pneumatic_section green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -12933,13 +12939,15 @@
       "line": 102,
       "end_line": 123,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_config_rejects_bad_pneumatic_sections",
+      "native_test_id": "reference.native_pneumatic_tire::test_config_rejects_bad_pneumatic_sections",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: native contract port landed in native/tests/reference/test_native_pneumatic_tire.cpp; CTest reference.native_pneumatic_tire::test_config_rejects_bad_pneumatic_sections green on darwin-arm64 + linux-aarch64 (no golden entries \u2014 direct native assertions)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -12947,13 +12955,19 @@
       "line": 126,
       "end_line": 159,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_state_wire_schema_and_round_trip",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_state_wire_schema_and_round_trip",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_state_wire_schema_and_round_trip green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -12961,13 +12975,19 @@
       "line": 162,
       "end_line": 194,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_state_rejections_are_atomic",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_state_rejections_are_atomic",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_state_rejections_are_atomic green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -12975,13 +12995,19 @@
       "line": 294,
       "end_line": 299,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_qfrc_bitwise",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_qfrc_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_qfrc_bitwise green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -12989,13 +13015,15 @@
       "line": 372,
       "end_line": 428,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_golden_episode_event_rich",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_golden_episode_event_rich",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-24 3.12b lane/a: STOPPED \u2014 baseline-red on the unmodified oracle (documented baseline family); C++ port authored in native/tests/reference/test_native_pneumatic_tire.cpp but parked ([[maybe_unused]], not registered in main) until the oracle is green and goldens exist on both platforms; partial sidecars deleted"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -13003,13 +13031,19 @@
       "line": 432,
       "end_line": 471,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_golden_reset_restore_mid_run",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_golden_reset_restore_mid_run",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_golden_reset_restore_mid_run green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -13017,13 +13051,19 @@
       "line": 475,
       "end_line": 544,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_golden_failure_atomicity",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_golden_failure_atomicity",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_golden_failure_atomicity green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -13031,13 +13071,19 @@
       "line": 615,
       "end_line": 695,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_qfrc_bitwise_detailed_tier",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_qfrc_bitwise_detailed_tier",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_qfrc_bitwise_detailed_tier green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -13045,13 +13091,19 @@
       "line": 699,
       "end_line": 828,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_rig_event_sweep_detailed_tier",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_rig_event_sweep_detailed_tier",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_rig_event_sweep_detailed_tier green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -13059,13 +13111,15 @@
       "line": 832,
       "end_line": 909,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_probe_and_clock",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_probe_and_clock",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-24 3.12b lane/a: STOPPED \u2014 baseline-red on the unmodified oracle (documented baseline family); C++ port authored in native/tests/reference/test_native_pneumatic_tire.cpp but parked ([[maybe_unused]], not registered in main) until the oracle is green and goldens exist on both platforms; partial sidecars deleted"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -13073,13 +13127,19 @@
       "line": 912,
       "end_line": 931,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_observations_declare_multi_contact",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_observations_declare_multi_contact",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_observations_declare_multi_contact green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
@@ -13087,13 +13147,19 @@
       "line": 935,
       "end_line": 965,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_tire::test_pneumatic_stored_energy_and_counters",
+      "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_stored_energy_and_counters",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_stored_energy_and_counters green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",

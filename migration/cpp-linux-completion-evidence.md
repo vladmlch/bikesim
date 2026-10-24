@@ -2857,3 +2857,104 @@ rows — 53 golden / 8 port — with dated evidence), `python-removal.json`
 this evidence file (+86 lane section), and 1272 golden sidecars under
 `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/` (~11.9 MiB per
 platform).
+
+## 2026-10-24 — Batch 3.12b: pneumatic tyre remainder (model / tire / wire)
+
+Lane `pfc-lane-a` (`lane/a`). Ports of
+`tests/reference/test_native_pneumatic_{model,tire,wire}.py` —
+19 + 13 + 17 records, one C++ file each under
+`native/tests/reference/`, registered in `Phase3Ports.cmake`.
+
+### Capture + CTest
+
+- darwin-arm64: model 36/36, tire 11 passed + 2 baseline-red, wire
+  55/55; `ctest -R 'reference.native_pneumatic_(model|tire|wire)'`
+  3/3 green (`reference.native_pneumatic_tire` 234751 checks,
+  `reference.native_pneumatic_wire` 49754 checks).
+- linux-aarch64 (container `root-clang`, capture venv
+  `/opt/bike-venv`, `NATIVE_TEST_BUILD_PATH=/build/native-clang`):
+  identical pass counts; CTest 3/3 green.
+- Byte-mutation proof: one byte flipped in a wire sidecar
+  `test_configured_surface_projects_through_a_real_sim.bin` ->
+  `FAIL ... comparison 0 label 'surface.name': bytes differ`;
+  byte restored -> `PASS 49754 checks`.
+
+### Baseline-red stops (verified on the unmodified baseline)
+
+- `test_pneumatic_golden_episode_event_rich`: episode capture dies
+  inside the 64000-step equilibrium budget
+  (`front_wheel_spin` residual ~0.081, the documented
+  "savage-plant" defect family) on both platforms.
+- `test_pneumatic_probe_and_clock`: the probe interval at step 1
+  diverges bitwise from the live sim on both platforms.
+- Both C++ functions are authored but parked (`[[maybe_unused]]`,
+  calls commented out in `main` with STOPPED notes); their
+  `test-port-map` records stay `planned` with evidence — no
+  sidecars are committed for them (partial captures deleted on
+  both platforms).
+
+### Structural finding: per-platform golden inputs
+
+`test_pneumatic_qfrc_bitwise` and the shorter parity tests
+re-drive a live episode per platform and record its rows. The
+episode is the live pipeline's output, so darwin-arm64 and
+linux-aarch64 produce different bytes (~1e-3 relative on
+`forces[0][tires][0]` at step 0). A single shared
+`episodes/fast40` bundle therefore cannot satisfy both
+platforms' sidecars: captured runtime artifacts (episode bundles
+`episodes/*`, and the env request bundles `env_fast`/`env_event`
+whose `initial_state.json` is post-equilibrium output) moved to
+`tests/fixtures/golden/<platform>/pneumatic_tire/…`. The C++ port
+resolves them via `bt::oracle::root()/platform()`. Static config
+inputs (wire JSON, rig models, track bundles) are
+platform-independent and stay in the shared
+`pneumatic_tire/`/`pneumatic_wire/` trees — shared-JSON
+deduplication shrank the wire sidecars from ~38 MiB to ~748 KiB
+per platform.
+
+### Size budget finding (stop condition per plan step 3)
+
+This batch's golden payload is ~49 MiB across both platforms —
+over the 20 MiB rule. Largest entries
+(`du -a tests/fixtures/golden | sort -n | tail`):
+
+- `<platform>/pneumatic_tire/episodes/fast40/` ~7.1 MiB each
+  (5.8 MiB `model.mjb` + 0.84 MiB `episode.npz` + manifest; the
+  mjb bytes differ per platform — not shareable)
+- `pneumatic_wire/track/model.mjb` 5.8 MiB (shared)
+- `<platform>/…test_native_pneumatic_model.py` ~6.6 MiB
+- `<platform>/…test_native_pneumatic_tire.py` ~5.0 MiB
+- `<platform>/…test_native_pneumatic_wire.py` ~0.75 MiB
+- `pneumatic_tire` shared rigs + `pneumatic_wire` shared payloads
+  ~6.1 MiB total
+
+The >20 MiB stop rule therefore fired at plan step 3 and the commits
+were withheld for a user decision. **User ruling, 2026-10-24: commit
+the ~49 MiB golden payload as-is — no Git LFS, no trim.** The
+per-file commits below carry the full payload (breakdown above);
+recorded here so the ledger shows the oversized payload was a
+deliberate decision, not an oversight.
+
+### Final gate — `bash tools/run_tests.sh native` (lane)
+
+Exit 8 at the binding-graph CTest (`native/build`, 62 tests): the
+three reds are all pre-existing, none caused by this batch —
+
+- `migration_T09` (`integration vector resolves bitwise`) and
+  `migration_T29` (`config.rider_controller.weld_servo_gain:
+  unknown key`) — the documented baseline pair, unchanged.
+- `migration_T25` (`welded_flat.toml: initial-state physical model
+  contract differs`) — verified pre-existing at `e843f0d` via
+  stash+rerun (fails identically without this batch's changes).
+  This node was recaptured/fixed in an earlier batch (the
+  `initial_state/welded_flat.json` `contract_sha256` drift entry
+  above) and has re-regressed since — the fixture's contract
+  inputs drifted again. Out of 3.12b scope; needs its own
+  root-cause pass per D16.
+
+The gate stops at the ctest phase; the reference/native pytest
+phase never launched. The three new `reference.native_pneumatic_*`
+CTests are green inside `build/native-release` (the root graph,
+reported above) — the binding-graph reds are unrelated T-legacy
+migration nodes.
+

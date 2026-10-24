@@ -816,6 +816,14 @@ The 13 failing node IDs, identical in the baseline and current full run, are:
 - `tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock`
 - `tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only`
 
+2026-10-24 addition (batch 3.12b lane/a triage): two further nodes of
+`test_native_pneumatic_tire.py` were verified red on the unmodified
+baseline (stash + rerun at `e843f0d`), so they join the documented
+baseline set rather than blocking the port batch:
+
+- `tests/reference/test_native_pneumatic_tire.py::test_pneumatic_golden_episode_event_rich` — episode capture exhausts the 64,000-step equilibrium budget (`front_wheel_spin` residual ≈ 0.081; same savage-plant defect family as `test_savage_is_ridden_to_the_end`).
+- `tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock` — the recorded probe interval diverges bitwise from the live simulation at step 1 on both platforms.
+
 2026-10-23 refresh (`migration/baseline-refresh-2026-10-23.md`, measured at
 `fe4feaa`): the two annotated nodes now pass; the other 11 nodes remain
 failing with deterministic signatures, so the live residual is 11 nodes.

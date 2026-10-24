@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.match",
+  "nbytes": 200,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_pneumatic_wire_rejection_cases[<lambda>-tire.pneumatic.timestep_s]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   25
+  ]
+ }
+]

@@ -1,0 +1,40 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.n_rays",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_selected_native_parser_accepts_the_pneumatic_wire",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "names.first",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_selected_native_parser_accepts_the_pneumatic_wire",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "names.count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_selected_native_parser_accepts_the_pneumatic_wire",
+  "offset": 34,
+  "rtol": null,
+  "shape": []
+ }
+]

@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "profile.head",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_pneumatic_profile_matches_the_appliers_road_bitwise",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "profile.z_m",
+  "nbytes": 192008,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_pneumatic_profile_matches_the_appliers_road_bitwise",
+  "offset": 16,
+  "rtol": null,
+  "shape": [
+   24001
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "applier.head",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_pneumatic_profile_matches_the_appliers_road_bitwise",
+  "offset": 192024,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "applier.z_m",
+  "nbytes": 192008,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_pneumatic_profile_matches_the_appliers_road_bitwise",
+  "offset": 192040,
+  "rtol": null,
+  "shape": [
+   24001
+  ]
+ }
+]

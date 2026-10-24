@@ -13101,13 +13101,19 @@
       "line": 94,
       "end_line": 121,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_pneumatic_projection_carries_the_full_section",
+      "native_test_id": "reference.native_pneumatic_wire::test_pneumatic_projection_carries_the_full_section",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_wire::test_pneumatic_projection_carries_the_full_section green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13115,13 +13121,19 @@
       "line": 124,
       "end_line": 134,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_pneumatic_profile_matches_the_appliers_road_bitwise",
+      "native_test_id": "reference.native_pneumatic_wire::test_pneumatic_profile_matches_the_appliers_road_bitwise",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_wire::test_pneumatic_profile_matches_the_appliers_road_bitwise green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13129,13 +13141,19 @@
       "line": 137,
       "end_line": 141,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_pneumatic_track_mode_keeps_the_surface_map",
+      "native_test_id": "reference.native_pneumatic_wire::test_pneumatic_track_mode_keeps_the_surface_map",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_wire::test_pneumatic_track_mode_keeps_the_surface_map green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13143,13 +13161,15 @@
       "line": 144,
       "end_line": 145,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_pneumatic_wire_round_trips_through_the_schema",
+      "native_test_id": "reference.native_pneumatic_wire::test_pneumatic_wire_round_trips_through_the_schema",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "structural",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: native contract port landed in native/tests/reference/test_native_pneumatic_wire.cpp; CTest reference.native_pneumatic_wire::test_pneumatic_wire_round_trips_through_the_schema green on darwin-arm64 + linux-aarch64 (no golden entries \u2014 direct native assertions)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13157,13 +13177,15 @@
       "line": 148,
       "end_line": 157,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_configured_surface_projects_the_resolved_spec",
+      "native_test_id": "reference.native_pneumatic_wire::test_configured_surface_projects_the_resolved_spec",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "structural",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: native contract port landed in native/tests/reference/test_native_pneumatic_wire.cpp; CTest reference.native_pneumatic_wire::test_configured_surface_projects_the_resolved_spec green on darwin-arm64 + linux-aarch64 (no golden entries \u2014 direct native assertions)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13171,13 +13193,19 @@
       "line": 160,
       "end_line": 167,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_configured_surface_projects_through_a_real_sim",
+      "native_test_id": "reference.native_pneumatic_wire::test_configured_surface_projects_through_a_real_sim",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_wire::test_configured_surface_projects_through_a_real_sim green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13185,13 +13213,19 @@
       "line": 170,
       "end_line": 176,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_named_surface_overrides_the_track_map_on_the_wire",
+      "native_test_id": "reference.native_pneumatic_wire::test_named_surface_overrides_the_track_map_on_the_wire",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_wire::test_named_surface_overrides_the_track_map_on_the_wire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13199,13 +13233,19 @@
       "line": 179,
       "end_line": 187,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_detailed_tier_projects_its_resolved_parameters",
+      "native_test_id": "reference.native_pneumatic_wire::test_detailed_tier_projects_its_resolved_parameters",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_wire::test_detailed_tier_projects_its_resolved_parameters green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13213,13 +13253,15 @@
       "line": 190,
       "end_line": 195,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_pneumatic_section_requires_the_road_profile",
+      "native_test_id": "reference.native_pneumatic_wire::test_pneumatic_section_requires_the_road_profile",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: native contract port landed in native/tests/reference/test_native_pneumatic_wire.cpp; CTest reference.native_pneumatic_wire::test_pneumatic_section_requires_the_road_profile green on darwin-arm64 + linux-aarch64 (no golden entries \u2014 direct native assertions)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13227,13 +13269,15 @@
       "line": 198,
       "end_line": 201,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_projection_rejects_a_non_pneumatic_section",
+      "native_test_id": "reference.native_pneumatic_wire::test_projection_rejects_a_non_pneumatic_section",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: native contract port landed in native/tests/reference/test_native_pneumatic_wire.cpp; CTest reference.native_pneumatic_wire::test_projection_rejects_a_non_pneumatic_section green on darwin-arm64 + linux-aarch64 (no golden entries \u2014 direct native assertions)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13241,13 +13285,19 @@
       "line": 265,
       "end_line": 269,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_pneumatic_wire_rejection_cases",
+      "native_test_id": "reference.native_pneumatic_wire::test_pneumatic_wire_rejection_cases",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_wire::test_pneumatic_wire_rejection_cases green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13255,13 +13305,15 @@
       "line": 272,
       "end_line": 277,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_pneumatic_configured_wire_requires_the_surface",
+      "native_test_id": "reference.native_pneumatic_wire::test_pneumatic_configured_wire_requires_the_surface",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: native contract port landed in native/tests/reference/test_native_pneumatic_wire.cpp; CTest reference.native_pneumatic_wire::test_pneumatic_configured_wire_requires_the_surface green on darwin-arm64 + linux-aarch64 (no golden entries \u2014 direct native assertions)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13269,13 +13321,15 @@
       "line": 280,
       "end_line": 285,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_pneumatic_configured_wire_rejects_a_malformed_surface",
+      "native_test_id": "reference.native_pneumatic_wire::test_pneumatic_configured_wire_rejects_a_malformed_surface",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: native contract port landed in native/tests/reference/test_native_pneumatic_wire.cpp; CTest reference.native_pneumatic_wire::test_pneumatic_configured_wire_rejects_a_malformed_surface green on darwin-arm64 + linux-aarch64 (no golden entries \u2014 direct native assertions)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13283,13 +13337,15 @@
       "line": 288,
       "end_line": 292,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_pneumatic_track_wire_still_requires_the_map",
+      "native_test_id": "reference.native_pneumatic_wire::test_pneumatic_track_wire_still_requires_the_map",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: native contract port landed in native/tests/reference/test_native_pneumatic_wire.cpp; CTest reference.native_pneumatic_wire::test_pneumatic_track_wire_still_requires_the_map green on darwin-arm64 + linux-aarch64 (no golden entries \u2014 direct native assertions)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13297,13 +13353,15 @@
       "line": 295,
       "end_line": 302,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_pneumatic_backend_reaches_the_backend_allow_list",
+      "native_test_id": "reference.native_pneumatic_wire::test_pneumatic_backend_reaches_the_backend_allow_list",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: native contract port landed in native/tests/reference/test_native_pneumatic_wire.cpp; CTest reference.native_pneumatic_wire::test_pneumatic_backend_reaches_the_backend_allow_list green on darwin-arm64 + linux-aarch64 (no golden entries \u2014 direct native assertions)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13311,13 +13369,19 @@
       "line": 305,
       "end_line": 320,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_selected_native_parser_accepts_the_pneumatic_wire",
+      "native_test_id": "reference.native_pneumatic_wire::test_selected_native_parser_accepts_the_pneumatic_wire",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_wire::test_selected_native_parser_accepts_the_pneumatic_wire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_pneumatic_wire.py",
@@ -13325,13 +13389,19 @@
       "line": 367,
       "end_line": 378,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_pneumatic_wire::test_selected_native_parser_rejects_malformed_pneumatic_wires",
+      "native_test_id": "reference.native_pneumatic_wire::test_selected_native_parser_rejects_malformed_pneumatic_wires",
       "native_source": "native/tests/reference/test_native_pneumatic_wire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_wire::test_selected_native_parser_rejects_malformed_pneumatic_wires green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",

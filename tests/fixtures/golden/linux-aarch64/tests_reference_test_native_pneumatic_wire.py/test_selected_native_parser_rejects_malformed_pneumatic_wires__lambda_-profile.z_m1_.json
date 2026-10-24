@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.match",
+  "nbytes": 88,
+  "node": "tests/reference/test_native_pneumatic_wire.py::test_selected_native_parser_rejects_malformed_pneumatic_wires[<lambda>-profile.z_m1]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   11
+  ]
+ }
+]

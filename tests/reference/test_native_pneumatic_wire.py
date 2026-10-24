@@ -10,7 +10,10 @@ layer (Task 6) parses and validates it while the pneumatic writer lands
 with the Stepper dispatch task.
 """
 import copy
+import json
+import os
 from dataclasses import asdict
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -27,7 +30,40 @@ from bike_sim.terrain import get_preset
 from bike_sim.terrain.surface import SurfaceMap, get_surface
 from tools.native_config import project, validate_config, _surface_spec
 
+import _golden
+
 TYRE_SPEC_KEYS = tuple(asdict(FRONT_TYRE))
+
+
+def _record_input_string(value, label):
+    """A JSON/text payload consumed by the C++ port: rides the golden
+    stream as a <f8 array of char codes so Node.f64_input reconstructs
+    the exact bytes."""
+    _golden.record(np.frombuffer(str(value).encode(), np.uint8)
+                   .astype(np.float64), label)
+
+
+def _record_string(value, label):
+    _golden.record(np.frombuffer(str(value).encode(), np.uint8), label)
+
+
+def _fixture_save_bytes(payload, *parts):
+    """Platform-shared input bytes under tests/fixtures/golden/
+    pneumatic_wire/<parts> — written only inside a capture."""
+    root = os.environ.get('BIKE_GOLDEN_CAPTURE')
+    if root is None:
+        return
+    target = Path(root) / 'pneumatic_wire' / parts[0]
+    target.mkdir(parents=True, exist_ok=True)
+    (target / parts[1]).write_bytes(payload)
+
+
+def _fixture_save_json(value, *parts):
+    """Persist a wire/section payload once under the shared bundle — the
+    C++ port reads the frozen bytes instead of an 'input.*' stream (the
+    same document is replayed across dozens of nodes)."""
+    _fixture_save_bytes(json.dumps(value, sort_keys=True).encode(),
+                        *parts)
 
 
 def _sim(pneumatic=None, surface_mode='track', **tires_kwargs):
@@ -92,6 +128,10 @@ def _assert_builtin_leaves(value, path='config'):
 
 
 def test_pneumatic_projection_carries_the_full_section(track_sim, track_wire):
+    # The oracle wire is the golden input the C++ port replays: it builds
+    # the same BuildRequest, projects it through the native
+    # project_writer_config and compares the canonical form plus leaves.
+    _fixture_save_json(track_wire, 'track', 'wire.json')
     tire = track_wire['tire']
     assert tire['backend'] == 'pneumatic' and tire['surface_mode'] == 'track'
     # The TireParameters sides keep the shared tangential fields; the
@@ -112,9 +152,20 @@ def test_pneumatic_projection_carries_the_full_section(track_sim, track_wire):
     assert type(pneu['half_angle_deg']) is float
     assert pneu['half_angle_deg'] == tier.half_angle_deg
     assert pneu['timestep_s'] == tier.timestep_s
+    _golden.record(np.asarray(
+        [float(tier.n_rays), tier.half_angle_deg,
+         float(tier.discretised_brush), tier.timestep_s]), 'tier')
     # Each side carries the 18 TyreSpecs dataclass fields — nothing else.
     assert pneu['front'] == asdict(FRONT_TYRE)
     assert pneu['rear'] == asdict(REAR_TYRE)
+    _golden.record(np.asarray(
+        [float(v) for k, v in asdict(FRONT_TYRE).items()
+         if isinstance(v, float)]), 'front_spec')
+    _record_string(FRONT_TYRE.name, 'front_spec.name')
+    _golden.record(np.asarray(
+        [float(v) for k, v in asdict(REAR_TYRE).items()
+         if isinstance(v, float)]), 'rear_spec')
+    _record_string(REAR_TYRE.name, 'rear_spec.name')
     for side in ('front', 'rear'):
         assert tuple(pneu[side]) == TYRE_SPEC_KEYS
         assert 'rim_strike_deflection_mm' not in pneu[side]
@@ -123,6 +174,10 @@ def test_pneumatic_projection_carries_the_full_section(track_sim, track_wire):
 
 def test_pneumatic_profile_matches_the_appliers_road_bitwise(
         track_sim, track_wire):
+    # The C++ port decodes this wire from the shared fixture bundle and
+    # replays the resolved profile against these recorded values.
+    _fixture_save_bytes(json.dumps(track_wire, sort_keys=True).encode(),
+                        'track', 'wire.json')
     profile = track_wire['tire']['pneumatic']['profile']
     assert set(profile) == {'x0_m', 'dx_m', 'z_m'}
     assert type(profile['x0_m']) is float and type(profile['dx_m']) is float
@@ -132,16 +187,26 @@ def test_pneumatic_profile_matches_the_appliers_road_bitwise(
     assert profile['x0_m'] == applier_profile.x0_m
     assert profile['dx_m'] == applier_profile.dx_m
     assert np.array_equal(np.asarray(profile['z_m']), applier_profile.z_m)
+    _golden.record(np.asarray([profile['x0_m'], profile['dx_m']]),
+                   'profile.head')
+    _golden.record(np.asarray(profile['z_m']), 'profile.z_m')
+    _golden.record(np.asarray(
+        [applier_profile.x0_m, applier_profile.dx_m]), 'applier.head')
+    _golden.record(np.asarray(applier_profile.z_m), 'applier.z_m')
 
 
 def test_pneumatic_track_mode_keeps_the_surface_map(track_wire):
+    _fixture_save_json(track_wire, 'track', 'wire.json')
     tire = track_wire['tire']
     assert set(tire['surface_map']) == {'surface', 'sections'}
     assert tire['surface_map']['surface']['name'] == get_preset('flat').surface
+    _record_string(tire['surface_map']['surface']['name'],
+                   'surface_map.surface')
     validate_config(track_wire)
 
 
 def test_pneumatic_wire_round_trips_through_the_schema(track_wire):
+    _fixture_save_json(track_wire, 'track', 'wire.json')
     validate_config(track_wire)
 
 
@@ -151,6 +216,7 @@ def test_configured_surface_projects_the_resolved_spec():
     the native side builds SurfaceMap.uniform from it."""
     section = _section(pneumatic=PneumaticTireConfig(surface='asphalt'),
                        surface_mode='configured')
+    _fixture_save_json(section, 'configured', 'section.json')
     assert 'surface_map' not in section
     assert section['pneumatic']['surface'] == _surface_spec(
         get_surface('asphalt'))
@@ -161,9 +227,11 @@ def test_configured_surface_projects_through_a_real_sim():
     sim = _sim(pneumatic=PneumaticTireConfig(surface='wet'),
                surface_mode='configured')
     wire = project(sim)
+    _fixture_save_json(wire, 'configured_sim', 'wire.json')
     tire = wire['tire']
     assert 'surface_map' not in tire
     assert tire['pneumatic']['surface']['name'] == 'wet'
+    _record_string(tire['pneumatic']['surface']['name'], 'surface.name')
     validate_config(wire)
 
 
@@ -171,19 +239,25 @@ def test_named_surface_overrides_the_track_map_on_the_wire():
     """A named surface under surface_mode='track' ships BOTH: the map the
     runtime passed and the pneumatic.surface the applier prefers."""
     section = _section(pneumatic=PneumaticTireConfig(surface='scree'))
+    _fixture_save_json(section, 'named', 'section.json')
     assert 'surface_map' in section
     assert section['pneumatic']['surface']['name'] == 'scree'
+    _record_string(section['pneumatic']['surface']['name'], 'surface.name')
     validate_config(_wire(section))
 
 
 def test_detailed_tier_projects_its_resolved_parameters():
     section = _section(pneumatic=PneumaticTireConfig(tier='detailed'))
+    _fixture_save_json(section, 'detailed', 'section.json')
     pneu = section['pneumatic']
     tier = TIERS['detailed']
     assert pneu['tier'] == 'detailed'
     assert pneu['n_rays'] == tier.n_rays == 256
     assert pneu['discretised_brush'] is True
     assert pneu['timestep_s'] == tier.timestep_s
+    _golden.record(np.asarray(
+        [float(tier.n_rays), tier.half_angle_deg,
+         float(tier.discretised_brush), tier.timestep_s]), 'tier')
     validate_config(_wire(section))
 
 
@@ -264,6 +338,8 @@ def _good_track_wire():
 ])
 def test_pneumatic_wire_rejection_cases(mutate, match):
     wire = _good_track_wire()
+    _fixture_save_json(wire, 'good_track', 'wire.json')
+    _record_input_string(match, 'input.match')
     mutate(wire)
     with pytest.raises(ValueError, match=match):
         validate_config(wire)
@@ -272,6 +348,7 @@ def test_pneumatic_wire_rejection_cases(mutate, match):
 def test_pneumatic_configured_wire_requires_the_surface():
     wire = _wire(_section(pneumatic=PneumaticTireConfig(surface='asphalt'),
                           surface_mode='configured'))
+    _fixture_save_json(wire, 'configured', 'wire.json')
     del wire['tire']['pneumatic']['surface']
     with pytest.raises(ValueError, match='tire.pneumatic.surface'):
         validate_config(wire)
@@ -280,6 +357,7 @@ def test_pneumatic_configured_wire_requires_the_surface():
 def test_pneumatic_configured_wire_rejects_a_malformed_surface():
     wire = _wire(_section(pneumatic=PneumaticTireConfig(surface='asphalt'),
                           surface_mode='configured'))
+    _fixture_save_json(wire, 'configured', 'wire.json')
     del wire['tire']['pneumatic']['surface']['mu_slide']
     with pytest.raises(ValueError, match='mu_slide'):
         validate_config(wire)
@@ -287,6 +365,7 @@ def test_pneumatic_configured_wire_rejects_a_malformed_surface():
 
 def test_pneumatic_track_wire_still_requires_the_map():
     wire = _good_track_wire()
+    _fixture_save_json(wire, 'good_track', 'wire.json')
     del wire['tire']['surface_map']
     with pytest.raises(ValueError, match='tire.surface_map'):
         validate_config(wire)
@@ -294,6 +373,7 @@ def test_pneumatic_track_wire_still_requires_the_map():
 
 def test_pneumatic_backend_reaches_the_backend_allow_list():
     wire = _good_track_wire()
+    _fixture_save_json(wire, 'good_track', 'wire.json')
     wire['tire']['backend'] = 'pneumtic'
     with pytest.raises(ValueError, match='tire.backend'):
         validate_config(wire)
@@ -312,11 +392,17 @@ def test_selected_native_parser_accepts_the_pneumatic_wire(
     import mujoco
     mjb = tmp_path / 'model.mjb'
     mujoco.mj_saveModel(track_sim.model, str(mjb))
+    _fixture_save_bytes(mjb.read_bytes(), 'track', 'model.mjb')
+    _fixture_save_json(track_wire, 'track', 'wire.json')
     stepper = load_native().Stepper(str(mjb), track_wire)
     n = track_wire['tire']['pneumatic']['n_rays']
     max_patches = (n + 1) // 2
+    _golden.record(np.asarray(float(n)), 'input.n_rays')
     assert len(stepper.tire_state_names) == \
         2 * (4 * n + 8 + 3 * max_patches)
+    _record_string(stepper.tire_state_names[0], 'names.first')
+    _golden.record(np.asarray(float(len(stepper.tire_state_names))),
+                   'names.count')
     assert stepper.tire_state_names[0] == 'front.ray.000.delta_prev_m'
 
 
@@ -372,6 +458,9 @@ def test_selected_native_parser_rejects_malformed_pneumatic_wires(
     import mujoco
     mjb = tmp_path / 'model.mjb'
     mujoco.mj_saveModel(track_sim.model, str(mjb))
+    _fixture_save_bytes(mjb.read_bytes(), 'track', 'model.mjb')
+    _fixture_save_json(track_wire, 'track', 'wire.json')
+    _record_input_string(match, 'input.match')
     wire = copy.deepcopy(track_wire)
     mutate(wire)
     with pytest.raises(ValueError, match=match):

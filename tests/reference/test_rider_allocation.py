@@ -162,7 +162,8 @@ def test_allocation_forecast_includes_current_assembled_support_forces(with_resi
         runtime.tire=SimpleNamespace(compute_qfrc=lambda *args,**kwargs:np.zeros(1),
             snapshots={},probe_snapshots={})
         runtime.resistance=SimpleNamespace(compute_components=lambda *args:{'wind':np.ones(1)})
-    runtime.brake=SimpleNamespace(apply=lambda *args:None)
+    runtime.brake=SimpleNamespace(apply=lambda *args:None,
+        hold_qfrc=lambda *args,**kwargs:np.zeros(model.nv))
     runtime.drive=SimpleNamespace(prepare_pedaling=lambda *args,**kwargs:SimpleNamespace(
         target_phase_rad=None,target_rate_rad_s=0.,effort_nm=0.),ideal_hub=None,
         compute_components=lambda *args,**kwargs:{})

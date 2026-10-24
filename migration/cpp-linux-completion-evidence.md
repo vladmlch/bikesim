@@ -2520,3 +2520,81 @@ plateau-climb baseline gap, `steep_grade_saddle_shear` (pre-existing
 at HEAD, verified), the settled-pose-dependent 3.28 port-map records
 awaiting their `resolved` fixtures — savage/3.28 rows remain
 `planned` per ruling.
+
+## 2026-10-24 — F2 gate results + migration_T25 root cause
+
+Final `bash tools/run_tests.sh native` on `051497c`: build green, all
+nine static-analysis sweeps green (`frontends`/`tidy`/`cppcheck`/`odr`/
+`headers`/`context`/`diagnostic-controls` findings `none`, `analyzer`
+`report-only`, `contracts` all 12 controls passed), CTest **59/62**
+— `migration_T09`, `migration_T25`, `migration_T29`; the profile then
+exited at the ctest failure before its contracts+pytest tail, which was
+run manually (contracts: all 12 controls passed; the 3,080-item
+native/golden pytest selection — see task-F2-report for its outcome).
+
+`migration_T25` root cause `[reproduced]` — **not this fix, not a new
+regression**: the initial-state `contract_sha256` (initial_state.cpp:43
+mirroring initial_state.py `_contract`) serializes the resolved
+**absolute** `articulated.joint_envelope_path`/`joint_strength_path`
+strings, binding the hash to the capturing worktree. Evidence:
+payloads computed by the live oracle on identical trees differ only in
+those two path strings (`…/pfc-lane-b/…` vs `…/python-free-cpp/…`);
+the oracle on `python-free-cpp` reproduces the fixture's pinned
+`04cab701…` exactly while `pfc-lane-b` computes `bb4ceb98…`; T25
+rebuilt+rerun at `5be9ec5` with this commit's native files reverted
+fails identically; and the concurrent `pfc-lane-a` `native` gate
+(without F2) exits at the identical T09/T25/T29 trio. **T25 cannot pass
+outside the capturing worktree** — a portability defect in the
+contract-hash inputs, pre-existing at the sync base.
+
+Savage nodes post-fix `[reproduced]`: `test_savage_is_ridden_to_the_end`
+now completes settle + the full 110 s/88,000-step ride + recording
+export (earlier attempt died on host ENOSPC; rerun green-through-export
+at 65 Gi free) and fails only the downstream distance assertion
+(`max x = 58.32 m < 120 m`, `env.reason='duration'` — plateau mean
+≈0.98 m/s vs the 6 km/h requirement, balance/attachment/power
+violations from ~0.5 s — the documented baseline gap). The realtime
+node completes 20 s/16,000 steps and fails only `factor 0.6899 >= 1.0`.
+`test-port-map.json` unchanged at `5be9ec5`; savage + the 17 stopped
+3.28 records remain `planned`.
+
+## 2026-10-24 — F2 quick-profile failure triage
+
+The `quick` run (1,916 passed / 22 failed / 13 skipped, ~98 min, shared
+host with lane-a's `native` gate) carried four failure classes; each was
+reproduced and classified:
+
+- `test_replay_session.py` + `test_replay_recording_v3.py` (12) —
+  **stale shared equilibrium cache, not this fix.** `ReplaySession`
+  rebuilds the env and bitwise-compares `initial_integration_state`
+  (atol 1e-9) against `states.npz`. The record env loaded
+  `$TMPDIR/bike_sim_equilibrium/<fingerprint>.npz` (auto-cache,
+  `equilibrium_cache_enabled=true`) while the rebuilt env — its
+  fingerprint differs because the recorded physics payload carries the
+  bundled tmp-path `articulated.*_path` strings — ran a full fresh
+  settle (8,453 `hold_qfrc` calls, zero reseats) and converged to the
+  same pose a base settle produces (qpos[1]=2.00995963,
+  qpos[4]=-0.04035243). The cached pose (2.00997026) differs — written
+  by an earlier same-fingerprint settle whose *unhashed* inputs
+  (`ExperimentConfig`/`demand`/`rider_program` are outside
+  `fingerprint()`, and `PhysicalRuntime.reset()` re-solves equilibrium
+  from dirty post-episode state then `save()`s under the same key)
+  shifted its output. Proof post-fix: `BIKE_SIM_EQUILIBRIUM_CACHE_DIR`
+  pointed at a fresh dir → record and rebuild settles bitwise-identical
+  (max diff 0.0) and all 16 nodes in both files pass (297 s). The
+  failure is order/environment-dependent infrastructure flake — the
+  documented "cache-mediated greens are not proof" hazard surfacing as a
+  spurious red — not a semantic regression: the F2 settle on this recipe
+  is bitwise-identical to `5be9ec5`.
+- `test_rider_allocation.py::test_allocation_forecast_*` (2) —
+  pre-existing `b21c63e`-family double gap: `PhysicalRuntime.__new__`
+  stub `brake=SimpleNamespace(apply=...)` lacks `hold_qfrc`, which
+  `apply_forces` already calls at `5be9ec5:302`. Repaired the stub
+  (`hold_qfrc=lambda *a,**k: np.zeros(model.nv)`); file now 42/42.
+- `test_cadence_shifter.py` (3) — pure cassette/shift-logic assertions;
+  no file in the diff touches it; fails identically at committed state;
+  pre-existing baseline.
+- `tests/portability/*` (4) — checkout-baseline/dependency/docs policy
+  checks; unrelated to ride physics; pre-existing baseline.
+
+No fixture changes; `test-port-map.json` remains at `5be9ec5`.

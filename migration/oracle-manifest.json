@@ -14889,6 +14889,78 @@
       "recipe": "RCP-01"
     },
     {
+      "comparison": "S",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 23571,
+          "path": "initial_state/linux-aarch64/welded_flat.json",
+          "sha256": "2abb325564cf8ac91a9359c3d7f75b9e3470803a110bffdccb12285d8ea2b2dd"
+        }
+      ],
+      "group": "bootstrap",
+      "inputs": [
+        {
+          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/tests/fixtures/migration/requests/welded_flat.toml",
+          "sha256": "32143e14a69e96ee5d0c65f4398980deda2eb52e9c7aa9084270fdc330712c16"
+        }
+      ],
+      "name": "initial_state/linux-aarch64/welded_flat.json",
+      "notes": "t=0 state transferred by requests/welded_flat.toml \u2014 schema_version 2 (contract binds envelope/strength file content, not worktree-absolute paths); platform-bound payload captured under the golden platform key and preferred by the request reader's platform-sibling convention; captured in the linux aarch64 container (clang++-18, /build/root-clang)",
+      "produced_by": "tools/migration/_t25_capture.py: PhysicalInitialState.capture on a welded-flat cache-hit build (linux-aarch64 container)",
+      "recipe": "RCP-01"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 23384,
+          "path": "initial_state/darwin-arm64/probe_welded_0005.json",
+          "sha256": "6b97511fb82870f15c3593006df5bad8956c2d7e3f2797e51cf60765184c909c"
+        }
+      ],
+      "group": "research",
+      "inputs": [
+        {
+          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/tests/fixtures/migration/config/viewer_physics_welded.toml",
+          "sha256": "6385864cc68277f074ac9c9b025bd5e4e7900f9a5d494a1906870f2d1dd86247"
+        }
+      ],
+      "name": "initial_state/darwin-arm64/probe_welded_0005.json",
+      "notes": "welded-probe t=0 document restored by reference.period_buffer via request.setup.initial_state \u2014 schema_version 2; INPUT artifact: state values stay pinned to the period_buffer expected-wire family (tests/fixtures/golden/<platform>/period_buffer/); only schema_version/contract_sha256/source_sha256 were re-pinned when the contract moved to content-bound asset digests \u2014 recapturing the pose requires re-freezing the wire family",
+      "produced_by": "tools/migration/_t52_capture.py: research environment (dt .0005, diagnostic-model-limits, inline 200 m hardpack probe track) + PhysicalInitialState.capture; contract/source re-pinned, state values frozen with the wire family",
+      "recipe": "RCP-01"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 23364,
+          "path": "initial_state/linux-aarch64/probe_welded_0005.json",
+          "sha256": "38d39ea01c1efbd0e637cb7f0c404002f8363c404afc6dab9cf2cd16f8bd0aa2"
+        }
+      ],
+      "group": "research",
+      "inputs": [
+        {
+          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/tests/fixtures/migration/config/viewer_physics_welded.toml",
+          "sha256": "6385864cc68277f074ac9c9b025bd5e4e7900f9a5d494a1906870f2d1dd86247"
+        }
+      ],
+      "name": "initial_state/linux-aarch64/probe_welded_0005.json",
+      "notes": "welded-probe t=0 document restored by reference.period_buffer via request.setup.initial_state \u2014 schema_version 2; INPUT artifact: state values stay pinned to the period_buffer expected-wire family (tests/fixtures/golden/<platform>/period_buffer/); only schema_version/contract_sha256/source_sha256 were re-pinned when the contract moved to content-bound asset digests \u2014 recapturing the pose requires re-freezing the wire family",
+      "produced_by": "tools/migration/_t52_capture.py: research environment (dt .0005, diagnostic-model-limits, inline 200 m hardpack probe track) + PhysicalInitialState.capture; contract/source re-pinned, state values frozen with the wire family",
+      "recipe": "RCP-01"
+    },
+    {
       "comparison": "B",
       "expected": {
         "kind": "accepted"

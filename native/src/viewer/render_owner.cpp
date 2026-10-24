@@ -2,6 +2,7 @@
 #include "render_fields.hpp"
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
+#include "../spatial/frames.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -54,6 +55,8 @@ struct RenderOwner::Impl {
     std::vector<std::pair<int, std::array<double, 3>>> marker_sizes;
     bool graphics = false, poisoned = false, is_closed = false;
     int free_root_qpos = -1;
+    int rider_root_qpos = -1;
+    std::size_t qpos_state_offset = 0;
     void require_live() const {
         if (thread != std::this_thread::get_id()) throw std::runtime_error("render owner must stay on its event thread");
         if (is_closed) throw std::runtime_error("render owner is closed");
@@ -75,6 +78,15 @@ RenderOwner::RenderOwner(const runtime::ModelImage& image) : impl_(std::make_uni
         if (p.model->jnt_type[root] != mjJNT_FREE) throw std::invalid_argument("render root_free is not a free joint");
         p.free_root_qpos = p.model->jnt_qposadr[root];
     }
+    const int rider = mj_name2id(p.model.get(), mjOBJ_JOINT, "rider_root_free");
+    if(rider>=0) {
+        if(p.model->jnt_type[rider]!=mjJNT_FREE)
+            throw std::invalid_argument("render rider_root_free is not a free joint");
+        p.rider_root_qpos=p.model->jnt_qposadr[rider];
+    }
+    // mjSTATE_INTEGRATION stores TIME before QPOS. Ask the engine for the
+    // width of that prefix instead of assuming a generalized coordinate ID.
+    p.qpos_state_offset=static_cast<std::size_t>(engine::state_size(p.model.get(),mjSTATE_TIME));
     mjv_defaultCamera(&p.camera);
     mjv_defaultOption(&p.option);
     mjv_defaultScene(&p.scene);
@@ -138,12 +150,32 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
         }
         if(!finite(pose->position_world_m))throw std::invalid_argument("render frame: interpolated spatial pose is nonfinite");
     }
+    std::optional<std::array<double,7>> rider_pose;
+    if(p.free_root_qpos>=0&&p.rider_root_qpos>=0&&staged.presentation.spatial) {
+        const auto& source=*frame.presentation.spatial;
+        const auto& target=*staged.presentation.spatial;
+        const auto address=p.qpos_state_offset+static_cast<std::size_t>(p.rider_root_qpos);
+        std::array<double,3> relative{};
+        std::array<double,4> rider_quat{};
+        for(std::size_t i=0;i<3;++i)relative[i]=state.integration_state.at(address+i)-source.position_world_m[i];
+        for(std::size_t i=0;i<4;++i)rider_quat[i]=state.integration_state.at(address+3+i);
+        const auto rotation=normalized(spatial::quat_multiply(target.quat_wxyz,
+            spatial::quat_conjugate(normalized(source.quat_wxyz))));
+        const auto offset=spatial::rotate_body_to_world(rotation,relative);
+        const auto quaternion=normalized(spatial::quat_multiply(rotation,normalized(rider_quat)));
+        rider_pose.emplace();
+        for(std::size_t i=0;i<3;++i)(*rider_pose)[i]=target.position_world_m[i]+offset[i];
+        for(std::size_t i=0;i<4;++i)(*rider_pose)[3+i]=quaternion[i];
+        if(!finite(*rider_pose))throw std::invalid_argument("render frame: interpolated rider pose is nonfinite");
+    }
     for (std::size_t i = 0; i < fields.size(); ++i)
         std::copy(staged.presentation.model_fields[i].begin(), staged.presentation.model_fields[i].end(), fields[i].begin());
     struct Refresh { mjModel* m; mjData* d; const double* state; int root;
-        const runtime::SpatialPresentation* pose; } refresh{.m=p.model.get(), .d=p.data.get(),
+        const runtime::SpatialPresentation* pose; int rider; const std::array<double,7>* rider_pose;
+    } refresh{.m=p.model.get(), .d=p.data.get(),
         .state=staged.state.integration_state.data(), .root=p.free_root_qpos,
-        .pose=staged.presentation.spatial ? &*staged.presentation.spatial : nullptr};
+        .pose=staged.presentation.spatial ? &*staged.presentation.spatial : nullptr,
+        .rider=p.rider_root_qpos,.rider_pose=rider_pose?&*rider_pose:nullptr};
     engine::ErrorBuffer error;
     // Deliberately kinematic only. No mj_forward, mj_step, sensor acquisition,
     // force writers or policy evaluation can be reached from this operation.
@@ -154,6 +186,11 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
             for (std::size_t i = 0; i < 3; ++i) r->d->qpos[r->root + static_cast<int>(i)] = r->pose->position_world_m[i];
             for (std::size_t i = 0; i < 4; ++i) r->d->qpos[r->root + 3 + static_cast<int>(i)] = r->pose->quat_wxyz[i];
         }
+        // The articulated pelvis is an independent world free joint. Apply
+        // the bike's display transform to it too, preserving the accepted
+        // bike-relative rider pose and all local articulated coordinates.
+        if(r->rider>=0&&r->rider_pose)
+            for(std::size_t i=0;i<7;++i)r->d->qpos[r->rider+static_cast<int>(i)]=(*r->rider_pose)[i];
         mj_kinematics(r->m, r->d);
         mj_comPos(r->m, r->d);
         mj_camlight(r->m, r->d);
@@ -229,6 +266,12 @@ std::vector<double> RenderOwner::integration_state() const {
     impl_->require_live();
     if (!impl_->frame) return {};
     return impl_->frame->state.integration_state;
+}
+std::vector<double> RenderOwner::rendered_qpos() const {
+    impl_->require_live();
+    if(!impl_->frame)return {};
+    const auto qpos=model_access::readonly_buffer(impl_->data->qpos,impl_->model->nq);
+    return {qpos.begin(),qpos.end()};
 }
 std::array<std::vector<double>, 6> RenderOwner::model_fields() const {
     impl_->require_live();

@@ -25,6 +25,7 @@ Pneumatic3dTireWriter::Pneumatic3dTireWriter(const mjModel& m,const spatial::Top
      jacp_(3*static_cast<std::size_t>(m.nv)),jacr_(3*static_cast<std::size_t>(m.nv)) {
     if(topology.nq!=m.nq || topology.nv!=m.nv || topology.fingerprint_hex!=identity.topology_fingerprint_hex ||
        spatial::topology_fingerprint_hex(topology)!=identity.topology_fingerprint_hex ||
+       spatial::model_fingerprint_hex(m)!=topology.model_sha256_hex ||
        terrain.fingerprint_hex()!=identity.terrain_sha256_hex)
         throw std::invalid_argument("pneumatic3d.writer.identity: model/topology/terrain mismatch");
     const auto geom_body=model_access::readonly_buffer(m.geom_bodyid,m.ngeom,"geom_bodyid");

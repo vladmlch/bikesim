@@ -296,6 +296,23 @@ double spatial_refine(SetupContext& context,int max_evaluations,double tolerance
         if(max<best_residual){best_residual=max;best.assign(x.begin(),x.end());}
         return r;
     };
+    if(max_evaluations==1) {
+        // This branch is an observation, including when the physical query
+        // rejects the pose. Re-evaluating a failed candidate before rollback
+        // would throw again with its zeroed velocity/force lanes still live.
+        const auto restore_probe=[&] {
+            restore_material();stepper.note_posvel_stale();stepper.forward();
+            engine::set_state(&m,&d,integration.data(),mjSTATE_INTEGRATION);
+            stepper.note_posvel_fresh();
+        };
+        try {
+            (void)residual(std::vector<double>(dofs.size(),0.));
+            context.spatial_report=std::make_shared<SpatialEquilibriumReport>(report(context,evaluations,tolerance));
+        }catch(const engine::EngineFailure&){throw;}
+        catch(...) {restore_probe();throw;}
+        restore_probe();
+        return std::max(context.spatial_report->max_linear_accel_mps2,context.spatial_report->max_angular_accel_radps2);
+    }
     numerics::LeastSquaresOptions options;options.max_evaluations=max_evaluations;
     options.difference=numerics::DifferenceScheme::three_point;options.relative_difference_step=1e-6;
     options.ftol=options.xtol=options.gtol=1e-10;
@@ -304,19 +321,10 @@ double spatial_refine(SetupContext& context,int max_evaluations,double tolerance
     for(std::size_t i=0;i<dofs.size();++i){const double limit=translation(m,dofs[i])?.10:.35;lower[i]=-limit;upper[i]=limit;}
     std::exception_ptr failure;
     try {
-        if(max_evaluations==1)(void)residual(std::vector<double>(dofs.size(),0.));
-        else (void)numerics::bounded_least_squares(residual,std::vector<double>(dofs.size(),0.),lower,upper,options);
+        (void)numerics::bounded_least_squares(residual,std::vector<double>(dofs.size(),0.),lower,upper,options);
     }catch(const engine::EngineFailure&){throw;}catch(...){failure=std::current_exception();}
     place(best);apply_initial_forces(context,false);stepper.forward();
     context.spatial_report=std::make_shared<SpatialEquilibriumReport>(report(context,evaluations,tolerance));
-    // A one-point report is observational. In particular a cached pose must
-    // retain its warm start and complete integration bytes before the same
-    // finalize sequence used by a fresh solve.
-    if(max_evaluations==1) {
-        restore_material();stepper.note_posvel_stale();stepper.forward();
-        engine::set_state(&m,&d,integration.data(),mjSTATE_INTEGRATION);
-        stepper.note_posvel_fresh();
-    }
     if(failure)std::rethrow_exception(failure);
     return std::max(context.spatial_report->max_linear_accel_mps2,context.spatial_report->max_angular_accel_radps2);
 }

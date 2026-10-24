@@ -12,6 +12,7 @@
 #include "platform/provenance.hpp"
 #include "pneumatic3d/state.hpp"
 #include "runtime/runtime.hpp"
+#include "runtime/spatial_checkpoint_internal.hpp"
 #include "terrain/spec_io.hpp"
 #include "terrain/trackfile.hpp"
 #include "validation/runtime_access.hpp"
@@ -63,6 +64,32 @@ inline std::string spatial_bytes(const runtime::RuntimeSnapshot& snapshot) {
 }
 inline bool same_doubles(std::span<const double> a, std::span<const double> b) {
     return std::ranges::equal(std::as_bytes(a), std::as_bytes(b));
+}
+inline std::string live_boundary_bytes(const runtime::NativeRideRuntime& ride) {
+    // RuntimeSnapshot intentionally publishes cached committed rows. The
+    // production continuation encoder also reads live engine/model/drive/
+    // controller/force-cache/accounting owners that a probe could mutate.
+    return bike::io::recording_json(runtime::spatial::CheckpointAccess::capture_bootstrap(ride));
+}
+inline std::span<const double> tire_probe_component(const runtime::PhysicalStep::ProbeResult& probe,
+                                                   std::size_t nv) {
+    const auto found=std::ranges::find_if(probe.components,[](const auto& row){return row.first=="tires";});
+    bt::require(found!=probe.components.end(),"probe publishes the installed tyre producer's force row");
+    const auto& row=found->second;
+    bt::require(row.size()==nv && std::ranges::all_of(row,[](double x){return std::isfinite(x);}) &&
+                std::ranges::any_of(row,[](double x){return x!=0.;}),
+                "supported bridge probe has a finite nonzero generalized tyre force");
+    return row;
+}
+inline double root_probe_force(const mjModel& model,std::span<const double> force,const char* coordinate) {
+    const int joint=mj_name2id(&model,mjOBJ_JOINT,coordinate);
+    bt::require(joint>=0,"flat load projection names a real root translation");
+    const auto index=static_cast<std::size_t>(joint);
+    bt::require(model_access::readonly_buffer(model.jnt_type,model.njnt)[index]==mjJNT_SLIDE,
+                "flat load projection uses a translation, not a rotational coordinate");
+    const int dof=model_access::readonly_buffer(model.jnt_dofadr,model.njnt)[index];
+    model_access::require_id(dof,model.nv,"bridge.root_force.dof");
+    return force[static_cast<std::size_t>(dof)];
 }
 inline void same_boundary(const runtime::RuntimeSnapshot& a,
                           const runtime::RuntimeSnapshot& b, bool generation = true) {
@@ -298,7 +325,7 @@ inline double initial_error(const Fixture& planar, const Fixture& spatial) {
                             std::abs(value.velocity - found->second.velocity)});
     }
     for (const auto& [name, value] : spatial.initial.joints) if (!planar.initial.joints.contains(name)) {
-        bt::require(name == "root_y" || name == "steer_joint", "only the declared constrained coordinates may be extra");
+        bt::require(name == "root_y", "only the declared lateral constrained coordinate may be extra");
         maximum = std::max({maximum, std::abs(value.position), std::abs(value.velocity)});
     }
     return maximum;
@@ -510,28 +537,50 @@ inline void integrated_state_checks(const Fixture& fixture, const Recipe& recipe
     auto inspected = std::make_unique<runtime::NativeRideRuntime>(*fixture.bootstrap);
     auto uninterrupted = std::make_unique<runtime::NativeRideRuntime>(*fixture.bootstrap);
     const auto before = inspected->snapshot();
+    const auto live_before=live_boundary_bytes(*inspected);
+    const auto publications_before=inspected->prepare_samples().samples.size();
     for (const auto& demand : recipe.demands) {
         const auto probe = inspected->probe_step_inputs(demand.control(), demand.front_brake, demand.rear_brake);
-        bt::require(probe.has_contact_probe && !probe.components.empty(), "runtime probe evaluates the real physical writer ensemble");
+        RuntimeRigAccess::inspect(*inspected,[&](const Stepper& stepper,const runtime::PhysicalStep&) {
+            (void)tire_probe_component(probe,static_cast<std::size_t>(stepper.model()->nv));
+        });
         same_boundary(before, inspected->snapshot());
+        bt::require(live_boundary_bytes(*inspected)==live_before &&
+                    inspected->prepare_samples().samples.size()==publications_before,
+                    "public spatial probe preserves live causal owners and publication inventory");
     }
+    runtime::RideControl invalid;invalid.motor_torque_nm=-1.;
+    bt::invalid([&]{(void)inspected->probe_step_inputs(invalid,0.,0.);});
+    bt::require(live_boundary_bytes(*inspected)==live_before &&
+                inspected->prepare_samples().samples.size()==publications_before,
+                "rejected spatial probe preserves the complete live continuation boundary");
     real_codec_probe_restore(*inspected, recipe.dt_s);
     same_boundary(before, inspected->snapshot());
+    bt::require(live_boundary_bytes(*inspected)==live_before,"direct writer codec probes preserve every live causal owner");
     advance_trace(*inspected, recipe, 32);
     advance_trace(*uninterrupted, recipe, 32);
     same_boundary(inspected->snapshot(), uninterrupted->snapshot());
+    bt::require(live_boundary_bytes(*inspected)==live_boundary_bytes(*uninterrupted),
+                "probed and uninterrupted prefixes preserve full continuation state");
     real_codec_probe_restore(*inspected, recipe.dt_s);
     advance_trace(*inspected, recipe, 64);
     advance_trace(*uninterrupted, recipe, 64);
     same_boundary(inspected->snapshot(), uninterrupted->snapshot());
+    bt::require(live_boundary_bytes(*inspected)==live_boundary_bytes(*uninterrupted),
+                "material restore preserves drive/controller/cache/accounting continuation");
     const auto generation = inspected->snapshot().generation;
     inspected->reset();
     bt::require(inspected->snapshot().generation == generation + 1, "reset advances only the generation identity");
     same_boundary(before, inspected->snapshot(), false);
     auto fresh = std::make_unique<runtime::NativeRideRuntime>(*fixture.bootstrap);
+    fresh->reset(); // align only the explicit generation change for complete-state comparison
+    bt::require(live_boundary_bytes(*inspected)==live_boundary_bytes(*fresh),
+                "reset restores complete causal state at the same new generation");
     advance_trace(*inspected, recipe, 64);
     advance_trace(*fresh, recipe, 64);
-    same_boundary(inspected->snapshot(), fresh->snapshot(), false);
+    same_boundary(inspected->snapshot(), fresh->snapshot());
+    bt::require(live_boundary_bytes(*inspected)==live_boundary_bytes(*fresh),
+                "reset continuation agrees in every production checkpoint owner");
 }
 
 inline void static_and_low_speed(const Recipe& recipe, const Value& entry) {
@@ -541,20 +590,36 @@ inline void static_and_low_speed(const Recipe& recipe, const Value& entry) {
         const Demand released;
         const auto planar_probe = planar->ride->probe_step_inputs(released.control(), 0., 0.);
         const auto spatial_probe = spatial->ride->probe_step_inputs(released.control(), 0., 0.);
-        bt::require(planar_probe.has_contact_probe && spatial_probe.has_contact_probe, "both low-speed producers publish real contacts");
         double spatial_load = 0., lateral = 0., planar_load = 0.;
         RuntimeRigAccess::inspect(*spatial->ride, [&](const Stepper& stepper, const runtime::PhysicalStep&) {
-            for (std::size_t side = 0; side < 2; ++side)
-                for (const auto& wrench : stepper.spatial_tire_writer().wrenches(side)) {
-                    bt::require(wrench.valid && wrench.normal_load_n >= 0. && wrench.force_world_n[2] >= 0., "flat tyre contact has positive support sign");
-                    spatial_load += wrench.normal_load_n;
-                    lateral += wrench.force_world_n[1];
+            const auto force=tire_probe_component(spatial_probe,static_cast<std::size_t>(stepper.model()->nv));
+            // On flat ground these unit root translations map total tyre
+            // force directly to world Z/Y, independently of probe caches.
+            spatial_load=root_probe_force(*stepper.model(),force,"root_z");
+            lateral=root_probe_force(*stepper.model(),force,"root_y");
+            // The public runtime probe owns an isolated scratch producer.
+            // Evaluate the live writer explicitly before inspecting its own
+            // probe view, while keeping committed material bytes untouched.
+            auto& writer=stepper.spatial_tire_writer();
+            const auto committed=writer.state_bytes();
+            std::vector<double> direct(force.size());
+            bt::require(writer.try_compute_into(stepper.data(),recipe.dt_s,false,direct)==CoreStatus::ok &&
+                        writer.state_bytes()==committed,"direct static tyre probe preserves committed material");
+            double normal_load=0.;
+            for(std::size_t side=0;side<2;++side)
+                for(const auto& wrench:writer.wrenches(side)) {
+                    bt::require(wrench.valid && wrench.normal_load_n>=0. && wrench.force_world_n[2]>=0.,
+                                "each flat tyre probe contact has a valid positive support sign");
+                    normal_load+=wrench.normal_load_n;
                 }
+            bt::require(std::abs(normal_load-spatial_load)<=1e-9,
+                        "isolated runtime force and direct tyre support agree on the same flat state");
         });
         RuntimeRigAccess::inspect(*planar->ride, [&](const Stepper& stepper, const runtime::PhysicalStep&) {
-            for (const auto& wheel : stepper.tire_writer().probe_snapshot_storage())
-                for (const auto& patch : wheel.patches) planar_load += patch.normal_load_n;
+            const auto force=tire_probe_component(planar_probe,static_cast<std::size_t>(stepper.model()->nv));
+            planar_load=root_probe_force(*stepper.model(),force,"root_z");
         });
+        bt::require(planar_load>0. && spatial_load>0.,"flat tyre probes have positive support sign");
         std::cout << bike::io::canonical_json(Value{Object{{"fixture", Value{std::string("flat-static")}},
             {"speed_mps", number(speed)}, {"weight_n", number(planar->initial.weight_n)},
             {"planar_load_n", number(planar_load)}, {"spatial_load_n", number(spatial_load)},

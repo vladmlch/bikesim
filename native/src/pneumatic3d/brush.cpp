@@ -51,22 +51,38 @@ FastBrushResult compute(const BrushSpec3d& spec, const Patch3d& patch,
     const double ay=material_resolved ? 0. : rolling/spec.relaxation_y_m;
     // u is spring extension, so du/dt=v_rel-a*u and F=-K*u. Reversing
     // only the first sign (as the W prose does) would be an active tyre.
-    const double tx=(oldx+dt*sx)/(1.+dt*ax), ty=(oldy+dt*sy)/(1.+dt*ay);
-    double x=tx,y=ty;
+    const double denominator_x=1.+dt*ax, denominator_y=1.+dt*ay;
+    const double tx=(oldx+dt*sx)/denominator_x, ty=(oldy+dt*sy)/denominator_y;
     const double capx=mux*patch.normal_load_n, capy=muy*patch.normal_load_n;
+    // Finite input fields can overflow a stiffness, decay denominator, slip
+    // increment or grip capacity. Do not let an infinite denominator or
+    // ellipse silently turn a loaded contact into a valid zero-force one.
+    if (!std::isfinite(kx) || !std::isfinite(ky) || !std::isfinite(b) ||
+        !std::isfinite(denominator_x) || !std::isfinite(denominator_y) ||
+        !std::isfinite(tx) || !std::isfinite(ty) ||
+        !std::isfinite(capx) || !std::isfinite(capy)) {
+        result.status=CoreStatus::invalid_geometry;return result;
+    }
+    double x=tx,y=ty;
     if (capx==0. || kx==0.) x=0.;
     if (capy==0. || ky==0.) y=0.;
     const double nx=capx>0. ? kx*x/capx : 0., ny=capy>0. ? ky*y/capy : 0.;
     const double ellipse=std::hypot(nx,ny);
+    if (!std::isfinite(ellipse)) { result.status=CoreStatus::invalid_geometry;return result; }
     if (ellipse>1.) { x/=ellipse; y/=ellipse; }
     const double fx=-kx*x, fy=-ky*y;
     result.ux_m=x; result.uy_m=y;
     result.stored_j=.5*(kx*x*x+ky*y*y);
     // Endpoint work identity: -F.v*dt = Delta(U) + losses. This includes
     // the implicit integrator's nonnegative algorithmic loss explicitly.
-    result.sliding_j=std::max(0.,kx*x*(tx-x)+ky*y*(ty-y));
-    result.convective_j=std::max(0.,dt*(ax*kx*x*tx+ay*ky*y*ty)+
-        .5*(kx*(x-oldx)*(x-oldx)+ky*(y-oldy)*(y-oldy)));
+    const double sliding=kx*x*(tx-x)+ky*y*(ty-y);
+    const double convective=dt*(ax*kx*x*tx+ay*ky*y*ty)+
+        .5*(kx*(x-oldx)*(x-oldx)+ky*(y-oldy)*(y-oldy));
+    if (!std::isfinite(sliding) || !std::isfinite(convective)) {
+        result.status=CoreStatus::invalid_geometry;return result;
+    }
+    result.sliding_j=std::max(0.,sliding);
+    result.convective_j=std::max(0.,convective);
     const Vec3 tangent=add(scale(patch.longitudinal_world,fx),scale(patch.lateral_world,fy));
     w.force_world_n=add(patch.force_world_n,tangent);
     // Keep the distributed normal wrench at its original centroid even
@@ -77,8 +93,10 @@ FastBrushResult compute(const BrushSpec3d& spec, const Patch3d& patch,
     w.slip_ratio=vx/std::max(rolling,1e-6);
     w.slip_angle_rad=std::atan2(vy,std::max(rolling,1e-6));
     w.loss_j=result.sliding_j+result.convective_j; w.valid=true;
-    if (!finite(w.force_world_n) || !finite(w.couple_world_nm) ||
-        !std::isfinite(w.loss_j) || !std::isfinite(result.stored_j))
+    if (!finite(w.point_world_m) || !finite(w.force_world_n) || !finite(w.couple_world_nm) ||
+        !std::isfinite(w.mz_nm) || !std::isfinite(w.slip_ratio) ||
+        !std::isfinite(w.slip_angle_rad) || !std::isfinite(w.loss_j) ||
+        !std::isfinite(result.stored_j))
         result.status=CoreStatus::invalid_geometry;
     return result;
 }
@@ -121,6 +139,15 @@ CoreStatus update_fast_brush(const BrushSpec3d& spec,std::span<const Patch3d> pa
         !std::isfinite(state.sliding_loss_j) || state.sliding_loss_j<0. ||
         !std::isfinite(state.convective_release_j) || state.convective_release_j<0.)
         return CoreStatus::invalid_input;
+    for (std::size_t i=0;i<state.ux_m.size();++i) {
+        if (!std::isfinite(state.ux_m[i]) || !std::isfinite(state.uy_m[i]) ||
+            !std::isfinite(state.camber_state[i])) return CoreStatus::invalid_input;
+        // Without an old patch area an omitted spring cannot be released or
+        // included in the new energy total. Reject before any output/state
+        // write instead of losing its storage while retaining displacement.
+        if (i>=n && (state.ux_m[i]!=0. || state.uy_m[i]!=0.))
+            return CoreStatus::invalid_input;
+    }
     // Frozen standalone interface represents a unit-friction synthetic road.
     // Production calls the private per-patch seam with resolved road mu.
     double stored=0.,sliding=0.,convective=0.;

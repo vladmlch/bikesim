@@ -12,9 +12,14 @@ struct RecordedResearch {
     std::unique_ptr<runtime::NativeResearchRuntime> environment;
     std::unique_ptr<bike::recording::RunCapture> capture;
 };
-inline RecordedResearch recording_fixture() {
+inline RecordedResearch recording_fixture(const std::filesystem::path& steer_profile = {}) {
     auto request=std::make_unique<bike::research::ResearchRequest>();
     request->setup=std::move(*make_startup_request(bike::spatial::RootKind::free6,bike::spatial::TyreTier::fast,false,2.));
+    if(!steer_profile.empty()) {
+        auto& spatial=*request->setup.model.physics->spatial;
+        spatial.steer.profile_id=steer_profile.string();
+        request->setup.model.spatial=spatial;
+    }
     request->capture_mode=runtime::ResearchCaptureMode::full;
     request->experiment.duration_s=.1;request->experiment.control_period_s=.01;
     request->experiment.actuator_delay_s=.02;request->experiment.seed_decimal="0";

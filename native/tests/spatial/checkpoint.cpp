@@ -1,10 +1,12 @@
 // W42 authored continuation controls; execution/qualification belongs to V07.
 #include "support/migration_test.hpp"
 #include "spatial/support/startup_cases.hpp"
+#include "spatial/support/ride_qualification.hpp"
 #include "research/environment.hpp"
 #include "research/evidence.hpp"
 #include "runtime/research_io.hpp"
 #include "runtime/spatial_checkpoint.hpp"
+#include "runtime/spatial_checkpoint_internal.hpp"
 #include "runtime/setup_values.hpp"
 #include "io/json.hpp"
 #include "pneumatic3d/state.hpp"
@@ -13,6 +15,7 @@
 #include <bit>
 #include <cstdint>
 #include <memory>
+#include <numbers>
 #include <span>
 #include <string>
 #include <utility>
@@ -44,6 +47,37 @@ void cursor_rejection() {
     bt::invalid([&]{pipeline.import_state(invalid);});
     bt::require(pipeline.state().cursor==before.cursor&&wire_bytes(pipeline.state_wire())==saved,
         "an internally inconsistent in-range cursor cannot consume sensor state");
+}
+
+void turned_rider_preview() {
+    auto request=std::make_unique<bike::research::ResearchRequest>();
+    request->setup=std::move(*spatial_tests::make_startup_request(
+        bike::spatial::RootKind::free6,bike::spatial::TyreTier::fast,true,0.));
+    request->capture_mode=runtime::ResearchCaptureMode::full;
+    request->experiment.duration_s=.1;request->experiment.control_period_s=.01;
+    auto prepared=bike::research::prepare_environment(std::move(request));
+    for(const double yaw:{std::numbers::pi/2.,std::numbers::pi}) {
+        auto ride=std::make_unique<runtime::NativeRideRuntime>(prepared->bootstrap.ride);
+        bike::validation::SpatialRideAccess::perturb(*ride,{0.,0.,0.},{0.,0.,yaw});
+        (void)ride->advance(1,runtime::RideControl{},0.,0.,std::nullopt);
+        const auto checkpoint=runtime::spatial::capture_checkpoint(*ride,
+            runtime::spatial::inactive_research_checkpoint(),runtime::spatial::inactive_sensor_checkpoint(),
+            Value{Object{{"resumable",Value{false}},{"state",Value{}}}},
+            runtime::spatial::checkpoint_identity(prepared->metadata));
+        const auto& physical=field(field(field(checkpoint.bootstrap2,"runtime"),"continuation"),"physical");
+        const auto& road=io::as_array(field(field(physical,"rider_kinematics"),"road"),"road");
+        bool nonincreasing_x=false;
+        for(std::size_t i=1;i<road.size();++i)
+            nonincreasing_x=nonincreasing_x ||
+                io::as_double(io::as_array(road[i],"point")[0],"x")<=
+                io::as_double(io::as_array(road[i-1],"point")[0],"x");
+        bt::require(road.size()>2&&nonincreasing_x,
+            "real turned-rider preview is ordered by heading, not increasing world X");
+        auto restored=runtime::spatial::CheckpointAccess::prepare(checkpoint,*ride);
+        bt::require(bytes(runtime::spatial::CheckpointAccess::capture_bootstrap(*restored))==
+                    bytes(checkpoint.bootstrap2),
+            "sideways and reversed rider previews survive complete checkpoint restoration");
+    }
 }
 
 void accounting_power_order() {
@@ -251,4 +285,4 @@ void continuation() {
     bt::require(reset->spatial&&!reset->spatial->hold.active,"reset never rearms scored bootstrap hold");
 }
 } // namespace
-int main() { return bt::run([]{cursor_rejection();accounting_power_order();continuation();}); }
+int main() { return bt::run([]{cursor_rejection();accounting_power_order();turned_rider_preview();continuation();}); }

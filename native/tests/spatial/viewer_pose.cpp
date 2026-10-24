@@ -73,6 +73,51 @@ void replica_contract() {
     owner.apply(frame);
     bt::require(owner.integration_state()==accepted,"new generation permits an unsmoothed reset to the accepted state");
 }
+void articulated_replica_contract() {
+    const auto model=bike::model::compile_mjcf(R"(<mujoco><worldbody>
+      <body name="frame" pos="0 0 .5"><freejoint name="root_free"/><geom type="sphere" size=".1" mass="1"/></body>
+      <body name="rider_pelvis" pos="1 0 1.5"><freejoint name="rider_root_free"/><geom type="sphere" size=".1" mass="1"/></body>
+      </worldbody></mujoco>)");
+    std::unique_ptr<mjData,decltype(&mj_deleteData)> data(engine::make_data(model.get()),mj_deleteData);
+    const auto image=bike::initialization::capture_model_image(*model);
+    runtime::PresentationState presentation;presentation.z_m=.5;presentation.root_x_dofadr=-1;
+    presentation.spatial.emplace();presentation.spatial->position_world_m={0.,0.,.5};
+    bike::viewer::RenderOwner owner(image);
+    owner.apply(bike::viewer::capture_frame(*model,*data,0,0,image.sha256,presentation));
+    const int root=model->jnt_qposadr[mj_name2id(model.get(),mjOBJ_JOINT,"root_free")];
+    const int rider=model->jnt_qposadr[mj_name2id(model.get(),mjOBJ_JOINT,"rider_root_free")];
+    const double half=std::sqrt(.5);
+    const std::array root_pose{5.,2.,.5,half,0.,0.,half};
+    const std::array rider_pose{5.,3.,1.5,half,0.,0.,half};
+    for(std::size_t i=0;i<7;++i) {
+        data->qpos[root+static_cast<int>(i)]=root_pose[i];
+        data->qpos[rider+static_cast<int>(i)]=rider_pose[i];
+    }
+    data->time=.01;
+    presentation.spatial->position_world_m={5.,2.,.5};
+    presentation.spatial->quat_wxyz={half,0.,0.,half};
+    auto next=bike::viewer::capture_frame(*model,*data,0,1,image.sha256,presentation);
+    const auto accepted=next.state.integration_state;
+    owner.apply(next);
+    const auto shown=owner.rendered_qpos();
+    const auto r=static_cast<std::size_t>(root),p=static_cast<std::size_t>(rider);
+    const double yaw=std::numbers::pi/10.; // alpha=.2 of the accepted quarter turn
+    bt::require(std::abs(shown[r]-1.)<1e-12&&std::abs(shown[r+1]-.4)<1e-12,
+        "the render bike keeps its existing positional smoothing");
+    bt::require(std::abs(shown[p]-shown[r]-std::cos(yaw))<1e-12&&
+        std::abs(shown[p+1]-shown[r+1]-std::sin(yaw))<1e-12&&
+        std::abs(shown[p+2]-shown[r+2]-1.)<1e-12,
+        "the independent pelvis preserves its accepted bike-relative offset through translation and rotation");
+    for(std::size_t i=0;i<4;++i)bt::require(std::abs(shown[r+3+i]-shown[p+3+i])<1e-12,
+        "equal accepted bike/rider orientations remain equal in the smoothed copy");
+    bt::require(owner.integration_state()==accepted&&next.state.integration_state==accepted,
+        "coherent display smoothing never rewrites either accepted state owner");
+    next.state.generation=1;next.presentation.spatial->generation=1;owner.apply(next);
+    const auto reset=owner.rendered_qpos();
+    for(std::size_t i=0;i<3;++i)bt::require(std::abs(reset[r+i]-root_pose[i])<1e-12&&
+        std::abs(reset[p+i]-rider_pose[i])<1e-12,
+        "generation reset restores the accepted bike and pelvis without the old display offset");
+}
 bike::replay::PlaybackData free_playback() {
     const auto model=bike::model::compile_mjcf(R"(<mujoco><worldbody><body name="frame"><freejoint name="root_free"/><geom type="sphere" size=".1" mass="1"/></body></worldbody></mujoco>)");
     bike::replay::PlaybackData saved;
@@ -144,4 +189,4 @@ void playback_constrained_contract() {
         "constrained-root inspection exposes the same heading-relative HUD contract");
 }
 }
-int main(){return bt::run([]{camera_contract();replica_contract();playback_free_contract();playback_singular_contract();playback_constrained_contract();});}
+int main(){return bt::run([]{camera_contract();replica_contract();articulated_replica_contract();playback_free_contract();playback_singular_contract();playback_constrained_contract();});}

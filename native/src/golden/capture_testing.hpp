@@ -13,4 +13,8 @@ using ForceExitMutation = void (*)(void *, std::span<double>) noexcept;
 [[nodiscard]] EpisodeArtifact capture_with_force_exit_mutation(
     runtime::NativeResearchRuntime &env, std::size_t steps,
     const runtime::RideControl &control, void *context, ForceExitMutation mutation);
+
+// Calls the same typed preflight used before spatial golden serialization.
+// No runtime/model owner is needed to distinguish numeric NaN from text "nan".
+void validate_spatial_numeric_evidence(const runtime::Wire&);
 } // namespace bike::golden::testing

@@ -57,6 +57,27 @@ Value value_from_wire(const runtime::Wire &wire) {
         else return Value{value};
     }, wire.value);
 }
+// NOLINTNEXTLINE(misc-no-recursion) bounded owned sample tree, before legacy number-to-string serialization
+void require_finite_spatial_wire(const runtime::Wire& wire,const std::string& path) {
+    std::visit([&](const auto& value) {
+        using T=std::decay_t<decltype(value)>;
+        if constexpr(std::is_same_v<T,double>) {
+            if(!std::isfinite(value))
+                throw std::invalid_argument("physical_invalid: "+path+" contains nonfinite numeric evidence");
+        } else if constexpr(std::is_same_v<T,runtime::WireObject>) {
+            for(const auto& [name,child]:value)require_finite_spatial_wire(child,path+"."+name);
+        } else if constexpr(std::is_same_v<T,runtime::WireArray>) {
+            for(std::size_t i=0;i<value.size();++i)
+                require_finite_spatial_wire(value[i],path+"["+std::to_string(i)+"]");
+        }
+    },wire.value);
+}
+Value capture_wire(const runtime::Wire& wire,bool spatial,const std::string& path) {
+    // A real string such as "nan" is valid evidence. Inspect numeric doubles
+    // while their type is still present; keep the planar serialization exact.
+    if(spatial)require_finite_spatial_wire(wire,path);
+    return value_from_wire(wire);
+}
 class Guard {
 public:
     explicit Guard(std::atomic<bool> &flag) : flag_(flag) {
@@ -273,12 +294,13 @@ public:
             result->controls.push_back(::rider::encode_intent_control(runtime.physical_->applied_control()));
             append_samples(runtime, *result);
             tire_snapshots.push_back(snapshots(records.back()));
-            tire_diagnostics.push_back(value_from_wire(runtime::Wire(records.back().tire_diagnostics)));
+            tire_diagnostics.push_back(capture_wire(runtime::Wire(records.back().tire_diagnostics),
+                runtime.config_.spatial.has_value(),"tire_diagnostics"));
         }
         runtime.flush_accounting();
         append_samples(runtime, *result);
         if (const auto &failure = runtime.accounting_->state().monitor.first_failure)
-            result->first_failure = value_from_wire(failure->as_wire());
+            result->first_failure = capture_wire(failure->as_wire(),runtime.config_.spatial.has_value(),"first_failure");
         std::set<std::string> channels;
         for (const auto &row : result->stored_rows)
             for (const auto &[name, unused] : io::as_object(row, "stored row")) { (void)unused; channels.insert(name); }
@@ -380,7 +402,8 @@ private:
         for (const auto &sample : batch.samples) {
             // PhysicalSampleData::as_wire mirrors PhysicalSample.as_dict,
             // including full-period extra channels (runtime/samples.cpp).
-            episode.stored_rows.push_back(storage_row(value_from_wire(runtime::Wire(sample->as_wire()))));
+            episode.stored_rows.push_back(storage_row(capture_wire(runtime::Wire(sample->as_wire()),
+                runtime.config_.spatial.has_value(),"rows")));
             episode.rows.push_back(flatten_row(episode.stored_rows.back()));
         }
         runtime.accounting_->acknowledge_samples(batch);
@@ -437,6 +460,10 @@ EpisodeArtifact testing::capture_with_force_exit_mutation(runtime::NativeResearc
         throw std::invalid_argument("golden force-exit regression requires a callback and context");
     return capture_impl(env, steps, control, context, mutation);
 }
+
+void testing::validate_spatial_numeric_evidence(const runtime::Wire& wire) {
+    require_finite_spatial_wire(wire,"evidence");
+}
 std::vector<Row> replay_episode(runtime::NativeResearchRuntime &env, const EpisodeArtifact &episode) {
     std::vector<runtime::RideControl> controls;
     controls.reserve(episode.controls.size());
@@ -469,7 +496,7 @@ std::vector<std::string> compare_episode(const EpisodeArtifact &golden,
         }
     }
     Value failure;
-    if (const auto current = env.snapshot().first_failure) failure = value_from_wire(current->as_wire());
+    if (const auto current = env.snapshot().first_failure) failure = capture_wire(current->as_wire(),spatial,"first_failure");
     if (!same_failure(golden.first_failure, failure, rtol, atol))
         differences.emplace_back("first_failure differs between golden and candidate");
     return differences;
@@ -491,6 +518,9 @@ public:
     }
     void number(double expected,double actual,const std::string& path,const std::string& label) {
         if(!difference_.empty())return;
+        if(!std::isfinite(expected)||!std::isfinite(actual)) {
+            difference_="physical_invalid: "+label+" contains nonfinite numeric evidence";return;
+        }
         const auto rule=rules_.find(path);
         if(rule!=rules_.end()) {
             rule->second.used=true;
@@ -502,6 +532,15 @@ public:
     // NOLINTNEXTLINE(misc-no-recursion) bounded artifact value-tree comparison
     void value(const Value& expected,const Value& actual,const std::string& path,const std::string& label) {
         if(!difference_.empty())return;
+        const auto nonfinite=[](const Value& value) {
+            const auto* tag=std::get_if<io::Tagged>(&value.data);
+            return tag && tag->kind=="float64";
+        };
+        // Recording float64 tags have an explicit numeric type and denote
+        // only NaN/+Inf/-Inf. Ordinary string channels remain exact strings.
+        if(nonfinite(expected)||nonfinite(actual)) {
+            difference_="physical_invalid: "+label+" contains nonfinite numeric evidence";return;
+        }
         if(cross_&&(path=="checkpoints.initial.runtime.continuation.execution"||path=="checkpoints.final.runtime.continuation.execution"))return;
         if(expected.data.index()!=actual.data.index()){difference_="regression: "+label+" value kind differs";return;}
         if(const auto* object=std::get_if<Value::Object>(&expected.data)) {
@@ -526,8 +565,15 @@ public:
     void array(const io::NpyArray& expected,const io::NpyArray& actual,const std::string& path) {
         if(!difference_.empty())return;
         if(expected.dtype!=actual.dtype||expected.shape!=actual.shape||expected.fortran_order!=actual.fortran_order){difference_="regression: "+path+" dtype/shape differs";return;}
-        if(!cross_){if(expected.bytes!=actual.bytes)difference_="regression: "+path+" bits differ";return;}
+        // Equal NaN/Inf payload bits can be useful diagnostic artifacts, but
+        // cannot qualify a spatial physical run. Check both sides before the
+        // same-platform byte fast path or a cross-platform tolerance rule.
         const auto x=expected.doubles(true),y=actual.doubles(true);
+        const auto finite=[](double value){return std::isfinite(value);};
+        if(!std::ranges::all_of(x,finite)||!std::ranges::all_of(y,finite)) {
+            difference_="physical_invalid: "+path+" contains nonfinite numeric evidence";return;
+        }
+        if(!cross_){if(expected.bytes!=actual.bytes)difference_="regression: "+path+" bits differ";return;}
         for(std::size_t i=0;i<x.size();++i)number(x[i],y[i],path+".*",path+"["+std::to_string(i)+"]");
     }
     std::vector<std::string> finish() const {

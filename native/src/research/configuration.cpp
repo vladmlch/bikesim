@@ -263,6 +263,9 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
         out.experiment.actuator_delay_s = number(document, "actuator_delay_s", out.experiment.actuator_delay_s);
         out.experiment.duration_s = number(document, "duration_s", out.experiment.duration_s);
         out.sensors.delivery.latency_s = number(document, "sensor_delay_s", out.sensors.delivery.latency_s);
+        // This request-level alias selects latency for either observation
+        // schema and has the same precedence over each nested sensor record.
+        out.sensors_v2.latency_s = number(document, "sensor_delay_s", out.sensors_v2.latency_s);
         out.setup.seed_decimal = out.experiment.seed_decimal;
         const auto track_file = find(document, "track_file") ? std::optional(path(document, "track_file", base)) : std::nullopt;
         const auto generator_file = find(document, "generator_spec_file") ? std::optional(path(document, "generator_spec_file", base)) : std::nullopt;

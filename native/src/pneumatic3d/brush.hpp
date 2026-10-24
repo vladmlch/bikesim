@@ -35,6 +35,10 @@ struct PatchWrench {
 
 // For count patches, the velocity span has count+1 entries: material-point
 // velocities at patch centroids (including spin), followed by hub velocity.
+// Include every slot with nonzero displacement history, even when its patch
+// has become unloaded. Spare state capacity may only have zero ux/uy: this
+// standalone interface has no old patch areas with which to release omitted
+// spring energy. An incomplete history span returns invalid_input unchanged.
 CoreStatus update_fast_brush(
     const BrushSpec3d&, std::span<const Patch3d>,
     std::span<const bike::spatial::Vec3> point_velocity_world_mps,

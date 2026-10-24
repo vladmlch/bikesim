@@ -12,6 +12,8 @@
 #include <cmath>
 #include <limits>
 #include <numbers>
+#include <stdexcept>
+#include <string_view>
 
 namespace {
 namespace io=bike::io;
@@ -108,6 +110,57 @@ void model_and_mass(spatial_tests::RiderRig& source) {
             model_access::readonly_buffer(current.eq_objtype,current.neq)[eq]==mjOBJ_SITE,"grips constrain position between sites, without orientation weld");
     }
 }
+void rounded_box_contact() {
+    sp::BodyPose pose;pose.position_world_m={3.,-2.,1.};
+    const double component=std::sqrt((1.+5e-9)/2.);
+    pose.quat_world_from_body_wxyz={component,component,0.,0.};
+    const auto raw=pose.quat_world_from_body_wxyz;
+    // Analytic +90 degree X rotation: (x,y,z) -> (x,-z,y).
+    // Local centre (0.03,0.02,0.04) is 0.03 m above the box top.
+    const auto rounded=::rider::spatial_box_pad_contact({3.03,-2.04,1.02},.01,pose,{.1,.06,.01});
+    near3(rounded.point_m,{3.03,-2.01,1.02},1e-13,
+        "accepted quaternion roundoff preserves the physical contact point");
+    near3(rounded.normal,{0.,-1.,0.},1e-14,
+        "distance and normal use the same normalized support rotation");
+    bt::require(std::abs(rounded.gap_m-.02)<1e-13,
+        "accepted quaternion roundoff does not create artificial contact penetration");
+    bt::require(pose.quat_world_from_body_wxyz==raw,"contact geometry preserves raw integration quaternion");
+    pose.quat_world_from_body_wxyz={std::sqrt(.5),std::sqrt(.5),0.,0.};
+    const auto unit=::rider::spatial_box_pad_contact({3.03,-2.04,1.02},.01,pose,{.1,.06,.01});
+    near3(rounded.point_m,unit.point_m,1e-13,"rounded and unit rotations share the same geometry");
+    bt::require(std::abs(rounded.gap_m-unit.gap_m)<1e-13,"rounded and unit rotations share the same gap");
+}
+void motor_semantics(spatial_tests::RiderRig& source) {
+    auto& model=*source.rig.model;
+    const auto motor=static_cast<std::size_t>(bike::model::required_id(model,mjOBJ_ACTUATOR,"act_shoulder_swivel_l"));
+    auto dynamics=model_access::mutable_buffer(model.actuator_dyntype,model.nu);
+    auto gains=model_access::mutable_buffer(model.actuator_gaintype,model.nu);
+    auto biases=model_access::mutable_buffer(model.actuator_biastype,model.nu);
+    auto parameters=model_access::mutable_buffer(model.actuator_gainprm,mjNGAIN*model.nu);
+    const auto pose=::rider::decode_spatial_spindle_pose(spatial_tests::rider_pose_document(*source.request),"pose");
+    const auto construct=[&] {
+        const auto controller=std::make_unique<::rider::SpindleController>(
+            &model,pose,source.controller->config(),source.request->bike.crank_length/1000.);
+        bt::require(controller!=nullptr,"valid spatial motor owns a controller");
+    };
+    const auto reject=[&] {
+        bt::invalid([&] {
+            try { construct(); }
+            catch(const std::invalid_argument& error) {
+                bt::require(std::string_view(error.what()).starts_with("rider.spatial.shoulder_swivel_l:"),
+                    "non-motor rejection occurs at the spatial actuator contract");
+                throw;
+            }
+        });
+    };
+    const int saved_dynamics=dynamics[motor],saved_gain=gains[motor],saved_bias=biases[motor];
+    const double saved_parameter=parameters[mjNGAIN*motor];
+    parameters[mjNGAIN*motor]=2.;reject();parameters[mjNGAIN*motor]=saved_parameter;
+    gains[motor]=mjGAIN_AFFINE;reject();gains[motor]=saved_gain;
+    biases[motor]=mjBIAS_AFFINE;reject();biases[motor]=saved_bias;
+    dynamics[motor]=mjDYN_FILTER;reject();dynamics[motor]=saved_dynamics;
+    construct(); // the original pure unit motor remains admissible after every rejection
+}
 void attachment_frame_codec() {
     ::rider::AttachmentRaw raw;
     raw.rider_jac={.rows=6,.columns=3,.values=std::vector<double>(18,0.)};
@@ -198,6 +251,6 @@ void state_and_ownership(spatial_tests::RiderRig& source) {
 }
 }
 int main() {return bt::run([] {
-    profile_and_frames();attachment_frame_codec();auto rig=std::make_unique<spatial_tests::RiderRig>();
-    model_and_mass(*rig);state_and_ownership(*rig);
+    profile_and_frames();rounded_box_contact();attachment_frame_codec();auto rig=std::make_unique<spatial_tests::RiderRig>();
+    model_and_mass(*rig);motor_semantics(*rig);state_and_ownership(*rig);
 });}

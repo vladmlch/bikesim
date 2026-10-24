@@ -6,17 +6,48 @@
 #include "replay/playback.hpp"
 #include "replay/spatial_recipe.hpp"
 #include "runtime/setup_values.hpp"
+#include "runtime/spatial_tire_factory.hpp"
 #include "pneumatic3d/state.hpp"
 #include "terrain/asset3d.hpp"
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <span>
 #include <string>
 
 namespace {
 namespace replay=bike::replay;
 using namespace runtime::setupvalue;
+void external_steer_profile(const std::filesystem::path& root) {
+    const auto profile_path=root/"original-steer-profile.json";
+    const auto profile=runtime::resolved_steer_profile(bike::spatial::SteerConfig{});
+    {
+        std::ofstream file(profile_path,std::ios::binary);
+        file<<bike::io::recording_json(bike::rider::write_steer_profile(profile));
+        file.close();bt::require(static_cast<bool>(file),"write external steer profile fixture");
+    }
+    auto fixture=spatial_tests::recording_fixture(profile_path);
+    const auto publication=bike::recording::finalize(*fixture.capture,root/"external-steer");
+    bt::require(std::filesystem::remove(profile_path),"remove the original external profile before replay");
+    const auto relocated=replay::check(publication.directory,0);
+    bt::require(relocated.matched,"custom steering replay owns its coefficients and survives loss of the source path");
+
+    const auto missing=spatial_tests::mutate_recording(publication.directory,root/"missing-steer",[](const auto& c){
+        c.execute("DELETE FROM assets WHERE name='spatial/steer_profile.json'");
+    });
+    const auto missing_result=replay::check(missing,0);
+    bt::require(!missing_result.matched && missing_result.reason.find("steer profile")!=std::string::npos,
+        "missing external steering asset is rejected before original paths can be opened");
+    const auto changed=spatial_tests::mutate_recording(publication.directory,root/"changed-steer",[](const auto& c){
+        auto document=spatial_tests::saved_document(c,"spatial/steer_profile.json");
+        set(document,"reference_torque_nm",real(1.));set(document,"sha256_hex",Value{});
+        spatial_tests::replace_document(c,"spatial/steer_profile.json",document);
+    });
+    const auto changed_result=replay::check(changed,0);
+    bt::require(!changed_result.matched && changed_result.reason.find("steer profile content identity")!=std::string::npos,
+        "valid but different steering coefficients cannot replace the recorded profile");
+}
 void matching_generation(const replay::ReplaySession& session) {
     const auto& frame=session.render_frame();
     bt::require(frame.presentation.spatial.has_value(),"spatial replay publishes a spatial pose");
@@ -156,4 +187,5 @@ int main(){return bt::run([]{
     }
     startup_provenance_cases(publication.directory,root.path());
     corruption_cases(publication.directory,root.path());
+    external_steer_profile(root.path());
 });}

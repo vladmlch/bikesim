@@ -103,7 +103,7 @@ pn::Pneumatic3dSpec decode_spatial_tire_config(const Value& value) {
 }
 bike::rider::SteerProfile resolved_steer_profile(const bike::spatial::SteerConfig& config) {
     bike::rider::SteerProfile p;
-    if(config.profile_id.empty() || config.profile_id=="roll-heading-v1" || config.profile_id=="steer-provisional-v1") {
+    if(bike::rider::builtin_steer_profile(config.profile_id)) {
         p.speed_nodes_mps={1.,3.,5.,8.};
         // Pin decimal source coefficients exactly as in the profile record;
         // arithmetic scaling can differ by one ulp and change its digest.

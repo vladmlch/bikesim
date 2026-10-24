@@ -86,6 +86,33 @@ int main() { return bt::run([] {
                 std::abs(rotating.stored_j+rotating.wrench.loss_j-supplied_work)<=1e-12,
                 "camber storage uses absolute wheel spin conjugate to the wheel-body couple, including carrier rotation");
 
+    auto finite_state=brush_state(1);
+    const auto finite_before=bytes(finite_state);
+    const std::array<Patch3d,1> loaded_patch{p};
+    const std::array<bike::spatial::Vec3,2> huge_velocity{{{1e308,0.,0.},{1e308,0.,0.}}};
+    bt::require(update_fast_brush(spec,loaded_patch,huge_velocity,1.,true,finite_state,out)==CoreStatus::invalid_geometry &&
+                bytes(finite_state)==finite_before,
+                "finite velocity cannot hide an overflowing relaxation denominator as zero force and zero loss");
+    const std::array<bike::spatial::Vec3,2> control_velocity{{{.1,0.,0.},{3.,0.,0.}}};
+    bt::require(update_fast_brush(spec,loaded_patch,control_velocity,dt,true,finite_state,out)==CoreStatus::ok && out[0].fx_n<0.,
+                "valid retry after rejected brush arithmetic retains its friction response");
+    auto invalid_tail=brush_state(2);
+    invalid_tail.ux_m[1]=std::numeric_limits<double>::quiet_NaN();
+    const auto tail_before=bytes(invalid_tail);
+    bt::require(update_fast_brush(spec,loaded_patch,control_velocity,dt,true,invalid_tail,out)==CoreStatus::invalid_input &&
+                bytes(invalid_tail)==tail_before,"unused capacity cannot hide a nonfinite material-state lane");
+    invalid_tail.ux_m[1]=.001;
+    invalid_tail.elastic_energy_j=.5*spec.kx_n_per_m3*p.area_m2*.001*.001;
+    const auto omitted_before=bytes(invalid_tail);
+    bt::require(update_fast_brush(spec,loaded_patch,control_velocity,dt,true,invalid_tail,out)==CoreStatus::invalid_input &&
+                bytes(invalid_tail)==omitted_before,
+                "omitting a finite loaded spring cannot discard its stored energy while retaining its displacement");
+    invalid_tail.ux_m[1]=0.;
+    invalid_tail.elastic_energy_j=0.;
+    invalid_tail.camber_state[1]=.2;
+    bt::require(update_fast_brush(spec,loaded_patch,control_velocity,dt,true,invalid_tail,out)==CoreStatus::ok,
+                "zero-displacement spare capacity with finite camber remains supported");
+
     // Drop a loaded spring at zero speed: no external work, all old stored
     // energy must be released rather than disappearing from the ledger.
     auto unloaded=brush_state(1);unloaded.ux_m[0]=.001;

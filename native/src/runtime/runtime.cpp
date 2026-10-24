@@ -414,16 +414,17 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
 // constructor — carries a frame too large for the debug stack budget, so
 // it owns a separate function scope.
 std::unique_ptr<PhysicalStep>
-build_physical_step(Stepper &stepper, const RuntimeConfig &config) {
+build_physical_step(Stepper &stepper, const RuntimeConfig &config,
+    const bike::rider::SteerProfile* acquired_steer_profile = nullptr) {
     // The compiled terrain cross-section is constant model geometry — the
     // tire writer's own copy was read from this same post-forward data.
     std::vector<std::array<double, 2>> vertices;
     if(config.spatial) {
         if(!config.terrain3d)
             throw std::invalid_argument("config.spatial.terrain: physical source missing");
-        // The legacy rider preview still consumes a centreline. Sample the
-        // canonical source, never the visual heightfield; tyre queries remain
-        // fully two-dimensional through the same immutable owner.
+        // Keep the canonical centreline for initial-state transfer and legacy
+        // reporting. Live spatial rider preview queries the physical source
+        // at the current wheel positions along the current body heading.
         constexpr std::size_t samples=1025;
         vertices.reserve(samples);
         const auto query=config.terrain3d->query_view();
@@ -448,7 +449,7 @@ build_physical_step(Stepper &stepper, const RuntimeConfig &config) {
     }
     return std::make_unique<PhysicalStep>(
         stepper, step_config(config), std::move(vertices),
-        static_brake(config, *stepper.model(), stepper), pose, rider_cfg);
+        static_brake(config, *stepper.model(), stepper), pose, rider_cfg, acquired_steer_profile);
 }
 
 } // namespace
@@ -475,11 +476,19 @@ NativeRideRuntime::NativeRideRuntime(RuntimeBootstrap bootstrap, ContinuationTag
     if(!config_.spatial)throw std::invalid_argument("checkpoint continuation requires spatial runtime2");
     init(true);
 }
+NativeRideRuntime::NativeRideRuntime(RuntimeBootstrap bootstrap, ProbeTag,
+    const bike::rider::SteerProfile* acquired_steer_profile)
+    : config_(std::move(bootstrap.config)), bootstrap_(std::move(bootstrap.state)),
+      model_image_(std::move(bootstrap.model)) {
+    if(!config_.spatial)throw std::invalid_argument("isolated probe requires spatial runtime2");
+    init(false,true,acquired_steer_profile);
+}
 NATIVE_DIAG_POP
 
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
-void NativeRideRuntime::init(bool continuation) {
+void NativeRideRuntime::init(bool continuation, bool probe,
+    const bike::rider::SteerProfile* acquired_steer_profile) {
     if(config_.spatial || bootstrap_.spatial || config_.schema!=kRuntimeSchema || bootstrap_.schema!=kRuntimeSchema)
         validate_schema_family(config_,bootstrap_.schema);
     const bool has_continuation=bio::find_member(bio::as_object(bootstrap_.runtime,"state.runtime"),"continuation")!=nullptr;
@@ -538,7 +547,9 @@ void NativeRideRuntime::init(bool continuation) {
                            "the runtime config has no rider_contacts writer");
         }
     }
-    physical_ = make_physical_step(*stepper_, config_);
+    physical_ = acquired_steer_profile
+        ? build_physical_step(*stepper_, config_, acquired_steer_profile)
+        : make_physical_step(*stepper_, config_);
     bootstrap_step_state_ = decode_step_state(bootstrap_);
     // The captured controller state and the configured rider ensemble
     // arrive together (setup.py emits both or neither).
@@ -562,7 +573,7 @@ void NativeRideRuntime::init(bool continuation) {
         }
     }
     apply_bootstrap();
-    initialize_accounting(continuation);
+    if(!probe) initialize_accounting(continuation);
 }
 NATIVE_DIAG_POP
 
@@ -998,6 +1009,8 @@ NativeRideRuntime::probe_step_inputs(const RideControl &command,
     const AdvancementGuard guard(advancing_);
     require_open();
     require_boundary_ready();
+    if(config_.spatial)
+        return spatial::CheckpointAccess::probe_locked(*this,command,front_brake_demand,rear_brake_demand);
     return physical_->probe_step_inputs(command, front_brake_demand,
                                         rear_brake_demand);
 }
@@ -1171,6 +1184,11 @@ std::string config_digest(const RuntimeConfig& c) {
     // Relocation changes the source pathname, never the acquired physical
     // terrain identity (the latter is pinned by the writer and checkpoint).
     set(terrain,"path",text(""));set(spatial,"terrain",std::move(terrain));
+    if(c.spatial->steer.controller!=bike::spatial::SteerController::off &&
+       !bike::rider::builtin_steer_profile(c.spatial->steer.profile_id)) {
+        auto steer=field(spatial,"steer");set(steer,"profile_id",field(steer,"profile_sha256"));
+        set(spatial,"steer",std::move(steer));
+    }
     const auto named=[](const std::optional<std::string>& name){return name?text(*name):Value{};};
     const Value document{Object{{"schema",integer(c.schema)},{"dt",real(c.timestep_s)},
         {"period",real(c.control_period_s)},{"period_steps",integer(c.control_period_steps)},
@@ -1210,10 +1228,10 @@ std::optional<RiderKinematicState> rider_kinematics(const Value& value,const mjM
         .qvel=numbers(field(value,"qvel"),static_cast<std::size_t>(model.nv)),
         .rider_time_s=number(field(value,"time"))};
     if(out.rider_time_s<0.||out.rider_time_s>time)vread::invalid("checkpoint.rider_kinematics.time","outside accepted prefix");
+    // This codec belongs to spatial continuation. Samples follow the saved
+    // body heading; their world X can be equal (+Y) or decreasing (-X).
     for(const auto& item:bike::io::as_array(field(value,"road"),"checkpoint.rider_kinematics.road")) {
         const auto point=array<3>(item);
-        if(!out.road.empty()&&point[0]<=out.road.back().x_m)
-            vread::invalid("checkpoint.rider_kinematics.road","nonmonotonic preview positions");
         out.road.push_back(RoadSample{.x_m=point[0],.height_m=point[1],.grade=point[2]});
     }
     return out;
@@ -1271,6 +1289,42 @@ struct EngineRows {
         std::span<double>(d.efc_force,static_cast<std::size_t>(d.nefc))} {}
 };
 } // namespace
+
+PhysicalStep::ProbeResult CheckpointAccess::probe_locked(const NativeRideRuntime& source,
+    const RideControl& control,double front,double rear) {
+    source.require_open();source.require_boundary_ready();
+    // Retain the live arena's poison/callback gate without mutating it. Every
+    // potentially mutating solve below belongs to a disposable physical copy.
+    source.stepper_->mutate([]{});
+    const auto document=bike::initialization::capture_current_state(
+        *source.stepper_,*source.physical_,source.config_,source.model_image_);
+    auto bootstrap=compose_bootstrap(source.config_,source.model_image_,document);
+    const auto* profile=source.physical_->steer_balance_
+        ? &source.physical_->steer_balance_->profile():nullptr;
+    auto candidate=std::unique_ptr<NativeRideRuntime>(new NativeRideRuntime(
+        std::move(bootstrap),NativeRideRuntime::ProbeTag{},profile));
+    auto& step=*candidate->physical_;
+    // Construction forwards the copied engine. Restore the exact incoming
+    // integration/warmstart and the same derived rows as a full checkpoint;
+    // the observer must see the accepted sensor stage, not that extra solve.
+    engine::set_state(candidate->stepper_->model(),candidate->stepper_->data(),
+        candidate->bootstrap_.integration_state.data(),mjSTATE_INTEGRATION);
+    const EngineRows from(*source.stepper_->model(),*source.stepper_->data());
+    const EngineRows to(*candidate->stepper_->model(),*candidate->stepper_->data());
+    for(std::size_t i=0;i<from.rows.size();++i) {
+        if(from.rows[i].size()!=to.rows[i].size())
+            throw std::invalid_argument("spatial probe: copied engine row shape differs");
+        std::ranges::copy(from.rows[i],to.rows[i].begin());
+    }
+    step.acc_inputs_=source.physical_->acc_inputs_;
+    step.acc_inputs_valid_=source.physical_->acc_inputs_valid_;
+    step.rider_state_=source.physical_->rider_state_;
+    step.spatial_brake_force_=source.physical_->spatial_brake_force_;
+    step.spatial_brake_last_=source.physical_->spatial_brake_last_;
+    step.imu_truth_=source.physical_->imu_truth_;
+    step.spatial_truth_=source.physical_->spatial_truth_;
+    return step.probe_step_inputs(control,front,rear);
+}
 
 bike::io::Value CheckpointAccess::capture_bootstrap(const NativeRideRuntime& runtime) {
     const AdvancementGuard guard(runtime.advancing_);

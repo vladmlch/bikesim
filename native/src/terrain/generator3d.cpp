@@ -62,10 +62,17 @@ double y_node(std::size_t index, std::size_t count, double half_width, double dy
     return -half_width + static_cast<double>(index) * dy;
 }
 double window(double x, double length, const Track3dSpec& spec) noexcept {
-    if (x <= spec.lead_in_m || x >= length - spec.lead_out_m) return 0.;
-    const double transition = std::min(1., .5 * (length - spec.lead_in_m - spec.lead_out_m));
-    return quintic_smoothstep((x - spec.lead_in_m) / transition) *
-           quintic_smoothstep((length - spec.lead_out_m - x) / transition);
+    // Catmull interpolation reads one node beyond each end of a cell. A cell
+    // containing a non-grid-aligned lead boundary can therefore read as far
+    // as two spacings into the active region. Keep that halo flat as well,
+    // otherwise lateral relief leaks back into the declared lead zones even
+    // though every node inside them equals the base profile.
+    const double start = spec.lead_in_m + 2. * spec.dx_m;
+    const double stop = length - spec.lead_out_m - 2. * spec.dx_m;
+    if (x <= start || x >= stop) return 0.;
+    const double transition = std::min(1., .5 * (stop - start));
+    return quintic_smoothstep((x - start) / transition) *
+           quintic_smoothstep((stop - x) / transition);
 }
 double feature_height(const Feature3dSpec& feature, double x, double y) noexcept {
     const double c = std::cos(feature.yaw_rad), s = std::sin(feature.yaw_rad);

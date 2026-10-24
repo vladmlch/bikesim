@@ -40,6 +40,8 @@ struct Topology {
 };
 
 [[nodiscard]] Topology bind_topology(const mjModel&, const Config&);
+// Cold compiled-model identity; may allocate and must not run in a force tick.
+[[nodiscard]] std::string model_fingerprint_hex(const mjModel&);
 [[nodiscard]] std::string topology_fingerprint_hex(const Topology&);
 // Model/data/binding identity and a current kinematic stage are preconditions.
 [[nodiscard]] BodyPose body_pose(const mjModel&, const mjData&, const RootBinding&) noexcept;

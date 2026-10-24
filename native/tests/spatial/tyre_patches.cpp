@@ -34,6 +34,16 @@ int main() { return bt::run([] {
     bt::require(assign_patches(e,n,true,s,out,count)==CoreStatus::ok && count==2,"gap splits one contact");
     bt::require(out[1].id==first_id && out[0].id!=first_id,"largest descendant retains ID");
     const auto new_id=out[0].id;
+    // The older ID is on the right after this split. Equal overlap on a
+    // later merge must prefer the lowest element, not the oldest/smallest ID.
+    auto tied=s;
+    auto tied_normals=n;
+    tied_normals[2].active=true;tied_normals[2].normal_load_n=10.;
+    for(std::size_t i=3;i<tied_normals.size();++i)tied_normals[i].normal_load_n=4.;
+    prepare();
+    bt::require(assign_patches(e,tied_normals,true,tied,out,count)==CoreStatus::ok && count==1,
+                "equal-overlap merge is accepted");
+    bt::require(out[0].id==new_id,"merge tie retains the ancestor with the lowest overlapping element");
     n[2].active=true;n[2].normal_load_n=10.;prepare();
     bt::require(assign_patches(e,n,true,s,out,count)==CoreStatus::ok && count==1,"gap closes again");
     bt::require(out[0].id==first_id && out[0].id!=new_id,"largest ancestor survives merge");

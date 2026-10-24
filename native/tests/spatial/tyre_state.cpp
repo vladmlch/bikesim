@@ -17,6 +17,7 @@
 #include <numbers>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace {
 using namespace bike::pneumatic3d;
@@ -77,6 +78,26 @@ void codecs(sp::TyreTier tier) {
     bt::require(encode_tyre_state(a.committed_state())==zero,"failed restore is atomic");
     invalid=*decoded;invalid.brush[0].ux_m[0]=.1;
     bt::invalid([&]{(void)encode_tyre_state(invalid);});
+    invalid=*decoded;invalid.carcass[0].previous_penetration_m[0]=.01;
+    bt::require(a.restore(invalid)==CoreStatus::invalid_input && encode_tyre_state(a.committed_state())==zero,
+                "inactive cell cannot restore a fictitious penetration rate history");
+    corrupt=zero;
+    const auto material_cells=static_cast<std::size_t>(id.dims.n_theta_material)*id.dims.n_phi;
+    put64(corrupt,300U+16U*material_cells,std::bit_cast<std::uint64_t>(.01));
+    bt::require(!decode_tyre_state(corrupt,id),"binary codec rejects the same inactive penetration inconsistency");
+    invalid=*decoded;invalid.carcass[0].active[0]=1;
+    invalid.carcass[0].deflection_m[0]=.01;invalid.carcass[0].previous_penetration_m[0]=.02;
+    bt::require(a.restore(invalid)==CoreStatus::invalid_input && encode_tyre_state(a.committed_state())==zero,
+                "active cell must retain the producer's identical accepted penetration lanes");
+    auto relaxed_memory=*decoded;
+    const auto memory_grid=make_torus_grid(id.dims,spec.outer_radius_m[0],spec.casing_width_m[0]);
+    relaxed_memory.carcass[0].maxwell_q_n_per_m2[0]=17.;
+    relaxed_memory.carcass[0].stored_energy_j=.5*memory_grid.geometric_area_m2[0]*17.*17./spec.carcass[0].maxwell_k_n_per_m3;
+    const auto memory_bytes=encode_tyre_state(relaxed_memory);
+    bt::require(a.restore(relaxed_memory)==CoreStatus::ok && encode_tyre_state(a.committed_state())==memory_bytes &&
+                decode_tyre_state(memory_bytes,id).has_value(),
+                "inactive material may retain finite Maxwell relaxation memory with zero penetration");
+    bt::require(a.restore(*decoded)==CoreStatus::ok,"valid cold control restores the original unloaded state");
     invalid=*decoded;
     invalid.carcass[0].dissipated_j=std::numeric_limits<double>::max();
     invalid.carcass[1].dissipated_j=std::numeric_limits<double>::max();
@@ -88,6 +109,40 @@ void codecs(sp::TyreTier tier) {
     bt::invalid([&]{Pneumatic3dModel bad(bad_spec,terrain.query_view(),id);});
     const std::array<double,7> render_pose{0.,0.,1.,1.,0.,0.,0.};
     bt::require(!decode_tyre_state(std::as_bytes(std::span(render_pose)),id),"render-only integration pose cannot seed complete tyre state");
+    for(const double phase:std::array{-2.*std::numbers::pi-.001,-2.*std::numbers::pi+.001,
+                                    -.001,0.,.001,2.*std::numbers::pi-.001,2.*std::numbers::pi+.001}) {
+        auto k=input(spec,0);
+        for(auto& wheel:k) {
+            wheel.wheel_phase_rad=phase;
+            wheel.relative_spin_rad_s=std::copysign(std::abs(wheel.relative_spin_rad_s),phase);
+        }
+        bt::require(a.evaluate(k,{},0.,false)==CoreStatus::ok,"material-order wrap/reverse probe is valid");
+        const auto forces=a.wrenches(0);
+        if(tier==sp::TyreTier::detailed) {
+            const auto grid=make_torus_grid(id.dims,spec.outer_radius_m[0],spec.casing_width_m[0]);
+            std::vector<ContactElement3d> geometry(grid.element_count());
+            bt::require(query_geometry(grid,k[0],terrain.query_view(),geometry)==CoreStatus::ok,
+                        "independent geometry supplies material IDs for the order oracle");
+            std::vector<std::pair<std::uint32_t,sp::Vec3>> ordered;
+            for(const auto& e:geometry)if(e.valid&&e.penetration_m>0.)
+                ordered.emplace_back(e.material_cell,e.point_world_m);
+            std::sort(ordered.begin(),ordered.end(),[](const auto& lhs,const auto& rhs){return lhs.first<rhs.first;});
+            bt::require(!ordered.empty(),"material-order regression contains loaded contacts");
+            std::size_t at=0;
+            for(const auto& force:forces)if(force.valid) {
+                bt::require(at<ordered.size()&&force.point_world_m==ordered[at].second,
+                            "detailed world-force publication follows sorted material IDs through wrap and reverse");
+                ++at;
+            }
+            bt::require(at==ordered.size(),"material ordering neither drops nor duplicates a loaded element");
+        } else {
+            const auto patches=a.patches(0);
+            bt::require(forces.size()==patches.size(),"fast force publication retains patch order");
+            for(std::size_t i=0;i<forces.size();++i)
+                bt::require(forces[i].patch_id==patches[i].id,"fast patch association is unchanged by detailed ordering");
+        }
+    }
+    bt::require(encode_tyre_state(a.committed_state())==zero,"material-order probes preserve complete committed state");
     for(std::size_t t=0;t<37;++t)bt::require(a.evaluate(input(spec,t),{},.0005,true)==CoreStatus::ok,"prefix accepted");
     const auto checkpoint=encode_tyre_state(a.committed_state());
     const auto checkpoint_decoded=decode_tyre_state(checkpoint,id);bt::require(checkpoint_decoded.has_value(),"active state decodes");

@@ -57,7 +57,9 @@ bool qualifies_engine_pool(double baseline_wall_s, double candidate_wall_s, bool
     if (!std::isfinite(baseline_wall_s) || baseline_wall_s <= 0. ||
         !std::isfinite(candidate_wall_s) || candidate_wall_s <= 0.)
         throw std::invalid_argument("engine_pool_probe: positive finite full-run times required");
-    return same_bits && candidate_wall_s <= .90 * baseline_wall_s;
+    int exponent = 0;
+    const double baseline_normalized = std::frexp(baseline_wall_s, &exponent);
+    return same_bits && std::scalbn(candidate_wall_s, -exponent) <= .90 * baseline_normalized;
 }
 
 void helper_controls() {
@@ -68,6 +70,13 @@ void helper_controls() {
     bt::invalid([] { (void)qualifies_engine_pool(0., 1., true); });
     bt::invalid([] { (void)qualifies_engine_pool(std::numeric_limits<double>::quiet_NaN(), 1., true); });
     bt::invalid([] { (void)qualifies_engine_pool(1., std::numeric_limits<double>::infinity(), true); });
+    const double unit = std::numeric_limits<double>::denorm_min();
+    bt::require(!qualifies_engine_pool(unit, unit, true),
+        "underflow in the threshold cannot qualify unchanged measured time");
+    bt::require(!qualifies_engine_pool(11. * unit, 10. * unit, true),
+        "subnormal threshold rounding cannot accept a gain below ten percent");
+    bt::require(qualifies_engine_pool(10. * unit, 9. * unit, true),
+        "exact ten percent remains inclusive after power-of-two normalization");
 }
 
 void set_engine_threads(mjData* data, unsigned total_threads) {
@@ -222,6 +231,10 @@ Run run(const Fixture& fixture, unsigned tyre_threads, unsigned engine_threads, 
     const auto begin = SteadyClock::now();
     for (const auto& block : fixture.blocks) {
         const auto result = live->advance(block.target, block.control, block.brake, block.brake, std::nullopt);
+        // Retention-off disables the archive, not the delivery queue. Match
+        // the W50 headless consumer and release every delivered control block
+        // inside the timing window, keeping pending ownership bounded.
+        live->release_samples();
         out.steps = result.step;
         out.simulated_s = result.time_s;
         if (checkpoints && result.step % fixture.checkpoint_stride == 0 && result.step < fixture.final_step)
@@ -231,7 +244,10 @@ Run run(const Fixture& fixture, unsigned tyre_threads, unsigned engine_threads, 
     // Include the final accounting drain in the full-run timing. Construction,
     // settlement and cold comparison/export are outside the measurement.
     live->flush();
+    live->release_samples();
     out.wall_s = seconds(begin, SteadyClock::now());
+    bt::require(live->prepare_samples().samples.empty(),
+        "retention-off probe drains delivered accounting rows instead of accumulating the whole ride");
     const auto final = live->snapshot();
     out.valid = out.steps == fixture.final_step && final.spatial &&
         final.spatial->outcome.latched.reason == sp::SpatialReason::requested_completion &&

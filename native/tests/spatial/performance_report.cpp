@@ -3,9 +3,11 @@
 #include "runtime/realtime_runner.hpp"
 #include "runtime/spatial_measurement.hpp"
 #include "runtime/setup_values.hpp"
+#include "spatial/bootstrap_state.hpp"
 #include "cli/application.hpp"
 #include "io/json.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <limits>
@@ -42,7 +44,8 @@ public:
     measure::Boundary boundary() const override { return {.step = step_, .time_s = static_cast<double>(step_) * settings_.timestep_s}; }
     std::optional<std::string> reason() const override {
         if (step_ == 0) return {};
-        return fixture_->fall ? "capsize" : "requested_completion";
+        return fixture_->fall ? "capsize" :
+            std::string(bike::spatial::to_string(bike::spatial::SpatialReason::requested_completion));
     }
     void start() override {}
     void advance(std::int64_t target, double budget) override {
@@ -58,8 +61,9 @@ public:
     }
     Value execution_identity() const override { return field(settings_.metadata, "execution"); }
     measure::MeasurementTimings timings() const override {
-        return {.regions = {.terrain_rays_s = .5, .tyre_elements_s = 1., .engine_step_s = 1.,
-            .rider_steer_s = .25, .accounting_s = .25},
+        const double scale = (fixture_->advance_s + fixture_->flush_s) / 15.;
+        return {.regions = {.terrain_rays_s = .5 * scale, .tyre_elements_s = scale, .engine_step_s = scale,
+            .rider_steer_s = .25 * scale, .accounting_s = .25 * scale},
             .clock_overhead_estimate_s = .001, .clock_reads = 100, .available = true};
     }
     void export_run(const std::filesystem::path&, std::string_view) override {
@@ -100,6 +104,9 @@ void controlled_wall_and_report() {
         "whole interval includes final flush, excludes preparation and export");
     bt::require(number(run, "rtf") == 2. && fixture->closed && fixture->exported,
         "controlled clocks establish exact report arithmetic and owner teardown");
+    bt::require(yes(run, "valid") && io::as_string(field(run, "terminal_reason"), "terminal_reason") == "completed" &&
+        io::as_string(field(measure::steady_state_evidence(run, 30.), "status"), "steady_state.status") == "eligible",
+        "canonical spatial completion is a valid full run and steady-state window");
     const auto report = measure::build_report({run}, {run, run, run});
     bt::require(number(report, "median_rtf") == 2. && yes(report, "target_met") &&
         number(report, "valid_measurement_count") == 3., "one warmup and three full strict runs permit the performance threshold");
@@ -151,13 +158,36 @@ void diagnostic_exclusion() {
     const auto incompatible = measure::build_report({run}, {run, different_terminal, run});
     bt::require(!yes(incompatible, "repeated_runs_comparable") && io::is_null(field(incompatible, "target_met")),
         "individually valid runs with different terminal classifications cannot qualify a common throughput target");
+    bt::require(io::is_null(field(measure::build_report({different_terminal}, {run, run, run}), "target_met")),
+        "a differently classified warmup cannot qualify the measured episode");
 }
 void malformed_or_incompatible_report() {
     const auto run = sample();
     auto other = run; auto identity = field(other, "execution");
     set(identity, "native_source_sha256", text(std::string(64, '5'))); set(other, "execution", identity);
+    bt::require(!yes(measure::compare_runs(run, other), "comparable"),
+        "external spatial baseline comparison includes the execution identity");
     bt::invalid([&] { (void)measure::build_report({run}, {run, other, run}); });
     bt::invalid([&] { (void)measure::build_report({other}, {run, run, run}); });
+    auto other_backend = run; set(other_backend, "backend", text("foreign"));
+    bt::require(!yes(measure::compare_runs(run, other_backend), "comparable"),
+        "external spatial baseline comparison cannot relabel a foreign backend");
+    bt::invalid([&] { (void)measure::build_report({run}, {run, other_backend, run}); });
+    bt::invalid([&] { (void)measure::build_report({other_backend}, {run, run, run}); });
+    auto absent_clocks = run; set(absent_clocks, "instrumentation_clock_reads", integer(0));
+    bt::invalid([&] { (void)measure::build_report({run}, {run, absent_clocks, run}); });
+    auto impossible_regions = run; auto regions = field(impossible_regions, "regions");
+    set(regions, "terrain_rays_s", real(16.)); set(impossible_regions, "regions", regions);
+    bt::invalid([&] { (void)measure::build_report({run}, {run, impossible_regions, run}); });
+    set(regions, "terrain_rays_s", real(std::numeric_limits<double>::max()));
+    set(regions, "tyre_elements_s", real(std::numeric_limits<double>::max()));
+    set(impossible_regions, "regions", regions);
+    bt::invalid([&] { (void)measure::build_report({run}, {run, impossible_regions, run}); });
+    auto large_estimate = run;
+    set(large_estimate, "instrumentation_overhead_s", real(std::numeric_limits<double>::max()));
+    bt::require(number(measure::build_report({large_estimate}, {large_estimate, large_estimate, large_estimate}),
+        "instrumentation_overhead_s") == std::numeric_limits<double>::max(),
+        "finite repeated clock-cost estimates retain a finite mean without overflowing their sum");
     auto per_step = run; set(per_step, "per_step_latency", Value{Object{{"p95", real(14.)}}});
     bt::invalid([&] { (void)measure::build_report({per_step}, {per_step}); });
     auto mislabeled = run; auto latency = field(mislabeled, "chunk_latency");
@@ -177,6 +207,21 @@ void malformed_or_incompatible_report() {
     set(profile, "dt_s", real(.0005)); set(bad_profile, "profile", profile);
     auto key = field(bad_profile, "comparability"); set(key, "spatial_profile", profile); set(bad_profile, "comparability", key);
     bt::invalid([&] { (void)measure::build_report({bad_profile}, {bad_profile}); });
+    for (const auto name : {"provider_identity", "calibration_sha256"}) {
+        auto incomplete = run; auto missing_profile = field(incomplete, "profile");
+        auto& members = std::get<Object>(missing_profile.data);
+        members.erase(std::remove_if(members.begin(), members.end(),
+            [&](const auto& member) { return member.first == name; }), members.end());
+        auto comparison = field(incomplete, "comparability");
+        set(comparison, "spatial_profile", missing_profile);
+        set(incomplete, "profile", missing_profile); set(incomplete, "comparability", comparison);
+        bt::invalid([&] { (void)measure::build_report({incomplete}, {incomplete, incomplete, incomplete}); });
+    }
+    auto zero_threads = run; auto invalid_profile = field(zero_threads, "profile");
+    set(invalid_profile, "tyre_threads", integer(0));
+    auto comparison = field(zero_threads, "comparability"); set(comparison, "spatial_profile", invalid_profile);
+    set(zero_threads, "profile", invalid_profile); set(zero_threads, "comparability", comparison);
+    bt::invalid([&] { (void)measure::build_report({zero_threads}, {zero_threads, zero_threads, zero_threads}); });
 }
 void cli_projection() {
     const std::array<std::string_view, 4> args{"--out", "not-created", "--profile", "spatial-fast-v1"};

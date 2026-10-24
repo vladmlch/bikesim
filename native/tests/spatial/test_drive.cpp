@@ -22,6 +22,7 @@
 #include <numbers>
 #include <string>
 #include <string_view>
+#include <stdexcept>
 
 namespace {
 namespace sp=bike::spatial;
@@ -111,6 +112,40 @@ void drive_covariance() {
             }
         }
 }
+void spatial_motor_contract() {
+    auto rig=vehicle("ideal_mid_drive",{6.,2.,false,"crank_effort"},0.);
+    auto& model=*rig->model;
+    auto gear=model_access::mutable_buffer(model.actuator_gear,6*model.nu);
+    auto dynamics=model_access::mutable_buffer(model.actuator_dyntype,model.nu);
+    auto gains=model_access::mutable_buffer(model.actuator_gaintype,model.nu);
+    auto biases=model_access::mutable_buffer(model.actuator_biastype,model.nu);
+    auto parameters=model_access::mutable_buffer(model.actuator_gainprm,mjNGAIN*model.nu);
+    const auto construct=[&] {
+        return std::make_unique<drivetrain::DrivetrainWriter>(&model,rig->data.get(),rig->writer->config());
+    };
+    for(const char* name:{"human_crank","mid_drive"}) {
+        const auto motor=static_cast<std::size_t>(bike::model::required_id(model,mjOBJ_ACTUATOR,name));
+        const auto reject=[&] {
+            bt::invalid([&] {
+                try { (void)construct(); }
+                catch(const std::invalid_argument& error) {
+                    bt::require(std::string_view(error.what()).starts_with(std::string("drive.spatial.")+name+":"),
+                        "invalid motor is rejected before torque/energy staging");
+                    throw;
+                }
+            });
+        };
+        const double saved_gear=gear[6*motor],saved_extra=gear[6*motor+1],saved_parameter=parameters[mjNGAIN*motor];
+        const int saved_dynamics=dynamics[motor],saved_gain=gains[motor],saved_bias=biases[motor];
+        gear[6*motor]=2.;reject();gear[6*motor]=saved_gear;
+        gear[6*motor+1]=1.;reject();gear[6*motor+1]=saved_extra;
+        parameters[mjNGAIN*motor]=2.;reject();parameters[mjNGAIN*motor]=saved_parameter;
+        gains[motor]=mjGAIN_AFFINE;reject();gains[motor]=saved_gain;
+        biases[motor]=mjBIAS_AFFINE;reject();biases[motor]=saved_bias;
+        dynamics[motor]=mjDYN_FILTER;reject();dynamics[motor]=saved_dynamics;
+        (void)construct();
+    }
+}
 void brakes_and_resistance() {
     sp::Config config;config.root=sp::RootKind::free6;
     auto rig=spatial_tests::free_rig(config,false);
@@ -184,4 +219,4 @@ void planar_oracle() {
 }
 } // namespace
 
-int main() {return bt::run([]{drive_covariance();brakes_and_resistance();resistance_source_boundary();planar_oracle();});}
+int main() {return bt::run([]{drive_covariance();spatial_motor_contract();brakes_and_resistance();resistance_source_boundary();planar_oracle();});}

@@ -12,6 +12,10 @@ public:
     [[nodiscard]] static bike::io::Value capture_bootstrap(const NativeRideRuntime&);
     [[nodiscard]] static std::unique_ptr<NativeRideRuntime> prepare(
         const SpatialCheckpoint&, const NativeRideRuntime&);
+    // Caller holds the source advancement guard. Evaluates only an isolated
+    // physical arena; does not copy, drain or publish accounting, including async.
+    [[nodiscard]] static PhysicalStep::ProbeResult probe_locked(const NativeRideRuntime&,
+        const RideControl&, double front, double rear);
     static void commit(CheckpointStage&&, NativeRideRuntime&);
 private:
     [[nodiscard]] static std::unique_ptr<NativeRideRuntime> prepare_locked(

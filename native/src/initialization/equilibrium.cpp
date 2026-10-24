@@ -78,16 +78,16 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
         try{
             restore_equilibrium_state(context,*cached);
             steps=state_array(*cached,"steps").integers().front();
-            if(explicit_file){apply_initial_forces(context,false);context.stepper.forward();residual=acceleration_residual(context);if(residual>options.tolerance)throw std::invalid_argument(std::format("restored residual {:.6g} exceeds tolerance {}",residual,options.tolerance));}
-            else if(context.topology) {
+            if(context.topology) {
                 residual=spatial_refine(context,1,options.tolerance);
                 if(residual>options.tolerance || !context.spatial_report->errors.empty())
-                    throw std::invalid_argument("cached spatial equilibrium failed its physical residual/contact check");
+                    throw std::invalid_argument("restored spatial equilibrium failed its physical residual/contact check");
                 if(context.bootstrap_hold && !context.bootstrap_hold->release_check(*context.spatial_report,
                     context.physics.spatial->bootstrap.release_force_limit_n,
                     context.physics.spatial->bootstrap.release_moment_limit_nm))
-                    throw std::invalid_argument("cached spatial equilibrium requires bootstrap support");
+                    throw std::invalid_argument("restored spatial equilibrium requires bootstrap support");
             }
+            else if(explicit_file){apply_initial_forces(context,false);context.stepper.forward();residual=acceleration_residual(context);if(residual>options.tolerance)throw std::invalid_argument(std::format("restored residual {:.6g} exceeds tolerance {}",residual,options.tolerance));}
             else{context.stepper.forward();residual=state_array(*cached,"residual_qacc").doubles().front();}
             cache_hit=true;
         }catch(const engine::EngineFailure&){throw;}catch(const std::bad_alloc&){throw;}
@@ -143,7 +143,8 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
         }
         throw EquilibriumFailure(steps,residual,worst(context));
     }
-    if(context.topology && context.spatial_report && !context.spatial_report->errors.empty() && !context.bootstrap_hold)
+    if(context.topology && context.spatial_report && !context.spatial_report->errors.empty() &&
+       (!context.bootstrap_hold || context.physical.spatial_state()->bootstrap_phase>=spatial::BootstrapPhase::armed))
         throw std::invalid_argument("spatial equilibrium: "+context.spatial_report->errors.front());
     EquilibriumResult result;result.steps=steps;result.residual_qacc=residual;result.cache_hit=cache_hit;
     result.spatial=context.spatial_report;

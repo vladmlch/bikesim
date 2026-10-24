@@ -14,6 +14,11 @@ authored physics TOML retains its mode; an empty configuration remains planar.
 explicitly removes the extension. The latter still requires a valid planar
 tyre backend in the resulting physics configuration.
 
+`--preview` draws a planar track profile and is rejected for spatial requests
+before creating output. Use a spatial ride or the recorded-data reports below
+to inspect the 3D route. The optional live CSV leaves `grade_pct` empty when
+the accepted presentation has no directional spatial grade measurement.
+
 ## Capability and evidence
 
 | Capability | Source status | Required verification |
@@ -117,8 +122,8 @@ camera follows world Y and unwraps heading across `-pi/+pi`. A new generation
 clears smoothing. Quaternion interpolation, camera movement and pacing alter
 only the render copy. They do not step physics, run sensors or invoke a policy.
 
-HUD roll is `N/A` when attitude is unavailable. Steering angle/torque use
-rad/N m; lateral slips use m/s and respect front/rear contact validity. `HOLD`
+HUD roll is `N/A` when attitude is unavailable. Displayed roll and steering
+angles use degrees, steering torque uses N m; lateral slips use m/s and respect front/rear contact validity. `HOLD`
 is displayed while the accepted state says the hold is active. A real display
 is mandatory for `spatial.viewer_smoke`; an absent display is a failing gate.
 Recording is off in this example.

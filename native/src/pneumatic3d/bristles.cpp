@@ -4,12 +4,14 @@
 
 #include <array>
 #include <cmath>
+#include <limits>
 
 namespace bike::pneumatic3d {
 namespace {
 constexpr std::size_t max_cells=1024U*15U;
+constexpr std::uint32_t absent=std::numeric_limits<std::uint32_t>::max();
 struct BristleScratch {
-    std::array<std::uint8_t,max_cells> touched{};
+    std::array<std::uint32_t,max_cells> source_element{};
     std::array<double,detail::max_fan_elements> resolved_mu{};
     bool busy=false;
 };
@@ -33,10 +35,13 @@ CoreStatus detailed_impl(const BrushSpec3d& spec,
         return CoreStatus::invalid_input;
     if(scratch.busy)return CoreStatus::invalid_input;
     const ScratchUse use(scratch.busy);
-    auto& touched=scratch.touched;auto& resolved_mu=scratch.resolved_mu;
-    touched.fill(0);resolved_mu.fill(0.);
+    auto& source_element=scratch.source_element;auto& resolved_mu=scratch.resolved_mu;
+    source_element.fill(absent);resolved_mu.fill(0.);
     if (elements.size()>resolved_mu.size()) return CoreStatus::invalid_input;
     for (std::size_t i=0;i<elements.size();++i) {
+        const auto j=elements[i].material_cell;
+        if (j>=cells || source_element[j]!=absent) return CoreStatus::invalid_input;
+        source_element[j]=static_cast<std::uint32_t>(i);
         // Unit friction belongs only to the standalone synthetic kernel.
         // Production contacts must resolve their declared material ID.
         resolved_mu[i]=terrain ? 0. : 1.;
@@ -60,10 +65,12 @@ CoreStatus detailed_impl(const BrushSpec3d& spec,
             !std::isfinite(state.bristle_energy_j[j]) || state.bristle_energy_j[j]<0.)
             return CoreStatus::invalid_input;
     double stored=0.,sliding=0.,release=0.;
-    for (std::size_t i=0;i<elements.size();++i) {
-        const auto j=elements[i].material_cell;
-        if (j>=cells || touched[j]) return CoreStatus::invalid_input;
-        touched[j]=1;
+    // A fan can cross the material seam or present the same cells in another
+    // order. Its ordering must not change serialized energy/loss reductions.
+    // Keep output wrenches in input order and reduce in material-cell order.
+    for (std::size_t j=0;j<cells;++j) {
+        const auto i=source_element[j];
+        if (i==absent) { release+=state.bristle_energy_j[j];continue; }
         const auto result=detail::evaluate_bristle(spec,elements[i],normals[i],kin,
             resolved_mu[i]*spec.mu_x_scale,resolved_mu[i]*spec.mu_y_scale,
             state.bristle_ux_m[j],state.bristle_uy_m[j],dt);
@@ -73,7 +80,6 @@ CoreStatus detailed_impl(const BrushSpec3d& spec,
         release+=result.convective_j;
         if (!result.wrench.valid) release+=state.bristle_energy_j[j];
     }
-    for (std::size_t j=0;j<cells;++j) if (!touched[j]) release+=state.bristle_energy_j[j];
     if (!std::isfinite(stored) || !std::isfinite(sliding) || !std::isfinite(release) ||
         !std::isfinite(state.sliding_loss_j+sliding) ||
         !std::isfinite(state.convective_release_j+release)) return CoreStatus::invalid_geometry;
@@ -81,7 +87,7 @@ CoreStatus detailed_impl(const BrushSpec3d& spec,
         // Geometry already identifies the material under each stationary fan
         // node using signed wheel phase. Re-advecting here would count spin
         // twice. The frozen state has no former tangent bases; see C10.
-        for (std::size_t j=0;j<cells;++j) if (!touched[j]) {
+        for (std::size_t j=0;j<cells;++j) if (source_element[j]==absent) {
             state.bristle_ux_m[j]=state.bristle_uy_m[j]=state.bristle_energy_j[j]=0.;
         }
         for (std::size_t i=0;i<elements.size();++i) {

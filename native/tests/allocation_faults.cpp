@@ -1,5 +1,6 @@
 #include "allocation_faults.hpp"
 #include <cstdlib>
+#include <limits>
 #include <new>
 
 // Overrides of the throwing AND nothrow global allocation operators for
@@ -40,9 +41,13 @@ namespace {
 
     // aligned_alloc requires size % alignment == 0; round up and keep the
     // zero-size edge nonzero so it cannot surface as a spurious nullptr.
-    std::size_t padded(std::size_t size, std::size_t alignment) noexcept {
-        const std::size_t rounded = (size / alignment + (size % alignment != 0)) * alignment;
-        return rounded != 0 ? rounded : alignment;
+    std::size_t padded(std::size_t size, std::size_t alignment) {
+        if (size == 0) return alignment;
+        const auto remainder = size % alignment;
+        const auto extra = remainder == 0 ? 0 : alignment - remainder;
+        if (size > std::numeric_limits<std::size_t>::max() - extra)
+            throw std::bad_alloc();
+        return size + extra;
     }
 
     void *allocate(std::size_t size, std::size_t alignment) {

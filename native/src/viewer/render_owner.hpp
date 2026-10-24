@@ -51,6 +51,9 @@ public:
     [[nodiscard]] bool closed() const noexcept;
     [[nodiscard]] bool has_markers() const noexcept;
     [[nodiscard]] std::vector<double> integration_state() const;
+    // Owned display coordinates after smoothing. The accepted integration
+    // state above remains byte-for-byte the supplied physical frame.
+    [[nodiscard]] std::vector<double> rendered_qpos() const;
     [[nodiscard]] std::array<std::vector<double>, 6> model_fields() const;
     [[nodiscard]] std::string_view model_sha256() const noexcept;
 private:

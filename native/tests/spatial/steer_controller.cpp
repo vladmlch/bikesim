@@ -10,8 +10,14 @@
 
 int main(){return bt::run([] {
     using namespace bike;
-    const auto profile=rider::read_steer_profile(io::parse_json(bt::text(
-        std::filesystem::path(BIKE_SPATIAL_SOURCE_ROOT)/"native/tests/spatial/data/steer_profiles.json")));
+    const auto document=io::parse_json(bt::text(
+        std::filesystem::path(BIKE_SPATIAL_SOURCE_ROOT)/"native/tests/spatial/data/steer_profiles.json"));
+    const auto profile=rider::read_steer_profile(document);
+    for(const auto* key:{"cap_nm","gains","sha256_hex"}) {
+        auto duplicate=document;
+        std::get<io::Value::Object>(duplicate.data).emplace_back(key,io::Value{});
+        bt::invalid([&]{(void)rider::read_steer_profile(duplicate);});
+    }
     bt::require(profile.provenance_status=="provisional","authored gains make no calibration claim");
     rider::SteerBalance control(profile,.005);
     bt::require(control.delay_ticks()==20 && control.resolved_delay_s()==.1,"100 ms is twenty 200 Hz ticks");

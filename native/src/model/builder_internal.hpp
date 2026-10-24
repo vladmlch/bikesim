@@ -50,7 +50,9 @@ struct BuildContext {
     bool crank_joint;
     MassRegistry registry;
     [[nodiscard]] bool physical() const { return physics && physics->physics_mode=="physical"; }
-    [[nodiscard]] bool spatial() const { return request.spatial && request.spatial->mode==bike::spatial::Mode::spatial3d; }
+    // generate_mjcf resolves the optional model declaration into this owned,
+    // validated physics copy. All model stages consume the same selection.
+    [[nodiscard]] bool spatial() const { return physics && physics->spatial && physics->spatial->mode==bike::spatial::Mode::spatial3d; }
     MassRegistry* mass_registry() { return physical()? &registry : nullptr; }
 };
 void build_visual_and_assets(Element& root);

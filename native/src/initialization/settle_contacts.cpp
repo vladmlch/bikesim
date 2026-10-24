@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 
 namespace bike::initialization {
 void apply_initial_forces(SetupContext& context,bool advance) {
@@ -15,13 +16,22 @@ void apply_initial_forces(SetupContext& context,bool advance) {
         std::nullopt,runtime::RideControl{});
     if(context.bootstrap_hold && context.physical.spatial_state()) {
         auto spatial=*context.physical.spatial_state();
-        const auto status=context.bootstrap_hold->try_compute_into(*context.stepper.model(),
-            *context.stepper.data(),spatial.bootstrap_phase,
-            std::span<double>(context.stepper.data()->qfrc_applied,
-                static_cast<std::size_t>(context.stepper.model()->nv)));
+        // Both the hold owner and its generalized-force contribution remain
+        // staged until preparing the complete causal record has succeeded.
+        // Preparation validates and allocates, so it can still throw.
+        auto hold=*context.bootstrap_hold;
+        const auto target=std::span<double>(context.stepper.data()->qfrc_applied,
+            static_cast<std::size_t>(context.stepper.model()->nv));
+        std::vector<double> force(target.begin(),target.end());
+        const auto status=hold.try_compute_into(*context.stepper.model(),
+            *context.stepper.data(),spatial.bootstrap_phase,force);
         if(status!=CoreStatus::ok)throw std::invalid_argument("bootstrap.hold: invalid force evaluation");
-        spatial.hold=context.bootstrap_hold->state();
-        context.physical.commit_spatial_state(context.physical.prepare_spatial_state(spatial));
+        spatial.hold=hold.state();
+        auto prepared=context.physical.prepare_spatial_state(spatial);
+        if(context.bootstrap_hold->restore(prepared.hold)!=CoreStatus::ok)
+            throw std::invalid_argument("bootstrap.hold: staged state rejected");
+        std::ranges::copy(force,target.begin());
+        context.physical.commit_spatial_state(std::move(prepared));
     }
 }
 double acceleration_residual(SetupContext const& context) {

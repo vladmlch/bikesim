@@ -194,6 +194,8 @@ std::unique_ptr<ResolvedRide> resolve_ride(Arguments args, bool settling) {
     if (experiment && !args.has("seed")) args.set("seed", "0");
     const auto physics = ride_physics(args);
     const bool physical = physics->physics_mode == "physical";
+    if(args.flag("preview")&&physics->spatial)
+        throw ArgumentError("--preview supports planar track profiles; spatial terrain requires a ride or recording report");
     if (args.has("time_scale") && (args.flag("headless") || !physical || args.flag("preview")))
         throw ArgumentError("--time-scale requires an interactive physical or research run");
     if (args.flag("close_on_finish")) {

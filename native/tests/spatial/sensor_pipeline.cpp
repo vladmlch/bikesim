@@ -1,21 +1,54 @@
 #include "support/migration_test.hpp"
 #include "support/spatial_fixture.hpp"
+#include "support/temporary_directory.hpp"
+#include "fixture_paths.hpp"
 #include "runtime/spatial_sensor_pipeline.hpp"
 #include "runtime/research_io.hpp"
 #include "runtime/value_readers.hpp"
 #include "research/environment.hpp"
 #include "research/evidence.hpp"
 #include "io/json.hpp"
+#include <filesystem>
+#include <fstream>
 #include <limits>
+#include <memory>
 
 namespace {
 runtime::spatial::SensorObservationV2 raw(double time){runtime::spatial::SensorObservationV2 out;out.time_s=out.source_time_s=time;
     for(std::size_t i=0;i<out.values.size();++i)out.values[i]=static_cast<double>(i+1);return out;}
 runtime::spatial::NoiseTapeV2 zeros(std::size_t n){runtime::spatial::NoiseTapeV2 tape;tape.noise.resize(n);tape.dropout_uniform.assign(n,.5);return tape;}
 std::string state(const runtime::spatial::SensorPipelineV2& pipeline){return bike::io::canonical_json(bike::research::wire_value(pipeline.state_wire()));}
+void request_latency_alias() {
+    const bt::TemporaryDirectory temporary("spatial-sensor-delay");
+    const auto source=std::filesystem::path(BIKE_SPATIAL_SOURCE_ROOT);
+    const auto quoted=[](const std::filesystem::path& path){return bike::io::canonical_json(bike::io::Value{path.string()});};
+    const auto request_path=temporary.path()/"request.toml";
+    for(const bool has_alias:{false,true}) {
+        {
+            std::ofstream file(request_path,std::ios::binary|std::ios::trunc);
+            file << "request_schema = 1\nphysics_file = " << quoted(source/"examples/spatial/free_fast.toml")
+                 << "\ntrack_file = " << quoted(source/"tests/fixtures/migration/tracks/flat.toml")
+                 << "\nrider_variant = \"lumped\"\n";
+            if(has_alias)file << "sensor_delay_s = 0.0\n";
+            file << "[sensors]\nlatency_s = 0.07\n[sensors_v2]\nlatency_s = 0.03\n";
+            file.close();bt::require(static_cast<bool>(file),"sensor request fixture is complete");
+        }
+        const std::unique_ptr<bike::research::ResearchRequest> request{
+            new bike::research::ResearchRequest(bike::research::read_research_request(request_path))};
+        bt::require(request->setup.model.physics && request->setup.model.physics->spatial &&
+            request->setup.model.physics->spatial->mode==bike::spatial::Mode::spatial3d,
+            "sensor alias control selects an actual spatial research request");
+        bt::require(request->sensors.delivery.latency_s==(has_alias?0.:.07) &&
+            request->sensors_v2.latency_s==(has_alias?0.:.03),
+            "request latency overrides both nested schemas while absence preserves each nested value");
+        runtime::spatial::SensorPipelineV2 pipeline(request->sensors_v2,zeros(1));pipeline.reset(raw(0.));
+        bt::require(pipeline.read(0.).valid==has_alias,"requested zero delay reaches the spatial delivery pipeline");
+    }
+}
 }
 int main(){return bt::run([]{
     using namespace runtime::spatial;
+    request_latency_alias();
     SensorConfigV2 config;config.latency_s=.02;config.sample_period_s=.01;config.maximum_read_period_s=.02;config.maximum_age_s=.04;
     auto tape=zeros(20);tape.validate();bt::require(tape.noise.front().size()==11,"V2 has eleven measured channels");
     auto bad=tape;bad.dropout_uniform.clear();bt::invalid([&]{bad.validate();});
@@ -37,6 +70,18 @@ int main(){return bt::run([]{
     bt::require(masked.valid&&masked.valid_mask==0x7c0U&&masked.values[0]==0.&&masked.values[5]==0.&&masked.values[6]==7.,"disabled IMU masks six axes and retains encoders");
     SensorConfigV2 dropout;dropout.dropout_probability=1.;dropout.latency_s=0.;SensorPipelineV2 dropped(dropout,zeros(1));dropped.reset(raw(0.));
     bt::require(!dropped.read(0.).valid&&dropped.state().cursor==1&&dropped.state().samples_dropped==1,"dropout consumes one deterministic cursor");
+    const auto dropped_before=state(dropped);
+    auto inconsistent_drop=dropped.state();inconsistent_drop.samples_dropped=0;
+    bt::invalid([&]{dropped.import_state(inconsistent_drop);});
+    bt::require(state(dropped)==dropped_before,"drop counter corruption does not change the consumed tape prefix");
+    inconsistent_drop=dropped.state();inconsistent_drop.queue.front().valid=true;inconsistent_drop.queue.front().valid_mask=0x7ffU;
+    bt::invalid([&]{dropped.import_state(inconsistent_drop);});
+    bt::require(state(dropped)==dropped_before,"checkpoint cannot turn a dropped attempt into valid measurement");
+    inconsistent_drop=dropped.state();inconsistent_drop.startup->valid=true;inconsistent_drop.startup->valid_mask=0x7ffU;
+    bt::invalid([&]{dropped.import_state(inconsistent_drop);});
+    bt::require(state(dropped)==dropped_before,"checkpoint cannot revive a dropped startup sentinel");
+    dropped.import_state(dropped.state());
+    bt::require(state(dropped)==dropped_before,"authentic all-drop snapshot remains restorable");
     bool exhausted=false;try{dropped.push(raw(.01));}catch(const std::runtime_error&){exhausted=true;}bt::require(exhausted,"tape exhaustion invalidates run");
     SensorConfigV2 mixed;mixed.latency_s=0.;mixed.dropout_probability=.5;
     auto attempts=zeros(2);attempts.dropout_uniform={.75,.25};SensorPipelineV2 intermittent(mixed,attempts);intermittent.reset(raw(0.));
@@ -44,6 +89,13 @@ int main(){return bt::run([]{
     const auto missing=intermittent.read(.01);
     bt::require(!missing.valid&&missing.valid_mask==0&&missing.source_time_s==.01&&intermittent.state().cursor==2,
         "dropout consumes its own attempt and never reuses an earlier valid delivery");
+    const auto suffix=intermittent.state();intermittent.import_state(suffix);
+    bt::require(intermittent.state().queue.size()==1&&!intermittent.read(.01).valid,
+        "retained suffix is checked at its original tape index after an earlier delivery is discarded");
+    SensorPipelineV2 unavailable(mixed,zeros(1));auto unavailable_raw=raw(0.);unavailable_raw.valid=false;unavailable_raw.valid_mask=0;
+    unavailable.reset(unavailable_raw);unavailable.import_state(unavailable.state());
+    bt::require(!unavailable.read(0.).valid&&unavailable.state().samples_dropped==0,
+        "nondropped input may remain invalid for an independent acquisition reason");
     SensorConfigV2 bounded;bounded.latency_s=0.;bounded.sample_period_s=.01;bounded.maximum_read_period_s=.02;
     SensorPipelineV2 unread(bounded,zeros(8));unread.reset(raw(0.));
     for(int i=1;i<5;++i)unread.push(raw(static_cast<double>(i)*.01));

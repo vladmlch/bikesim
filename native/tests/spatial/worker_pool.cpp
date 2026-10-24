@@ -1,5 +1,6 @@
 #include "support/migration_test.hpp"
 #include "runtime/spatial_worker_pool.hpp"
+#include "allocation_faults.hpp"
 
 #include <array>
 #include <atomic>
@@ -10,6 +11,7 @@
 #include <exception>
 #include <iostream>
 #include <mutex>
+#include <new>
 #include <numeric>
 #include <span>
 #include <stdexcept>
@@ -43,6 +45,34 @@ void blocked(void* raw,std::size_t begin,std::size_t end) noexcept {
     latch.cv.wait(lock,[&]{return latch.released;});
 }
 void no_work(void* raw,std::size_t begin,std::size_t end) noexcept {(void)raw;(void)begin;(void)end;}
+struct AllocationLane {std::size_t allocations=0,frees=0;};
+void reset_allocations(void*,std::size_t,std::size_t) noexcept {allocation_counter::reset();}
+void capture_allocations(void* raw,std::size_t begin,std::size_t) noexcept {
+    auto* lanes=static_cast<AllocationLane*>(raw);
+    lanes[begin]={allocation_counter::count(),allocation_counter::freed()};
+}
+void allocate_control(void*,std::size_t,std::size_t) noexcept {
+    void* pointer=::operator new(1,std::nothrow);
+    ::operator delete(pointer);
+}
+void warm_allocations(unsigned threads) {
+    WorkerPool pool(threads);
+    const auto ranges=partition_ranges(threads,threads);
+    std::array<AllocationLane,8> lanes{};
+    pool.run(ranges,no_work,nullptr);
+    pool.run(ranges,reset_allocations,nullptr);
+    for(unsigned generation=0;generation<64;++generation)pool.run(ranges,no_work,nullptr);
+    pool.run(ranges,capture_allocations,lanes.data());
+    for(unsigned i=0;i<threads;++i)
+        bt::require(lanes[i].allocations==0&&lanes[i].frees==0,
+            "warmed pool dispatch/completion allocates or frees on neither caller nor worker threads");
+    pool.run(ranges,reset_allocations,nullptr);
+    pool.run(ranges,allocate_control,nullptr);
+    pool.run(ranges,capture_allocations,lanes.data());
+    for(unsigned i=0;i<threads;++i)
+        bt::require(lanes[i].allocations==1&&lanes[i].frees==1,
+            "per-thread allocation instrumentation detects the explicit negative control on every pool lane");
+}
 void overlap() {
     WorkerPool pool(2);const auto ranges=partition_ranges(2,2);Latch latch;
     // An incorrect stop() could join the deliberately blocked callbacks.
@@ -107,6 +137,7 @@ void cases() {
     const auto empty_serial=partition_ranges(0,1);
     logic_error([&]{serial.run(empty_serial,increment,nullptr);},"stopped pool rejects run");
     for(const unsigned threads:{1U,2U,4U,8U}) {
+        warm_allocations(threads);
         WorkerPool pool(threads);std::array<std::uint64_t,17> values{};Cells cells{values};
         const auto ranges=partition_ranges(values.size(),threads);
         for(unsigned generation=0;generation<1000;++generation)pool.run(ranges,increment,&cells);

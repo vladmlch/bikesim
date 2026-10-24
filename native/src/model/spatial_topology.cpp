@@ -49,7 +49,7 @@ void emit_imu(Element& root,Element& frame,const bike::spatial::ImuMountConfig& 
 
 void finish_spatial_topology(Element& root,const BuildContext& c) {
     if(!c.spatial() || !c.physical()) throw std::invalid_argument("spatial_3d: physical spatial build required");
-    const auto& cfg=*c.request.spatial;
+    const auto& cfg=*c.physics->spatial;
     if(c.physics->tires.backend!="pneumatic_3d") throw std::invalid_argument("tires.backend: spatial model requires pneumatic_3d");
     if(cfg.root==bike::spatial::RootKind::constrained4 && cfg.steer.controller!=bike::spatial::SteerController::off)
         throw std::invalid_argument("spatial_3d.steer.controller: constrained root requires off");

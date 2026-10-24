@@ -22,6 +22,7 @@
 #include "runtime/capabilities.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/setup_values.hpp"
+#include "runtime/spatial_checkpoint_internal.hpp"
 #include "runtime/spatial_tire_factory.hpp"
 #include "spatial/frames.hpp"
 #include "spatial/topology.hpp"
@@ -384,20 +385,105 @@ void bootstrap_quaternion() {
 }
 
 void shoulder_layout() {
-    Witness witness;auto guard=spatial_tests::mixed_joint_rig();spatial_tests::RiderRig rider;
+    spatial_tests::RiderRig rider;
     const auto before=model_state(*rider.rig.model,*rider.rig.data);
     const auto original=rider.controller->state(rider.rig.data.get());
     const auto state_bytes=io::canonical_json(::rider::encode_spindle_state(original));
+    const auto unchanged=[&] {
+        bt::require(before==model_state(*rider.rig.model,*rider.rig.data) &&
+            state_bytes==io::canonical_json(::rider::encode_spindle_state(rider.controller->state(rider.rig.data.get()))),
+            "each incompatible shoulder state preserves the actual target controller/model/data");
+    };
+    const auto rejected=[&](const ::rider::SpindleController::State& incompatible) {
+        invalid_path([&]{rider.controller->restore(incompatible);},"rider_controller.rider.spatial");
+        unchanged();
+    };
     auto incompatible=original;bt::require(incompatible.spatial.has_value(),"spatial controller owns shoulder lanes");
     incompatible.spatial->arm_branch*=-1;
-    reject(witness,guard,"rider_controller.rider.spatial",[&]{rider.controller->restore(incompatible);});
+    rejected(incompatible);
     incompatible=original;incompatible.spatial->shoulder_profile_sha256=std::string(64,'0');
-    reject(witness,guard,"rider_controller.rider.spatial",[&]{rider.controller->restore(incompatible);});
+    rejected(incompatible);
     incompatible=original;incompatible.spatial.reset();
-    reject(witness,guard,"rider_controller.rider.spatial",[&]{rider.controller->restore(incompatible);});
-    bt::require(before==model_state(*rider.rig.model,*rider.rig.data) &&
-        state_bytes==io::canonical_json(::rider::encode_spindle_state(rider.controller->state(rider.rig.data.get()))),
-        "incompatible shoulder state preserved complete controller/model/data state");
+    rejected(incompatible);
+    rider.controller->restore(original);
+    unchanged();
+}
+
+std::string publication_bytes(runtime::NativeRideRuntime& ride) {
+    const auto pending=ride.prepare_samples();
+    Array pending_rows,retained_rows;
+    for(const auto& sample:pending.samples)
+        pending_rows.push_back(bike::research::wire_value(runtime::Wire{sample->as_wire()}));
+    for(const auto& sample:ride.recorded_intervals())
+        retained_rows.push_back(bike::research::wire_value(runtime::Wire{sample->as_wire()}));
+    return io::recording_json(Value{Object{{"generation",integer(pending.generation)},
+        {"pending",Value{std::move(pending_rows)}},{"retained",Value{std::move(retained_rows)}},
+        {"accounting",bike::research::wire_value(runtime::Wire{ride.accounting_state()})}}});
+}
+
+void public_probe_isolation() {
+    auto request=spatial_tests::make_startup_request(sp::RootKind::free6,sp::TyreTier::fast,false,.5);
+    auto fixture=std::make_unique<spatial_tests::OwnedStartup>(std::move(*request));
+    auto reference=std::make_unique<runtime::NativeRideRuntime>(*fixture->bootstrap);
+    runtime::RideControl drive;drive.human_torque_nm=1.;
+    runtime::RideControl probe_control;probe_control.human_torque_nm=3.;
+    runtime::RideControl invalid;invalid.motor_torque_nm=-1.;
+    const auto probe=[&](runtime::NativeRideRuntime& ride) {
+        const auto result=ride.probe_step_inputs(probe_control,.6,.4);
+        bt::require(!result.components.empty() && !result.ctrl.empty() &&
+            std::ranges::all_of(result.ctrl,[](double value){return std::isfinite(value);}),
+            "free-root public probe returns an owned finite staged actuator row");
+    };
+    auto& ride=*fixture->runtime;
+    (void)ride.advance(33,drive,.2,.1,{});
+    (void)reference->advance(33,drive,.2,.1,{});
+    const auto boundary=ride.snapshot();
+    bt::require(boundary.step==33 && boundary.spatial &&
+        boundary.spatial->steer.controller==sp::SteerController::roll_heading &&
+        boundary.spatial->steer.next_tick>0 && boundary.spatial->steer.fifo_count>0,
+        "probe fixture has a nonzero-time free-root steering continuation");
+    const auto checkpoint=io::recording_json(runtime::spatial::CheckpointAccess::capture_bootstrap(ride));
+    const auto publications=publication_bytes(ride);
+    probe(ride);
+    bt::require(checkpoint==io::recording_json(runtime::spatial::CheckpointAccess::capture_bootstrap(ride)) &&
+        publications==publication_bytes(ride),
+        "free-root probe preserves every live checkpoint and publication owner");
+    bt::invalid([&]{(void)ride.probe_step_inputs(invalid,0.,0.);});
+    bt::require(checkpoint==io::recording_json(runtime::spatial::CheckpointAccess::capture_bootstrap(ride)) &&
+        publications==publication_bytes(ride),"rejected free-root probe is atomic on the same live owner");
+    (void)ride.advance(64,drive,.2,.1,{});
+    (void)reference->advance(64,drive,.2,.1,{});
+    bt::require(ride.snapshot().step==64 && reference->snapshot().step==64 &&
+        io::recording_json(runtime::spatial::CheckpointAccess::capture_bootstrap(ride))==
+        io::recording_json(runtime::spatial::CheckpointAccess::capture_bootstrap(*reference)),
+        "free-root probe leaves the next physical and accounting continuation bitwise unchanged");
+
+    auto async_bootstrap=std::make_unique<runtime::RuntimeBootstrap>(*fixture->bootstrap);
+    async_bootstrap->config.async_telemetry=true;
+    auto asynchronous=std::make_unique<runtime::NativeRideRuntime>(*async_bootstrap);
+    (void)asynchronous->advance(33,drive,.2,.1,{});
+    bt::require(asynchronous->snapshot().step==33,"async probe fixture reaches a live partial period");
+    const auto image=asynchronous->model_image();
+    const auto physical_bytes=[&] {
+        std::vector<std::byte> bytes;
+        bike::validation::RuntimeRigAccess::inspect(*asynchronous,[&](const Stepper& stepper,const runtime::PhysicalStep& physical) {
+            bytes=model_state(*stepper.model(),*stepper.data());
+            append(bytes,bike::initialization::capture_current_state(stepper,physical,async_bootstrap->config,image));
+        });
+        return bytes;
+    };
+    const auto physics_before=physical_bytes();
+    const auto async_publications=publication_bytes(*asynchronous);
+    probe(*asynchronous);
+    // The worker never mutates the main accounting owner until collect(); no
+    // flush is allowed here, so a public probe cannot drain queued periods.
+    bt::require(physics_before==physical_bytes() && async_publications==publication_bytes(*asynchronous),
+        "async probes neither mutate physical owners nor collect or publish accounting");
+    bt::invalid([&]{(void)asynchronous->probe_step_inputs(invalid,0.,0.);});
+    bt::require(physics_before==physical_bytes() && async_publications==publication_bytes(*asynchronous),
+        "rejected async probe preserves both the live physical and publication boundaries");
+    bt::require(asynchronous->checkpoint_unavailable_reason()=="checkpoint requires synchronous accounting",
+        "observational async probe preserves the source accounting mode");
 }
 
 double dot(const sp::Vec3& a,const sp::Vec3& b) {return std::inner_product(a.begin(),a.end(),b.begin(),0.);}
@@ -507,6 +593,7 @@ int main() {
     failures+=bt::run(topology_matrix);failures+=bt::run(identity_and_entrypoints);
     failures+=bt::run(producer_declaration_mismatch);
     failures+=bt::run(bootstrap_quaternion);failures+=bt::run(shoulder_layout);
+    failures+=bt::run(public_probe_isolation);
     failures+=bt::run(covariance);failures+=bt::run(release_reporting);
     return failures?1:0;
 }

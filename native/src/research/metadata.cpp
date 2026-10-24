@@ -17,11 +17,13 @@
 #include "../terrain/source3d.hpp"
 #include "../spatial/config.hpp"
 #include "../runtime/research_io.hpp"
+#include "../runtime/spatial_tire_factory.hpp"
 #include "../writers/pyfloat.hpp"
 #include <algorithm>
 #include <bit>
 #include <cctype>
 #include <cmath>
+#include <fstream>
 #include <ranges>
 #include <type_traits>
 
@@ -78,6 +80,16 @@ std::string configuration_digest(const Value& resolved) {
     if(find(articulated,"shoulder_profile")) {
         const auto* digest=find(resolved,"shoulder_profile_asset_sha256");
         set(articulated,"shoulder_profile",digest?*digest:Value{});
+    }
+    if(const auto* source=find(physics,"spatial_3d")) {
+        auto spatial=*source;auto steer=field(spatial,"steer");
+        if(io::as_string(field(steer,"controller"),"steer.controller")!="off" &&
+           !rider::builtin_steer_profile(io::as_string(field(steer,"profile_id"),"steer.profile_id"))) {
+            // A file's location is provenance; its checked coefficients own
+            // the physical configuration identity after relocation.
+            set(steer,"profile_id",field(steer,"profile_sha256"));
+            set(spatial,"steer",std::move(steer));set(physics,"spatial_3d",std::move(spatial));
+        }
     }
     set(physics, "articulated", std::move(articulated));
     set(hashable, "physics", std::move(physics));
@@ -241,6 +253,16 @@ io::Value identity_receipt(const io::Value& metadata) {
         }
         if(const auto* path=find(articulated,"shoulder_profile");path&&!io::is_null(*path))
             set(resolved,"shoulder_profile_asset_sha256",text(platform::file_sha256(io::as_string(*path,"shoulder_profile"))));
+        if(const auto* spatial_source=find(field(resolved,"physics"),"spatial_3d")) {
+            const auto& steer=field(*spatial_source,"steer");
+            if(io::as_string(field(steer,"controller"),"steer.controller")!="off" &&
+               !rider::builtin_steer_profile(io::as_string(field(steer,"profile_id"),"steer.profile_id"))) {
+                auto config=spatial::spatial_config_from_wire(field(metadata,"spatial"));
+                // The resolver checks both the saved content hash and the
+                // cap/delay contract; a changed or missing file fails closed.
+                (void)runtime::resolved_steer_profile(config.steer);
+            }
+        }
         const bool source_changed = identity.native_source_sha256 !=
             io::as_string(field(metadata, "model_source_sha256"), "model_source_sha256");
         const bool config_changed = configuration_digest(resolved) !=
@@ -336,6 +358,23 @@ std::vector<runtime::ResearchAsset> snapshot_spatial_assets(const initialization
     const Value calibration{Object{{"calibration_sha256",text(bootstrap.state.spatial->calibration_sha256)},
         {"tire",field(bootstrap.config.writer_config,"tire")},{"imu",field(spatial::spatial_config_to_wire(*bootstrap.config.spatial),"imu")}}};
     out.push_back(text_asset("spatial/calibration.json","application/json",io::recording_json(calibration)+"\n"));
+    const auto& steer=bootstrap.config.spatial->steer;
+    if(steer.controller!=spatial::SteerController::off && !rider::builtin_steer_profile(steer.profile_id)) {
+        // Preserve the bounded source bytes: canonical reserialization can
+        // expand a valid near-limit source beyond the resolver's 1 MiB cap.
+        // Validate this very snapshot, not a second read of the pathname.
+        std::ifstream input(steer.profile_id,std::ios::binary|std::ios::ate);
+        if(!input || input.tellg()<0 || input.tellg()>1024*1024)
+            throw std::invalid_argument("steer profile: unreadable or oversized recording source");
+        std::string content(static_cast<std::size_t>(input.tellg()),'\0');input.seekg(0);
+        input.read(content.data(),static_cast<std::streamsize>(content.size()));
+        if(!input || input.peek()!=std::char_traits<char>::eof())
+            throw std::invalid_argument("steer profile: source changed during asset capture");
+        const auto profile=rider::read_steer_profile(io::parse_json(content));
+        if(profile.sha256_hex!=steer.profile_sha256)
+            throw std::invalid_argument("steer profile: content changed during asset capture");
+        out.push_back(text_asset("spatial/steer_profile.json","application/json",content));
+    }
     if(request.model.physics && request.model.physics->articulated.shoulder_profile) {
         auto shoulder=asset("spatial/shoulder_profile.json","application/json",io::read_numpy_bytes(*request.model.physics->articulated.shoulder_profile));
         if(shoulder.sha256!=io::as_string(field(field(metadata,"resolved_config"),"shoulder_profile_asset_sha256"),"shoulder_profile_asset_sha256"))

@@ -13,7 +13,7 @@ namespace {
 constexpr std::uint32_t absent=std::numeric_limits<std::uint32_t>::max();
 struct Overlap { std::uint32_t slot=absent, component=absent, element=absent; double load=0.; };
 struct PatchScratch {
-    std::array<std::uint32_t,max_fan_elements> label{},queue{},first{},selected{},winner{};
+    std::array<std::uint32_t,max_fan_elements> label{},queue{},first{},selected{},winner{},best_element{};
     std::array<double,max_fan_elements> best_weight{},component_weight{};
     std::array<std::uint8_t,max_fan_elements> used{};
     std::array<Overlap,max_fan_elements> overlap{};
@@ -58,11 +58,12 @@ CoreStatus assign_patches(std::span<const ContactElement3d> elements,
     const ScratchUse use(scratch.busy);
     auto& label=scratch.label;auto& queue=scratch.queue;auto& first=scratch.first;
     auto& selected=scratch.selected;auto& winner=scratch.winner;auto& best_weight=scratch.best_weight;
+    auto& best_element=scratch.best_element;
     auto& used=scratch.used;auto& overlap=scratch.overlap;
     auto& component_weight=scratch.component_weight;auto& ids=scratch.ids;
     queue.fill(0);first.fill(0);best_weight.fill(0.);used.fill(0);overlap.fill(Overlap{});
     component_weight.fill(0.);ids.fill(0);
-    label.fill(absent); selected.fill(absent); winner.fill(absent);
+    label.fill(absent); selected.fill(absent); winner.fill(absent);best_element.fill(absent);
     const std::size_t width=lateral_nodes(elements);
     std::size_t components=0;
     const auto active=[&](std::size_t i) noexcept {
@@ -105,18 +106,19 @@ CoreStatus assign_patches(std::span<const ContactElement3d> elements,
     // ancestor of each new component. All summation order is canonical.
     for (std::size_t i=0;i<overlap_count;) {
         const auto s=overlap[i].slot, c=overlap[i].component;
+        const auto element=overlap[i].element;
         double load=0.;
         do { load+=overlap[i++].load; }
         while (i<overlap_count && overlap[i].slot==s && overlap[i].component==c);
         if (winner[s]==absent || load>best_weight[s] ||
             (load==best_weight[s] && first[c]<first[winner[s]])) {
-            winner[s]=c; best_weight[s]=load;
+            winner[s]=c; best_weight[s]=load;best_element[s]=element;
         }
     }
     for (std::size_t s=0;s<capacity;++s) if (winner[s]!=absent) {
         const auto c=winner[s];
         if (selected[c]==absent || best_weight[s]>component_weight[c] ||
-            (best_weight[s]==component_weight[c] && state.ids[s]<state.ids[selected[c]])) {
+            (best_weight[s]==component_weight[c] && best_element[s]<best_element[selected[c]])) {
             selected[c]=static_cast<std::uint32_t>(s); component_weight[c]=best_weight[s];
         }
     }

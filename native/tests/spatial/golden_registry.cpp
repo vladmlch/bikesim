@@ -4,6 +4,7 @@
 #include "fixture_paths.hpp"
 #include "golden/spatial_registry.hpp"
 #include "golden/spatial_compare.hpp"
+#include "golden/capture_testing.hpp"
 #include "runtime/setup_values.hpp"
 #include "support/temporary_directory.hpp"
 #include "platform/files.hpp"
@@ -11,6 +12,7 @@
 #include "research/environment.hpp"
 #include "runtime/research_io.hpp"
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <functional>
 #include <filesystem>
@@ -49,6 +51,56 @@ golden::EpisodeArtifact artifact(const Value& manifest) {
     result.ctrl_written=result.qfrc_applied=result.forces=result.tire_state=empty;
     const auto bootstrap=synthetic_bootstrap();set(result.manifest,"spatial_checkpoint_initial",bootstrap);set(result.manifest,"spatial_checkpoint_final",bootstrap);
     return result;
+}
+void nonfinite_comparison_cases(const golden::EpisodeArtifact& expected,
+    const golden::EpisodeArtifact& actual,const Value& entry) {
+    golden::testing::validate_spatial_numeric_evidence(runtime::WireObject{
+        {"state",runtime::WireArray{0.,-0.,std::numeric_limits<double>::max(),true,nullptr}},
+        {"labels",runtime::WireArray{"nan","inf","+inf","-inf"}}});
+    for(const double nonfinite:{std::numeric_limits<double>::quiet_NaN(),
+                               std::numeric_limits<double>::infinity(),
+                               -std::numeric_limits<double>::infinity()}) {
+        const runtime::Wire typed=runtime::WireObject{{"state",runtime::WireArray{0.,nonfinite}}};
+        rejects_with([&]{golden::testing::validate_spatial_numeric_evidence(typed);},
+            "physical_invalid: evidence.state[1]");
+        auto invalid_reference=expected;auto invalid_same=expected;auto invalid_cross=actual;
+        const auto numeric=bike::io::double_array(std::array{nonfinite},{1});
+        invalid_reference.state_qpos=invalid_same.state_qpos=invalid_cross.state_qpos=numeric;
+        for(const auto& [candidate,host]:std::array{
+                std::pair{&invalid_same,"macos-arm64"},std::pair{&invalid_cross,"linux-aarch64"}}) {
+            const auto errors=golden::compare_spatial_artifacts(invalid_reference,*candidate,entry,host);
+            bt::require(!errors.empty()&&errors.front().starts_with("physical_invalid:"),
+                "bit-identical nonfinite engine evidence never qualifies on either platform path");
+        }
+    }
+    for(const auto* spelling:{"nan","+inf","-inf"}) {
+        auto tagged_reference=expected,tagged_same=expected,tagged_cross=actual;
+        const Value tagged{bike::io::Tagged{.kind="float64",.fields={{"value",spelling}}}};
+        for(auto* candidate:{&tagged_reference,&tagged_same,&tagged_cross}) {
+            candidate->channel_names.push_back("typed_numeric");
+            set(candidate->stored_rows[0],"typed_numeric",tagged);
+        }
+        for(const auto& [candidate,host]:std::array{
+                std::pair{&tagged_same,"macos-arm64"},std::pair{&tagged_cross,"linux-aarch64"}}) {
+            const auto errors=golden::compare_spatial_artifacts(tagged_reference,*candidate,entry,host);
+            bt::require(!errors.empty()&&errors.front().starts_with("physical_invalid:"),
+                "typed nonfinite scalar evidence is invalid on same and cross platform paths");
+        }
+        set(tagged_reference.stored_rows[0],"typed_numeric",real(0.));
+        const auto against_finite=golden::compare_spatial_artifacts(tagged_reference,tagged_same,entry,"macos-arm64");
+        bt::require(!against_finite.empty() && against_finite.front().starts_with("physical_invalid:"),
+            "a nonfinite candidate is invalid even when its reference is finite");
+    }
+    for(const auto* spelling:{"nan","inf","+inf","-inf"}) {
+        auto text_reference=expected,text_same=expected,text_cross=actual;
+        for(auto* candidate:{&text_reference,&text_same,&text_cross}) {
+            candidate->channel_names.push_back("text_label");
+            set(candidate->stored_rows[0],"text_label",text(spelling));
+        }
+        bt::require(golden::compare_spatial_artifacts(text_reference,text_same,entry,"macos-arm64").empty() &&
+            golden::compare_spatial_artifacts(text_reference,text_cross,entry,"linux-aarch64").empty(),
+            "literal string labels keep exact equality and are never guessed to be numeric NaN/Inf");
+    }
 }
 void accepted_reference_checks(const Value& pending_entry) {
     bt::TemporaryDirectory root("spatial-golden-reference");
@@ -91,6 +143,7 @@ void accepted_reference_checks(const Value& pending_entry) {
     rejects_with([&]{(void)golden::compare_spatial_artifacts(expected,changed,entry,"linux-aarch64");},"incompatibility: calibration");
     changed=actual;changed.first_failure=text("manufactured physical failure");
     bt::require(golden::compare_spatial_artifacts(expected,changed,entry,"linux-aarch64").front().starts_with("physical_invalid:"),"physical invalidity is distinct from a regression");
+    nonfinite_comparison_cases(expected,actual,entry);
     std::filesystem::remove(root.path()/"episode.npz");
     rejects_with([&]{(void)golden::inspect_spatial_reference(entry,root.path(),"linux-aarch64");},"incompatibility: missing artifact");
     write(root.path()/"episode.npz","changed-artifact");

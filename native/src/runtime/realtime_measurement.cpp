@@ -2,6 +2,7 @@
 #include "setup_values.hpp"
 #include "status.hpp"
 #include "spatial_measurement.hpp"
+#include "../spatial/bootstrap_state.hpp"
 #include "../io/json.hpp"
 #include <algorithm>
 #include <chrono>
@@ -128,7 +129,8 @@ Value measured(Driver& driver, double setup_start,
         set(result, "instrumentation_total_overhead_pending", Value{true});
         const bool complete = measured_ok && identity_unchanged && valid && driver.settings().strict &&
             steps == requested_steps && requested_steps > 0 &&
-            (reason == "duration_reached" || reason == "requested_completion");
+            (reason == "duration_reached" ||
+             reason == bike::spatial::to_string(bike::spatial::SpatialReason::requested_completion));
         set(result, "rtf", real(simulated / wall));
         set(result, "terminal_reason", text(reason));
         set(result, "steps", integer(steps));

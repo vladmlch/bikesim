@@ -8,6 +8,7 @@
 #include "../model_topology.hpp"
 #include "frames.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <limits>
@@ -90,6 +91,10 @@ Value root_value(const RootBinding& root) {
         {"free_dof",integer(root.free_dof_adr)},{"scalar",Value{std::move(scalars)}}}};
 }
 } // namespace
+
+std::string model_fingerprint_hex(const mjModel& model) {
+    return model_digest(model);
+}
 
 std::string topology_fingerprint_hex(const Topology& t) {
     Value::Array riders,wheels;
@@ -200,8 +205,34 @@ Topology bind_topology(const mjModel& m,const Config& cfg) {
         if (actuator<0) invalid("steer_torque","missing actuator");
         const auto actuator_types=model_access::readonly_buffer(m.actuator_trntype,m.nu);
         const auto targets=model_access::readonly_buffer(m.actuator_trnid,2*m.nu);
-        if (actuator_types[static_cast<std::size_t>(actuator)]!=mjTRN_JOINT || targets[2*static_cast<std::size_t>(actuator)]!=steer)
+        const auto ai=static_cast<std::size_t>(actuator);
+        if (actuator_types[ai]!=mjTRN_JOINT || targets[2*ai]!=steer)
             invalid("steer_torque","actuator targets the wrong joint");
+        const auto gear=model_access::readonly_buffer(m.actuator_gear,6*m.nu).subspan(6*ai,6);
+        const auto dynamics=model_access::readonly_buffer(m.actuator_dyntype,m.nu);
+        const auto gains=model_access::readonly_buffer(m.actuator_gaintype,m.nu);
+        const auto biases=model_access::readonly_buffer(m.actuator_biastype,m.nu);
+        const auto gain_parameters=model_access::readonly_buffer(m.actuator_gainprm,mjNGAIN*m.nu);
+        // Commands and accounting are in Nm: a position servo, nonunit gain,
+        // or activation filter cannot masquerade as the named torque motor.
+        if(gear[0]!=1. || !std::ranges::all_of(gear.subspan(1),[](double x){return x==0.;}) ||
+           dynamics[ai]!=mjDYN_NONE || gains[ai]!=mjGAIN_FIXED || biases[ai]!=mjBIAS_NONE ||
+           gain_parameters[mjNGAIN*ai]!=1.)
+            invalid("steer_torque","expected a pure unit-gain torque motor");
+        const auto cap=cfg.steer.torque_cap_nm;
+        if(cap && (!std::isfinite(*cap) || *cap<=0.))
+            invalid("steer_torque","configured torque cap must be finite and positive");
+        const auto check_range=[&](bool limited,std::span<const mjtNum> range) {
+            if(!limited)return;
+            if(!std::isfinite(range[0]) || !std::isfinite(range[1]) || range[0]>=range[1])
+                invalid("steer_torque","enabled actuator limits require finite ordered bounds");
+            if(cap && (range[0]>-*cap || range[1]<*cap))
+                invalid("steer_torque","actuator limits clip the configured torque cap");
+        };
+        check_range(model_access::readonly_buffer(m.actuator_ctrllimited,m.nu)[ai]!=0,
+            model_access::readonly_buffer(m.actuator_ctrlrange,2*m.nu).subspan(2*ai,2));
+        check_range(model_access::readonly_buffer(m.actuator_forcelimited,m.nu)[ai]!=0,
+            model_access::readonly_buffer(m.actuator_forcerange,2*m.nu).subspan(2*ai,2));
         out.steer.actuator_id=actuator;
     }
     std::set<int> rider_bodies;
@@ -211,7 +242,7 @@ Topology bind_topology(const mjModel& m,const Config& cfg) {
         const auto ji=static_cast<std::size_t>(id);
         const int body=jbody[ji];
         model_access::require_id(body,m.nbody,"topology.rider.body");
-        if (parents[static_cast<std::size_t>(body)]!=0 || !rider_bodies.insert(body).second) continue;
+        if (parents[static_cast<std::size_t>(body)]!=0 || rider_bodies.contains(body)) continue;
         if (jtype[ji]==mjJNT_FREE) out.rider_roots.push_back(free_root(m,raw));
         else if (jtype[ji]==mjJNT_BALL) {
             // W00 RootBinding has no BALL kind/span. Never mislabel a four-
@@ -223,13 +254,18 @@ Topology bind_topology(const mjModel& m,const Config& cfg) {
             root.scalar[2]=scalar(m,"rider_root_z",mjJNT_SLIDE,{0.,0.,1.});
             root.scalar[3]=scalar(m,"rider_root_pitch",mjJNT_HINGE,{0.,1.,0.});
             for (const auto& b:root.scalar) if (b.joint_id>=0 && jbody[static_cast<std::size_t>(b.joint_id)]!=body) invalid("rider_roots","scalar coordinates must share one body");
+            if(counts[static_cast<std::size_t>(body)]!=3)
+                invalid("rider_roots","unexpected planar rider root joint inventory");
             out.rider_roots.push_back(root);
-        }
+        } else continue;
+        // A leading scalar pitch hinge is not itself a root descriptor. Do
+        // not mark its body consumed until the complete root has been bound.
+        rider_bodies.insert(body);
     }
     out.imu_site_id=mj_name2id(&m,mjOBJ_SITE,"imu_site_spatial");
     const auto site_bodies=model_access::readonly_buffer(m.site_bodyid,m.nsite);
     if (out.imu_site_id>=0 && site_bodies[static_cast<std::size_t>(out.imu_site_id)]!=out.root.body_id) invalid("imu_site_spatial","must belong to frame");
-    out.model_sha256_hex=model_digest(m);out.fingerprint_hex=topology_fingerprint_hex(out);
+    out.model_sha256_hex=model_fingerprint_hex(m);out.fingerprint_hex=topology_fingerprint_hex(out);
     return out;
 }
 

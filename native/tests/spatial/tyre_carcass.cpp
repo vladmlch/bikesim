@@ -55,6 +55,30 @@ int main() { return bt::run([] {
     elements[0].valid=false;
     bt::require(update_carcass(spec,elements,.001,true,s,out)==CoreStatus::ok && !out[0].active && out[0].normal_load_n==0.,"invalid geometry cannot create a maximal force");
 
+    // An initially unloaded Maxwell branch stores k*d^2/2 to leading
+    // order, but its loss is k*d^2*(dt/tau)/3. Computing the latter as
+    // three O(q_ss^2*dt) terms loses all significant digits at small dt.
+    auto short_spec=spec;
+    short_spec.k_area_n_per_m3=0.;short_spec.rim_stiffness_n_per_m3=0.;
+    short_spec.maxwell_k_n_per_m3=1e6;short_spec.maxwell_tau_s=1.;
+    auto short_state=carcass_state(1);
+    std::array<ContactElement3d,1> short_elements{element(0,.001,1.)};
+    bt::require(update_carcass(short_spec,short_elements,1e-9,true,short_state,out)==CoreStatus::ok,
+                "short Maxwell ramp remains finite");
+    const double short_loss=1e-9/3.;
+    bt::require(std::abs(out[0].dissipated_work_j-short_loss)<=2e-9*short_loss,
+                "short Maxwell ramp retains its independently expanded positive loss");
+
+    auto relaxed_spec=short_spec;
+    relaxed_spec.maxwell_k_n_per_m3=1.;
+    auto relaxed_state=carcass_state(1);
+    relaxed_state.maxwell_q_n_per_m2[0]=1e9;
+    short_elements[0].penetration_m=1e-9;
+    bt::require(update_carcass(relaxed_spec,short_elements,100.,true,relaxed_state,out)==CoreStatus::ok,
+                "large relaxation interval remains finite");
+    bt::require(std::abs(relaxed_state.maxwell_q_n_per_m2[0]-1e-11)<=1e-23,
+                "relaxation preserves the small nonzero steady stress");
+
     auto overflowing=carcass_state(1);
     overflowing.maxwell_q_n_per_m2[0]=1e154;
     overflowing.dissipated_j=std::numeric_limits<double>::max();

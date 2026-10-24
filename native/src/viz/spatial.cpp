@@ -54,6 +54,9 @@ void segments(Plot& plot, const std::vector<double>& x, const std::vector<double
     bool gap = false;
     const auto finish = [&] {
         if (!current.x.empty()) {
+            // A one-sample valid island has no line segment. Explicit points
+            // keep it visible in both native HTML and the Plotly backend.
+            if(current.x.size()==1)current.style=SeriesStyle::points;
             plot.series.push_back(std::move(current));
             current = Series{.name=name, .x={}, .y={}, .color=color};
         }

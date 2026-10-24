@@ -219,7 +219,12 @@ private:
     // stack-budget sweep green on unoptimized builds.
     struct ContinuationTag {};
     NativeRideRuntime(RuntimeBootstrap bootstrap, ContinuationTag);
-    void init(bool continuation = false);
+    // Private observational arena: current physical state, no accounting or
+    // publication owner. It cannot escape the guarded probe implementation.
+    struct ProbeTag {};
+    NativeRideRuntime(RuntimeBootstrap bootstrap, ProbeTag, const bike::rider::SteerProfile*);
+    void init(bool continuation = false, bool probe = false,
+              const bike::rider::SteerProfile* acquired_steer_profile = nullptr);
     void apply_bootstrap();
     void initialize_accounting(bool continuation = false);
     void test_failure_boundary();

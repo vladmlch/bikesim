@@ -6,6 +6,7 @@
 #include "pneumatic3d/kernel_math.hpp"
 #include "spatial/frames.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <iostream>
@@ -60,6 +61,34 @@ int main() { return bt::run([] {
     for(auto& e:elements) e.valid=true;
     kin.hub.linear_velocity_world_mps={-.1,0.,0.};
     bt::require(update_detailed_brush(spec,elements,normal,kin,.001,true,s,out)==CoreStatus::ok && out[0].fx_n>0.,"reverse reentry force opposes slip");
+
+    // Identical material cells can arrive across a fan seam in a different
+    // order. The energy ledger is a material-order reduction, independent of
+    // that enumeration. 1e16 + 1 + 1 + 1 exposes a fan-order floating sum.
+    auto order_spec=spec;order_spec.kx_n_per_m3=order_spec.ky_n_per_m3=2.;
+    order_spec.mu_x_scale=order_spec.mu_y_scale=1.;
+    std::array<ContactElement3d,4> ordered_elements;
+    std::array<NormalElement3d,4> ordered_normal{};
+    auto ordered=brush_state(1,4);
+    for(std::size_t i=0;i<4;++i) {
+        ordered_elements[i]=element(static_cast<std::uint32_t>(i),.01,1.);
+        ordered_normal[i].active=true;ordered_normal[i].normal_load_n=1e16;
+        ordered.bristle_ux_m[i]=i==0 ? 1e8 : 1.;
+        ordered.bristle_energy_j[i]=ordered.bristle_ux_m[i]*ordered.bristle_ux_m[i];
+        ordered.elastic_energy_j+=ordered.bristle_energy_j[i];
+    }
+    auto reversed=ordered;
+    auto reversed_elements=ordered_elements;
+    std::reverse(reversed_elements.begin(),reversed_elements.end());
+    const auto stationary=spatial_tests::wheel_at({0.,0.,order_spec.r_eff_m},0.,0.,0.,0.);
+    std::array<PatchWrench,4> ordered_out{},reversed_out{};
+    bt::require(update_detailed_brush(order_spec,ordered_elements,ordered_normal,stationary,.001,true,ordered,ordered_out)==CoreStatus::ok &&
+                update_detailed_brush(order_spec,reversed_elements,ordered_normal,stationary,.001,true,reversed,reversed_out)==CoreStatus::ok,
+                "both material-cell enumerations are valid controls");
+    bt::require(bytes(ordered)==bytes(reversed),"material state and energy are invariant under fan enumeration");
+    for(std::size_t i=0;i<4;++i)
+        bt::require(ordered_out[i].force_world_n==reversed_out[3-i].force_world_n,
+                    "per-element output retains the caller's order");
 
     // A zero-width Stribeck transition still has a static peak at exactly
     // zero slip; the fast owner uses the same convention.

@@ -11,11 +11,20 @@ std::string generate_mjcf(const BuildRequest& request) {
     if (request.benchmark_whipple) return generate_whipple_mjcf(*request.benchmark_whipple);
     auto physics=request.physics?
         std::make_unique<configuration::SimulationPhysicsConfig>(*request.physics):nullptr;
+    if(request.spatial && physics && physics->spatial &&
+       (request.spatial->mode!=physics->spatial->mode ||
+        (request.spatial->mode==bike::spatial::Mode::spatial3d &&
+         bike::spatial::spatial_config_fingerprint_hex(*request.spatial)!=
+         bike::spatial::spatial_config_fingerprint_hex(*physics->spatial))))
+        throw std::invalid_argument("model.spatial: model and physics configurations differ");
     if(request.spatial && request.spatial->mode==bike::spatial::Mode::spatial3d) {
         if(!physics) throw std::invalid_argument("spatial_3d: physical configuration required");
         physics->spatial=request.spatial;
     }
     if(physics) configuration::post_init(*physics);
+    if(request.terrain3d && (!physics || !physics->spatial ||
+       physics->spatial->mode!=bike::spatial::Mode::spatial3d))
+        throw std::invalid_argument("model.terrain3d: spatial source requires spatial physics");
     const bool physical=physics && physics->physics_mode=="physical";
     if(physical && request.mode!="ride") throw std::invalid_argument("physical configuration requires ride mode");
     if(physical && request.tyre_model!="sphere") throw std::invalid_argument("legacy pneumatic tyre_model is not a physical backend; configure physics_config.tires");

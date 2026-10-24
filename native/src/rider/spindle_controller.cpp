@@ -448,8 +448,16 @@ SpindleController::SpindleController(const mjModel *model,
             const auto transmissions = model_access::readonly_buffer(model->actuator_trntype, model->nu);
             const auto ids = model_access::readonly_buffer(model->actuator_trnid, 2*model->nu);
             const auto gear = model_access::readonly_buffer(model->actuator_gear, 6*model->nu);
+            const auto dynamics = model_access::readonly_buffer(model->actuator_dyntype, model->nu);
+            const auto gains = model_access::readonly_buffer(model->actuator_gaintype, model->nu);
+            const auto biases = model_access::readonly_buffer(model->actuator_biastype, model->nu);
+            const auto gain_parameters = model_access::readonly_buffer(model->actuator_gainprm, mjNGAIN*model->nu);
+            const auto motor = static_cast<std::size_t>(actuator);
             if (types[j] != mjJNT_HINGE || transmissions[static_cast<std::size_t>(actuator)] != mjTRN_JOINT ||
-                ids[2*static_cast<std::size_t>(actuator)] != joint || gear[6*static_cast<std::size_t>(actuator)] != 1.)
+                ids[2*motor] != joint || gear[6*motor] != 1. || dynamics[motor] != mjDYN_NONE ||
+                !std::ranges::all_of(gear.subspan(6*motor+1,5),[](double x){return x==0.;}) ||
+                gains[motor] != mjGAIN_FIXED || biases[motor] != mjBIAS_NONE ||
+                gain_parameters[mjNGAIN*motor] != 1.)
                 throw std::invalid_argument("rider.spatial."+std::string(name)+": scalar hinge and owned unit motor required");
             if (is_swivel(name)) {
                 const auto axes = model_access::readonly_buffer(model->jnt_axis, 3*model->njnt);

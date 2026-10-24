@@ -309,6 +309,16 @@ CoreStatus Pneumatic3dModel::evaluate(const std::array<WheelKinematics3d,2>& kin
                 const auto slot=staging_.patches[w].element_to_patch_slot[i];
                 if(slot<staging_.patches[w].ids.size())wrench_[w][i].patch_id=staging_.patches[w].ids[slot];
             }
+            // The supported fan traverses increasing theta over < 2*pi,
+            // with phi as its inner loop. material_cell=theta_row*n_phi+phi
+            // therefore has at most one cyclic wrap. Detailed evaluation
+            // has already rejected duplicate material cells. Rotate complete
+            // wrenches only after assigning their real patch IDs, so every
+            // later world/Jacobian reduction uses fixed material order and
+            // keeps each force, point and patch association together.
+            const auto first=std::min_element(elements_[w].begin(),elements_[w].end(),
+                [](const auto& a,const auto& b) noexcept {return a.material_cell<b.material_cell;});
+            std::rotate(wrench_[w].begin(),wrench_[w].begin()+(first-elements_[w].begin()),wrench_[w].end());
         }
         if(advance && dt>0.)staging_.carcass[w].material_phase_rad=std::remainder(kin[w].wheel_phase_rad,2.*std::numbers::pi);
     }

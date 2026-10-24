@@ -180,8 +180,14 @@ void validate_material(const SetupContext& context,Material& candidate,
             context.physical.rider_control().validate_spatial_lanes(*candidate.controller,qpos,qvel);
         else context.physical.rider_control().validate_state(*candidate.controller);
     }
-    if(candidate.spatial)
+    if(candidate.spatial) {
         candidate.spatial=context.physical.prepare_spatial_state(*candidate.spatial);
+        if(context.bootstrap_hold) {
+            auto hold=*context.bootstrap_hold;
+            if(hold.restore(candidate.spatial->hold)!=CoreStatus::ok)
+                throw std::invalid_argument("state.spatial.hold: bootstrap owner rejected staged state");
+        }
+    }
     if(candidate.tire3d) {
         // Validate the actual kernel on an independent owner before any live
         // drive/model/controller row changes. W27 owns atomic kernel restore.

@@ -5,6 +5,7 @@
 #include "support/tyre_fixture.hpp"
 #include "allocation_faults.hpp"
 #include "writers/pneumatic_3d_tire.hpp"
+#include "writers/spatial_tire_adapter.hpp"
 #include "spatial/frames.hpp"
 #include "runtime/runtime.hpp"
 #include "engine_call.hpp"
@@ -18,6 +19,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <new>
 #include <numbers>
 #include <random>
 #include <span>
@@ -30,6 +32,23 @@ namespace sp=bike::spatial;
 namespace pn=bike::pneumatic3d;
 using Vec=sp::Vec3;
 using Writer=pn::Pneumatic3dTireWriter;
+void allocation_probe_control() {
+    constexpr auto alignment=std::align_val_t{2*__STDCPP_DEFAULT_NEW_ALIGNMENT__};
+    bool rejected=false;
+    try {
+        void* pointer=::operator new(std::numeric_limits<std::size_t>::max(),alignment);
+        ::operator delete(pointer,alignment);
+    } catch(const std::bad_alloc&) {rejected=true;}
+    bt::require(rejected,"allocation probe cannot wrap a huge aligned request into a small successful buffer");
+    void* huge=::operator new(std::numeric_limits<std::size_t>::max(),alignment,std::nothrow);
+    const bool null_result=huge==nullptr;
+    ::operator delete(huge,alignment);
+    bt::require(null_result,
+                "nothrow allocation probe preserves rejection of unrepresentable aligned size");
+    void* pointer=::operator new(1,alignment);
+    bt::require(pointer!=nullptr,"ordinary aligned allocation remains valid after an oversized request");
+    ::operator delete(pointer,alignment);
+}
 double dot(const Vec& a,const Vec& b) {return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
 Vec cross(const Vec& a,const Vec& b) {
     return {a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]};
@@ -172,6 +191,47 @@ void restore_rejections(Writer& writer) {
     wrong=good;wrong.brush[0].elastic_energy_j=std::numeric_limits<double>::quiet_NaN();reject(wrong);
     bt::require(writer.restore(good)==CoreStatus::ok&&writer.state_bytes()==before,"valid complete restore is exact");
 }
+void projection_failure(st::RigModel& rig,Writer& writer,
+                        const bike::terrain::Terrain3dSource& terrain,double dt) {
+    namespace tr=bike::terrain;
+    struct Fault {tr::Terrain3dQueryView source;bool reject=false;} fault{terrain.query_view()};
+    auto view=fault.source;view.context=&fault;
+    view.sample_fn=[](const void* raw,double x,double y) noexcept -> tr::GridSample3d {
+        const auto& state=*static_cast<const Fault*>(raw);
+        if(state.reject)return {.status=tr::QueryStatus3d::invalid_input};
+        return state.source.sample(x,y);
+    };
+    view.ray_fn=[](const void* raw,Vec origin,Vec direction,double distance) noexcept {
+        return static_cast<const Fault*>(raw)->source.ray_cast(origin,direction,distance);
+    };
+    SpatialTireAdapter adapter(*rig.model,rig.topology,writer,view);
+    (void)adapter.probe_qfrc(rig.data,dt);
+    const auto before=adapter.probe_snapshots();const auto material=writer.state_bytes();
+    std::size_t contacts=0;for(const auto& wheel:before)if(wheel)contacts+=wheel->patches.size();
+    bt::require(contacts>0,"projection fault control has previously published contact snapshots");
+    fault.reject=true;bool rejected=false;
+    try {(void)adapter.probe_qfrc(rig.data,dt);}
+    catch(const pn::SpatialTireEvaluationError&){rejected=true;}
+    bt::require(rejected&&writer.state_bytes()==material,"failed projection cannot advance material state");
+    const auto after=adapter.probe_snapshots();
+    for(std::size_t w=0;w<2;++w) {
+        bt::require(before[w].has_value()&&after[w].has_value(),"previous complete probe pair remains published");
+        const auto& a=*before[w];const auto& b=*after[w];
+        bt::require(a.time_s==b.time_s&&a.interval_id==b.interval_id&&a.backend==b.backend&&
+            a.geometric_contact==b.geometric_contact&&a.wheel_axis_m==b.wheel_axis_m&&
+            a.effective_radius_m==b.effective_radius_m&&a.patches.size()==b.patches.size(),
+            "failed replacement preserves all previously published snapshot fields");
+        for(std::size_t i=0;i<a.patches.size();++i) {
+            const auto& x=a.patches[i];const auto& y=b.patches[i];
+            bt::require(x.point_m==y.point_m&&x.normal==y.normal&&x.normal_load_n==y.normal_load_n&&
+                x.tangent_force_n==y.tangent_force_n&&x.slip_mps==y.slip_mps&&
+                x.working_surface==y.working_surface&&x.native_world_force_n==y.native_world_force_n&&
+                x.couple_world_nm==y.couple_world_nm,"failed projection preserves every published contact");
+        }
+    }
+    fault.reject=false;(void)adapter.probe_qfrc(rig.data,dt);
+    bt::require(writer.state_bytes()==material,"valid projection retry remains observational");
+}
 void warm_window(st::RigModel& rig,Writer& writer,std::span<double> out,double dt) {
     // Warm error frames and engine Jacobian scratch before counting. This
     // hook measures executable-owned new/delete, not hidden vendor malloc.
@@ -195,6 +255,16 @@ void warm_window(st::RigModel& rig,Writer& writer,std::span<double> out,double d
 void exercise(st::RigModel& rig,sp::TyreTier tier,const bike::terrain::Terrain3dSource& terrain) {
     const auto spec=specification(rig,tier);
     auto writer=std::make_unique<Writer>(*rig.model,rig.topology,spec,terrain,identity(spec,rig.topology,terrain));
+    // Dimensions and a self-consistent topology hash do not bind another
+    // compiled model with the same joint layout and different physical data.
+    const auto root_body=static_cast<std::size_t>(rig.topology.root.body_id);
+    const auto old_mass=rig.model->body_mass[root_body];
+    rig.model->body_mass[root_body]=old_mass+1.;
+    bt::invalid([&] {
+        (void)std::make_unique<Writer>(*rig.model,rig.topology,spec,terrain,
+                                      identity(spec,rig.topology,terrain));
+    });
+    rig.model->body_mass[root_body]=old_mass;
     const auto initial=writer->state();const auto nv=static_cast<std::size_t>(rig.model->nv);
     std::vector<double> force(nv),seed(nv);
     const auto qvel=model_access::mutable_buffer(rig.data->qvel,rig.model->nv,"qvel");
@@ -212,6 +282,7 @@ void exercise(st::RigModel& rig,sp::TyreTier tier,const bike::terrain::Terrain3d
         couples+=virtual_work(rig,*writer,force,seed).couple_magnitude;
         bt::require(writer->state_bytes()==before,"force probe is observational for every material byte");
         bt::require(st::complete_state_bytes(rig)==engine_before,"writer probe preserves engine integration and model bytes");
+        if(trial==0 && tier==sp::TyreTier::detailed)projection_failure(rig,*writer,terrain,dt);
         force=seed;
         bt::require(writer->try_compute_into(rig.data,dt,true,force)==CoreStatus::ok,"first interval is accepted once");
         (void)virtual_work(rig,*writer,force,seed);
@@ -277,6 +348,7 @@ NATIVE_DIAG_POP
 } // namespace
 
 int main(){return bt::run([] {
+    allocation_probe_control();
     bike::terrain::Terrain3dSource terrain(st::plane_grid(0.,0.,0.,129,65,.125,.125));
     for(auto tier:{sp::TyreTier::fast,sp::TyreTier::detailed}) {
         auto mixed=st::mixed_joint_rig();

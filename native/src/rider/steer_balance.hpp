@@ -7,9 +7,16 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace bike::rider {
+
+// Other nonempty identifiers name external profile files. Keep acquisition,
+// recording and replay on the same versioned built-in/source distinction.
+inline constexpr bool builtin_steer_profile(std::string_view id) noexcept {
+    return id.empty() || id == "roll-heading-v1" || id == "steer-provisional-v1";
+}
 
 struct SteerInput {
     std::int64_t control_tick = 0;
@@ -39,6 +46,7 @@ class SteerBalance {
 public:
     SteerBalance(SteerProfile, double control_period_s);
     double tick(const SteerInput&) noexcept;
+    const SteerProfile& profile() const noexcept { return profile_; }
     const bike::spatial::SteerState& state() const noexcept;
     CoreStatus restore(const bike::spatial::SteerState&) noexcept;
     void reset() noexcept;

@@ -27,6 +27,20 @@ bool checked_product(std::uint64_t a, std::uint64_t b, std::uint64_t& result) no
     return true;
 }
 
+bool distinct_nodes(double origin, double spacing, std::uint64_t nodes) noexcept {
+    // A positive spacing and a finite, nonempty total extent do not imply
+    // representable cells. At a large world offset, adjacent authored nodes
+    // can round to the same binary64 coordinate while the final node moves.
+    // Check the exact coordinate expression used by sampling and DDA.
+    double previous = origin;
+    for (std::uint64_t i = 1; i < nodes; ++i) {
+        const double current = origin + static_cast<double>(i) * spacing;
+        if (!(current > previous)) return false;
+        previous = current;
+    }
+    return true;
+}
+
 } // namespace
 
 std::expected<Grid3d, std::string> Grid3d::create(
@@ -56,6 +70,10 @@ std::expected<Grid3d, std::string> Grid3d::create(
         return invalid("terrain3d.header.x0_m", "unrepresentable x domain");
     if (!std::isfinite(y1) || !(y1 > desc.y0_m))
         return invalid("terrain3d.header.y0_m", "unrepresentable y domain");
+    if (!distinct_nodes(desc.x0_m, desc.dx_m, desc.nx))
+        return invalid("terrain3d.header.dx_m", "adjacent x nodes have identical world coordinates");
+    if (!distinct_nodes(desc.y0_m, desc.dy_m, desc.ny))
+        return invalid("terrain3d.header.dy_m", "adjacent y nodes have identical world coordinates");
     if (budget.max_cells == 0) return invalid("terrain3d.budget.max_cells", "must be positive");
     if (budget.stack_capacity == 0 || budget.stack_capacity > 128)
         return invalid("terrain3d.budget.stack_capacity", "must be in [1,128]");

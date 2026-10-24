@@ -15,7 +15,9 @@ SpatialTireAdapter::SpatialTireAdapter(const mjModel& m,const bike::spatial::Top
     for(std::size_t w=0;w<2;++w) {
         model_access::require_id(topology_.wheels[w].wheel_body_id,m.nbody,"pneumatic_3d.wheel_body");
         model_access::require_id(topology_.wheels[w].hub_body_id,m.nbody,"pneumatic_3d.hub_body");
-        for(auto* lane:{&snapshots_[w],&probes_[w]}){lane->backend="pneumatic_3d";lane->patches.reserve(bound);}
+        for(auto* lane:{&snapshots_[w],&probes_[w],&projection_stage_[w]}) {
+            lane->backend="pneumatic_3d";lane->patches.reserve(bound);
+        }
         diagnostics_[w].surface="terrain3d";diagnostics_[w].calibration_status="provisional";
         diagnostics_[w].capability_status="qualification_pending";
         diagnostics_[w].supports_multiple_contacts=true;
@@ -70,7 +72,7 @@ CoreStatus SpatialTireAdapter::project(const mjData& data) noexcept {
     try {positions=model_access::readonly_buffer(data.xpos,3*model_->nbody,"pneumatic_3d.xpos");}
     catch(...) {return CoreStatus::invalid_input;}
     for(std::size_t w=0;w<2;++w) {
-        auto& s=probes_[w];s.time_s=data.time;s.interval_id=writer_->state().accepted_interval;
+        auto& s=projection_stage_[w];s.time_s=data.time;s.interval_id=writer_->state().accepted_interval;
         s.patches.clear();s.geometric_contact=false;
         const auto wheel=static_cast<std::size_t>(topology_.wheels[w].wheel_body_id);
         for(std::size_t a=0;a<3;++a)s.wheel_axis_m[a]=positions[3*wheel+a];
@@ -105,7 +107,10 @@ CoreStatus SpatialTireAdapter::project(const mjData& data) noexcept {
         }
         s.effective_radius_m=weight>0.?radius/weight:radii_[w];
     }
-    probed_=true;
+    // Terrain projection can fail on either wheel after the previous pair
+    // was published. Keep that pair intact until the whole replacement is
+    // ready; both vector sets have the same cold-reserved capacity.
+    probes_.swap(projection_stage_);probed_=true;
     return CoreStatus::ok;
 }
 void SpatialTireAdapter::publish_probe(const mjData& data) noexcept {

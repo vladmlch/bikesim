@@ -52,5 +52,16 @@ int main() {
         const double next = std::nextafter(5., 6.);
         bt::require(!latency_goal_met(10., next, true, true),
                     "one representable step above the latency boundary is rejected");
+        const double unit = std::numeric_limits<double>::denorm_min();
+        bt::require(!latency_goal_met(3. * unit, 2. * unit, true, true),
+                    "rounding an odd subnormal baseline cannot invent a twofold section gain");
+        bt::require(latency_goal_met(4. * unit, 2. * unit, true, true),
+                    "the exact twofold subnormal section boundary still qualifies");
+        bt::require(!interactive_goal_met(unit, unit, unit, unit, true, true),
+                    "identical subnormal section and ride times cannot qualify");
+        bt::require(!interactive_goal_met(2. * unit, unit, 11. * unit, 10. * unit, true, true),
+                    "subnormal ride rounding cannot turn a nine-percent gain into ten percent");
+        bt::require(interactive_goal_met(2. * unit, unit, 10. * unit, 9. * unit, true, true),
+                    "exact ten-percent full-ride gain remains inclusive for finite subnormal inputs");
     });
 }

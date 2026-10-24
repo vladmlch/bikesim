@@ -50,11 +50,21 @@ void spatial_initial_velocity(SetupContext& context,const runtime::WheelSnapshot
     context.stepper.note_posvel_stale();context.stepper.forward();
     for(std::size_t side=0;side<2;++side) {
         if(!snapshots[side])throw std::invalid_argument("initial_speed.spatial.tire: snapshot missing");
+        // Each wheel can occupy a different slope. Use the same physical
+        // contact inventory and load weights as its effective radius, rather
+        // than the terrain normal sampled below the root for heading speed.
+        spatial::Vec3 wheel_normal{};
+        for(const auto& patch:snapshots[side]->patches)if(patch.working_surface && patch.normal_load_n>0.)
+            for(std::size_t i=0;i<3;++i)wheel_normal[i]+=patch.normal_load_n*patch.normal[i];
+        const double normal_length=std::hypot(wheel_normal[0],wheel_normal[1],wheel_normal[2]);
+        if(!std::isfinite(normal_length) || !(normal_length>0.))
+            throw std::invalid_argument("initial_speed.spatial.tire: loaded contact normal missing");
+        for(double& component:wheel_normal)component/=normal_length;
         const auto& wheel=topology.wheels[side];
         const auto q=static_cast<std::size_t>(wheel.hub_body_id)*4;
         const auto axle=spatial::rotate_body_to_world({rotations[q],rotations[q+1],rotations[q+2],rotations[q+3]},wheel.axle_axis_hub);
-        spatial::Vec3 tangent{axle[1]*normal[2]-axle[2]*normal[1],
-            axle[2]*normal[0]-axle[0]*normal[2],axle[0]*normal[1]-axle[1]*normal[0]};
+        spatial::Vec3 tangent{axle[1]*wheel_normal[2]-axle[2]*wheel_normal[1],
+            axle[2]*wheel_normal[0]-axle[0]*wheel_normal[2],axle[0]*wheel_normal[1]-axle[1]*wheel_normal[0]};
         const double norm=std::sqrt(tangent[0]*tangent[0]+tangent[1]*tangent[1]+tangent[2]*tangent[2]);
         if(!(norm>1e-12))throw std::invalid_argument("initial_speed.spatial.tire: axle parallel to surface normal");
         for(double& component:tangent)component/=norm;
@@ -138,6 +148,17 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
     auto& physical=context.physical;auto& stepper=context.stepper;mjData* d=stepper.data();mjModel* m=stepper.model();
     if(context.topology) {
         auto causal=*physical.spatial_state();
+        // An imported phase is state, not evidence that this pose can support
+        // itself. Recheck released imports (including PhysicalInitialState)
+        // before any lifecycle/accounting mutation. The one-point probe
+        // restores the complete incoming integration and material inventory.
+        const bool released=causal.bootstrap_phase>=spatial::BootstrapPhase::armed;
+        if(released || !context.bootstrap_hold || !context.spatial_report) {
+            (void)spatial_refine(context,1,.05);
+            context.equilibrium->spatial=context.spatial_report;
+        }
+        if((released || !context.bootstrap_hold) && !context.spatial_report->errors.empty())
+            throw std::invalid_argument("spatial equilibrium: "+context.spatial_report->errors.front());
         if(causal.bootstrap_phase<spatial::BootstrapPhase::armed) {
             // Equilibrium accepted intervals live on their own clock. Retain
             // the physical brake latch but start scored interval numbering at
@@ -172,9 +193,10 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
         causal.bootstrap_phase=spatial::BootstrapPhase::armed;
         causal.hold.active=false;causal.hold.phase=spatial::BootstrapPhase::armed;
         causal.hold.last_force_world_n={};causal.hold.last_couple_world_nm={};causal.hold.stored_energy_j=0.;
-        if(context.bootstrap_hold && context.bootstrap_hold->restore(causal.hold)!=CoreStatus::ok)
+        auto armed=physical.prepare_spatial_state(causal);
+        if(context.bootstrap_hold && context.bootstrap_hold->restore(armed.hold)!=CoreStatus::ok)
             throw std::invalid_argument("bootstrap.hold: armed state rejected");
-        physical.commit_spatial_state(physical.prepare_spatial_state(causal));
+        physical.commit_spatial_state(std::move(armed));
     }
     d->time=0.;physical.step_=0;physical.generation_=1;physical.initializing_=false;
     physical.control_clock_.reset();physical.contact_query_.restore({});physical.probe_query_.restore({});
@@ -245,9 +267,10 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
         causal.bootstrap_phase=spatial::BootstrapPhase::scored;
         causal.hold.phase=spatial::BootstrapPhase::scored;causal.hold.active=false;
         causal.hold.last_force_world_n={};causal.hold.last_couple_world_nm={};causal.hold.stored_energy_j=0.;
-        if(context.bootstrap_hold && context.bootstrap_hold->restore(causal.hold)!=CoreStatus::ok)
+        auto scored=physical.prepare_spatial_state(causal);
+        if(context.bootstrap_hold && context.bootstrap_hold->restore(scored.hold)!=CoreStatus::ok)
             throw std::invalid_argument("bootstrap.hold: scored state rejected");
-        physical.commit_spatial_state(physical.prepare_spatial_state(causal));
+        physical.commit_spatial_state(std::move(scored));
     }
     physical.research_accounting_valid_=true;context.completed=true;
 }

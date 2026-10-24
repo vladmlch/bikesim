@@ -251,7 +251,7 @@ WireObject PresentationState::as_wire() const {
     };
     WireObject row{{"time_s", time_s}, {"x_m", position_m}, {"rtf", nullptr},
         {"speed_kmh", speed_mps * 3.6}, {"pitch_deg", degrees(pitch_rad)},
-        {"grade_pct", 0.}, {"obstacle", ""}, {"obstacle_distance_m", ""},
+        {"grade_pct", spatial ? Wire{nullptr} : Wire{0.}}, {"obstacle", ""}, {"obstacle_distance_m", ""},
         {"front_load_n", front_load_n}, {"rear_load_n", rear_load_n},
         {"fork_travel_mm", fork_travel_mm}, {"fork_velocity_mps", fork_velocity_mps},
         {"fork_force_n", fork_force_n}, {"shock_stroke_mm", shock_stroke_mm},

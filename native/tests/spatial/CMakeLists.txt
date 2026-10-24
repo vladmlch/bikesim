@@ -76,6 +76,8 @@ bike_add_spatial_test(drive SOURCES test_drive.cpp
   LIBRARIES bike_spatial bike_golden_test bike_initialization LABELS topology drive)
 bike_add_spatial_test(rider SOURCES test_rider.cpp
   LIBRARIES bike_rider_spatial bike_initialization LABELS topology rider)
+bike_add_spatial_test(road_preview SOURCES road_preview.cpp
+  LIBRARIES bike_startup_runtime LABELS topology rider terrain)
 bike_add_spatial_test(grip SOURCES test_grip.cpp
   LIBRARIES bike_rider_spatial bike_initialization LABELS topology rider slow)
 bike_add_spatial_test(runtime_state SOURCES test_runtime_state.cpp
@@ -167,7 +169,7 @@ bike_add_spatial_test(pacer_report SOURCES pacer_report.cpp
   LIBRARIES bike_viewer LABELS performance unit)
 bike_add_spatial_test(worker_ranges SOURCES worker_ranges.cpp
   LIBRARIES bike_spatial_workers LABELS performance unit)
-bike_add_spatial_test(worker_pool SOURCES worker_pool.cpp
+bike_add_spatial_test(worker_pool SOURCES worker_pool.cpp $<TARGET_OBJECTS:bike_test_allocation_faults>
   LIBRARIES bike_spatial_workers bike_pneumatic3d LABELS performance lifecycle)
 bike_add_spatial_test(thread_invariance SOURCES thread_invariance.cpp
   LIBRARIES bike_startup_runtime bike_pneumatic3d bike_initialization bike_validation bike_spatial bike_app bike_recording
@@ -200,7 +202,7 @@ endif()
 
 foreach(_spatial_test IN ITEMS terrain_codec terrain_sampling terrain_raycast terrain_generator
     terrain_extrusion terrain_startup terrain_acceptance terrain_budget_300m topology frames model
-    force_mapping drive rider grip runtime_state planar_bridge planar_bridge_long topology_negatives
+    force_mapping drive rider grip road_preview runtime_state planar_bridge planar_bridge_long topology_negatives
     tyre_geometry tyre_carcass tyre_patches tyre_brush_fast tyre_brush_detailed tyre_writer
     brake_static_3d tyre_state tyre_qualification equilibrium bootstrap_hold startup_paths steer_controller outcomes meijaard
     cornering mirror timestep target_rides sensor_mount sensor_pipeline policy_v2 truth_metrics

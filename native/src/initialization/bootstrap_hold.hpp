@@ -15,7 +15,7 @@ class BootstrapHold {
 public:
     BootstrapHold(const bike::spatial::BootstrapConfig&,
                   const bike::spatial::RootBinding&, const mjModel&);
-    // phase >= armed: exact zero contribution, committed state unchanged.
+    // phase >= armed: exact zero contribution; cumulative work is unchanged.
     CoreStatus try_compute_into(const mjModel&, const mjData&,
                                 bike::spatial::BootstrapPhase,
                                 std::span<double> qfrc) noexcept;

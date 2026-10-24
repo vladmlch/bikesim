@@ -14,6 +14,11 @@ void profile_and_physical(const ride::Report& report,const ride::ProfilePin& pin
         "qualification cannot drift to different tyre or steering source content");
     bt::require(report.invalid_ticks==0 && report.hold_ticks==0,
         "target ride remains physical throughout every scored interval");
+    bt::require(report.max_abs_hold_work==0.,"no accepted physics interval contains bootstrap hold work");
+    bt::require(report.max_abs_steer<=40.+1e-12 && report.max_abs_motor_torque<=85.+1e-9,
+        "steering and motor ceilings hold on every physics interval, including between observations");
+    bt::require(report.max_brake_budget_error<=1e-6,"one brake budget holds on every physics interval");
+    bt::require(report.max_ellipse<=1.+1e-10,"every physics interval obeys each material friction ellipse");
     for(const auto& p:report.points) {
         bt::require(p.valid && !p.hold && p.hold_work==0.,"target ride has no bootstrap hold work or invalid contact");
         bt::require(std::abs(p.steer)<=40.+1e-12 && std::abs(p.motor_torque)<=85.+1e-9,
@@ -21,6 +26,38 @@ void profile_and_physical(const ride::Report& report,const ride::ProfilePin& pin
         bt::require(p.brake_budget_error<=1e-6,"solved friction plus bite obey one brake torque budget");
         bt::require(p.ellipse<=1.+1e-10,"each actual material patch shares its Stribeck friction ellipse");
     }
+}
+void undecimated_limits() {
+    const ride::ProfilePin pin{};
+    const ride::Point valid;
+    for(unsigned lane=0;lane<6;++lane) {
+        ride::Report report;report.points={valid,valid};
+        ride::record_limits(report,valid);
+        auto between=valid;
+        if(lane==0)between.steer=41.;
+        if(lane==1)between.motor_torque=86.;
+        if(lane==2)between.brake_budget_error=.01;
+        if(lane==3)between.ellipse=1.01;
+        if(lane==4)between.hold_work=.01;
+        if(lane==5)between.motor_torque=std::numeric_limits<double>::quiet_NaN();
+        ride::record_limits(report,between);
+        ride::record_limits(report,valid);
+        // The trajectory stores only the two valid endpoints. A violation in
+        // the omitted interval must still fail the physical acceptance gate.
+        const std::string_view expected=lane<2 || lane==5
+            ? "steering and motor ceilings hold on every physics interval, including between observations"
+            : lane==2 ? "one brake budget holds on every physics interval"
+            : lane==3 ? "every physics interval obeys each material friction ellipse"
+            : "no accepted physics interval contains bootstrap hold work";
+        bool rejected=false;
+        try {profile_and_physical(report,pin);}
+        catch(const std::runtime_error& error){rejected=std::string_view(error.what())==expected;}
+        bt::require(rejected,"decimation cannot conceal a transient qualification-limit violation");
+    }
+    ride::Report control;control.points={valid,valid};ride::record_limits(control,valid);
+    profile_and_physical(control,pin);
+    auto rim=valid;rim.max_rim=.001;ride::record_limits(control,rim);ride::record_limits(control,valid);
+    bt::require(control.max_rim==.001,"a transient rim penetration survives later valid samples");
 }
 void full_duration(const ride::Report& report) {
     bt::require(report.valid_duration==report.requested_duration && !report.terminal_reason,
@@ -121,6 +158,7 @@ void rough_uphill() {
         ride::print_report("R",report);profile_and_physical(report,pin);
         bt::require(report.completed_distance>=report.requested_distance,"rough-uphill acceptance requires the full requested 100 m ride");
         bt::require(!report.points.empty() && report.points.back().energy_error<=.005,"rough-uphill complete ledger closes within 0.5 percent");
+        bt::require(report.max_rim==0.,"rough-uphill has no rim penetration on any accepted physics interval");
         double travel=0.,impulse=0.;double last_time=0.;
         for(const auto& p:report.points) {
             bt::require(p.max_rim==0.,"qualification profile has no rim penetration on the requested rough-uphill course");
@@ -215,4 +253,4 @@ void continuation() {
     }
 }
 } // namespace
-int main() {return bt::run([]{flat_matrix();bank_matrix();split_grip();continuation();rough_uphill();});}
+int main() {return bt::run([]{undecimated_limits();flat_matrix();bank_matrix();split_grip();continuation();rough_uphill();});}

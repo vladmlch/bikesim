@@ -33,6 +33,16 @@ void reports() {
     bt::require(panel.markers.size()==1&&panel.markers[0].label.find("N/A")!=std::string::npos&&panel.series[2].x.size()==5,"gap is labelled N/A while steering remains independently available");
     auto bad=channels;std::get<std::vector<double>>(bad[2].second).pop_back();bt::invalid([&]{(void)viz::spatial_attitude_plot(bad);});
     bad=channels;std::get<std::vector<double>>(bad[1].second)[2]=2.;bt::invalid([&]{(void)viz::spatial_attitude_plot(bad);});
+    auto isolated=channels;
+    std::get<std::vector<double>>(isolated[1].second)={0.,1.,0.,1.,0.};
+    const auto islands=viz::spatial_attitude_plot(isolated);
+    bt::require(islands.panels[0].series[0].style==viz::SeriesStyle::points&&
+        islands.panels[0].series[0].x==std::vector<double>{1.}&&
+        islands.panels[0].series[1].style==viz::SeriesStyle::points&&
+        islands.panels[0].series[1].x==std::vector<double>{3.},
+        "single accepted samples between gaps remain visible points in interactive reports");
+    bt::require(viz::to_html(islands).find("\"style\":\"points\"")!=std::string::npos,
+        "offline HTML retains point rendering instead of an invisible one-vertex line");
     const viz::Channels energy{{"time_s",std::vector<double>{0.,1.}},
         {"spatial.energy_time_s",std::vector<double>{1.,2.}},
         {"spatial.steer_work_j",std::vector<double>{1.,2.}},

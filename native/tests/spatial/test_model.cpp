@@ -12,7 +12,9 @@
 #include <cmath>
 #include <memory>
 #include <numbers>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace {
 namespace mdl=bike::model;
@@ -102,6 +104,35 @@ void rejections() {
     request->spatial->steer.controller=sp::SteerController::roll_heading;
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
 }
+void spatial_configuration_sources() {
+    auto request=spatial_tests::model_request(sp::RootKind::free6);
+    const auto reject=[&](std::string_view field) {
+        bt::invalid([&] {
+            try { (void)mdl::generate_mjcf(*request); }
+            catch(const std::invalid_argument& error) {
+                bt::require(std::string_view(error.what()).starts_with(field),
+                    "configuration rejection identifies the conflicting declaration");
+                throw;
+            }
+        });
+    };
+    const auto explicit_model=mdl::generate_mjcf(*request);
+    request->physics->spatial=request->spatial;
+    request->spatial.reset();
+    bt::require(mdl::generate_mjcf(*request)==explicit_model,
+        "physics-only spatial configuration builds the same free root, steering and terrain");
+    request->spatial=request->physics->spatial;
+    bt::require(mdl::generate_mjcf(*request)==explicit_model,
+        "matching model and physics declarations build the same spatial model");
+    request->spatial->root=sp::RootKind::constrained4;
+    reject("model.spatial:");
+    request->spatial=sp::Config{};
+    reject("model.spatial:");
+    request->spatial.reset();
+    request->physics->spatial.reset();
+    request->physics->tires.backend="pneumatic";
+    reject("model.terrain3d:");
+}
 void profile_strength_cap() {
     auto request=spatial_tests::model_request(sp::RootKind::free6);
     request->spatial->steer.torque_cap_nm.reset();
@@ -128,6 +159,8 @@ void planar_bytes() {
     const auto absent=mdl::generate_mjcf(*request);
     request->spatial=sp::Config{};
     bt::require(absent==mdl::generate_mjcf(*request),"explicit planar extension does not change legacy bytes");
+    request->physics->spatial=request->spatial;
+    bt::require(absent==mdl::generate_mjcf(*request),"matching explicit planar declarations preserve legacy bytes");
     const auto manifest=spatial_tests::json(spatial_tests::fixture("model/manifest.json"));
     const auto& object=bike::io::as_object(manifest,"model fixture manifest");
     const auto* identity=bike::io::find_member(object,"native_mjcf_sha256_hex");
@@ -139,4 +172,4 @@ void planar_bytes() {
 }
 } // namespace
 
-int main() {return bt::run([]{inventory_and_mass();rejections();profile_strength_cap();planar_bytes();});}
+int main() {return bt::run([]{inventory_and_mass();rejections();spatial_configuration_sources();profile_strength_cap();planar_bytes();});}

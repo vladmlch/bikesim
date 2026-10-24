@@ -49,11 +49,32 @@ int main() { return bt::run([] {
     bt::require(std::abs(rock.sample(8.,.5).height_m - .08) <= 1e-9,"rock centre is not at authored coordinates/amplitude");
     const auto rut = generate_grid3d(input("single_rut.toml"));
     bt::require(std::abs(rut.sample(8.,-.5).height_m + .04) <= 1e-9,"rut must be negative with authored depth");
-    const auto bank = generate_grid3d(input("constant_bank.toml"));
+    const auto bank_spec = input("constant_bank.toml");
+    const auto bank = generate_grid3d(bank_spec);
     for (double x : {0.,2.,4.,15.,18.,20.})
         bt::require(bank.sample(x,.7).height_m == bank.sample(x,-.7).height_m,"lead zones must be flat laterally");
     bt::require(std::abs(bank.sample(8.,.7).height_m - bank.sample(8.,-.7).height_m -
         1.4 * std::tan(10. * std::numbers::pi / 180.)) <= 1e-12,"bank antisymmetry law");
+    const auto flat_lead_cells = [](const Grid3d& grid, const Track3dSpec& spec) {
+        const double end = track_from_dict(spec.base_track_spec).length_m - spec.lead_out_m;
+        for (const double fraction : {.0,.125,.5,.875}) {
+            for (const double x : {spec.lead_in_m - fraction * spec.dx_m,
+                                   end + fraction * spec.dx_m}) {
+                const auto left = grid.sample(x,-.7), right = grid.sample(x,.7);
+                bt::require(left.status == QueryStatus3d::ok && right.status == QueryStatus3d::ok &&
+                    left.height_m == 0. && right.height_m == 0. &&
+                    left.normal_world[1] == 0. && right.normal_world[1] == 0.,
+                    "bicubic samples throughout flat lead cells retain zero lateral relief");
+            }
+        }
+    };
+    flat_lead_cells(bank,bank_spec);
+    auto unaligned_bank = bank_spec;
+    unaligned_bank.lead_in_m += .37 * bank_spec.dx_m;
+    unaligned_bank.lead_out_m += .29 * bank_spec.dx_m;
+    unaligned_bank.roughness = {.003,.1};
+    const auto unaligned = generate_grid3d(unaligned_bank);
+    flat_lead_cells(unaligned,unaligned_bank);
     const auto mirrored = generate_grid3d(input("mirrored.toml"));
     for (std::uint64_t iy = 0; iy < rock.ny(); ++iy) for (std::uint64_t ix = 0; ix < rock.nx(); ++ix)
         bt::require(std::bit_cast<std::uint64_t>(rock.elevation()[iy * rock.nx() + ix]) ==

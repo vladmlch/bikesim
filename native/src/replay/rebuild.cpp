@@ -12,6 +12,7 @@
 #include "../runtime/research_io.hpp"
 #include "../runtime/spatial_checkpoint.hpp"
 #include "../rider/allocation.hpp"
+#include "../rider/steer_balance.hpp"
 #include <algorithm>
 #include <cstdlib>
 #include <cerrno>
@@ -76,6 +77,13 @@ Value configuration_hashable(Value resolved) {
     auto physics = field(resolved, "physics"), articulated = field(physics, "articulated");
     for (auto key : {"joint_envelope", "joint_strength"}) set(articulated, std::string(key) + "_path", maybe(resolved, std::string(key) + "_sha256"));
     if(find(articulated,"shoulder_profile"))set(articulated,"shoulder_profile",maybe(resolved,"shoulder_profile_asset_sha256"));
+    if(const auto* source=find(physics,"spatial_3d")) {
+        auto spatial=*source;auto steer=field(spatial,"steer");
+        if(string(field(steer,"controller"))!="off" && !rider::builtin_steer_profile(string(field(steer,"profile_id")))) {
+            set(steer,"profile_id",field(steer,"profile_sha256"));
+            set(spatial,"steer",std::move(steer));set(physics,"spatial_3d",std::move(spatial));
+        }
+    }
     set(physics, "articulated", std::move(articulated)); set(resolved, "physics", std::move(physics)); return resolved;
 }
 } // namespace
@@ -92,6 +100,8 @@ FixedAssets::FixedAssets(const ReplayInput& input) {
                 platform::write_exclusive(path_/"spatial/terrain.terrain3d",it->second);
             if(const auto it=input.assets.find("spatial/shoulder_profile.json");it!=input.assets.end())
                 platform::write_exclusive(path_/"spatial/shoulder_profile.json",it->second);
+            if(const auto it=input.assets.find("spatial/steer_profile.json");it!=input.assets.end())
+                platform::write_exclusive(path_/"spatial/steer_profile.json",it->second);
         }
         for (auto file : {"track.toml", "rider_joint_envelope.json", "rider_joint_strength.json"})
             if (const auto it = input.assets.find(file); it != input.assets.end()) platform::write_exclusive(path_ / file, it->second);
@@ -114,6 +124,17 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
         const bool bundled=input.assets.contains("spatial/shoulder_profile.json");
         if((declared&&!io::is_null(*declared))!=bundled)throw IncompatibleExecution("spatial shoulder profile lacks its immutable bundle");
         if(bundled)set(articulated,"shoulder_profile",text((assets.path()/"spatial/shoulder_profile.json").string()));
+        auto spatial=field(physics,"spatial_3d");auto steer=field(spatial,"steer");
+        const bool external=string(field(steer,"controller"))!="off" &&
+            !rider::builtin_steer_profile(string(field(steer,"profile_id")));
+        if(external!=input.assets.contains("spatial/steer_profile.json"))
+            throw IncompatibleExecution("spatial steer profile lacks its immutable bundle");
+        if(external) {
+            // Never reopen a path from the recording. database_input checked
+            // the bundled coefficients against the resolved profile digest.
+            set(steer,"profile_id",text((assets.path()/"spatial/steer_profile.json").string()));
+            set(spatial,"steer",std::move(steer));set(physics,"spatial_3d",std::move(spatial));
+        }
     }
     set(physics, "articulated", std::move(articulated));
     if (const auto* initial_file = find(physics, "equilibrium_state_file"); initial_file && !io::is_null(*initial_file)) {

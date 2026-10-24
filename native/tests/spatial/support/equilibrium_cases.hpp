@@ -18,8 +18,9 @@ struct EquilibriumArena {
     std::unique_ptr<Stepper> stepper;
     std::unique_ptr<runtime::PhysicalStep> physical;
     std::unique_ptr<bike::initialization::SetupContext> context;
-    EquilibriumArena(bike::spatial::RootKind root,bike::spatial::TyreTier tier,bool articulated)
-        :request(make_startup_request(root,tier,articulated,0.)) {
+    EquilibriumArena(bike::spatial::RootKind root,bike::spatial::TyreTier tier,bool articulated,
+        std::shared_ptr<const bike::terrain::Terrain3dSource> terrain={},double speed=0.)
+        :request(make_startup_request(root,tier,articulated,speed,std::move(terrain))) {
         namespace b=bike;
         b::configuration::post_init(*request->model.physics);
         runtime::resolve_spatial_runtime_profiles(*request->model.physics);

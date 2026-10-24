@@ -34,14 +34,17 @@ pn::TyreStateIdentity3d identity(sp::TyreTier tier,const bike::terrain::Terrain3
     id.calibration_sha256_hex=std::string(64,'c');return id;
 }
 Kin kinematics(const pn::Pneumatic3dSpec& spec,const std::array<double,2>& height,
-    double v,double kappa,double alpha,double gamma,double yaw=0.,double phase=0.) {
+    double v,double kappa,double alpha,double gamma,double yaw=0.,double travel_m=0.) {
     Kin k;
     for(std::size_t w=0;w<2;++w) {
         k[w]=spatial_tests::wheel_at({4.+.5*static_cast<double>(w),0.,height[w]},yaw,gamma,v,
             (1.+kappa)*v/spec.brush[w].r_eff_m);
         k[w].hub.linear_velocity_world_mps[0]-=std::sin(yaw)*v*std::tan(alpha);
         k[w].hub.linear_velocity_world_mps[1]+=std::cos(yaw)*v*std::tan(alpha);
-        k[w].wheel_phase_rad=phase;
+        // Each wheel's material phase must integrate its prescribed spin,
+        // including slip and its own radius. travel_m is signed longitudinal
+        // travel, so stop and reverse also stop and reverse material motion.
+        k[w].wheel_phase_rad=(1.+kappa)*travel_m/spec.brush[w].r_eff_m;
     }
     return k;
 }
@@ -106,7 +109,7 @@ void matrix(sp::TyreTier tier,Report& report) {
             bt::require(model.restore(empty)==CoreStatus::ok,"matrix row resets all material/patch history");
             bool valid=true;
             for(int tick=0;tick<8;++tick) {
-                const auto kin=kinematics(spec,height,v,kappa,slip*rad,camber*rad,0.,tick*.0005*v/spec.brush[0].r_eff_m);
+                const auto kin=kinematics(spec,height,v,kappa,slip*rad,camber*rad,0.,tick*.0005*v);
                 if(model.evaluate(kin,{},.0005,true)!=CoreStatus::ok){valid=false;break;}
                 observe(model,report);
             }
@@ -191,8 +194,9 @@ void refinement_and_patch_lifecycle() {
         const auto h=load_height(model,600.,0.);std::size_t max_patches=0;double previous_loss=0.;
         for(int tick=0;tick<800;++tick) {
             const double t=tick*.001;const double speed=t<.4?.5:-.5;
-            auto k=kinematics(spec,h,speed,.05,0.,0.,0.,t*1.4);
-            for(auto& wheel:k)wheel.hub.position_world_m[0]+=t<.4?.5*t:.4-.5*t;
+            const double travel=t<.4?.5*t:.4-.5*t;
+            auto k=kinematics(spec,h,speed,.05,0.,0.,0.,travel);
+            for(auto& wheel:k)wheel.hub.position_world_m[0]+=travel;
             bt::require(model.evaluate(k,{},.001,true)==CoreStatus::ok,"moving material boundaries split and merge without invalid state");
             max_patches=std::max(max_patches,model.patches(0).size());
             bt::require(model.stored_energy_j()>=0.&&model.dissipated_j()+1e-12>=previous_loss,
@@ -209,9 +213,9 @@ void physical_properties(sp::TyreTier tier) {
     const auto h=load_height(a,300.,.05);Report report;
     for(int tick=0;tick<200;++tick) {
         const double t=tick*.0005;
-        auto k=kinematics(spec,h,3.,-.1,.03,.05,0.,t*8.);
-        auto mirrored=kinematics(spec,h,3.,-.1,-.03,-.05,0.,t*8.);
-        auto yaw=kinematics(spec,h,3.,-.1,.03,.05,std::numbers::pi/2.,t*8.);
+        auto k=kinematics(spec,h,3.,-.1,.03,.05,0.,3.*t);
+        auto mirrored=kinematics(spec,h,3.,-.1,-.03,-.05,0.,3.*t);
+        auto yaw=kinematics(spec,h,3.,-.1,.03,.05,std::numbers::pi/2.,3.*t);
         bt::require(a.evaluate(k,{},.0005,true)==CoreStatus::ok&&b.evaluate(mirrored,{},.0005,true)==CoreStatus::ok&&
             c.evaluate(yaw,{},.0005,true)==CoreStatus::ok,"mirrored/rotated models remain valid");
         const auto fa=force(a),fb=force(b),fc=force(c);
@@ -223,18 +227,18 @@ void physical_properties(sp::TyreTier tier) {
     for(auto& brush:spec.brush){brush.mu_x_scale=0.;brush.mu_y_scale=0.;}
     pn::Pneumatic3dModel no_grip(spec,terrain.query_view(),id);
     for(int tick=0;tick<20;++tick) {
-        bt::require(no_grip.evaluate(kinematics(spec,h,3.,-.3,.1,.2,0.,tick*.01),{},.0005,true)==CoreStatus::ok,
+        bt::require(no_grip.evaluate(kinematics(spec,h,3.,-.3,.1,.2,0.,tick*.0005*3.),{},.0005,true)==CoreStatus::ok,
             "zero-friction pressure/load boundary is valid");
         for(std::size_t w=0;w<2;++w)for(const auto& p:no_grip.wrenches(w))
             bt::require(p.fx_n==0.&&p.fy_n==0.,"mu to zero removes the entire tangential budget");
     }
     spec=spatial_tests::synthetic_spec(tier);
     const auto run=[&](double dt) {
-        pn::Pneumatic3dModel m(spec,terrain.query_view(),id);double work=0.;
+        pn::Pneumatic3dModel m(spec,terrain.query_view(),id);double work=0.,travel=0.;
         const auto count=static_cast<int>(std::llround(.2/dt));
         for(int tick=0;tick<count;++tick) {
             const double t=tick*dt;const double v=t<.05?1.:t<.1?0.:-1.;
-            const auto kin=kinematics(spec,h,v,.05,.02,0.,0.,t*4.);
+            const auto kin=kinematics(spec,h,v,.05,.02,0.,0.,travel);
             bt::require(m.evaluate(kin,{},dt,true)==CoreStatus::ok,"start/stop/reverse cannot become invalid");
             for(std::size_t w=0;w<2;++w)for(const auto& p:m.wrenches(w)) {
                 const auto& hub=kin[w].hub;const auto& axle=kin[w].axle_world;
@@ -245,6 +249,7 @@ void physical_properties(sp::TyreTier tier) {
                 work-=dt*(p.force_world_n[0]*vel[0]+p.force_world_n[1]*vel[1]+
                     p.couple_world_nm[0]*omega[0]+p.couple_world_nm[1]*omega[1]+p.couple_world_nm[2]*omega[2]);
             }
+            travel+=v*dt;
         }
         double energy=0.,loss=0.;for(const auto& brush:m.committed_state().brush) {
             energy+=brush.elastic_energy_j;loss+=brush.sliding_loss_j+brush.convective_release_j;

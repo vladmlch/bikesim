@@ -2,6 +2,7 @@
 #include "../engaged.hpp"
 #include "../drivetrain/capabilities.hpp"
 #include "../engine_call.hpp"
+#include "../model_access.hpp"
 #include "../model_topology.hpp"
 #include "pyfloat.hpp"
 #include <algorithm>
@@ -20,6 +21,19 @@ namespace drivetrain {
         DriveConfig checked_config(DriveConfig config) {
             validate(config);
             return config;
+        }
+        void spatial_torque_motor(const mjModel& model,int id,const char* name) {
+            if(id<0)return; // optional actuators have already passed the mode gate
+            const auto motor=static_cast<std::size_t>(id);
+            const auto gear=model_access::readonly_buffer(model.actuator_gear,6*model.nu).subspan(6*motor,6);
+            const auto dynamics=model_access::readonly_buffer(model.actuator_dyntype,model.nu);
+            const auto gains=model_access::readonly_buffer(model.actuator_gaintype,model.nu);
+            const auto biases=model_access::readonly_buffer(model.actuator_biastype,model.nu);
+            const auto parameters=model_access::readonly_buffer(model.actuator_gainprm,mjNGAIN*model.nu);
+            if(gear[0]!=1. || !std::ranges::all_of(gear.subspan(1),[](double x){return x==0.;}) ||
+               dynamics[motor]!=mjDYN_NONE || gains[motor]!=mjGAIN_FIXED || biases[motor]!=mjBIAS_NONE ||
+               parameters[mjNGAIN*motor]!=1.)
+                throw std::invalid_argument(std::string("drive.spatial.")+name+": pure unit-gain torque motor required");
         }
     }
 
@@ -159,6 +173,12 @@ namespace drivetrain {
         if (motor_actuator_ >= 0)
             topology::actuator(m, motor_actuator_, "mid_drive",
                                resolve(m, mjOBJ_JOINT, motor.actuator_joint));
+        if(mj_name2id(m,mjOBJ_JOINT,"root_free")>=0 || mj_name2id(m,mjOBJ_JOINT,"root_y")>=0) {
+            // Spatial command and energy contracts use ctrl/actuator_force
+            // as Nm. Keep legacy invalid-input behavior on the planar path.
+            spatial_torque_motor(*m,human_actuator_,"human_crank");
+            spatial_torque_motor(*m,motor_actuator_,"mid_drive");
+        }
         if (!simplified_) {
             cassette_ = resolve(m, mjOBJ_BODY, "cassette");
             const auto parents = buffer(m->body_parentid, m->nbody);

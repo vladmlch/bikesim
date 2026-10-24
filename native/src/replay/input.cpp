@@ -4,6 +4,7 @@
 #include "../recording/versioned.hpp"
 #include "../terrain/asset3d.hpp"
 #include "../runtime/spatial_checkpoint.hpp"
+#include "../rider/steer_balance.hpp"
 
 namespace bike::replay {
 namespace {
@@ -113,6 +114,17 @@ ReplayInput database_input(const std::filesystem::path& path, std::optional<std:
             expected_assets.insert("spatial/shoulder_profile.json");
             if(io::sha256(out.assets.at("spatial/shoulder_profile.json"))!=string(field(resolved,"shoulder_profile_asset_sha256")))
                 throw recording::RecordingError("spatial shoulder profile content identity differs");
+        }
+        const auto& steer=field(field(field(resolved,"physics"),"spatial_3d"),"steer");
+        const bool external=string(field(steer,"controller"))!="off" &&
+            !rider::builtin_steer_profile(string(field(steer,"profile_id")));
+        if(external!=out.assets.contains("spatial/steer_profile.json"))
+            throw recording::RecordingError("spatial steer profile lacks its immutable bundle");
+        if(external) {
+            expected_assets.insert("spatial/steer_profile.json");
+            const auto profile=rider::read_steer_profile(io::parse_recording_json(asset_text(out,"spatial/steer_profile.json")));
+            if(profile.sha256_hex!=string(field(steer,"profile_sha256")))
+                throw recording::RecordingError("spatial steer profile content identity differs");
         }
     }
     for (auto [key, name] : {std::pair{"joint_envelope", "rider_joint_envelope.json"}, std::pair{"joint_strength", "rider_joint_strength.json"}}) {

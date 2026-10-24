@@ -565,9 +565,24 @@ struct Report {
     std::vector<Point> points;std::uint64_t invalid_ticks=0,hold_ticks=0;
     std::vector<Event> events;
     double mean_load=0.,peak_load=0.;std::uint64_t samples=0;
+    // Qualification limits are reduced over every accepted physics interval;
+    // points may be decimated for trajectories and must not hide excursions.
+    double max_abs_steer=0.,max_abs_motor_torque=0.,max_brake_budget_error=0.;
+    double max_ellipse=0.,max_rim=0.,max_abs_hold_work=0.;
     std::optional<std::string> terminal_reason;
     std::string profile_digest,steer_digest;
 };
+inline void record_limits(Report& report,const Point& point) {
+    const auto maximum=[](double previous,double value) {
+        return std::isfinite(value)?std::max(previous,value):std::numeric_limits<double>::infinity();
+    };
+    report.max_abs_steer=maximum(report.max_abs_steer,std::abs(point.steer));
+    report.max_abs_motor_torque=maximum(report.max_abs_motor_torque,std::abs(point.motor_torque));
+    report.max_brake_budget_error=maximum(report.max_brake_budget_error,point.brake_budget_error);
+    report.max_ellipse=maximum(report.max_ellipse,point.ellipse);
+    report.max_rim=maximum(report.max_rim,point.max_rim);
+    report.max_abs_hold_work=maximum(report.max_abs_hold_work,std::abs(point.hold_work));
+}
 using BeforeStep=std::function<void(runtime::NativeRideRuntime&,double)>;
 inline Report run(OwnedStartup& fixture,double duration,std::span<const Demand> trace,
                   double requested_distance=0.,std::int64_t decimation=1,BeforeStep before={},bool close_period=true) {
@@ -590,6 +605,7 @@ inline Report run(OwnedStartup& fixture,double duration,std::span<const Demand> 
         if(before)before(rt,time);
         const auto result=rt.advance(start.step+i,control,demand.brake_fraction,demand.brake_fraction,std::nullopt);
         const auto point=observe(rt);
+        record_limits(report,point);
         if(!point.valid)++report.invalid_ticks;if(point.hold)++report.hold_ticks;
         if(point.patches!=preceding.patches)report.events.push_back({"patches:"+std::to_string(point.patches),point.time});
         if((point.load>1e-6)!=(preceding.load>1e-6))report.events.push_back({point.load>1e-6?"landing":"airborne",point.time});
@@ -597,9 +613,10 @@ inline Report run(OwnedStartup& fixture,double duration,std::span<const Demand> 
         report.mean_load+=point.load;report.peak_load=std::max(report.peak_load,point.load);++report.samples;
         if(point.valid && report.invalid_ticks==0)report.valid_duration=std::min(duration,static_cast<double>(i)*dt);
         report.completed_distance=point.position[0]-start_x;
-        if(i%decimation==0 || result.outcome || i==steps)report.points.push_back(point);
+        const bool distance_complete=requested_distance>0. && report.completed_distance>=requested_distance;
+        if(i%decimation==0 || result.outcome || i==steps || distance_complete)report.points.push_back(point);
         if(result.outcome) { report.terminal_reason=result.outcome;report.events.push_back({*result.outcome,point.time});break; }
-        if(requested_distance>0. && report.completed_distance>=requested_distance)break;
+        if(distance_complete)break;
         preceding=point;
     }
     if(report.samples)report.mean_load/=static_cast<double>(report.samples);

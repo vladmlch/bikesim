@@ -13,6 +13,8 @@
 #include "../model_access.hpp"
 #include "../engine_call.hpp"
 #include "../spatial/frames.hpp"
+#include "../spatial/topology.hpp"
+#include "../terrain/source3d.hpp"
 #include "../tyre/profile.hpp"
 #include "../validation.hpp"
 
@@ -462,6 +464,71 @@ road_samples(std::span<const std::array<double, 2>> vertices,
     return RoadProfile(vertices).samples(wheel_x_m, lookahead_m, spacing_m);
 }
 
+std::vector<RoadSample> spatial_road_samples(
+    const bike::terrain::Terrain3dQueryView& terrain,
+    std::span<const std::array<double, 3>> wheels,
+    std::array<double, 3> forward, double lookahead, double spacing) {
+    constexpr std::size_t maximum_samples = 65536;
+    if (wheels.empty() || wheels.size() > maximum_samples - 1 ||
+        !std::isfinite(lookahead) || lookahead < 0. ||
+        !std::isfinite(spacing) || spacing <= 0. ||
+        !std::ranges::all_of(forward, [](double x) { return std::isfinite(x); }))
+        throw std::invalid_argument("spatial.road_preview: invalid wheels, heading or sample spacing");
+    const double heading_length = std::hypot(forward[0], forward[1]);
+    if (!std::isfinite(heading_length) || heading_length <= 1e-12)
+        throw std::invalid_argument("spatial.road_preview.heading: horizontal heading is undefined");
+    forward[0] /= heading_length;
+    forward[1] /= heading_length;
+    const double count_real = std::floor(lookahead / spacing);
+    if (!std::isfinite(count_real) ||
+        count_real > static_cast<double>(maximum_samples - wheels.size() - 1))
+        throw std::invalid_argument("spatial.road_preview: sample budget exceeded");
+    const auto count = static_cast<std::size_t>(count_real);
+    std::vector<std::pair<double, std::size_t>> order;
+    order.reserve(wheels.size());
+    for (std::size_t i = 0; i < wheels.size(); ++i) {
+        if (!std::ranges::all_of(wheels[i], [](double x) { return std::isfinite(x); }))
+            throw std::invalid_argument("spatial.road_preview.wheels: nonfinite position");
+        const double along = (wheels[i][0] - wheels.front()[0]) * forward[0] +
+                             (wheels[i][1] - wheels.front()[1]) * forward[1];
+        if (!std::isfinite(along))
+            throw std::invalid_argument("spatial.road_preview.wheels: unrepresentable separation");
+        order.emplace_back(along, i);
+    }
+    std::sort(order.begin(), order.end());
+    std::vector<RoadSample> result;
+    result.reserve(wheels.size() + count + 1);
+    const auto append = [&](double x, double y, bool required) {
+        const auto sample = terrain.sample(x, y);
+        if (!required && sample.status == bike::terrain::QueryStatus3d::outside) return false;
+        if (sample.status != bike::terrain::QueryStatus3d::ok ||
+            !std::isfinite(sample.height_m) || !std::isfinite(sample.normal_world[0]) ||
+            !std::isfinite(sample.normal_world[1]) || !std::isfinite(sample.normal_world[2]) ||
+            sample.normal_world[2] <= 0.)
+            throw std::invalid_argument("spatial.road_preview.terrain: invalid physical sample");
+        const double grade = -(sample.normal_world[0] * forward[0] +
+                               sample.normal_world[1] * forward[1]) / sample.normal_world[2];
+        if (!std::isfinite(grade))
+            throw std::invalid_argument("spatial.road_preview.grade: nonfinite directional slope");
+        result.push_back({.x_m = x, .height_m = sample.height_m, .grade = grade});
+        return true;
+    };
+    for (const auto& [along, index] : order) {
+        (void)along;
+        (void)append(wheels[index][0], wheels[index][1], true);
+    }
+    const auto& front = wheels[order.back().second];
+    const auto preview = [&](double distance) {
+        return append(front[0] + distance * forward[0],
+                      front[1] + distance * forward[1], false);
+    };
+    for (std::size_t i = 1; i <= count; ++i)
+        if (!preview(static_cast<double>(i) * spacing)) return result;
+    if (lookahead > 0. && (count == 0 || static_cast<double>(count) * spacing < lookahead))
+        (void)preview(lookahead);
+    return result;
+}
+
 double road_grade_for_posture(std::span<const RoadSample> road) {
     if (road.empty())
         throw std::invalid_argument(
@@ -510,6 +577,38 @@ RiderKinematicState rider_kinematic_state(
             throw std::invalid_argument("rider state qvel");
     if (!std::isfinite(out.rider_time_s) || out.rider_time_s < 0.)
         throw std::invalid_argument("rider state time");
+    return out;
+}
+
+RiderKinematicState spatial_rider_kinematic_state(
+    const mjModel* model, const mjData* data, const bike::spatial::Topology& topology,
+    const bike::terrain::Terrain3dQueryView& terrain, double lookahead, double spacing) {
+    if (model == nullptr || data == nullptr)
+        throw std::invalid_argument("spatial rider state needs a model and data");
+    const auto positions = model_access::readonly_buffer(data->xpos, 3 * model->nbody, "xpos");
+    std::array<std::array<double, 3>, 2> wheels{};
+    for (std::size_t i = 0; i < wheels.size(); ++i) {
+        const auto body = topology.wheels[i].wheel_body_id;
+        model_access::require_id(body, model->nbody, "spatial.road_preview.wheel");
+        const auto offset = 3 * static_cast<std::size_t>(body);
+        for (std::size_t axis = 0; axis < 3; ++axis) wheels[i][axis] = positions[offset + axis];
+    }
+    model_access::require_id(topology.root.body_id, model->nbody, "spatial.road_preview.root");
+    const auto rotations = model_access::readonly_buffer(data->xquat, 4 * model->nbody, "xquat");
+    const auto q = 4 * static_cast<std::size_t>(topology.root.body_id);
+    const auto heading = bike::spatial::rotate_body_to_world(
+        {rotations[q], rotations[q + 1], rotations[q + 2], rotations[q + 3]}, {1., 0., 0.});
+    const auto qpos = model_access::readonly_buffer(data->qpos, model->nq, "qpos");
+    const auto qvel = model_access::readonly_buffer(data->qvel, model->nv, "qvel");
+    RiderKinematicState out{
+        .qpos = std::vector<double>(qpos.begin(), qpos.end()),
+        .qvel = std::vector<double>(qvel.begin(), qvel.end()),
+        .rider_time_s = data->time,
+        .road = spatial_road_samples(terrain, wheels, heading, lookahead, spacing)};
+    if (!std::ranges::all_of(out.qpos, [](double x) { return std::isfinite(x); }) ||
+        !std::ranges::all_of(out.qvel, [](double x) { return std::isfinite(x); }) ||
+        !std::isfinite(out.rider_time_s) || out.rider_time_s < 0.)
+        throw std::invalid_argument("spatial rider state: nonfinite coordinates or invalid time");
     return out;
 }
 

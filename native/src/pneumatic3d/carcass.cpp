@@ -12,15 +12,36 @@ struct MaxwellStep { double q=0., loss_density=0.; };
 MaxwellStep maxwell(double q0, double rate, double k, double tau, double dt) noexcept {
     if (!(k>0.)) return {};
     if (!(dt>0.)) return {q0,0.};
-    const double one_minus_e=-std::expm1(-dt/tau);
-    const double one_minus_e2=-std::expm1(-2.*dt/tau);
-    const double qss=k*tau*rate, a=q0-qss;
-    const double q=q0+(qss-q0)*one_minus_e;
-    // Exact integral int(q(t)^2/(k*tau),0,dt). A tiny roundoff-negative
-    // integral is canonicalized; no negative dissipation is exported.
-    const double integral=qss*qss*dt+2.*qss*a*tau*one_minus_e+
-                          .5*a*a*tau*one_minus_e2;
-    return {q,std::max(0.,integral/(k*tau))};
+    const double x=dt/tau, e=std::exp(-x);
+    const double one_minus_e=-std::expm1(-x);
+    const double one_minus_e2=-std::expm1(-2.*x);
+    double q=0., loss=0.;
+    if (x<.01) {
+        // Integrate in q0 and the elastic strain increment, not q_ss. The
+        // three q_ss terms of the usual closed form cancel to O(x^3) when
+        // dt << tau, erasing (or inventing) dissipation in an ordinary ramp.
+        const double increment=k*(rate*dt);
+        const double f=x>0. ? one_minus_e/x : 1.;
+        const double a=x>0. ? .5*one_minus_e2/x : 1.;
+        // [x-2(1-exp(-x))+(1-exp(-2x))/2]/x^3. The remainder
+        // after x^7 is below 3e-21 throughout this branch.
+        const double c=1./3.+x*(-1./4.+x*(7./60.+x*(-1./24.+
+            x*(31./2520.+x*(-1./320.+x*(127./181440.-x*17./120960.))))));
+        q=q0*e+increment*f;
+        loss=(x/k)*(q0*q0*a+q0*increment*f*f+increment*increment*c);
+    } else {
+        const double qss=k*tau*rate;
+        // Retain the small steady stress after complete relaxation: the
+        // equivalent q0+(qss-q0)*(1-e) subtracts it away when e rounds to 0.
+        q=q0*e+qss*one_minus_e;
+        const double a=.5*one_minus_e2;
+        const double b=one_minus_e*one_minus_e;
+        const double c=x-one_minus_e-.5*one_minus_e*one_minus_e;
+        loss=(q0*q0*a+q0*qss*b+qss*qss*c)/k;
+    }
+    // Never turn a nonfinite quadratic into zero through std::max(0, NaN).
+    // The caller rejects it before changing any material state.
+    return {q,std::isfinite(loss) ? std::max(0.,loss) : loss};
 }
 }
 

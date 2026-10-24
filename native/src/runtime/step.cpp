@@ -1030,7 +1030,8 @@ PhysicalStep::PhysicalStep(
     Stepper &stepper, StepConfig config,
     std::vector<std::array<double, 2>> vertices, StaticBrake brake,
     const std::optional<rider::SpindlePose> &rider_pose,
-    const std::optional<rider::SpindleConfig> &rider_config)
+    const std::optional<rider::SpindleConfig> &rider_config,
+    const bike::rider::SteerProfile* acquired_steer_profile)
     : stepper_(&stepper), config_(config),
       vertices_(std::move(vertices)),
       road_profile_(vertices_),
@@ -1067,8 +1068,15 @@ PhysicalStep::PhysicalStep(
         spatial_state_->terrain_sha256=config_.terrain3d->fingerprint_hex();
         spatial_state_->calibration_sha256=config_.spatial->tyre.lateral_coefficients_sha256;
         if(config_.spatial->steer.controller!=bike::spatial::SteerController::off) {
+            if(acquired_steer_profile &&
+               (acquired_steer_profile->sha256_hex!=config_.spatial->steer.profile_sha256 ||
+                acquired_steer_profile->delay_s!=config_.spatial->steer.reaction_delay_s ||
+                (config_.spatial->steer.torque_cap_nm &&
+                 acquired_steer_profile->cap_nm!=*config_.spatial->steer.torque_cap_nm)))
+                throw std::invalid_argument("runtime.spatial.steer: acquired profile differs from configuration");
             steer_balance_=std::make_unique<bike::rider::SteerBalance>(
-                resolved_steer_profile(config_.spatial->steer),config_.control_period_s);
+                acquired_steer_profile?*acquired_steer_profile:resolved_steer_profile(config_.spatial->steer),
+                config_.control_period_s);
             spatial_state_->steer=steer_balance_->state();
             spatial_steer_rollback_=steer_balance_->state();
         }
@@ -1364,13 +1372,22 @@ PhysicalStep::apply_forces_body(
             !advance || initializing_ || control_clock_.is_tick(step_);
         spatial::timing::Scope intent_timing(spatial::timing::Region::rider_steer);
         if (rider_control_.has_value() && control_tick) {
-            const auto xpos = buf(d->xpos, 3 * m->nbody);
-            wheel_x_m_ = {xpos[3 * static_cast<std::size_t>(
-                              wheel_bodies_[0])],
-                          xpos[3 * static_cast<std::size_t>(
-                              wheel_bodies_[1])]};
-            rider_state_ = rider_kinematic_state(
-                m, d, road_profile_, wheel_x_m_, config_.road_lookahead_m);
+            if (topology_) {
+                // Equilibrium probes can move qpos before this force pass.
+                // Refresh only geometry here; the established dynamics solve
+                // remains after the model/control writes below.
+                if (!posvel_fresh()) engine::kinematics(m, d);
+                rider_state_ = spatial_rider_kinematic_state(m, d, *topology_,
+                    config_.terrain3d->query_view(), config_.road_lookahead_m);
+            } else {
+                const auto xpos = buf(d->xpos, 3 * m->nbody);
+                wheel_x_m_ = {xpos[3 * static_cast<std::size_t>(
+                                  wheel_bodies_[0])],
+                              xpos[3 * static_cast<std::size_t>(
+                                  wheel_bodies_[1])]};
+                rider_state_ = rider_kinematic_state(
+                    m, d, road_profile_, wheel_x_m_, config_.road_lookahead_m);
+            }
         }
         const bool automatic_effort =
             active && config_.intent.enabled &&

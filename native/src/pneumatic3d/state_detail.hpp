@@ -59,6 +59,16 @@ inline const char* state_layout_error(const TyreState3d& s,const TyreStateIdenti
            !std::isfinite(c.dissipated_j)||c.dissipated_j<0.)
             return "carcass: nonfinite value or negative energy/deflection";
         if(!std::ranges::all_of(c.active,[](auto v){return v<=1;}))return "carcass.active: expected 0 or 1";
+        for(std::size_t i=0;i<mat;++i) {
+            // The accepted producer writes the same penetration into both
+            // lanes, and resets both when the cell leaves contact. Maxwell
+            // stress is deliberately allowed to relax outside contact.
+            if(!c.active[i]) {
+                if(!positive_zero(c.deflection_m[i])||!positive_zero(c.previous_penetration_m[i]))
+                    return "carcass: inactive penetration history must be canonical zero";
+            } else if(!(c.deflection_m[i]>0.)||c.previous_penetration_m[i]!=c.deflection_m[i])
+                return "carcass: active penetration history differs from accepted deflection";
+        }
         if(p.capacity!=cap||p.ids.size()!=cap||p.slot_used.size()!=cap||p.element_to_patch_slot.size()!=fan)
             return "patches: dimensions mismatch";
         if(b.ux_m.size()!=cap||b.uy_m.size()!=cap||b.camber_state.size()!=cap||

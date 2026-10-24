@@ -1,9 +1,11 @@
 #include "realtime_measurement.hpp"
 #include "setup_values.hpp"
 #include "spatial_measurement.hpp"
+#include "../spatial/bootstrap_state.hpp"
 #include "../io/json.hpp"
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cmath>
 #include <limits>
 #include <numeric>
@@ -45,6 +47,36 @@ Value median(std::vector<double> values) {
     const auto index = values.size() / 2;
     return real(values.size() % 2 != 0 ? values.at(index) : std::midpoint(values.at(index - 1), values.at(index)));
 }
+std::uint64_t unsigned_value(const Value& object, std::string_view name, std::uint64_t maximum) {
+    const auto& spelling = io::as_number(field(object, name), name).lexeme;
+    std::uint64_t value = 0;
+    const auto parsed = std::from_chars(spelling.data(), spelling.data() + spelling.size(), value);
+    if (parsed.ec != std::errc{} || parsed.ptr != spelling.data() + spelling.size() || value > maximum)
+        throw std::invalid_argument("spatial report." + std::string(name) + ": unsigned integer out of range");
+    return value;
+}
+void validate_spatial_profile(const Value& profile) {
+    spatial::SpatialPerformanceProfile decoded;
+    for (const auto& [name, destination] : std::array{
+        std::pair{"id", &decoded.id}, std::pair{"source_sha", &decoded.source_sha},
+        std::pair{"config_sha256", &decoded.config_sha256}, std::pair{"calibration_sha256", &decoded.calibration_sha256},
+        std::pair{"provider_identity", &decoded.provider_identity}, std::pair{"sensor_mode", &decoded.sensor_mode},
+        std::pair{"recording_mode", &decoded.recording_mode}})
+        *destination = io::as_string(field(profile, name), name);
+    const auto root = bike::spatial::parse_root_kind(io::as_string(field(profile, "root"), "profile.root"));
+    const auto tier = bike::spatial::parse_tyre_tier(io::as_string(field(profile, "tier"), "profile.tier"));
+    if (!root || !tier) throw std::invalid_argument("spatial.profile: unknown root or tyre tier");
+    decoded.root = *root; decoded.tier = *tier;
+    decoded.grid_nx = unsigned_value(profile, "grid_nx", std::numeric_limits<std::uint64_t>::max());
+    decoded.grid_ny = unsigned_value(profile, "grid_ny", std::numeric_limits<std::uint64_t>::max());
+    decoded.dt_s = number(profile, "dt_s");
+    decoded.processes = static_cast<unsigned>(unsigned_value(profile, "processes", std::numeric_limits<unsigned>::max()));
+    decoded.tyre_threads = static_cast<unsigned>(unsigned_value(profile, "tyre_threads", std::numeric_limits<unsigned>::max()));
+    decoded.engine_threads = static_cast<unsigned>(unsigned_value(profile, "engine_threads", std::numeric_limits<unsigned>::max()));
+    // Loaded reports must satisfy the same identity/domain checks as the
+    // live producer; equality of two incomplete profiles is not evidence.
+    (void)spatial_profile_value(decoded);
+}
 } // namespace
 
 bike::io::Value compare_runs(const bike::io::Value& left, const bike::io::Value& right) {
@@ -55,6 +87,12 @@ bike::io::Value compare_runs(const bike::io::Value& left, const bike::io::Value&
     for (const auto& [name, ignored] : io::as_object(right_key, "comparability")) { (void)ignored; keys.insert(name); }
     Array differences, classifications;
     for (const auto& name : keys) if (!equal(get(left_key, name), get(right_key, name))) differences.push_back(text(name));
+    if (find(left, "profile") != nullptr || find(right, "profile") != nullptr) {
+        // Spatial baseline comparison includes the actual build/provider
+        // identity, not merely identical source/configuration fingerprints.
+        for (const std::string_view name : {"backend", "profile", "execution"})
+            if (!equal(get(left, name), get(right, name))) differences.push_back(text(name));
+    }
     const auto& a = field(left, "prefix");
     const auto& b = field(right, "prefix");
     for (std::string_view const name : {"reason", "model_valid", "numerically_valid", "steps"})
@@ -121,6 +159,7 @@ bike::io::Value build_spatial_report(const bike::io::Value::Array& warmups,
     const auto& first = runs.front();
     const auto& profile = field(first, "profile");
     (void)io::as_object(profile, "profile");
+    validate_spatial_profile(profile);
     const auto& reference_key = field(first, "comparability");
     const auto& reference_execution = field(first, "execution");
     if (!equal(field(reference_key, "spatial_profile"), profile))
@@ -143,16 +182,17 @@ bike::io::Value build_spatial_report(const bike::io::Value::Array& warmups,
         "accounting_s", "sensors_s", "recording_s", "ui_s"};
     constexpr std::array<std::string_view, 3> pending_names{
         "sensors_pending", "recording_pending", "ui_pending"};
-    std::array<double, 8> region_totals{};
+    std::array<double, 8> region_means{};
     std::array<bool, 3> pending{};
     std::vector<double> factors;
     Array measured_rows, warmup_rows, pairs;
     bool all_valid = true, valid_warmups = !warmups.empty(), duration_protocol = true;
     bool instrumentation_available = true, any_short = false, repeated_comparable = true;
-    double overhead_total = 0.;
+    double overhead_mean = 0.;
 
     const auto inspect = [&](const Value& run, bool warmup) {
-        if (!equal(field(run, "profile"), profile) ||
+        if (!equal(field(run, "backend"), field(first, "backend")) ||
+            !equal(field(run, "profile"), profile) ||
             !equal(field(run, "comparability"), reference_key) ||
             !equal(field(run, "execution"), reference_execution))
             throw std::invalid_argument("spatial report run identity mismatch (including warmups)");
@@ -167,17 +207,28 @@ bike::io::Value build_spatial_report(const bike::io::Value::Array& warmups,
             throw std::invalid_argument("spatial report chunk latency cannot be labeled per-step latency");
         const auto& regions = field(run, "regions");
         std::array<double, 8> times{};
+        double region_sum = 0.;
         for (std::size_t i = 0; i < region_names.size(); ++i) {
             times[i] = number(regions, region_names[i]);
             if (!std::isfinite(times[i]) || times[i] < 0.)
                 throw std::invalid_argument("spatial.regions." + std::string(region_names[i]) + ": invalid time");
+            region_sum += times[i];
         }
+        // The owner collector pauses a parent scope while a child runs.
+        // These exclusive regions are all inside the measured wall window;
+        // impossible or overflowing evidence cannot support a timing claim.
+        if (!std::isfinite(region_sum) || (region_sum > wall && !isclose(region_sum, wall)))
+            throw std::invalid_argument("spatial report exclusive region times exceed full wall time");
         for (const auto name : pending_names)
             if (!std::holds_alternative<bool>(field(regions, name).data))
                 throw std::invalid_argument("spatial.regions." + std::string(name) + ": boolean required");
         const double overhead = number(run, "instrumentation_overhead_s");
         if (!std::isfinite(overhead) || overhead < 0.)
             throw std::invalid_argument("spatial report instrumentation overhead is invalid");
+        const auto clock_reads = unsigned_value(run, "instrumentation_clock_reads", std::numeric_limits<std::uint64_t>::max());
+        const bool timing_observed = io::as_bool(field(run, "instrumentation_available"), "instrumentation_available");
+        if (timing_observed && clock_reads == 0)
+            throw std::invalid_argument("spatial report available instrumentation requires observed clock reads");
         const auto& prefix = field(run, "prefix");
         const auto requested = count(prefix, "requested_steps");
         const auto completed = count(prefix, "steps");
@@ -192,7 +243,7 @@ bike::io::Value build_spatial_report(const bike::io::Value::Array& warmups,
         const bool complete = completed == requested &&
             count(run, "physics_steps") == requested &&
             (equal(field(prefix, "reason"), text("duration_reached")) ||
-             equal(field(prefix, "reason"), text("requested_completion")));
+             equal(field(prefix, "reason"), text(bike::spatial::to_string(bike::spatial::SpatialReason::requested_completion))));
         const bool valid = complete && yes(field(run, "measured_ok")) && yes(field(run, "valid_prefix")) &&
             yes(field(run, "identity_unchanged")) && yes(field(reference_key, "strict")) &&
             yes(field(prefix, "model_valid")) && yes(field(prefix, "numerically_valid")) &&
@@ -207,18 +258,23 @@ bike::io::Value build_spatial_report(const bike::io::Value::Array& warmups,
         // actual clock; RTF itself always uses the unrounded observed time.
         const bool full_window = complete && requested_time >= 30.;
         if (warmup) {
-            valid_warmups = valid_warmups && valid && full_window;
+            valid_warmups = valid_warmups && valid && full_window &&
+                yes(field(compare_runs(first, run), "comparable"));
             warmup_rows.push_back(std::move(row));
         } else {
             all_valid = all_valid && valid;
             any_short = any_short || !complete;
             duration_protocol = duration_protocol && full_window;
-            instrumentation_available = instrumentation_available && yes(field(run, "instrumentation_available"));
+            instrumentation_available = instrumentation_available && timing_observed;
             if (valid) {
                 factors.push_back(factor);
-                for (std::size_t i = 0; i < times.size(); ++i) region_totals[i] += times[i];
+                const double samples = static_cast<double>(factors.size());
+                // Nonnegative finite observations have a finite mean even
+                // when their raw sum over several repetitions overflows.
+                for (std::size_t i = 0; i < times.size(); ++i)
+                    region_means[i] += (times[i] - region_means[i]) / samples;
                 for (std::size_t i = 0; i < pending.size(); ++i) pending[i] = pending[i] || yes(field(regions, pending_names[i]));
-                overhead_total += overhead;
+                overhead_mean += (overhead - overhead_mean) / samples;
             }
             measured_rows.push_back(std::move(row));
         }
@@ -234,7 +290,7 @@ bike::io::Value build_spatial_report(const bike::io::Value::Array& warmups,
     const auto median_factor = median(std::move(factors));
     Object averaged_regions;
     for (std::size_t i = 0; i < region_names.size(); ++i)
-        averaged_regions.emplace_back(region_names[i], accepted == 0 ? Value{} : real(region_totals[i] / static_cast<double>(accepted)));
+        averaged_regions.emplace_back(region_names[i], accepted == 0 ? Value{} : real(region_means[i]));
     for (std::size_t i = 0; i < pending_names.size(); ++i)
         averaged_regions.emplace_back(pending_names[i], Value{accepted == 0 || pending[i]});
     const bool protocol = !warmups.empty() && runs.size() >= 3 && duration_protocol;
@@ -254,7 +310,7 @@ bike::io::Value build_spatial_report(const bike::io::Value::Array& warmups,
         {"target_rtf", fast ? real(2.) : Value{}}, {"target_met", target}, {"headless_rtf_threshold_met", target},
         {"regions", Value{std::move(averaged_regions)}},
         {"regions_aggregation", text("mean full-run seconds over valid measured episodes; warmups excluded")},
-        {"instrumentation_overhead_s", accepted == 0 ? Value{} : real(overhead_total / static_cast<double>(accepted))},
+        {"instrumentation_overhead_s", accepted == 0 ? Value{} : real(overhead_mean)},
         {"instrumentation_overhead_kind", text("estimated clock-read cost; included in measured wall time")},
         {"instrumentation_total_overhead_s", Value{}}, {"instrumentation_total_overhead_pending", Value{true}},
         {"instrumentation_available", Value{instrumentation_available}}, {"sampling_protocol_satisfied", Value{protocol}},
@@ -278,7 +334,8 @@ bike::io::Value steady_state_evidence(const bike::io::Value& run, double minimum
     if (count(prefix, "requested_steps") <= 0 || count(prefix, "steps") != count(prefix, "requested_steps") || count(run, "physics_steps") != count(prefix, "steps"))
         reasons.push_back(text("incomplete_requested_prefix"));
     if (!equal(field(prefix, "reason"), text("duration_reached")) &&
-        !(find(run, "profile") != nullptr && equal(field(prefix, "reason"), text("requested_completion"))))
+        !(find(run, "profile") != nullptr && equal(field(prefix, "reason"),
+            text(bike::spatial::to_string(bike::spatial::SpatialReason::requested_completion)))))
         reasons.push_back(text("non_duration_terminal"));
     if (find(run, "profile") != nullptr && !yes(field(field(run, "comparability"), "strict")))
         reasons.push_back(text("non_strict_diagnostic"));

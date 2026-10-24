@@ -87,6 +87,42 @@ void moving_start(const spatial_tests::OwnedStartup& setup,double speed) {
         bt::require(p.state().energy.initial_energy_j.has_value(),"initial moving kinetic and stored energy are captured");
     });
 }
+void lifted_initial_state_is_rejected(const spatial_tests::OwnedStartup& source,
+        bike::initialization::SetupRequest request,const bike::initialization::PhysicalInitialState& initial,
+        const bike::initialization::StateFile& saved) {
+    using namespace bike;
+    namespace values=runtime::setupvalue;
+    auto payload=initial.payload();
+    validation::RuntimeRigAccess::inspect(*source.runtime,[&](const Stepper& stepper,const runtime::PhysicalStep& physical) {
+        auto integration=initialization::state_array(saved,"integration_state").doubles();
+        auto coordinates=initialization::state_array(saved,"qpos").doubles();
+        const auto* m=stepper.model();
+        const std::unique_ptr<mjData,decltype(&mj_deleteData)> probe(engine::make_data(m),&mj_deleteData);
+        bt::require(bool(probe),"lifted import has independent integration storage");
+        engine::set_state(m,probe.get(),integration.data(),mjSTATE_INTEGRATION);
+        const auto height=static_cast<std::size_t>(physical.topology()->root.free_qpos_adr+2);
+        coordinates[height]+=.25;model_access::mutable_buffer(probe->qpos,m->nq)[height]=coordinates[height];
+        engine::get_state(m,probe.get(),integration.data(),mjSTATE_INTEGRATION);
+        values::set(payload,"qpos",values::reals(coordinates));
+        auto engine_doc=values::field(payload,"spatial_engine");
+        auto record=values::field(engine_doc,"integration_state");
+        values::set(record,"values",values::reals(integration));
+        values::set(engine_doc,"integration_state",std::move(record));
+        values::set(payload,"spatial_engine",std::move(engine_doc));
+    });
+    // Keep the real source's successful report and scored phase. Both the
+    // coordinate envelope and its integration record agree on the lifted pose.
+    request.initial_state.emplace(io::canonical_json(payload));
+    const auto options=request.equilibrium;
+    auto owner=initialization::make_setup(std::move(request));
+    bool rejected=false;
+    try {(void)initialization::settle(*owner,options);}
+    catch(const std::invalid_argument& error) {
+        rejected=std::string_view(error.what())=="spatial equilibrium: missing or invalid wheel contacts";
+    }
+    bt::require(rejected,"an internally consistent scored import cannot substitute source evidence for current physical support");
+    bt::invalid([&]{(void)owner->seal_bootstrap();});
+}
 void failure_keeps_committed_prefix() {
     using namespace bike;
     const auto request=spatial_tests::make_startup_request(spatial::RootKind::free6,spatial::TyreTier::fast,false,3.);
@@ -275,6 +311,8 @@ int main(){return bt::run([] {
                 bt::require(!fresh.equilibrium.cache_hit,"first native setup follows fresh equilibrium path");
                 const auto transferred=fresh.owner->capture_initial_state();
                 const auto saved=fresh.owner->capture_state_file();
+                if(tier==spatial::TyreTier::fast && root==spatial::RootKind::free6 && !articulated)
+                    lifted_initial_state_is_rejected(fresh,*request,transferred,saved);
                 spatial_tests::OwnedStartup cached(*request);
                 bt::require(cached.equilibrium.cache_hit,"second identical setup restores the native cache");
                 auto import_request=*request;import_request.model.physics->equilibrium_cache_enabled=false;

@@ -376,7 +376,11 @@ namespace rider {
             throw std::invalid_argument("rider.spatial.pad: positive dimensions required");
         if (!bike::rider::support_frame(pose, {0.,0.,1.}).valid)
             throw std::invalid_argument("rider.spatial.box: unit quaternion required");
-        const auto local = bike::spatial::rotate_world_to_body(pose.quat_world_from_body_wxyz,
+        // support_frame accepts small engine roundoff and normalizes its
+        // derived rotation. Use that same rotation for distances and points;
+        // raw near-unit quaternion transforms are not mutual inverses.
+        const auto rotation = bike::spatial::quat_normalized(pose.quat_world_from_body_wxyz);
+        const auto local = bike::spatial::rotate_world_to_body(rotation,
             subtract(center, pose.position_world_m));
         Vec3 closest{}, delta{};
         for (std::size_t i = 0; i < 3; ++i) {
@@ -397,7 +401,7 @@ namespace rider {
             distance = -(half[face]-std::abs(local[face]));
         }
         const auto frame = bike::rider::support_frame(pose, normal);
-        return {.point_m=add(pose.position_world_m, bike::spatial::rotate_body_to_world(pose.quat_world_from_body_wxyz, closest)),
+        return {.point_m=add(pose.position_world_m, bike::spatial::rotate_body_to_world(rotation, closest)),
             .normal=frame.normal_world, .gap_m=distance-radius,
             .within_width=std::abs(local[1]) <= half[1]+radius,
             .within_footprint=std::abs(local[0]) <= half[0]+radius && std::abs(local[1]) <= half[1]+radius};

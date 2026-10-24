@@ -27,6 +27,9 @@
 #include "../rider/spindle_controller.hpp"
 #include "../writers/tire.hpp"
 
+namespace bike::terrain { struct Terrain3dQueryView; }
+namespace bike::spatial { struct Topology; }
+
 namespace runtime {
 
 // ---- Wire: the insertion-ordered plain-data tree the step metadata
@@ -412,6 +415,16 @@ road_samples(std::span<const std::array<double, 2>> vertices,
              std::span<const double> wheel_x_m, double lookahead_m,
              double spacing_m = .05);
 
+// Spatial preview samples the physical source at the current wheel positions
+// and ahead of the leading wheel along the horizontal body heading. Samples
+// are ordered along that heading; x_m still records their world X coordinate.
+// Optional lookahead stops at the finite terrain edge, without extrapolation.
+[[nodiscard]] std::vector<RoadSample> spatial_road_samples(
+    const bike::terrain::Terrain3dQueryView&,
+    std::span<const std::array<double, 3>> wheel_positions_world_m,
+    std::array<double, 3> forward_world, double lookahead_m,
+    double spacing_m = .05);
+
 [[nodiscard]] double road_grade_for_posture(std::span<const RoadSample> road);
 [[nodiscard]] double road_grade_preview(std::span<const RoadSample> road);
 
@@ -426,6 +439,11 @@ struct RiderKinematicState {
 [[nodiscard]] RiderKinematicState rider_kinematic_state(
     const mjModel *model, const mjData *data, const RoadProfile &road,
     std::span<const double> wheel_x_m, double lookahead_m,
+    double spacing_m = .05);
+
+[[nodiscard]] RiderKinematicState spatial_rider_kinematic_state(
+    const mjModel*, const mjData*, const bike::spatial::Topology&,
+    const bike::terrain::Terrain3dQueryView&, double lookahead_m,
     double spacing_m = .05);
 [[nodiscard]] RiderKinematicState rider_kinematic_state(
     const mjModel *model, const mjData *data,

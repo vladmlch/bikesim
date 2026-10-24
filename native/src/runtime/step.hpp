@@ -197,11 +197,14 @@ public:
     // output on the already-forwarded bootstrap data. The rider controller
     // emplaces in place (it is immovable by design); pass both pose and
     // config or neither — exactly like the oracle's control-is-None gate.
+    // A cold isolated probe may reuse an already acquired steering profile;
+    // the constructor checks its identity and copies it into the new owner.
     PhysicalStep(Stepper &stepper, StepConfig config,
                  std::vector<std::array<double, 2>> vertices,
                  StaticBrake brake,
                  const std::optional<rider::SpindlePose> &rider_pose,
-                 const std::optional<rider::SpindleConfig> &rider_config);
+                 const std::optional<rider::SpindleConfig> &rider_config,
+                 const bike::rider::SteerProfile* acquired_steer_profile = nullptr);
 
     // Immovable like the oracle's runtime: members own model pointers and
     // the rider controller emplaces in place.

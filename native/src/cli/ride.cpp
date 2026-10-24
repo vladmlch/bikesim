@@ -19,6 +19,7 @@
 #include "../recording/spatial_analysis.hpp"
 #include "../research/preview_csv.hpp"
 #include "../runtime/setup_values.hpp"
+#include "../spatial/bootstrap_state.hpp"
 #include "../terrain/trackfile.hpp"
 #include "../terrain/source3d.hpp"
 #include "../viewer/session.hpp"
@@ -88,14 +89,18 @@ std::string legacy_directory_name(const legacy::RideOptions& options,const std::
     }
     return name;
 }
-runtime::WireObject preview_row(const runtime::RenderFrame& frame,const terrain::TrackSpec& track,
+} // namespace
+runtime::WireObject physical_preview_row(const runtime::RenderFrame& frame,const terrain::TrackSpec& track,
     std::optional<double> achieved_rtf) {
     auto row=runtime::sample_wire::object(runtime::sample_wire::required(frame.state.view,"preview_row"));
     runtime::sample_wire::set(row,"rtf",achieved_rtf?runtime::Wire{*achieved_rtf}:runtime::Wire{nullptr});
     const double position=frame.presentation.position_m;
-    runtime::sample_wire::set(row,"grade_pct",track.grade_profile?track.grade_profile->slope(position)*100.:0.);
+    // A spatial SetupRequest carries a planar placeholder, not the authored
+    // Terrain3D. No accepted directional grade is present in this CSV input.
+    runtime::sample_wire::set(row,"grade_pct",frame.presentation.spatial ? runtime::Wire{nullptr} :
+        runtime::Wire{track.grade_profile?track.grade_profile->slope(position)*100.:0.});
     const auto markers=track.markers();
-    if(!markers.empty()) {
+    if(!frame.presentation.spatial&&!markers.empty()) {
         const auto nearest=std::ranges::min_element(markers,[&](const auto& a,const auto& b){return std::abs(a.first-position)<std::abs(b.first-position);});
         runtime::sample_wire::set(row,"obstacle",nearest->second);
         runtime::sample_wire::set(row,"obstacle_distance_m",nearest->first-position);
@@ -108,6 +113,20 @@ runtime::WireObject preview_row(const runtime::RenderFrame& frame,const terrain:
     runtime::sample_wire::set(row,"termination_reason",frame.state.outcome?runtime::Wire{*frame.state.outcome}:runtime::Wire{std::string{}});
     return row;
 }
+int physical_ride_exit_code(std::string_view reason,const io::Value& summary) {
+    if(reason=="operator_stop")return 130;
+    if(const auto* status=io::find_member(io::as_object(summary,"summary"),"model_status")) {
+        const auto& fields=io::as_object(*status,"model_status");
+        for(const auto key:{"model_valid","numerically_valid"}) {
+            const auto* value=io::find_member(fields,key);
+            const auto* valid=value?std::get_if<bool>(&value->data):nullptr;
+            if(valid&&!*valid)return 2;
+        }
+    }
+    return reason=="duration_reached"||reason=="end_of_track"||reason=="viewer_closed"||
+        reason==spatial::to_string(spatial::SpatialReason::requested_completion)?0:1;
+}
+namespace {
 [[gnu::noinline]] void apply_sag(initialization::SetupRequest& request, const Arguments& args) {
     const double pct=args.real("sag");if(pct<=0.||pct>=100.)throw ArgumentError("sag percentage must lie strictly between 0 and 100");
     const auto& bike=request.model.bike;
@@ -117,25 +136,27 @@ runtime::WireObject preview_row(const runtime::RenderFrame& frame,const terrain:
     request.model.bike.fork_initial_psi=fitted[0];request.model.bike.shock_stiffness=fitted[1];
 }
 
-struct ViewerFinalizationTimes {
-    double seal_s = 0., preview_s = 0., publication_s = 0., export_s = 0., close_s = 0.;
-};
 double finalization_elapsed(double started) {
     const double elapsed = platform::monotonic_seconds() - started;
     if (!std::isfinite(elapsed) || elapsed < 0.)
         throw std::invalid_argument("viewer finalization clock must be finite and monotone");
     return elapsed;
 }
-[[gnu::noinline]] Value viewer_performance_value(const viewer::PacingReport& pacing, const Value& summary,
+} // namespace
+[[gnu::noinline]] io::Value viewer_performance_value(const viewer::PacingReport& pacing, const io::Value& summary,
     const ViewerFinalizationTimes& finalization, bool fast_profile, bool strict, bool recording_enabled) {
     const auto optional_real = [](std::optional<double> value) { return value ? real(*value) : Value{}; };
     const auto counter = [](std::uint64_t value) { return Value{io::Number{std::to_string(value)}}; };
     const auto& status = field(summary, "model_status");
-    const bool physical_valid = io::as_bool(field(status, "model_valid"), "model_status.model_valid") &&
-        io::as_bool(field(status, "numerically_valid"), "model_status.numerically_valid") &&
+    const auto accepted_true=[](const Value& value) {
+        const auto* flag=std::get_if<bool>(&value.data);return flag&&*flag;
+    };
+    const bool physical_valid = accepted_true(field(status, "model_valid")) &&
+        accepted_true(field(status, "numerically_valid")) &&
         io::is_null(field(summary, "first_failure"));
     const auto& reason = io::as_string(field(field(summary, "outcome"), "reason"), "outcome.reason");
-    const bool complete = reason == "duration_reached" || reason == "requested_completion";
+    const bool complete = reason == "duration_reached" ||
+        reason == spatial::to_string(spatial::SpatialReason::requested_completion);
     const double finalization_s = finalization.seal_s + finalization.preview_s +
         finalization.publication_s + finalization.close_s;
     const double total_s = pacing.wall_s + finalization_s;
@@ -204,6 +225,7 @@ double finalization_elapsed(double started) {
             text("V10 real-display visual acceptance and complete physical qualification")}}}
     }};
 }
+namespace {
 // ResolvedRide, PreparedSimulation and the by-value arguments of prepare and
 // make_ride are each several KB; heap ownership keeps this orchestration
 // frame inside the strict bound.
@@ -286,7 +308,7 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
             hooks.frame=[&]{return runtime->render_frame();};hooks.terminal=terminal;
             hooks.presented=[&](const runtime::RenderFrame& frame,std::optional<double> achieved){
                 if(preview&&preview->due(frame.state.time_s,frame.state.generation))
-                    preview->write(frame.state.time_s,frame.state.generation,preview_row(frame,request.track,achieved));
+                    preview->write(frame.state.time_s,frame.state.generation,physical_preview_row(frame,request.track,achieved));
             };
             hooks.advance=[&](std::int64_t target,double budget){(void)runtime->advance(std::min(target,max_steps),{},front,rear,budget);runtime->release_samples();};
             hooks.brakes=[&](double f,double r){front=f;rear=r;(void)journal->emit("brakes",wall(),runtime->snapshot().step,{},Value{Object{{"front",real(f)},{"rear",real(r)}}});};
@@ -308,7 +330,7 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
         const double preview_started=viewer_pacing?platform::monotonic_seconds():0.;
         try {
             const auto frame=runtime->render_frame();
-            preview->write(frame.state.time_s,frame.state.generation,preview_row(frame,request.track,{}));
+            preview->write(frame.state.time_s,frame.state.generation,physical_preview_row(frame,request.track,{}));
             preview->write_marker("run ended; "+reason+"; t="+geometry::detail::py_fixed(frame.state.time_s,6)+"s");
             preview->close();
         } catch(...) {if(!failure)failure=std::current_exception();else std::cerr<<"preview finalization also failed\n";}
@@ -355,10 +377,7 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
     }
     std::cout<<io::recording_json(summary)<<'\n';
     if(publication)std::cout<<"[bike-ride] recording: "<<publication->directory<<'\n';
-    if(reason=="operator_stop")return 130;
-    if(const auto* status=io::find_member(io::as_object(summary,"summary"),"model_status"))
-        if(const auto* valid=io::find_member(io::as_object(*status,"model_status"),"model_valid");valid&&!io::as_bool(*valid,"model_valid"))return 2;
-    return reason=="duration_reached"||reason=="end_of_track"||reason=="viewer_closed"||reason=="completed"?0:1;
+    return physical_ride_exit_code(reason,summary);
 }
 
 // RideOptions embeds the multi-KB setup request; the options builder and the

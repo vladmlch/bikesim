@@ -56,6 +56,13 @@ bool finite_state(const spatial::SteerState& s) noexcept {
 SteerProfile read_steer_profile(const io::Value& value) {
     const auto& obj = vread::mapping(vread::Node{&value}, "steer.profile");
     const vread::Dict d{.value=&obj, .path="steer.profile"};
+    // Parsed JSON already rejects duplicates, but the public Value boundary
+    // also accepts documents assembled by native callers. Do not silently
+    // fingerprint only the first of two conflicting safety-critical fields.
+    for (std::size_t i = 0; i < obj.size(); ++i)
+        for (std::size_t j = 0; j < i; ++j)
+            if (obj[i].first == obj[j].first)
+                vread::invalid(d.child(obj[i].first), "duplicate key");
     vread::exact(d, vread::keys("schema", "speed_nodes_mps", "gains", "reference_torque_nm",
         "cap_nm", "delay_s", "sha256_hex", "provenance_status"));
     if (vread::integer(vread::field(d, "schema"), d.child("schema")) != 1)

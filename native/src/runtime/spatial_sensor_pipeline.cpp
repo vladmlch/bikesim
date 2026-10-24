@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <span>
 #include <stdexcept>
 #include <string_view>
 
@@ -126,6 +127,10 @@ void SensorPipelineV2::import_state(SensorStateV2 next) {
         throw std::invalid_argument("sensors_v2.state: inconsistent cursor, counters or ring size");
     if(next.cursor==0){if(next.startup||next.last_time||next.delivery_time||!next.queue.empty())throw std::invalid_argument("sensors_v2.state: uninitialized state has samples");}
     else if(!next.startup||!next.last_time||next.queue.empty())throw std::invalid_argument("sensors_v2.state: initialized state lacks clocks/startup/latest sample");
+    const auto dropped=[&](double uniform){return uniform<config_.dropout_probability;};
+    const auto consumed=std::span<const double>(tape_.dropout_uniform).first(next.cursor);
+    if(next.samples_dropped!=static_cast<std::size_t>(std::ranges::count_if(consumed,dropped)))
+        throw std::invalid_argument("sensors_v2.state.samples_dropped: differs from consumed noise tape");
     if(next.last_time)nonnegative(*next.last_time,"sensors_v2.last_time");
     if(next.delivery_time)nonnegative(*next.delivery_time,"sensors_v2.delivery_time");
     const auto configured_sample=[&](const SensorObservationV2& sample) {
@@ -135,12 +140,20 @@ void SensorPipelineV2::import_state(SensorStateV2 next) {
             throw std::invalid_argument("sensors_v2.state: disabled IMU channels must be canonical zero and invalid");
     };
     if(next.startup){configured_sample(*next.startup);if(next.startup->source_time_s>*next.last_time||
+        (dropped(tape_.dropout_uniform.front())&&next.startup->valid)||
         (next.startup->valid&&(next.startup->source_time_s+config_.latency_s>next.startup->time_s||
          next.startup->time_s-next.startup->source_time_s>config_.maximum_age_s)))
         throw std::invalid_argument("sensors_v2.state.startup: invalid startup sentinel");
         if(next.delivery_time&&*next.delivery_time<next.startup->source_time_s)throw std::invalid_argument("sensors_v2.state.delivery_time: precedes startup");}
     std::optional<double> previous;
-    for(const auto& sample:next.queue){configured_sample(sample);if((previous&&sample.source_time_s<=*previous)||!next.last_time||
+    // read() discards only a prefix; retained slots map to the last queue.size()
+    // attempts, including dropped attempts. A nondrop may still be invalid for
+    // another reason, but a dropped attempt can never be a usable delivery.
+    std::size_t attempt=next.cursor-next.queue.size();
+    for(const auto& sample:next.queue){configured_sample(sample);
+        if(dropped(tape_.dropout_uniform[attempt++])&&sample.valid)
+            throw std::invalid_argument("sensors_v2.state.queue: dropped attempt cannot be valid");
+        if((previous&&sample.source_time_s<=*previous)||!next.last_time||
         sample.source_time_s>*next.last_time||sample.source_time_s<next.startup->source_time_s)
         throw std::invalid_argument("sensors_v2.state.queue: timestamps are not unique and ordered");previous=sample.source_time_s;}
     if(next.last_time&&(!previous||*previous!=*next.last_time))

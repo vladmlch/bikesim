@@ -9,7 +9,9 @@ inline bool latency_goal_met(double cpu_s, double gpu_s,
                              bool accuracy_passed, bool deterministic) {
     if (!std::isfinite(cpu_s) || !std::isfinite(gpu_s) || cpu_s <= 0. || gpu_s <= 0.)
         throw std::invalid_argument("positive finite measured times required");
-    return accuracy_passed && deterministic && gpu_s <= cpu_s / 2.;
+    // Doubling the candidate is exact (or overflows to a definite failure).
+    // Halving an odd subnormal baseline can round the target upward.
+    return accuracy_passed && deterministic && 2. * gpu_s <= cpu_s;
 }
 
 inline bool batch_goal_met(double cpu_episodes_per_s, double gpu_episodes_per_s,
@@ -39,7 +41,11 @@ inline bool interactive_goal_met(double cpu_section_s, double gpu_section_s,
     if (!std::isfinite(cpu_ride_s) || !std::isfinite(gpu_ride_s) ||
         cpu_ride_s <= 0. || gpu_ride_s <= 0.)
         throw std::invalid_argument("positive finite complete-ride times required");
-    return section && gpu_ride_s <= 0.90 * cpu_ride_s;
+    // Normalize by a power of two before forming the 90% threshold. A
+    // subnormal product must not round up and accept unchanged ride time.
+    int exponent = 0;
+    const double cpu_normalized = std::frexp(cpu_ride_s, &exponent);
+    return section && std::scalbn(gpu_ride_s, -exponent) <= 0.90 * cpu_normalized;
 }
 
 } // namespace spatial_gpu

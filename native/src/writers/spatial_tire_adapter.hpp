@@ -66,7 +66,7 @@ private:
     std::array<bike::spatial::BodyPose,2> wheel_motion_{};
     std::array<bike::spatial::Vec3,2> forward_{};
     bike::pneumatic3d::TyreState3d initial_;
-    std::array<TireSnapshot,2> snapshots_,probes_;
+    std::array<TireSnapshot,2> snapshots_,probes_,projection_stage_;
     std::array<TireDiagnostics,2> diagnostics_{};
     std::array<double,2> radii_{};
     std::vector<std::string> no_planar_columns_;

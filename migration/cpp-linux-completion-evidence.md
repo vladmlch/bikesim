@@ -2501,3 +2501,133 @@ would-be golden (`assert_bitwise_equal` vs the damper oracle).
 The batch instructions and labels use `t52`; the port-map rows carry
 `owner_task: T53` (as assigned at T01 enumeration). Documented rather than
 rewritten — owner_task left as recorded.
+
+## 2026-10-23 — Task 3.28 (lane/c) merge-back
+
+Merge of `lane/c` (`49ae26c` atomicity port, `c483ec3` input-contracts
+port + ledgers + evidence, `374361c` indent-2 ledger restore) into
+`impl/python-free-cpp` at `5be9ec5` via `git merge --no-ff lane/c`
+(D17 L2 in this worktree). Clean `ort` merge — **zero conflicts**: the
+only overlapping file was this evidence file and the hunks were
+disjoint (HEAD's 3.21a review-fix + par-t20 sections vs the lane's
+appended 3.28 section).
+
+### Ledger verification
+
+`migration/test-port-map.json` parses; **2381 records**;
+`tests/reference/test_native_atomicity.py` dispositions
+**16 port / 5 drop** (21 records) and
+`tests/reference/test_native_input_contracts.py`
+**8 port / 7 drop / 17 planned** (32 records) — the 17
+`resolved`-fixture-stopped records stay `planned` exactly as the lane
+recorded. `python-removal.json` parses; `test_native_atomicity.py` →
+`replacement_landed` (`verification_ids` =
+`[reference.native_atomicity]`); `test_native_input_contracts.py`
+stays `planned` with `reference.native_input_contracts` appended to
+`verification_ids`. `oracle-manifest.json` unchanged (no golden rows
+this batch). `native/tests/reference/Phase3Ports.cmake` keeps every
+prior registration plus `reference.native_atomicity` and
+`reference.native_input_contracts` (labels `reference`, `contracts`,
+`t52`). `git ls-files -u` empty; no conflict markers in any ledger.
+
+### Green proof (merge nodes)
+
+macOS arm64 (`build/native-release`):
+
+    ctest --test-dir build/native-release \
+      -R 'reference\.(native_atomicity|native_input_contracts)' \
+      --output-on-failure
+    # reference.native_atomicity .......... Passed 0.62 s
+    # reference.native_input_contracts .... Passed 0.58 s
+    # 100% tests passed out of 2
+
+Linux aarch64, container `bike-dev-python-free-cpp`
+(`bike-dev-linux:24.04`, clang++-18, `/build/root-clang`), after
+`tools/linux/container.sh sync` and a target-scoped build:
+
+    tools/linux/container.sh build root-clang \
+      reference.native_atomicity reference.native_input_contracts
+    # both TUs compiled and linked clean under Linux clang++-18
+    tools/linux/container.sh ctest root-clang \
+      -R 'reference\.(native_atomicity|native_input_contracts)' \
+      --output-on-failure
+    # reference.native_atomicity .......... Passed 0.05 s
+    # reference.native_input_contracts .... Passed 0.02 s
+    # 100% tests passed out of 2
+
+### L2 block results (bounded subset)
+
+The merge adds two test TUs plus ledger/docs rows only — no
+`native/src` content — so the exercised L2 surface is bounded to both
+graph builds, the touched `t52` label family, and the binding-graph
+suite:
+
+- `cmake --build native/build -j10`: green (all targets).
+- `cmake --build build/native-release -j10`: green; both new
+  reference executables link (one cosmetic
+  `ld: warning: ignoring duplicate libraries: 'libbike_random.a'`,
+  the same pattern other `bike_app bike_random` registrants show).
+- `ctest --test-dir build/native-release -L t52 -j8
+  --output-on-failure`: **22/28** — all six reds are the documented
+  baseline set with signatures identical to the 3.21a merge-back:
+  `native_static_brake`, `pneumatic_tire_oracle`,
+  `native_clock_contracts`, `native_drive_policies`,
+  `native_drivetrain` (`FAIL fixture is not a regular file` family)
+  and `period_buffer` (`FAIL initial-state physical model contract
+  differs`). Both new nodes pass inside this run and
+  `reference.native_numeric_completion` stays green (1.82 s).
+- `ctest --test-dir native/build -j8 --output-on-failure`:
+  **60/62** — `migration_T09` (`integration vector resolves
+  bitwise`) and `migration_T29`
+  (`config.rider_controller.weld_servo_gain: unknown key`), the
+  documented baseline pair, unchanged.
+- `tools/run_native_checks.sh` (any kind) and `tools/run_tests.sh
+  native` (L3): not run — bounded per the merge-back scope; the merge
+  touches no `native/src` TU and both new test TUs compiled clean
+  under each graph's warning set on both platforms.
+
+### Parity pytest (transitional gate — ADR-0003)
+
+    PYTHONPATH=tests/reference \
+    NATIVE_TEST_BUILD_PATH=$PWD/native/build \
+    uv run --frozen --group native python -m pytest -q \
+      tests/reference/test_native_atomicity.py \
+      tests/reference/test_native_input_contracts.py
+    # 137 passed in 2.91 s — zero errors
+
+Versus the lane's documented `78 passed, 59 errors`: the 59
+`resolved`-fixture setup errors did not reproduce because the
+machine-level equilibrium cache (`$TMPDIR/bike_sim_equilibrium/`;
+`BIKE_SIM_EQUILIBRIUM_CACHE_DIR` unset) already held a validated
+fingerprint-matched pose — entries written 2026-10-23 21:29–21:33 by
+an earlier session on this host, and only post-validation poses are
+cached, so the savage settle did converge once on this machine. A
+cold-cache probe proves the underlying defect is unchanged and the
+green is cache-mediated, not a physics change:
+
+    BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/eqcache-probe-empty \
+      <same pytest invocation> \
+      tests/reference/test_native_input_contracts.py::test_schema_is_closed_integer
+    # 6 errors in 144.46 s — RuntimeError: physical equilibrium did
+    # not converge after 64000 steps: residual=0.094603;
+    # [('front_wheel_spin', -0.09460304386224792), ...] — the
+    # documented baseline signature verbatim.
+
+### Stopped records (17, `resolved` fixture)
+
+The 17 `planned` input-contract records remain blocked on the same
+documented savage-plant equilibrium defect
+(`migration/baseline-refresh-2026-10-23.md`; residual 0.094603 after
+64000 steps, `physical_equilibrium.py:141`, `front_wheel_spin`
+dominant) — reproduced cold above. Not a merge regression; their
+port stays gated on the physics-fix decision the lane recorded.
+
+### Changed files (this merge)
+
+6 paths vs `5be9ec5`, +1228/−178: the two new reference TUs
+(`test_native_atomicity.cpp` +588,
+`test_native_input_contracts.cpp` +241), `Phase3Ports.cmake` (+6:
+two registrations), `test-port-map.json` (36 dispositioned rows —
+24 port / 12 drop — plus 17 explicitly-stopped `planned` rows, all
+with dated evidence), `python-removal.json` (2 rows), and this
+evidence file (+110 lane section).

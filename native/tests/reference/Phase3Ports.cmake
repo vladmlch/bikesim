@@ -93,6 +93,9 @@ bike_add_reference_test(ride_plots_html_markers ENGINE
 bike_add_reference_test(native_rider_contacts ENGINE
   SOURCES test_native_rider_contacts.cpp LIBRARIES bike_app
   LABELS t52 rider golden)
+bike_add_reference_test(native_rider_contact_math ENGINE
+  SOURCES test_native_rider_contact_math.cpp LIBRARIES bike_app
+  LABELS t52 rider golden)
 foreach(_loader_case IN ITEMS
     test_native_contract_require_control_fails_in_selected_build
     test_native_contract_executable_lists_registered_cases

@@ -1,0 +1,28 @@
+[
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "outcome.unreachable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_sole_height_oracle[2.0--0.002-3.141592653589793]",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "outcome.message",
+  "nbytes": 49,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_sole_height_oracle[2.0--0.002-3.141592653589793]",
+  "offset": 1,
+  "rtol": null,
+  "shape": [
+   49
+  ]
+ }
+]

@@ -1,0 +1,68 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_outputs_own_storage_and_convert_dtype",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_outputs_own_storage_and_convert_dtype",
+  "offset": 24,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_outputs_own_storage_and_convert_dtype",
+  "offset": 48,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_outputs_own_storage_and_convert_dtype",
+  "offset": 56,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_outputs_own_storage_and_convert_dtype",
+  "offset": 64,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

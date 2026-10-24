@@ -11,6 +11,7 @@ from bike_sim.sim.ride import support_geometry as geometry
 from bike_sim.sim.ride.rider_contacts import grip_step
 from bike_sim.physics.grip_release import release_if_overloaded
 from _bits import assert_bitwise_equal
+import _golden
 
 from native_loader import load_native
 bike_native = load_native()
@@ -39,6 +40,7 @@ def test_box_pad_oracle(angle, local):
     for key in actual:
         wanted = getattr(expected, key)
         if isinstance(wanted, bool):
+            _golden.record(np.asarray(wanted), key)
             assert actual[key] is wanted
         else:
             bits(actual[key], wanted)
@@ -51,10 +53,18 @@ def test_box_random_and_medial_ties():
         origin = rng.uniform(-2., 2., 3)
         half = rng.uniform(.01, .2, 3)
         center = origin + rot @ rng.uniform(-.3, .3, 3)
+        # np.linalg/matmul lowers differ across BLAS builds — the C++ port
+        # replays the oracle's own inputs rather than recomputing them.
+        _golden.record(rot, 'input.rot')
+        _golden.record(origin, 'input.origin')
+        _golden.record(half, 'input.half')
+        _golden.record(center, 'input.center')
         expected = geometry.box_pad_contact(center, .02, origin, rot, half)
         actual = bike_native.rider_box_pad_contact(center, .02, origin, rot, half)
         for key in ('point_m', 'normal', 'tangent', 'gap_m'):
             bits(actual[key], getattr(expected, key))
+        _golden.record(np.asarray(expected.within_width), 'within_width')
+        _golden.record(np.asarray(expected.within_footprint), 'within_footprint')
         assert actual['within_width'] == expected.within_width
         assert actual['within_footprint'] == expected.within_footprint
     for angle in (0., math.pi/2, math.pi):
@@ -79,6 +89,10 @@ def test_sole_height_oracle(angle, compression, sole_x):
     try:
         expected = geometry.sole_target_height(*args)
     except (geometry.UnreachableSoleTarget, RuntimeError) as exc:
+        _golden.record(np.asarray(isinstance(exc, geometry.UnreachableSoleTarget)),
+                       'outcome.unreachable')
+        _golden.record(np.frombuffer(str(exc).encode('utf-8'), dtype=np.uint8),
+                       'outcome.message')
         cls = bike_native.UnreachableSoleTarget if isinstance(exc, geometry.UnreachableSoleTarget) else RuntimeError
         with pytest.raises(cls, match=str(exc)):
             bike_native.rider_sole_target_height(*args)
@@ -93,6 +107,10 @@ def test_project_goal_oracle(angle, compression, shear):
     try:
         expected, diagnostic = geometry.project_sole_goal(*args)
     except (geometry.UnreachableSoleTarget, RuntimeError) as exc:
+        _golden.record(np.asarray(isinstance(exc, geometry.UnreachableSoleTarget)),
+                       'outcome.unreachable')
+        _golden.record(np.frombuffer(str(exc).encode('utf-8'), dtype=np.uint8),
+                       'outcome.message')
         cls = bike_native.UnreachableSoleTarget if isinstance(exc, geometry.UnreachableSoleTarget) else RuntimeError
         with pytest.raises(cls, match=str(exc)):
             bike_native.rider_project_sole_goal(*args)
@@ -101,7 +119,13 @@ def test_project_goal_oracle(angle, compression, shear):
     bits(actual, expected)
     assert set(actual_diagnostic) == set(diagnostic)
     for key, wanted in diagnostic.items():
-        if isinstance(wanted, (bool, list)):
+        if isinstance(wanted, bool):
+            _golden.record(np.asarray(wanted), key)
+            assert actual_diagnostic[key] == wanted
+        elif isinstance(wanted, list):
+            for i, value in enumerate(wanted):
+                _golden.record(np.frombuffer(value.encode('utf-8'),
+                                             dtype=np.uint8), f'{key}[{i}]')
             assert actual_diagnostic[key] == wanted
         else:
             bits(actual_diagnostic[key], wanted)
@@ -110,8 +134,12 @@ def test_project_goal_oracle(angle, compression, shear):
 @pytest.mark.parametrize('k,c,dt', [(4000., 150., .0005), (1., 0., .1), (1e-100, 1e-50, 1e-20)])
 def test_grip_energy_oracle(k, c, dt):
     rng = np.random.default_rng(1982)
-    for xi, velocity in [(np.array([.003, -.002, .001]), np.array([.1, 0., -.2])),
-                          (np.array([-0., 0., -0.]), np.zeros(3))] + [tuple(rng.normal(size=(2, 3))) for _ in range(150)]:
+    literal_cases = [(np.array([.003, -.002, .001]), np.array([.1, 0., -.2])),
+                     (np.array([-0., 0., -0.]), np.zeros(3))]
+    rng_cases = [tuple(rng.normal(size=(2, 3))) for _ in range(150)]
+    for i, (xi, velocity) in enumerate(literal_cases + rng_cases):
+        if i >= len(literal_cases):
+            _golden.record(np.asarray([xi, velocity]), 'input.pair')
         expected = grip_step(xi, velocity, k, c, dt)
         actual = bike_native.rider_grip_step(xi, velocity, k, c, dt)
         for got, wanted in zip(actual, expected):
@@ -125,6 +153,7 @@ def test_grip_release_oracle(force, limit):
         expected = release_if_overloaded(force, .2, limit)
     actual = bike_native.rider_release_if_overloaded(force, .2, limit)
     bits(actual[0], expected[0]); bits(actual[1], expected[1])
+    _golden.record(np.asarray(expected[2]), 'overloaded')
     assert actual[2] is expected[2]
 
 
@@ -133,10 +162,13 @@ def test_three_coordinate_hypot_oracle():
     values = [(0., -0., 0.), (1e308, 1e308, 1e308), (5e-324, 5e-324, 5e-324),
               (math.inf, math.nan, 1.), (math.nan, 1., 2.)]
     values += [tuple(rng.normal(size=3)*math.ldexp(1., int(rng.integers(-1000, 1000)))) for _ in range(1000)]
-    for value in values:
+    for i, value in enumerate(values):
+        if i >= 5:
+            _golden.record(np.asarray(value), 'input.value')
         actual = bike_native._rider_hypot3(value)
         expected = math.hypot(*value)
         if math.isnan(expected):
+            _golden.record(np.asarray(math.isnan(expected)), 'value')
             assert math.isnan(actual)
         else:
             bits(actual, expected)
@@ -215,6 +247,8 @@ def test_planar_model_validation_oracle(tmp_path, joint, geom, quat):
     try:
         geometry.validate_planar_support_model(model, data, [geom_id])
     except ValueError as exc:
+        _golden.record(np.frombuffer(str(exc).encode('utf-8'), dtype=np.uint8),
+                       'outcome.message')
         with pytest.raises(ValueError, match=str(exc)):
             bike_native._rider_validate_support_model(stepper, [geom_id])
     else:
@@ -241,4 +275,5 @@ def test_release_preserves_reference_numeric_bool_inputs(energy, limit):
     expected = release_if_overloaded(force, energy, limit)
     actual = bike_native.rider_release_if_overloaded(force, energy, limit)
     bits(actual[0], expected[0]); bits(actual[1], expected[1])
+    _golden.record(np.asarray(expected[2]), 'overloaded')
     assert actual[2] is expected[2]

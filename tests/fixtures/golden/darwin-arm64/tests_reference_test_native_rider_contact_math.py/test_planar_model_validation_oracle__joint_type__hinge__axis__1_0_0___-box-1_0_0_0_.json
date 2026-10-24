@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "outcome.message",
+  "nbytes": 51,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_planar_model_validation_oracle[<joint type=\"hinge\" axis=\"1 0 0\"/>-box-1 0 0 0]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   51
+  ]
+ }
+]

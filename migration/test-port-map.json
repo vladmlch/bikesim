@@ -14541,13 +14541,19 @@
       "line": 32,
       "end_line": 44,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_box_pad_oracle",
+      "native_test_id": "reference.native_rider_contact_math::test_box_pad_oracle",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14555,13 +14561,19 @@
       "line": 47,
       "end_line": 64,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_box_random_and_medial_ties",
+      "native_test_id": "reference.native_rider_contact_math::test_box_random_and_medial_ties",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14569,13 +14581,19 @@
       "line": 68,
       "end_line": 71,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_upper_face_oracle",
+      "native_test_id": "reference.native_rider_contact_math::test_upper_face_oracle",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14583,13 +14601,19 @@
       "line": 77,
       "end_line": 86,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_sole_height_oracle",
+      "native_test_id": "reference.native_rider_contact_math::test_sole_height_oracle",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14597,13 +14621,19 @@
       "line": 91,
       "end_line": 107,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_project_goal_oracle",
+      "native_test_id": "reference.native_rider_contact_math::test_project_goal_oracle",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14611,13 +14641,19 @@
       "line": 111,
       "end_line": 118,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_grip_energy_oracle",
+      "native_test_id": "reference.native_rider_contact_math::test_grip_energy_oracle",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14625,13 +14661,19 @@
       "line": 123,
       "end_line": 128,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_grip_release_oracle",
+      "native_test_id": "reference.native_rider_contact_math::test_grip_release_oracle",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14639,13 +14681,19 @@
       "line": 131,
       "end_line": 142,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_three_coordinate_hypot_oracle",
+      "native_test_id": "reference.native_rider_contact_math::test_three_coordinate_hypot_oracle",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14653,13 +14701,15 @@
       "line": 155,
       "end_line": 157,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_invalid_grip",
+      "native_test_id": "reference.native_rider_contact_math::test_invalid_grip",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: ported to native/tests/reference/test_native_rider_contact_math.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_rider_contact_math)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14667,13 +14717,15 @@
       "line": 160,
       "end_line": 162,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_grip_overflow",
+      "native_test_id": "reference.native_rider_contact_math::test_grip_overflow",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: ported to native/tests/reference/test_native_rider_contact_math.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_rider_contact_math)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14681,13 +14733,15 @@
       "line": 169,
       "end_line": 173,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_invalid_box",
+      "native_test_id": "reference.native_rider_contact_math::test_invalid_box",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: ported to native/tests/reference/test_native_rider_contact_math.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_rider_contact_math)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14695,13 +14749,19 @@
       "line": 176,
       "end_line": 190,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_outputs_own_storage_and_convert_dtype",
+      "native_test_id": "reference.native_rider_contact_math::test_outputs_own_storage_and_convert_dtype",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14709,13 +14769,19 @@
       "line": 204,
       "end_line": 225,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_planar_model_validation_oracle",
+      "native_test_id": "reference.native_rider_contact_math::test_planar_model_validation_oracle",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14723,13 +14789,15 @@
       "line": 229,
       "end_line": 235,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_grip_scalar_validation_oracle",
+      "native_test_id": "reference.native_rider_contact_math::test_grip_scalar_validation_oracle",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: ported to native/tests/reference/test_native_rider_contact_math.cpp; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.native_rider_contact_math)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -14737,13 +14805,19 @@
       "line": 239,
       "end_line": 244,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_contact_math::test_release_preserves_reference_numeric_bool_inputs",
+      "native_test_id": "reference.native_rider_contact_math::test_release_preserves_reference_numeric_bool_inputs",
       "native_source": "native/tests/reference/test_native_rider_contact_math.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-24 3.14a lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_rider_contact_math green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contacts.py",

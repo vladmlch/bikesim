@@ -3935,3 +3935,111 @@ labels `t52` `rider` (plus `golden` on both registrations).
   two-platform captures, new CTest nodes green on both platforms,
   `ctest -L reference` L1 — are listed above. L3 runs in the
   integration worktree at merge-back.
+
+## 2026-10-24 — Task 3.14a (lane/d) merge-back
+
+Merged `lane/d` tip `6790a61` (base `e843f0d`; `e5dddc6` contacts +
+`6790a61` contact math) into `impl/python-free-cpp` @ `a5ed745` as
+`ce2a774` (`git merge --no-ff lane/d`). Reference-test batch — bounded
+merge-back L2, no physics escalation.
+
+### Conflict resolution
+
+One real conflict: `migration/cpp-linux-completion-evidence.md` — both
+sides appended at the same EOF seam (HEAD: four sections from the
+3.12b/3.16/F2 merge-backs; lane/d: one `2026-10-25` batch 3.14a
+section). Chronological resolution per the established precedent
+(section-date ordering, event time within a date): the lane's batch
+section — commits `2026-10-25 00:14–00:15 +0300`, postdating every
+HEAD merge (`22:26–23:11` on `2026-10-24`) — sits at EOF after the
+`2026-10-24 — F2 (lane/b) merge-back` section, preserving
+non-decreasing date order with zero inversions inside the merged
+content. Verified: `git diff` vs HEAD stage removes 0 lines / adds
+exactly the 115-line lane block + 1 blank seam.
+
+Auto-merged, then verified semantically:
+
+- `migration/test-port-map.json`: 2381 records, **0 record-level
+  union violations** vs base `e843f0d` / HEAD `a5ed745` / lane
+  `6790a61` (programmatic check — every record equals the side that
+  changed it; no landed disposition regressed to `planned`). This
+  batch: 55 records → 37 `golden` / 18 `port` / 0 `drop`, all on
+  `test_native_rider_contacts.py` (40) and
+  `test_native_rider_contact_math.py` (15). Merged totals: planned
+  1769 / port 354 / golden 192 / drop 66. Preserved from HEAD: 3.16
+  (52 port / 3 drop), 3.12b (38 golden / 9 port / 2 parked planned),
+  3.12a (53 golden / 8 port), 3.28 dispositions — and the F2-untouched
+  rows verbatim.
+- `migration/python-removal.json`: 535 rows, 0 union violations.
+  Lane's two rows (`test_native_rider_contacts.py`,
+  `test_native_rider_contact_math.py`) → `replacement_landed` with
+  `verification_ids` = the new CTest node names; HEAD's seven
+  landed rows (3.16 four + 3.12b three) keep their values.
+- `native/tests/reference/Phase3Ports.cmake`: all registrations
+  present — 3.12a trio, 3.12b trio, 3.16 four, plus this batch's
+  `native_rider_contacts` + `native_rider_contact_math` in the lane's
+  position after `ride_plots_html_markers` (labels `t52 rider
+  golden`, library `bike_app`).
+- Both ledgers + evidence + Phase3Ports keep trailing EOF LF;
+  `git ls-files -u` empty; no conflict markers.
+- Python oracle files: `test_native_rider_contacts.py` /
+  `test_native_rider_contact_math.py` byte-identical to lane/d —
+  additive `_golden.record` capture edits only; HEAD never touched
+  them (nothing to union). F2's `test_rider_allocation.py` /
+  `test_monitor_strictness.py` stub fixes are HEAD-side and were
+  never in the conflict set — intact.
+
+### Merge-back L2
+
+- `cmake --build native/build -j10`: green.
+- `cmake --build build/native-release -j10`: green; the two new
+  reference TUs (`test_native_rider_contacts.cpp`,
+  `test_native_rider_contact_math.cpp`) compile/link clean; only
+  pre-existing `ld` duplicate-library chatter.
+- `ctest --test-dir build/native-release -R
+  'reference\.native_rider' --output-on-failure`: **5/5** — the
+  pattern matches five nodes (3.16's
+  `native_rider_{allocation,dynamics,information_boundary}` plus this
+  batch's `native_rider_contacts` 0.95 s and
+  `native_rider_contact_math` 0.90 s); all pass. (The merge plan's
+  "4/4" undercounted the pattern by one — `information_boundary`
+  also matches `native_rider`.)
+- `ctest --test-dir build/native-release -L reference -j8
+  --output-on-failure`: **43/50** — the same seven documented
+  baseline reds verbatim: `native_static_brake`,
+  `pneumatic_tire_oracle`, `native_clock_contracts`,
+  `native_drive_policies`, `native_drivetrain` (the `FAIL fixture is
+  not a regular file` family — goldens owned by unmerged sibling
+  lanes / uncaptured oracle `Node`), `period_buffer` (`FAIL
+  initial-state physical model contract differs`), and
+  `golden_episode_tool` (`FAIL task 3.03 oracle acquisition …
+  episode.npz`). The fixture-missing family is **zero for landed
+  batches**: both new nodes find their captured fixtures and pass
+  inside the run; `golden_episode_regressions` also passes (17.37 s).
+- Linux aarch64 container `bike-dev-python-free-cpp`
+  (`/build/root-clang`, clang++-18): after `container.sh sync`,
+  target-scoped build of the two new TUs clean (zero `warning:`
+  lines, CMake reconfigure picked up the merged Phase3Ports);
+  `ctest root-clang -R
+  'reference\.native_rider_(contacts|contact_math)'`: **2/2**
+  (0.15 s / 0.11 s) — validates the linux-aarch64 golden tree
+  (the per-platform-divergent leaves like
+  `test_flat_contacts_qfrc_and_diagnostics_bitwise` replay from the
+  linux sidecars).
+- Parity pytest (`NATIVE_TEST_BUILD_PATH=$PWD/native/build`,
+  `uv`-only env): **309 passed / 51.53 s** on
+  `test_native_rider_contacts.py` +
+  `test_native_rider_contact_math.py` — matches the lane's reported
+  309 verbatim. Cold-cache probe (fresh
+  `BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/m6-coldcache`): **309
+  passed / 44.28 s** — identical count, no cache mediation.
+
+### Note on section dates
+
+This section is titled `2026-10-24` per the merge-back mandate while
+the lane's batch section above carries `2026-10-25` (its true commit
+time, `00:14 +0300`); the resulting single label inversion preserves
+correct event-time order (lane dev → merge-back).
+
+L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
+checkpoint profile owns it.

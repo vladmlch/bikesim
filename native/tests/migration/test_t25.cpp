@@ -7,6 +7,7 @@
 #include "configuration/load.hpp"
 #include "initialization/setup_owner.hpp"
 #include "io/json.hpp"
+#include "platform/provenance.hpp"
 #include "runtime/setup_values.hpp"
 #include "terrain/profile.hpp"
 
@@ -148,7 +149,13 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     // The immutable oracle gate stays bitwise and fail-closed when a binary
     // artifact is missing; this session does not create replacement goldens.
     bt::manifest_verify_files(bt::manifest_entry("bootstrap/native_start_welded"));
-    bt::golden_f64("bootstrap/native_start_welded/integration.f64", initial.integration_state);
+    // The restored t=0 vector is platform solver output (the initial-state
+    // document is platform-keyed): each captured platform owns its pin under
+    // <platform-key>/integration.f64 and an uncaptured platform fails closed
+    // on a missing fixture rather than silently comparing a foreign vector.
+    bt::golden_f64("bootstrap/native_start_welded/" + bike::platform::key() +
+                   "/integration.f64",
+                   initial.integration_state);
 }
 
 [[gnu::noinline]] void shipped_backends() {

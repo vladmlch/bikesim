@@ -797,7 +797,14 @@ def _support(oracle_root: Path):
 
 def _bootstrap_payload(ctx: Context, sim, stem: str, *, steps=None,
                        advance_args=None):
-    """capture_bootstrap + optional advance_python rows under ``stem``."""
+    """capture_bootstrap + optional advance_python rows under ``stem``.
+
+    The bitwise gate's ``<platform-key>/integration.f64`` pin is NOT emitted
+    here: it is the native prepare->snapshot vector (the request pipeline
+    zeroes the unported leg-ctrl slots), produced by
+    ``bike-native-ride --request <bundle> --steps 0 --dump-integration-state``
+    — see the RCP-01 native_start_welded notes and the T25 evidence.
+    """
     from bike_sim.native.setup import capture_bootstrap
     out, rec = ctx.out, ctx.rec
     work = ctx.tmp / stem.replace("/", "_")

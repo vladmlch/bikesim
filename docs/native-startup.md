@@ -128,6 +128,7 @@ The parser is in
 | `--max-equilibrium-steps N` | Positive maximum relaxation step count. |
 | `--fresh` | Ignore initial-state transfer and saved equilibrium input, and disable automatic cache reads and writes for this invocation. |
 | `--cache-dir DIR` | Select the automatic equilibrium-cache directory; does not itself enable caching. |
+| `--dump-integration-state FILE` | After `make_ride`, write the restored t=0 integration vector as little-endian `.f64` (exclusive create; fails when the file exists). This is the documented producer for the per-platform `bootstrap/<name>/<platform-key>/integration.f64` bitwise pins. |
 | `--legacy-source-root DIR` | Select the source tree whose bytes identify an explicit historical compatibility input. See the provenance section below. |
 | `--no-strict` | Disable the runtime's strict reference-monitor mode. Configuration validation and equilibrium acceptance remain in force. |
 | `--help`, `-h` | Print usage. |

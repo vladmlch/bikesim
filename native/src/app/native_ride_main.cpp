@@ -16,14 +16,16 @@
 #include <string_view>
 #include "../configuration/load.hpp"
 #include "../io/json.hpp"
+#include "../io/npy.hpp"
 #include "../legacy/ride.hpp"
 #include "../model/rider_geometry.hpp"
+#include "../platform/files.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../terrain/trackfile.hpp"
 
 namespace {
 struct Options {
-    std::optional<std::filesystem::path> request, physics, track_file, legacy_source, cache_directory;
+    std::optional<std::filesystem::path> request, physics, track_file, legacy_source, cache_directory, dump_state;
     std::optional<std::string> track, rider, seed, legacy_drive, legacy_tyre, legacy_tier, assist_mode;
     std::optional<double> speed_kph, duration_s;
     std::optional<std::int64_t> steps, equilibrium_steps;
@@ -66,6 +68,7 @@ Options parse(std::span<char*> arguments) {
         else if (key == "--max-equilibrium-steps") result.equilibrium_steps = number<std::int64_t>(value(), key);
         else if (key == "--legacy-source-root") result.legacy_source = value();
         else if (key == "--cache-dir") result.cache_directory = value();
+        else if (key == "--dump-integration-state") result.dump_state = value();
         else if (key == "--fresh") result.fresh = true;
         else if (key == "--no-strict") result.strict = false;
         else throw std::invalid_argument("unknown option '" + std::string(key) + "'");
@@ -140,6 +143,7 @@ void usage() {
         "  Common: [--steps N | --duration SECONDS] [--initial-speed-kph VALUE]\n"
         "          [--fresh] [--max-equilibrium-steps N] [--no-strict]\n"
         "          [--legacy-source-root DIR] [--cache-dir DIR]\n"
+        "          [--dump-integration-state FILE]  t=0 vector (.f64 LE), exclusive write\n"
         "  Legacy mode: [--legacy-drive motor|pedal|pedelec] [--assist-mode MODE]\n"
         "               [--legacy-tyre sphere|pneumatic] [--legacy-tyre-tier TIER]\n"
         "Default duration: 1 second. --steps 0 prepares t=0 only.\n"
@@ -204,6 +208,15 @@ void usage() {
     auto prepared = prepare_physical_ptr(std::move(setup_request));
     const auto residual = runtime::setupvalue::field(runtime::setupvalue::field(prepared->metadata, "equilibrium"), "residual_qacc");
     auto ride = make_physical_ride(std::move(prepared));
+    if (options.dump_state) {
+        // The restored t=0 vector exactly as the migration gate compares it
+        // (bootstrap/native_start_welded/<platform>/integration.f64), written
+        // exclusively: the flag is the documented capture step for that pin.
+        const auto snapshot = ride->snapshot();
+        const auto array = bike::io::double_array(snapshot.integration_state,
+                                                {snapshot.integration_state.size()});
+        bike::platform::write_exclusive(*options.dump_state, array.bytes);
+    }
     ride->set_finish_position(finish_m);
     const auto advanced = ride->advance(steps, runtime::RideControl{}, 0., 0., std::nullopt);
     using namespace runtime::setupvalue;

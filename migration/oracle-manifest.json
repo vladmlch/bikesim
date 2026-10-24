@@ -14827,6 +14827,26 @@
           ]
         },
         {
+          "bytes": 2336,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/native_start_welded/darwin-arm64/integration.f64",
+          "sha256": "b7e2d0ae18dfc688393aeca7a887469572fe648e4ce987031ac6af9d38dfd06d",
+          "shape": [
+            292
+          ]
+        },
+        {
+          "bytes": 2336,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/native_start_welded/linux-aarch64/integration.f64",
+          "sha256": "641bfea6b0d73352e12d2d76946209c6cfc09bf6b2c769e1ed7ff38f74908e3a",
+          "shape": [
+            292
+          ]
+        },
+        {
           "bytes": 351,
           "path": "bootstrap/native_start_welded/meta.json",
           "sha256": "9e7cc825c26acdb27ad5bca1a28c1afa448c98f755ac61ad50d5c9fad2a2dfb8"
@@ -14840,7 +14860,7 @@
         }
       ],
       "name": "bootstrap/native_start_welded",
-      "notes": "startup outputs for the matching frozen-flat request; integration.f64 pins the native startup vector bitwise \u2014 leg ctrl slots 87-90 are 0 because the weld-imposed leg feedforward is unported in the native spindle controller",
+      "notes": "startup outputs for the matching frozen-flat request; integration.f64 pins the native startup vector bitwise \u2014 leg ctrl slots 87-90 are 0 because the weld-imposed leg feedforward is unported in the native spindle controller. The restored t=0 vector is platform solver output: the live compare uses <platform-key>/integration.f64 (the shared spelling stays for the bootstrap read-path consumers)",
       "produced_by": "ride pipeline for requests/welded_flat.toml; integration.f64 is the native prepare->snapshot vector (bike::app::prepare + make_ride + snapshot) capturing the restored t=0, not the Python post-init capture: b21c63e's leg feedforward/preload are Python-only, so indices 87-90 (leg muscle ctrl) are zero here by design",
       "recipe": "RCP-01"
     },

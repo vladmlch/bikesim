@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "stored_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_stored_energy_matches_the_ledger",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

@@ -1,0 +1,2962 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "root.saddle.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "root.saddle.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "root.saddle.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 296,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "root.saddle.bike_jac",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 344,
+  "rtol": null,
+  "shape": [
+   6,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "root.saddle.bike_columns",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 488,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "root.saddle.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 512,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "root.saddle.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 513,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "root.saddle.kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 537,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "root.saddle.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 543,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "root.saddle.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 544,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "root.saddle.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 552,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "root.foot_front.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 552,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "root.foot_front.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 560,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "root.foot_front.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 848,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "root.foot_front.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 896,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "root.foot_front.bike_columns",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1136,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "root.foot_front.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1176,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "root.foot_front.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1177,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "root.foot_front.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1201,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "root.foot_front.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1205,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "root.foot_front.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1206,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "root.foot_front.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1214,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "root.foot_rear.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1214,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1222,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1510,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "root.foot_rear.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1558,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "root.foot_rear.bike_columns",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1798,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "root.foot_rear.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1838,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "root.foot_rear.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1839,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "root.foot_rear.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1863,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1867,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "root.foot_rear.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1868,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "root.foot_rear.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1876,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "root.grip_left.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1876,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "root.grip_left.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 1884,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "root.grip_left.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2172,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "root.grip_left.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2220,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "root.grip_left.bike_columns",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2412,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "root.grip_left.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2444,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "root.grip_left.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2445,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "root.grip_left.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2469,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "root.grip_left.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2473,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "root.grip_left.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2474,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "root.grip_left.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2482,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "root.grip_right.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2506,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "root.grip_right.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2514,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "root.grip_right.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2802,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "root.grip_right.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 2850,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "root.grip_right.bike_columns",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3042,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "root.grip_right.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3074,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "root.grip_right.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3075,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "root.grip_right.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3099,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "root.grip_right.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3103,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "root.grip_right.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3104,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "root.grip_right.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3112,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "root.saddle.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3136,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "root.saddle.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3144,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "root.saddle.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3432,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "root.saddle.bike_jac",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3480,
+  "rtol": null,
+  "shape": [
+   6,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "root.saddle.bike_columns",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3624,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "root.saddle.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3648,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "root.saddle.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3649,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "root.saddle.kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3673,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "root.saddle.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3679,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "root.saddle.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3680,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "root.saddle.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3688,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "root.foot_front.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3688,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "root.foot_front.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3696,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "root.foot_front.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 3984,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "root.foot_front.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4032,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "root.foot_front.bike_columns",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4272,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "root.foot_front.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4312,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "root.foot_front.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4313,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "root.foot_front.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4337,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "root.foot_front.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4341,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "root.foot_front.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4342,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "root.foot_front.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4350,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "root.foot_rear.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4350,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4358,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4646,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "root.foot_rear.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4694,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "root.foot_rear.bike_columns",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4934,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "root.foot_rear.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4974,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "root.foot_rear.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4975,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "root.foot_rear.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 4999,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5003,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "root.foot_rear.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5004,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "root.foot_rear.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5012,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "root.grip_left.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5012,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "root.grip_left.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5020,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "root.grip_left.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5308,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "root.grip_left.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5356,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "root.grip_left.bike_columns",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5548,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "root.grip_left.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5580,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "root.grip_left.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5581,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "root.grip_left.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5605,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "root.grip_left.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5609,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "root.grip_left.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5610,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "root.grip_left.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5618,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "root.grip_right.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5642,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "root.grip_right.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5650,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "root.grip_right.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5938,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "root.grip_right.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 5986,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "root.grip_right.bike_columns",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6178,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "root.grip_right.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6210,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "root.grip_right.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6211,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "root.grip_right.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6235,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "root.grip_right.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6239,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "root.grip_right.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6240,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "root.grip_right.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6248,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "root.saddle.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6272,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "root.saddle.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6280,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "root.saddle.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6568,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "root.saddle.bike_jac",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6616,
+  "rtol": null,
+  "shape": [
+   6,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "root.saddle.bike_columns",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6760,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "root.saddle.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6784,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "root.saddle.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6785,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "root.saddle.kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6809,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "root.saddle.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6815,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "root.saddle.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6816,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "root.saddle.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6824,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "root.foot_front.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6824,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "root.foot_front.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 6832,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "root.foot_front.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7120,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "root.foot_front.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7168,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "root.foot_front.bike_columns",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7408,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "root.foot_front.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7448,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "root.foot_front.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7449,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "root.foot_front.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7473,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "root.foot_front.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7477,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "root.foot_front.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7478,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "root.foot_front.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7486,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "root.foot_rear.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7486,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7494,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7782,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "root.foot_rear.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 7830,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "root.foot_rear.bike_columns",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8070,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "root.foot_rear.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8110,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "root.foot_rear.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8111,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "root.foot_rear.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8135,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8139,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "root.foot_rear.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8140,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "root.foot_rear.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8148,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "root.saddle.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8148,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "root.saddle.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8156,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "root.saddle.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8444,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "root.saddle.bike_jac",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8492,
+  "rtol": null,
+  "shape": [
+   6,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "root.saddle.bike_columns",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8636,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "root.saddle.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8660,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "root.saddle.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8661,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "root.saddle.kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8685,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "root.saddle.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8691,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "root.saddle.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8692,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "root.saddle.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8700,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "root.foot_front.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8700,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "root.foot_front.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8708,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "root.foot_front.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 8996,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "root.foot_front.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9044,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "root.foot_front.bike_columns",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9284,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "root.foot_front.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9324,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "root.foot_front.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9325,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "root.foot_front.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9349,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "root.foot_front.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9353,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "root.foot_front.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9354,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "root.foot_front.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9362,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "root.foot_rear.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9362,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9370,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9658,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "root.foot_rear.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9706,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "root.foot_rear.bike_columns",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9946,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "root.foot_rear.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9986,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "root.foot_rear.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 9987,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "root.foot_rear.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10011,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10015,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "root.foot_rear.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10016,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "root.foot_rear.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10024,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "root.foot_front.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10024,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "root.foot_front.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10032,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "root.foot_front.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10320,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "root.foot_front.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10368,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "root.foot_front.bike_columns",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10608,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "root.foot_front.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10648,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "root.foot_front.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10649,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "root.foot_front.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10673,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "root.foot_front.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10677,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "root.foot_front.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10678,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "root.foot_front.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10686,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "root.foot_rear.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10686,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10694,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 10982,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "root.foot_rear.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11030,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "root.foot_rear.bike_columns",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11270,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "root.foot_rear.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11310,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "root.foot_rear.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11311,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "root.foot_rear.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11335,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "root.foot_rear.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11339,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "root.foot_rear.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11340,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "root.foot_rear.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11348,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "root.grip_left.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11348,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "root.grip_left.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11356,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "root.grip_left.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11644,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "root.grip_left.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11692,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "root.grip_left.bike_columns",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11884,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "root.grip_left.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11916,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "root.grip_left.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11917,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "root.grip_left.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11941,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "root.grip_left.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11945,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "root.grip_left.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11946,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "root.grip_left.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11954,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "root.grip_right.eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11978,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "root.grip_right.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 11986,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "root.grip_right.rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 12274,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "root.grip_right.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 12322,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "root.grip_right.bike_columns",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 12514,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "root.grip_right.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 12546,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "root.grip_right.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 12547,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "root.grip_right.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 12571,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "root.grip_right.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 12575,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "bitwise",
+  "label": "root.grip_right.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 12576,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "root.grip_right.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_prepare_attachment_raw_matches_oracle",
+  "offset": 12584,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

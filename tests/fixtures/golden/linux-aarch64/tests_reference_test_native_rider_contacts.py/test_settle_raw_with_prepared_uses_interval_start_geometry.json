@@ -1,0 +1,3606 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "root[0].saddle.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "root[0].saddle.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "root[0].saddle.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 16,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "root[0].saddle.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 24,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "root[0].saddle.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 32,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "root[0].saddle.would_separate",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 40,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "root[0].saddle.would_slip",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 41,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 42,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 50,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 58,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 66,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 74,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.would_separate",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 82,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.would_slip",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 83,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 84,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 92,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 100,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 108,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 116,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.would_separate",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 124,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.would_slip",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 125,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "root[0].grip_left.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 126,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "root[0].grip_left.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 134,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "root[0].grip_left.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 142,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "root[0].grip_right.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 150,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "root[0].grip_right.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 158,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "root[0].grip_right.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 166,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "root[0].crank_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 174,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "root[1].saddle.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 182,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "root[1].saddle.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 470,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "root[1].saddle.bike_jac",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 518,
+  "rtol": null,
+  "shape": [
+   6,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "root[1].saddle.bike_qfrc",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 662,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "root[1].saddle.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 686,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "root[1].saddle.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 687,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "root[1].saddle.kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 711,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "root[1].saddle.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 717,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "root[1].saddle.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 718,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "root[1].saddle.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 726,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "root[1].saddle.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 734,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 734,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1022,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1070,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.bike_qfrc",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1310,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1350,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1351,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1375,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1379,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1380,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1388,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1396,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1396,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1684,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1732,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.bike_qfrc",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 1972,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2012,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2013,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2037,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2041,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2042,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2050,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2058,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2058,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2346,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2394,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.bike_qfrc",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2586,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2618,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2619,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2643,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2647,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2648,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2656,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2664,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2688,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 2976,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3024,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.bike_qfrc",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3216,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3248,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3249,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3273,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3277,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3278,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3286,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3294,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "root.enabled.saddle",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3318,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "root.enabled.front_pedal",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3319,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "root.enabled.rear_pedal",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3320,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "root.enabled.grip",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3321,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "root.supports.saddle:0.xi",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3322,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "root.supports.saddle:0.tangent",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3330,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "root.supports.saddle:1.xi",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3330,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "root.supports.saddle:1.tangent",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3338,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "root.supports.front_pedal:0.xi",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3338,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "root.supports.front_pedal:0.tangent",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3346,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "root.supports.front_pedal:1.xi",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3346,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "root.supports.front_pedal:1.tangent",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3354,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "root.supports.rear_pedal:0.xi",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3354,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "root.supports.rear_pedal:0.tangent",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3362,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "root.supports.rear_pedal:1.xi",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3362,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "root.supports.rear_pedal:1.tangent",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3370,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "root.grip_xi_local.left",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3370,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "root.grip_xi_local.right",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3394,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "root.grip_anchor_local.left",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3418,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "root.grip_anchor_local.right",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3442,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "root.elastic_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3466,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "root.loss_step_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3474,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "root.radial_dissipation_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3482,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "root.delivered_crank_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3490,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "root.last_time_s",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3498,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "root.pending_release_loss_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3498,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].saddle.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3506,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].saddle.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3514,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].saddle.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3522,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].saddle.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3530,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].saddle.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3538,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].saddle.would_separate",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3546,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].saddle.would_slip",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3547,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].front_pedal.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3548,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].front_pedal.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3556,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].front_pedal.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3564,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].front_pedal.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3572,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].front_pedal.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3580,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].front_pedal.would_separate",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3588,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].front_pedal.would_slip",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3589,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].rear_pedal.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3590,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].rear_pedal.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3598,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].rear_pedal.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3606,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].rear_pedal.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3614,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].rear_pedal.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3622,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].rear_pedal.would_separate",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3630,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].rear_pedal.would_slip",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3631,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].grip_left.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3632,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].grip_left.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3640,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].grip_left.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3648,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].grip_right.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3656,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].grip_right.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3664,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "root.settled_welds[0].grip_right.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3672,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "root.settled_welds[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3680,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3688,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 3976,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.bike_jac",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4024,
+  "rtol": null,
+  "shape": [
+   6,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.bike_qfrc",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4168,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4192,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4193,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4217,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4223,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4224,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4232,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.saddle.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4240,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4240,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4528,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4576,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.bike_qfrc",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4816,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4856,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4857,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4881,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4885,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4886,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4894,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_front.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4902,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 4902,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5190,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5238,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.bike_qfrc",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5478,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5518,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5519,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5543,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5547,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5548,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5556,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.foot_rear.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5564,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5564,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5852,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 5900,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.bike_qfrc",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6092,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6124,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6125,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6149,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6153,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6154,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6162,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_left.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6170,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6194,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6482,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6530,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.bike_qfrc",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6722,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6754,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6755,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6779,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6783,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6784,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6792,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "root.last_attachment_samples.grip_right.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6800,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "root.probe_diagnostics",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6824,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "root.probe_enabled",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6824,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "root.probe_delivered_crank_torque_nm",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6824,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "root[0].saddle.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6824,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "root[0].saddle.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6832,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "root[0].saddle.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6840,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "root[0].saddle.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6848,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "root[0].saddle.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6856,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "root[0].saddle.would_separate",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6864,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "root[0].saddle.would_slip",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6865,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6866,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6874,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6882,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6890,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6898,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.would_separate",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6906,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "root[0].front_pedal.would_slip",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6907,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6908,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6916,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6924,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6932,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6940,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.would_separate",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6948,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "root[0].rear_pedal.would_slip",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6949,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "root[0].grip_left.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6950,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "root[0].grip_left.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6958,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "bitwise",
+  "label": "root[0].grip_left.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6966,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "root[0].grip_right.force_on_rider_n[0]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6974,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "root[0].grip_right.force_on_rider_n[1]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6982,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 221,
+  "kind": "bitwise",
+  "label": "root[0].grip_right.force_on_rider_n[2]",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6990,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 222,
+  "kind": "bitwise",
+  "label": "root[0].crank_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 6998,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 223,
+  "kind": "bitwise",
+  "label": "root[1].saddle.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7006,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 224,
+  "kind": "bitwise",
+  "label": "root[1].saddle.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7294,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 225,
+  "kind": "bitwise",
+  "label": "root[1].saddle.bike_jac",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7342,
+  "rtol": null,
+  "shape": [
+   6,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 226,
+  "kind": "bitwise",
+  "label": "root[1].saddle.bike_qfrc",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7486,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 227,
+  "kind": "bitwise",
+  "label": "root[1].saddle.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7510,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 228,
+  "kind": "bitwise",
+  "label": "root[1].saddle.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7511,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "root[1].saddle.kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7535,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 230,
+  "kind": "bitwise",
+  "label": "root[1].saddle.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7541,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 231,
+  "kind": "bitwise",
+  "label": "root[1].saddle.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7542,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 232,
+  "kind": "bitwise",
+  "label": "root[1].saddle.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7550,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 233,
+  "kind": "bitwise",
+  "label": "root[1].saddle.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7558,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7558,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 235,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7846,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 236,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 7894,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 237,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.bike_qfrc",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8134,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 238,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8174,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 239,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8175,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8199,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8203,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 242,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8204,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 243,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8212,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 244,
+  "kind": "bitwise",
+  "label": "root[1].foot_front.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8220,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 245,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8220,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 246,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8508,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 247,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.bike_jac",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8556,
+  "rtol": null,
+  "shape": [
+   6,
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 248,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.bike_qfrc",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8796,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 249,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8836,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 250,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8837,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 251,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8861,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 252,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8865,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 253,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8866,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 254,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8874,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|i1",
+  "index": 255,
+  "kind": "bitwise",
+  "label": "root[1].foot_rear.pull_direction",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8882,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 256,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 8882,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 257,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9170,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 258,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9218,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 259,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.bike_qfrc",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9410,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 260,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9442,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 261,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9443,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 262,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9467,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 263,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9471,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 264,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9472,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 265,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9480,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 266,
+  "kind": "bitwise",
+  "label": "root[1].grip_left.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9488,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 267,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9512,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 268,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9800,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 269,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.bike_jac",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 9848,
+  "rtol": null,
+  "shape": [
+   6,
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 270,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.bike_qfrc",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 10040,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 271,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.observable",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 10072,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 272,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 10073,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 273,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 10097,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 274,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.rotational",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 10101,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 275,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 10102,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 276,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 10110,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 277,
+  "kind": "bitwise",
+  "label": "root[1].grip_right.pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contacts.py::test_settle_raw_with_prepared_uses_interval_start_geometry",
+  "offset": 10118,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

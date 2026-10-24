@@ -1,0 +1,128 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 400,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_restores_through_errors",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   50
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 352,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_restores_through_errors",
+  "offset": 400,
+  "rtol": null,
+  "shape": [
+   44
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "errors[0]",
+  "nbytes": 37,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_restores_through_errors",
+  "offset": 752,
+  "rtol": null,
+  "shape": [
+   37
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "errors[1]",
+  "nbytes": 41,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_restores_through_errors",
+  "offset": 789,
+  "rtol": null,
+  "shape": [
+   41
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "errors[2]",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_restores_through_errors",
+  "offset": 830,
+  "rtol": null,
+  "shape": [
+   40
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "errors[3]",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_restores_through_errors",
+  "offset": 870,
+  "rtol": null,
+  "shape": [
+   40
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "errors[4]",
+  "nbytes": 41,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_restores_through_errors",
+  "offset": 910,
+  "rtol": null,
+  "shape": [
+   41
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "qpos restored through collected errors",
+  "nbytes": 400,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_restores_through_errors",
+  "offset": 951,
+  "rtol": null,
+  "shape": [
+   50
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "qvel restored through collected errors",
+  "nbytes": 352,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_restores_through_errors",
+  "offset": 1351,
+  "rtol": null,
+  "shape": [
+   44
+  ]
+ }
+]

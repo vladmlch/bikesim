@@ -22,6 +22,7 @@ import numpy as np
 import pytest
 
 from _bits import assert_bitwise_equal
+import _golden
 from native_loader import load_native
 
 bike_native = load_native()
@@ -349,6 +350,30 @@ def _reset_pair(stepper, applier, model, data):
     stepper.rider_contacts_reset()
 
 
+def _capture_leaf(expected, path):
+    """One assert_tree leaf, frozen in its comparison class's encoding:
+    |i1 shape (0,) for None, |b1 for bools, |u1 UTF-8 bytes for strings,
+    <f8 for floats, np.asarray's own dtype for everything else."""
+    if expected is None:
+        _golden.record(np.zeros(0, dtype=np.int8), path)
+    elif isinstance(expected, (bool, np.bool_)):
+        _golden.record(np.asarray(expected), path)
+    elif isinstance(expected, str):
+        _golden.record(
+            np.frombuffer(expected.encode('utf-8'), dtype=np.uint8), path)
+    elif isinstance(expected, (float, np.floating)):
+        _golden.record(np.float64(expected), path)
+    else:
+        _golden.record(np.asarray(expected), path)
+
+
+def _capture_leaves(expected, path):
+    """The leaf stream one assert_tree node produces: sequence elements
+    are recorded under ``path[i]``; the caller asserts the comparison."""
+    for i, value in enumerate(expected):
+        _capture_leaf(value, f'{path}[{i}]')
+
+
 def assert_tree(actual, expected, path='root'):
     """Bitwise-recursive tree comparison: dicts by key set, sequences
     elementwise, ndarrays by raw bytes, floats by float64 bits, everything
@@ -373,10 +398,12 @@ def assert_tree(actual, expected, path='root'):
         assert_bitwise_equal(actual, expected, path)
         return
     if isinstance(expected, (float, np.floating)):
+        _capture_leaf(expected, path)
         a, e = np.float64(actual), np.float64(expected)
         assert a.tobytes() == e.tobytes(), \
             f'{path}: {actual!r} != {expected!r}'
         return
+    _capture_leaf(expected, path)
     assert type(actual) is type(expected) and actual == expected, \
         f'{path}: {actual!r} != {expected!r}'
 
@@ -500,6 +527,8 @@ def test_nonadvancing_probe_publishes_only_probe_fields(tmp_path):
     assert_tree(stepper.rider_contacts_state()['probe_enabled'],
                 applier.probe_enabled)
     state = stepper.rider_contacts_state()
+    _golden.record(np.float64(applier.probe_delivered_crank_torque_nm),
+                   'probe_delivered_crank_torque_nm')
     assert state['probe_delivered_crank_torque_nm'] == \
         applier.probe_delivered_crank_torque_nm
     assert applier.diagnostics == live_diag
@@ -564,6 +593,11 @@ def test_release_all_and_pending_release_loss(tmp_path):
     assert_bitwise_equal(actual, expected, 'qfrc')
     applier.release_all()
     stepper.rider_contacts_release_all()
+    _golden.record(np.float64(applier.pending_release_loss_j),
+                   'pending_release_loss_j')
+    for name in CONTACT_NAMES:
+        _golden.record(np.asarray(applier.enabled[name]),
+                       f'enabled.{name}')
     assert stepper.rider_contacts_state()['pending_release_loss_j'] == \
         applier.pending_release_loss_j
     assert stepper.rider_contacts_state()['enabled'] == applier.enabled
@@ -854,6 +888,7 @@ def test_prepare_attachment_raw_matches_oracle(tmp_path):
         expected_geometry, expected_errors = \
             applier.prepare_attachment_raw(model, data)
         geometry, errors = stepper.rider_contacts_prepare_attachment_raw()
+        _capture_leaves(expected_errors, 'errors')
         assert errors == expected_errors, (pedal, saddle, grip)
         assert_tree(geometry, expected_geometry)
 
@@ -902,6 +937,8 @@ def test_settled_latch_feeds_next_qfrc(tmp_path):
     assert_tree(stepper.rider_contacts_state(), oracle_state(applier))
     # delivered_crank_torque_nm is the latched scalar, not a recomputation.
     state = stepper.rider_contacts_state()
+    _golden.record(np.float64(applier._settled_welds[1]),
+                   'delivered_crank_torque_nm')
     assert state['delivered_crank_torque_nm'] == \
         applier._settled_welds[1] != 0.
 
@@ -925,6 +962,7 @@ def test_attachment_samples_scalar_and_raw_match_oracle(tmp_path):
                 applier.attachment_samples(model, data, raw=raw)
             samples, errors = \
                 stepper.rider_contacts_attachment_samples(raw=raw)
+            _capture_leaves(expected_errors, 'errors')
             assert errors == expected_errors, (pedal, saddle, grip, raw)
             assert_tree(samples, expected_samples)
 
@@ -982,6 +1020,7 @@ def test_attachment_samples_interval_state_restores_pose(tmp_path):
     dt = float(model.opt.timestep)
     probe_before = stepper.rider_contacts_qfrc(dt, advance=False)
     samples, errors = stepper.rider_contacts_attachment_samples(interval)
+    _capture_leaves(expected_errors, 'errors')
     assert errors == expected_errors
     assert_tree(samples, expected_samples)
     assert_bitwise_equal(np.asarray(stepper.qpos), live_qpos,
@@ -1022,6 +1061,7 @@ def test_attachment_samples_interval_restores_through_errors(tmp_path):
     # explain — every measurement collects the generic
     # ':unobservable_attachment_wrench' spelling (never a fabricated
     # zero), and the live pose is still restored.
+    _capture_leaves(expected_errors, 'errors')
     assert errors == expected_errors
     assert len(errors) == 5 and samples == expected_samples == {}
     assert 'foot_front:unobservable_attachment_wrench' in errors
@@ -1044,6 +1084,7 @@ def test_attachment_unobservable_records_errors_not_zeros(tmp_path):
     expected_geometry, expected_errors = \
         applier.prepare_attachment_raw(model, data)
     geometry, errors = stepper.rider_contacts_prepare_attachment_raw()
+    _capture_leaves(expected_errors, 'errors')
     assert errors == expected_errors == ()
     assert_tree(geometry, expected_geometry)
     assert geometry['foot_front']['observable'] is False
@@ -1054,6 +1095,7 @@ def test_attachment_unobservable_records_errors_not_zeros(tmp_path):
     expected_samples, expected_errors = \
         applier.attachment_samples(model, data)
     samples, errors = stepper.rider_contacts_attachment_samples()
+    _capture_leaves(expected_errors, 'errors')
     assert errors == expected_errors
     assert 'foot_front:unobservable_attachment_wrench' in errors
     assert 'foot_front' not in samples
@@ -1063,6 +1105,7 @@ def test_attachment_unobservable_records_errors_not_zeros(tmp_path):
     expected_raw, expected_errors = \
         applier.attachment_samples(model, data, raw=True)
     raw, errors = stepper.rider_contacts_attachment_samples(raw=True)
+    _capture_leaves(expected_errors, 'errors')
     assert errors == expected_errors == ()
     assert raw['foot_front']['observable'] is False
     assert_tree(raw, expected_raw)
@@ -1226,6 +1269,7 @@ def test_stored_energy_matches_the_ledger(tmp_path):
     stepper.rider_contacts_qfrc(dt)
     expected = applier.stored_energy(model, data)
     actual = stepper.rider_contacts_stored_energy()
+    _golden.record(np.float64(expected), 'stored_energy_j')
     assert np.float64(actual).tobytes() == np.float64(expected).tobytes()
 
 

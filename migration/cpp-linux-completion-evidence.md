@@ -3820,3 +3820,118 @@ settle_context converges under the reseat policy on both platforms.
 
 L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
 checkpoint profile owns it.
+
+## 2026-10-25 — Task 3.14a (lane/d): rider contacts and contact math batch
+
+Batch files: `tests/reference/test_native_rider_contacts.py` (40),
+`test_native_rider_contact_math.py` (15) — 55 records, owner T52,
+labels `t52` `rider` (plus `golden` on both registrations).
+
+### Dispositions
+
+- 37 `golden` (`bitwise-oracle`, `golden_platforms` = darwin-arm64 +
+  linux-aarch64): every record whose pytest emits `_golden.record`
+  comparisons — 26 contacts writer/settle/state nodes and 11 contact
+  math oracle functions (223 collected parametrized nodes between
+  them; every sidecar comparison is `kind: "bitwise"`).
+- 18 `port`: records with no golden entries — 14 `contract`
+  (`test_schema_*` accept/reject rows, `test_pair_limit_is_the_only_optional_key`,
+  `test_no_writer_answers_missing_config_errors`,
+  `test_set_enabled_rejects_invalid_requests`,
+  `test_evaluation_requires_initialized_anchors`,
+  `test_dt_domain_rejection`,
+  `test_missing_model_names_reject_construction`,
+  `test_invalid_grip`, `test_grip_overflow`, `test_invalid_box`,
+  `test_grip_scalar_validation_oracle`) and 4 `invariant`
+  (`test_projection_copies_the_appliers_resolved_setup`,
+  `test_projection_emits_an_explicit_pair_limit`,
+  `test_project_gates_the_section_on_the_applier`,
+  `test_duplicate_time_guard`).
+- 0 `drop`.
+
+### Golden qualification
+
+- Source files green before capture (capture env unset): 309 passed on
+  darwin-arm64 (6.27 s) and linux-aarch64 (3.06 s,
+  `bike-dev-pfc-lane-d` container, `/opt/bike-venv`,
+  `/build/native-clang` bindings).
+- Captures: 249 node sidecars per platform (contacts 26, math 223;
+  each `.json` pairs its `.bin`), ~6.1 MiB per platform — under the
+  20 MiB budget. Orphan audit: every sidecar node id is a live
+  collected node on both platforms (0 orphans; the 60 collected nodes
+  without sidecars are the `port` records and their parametrized
+  cases).
+- `test_flat_contacts_qfrc_and_diagnostics_bitwise` is one of the
+  leaves that differs between platforms (darwin
+  `55c3bc63…` vs linux `ec5136fb…`), so the linux-aarch64 tree is a
+  genuine capture, not a copy.
+
+### CTest
+
+- macOS `build/native-release`: both nodes pass
+  (`reference.native_rider_contacts` PASS 65398 checks,
+  `reference.native_rider_contact_math` PASS 47693 checks).
+- Linux `/build/root-clang` (container, `clang++-18`): both nodes pass
+  with identical check counts.
+
+### New files
+
+- `native/tests/reference/rider_contacts_reference_support.hpp` —
+  shared golden consumers and helpers: `bt::oracle::Node` adapters for
+  support/pad/grip diagnostics, weld latches, interval state, prepared
+  attachment geometry, raw vs scalar attachment samples, settle
+  outcomes, probe state and the serializable writer state tree;
+  tiny-plant builders; `reset_pair`/`solved_mirror`/probe helpers that
+  preserve `Stepper::mutate` boundaries, `_mirror`/`_solved_mirror`
+  (qpos/qvel/actuator/warm-start/time plus control inputs) and
+  interval-restore-on-all-exit-paths semantics; exception-substring
+  and bitwise span assertions.
+- `native/tests/reference/test_native_rider_contacts.cpp` (40
+  records), `test_native_rider_contact_math.cpp` (15 records);
+  registrations in `Phase3Ports.cmake` (labels `t52 rider golden`;
+  library `bike_app`).
+
+### Build/toolchain notes
+
+- The lane's `/build/root-clang` and `/build/native-clang` caches were
+  found configured with `/usr/bin/c++` (g++ 13.3) despite their names;
+  `container.sh gate` refuses non-clang caches. `/build/root-clang`
+  was moved aside to `root-clang.gcc` and reconfigured fresh with
+  `clang++-18` (`BIKE_BUILD_PYTHON_BINDINGS=OFF`). Under the stale g++
+  cache the build stopped at 11 production-TU
+  `-Werror=null-dereference`/`-Wmaybe-uninitialized` diagnostics
+  inside libstdc++ inlining (`rider/state_codec.cpp`,
+  `writer_config.cpp`, `runtime/wire.cpp`, `control.cpp`,
+  `response_allocation.cpp`, `drivetrain/state_codec.cpp`,
+  `bootstrap_io.cpp`, `validate.cpp`, `least_squares.cpp`,
+  `migration_test.cpp`, `artifact_identity.cpp`) — a GCC-13
+  false-positive class unrelated to this batch (none of those files
+  are touched); clang builds the same tree cleanly.
+- One g++-only finding in the batch TU was fixed before the clang
+  rebuild: `const auto [step, angle]` range-loop copy
+  (`-Werror=range-loop-construct`) → `const auto &`.
+- Both batch TUs are `g++ -fsyntax-only` clean under the full warning
+  set (container probe), so no `frontends`-sweep findings are added.
+- Baseline red, untouched: `ctest -L reference` on
+  `build/native-release` shows 7 pre-existing failures —
+  `golden_episode_tool` (3.03 oracle acquisition), `static_brake`,
+  `pneumatic_tire_oracle`, `clock_contracts`, `drive_policies`,
+  `drivetrain` (all `fixture is not a regular file` — goldens owned by
+  unmerged sibling lanes) and `period_buffer` (initial-state contract,
+  documented) — none authored by this batch.
+
+### Fail-proof
+
+- One byte at offset 100 of
+  `darwin-arm64/…/test_flat_contacts_qfrc_and_diagnostics_bitwise.bin`
+  flipped: binary exits 1 naming node, comparison index 0, label
+  `qfrc` and element 12. Restored byte-identical (sha
+  `55c3bc63a74e1aeeef6c4b69…`), PASS 65398 checks.
+
+### Gate scope notes
+
+- `tools/run_tests.sh native` (L3) is out of lane scope per D17
+  ("lanes never run L3"); the lane gates — per-file pytest greens,
+  two-platform captures, new CTest nodes green on both platforms,
+  `ctest -L reference` L1 — are listed above. L3 runs in the
+  integration worktree at merge-back.

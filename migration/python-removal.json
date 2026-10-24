@@ -16014,20 +16014,18 @@
   },
   {
     "path": "tests/reference/test_native_rider_contact_math.py",
-    "sha256": "e14d280f90b5cbfd3baa76971e6ba9da8ede910a326201d1d365e89855ce6a1e",
-    "line_count": 244,
+    "sha256": "a0ecf63c83bb6e21da02884f69943095fe8d0ca9cc35b48f85f0a46feb119561",
+    "line_count": 279,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_native_rider_contact_math.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_rider_contact_math"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "a5b333be6139168115754e30f6e8112b354773400dcee55f62288f1ab835895d",
     "snapshot_line_count": 244,
     "tracked": true,
@@ -16035,20 +16033,18 @@
   },
   {
     "path": "tests/reference/test_native_rider_contacts.py",
-    "sha256": "0b52f92a583682c09036370946e0a75a7aa5211eb6ad4f415bdc920cc56653c7",
-    "line_count": 1256,
+    "sha256": "e3ea0dde6570bc99ad85258a98e232cf052fc66527afdffb9a085000e845129b",
+    "line_count": 1300,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_native_rider_contacts.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_rider_contacts"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "a53f876afe9b57c11e61970bed4f2bc522deefc4c38f7ebacd7b5789401fda53",
     "snapshot_line_count": 1256,
     "tracked": true,

@@ -1,0 +1,44 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_upper_face_oracle[-0.9]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_upper_face_oracle[-0.9]",
+  "offset": 24,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_contact_math.py::test_upper_face_oracle[-0.9]",
+  "offset": 48,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

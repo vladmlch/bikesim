@@ -1,0 +1,517 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "oracle qpos",
+  "nbytes": 448,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   56
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "oracle qvel",
+  "nbytes": 392,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 448,
+  "rtol": null,
+  "shape": [
+   49
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "oracle xpos",
+  "nbytes": 312,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 840,
+  "rtol": null,
+  "shape": [
+   13,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "root.saddle.kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1152,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "root.saddle.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1158,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "root.saddle.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1166,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "root.saddle.moment_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1174,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "root.saddle.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1182,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "root.saddle.pull_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1190,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "root.saddle.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1198,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "root.foot_front.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1206,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "root.foot_front.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1210,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "root.foot_front.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1218,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "root.foot_front.moment_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1226,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "root.foot_front.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1234,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "root.foot_front.pull_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1242,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "root.foot_front.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1250,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "root.foot_rear.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1258,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "root.foot_rear.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1262,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "root.foot_rear.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1270,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "root.foot_rear.moment_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1278,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "root.foot_rear.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1286,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "root.foot_rear.pull_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1294,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "root.foot_rear.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1302,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "root.grip_left.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1310,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "root.grip_left.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1314,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "root.grip_left.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1322,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "root.grip_left.moment_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1330,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "root.grip_left.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1338,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "root.grip_left.pull_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1346,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "root.grip_left.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1354,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "root.grip_right.kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1362,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "root.grip_right.normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1366,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "root.grip_right.tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1374,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "root.grip_right.moment_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1382,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "root.grip_right.gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1390,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "root.grip_right.pull_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1398,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "root.grip_right.half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1406,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "qpos restored",
+  "nbytes": 448,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1414,
+  "rtol": null,
+  "shape": [
+   56
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "qvel restored",
+  "nbytes": 392,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 1862,
+  "rtol": null,
+  "shape": [
+   49
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "kinematics restored",
+  "nbytes": 392,
+  "node": "tests/reference/test_native_rider_contacts.py::test_attachment_samples_interval_state_restores_pose",
+  "offset": 2254,
+  "rtol": null,
+  "shape": [
+   49
+  ]
+ }
+]

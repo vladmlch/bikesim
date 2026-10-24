@@ -2929,7 +2929,7 @@ The `quick` run (1,916 passed / 22 failed / 13 skipped, ~98 min, shared
 host with lane-a's `native` gate) carried four failure classes; each was
 reproduced and classified:
 
-- `test_replay_session.py` + `test_replay_recording_v3.py` (12) —
+- `test_replay_session.py` + `test_replay_recording_v3.py` (13) —
   **stale shared equilibrium cache, not this fix.** `ReplaySession`
   rebuilds the env and bitwise-compares `initial_integration_state`
   (atol 1e-9) against `states.npz`. The record env loaded
@@ -3598,3 +3598,225 @@ capture-site edits (+385/−6 total), the lane's evidence section
 bundles under `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/`
 plus the shared `pneumatic_tire/`/`pneumatic_wire/` config trees
 (~49 MiB; committed as-is per the documented user ruling).
+## 2026-10-24 — F2 (lane/b) merge-back
+
+Merged `lane/b` tip `0fdabe2` (`5be9ec5` + `051497c` physics fix +
+`0fdabe2` test-double restore) into `impl/python-free-cpp` @ `464d1b7`
+as `a27a8d6` (`git merge --no-ff lane/b`). Physics-path change →
+merge-back L2 with the settle escalation: cold-cache reruns of the
+settle-dependent nodes named in the F2 evidence.
+
+### Conflict resolution
+
+Two conflicts, both resolved per the task ruling:
+
+- `tests/reference/test_rider_allocation.py` — lane/c's `cc37bc1` had
+  already landed an equivalent `hold_qfrc` stub
+  (`lambda m,d,*a,**k: np.zeros(m.nv)`); lane/b carried
+  `lambda *a,**k: np.zeros(model.nv)`. Semantically equivalent (both
+  return an nv-length zero qfrc); kept the landed lane/c form — it
+  reads `nv` off the model argument rather than the enclosing scope,
+  marginally more robust. File now 42/42.
+- `migration/cpp-linux-completion-evidence.md` — both sides appended
+  at the same EOF seam (HEAD: eight sections from the 3.28/3.16/3.12a/
+  3.12b merges; lane/b: the three F2 sections). Chronological
+  resolution per the established precedent (section-date ordering,
+  event time within a date): the contiguous F2 block — led by the
+  `2026-10-23` defect-fix section — sits between the last
+  2026-10-23-dated section (`Task 3.16` lane dev) and the first
+  2026-10-24-dated section (`Task 3.12a (lane/a)`), preserving the
+  file's non-decreasing date order with zero inversions and keeping
+  the lane's fix→gate→triage narrative intact. Verified: `git diff
+  HEAD` removes 0 lines / adds exactly the 206-line lane block + 1
+  blank seam; `git diff lane/b` removes 0 lines.
+
+Auto-merged, then verified semantically:
+
+- `migration/test-port-map.json`: byte-identical to HEAD — 2381
+  records (planned 1824 / port 336 / golden 155 / drop 66); F2 touched
+  no port-map rows (savage + the 17 stopped 3.28 records stay
+  `planned` per ruling).
+- `migration/python-removal.json`: byte-identical to HEAD (535 rows).
+- Both ledgers keep trailing EOF LF; `git ls-files -u` empty; no
+  conflict markers anywhere.
+- The F2 mirror itself: `static_braking.py` ↔ `static_brake.{hpp,cpp}`
+  carry the same `reseat` predicate (advancing only, inside engage
+  band, unclipped spring-damper magnitude > `torque*demand`) with
+  identical expression order; `physical_runtime.py`/`step.cpp` pass
+  `reseat=not active`/`!active` at the only `advance=true,active=false`
+  call site (the held-relaxation cycle). Exact-mirror parity holds.
+
+### 22-vs-21 reconciliation (review finding)
+
+The F2 quick-triage itemization summed to 21 against the run's
+reported `22 failed`. Reconciled against the lane's own run log
+(`/tmp/f2_quick_gate.log`, lane/b worktree): the `FAILED` list holds
+exactly 22 entries — **the replay class was undercounted as (12); the
+actual split is 13** (9 `test_replay_session` + 4
+`test_replay_recording_v3`):
+
+    session:    test_python_headless_and_incremental_replay_share_checks[0],
+                test_python_headless_and_incremental_replay_share_checks[2],
+                test_early_close_never_finishes_a_pending_replay,
+                test_last_frame_remains_unverified_until_final_state_comparison,
+                test_recorded_policy_reference_is_never_loaded,
+                test_resealed_semantic_tamper_still_fails_verification
+                  [commands_applied.jsonl-0-step-applied commands],
+                  [transitions.jsonl-0-physics_steps-transition],
+                  [observations.jsonl-1-time_s-observation],
+                test_identity_recheck_failure_advances_no_physics          (9)
+    recording:  test_new_recording_requires_all_verification_before_report,
+                test_multi_episode_selection_is_explicit,
+                test_new_replay_does_not_load_recorded_policy,
+                test_resealed_final_state_tamper_fails_last_boundary_
+                  not_format_loading                                       (4)
+
+13 replay + 2 rider_allocation + 3 cadence_shifter + 4 portability =
+22 — the reported total was correct; only the class count was off by
+one. The lane section's `(12)` is corrected to `(13)` in place (this
+paragraph is the record of the correction); the classification
+(poisoned shared equilibrium cache, infra flake, not the fix) is
+unaffected.
+
+### Merge-back L2 (physics escalation)
+
+- `cmake --build native/build -j10`: green.
+- `cmake --build build/native-release -j10`: green; only pre-existing
+  `ld` duplicate-library chatter. The touched TUs
+  (`static_brake.cpp`, `step.cpp`, `test_adapter.cpp`,
+  `test_native_static_brake.cpp`) compile clean under both graphs.
+- `ctest --test-dir build/native-release -R
+  'reference\.(native_static_brake|native_pneumatic|native_rider|
+  project_constraint)' --output-on-failure`: **10/11** — every landed
+  reference node green except `reference.native_static_brake`
+  (`FAIL fixture is not a regular file`, 0.80 s): the documented
+  baseline signature — the oracle `Node` golden for this planned
+  port-map record is not yet captured, so the lane's new reseat C++
+  assertions compile but do not execute (the binary bails at fixture
+  load). The Python parity suite is the live gate (below).
+- `ctest --test-dir build/native-release -L reference -j8
+  --output-on-failure`: **41/48** — the same seven documented
+  baseline reds verbatim as the 3.12b merge-back:
+  `native_static_brake`, `pneumatic_tire_oracle`,
+  `native_clock_contracts`, `native_drive_policies`,
+  `native_drivetrain` (`FAIL fixture is not a regular file` family),
+  `period_buffer` (`FAIL initial-state physical model contract
+  differs (only timestep/road mesh may vary)`), `golden_episode_tool`
+  (`FAIL task 3.03 oracle acquisition required … episode.npz`).
+  `reference.golden_episode_regressions` **passed inside the sweep**
+  (8.70 s) — the native settle_context converges under the reseat
+  policy on the merged tree.
+- `ctest --test-dir build/native-release -R 'migration_T' -j8
+  --output-on-failure`: **50/53** — `migration_T09` (`FAIL
+  integration vector resolves bitwise`), `migration_T29` (`FAIL
+  config.rider_controller.weld_servo_gain: unknown key`),
+  `migration_T56` (`t56_scripts_depth2_bad: stderr missing
+  'linux/bad.sh'` — the documented shellcheck-0.11.0 stderr-format
+  environment drift). **`migration_T25` PASSED (6.13 s)** — consistent
+  with the F2 root cause verbatim: the initial-state contract hash
+  binds to the capturing worktree's absolute paths and this
+  `python-free-cpp` checkout is where the fixture was captured (the
+  lane proved the oracle on this path reproduces the pinned
+  `04cab701…` exactly). T25's documented defect signature is
+  reconfirmed by construction: green here, structurally unpassable on
+  sibling worktrees until the path-hash portability fix lands.
+
+### Settle-dependent nodes — cold cache
+
+Every run below used a fresh, empty `BIKE_SIM_EQUILIBRIUM_CACHE_DIR`
+(the proven poisoning vector from the F2 triage — a green under a
+poisoned cache is meaningless):
+
+- Savage oracle settle (repro harness mirroring
+  `test_realistic_pedelec_acceptance._environment`, savage track,
+  `/tmp/f2-m5/repro_settle.py`):
+  `BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/f2-m5/cache-savage` →
+  **SETTLE OK in 14.0 s: steps=4720,
+  residual_qacc=0.009105692229970314**, `cache_hit=False` —
+  bitwise-identical to the lane's post-fix signature (fork 60.583 mm,
+  shock 14.465 mm, rear 45.860 mm, root_z −0.0532126, pitch 0.005645,
+  crank −0.034893, static loads 430.98/593.10 N). The defect's
+  pre-fix signature was non-convergence at 64,000 steps /
+  residual 0.094603.
+- alpine_rocky distributed settle (`/tmp/f2-m5/repro_rocky.py`,
+  `…/cache-rocky`): **converged steps=2400,
+  residual=0.013185039244472185, reseat events: 1** — matches the
+  lane's measurement verbatim.
+- `test_realtime_factor_for_full_twenty_seconds
+  [rough_uphill_savage.toml]` (`…/cache-rt`): **the full
+  16,000-step / 20.0 s sim completed** — fails only
+  `factor 0.6379 >= 1.0`, the documented plateau/RTF baseline gap
+  (lane measured 0.6899; RTF is host-load-sensitive — same failure
+  class, out of F2 scope).
+- `test_savage_is_ridden_to_the_end` (`…/cache-ped`): **settle + the
+  full 110 s / 88,000-step ride completed** (449 s wall) — fails only
+  the downstream distance assertion `max x = 58.27 m < 120 m`,
+  `env.reason='duration'` — the documented plateau-climb baseline gap
+  (lane measured 58.32 m; the 0.05 m delta is chaotic-ride run-to-run
+  drift on the same failure class — the F2-relevant settle block is
+  gone).
+- `test_tire_channel_parity_across_backends` (`…/cache-tire`,
+  `NATIVE_TEST_BUILD_PATH=native/build`): **progresses past both
+  settles** (was settle-blocked pre-fix) and fails only downstream on
+  `root.front.penetration_m` drift — actual 0.00331803 vs oracle
+  0.00331629, **~1.74e-6 vs atol 1e-9** — the documented
+  port-maturity gap the lane predicted verbatim; stays `planned`/red.
+- `test_native_static_brake.py` (`PYTHONPATH=tests/reference`,
+  `NATIVE_TEST_BUILD_PATH=native/build`, `…/cache-pytest`): **9/9**,
+  including `test_hold_reseat_parity_sequence` — the reseat parity
+  gate is live and green on the merged tree.
+- Harness-double files (`test_rider_allocation.py` 42 +
+  `test_monitor_strictness.py` + `test_equilibrium_state_file.py` =
+  **70/70**, `…/cache-misc`): the resolved stub and the F2
+  `brake.reset()` double both green.
+
+### Linux aarch64 container (`bike-dev-python-free-cpp`, `/build/root-clang`, clang++-18)
+
+`tools/linux/container.sh sync`, then target-scoped build
+`reference.native_static_brake reference.golden_episode_regressions`
+— clean, **0 `warning:` lines** in `/build/root-clang.log`. `ctest
+root-clang -R 'reference\.(native_static_brake|golden_episode_
+regressions)' --output-on-failure`: **1/2** — `native_static_brake`
+`FAIL fixture is not a regular file` (same baseline; the
+linux-aarch64 golden is likewise uncaptured) and
+`golden_episode_regressions` **Passed 11.90 s** — the native
+settle_context converges under the reseat policy on both platforms.
+
+### Unblocked work
+
+- The 17 `resolved`-fixture-stopped 3.28 port-map records: the savage
+  settle defect that stopped them is fixed — recapture/landing work
+  proceeds on a converging settle.
+- The savage nodes (`test_savage_is_ridden_to_the_end`, realtime
+  `[rough_uphill_savage]`): both now run to completion; their remaining
+  reds are the documented plateau-climb/RTF baseline gaps, no longer
+  the settle.
+- `migration_T25` recapture: unblocked for the T25 path-hash fix —
+  the settle-dependent contract inputs are now stable (savage settle
+  converges deterministically at 4,720 steps / residual
+  0.009105692229970314 on this worktree), so the
+  contract-path portability fix can proceed without the physics
+  moving under it.
+
+### Remaining red (unchanged, documented)
+
+- `-L reference` baseline seven (fixture-missing family +
+  `period_buffer` contract + `golden_episode_tool` 3.03 npz).
+- `migration_T09`/`T29` baseline pair; `migration_T56` shellcheck
+  env drift. `migration_T25` green here but structurally blocked on
+  siblings (documented portability defect — the fix belongs to the
+  T25 task, not this merge).
+- Realtime RTF ~0.64–0.69 and the plateau-climb distance/balance gap
+  on savage/extreme — documented performance baseline, out of F2
+  scope.
+- `test_tire_channel_parity_across_backends` stays `planned`/red
+  downstream (~1.7e-6 penetration_m drift) — port maturity, unblocked
+  by but not resolved by this fix.
+- The replay-cache poisoning vector (`fingerprint()` excludes
+  `ExperimentConfig`/`demand`/`rider_program`; `reset()` re-settles
+  dirty post-episode state under the same key) remains a live
+  infrastructure defect for the parent to surface — it manufactures
+  intermittent replay reds under shared `$TMPDIR`.
+
+L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
+checkpoint profile owns it.

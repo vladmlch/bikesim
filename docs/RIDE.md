@@ -1,5 +1,16 @@
 # Physical ride, research and checked replay
 
+## Spatial 3D source delivery — pending V08
+
+The existing native entry points now have source-authored spatial mode/terrain
+resolution, pose-aware viewing, schema2 recording/reporting and recipe4 checked
+research replay. [Spatial workflows](spatial-3d.md) contains the installed
+examples, exact flags, sensor/coordinate units and terminal classifications.
+Recording remains explicit with `--record`; `--out` is only a destination.
+The spatial changes have not been built or run in the write phase. Historical
+planar results below do not qualify them. See the
+[V08 evidence ledger](superpowers/audits/2026-10-22-spatial-3d-application-evidence.md).
+
 ## Status and prerequisites
 
 The 2026-10-13 run-recording delivery changes normal physical/research output

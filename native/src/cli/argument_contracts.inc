@@ -162,6 +162,8 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
   },
   "bike-ride": {
     "options": [
+      {"names":["--spatial"],"dest":"spatial","default":null,"type":"str","choices":["planar","3d"],"flag":false,"required":false,"positional":false},
+      {"names":["--terrain3d"],"dest":"terrain3d","default":null,"type":"str","choices":null,"flag":false,"required":false,"positional":false},
       {
         "names": [
           "--track"
@@ -840,6 +842,8 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
   },
   "bike-settle": {
     "options": [
+      {"names":["--spatial"],"dest":"spatial","default":null,"type":"str","choices":["planar","3d"],"flag":false,"required":false,"positional":false},
+      {"names":["--terrain3d"],"dest":"terrain3d","default":null,"type":"str","choices":null,"flag":false,"required":false,"positional":false},
       {
         "names": [
           "--physics-config"
@@ -1117,6 +1121,8 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
   },
   "bike-research": {
     "options": [
+      {"names":["--spatial"],"dest":"spatial","default":null,"type":"str","choices":["planar","3d"],"flag":false,"required":false,"positional":false},
+      {"names":["--terrain3d"],"dest":"terrain3d","default":null,"type":"str","choices":null,"flag":false,"required":false,"positional":false},
       {
         "names": [
           "--backend"
@@ -1766,6 +1772,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
   },
   "bike-replay": {
     "options": [
+      {"names":["--checked"],"dest":"checked","default":false,"type":"str","choices":null,"flag":true,"required":false,"positional":false},
       {
         "names": [
           "recording"

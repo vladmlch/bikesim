@@ -17,16 +17,18 @@ std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const in
     if (!request.setup.model.physics) throw std::invalid_argument("research requires physical configuration");
     auto& physics = *request.setup.model.physics;
     configuration::post_init(physics);
+    const bool spatial=physics.spatial&&physics.spatial->mode==bike::spatial::Mode::spatial3d;
+    if(spatial)request.sensors_v2.validate();
     if (physics.physics_mode != "physical" || (physics.drive_mode != "crank_effort" && physics.drive_mode != "articulated_effort"))
         throw std::invalid_argument("research requires a physical effort drive, not a speed controller");
-    if (physics.pitch_assist.value_or(false) || physics.tires.surface_mode != "track" ||
+    if (physics.pitch_assist.value_or(false) || (!spatial && (physics.tires.surface_mode != "track" ||
         (physics.tires.backend != "compliant_2d" && physics.tires.backend != "distributed_2d_reference" && physics.tires.backend != "pneumatic") ||
-        (physics.tires.backend == "pneumatic" && physics.tires.pneumatic.surface))
+        (physics.tires.backend == "pneumatic" && physics.tires.pneumatic.surface))))
         throw std::invalid_argument("research requires no pitch assist and track-material compliant_2d, distributed_2d_reference or pneumatic tires");
     sample_rider(request);
     request.setup.seed_decimal = validate_seed(request.experiment.seed_decimal);
     request.setup.research_startup = true;
-    request.setup.model.field = research_field(request.setup.track, request.road_resolution_m);
+    if(!spatial)request.setup.model.field = research_field(request.setup.track, request.road_resolution_m);
     request.setup.runtime.strict = request.experiment.stop_on_model_violation;
     request.setup.runtime.async_telemetry = request.experiment.async_telemetry;
     request.setup.runtime.measurement_decimation = request.experiment.record_decimation;
@@ -37,7 +39,12 @@ std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const in
     config.control_steps = integer_steps(request.experiment.control_period_s, config.timestep_s, "control period");
     config.delay_steps = integer_steps(request.experiment.actuator_delay_s, config.timestep_s, "actuator delay");
     config.max_steps = integer_steps(request.experiment.duration_s, config.timestep_s, "duration");
-    config.sensor_steps = integer_steps(request.sensors.sample_period_s, config.timestep_s, "sensor period");
+    config.sensor_steps = integer_steps(spatial?request.sensors_v2.sample_period_s:request.sensors.sample_period_s, config.timestep_s, "sensor period");
+    if(spatial) {
+        if(request.experiment.control_period_s>request.sensors_v2.maximum_read_period_s)
+            throw std::invalid_argument("sensors_v2.maximum_read_period_s: shorter than research control period");
+        config.sensors_v2=request.sensors_v2;
+    }
     if (config.control_steps < 1 || config.max_steps < 1 || config.sensor_steps < 1)
         throw std::invalid_argument("control period, sensor period and duration must span at least one physics step");
     config.track_length_m = request.setup.track.length_m;
@@ -54,18 +61,26 @@ std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const in
     config.noise_std = {request.sensors.noise.acceleration_std_mps2, request.sensors.noise.gyro_std_rad_s,
         request.sensors.noise.encoder_std_rad_s, request.sensors.noise.torque_std_nm};
     // All declarative checks and large tape allocation precede engine setup.
-    out.bootstrap.tape = make_sensor_tape(request.sensors, config.seed_decimal, 1 + config.max_steps / config.sensor_steps);
+    if(spatial)out.bootstrap.tape_v2=make_sensor_tape_v2(request.sensors_v2,config.seed_decimal,1+config.max_steps/config.sensor_steps);
+    else out.bootstrap.tape = make_sensor_tape(request.sensors, config.seed_decimal, 1 + config.max_steps / config.sensor_steps);
     auto owner = make_settled_research_owner(request.setup);
     const auto startup = std::make_unique<initialization::ResearchStartup>(owner->research_initial_state());
     config.geometry = startup->geometry;
     config.start_position_m = startup->position_m;
-    config.raw_initial = startup->observation;
-    out.bootstrap.startup = startup_sensor_state(request.sensors, out.bootstrap.tape, startup->observation);
+    if(spatial) {
+        if(!startup->observation_v2)throw std::invalid_argument("research startup: missing mounted V2 observation");
+        config.raw_initial_v2=startup->observation_v2;
+        runtime::spatial::SensorPipelineV2 pipeline(request.sensors_v2,*out.bootstrap.tape_v2);
+        pipeline.reset(*startup->observation_v2);(void)pipeline.read(0.);out.bootstrap.startup_v2=pipeline.state();
+    } else {
+        config.raw_initial = startup->observation;
+        out.bootstrap.startup = startup_sensor_state(request.sensors, out.bootstrap.tape, startup->observation);
+    }
     out.bootstrap.ride = owner->seal_bootstrap();
     out.metadata = configuration_metadata(request, *startup, out.bootstrap.ride, owner->metadata());
     config.metadata = out.metadata;
     if (request.capture_mode == runtime::ResearchCaptureMode::full || request.capture_mode == runtime::ResearchCaptureMode::legacy)
-        config.assets = snapshot_research_assets(request, *startup, out.metadata);
+        config.assets = snapshot_research_assets(request, *startup, out.metadata, out.bootstrap.ride);
 }
 [[gnu::noinline]] std::unique_ptr<ResearchRequest> load_research_request_ptr(const std::filesystem::path& file) {
     return std::make_unique<ResearchRequest>(read_research_request(file));

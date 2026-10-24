@@ -1427,3 +1427,54 @@ not a skip or a hash obtained from the implementation under comparison.
 `examples/research/terrain3d_manifest.json` likewise contains no measured
 successes. Terrain source limitations and numerical acceptance are recorded in
 `docs/superpowers/audits/2026-10-22-spatial-3d-native-terrain.md`.
+
+## Spatial W37–W49 source gates (2026-10-24)
+
+This section records authored tests, not execution. No configure, build,
+compilation, CTest, simulation, application, install, package or GUI run was
+performed for this delivery. V07/V08 and predecessor qualifications remain
+pending; see the [source report](superpowers/audits/2026-10-24-spatial-w37-w49-source.md)
+and [application guide](spatial-3d.md).
+
+| Scope | CTest names | Execution requirement |
+|---|---|---|
+| IMU / delivery / ABI / truth | `spatial.sensor_mount`, `spatial.sensor_pipeline`, `spatial.policy_v2`, `spatial.truth_metrics` | V07; policy test loads a real MODULE and compares paced native research |
+| Container / continuation / replay | `spatial.recording_catalog`, `spatial.checkpoint`, `spatial.recording_assets`, `spatial.checked_replay` | V07; startup, 500-interval continuation, damaged-state controls and real temporary recordings |
+| Golden registry | `spatial.golden_registry` | Structural/identity controls; pending references do not qualify comparison |
+| CLI / pose / reports / batch | `spatial.cli`, `spatial.viewer_pose`, `spatial.reports_batch` | V08; pose tests are headless, batch test uses real child processes |
+| Documented argv | `spatial.documented_examples` | V08; resolves all ten workflows from `examples/spatial/examples_manifest.json` without simulation |
+| Viewer | `spatial.viewer_smoke` | Built only with `BIKE_BUILD_GUI`; labels `spatial;gui;slow`; a real display is required for acceptance |
+| Installed tree | `spatial.installed_product`, `install_smoke`, `package_smoke` | V08; explicit package lane, relocated trees and native compatibility fixtures |
+
+The helper `bike_spatial_installed_fixture` is test support, not an installed
+application. It creates a schema1 fixture and a checksum-valid incompatible
+schema2 copy so that inspection success and `incompatible-execution` failure
+exercise different contracts. Missing fixtures or a missing display fail the
+corresponding gate; they do not count as passing skips.
+
+After V-phase execution is authorized and the chosen build is available, the
+new native groups can be selected with the following commands. These commands
+were **not run** during W37–W49:
+
+```sh
+ctest --test-dir "$BUILD" --output-on-failure -R '^spatial\.(sensor_mount|sensor_pipeline|policy_v2|truth_metrics|recording_catalog|checkpoint|recording_assets|checked_replay|golden_registry)$'
+ctest --test-dir "$BUILD" --output-on-failure -R '^spatial\.(cli|viewer_pose|reports_batch|documented_examples)$'
+ctest --test-dir "$BUILD" --output-on-failure -R '^(install_smoke|package_smoke)$'
+ctest --test-dir "$BUILD" --output-on-failure -R '^spatial\.viewer_smoke$'
+```
+
+`spatial.installed_product` directly targets the configured install prefix;
+`install_smoke` and `package_smoke` prepare and relocate their own trees before
+including the same assertions. Heavy simulation/continuation checks carry
+`slow`; display checks also carry `gui`; package checks carry `package`.
+The normal presets continue to exclude `slow|audit|package`. Existing `perf`
+checks remain their own explicit measurement lane, with no invented RTF data.
+
+The spatial manifest has independent `macos-arm64` and `linux-aarch64` entries.
+`pending_verification` plus null artifact hashes is deliberate. Structural
+validation is distinct from qualified comparison. `bike-recording golden
+freeze` requires `--accept-reviewed`; use the authoritative CLI help for its
+manifest/reference paths. Within-platform references require matching
+execution/provider/config/asset identities and byte-exact comparison;
+cross-platform comparisons permit only the declared per-field manifest
+policy. A hash of newly generated output is not an independent expected value.

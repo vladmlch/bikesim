@@ -83,6 +83,7 @@ if(BUILD_TESTING)
     "-DSOURCE_PACKAGE=${CPACK_SOURCE_PACKAGE_FILE_NAME}"
     "-DAUDIT_BINARY=$<TARGET_FILE:bike-python-audit>"
     "-DAUDIT_POLICY=${CMAKE_SOURCE_DIR}/migration/no-python-policy.json"
+    "-DSPATIAL_FIXTURE_TOOL=$<TARGET_FILE:bike_spatial_installed_fixture>"
     "-DCONFIG=$<CONFIG>"
     -P "${CMAKE_SOURCE_DIR}/native/tests/package/package_smoke.cmake")
   set_tests_properties(package_smoke PROPERTIES LABELS "package" RUN_SERIAL TRUE TIMEOUT 600)

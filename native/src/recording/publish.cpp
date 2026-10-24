@@ -1,4 +1,5 @@
 #include "publish.hpp"
+#include "versioned.hpp"
 #include "database.hpp"
 #include "report.hpp"
 #include "value_util.hpp"
@@ -63,7 +64,7 @@ Publication publish(const RunCapture& capture, const std::filesystem::path& outp
             if (options.before_stage) options.before_stage("hash_" + name);
             hashes.emplace_back(name, value::text(platform::file_sha256(staging / name)));
         }
-        const io::Value manifest{io::Value::Object{{"schema_version", value::integer(schema_version)}, {"sealed", io::Value{true}},
+        const io::Value manifest{io::Value::Object{{"schema_version", value::integer(static_cast<int>(capture_version(capture)))}, {"sealed", io::Value{true}},
             {"run_id", value::text(capture.metadata().run_uuid)}, {"database", value::text(database_name)},
             {"file_sha256", io::Value{hashes}}, {"row_counts", io::Value{counts}}, {"report_status", value::text(report_status)}, {"report_error", report_error}}};
         const auto candidate = staging / "sealed-manifest.json";

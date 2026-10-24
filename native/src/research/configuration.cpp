@@ -93,6 +93,21 @@ SensorConfig sensors_from(const Value& value, SensorConfig out) {
     out.validate();
     return out;
 }
+runtime::spatial::SensorConfigV2 sensors_v2_from(const Value& value, runtime::spatial::SensorConfigV2 out) {
+    keys(value,{"latency_s","maximum_age_s","dropout_probability","sample_period_s","maximum_read_period_s",
+        "acceleration_bias","gyro_bias","acceleration_std","gyro_std","encoder_std","torque_std","imu_enabled"},"sensors_v2");
+    out.latency_s=number(value,"latency_s",out.latency_s);out.maximum_age_s=number(value,"maximum_age_s",out.maximum_age_s);
+    out.dropout_probability=number(value,"dropout_probability",out.dropout_probability);
+    out.sample_period_s=number(value,"sample_period_s",out.sample_period_s);out.maximum_read_period_s=number(value,"maximum_read_period_s",out.maximum_read_period_s);
+    out.encoder_std=number(value,"encoder_std",out.encoder_std);out.torque_std=number(value,"torque_std",out.torque_std);
+    out.imu_enabled=boolean(value,"imu_enabled",out.imu_enabled);
+    const auto vector=[&](std::string_view key,auto& destination){if(const auto* member=find(value,key)){
+        const auto& values=io::as_array(*member,key);if(values.size()!=3)throw std::invalid_argument("sensors_v2 vector requires three values");
+        for(std::size_t i=0;i<3;++i)destination[i]=io::as_double(values[i],key);}};
+    vector("acceleration_bias",out.acceleration_bias);vector("gyro_bias",out.gyro_bias);
+    vector("acceleration_std",out.acceleration_std);vector("gyro_std",out.gyro_std);
+    out.validate();return out;
+}
 random::RiderRandomSpec random_from(const Value& value) {
     keys(value, {"mass_kg", "height_m", "torso_lean_rad", "pelvis_pitch_rad", "human_torque_nm"}, "rider_random");
     random::RiderRandomSpec out;
@@ -220,7 +235,7 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
     try {
         const auto document = configuration::detail::parse_toml_file(file);
         keys(document, {"request_schema", "physics_file", "track_file", "scenario", "generator_spec_file", "model_mode", "rider_variant", "speed_kph",
-            "seed_decimal", "use_equilibrium_cache", "initial_state_file", "overrides", "experiment", "sensors",
+            "seed_decimal", "use_equilibrium_cache", "initial_state_file", "overrides", "experiment", "sensors", "sensors_v2",
             "control_period_s", "actuator_delay_s", "sensor_delay_s", "duration_s", "road_resolution_m",
             "capture_mode", "demand_file", "demand_nm", "rider_program_file", "demand_program", "rider_program", "rider_random",
             "rider_seed_decimal", "check_policy"}, "research request");
@@ -236,6 +251,7 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
         out.setup.asset_root = base;
         if (const auto* value = find(document, "experiment")) out.experiment = experiment_from(*value, out.experiment);
         if (const auto* value = find(document, "sensors")) out.sensors = sensors_from(*value, out.sensors);
+        if (const auto* value = find(document, "sensors_v2")) out.sensors_v2 = sensors_v2_from(*value,out.sensors_v2);
         if (const auto* seed = find(document, "seed_decimal")) {
             const auto value = validate_seed(io::as_string(*seed, "seed_decimal"));
             if (const auto* experiment = find(document, "experiment"))

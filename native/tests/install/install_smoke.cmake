@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.27)
 
-# Full-product install contract. No application simulation is involved:
-# inspect every copied runtime image and exercise every installed CLI's help.
+# Full-product install contract: inspect runtime images and CLI help, then
+# execute the separately authored spatial product smoke (V08).
 foreach(_required BUILD_DIR SCRATCH_DIR DEPENDENCY_ROOT BIKE_TARGET_SYSTEM)
   if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
     message(FATAL_ERROR "install_smoke requires -D${_required}")
@@ -116,3 +116,5 @@ foreach(_name IN LISTS _entry_points)
   endif()
 endforeach()
 message(STATUS "Relocated install: all 11 entry points passed help with inspected load paths")
+set(SPATIAL_INSTALL_PREFIX "${_prefix}")
+include("${CMAKE_CURRENT_LIST_DIR}/../spatial/installed_product.cmake")

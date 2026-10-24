@@ -1,19 +1,26 @@
 #include "episode.hpp"
 #include "capture_testing.hpp"
+#include "spatial_compare.hpp"
 #include "model_image.hpp"
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
 #include "../rider/state_codec.hpp"
 #include "../runtime/research.hpp"
+#include "../runtime/spatial_checkpoint_internal.hpp"
+#include "../runtime/provenance.hpp"
+#include "../platform/provenance.hpp"
+#include "../engine_identity.hpp"
 #include "../stepper.hpp"
 
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <bit>
 #include <charconv>
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <map>
 #include <optional>
 #include <ranges>
 #include <set>
@@ -192,7 +199,8 @@ public:
         // directly; it does not submit delayed research control windows.
         // Validate all inputs before that reset changes any runtime state.
         runtime.reset();
-        const Guard physical_guard(runtime.advancing_);
+        const auto spatial_initial=runtime.config_.spatial ? runtime::spatial::CheckpointAccess::capture_bootstrap(runtime) : Value{};
+        std::optional<Guard> physical_guard;physical_guard.emplace(runtime.advancing_);
         if (initial) restore_initial(runtime, *initial);
         auto result = std::make_unique<EpisodeArtifact>();
         capture_initial(*result, model, *stepper.data());
@@ -225,6 +233,28 @@ public:
             {"physics_steps", integer(records.size())}, {"dt_s", number(model.opt.timestep)},
             {"tire_snapshots", Value{std::move(tire_snapshots)}}, {"tire_diagnostics", Value{std::move(tire_diagnostics)}}}};
         arrays(*result, records, model);
+        physical_guard.reset();
+        if(runtime.config_.spatial) {
+            auto& manifest=std::get<Value::Object>(result->manifest.data);
+            manifest.emplace_back("spatial_checkpoint_initial",spatial_initial);
+            manifest.emplace_back("spatial_checkpoint_final",runtime::spatial::CheckpointAccess::capture_bootstrap(runtime));
+#if defined(__APPLE__) && defined(__aarch64__)
+            manifest.emplace_back("spatial_platform",Value{std::string("macos-arm64")});
+#elif defined(__linux__) && defined(__aarch64__)
+            manifest.emplace_back("spatial_platform",Value{std::string("linux-aarch64")});
+#else
+            manifest.emplace_back("spatial_platform",Value{platform::build_identity().platform});
+#endif
+            manifest.emplace_back("source_identity",Value{runtime::runtime_identity().native_source_sha256});
+            manifest.emplace_back("execution_identity",Value{platform::execution_identity()});
+            manifest.emplace_back("provider",Value{engine::identity().numeric_provider});
+            const auto& metadata=io::as_object(env.config_.metadata,"spatial golden configuration");
+            const auto* config_hash=io::find_member(metadata,"configuration_sha256");
+            if(!config_hash)throw std::invalid_argument("spatial golden requires captured configuration identity");
+            manifest.emplace_back("config_sha256",*config_hash);
+            manifest.emplace_back("calibration_sha256",Value{runtime.bootstrap_.spatial->calibration_sha256});
+            manifest.emplace_back("terrain_sha256",Value{runtime.bootstrap_.spatial->terrain_sha256});
+        }
         return std::move(*result);
     }
 private:
@@ -325,11 +355,150 @@ std::vector<std::string> compare_episode(const EpisodeArtifact &golden,
     runtime::NativeResearchRuntime &env, double rtol, double atol) {
     if (!std::isfinite(rtol) || !std::isfinite(atol) || rtol < 0. || atol < 0.)
         throw std::invalid_argument("golden comparison tolerances must be finite and nonnegative");
-    auto differences = compare_rows(golden.rows, replay_episode(env, golden), rtol, atol);
+    std::vector<runtime::RideControl> controls;controls.reserve(golden.controls.size());
+    for(const auto& control:golden.controls)controls.push_back(decode_control(control));
+    const bool spatial=env.snapshot().spatial.has_value();
+    if(spatial) {
+        const auto& manifest=io::as_object(golden.manifest,"golden manifest");
+        const auto* source=io::find_member(manifest,"source_identity");
+        const auto* execution=io::find_member(manifest,"execution_identity");
+        if(!source||!execution||io::as_string(*source,"source_identity")!=runtime::runtime_identity().native_source_sha256 ||
+            io::as_string(*execution,"execution_identity")!=platform::execution_identity())
+            throw std::invalid_argument("incompatibility: spatial golden execution/source identity differs");
+    }
+    const auto candidate=RuntimeAccess::run(env,controls,&golden);
+    auto differences = compare_rows(golden.rows,candidate.rows,rtol,atol);
+    if(spatial) {
+        for(auto key:{"spatial_checkpoint_initial","spatial_checkpoint_final","calibration_sha256","terrain_sha256"}) {
+            const auto* expected=io::find_member(io::as_object(golden.manifest,"manifest"),key);
+            const auto* actual=io::find_member(io::as_object(candidate.manifest,"manifest"),key);
+            if(!expected||!actual||io::canonical_json(*expected)!=io::canonical_json(*actual))differences.push_back(std::string("regression: ")+key);
+        }
+    }
     Value failure;
     if (const auto current = env.snapshot().first_failure) failure = value_from_wire(current->as_wire());
     if (!same_failure(golden.first_failure, failure, rtol, atol))
         differences.emplace_back("first_failure differs between golden and candidate");
     return differences;
+}
+
+namespace {
+const Value& required(const Value& value,std::string_view key) {
+    const auto* member=io::find_member(io::as_object(value,"spatial golden"),key);
+    if(!member)throw std::invalid_argument("incompatibility: spatial golden missing "+std::string(key));
+    return *member;
+}
+std::string string(const Value& value,std::string_view key) {return io::as_string(required(value,key),key);}
+struct Tolerance {double atol=0.,rtol=0.;bool used=false;};
+class SpatialComparison {
+public:
+    SpatialComparison(const Value& entry,bool cross_platform):cross_(cross_platform) {
+        if(cross_)for(const auto& [path,value]:io::as_object(required(required(entry,"comparison"),"cross_platform_tolerances"),"tolerances"))
+            rules_.emplace(path,Tolerance{.atol=io::as_double(required(value,"atol"),"atol"),.rtol=io::as_double(required(value,"rtol"),"rtol")});
+    }
+    void number(double expected,double actual,const std::string& path,const std::string& label) {
+        if(!difference_.empty())return;
+        const auto rule=rules_.find(path);
+        if(rule!=rules_.end()) {
+            rule->second.used=true;
+            if(std::isfinite(expected)&&std::isfinite(actual)&&
+               std::abs(actual-expected)<=rule->second.atol+rule->second.rtol*std::abs(expected))return;
+        } else if(std::bit_cast<std::uint64_t>(expected)==std::bit_cast<std::uint64_t>(actual))return;
+        difference_="regression: "+label+" numeric evidence differs";
+    }
+    // NOLINTNEXTLINE(misc-no-recursion) bounded artifact value-tree comparison
+    void value(const Value& expected,const Value& actual,const std::string& path,const std::string& label) {
+        if(!difference_.empty())return;
+        if(cross_&&(path=="checkpoints.initial.runtime.continuation.execution"||path=="checkpoints.final.runtime.continuation.execution"))return;
+        if(expected.data.index()!=actual.data.index()){difference_="regression: "+label+" value kind differs";return;}
+        if(const auto* object=std::get_if<Value::Object>(&expected.data)) {
+            const auto& other=std::get<Value::Object>(actual.data);
+            if(object->size()!=other.size()){difference_="regression: "+label+" object keys differ";return;}
+            for(const auto& [key,child]:*object) {
+                const auto* found=io::find_member(other,key);
+                if(!found){difference_="regression: "+label+" missing "+key;return;}
+                value(child,*found,path+"."+key,label+"."+key);
+            }
+        } else if(const auto* array=std::get_if<Value::Array>(&expected.data)) {
+            const auto& other=std::get<Value::Array>(actual.data);
+            if(array->size()!=other.size()){difference_="regression: "+label+" array shape differs";return;}
+            for(std::size_t i=0;i<array->size();++i)value((*array)[i],other[i],path+".*",label+"["+std::to_string(i)+"]");
+        } else if(const auto* numeric=std::get_if<io::Number>(&expected.data)) {
+            const auto& other=std::get<io::Number>(actual.data);
+            if(io::is_integer_lexeme(numeric->lexeme)||io::is_integer_lexeme(other.lexeme)) {
+                if(numeric->lexeme!=other.lexeme)difference_="regression: "+label+" exact integer differs";
+            } else number(io::number_double(*numeric,label),io::number_double(other,label),path,label);
+        } else if(io::canonical_json(expected)!=io::canonical_json(actual))difference_="regression: "+label+" exact evidence differs";
+    }
+    void array(const io::NpyArray& expected,const io::NpyArray& actual,const std::string& path) {
+        if(!difference_.empty())return;
+        if(expected.dtype!=actual.dtype||expected.shape!=actual.shape||expected.fortran_order!=actual.fortran_order){difference_="regression: "+path+" dtype/shape differs";return;}
+        if(!cross_){if(expected.bytes!=actual.bytes)difference_="regression: "+path+" bits differ";return;}
+        const auto x=expected.doubles(true),y=actual.doubles(true);
+        for(std::size_t i=0;i<x.size();++i)number(x[i],y[i],path+".*",path+"["+std::to_string(i)+"]");
+    }
+    std::vector<std::string> finish() const {
+        if(!difference_.empty())return {difference_};
+        for(const auto& [path,rule]:rules_)if(!rule.used)throw std::invalid_argument("incompatibility: unused cross-platform numeric field tolerance "+path);
+        return {};
+    }
+private:
+    bool cross_;
+    std::map<std::string,Tolerance> rules_;
+    std::string difference_;
+};
+}
+
+std::vector<std::string> compare_spatial_artifacts(const EpisodeArtifact& expected,
+    const EpisodeArtifact& actual,const Value& entry,std::string_view current_platform) {
+    const auto reference_platform=string(expected.manifest,"spatial_platform");
+    if(string(actual.manifest,"spatial_platform")!=current_platform)throw std::invalid_argument("incompatibility: candidate platform differs");
+    const auto& platforms=required(entry,"platforms");
+    const auto& reference=required(platforms,reference_platform);const auto& current=required(platforms,current_platform);
+    for(auto key:{"source_identity","execution_identity","provider"}) {
+        if(string(expected.manifest,key)!=string(reference,key)||string(actual.manifest,key)!=string(current,key))
+            throw std::invalid_argument("incompatibility: "+std::string(key)+" differs from reviewed platform");
+    }
+    if(string(expected.manifest,"source_identity")!=string(actual.manifest,"source_identity"))
+        throw std::invalid_argument("incompatibility: stale source identity");
+    for(auto key:{"config_sha256","terrain_sha256","calibration_sha256"})
+        if(string(expected.manifest,key)!=string(entry,key)||string(actual.manifest,key)!=string(entry,key))
+            throw std::invalid_argument("incompatibility: "+std::string(key)+" differs");
+    if(!io::is_null(expected.first_failure)||!io::is_null(actual.first_failure))return {"physical_invalid: first_failure is present"};
+    if(expected.channel_names!=actual.channel_names||expected.force_names!=actual.force_names||expected.tire_state_names!=actual.tire_state_names)
+        return {"regression: channel/force/tyre names differ"};
+    for(const auto& field:io::as_array(required(entry,"expected_channels"),"expected_channels"))
+        if(std::ranges::find(expected.channel_names,io::as_string(field,"channel"))==expected.channel_names.end())
+            throw std::invalid_argument("incompatibility: missing expected channel "+io::as_string(field,"channel"));
+    const bool cross=reference_platform!=current_platform;
+    SpatialComparison compare(entry,cross);
+    compare.value(Value{expected.stored_rows},Value{actual.stored_rows},"rows","rows");
+    compare.value(Value{expected.controls},Value{actual.controls},"controls","controls");
+    compare.value(expected.first_failure,actual.first_failure,"first_failure","first_failure");
+    for(auto key:{"initial","final"})compare.value(runtime::spatial::bootstrap_comparison_value(required(expected.manifest,std::string("spatial_checkpoint_")+key)),
+        runtime::spatial::bootstrap_comparison_value(required(actual.manifest,std::string("spatial_checkpoint_")+key)),std::string("checkpoints.")+key,std::string("checkpoints.")+key);
+    if(expected.initial.size()!=actual.initial.size())return {"regression: initial engine state fields differ"};
+    for(const auto& [name,value]:expected.initial) {
+        const auto found=std::ranges::find_if(actual.initial,[&](const auto& p){return p.first==name;});
+        if(found==actual.initial.end())return {"regression: missing initial engine field "+name};
+        compare.array(value,found->second,"initial."+name);
+    }
+    for(const auto& [name,member]:std::array{
+        std::pair{"state_qpos",&EpisodeArtifact::state_qpos},std::pair{"state_qvel",&EpisodeArtifact::state_qvel},
+        std::pair{"state_act",&EpisodeArtifact::state_act},std::pair{"state_warmstart",&EpisodeArtifact::state_warmstart},
+        std::pair{"state_time",&EpisodeArtifact::state_time},std::pair{"ctrl_written",&EpisodeArtifact::ctrl_written},
+        std::pair{"qfrc_applied",&EpisodeArtifact::qfrc_applied},std::pair{"forces",&EpisodeArtifact::forces},std::pair{"tire_state",&EpisodeArtifact::tire_state}})
+        compare.array(expected.*member,actual.*member,std::string("arrays.")+name);
+    return compare.finish();
+}
+std::vector<std::string> compare_spatial_episode(const EpisodeArtifact& expected,
+    runtime::NativeResearchRuntime& env,const Value& entry,std::string_view current_platform) {
+    const auto& current=required(required(entry,"platforms"),current_platform);
+    if(string(current,"source_identity")!=runtime::runtime_identity().native_source_sha256 ||
+       string(current,"execution_identity")!=platform::execution_identity() || string(current,"provider")!=engine::identity().numeric_provider)
+        throw std::invalid_argument("incompatibility: current execution/source/provider identity differs from reviewed platform");
+    std::vector<runtime::RideControl> controls;controls.reserve(expected.controls.size());
+    for(const auto& control:expected.controls)controls.push_back(decode_control(control));
+    return compare_spatial_artifacts(expected,RuntimeAccess::run(env,controls,&expected),entry,current_platform);
 }
 } // namespace bike::golden

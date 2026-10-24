@@ -166,7 +166,28 @@ ModelMutableState decode_model_mutable(const vread::Dict &root,
                                        const mjModel &model) {
     ModelMutableState out;
     const vread::Dict mutable_section = vread::section(root, "model_mutable");
-    vread::exact(mutable_section, vread::keys("dof_frictionloss", "site_pos"));
+    const bool spatial=vread::integer(vread::field(root,"schema"),"state.schema")==2;
+    if(spatial) vread::exact(mutable_section,vread::keys("dof_frictionloss","site_pos"),vread::keys("spatial_arrays"));
+    else vread::exact(mutable_section, vread::keys("dof_frictionloss", "site_pos"));
+    if(spatial && bio::find_member(*mutable_section.value,"spatial_arrays")) {
+        const auto rows=vread::section(mutable_section,"spatial_arrays");
+        constexpr std::array names{"dof_frictionloss","site_pos","tendon_stiffness","tendon_damping",
+            "tendon_lengthspring","tendon_range","wrap_prm"};
+        vread::exact(rows,vread::keys("dof_frictionloss","site_pos","tendon_stiffness","tendon_damping",
+            "tendon_lengthspring","tendon_range","wrap_prm"));
+        const std::array<mjtSize,7> widths{model.nv,3*model.nsite,model.ntendon,model.ntendon,
+            2*model.ntendon,2*model.ntendon,model.nwrap};
+        out.spatial_arrays.emplace();
+        for(std::size_t i=0;i<names.size();++i) {
+            const auto& values=bio::as_array(*vread::field(rows,names[i]).value,rows.child(names[i]));
+            if(std::cmp_not_equal(values.size(),widths[i]))vread::invalid(rows.child(names[i]),"model width mismatch");
+            auto& destination=(*out.spatial_arrays)[i];destination.reserve(values.size());
+            for(const auto& value:values)destination.push_back(vread::finite_real(vread::Node{&value},rows.child(names[i])));
+        }
+        if(!vread::section(mutable_section,"dof_frictionloss").value->empty() ||
+           !vread::section(mutable_section,"site_pos").value->empty())
+            vread::invalid(mutable_section.path,"full rows and sparse copies cannot both own model state");
+    }
     const vread::Dict frictionloss =
         vread::section(mutable_section, "dof_frictionloss");
     // mjModel carries no per-joint dof count — it derives from jnt_type.
@@ -434,14 +455,15 @@ BootstrapState decode_bootstrap_state(const bike::io::Value &state,
     out.signals = owned_mapping(root, "signals");
 
     const vread::Dict runtime_section = vread::section(root, "runtime");
-    vread::exact(runtime_section,
-                 vread::keys("step", "generation", "measurement_decimation",
+    const auto runtime_keys=vread::keys("step", "generation", "measurement_decimation",
                              "applied_control", "held_control",
                              "held_rider_terms", "rollback_hold",
                              "research_accounting_valid", "initializing",
                              "filters", "balance", "crash", "contacts",
                              "contact_query", "probe_query", "energy",
-                             "history", "model_status", "monitor"));
+                             "history", "model_status", "monitor");
+    if(version==2)vread::exact(runtime_section,runtime_keys,vread::keys("continuation"));
+    else vread::exact(runtime_section,runtime_keys);
     out.step = vread::integer(vread::field(runtime_section, "step"),
                               runtime_section.child("step"));
     if (out.step < 0)

@@ -114,6 +114,94 @@ SensorConfig decode_sensors(const bio::Value &document) {
 
 } // namespace
 
+namespace {
+void validate_sensor_state_v2_shape(const spatial::SensorStateV2& s) {
+    if(s.cursor!=s.samples_attempted||s.samples_dropped>s.cursor||s.queue.size()>s.cursor||
+        std::cmp_greater(s.cursor,std::numeric_limits<std::int64_t>::max()))
+        throw std::invalid_argument("sensor_v2.state: inconsistent or unrepresentable counters");
+    if(s.cursor==0) {
+        if(s.last_time||s.delivery_time||s.startup||!s.queue.empty())
+            throw std::invalid_argument("sensor_v2.state: uninitialized state contains samples/clocks");
+        return;
+    }
+    if(!s.last_time||!s.startup||s.queue.empty())
+        throw std::invalid_argument("sensor_v2.state: initialized state lacks startup/latest attempt");
+    if(!std::isfinite(*s.last_time)||*s.last_time<0.||
+        (s.delivery_time&&(!std::isfinite(*s.delivery_time)||*s.delivery_time<0.)))
+        throw std::invalid_argument("sensor_v2.state: clock must be finite and nonnegative");
+    s.startup->validate();
+    if(s.startup->source_time_s>*s.last_time||
+        (s.delivery_time&&*s.delivery_time<s.startup->source_time_s))
+        throw std::invalid_argument("sensor_v2.state: startup source exceeds acquisition/delivery clock");
+    std::optional<double> previous;
+    for(const auto& sample:s.queue) {
+        sample.validate();
+        if((previous&&sample.source_time_s<=*previous)||sample.source_time_s<s.startup->source_time_s||sample.source_time_s>*s.last_time)
+            throw std::invalid_argument("sensor_v2.state.queue: source times must be unique within acquired prefix");
+        previous=sample.source_time_s;
+    }
+    if(!previous||*previous!=*s.last_time)
+        throw std::invalid_argument("sensor_v2.state.queue: latest attempt differs from acquisition clock");
+}
+}
+
+WireObject sensor_config_v2_to_wire(const spatial::SensorConfigV2& c) {
+    c.validate();
+    return {{"latency_s",c.latency_s},{"maximum_age_s",c.maximum_age_s},{"dropout_probability",c.dropout_probability},
+        {"sample_period_s",c.sample_period_s},{"maximum_read_period_s",c.maximum_read_period_s},
+        {"acceleration_bias",wire_array(c.acceleration_bias)},{"gyro_bias",wire_array(c.gyro_bias)},
+        {"acceleration_std",wire_array(c.acceleration_std)},{"gyro_std",wire_array(c.gyro_std)},
+        {"encoder_std",c.encoder_std},{"torque_std",c.torque_std},{"imu_enabled",c.imu_enabled}};
+}
+spatial::SensorConfigV2 decode_sensor_config_v2(const bio::Value& document) {
+    const auto wire=vread::wire_from_value(document,"sensor_v2.config");const auto& d=object(wire);
+    constexpr std::array<std::string_view,12> keys{"latency_s","maximum_age_s","dropout_probability","sample_period_s","maximum_read_period_s",
+        "acceleration_bias","gyro_bias","acceleration_std","gyro_std","encoder_std","torque_std","imu_enabled"};
+    exact(d,keys,"sensor_v2.config");spatial::SensorConfigV2 c;
+    const auto n=[&](std::string_view key){return number(required(d,key));};
+    c.latency_s=n("latency_s");c.maximum_age_s=n("maximum_age_s");c.dropout_probability=n("dropout_probability");
+    c.sample_period_s=n("sample_period_s");c.maximum_read_period_s=n("maximum_read_period_s");
+    const auto vector=[&](std::string_view key,auto& target){const auto& a=array(required(d,key));
+        if(a.size()!=target.size())throw std::invalid_argument("sensor_v2.config: vector width must be three");
+        for(std::size_t i=0;i<a.size();++i)target[i]=number(a[i]);};
+    vector("acceleration_bias",c.acceleration_bias);vector("gyro_bias",c.gyro_bias);
+    vector("acceleration_std",c.acceleration_std);vector("gyro_std",c.gyro_std);
+    c.encoder_std=n("encoder_std");c.torque_std=n("torque_std");c.imu_enabled=boolean(required(d,"imu_enabled"));c.validate();return c;
+}
+WireObject encode_sensor_state_v2(const spatial::SensorStateV2& s) {
+    validate_sensor_state_v2_shape(s);
+    WireArray queue;queue.reserve(s.queue.size());for(const auto& value:s.queue)queue.emplace_back(value.as_wire());
+    const auto optional=[](std::optional<double>x){return x?Wire(*x):Wire(nullptr);};
+    return {{"schema",std::int64_t{2}},{"queue",std::move(queue)},{"last_time",optional(s.last_time)},{"delivery_time",optional(s.delivery_time)},
+        {"startup",s.startup?Wire(s.startup->as_wire()):Wire(nullptr)},{"cursor",static_cast<std::int64_t>(s.cursor)},
+        {"samples_attempted",static_cast<std::int64_t>(s.samples_attempted)},{"samples_dropped",static_cast<std::int64_t>(s.samples_dropped)}};
+}
+spatial::SensorStateV2 decode_sensor_state_v2(const bio::Value& document) {
+    const auto wire=vread::wire_from_value(document,"sensor_v2.state");const auto& d=object(wire);
+    constexpr std::array<std::string_view,8> keys{"schema","queue","last_time","delivery_time","startup","cursor","samples_attempted","samples_dropped"};
+    exact(d,keys,"sensor_v2.state");
+    if(integer(required(d,"schema"))!=2)throw std::invalid_argument("sensor_v2.state: unsupported schema");
+    spatial::SensorStateV2 s;
+    const auto optional=[&](std::string_view key){const auto& value=required(d,key);return is_none(value)?std::nullopt:std::optional(number(value));};
+    s.last_time=optional("last_time");s.delivery_time=optional("delivery_time");
+    const auto count=[&](std::string_view key){const auto value=integer(required(d,key));
+        if(value<0||std::cmp_greater(value,std::numeric_limits<std::size_t>::max()))throw std::invalid_argument("sensor_v2.state: invalid counter");
+        return static_cast<std::size_t>(value);};
+    s.cursor=count("cursor");s.samples_attempted=count("samples_attempted");s.samples_dropped=count("samples_dropped");
+    if(!is_none(required(d,"startup")))s.startup=spatial::SensorObservationV2::from_wire(object(required(d,"startup")));
+    for(const auto& value:array(required(d,"queue")))s.queue.push_back(spatial::SensorObservationV2::from_wire(object(value)));
+    validate_sensor_state_v2_shape(s);
+    return s;
+}
+spatial::NoiseTapeV2 decode_noise_tape_v2(const bio::Value& noise,const bio::Value& dropout) {
+    spatial::NoiseTapeV2 tape;
+    for(const auto& value:bio::as_array(noise,"noise_v2.noise")){
+        const auto& row=bio::as_array(value,"noise_v2.row");if(row.size()!=11)throw std::invalid_argument("noise_v2.row: expected eleven channels");
+        std::array<double,11> parsed{};for(std::size_t i=0;i<11;++i)parsed[i]=bio::as_double(row[i],"noise_v2.channel");tape.noise.push_back(parsed);}
+    for(const auto& value:bio::as_array(dropout,"noise_v2.dropout_uniform"))tape.dropout_uniform.push_back(bio::as_double(value,"noise_v2.dropout_uniform"));
+    tape.validate();return tape;
+}
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (noise, dropout_uniform) mirrors the capture document's pair order at the single call site
 NoiseTape decode_noise_tape(const bio::Value &noise,
                             const bio::Value &dropout_uniform) {
@@ -173,6 +261,37 @@ SensorState decode_sensor_state(const bio::Value &document) {
 }
 
 ResearchConfig decode_research_config(const bio::Value &document) {
+    if(const auto* schema=bio::find_member(bio::as_object(document,"research"),"sensor_schema_version")) {
+        if(bio::as_int64(*schema,"research.sensor_schema_version")!=2)
+            throw std::invalid_argument("research: unsupported sensor schema");
+        const vread::Dict d{.value=&vread::mapping(vread::Node{&document},"research"),.path="research"};
+        vread::exact(d,vread::keys("sensor_schema_version","timestep_s","control_steps","delay_steps","max_steps","sensor_steps","record_decimation",
+            "stop_on_model_violation","maximum_energy_residual_ratio","wheelie_persistence_s","track_length_m","start_position_m","sensors_v2",
+            "startup_control","rider_program","demand_program","capture_mode","seed_decimal","metadata","raw_initial_v2"));
+        ResearchConfig c;
+        c.timestep_s=vread::finite_real(d["timestep_s"],d.child("timestep_s"));c.control_steps=vread::integer(d["control_steps"],d.child("control_steps"));
+        c.delay_steps=vread::integer(d["delay_steps"],d.child("delay_steps"));c.max_steps=vread::integer(d["max_steps"],d.child("max_steps"));
+        c.sensor_steps=vread::integer(d["sensor_steps"],d.child("sensor_steps"));c.record_decimation=vread::integer32(d["record_decimation"],d.child("record_decimation"));
+        c.stop_on_model_violation=vread::boolean(d["stop_on_model_violation"],d.child("stop_on_model_violation"));
+        c.maximum_energy_residual_ratio=vread::finite_real(d["maximum_energy_residual_ratio"],d.child("maximum_energy_residual_ratio"));
+        c.wheelie_persistence_s=vread::finite_real(d["wheelie_persistence_s"],d.child("wheelie_persistence_s"));
+        c.track_length_m=vread::finite_real(d["track_length_m"],d.child("track_length_m"));c.start_position_m=vread::finite_real(d["start_position_m"],d.child("start_position_m"));
+        c.sensors_v2=decode_sensor_config_v2(*vread::field(d,"sensors_v2").value);
+        if(c.timestep_s<=0.||std::abs(c.sensors_v2->sample_period_s/c.timestep_s-static_cast<double>(c.sensor_steps))>1e-8||
+            static_cast<double>(c.control_steps)*c.timestep_s>c.sensors_v2->maximum_read_period_s)
+            throw std::invalid_argument("research.sensors_v2: periods do not match the integer control clock");
+        c.startup_control=rider::decode_intent_control(*vread::field(d,"startup_control").value,d.child("startup_control"));
+        c.programs=ResearchPrograms::from_wire(vread::wire_from_value(*vread::field(d,"rider_program").value,d.child("rider_program")),
+            vread::wire_from_value(*vread::field(d,"demand_program").value,d.child("demand_program")));
+        const auto& mode=vread::string(d["capture_mode"],d.child("capture_mode"));
+        if(mode=="off")c.capture_mode=ResearchCaptureMode::off;else if(mode=="full")c.capture_mode=ResearchCaptureMode::full;
+        else if(mode=="legacy")c.capture_mode=ResearchCaptureMode::legacy;else if(mode=="verify")c.capture_mode=ResearchCaptureMode::verify;
+        else throw std::invalid_argument("research.capture_mode: unsupported mode");
+        c.seed_decimal=vread::string(d["seed_decimal"],d.child("seed_decimal"));c.metadata=*vread::field(d,"metadata").value;
+        const auto& raw=*vread::field(d,"raw_initial_v2").value;
+        if(!bio::is_null(raw))c.raw_initial_v2=spatial::SensorObservationV2::from_wire(object(vread::wire_from_value(raw,"research.raw_initial_v2")));
+        return c;
+    }
     const vread::Dict d{.value = &vread::mapping(vread::Node{&document},
                                                 "research"),
                         .path = "research"};
@@ -282,11 +401,13 @@ ResearchBootstrap read_research_bootstrap(const fs::path &directory) {
     // tape, sensor state, then the ride composition.
     out.config =
         decode_research_config(*vread::field(root, "research").value);
-    out.tape =
-        decode_noise_tape(*vread::field(root, "noise").value,
-                          *vread::field(root, "dropout_uniform").value);
-    out.startup =
-        decode_sensor_state(*vread::field(root, "sensor_state").value);
+    if(out.config.sensors_v2) {
+        out.tape_v2=decode_noise_tape_v2(*vread::field(root,"noise").value,*vread::field(root,"dropout_uniform").value);
+        out.startup_v2=decode_sensor_state_v2(*vread::field(root,"sensor_state").value);
+    } else {
+        out.tape = decode_noise_tape(*vread::field(root, "noise").value,*vread::field(root, "dropout_uniform").value);
+        out.startup = decode_sensor_state(*vread::field(root, "sensor_state").value);
+    }
     out.ride = read_bootstrap(directory);
     return out;
 }
@@ -294,6 +415,10 @@ ResearchBootstrap read_research_bootstrap(const fs::path &directory) {
 std::unique_ptr<NativeResearchRuntime>
 make_research(ResearchBootstrap bootstrap) {
     auto ride = std::make_unique<NativeRideRuntime>(std::move(bootstrap.ride));
+    if(bootstrap.config.sensors_v2) {
+        if(!bootstrap.tape_v2||!bootstrap.startup_v2)throw std::invalid_argument("research bootstrap: missing V2 tape/state");
+        return std::make_unique<NativeResearchRuntime>(std::move(ride),std::move(bootstrap.config),std::move(*bootstrap.tape_v2),std::move(*bootstrap.startup_v2));
+    }
     return std::make_unique<NativeResearchRuntime>(
         std::move(ride), std::move(bootstrap.config),
         std::move(bootstrap.tape), std::move(bootstrap.startup));
@@ -302,6 +427,10 @@ make_research(ResearchBootstrap bootstrap) {
 std::unique_ptr<NativeResearchRuntime>
 make_research(std::unique_ptr<ResearchBootstrap> bootstrap) {
     auto ride = std::make_unique<NativeRideRuntime>(std::move(bootstrap->ride));
+    if(bootstrap->config.sensors_v2) {
+        if(!bootstrap->tape_v2||!bootstrap->startup_v2)throw std::invalid_argument("research bootstrap: missing V2 tape/state");
+        return std::make_unique<NativeResearchRuntime>(std::move(ride),std::move(bootstrap->config),std::move(*bootstrap->tape_v2),std::move(*bootstrap->startup_v2));
+    }
     return std::make_unique<NativeResearchRuntime>(
         std::move(ride), std::move(bootstrap->config),
         std::move(bootstrap->tape), std::move(bootstrap->startup));

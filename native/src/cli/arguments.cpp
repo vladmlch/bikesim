@@ -170,6 +170,8 @@ Arguments parse_arguments(std::string_view command, std::span<const std::string_
             if (!chosen) throw ArgumentError("unrecognized arguments: " + std::string(token));
             attached = token;
         }
+        if ((chosen->dest == "spatial" || chosen->dest == "terrain3d") && args.present(chosen->dest))
+            throw ArgumentError("argument " + chosen->names.front() + ": may only be supplied once");
         if(chosen->type=="int")*attached=integer_token(*attached);
         validate_token(*chosen, *attached); args.set(chosen->dest, std::move(*attached), true);
     }
@@ -181,6 +183,13 @@ std::string help_text(std::string_view command) {
     const auto contracts = io::parse_json(kArgumentContracts);
     auto text = scalar(member(member(contracts, command), "help"));
     if (text.empty()) text = "usage: " + std::string(command) + " [-h]\n\nNative bicycle simulator.\n";
+    if (command == "bike-ride" || command == "bike-research" || command == "bike-settle")
+        text += "\nSpatial options:\n  --spatial {planar,3d}  override the TOML spatial mode (default: preserve TOML)\n"
+                "  --terrain3d PATH      .terrain3d asset or .toml genspec; requires 3D\n"
+                "  Recording requires --record; --out only selects its destination.\n";
+    if (command == "bike-replay")
+        text += "\n  --checked             explicitly select checked recalculation (the default)\n"
+                "  --view                inspect recorded frames without recalculation\n";
     return text;
 }
 std::vector<std::string> command_names() {

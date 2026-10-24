@@ -14,7 +14,9 @@ namespace runtime {
 WireObject SpatialEpisodeMetrics::as_wire() const {
     return {{"spatial_schema",Wire(std::int64_t{1})},{"requested_duration_s",Wire(requested_duration_s)},
         {"valid_duration_s",Wire(valid_duration_s)},{"completed_distance_m",Wire(completed_distance_m)},
-        {"terminal_reason",Wire(std::string(bike::spatial::to_string(terminal_reason)))},{"valid",Wire(valid)}};
+        {"terminal_reason",Wire(std::string(bike::spatial::to_string(terminal_reason)))},{"terminal_tick",Wire(terminal_tick)},
+        {"front_lateral_slip_path_m",Wire(lateral_slip_path_m[0])},{"rear_lateral_slip_path_m",Wire(lateral_slip_path_m[1])},
+        {"front_unloaded_s",Wire(front_unloaded_s)},{"front_lift_s",Wire(front_lift_s)},{"flight_s",Wire(flight_s)},{"valid",Wire(valid)}};
 }
 void update_spatial_metrics(SpatialEpisodeMetrics& metrics,std::int64_t interval,
         double end,double dt,double position,const bike::spatial::Outcome& outcome) {
@@ -39,7 +41,7 @@ void update_spatial_metrics(SpatialEpisodeMetrics& metrics,std::int64_t interval
     }
     if(terminal) {
         metrics.valid=metrics.valid && outcome.valid;
-        if(metrics.terminal_reason==bike::spatial::SpatialReason::none)metrics.terminal_reason=outcome.reason;
+        if(metrics.terminal_reason==bike::spatial::SpatialReason::none){metrics.terminal_reason=outcome.reason;metrics.terminal_tick=outcome.tick;}
     }
     metrics.last_interval=interval;
     metrics.last_end_time_s=end;

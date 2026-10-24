@@ -32,6 +32,9 @@ std::string render(const Query& query) {
     const auto episodes = query("SELECT * FROM episodes ORDER BY episode_id", {});
     const auto fields = query("SELECT * FROM field_catalog WHERE dtype='DOUBLE' AND "
         "(table_name='physics' OR table_name LIKE 'channel_%') ORDER BY table_name,field_name", {});
+    const bool spatial = std::ranges::any_of(fields, [](const auto& row) {
+        return string(field(row,"table_name")) == "channel_spatial";
+    });
     std::string out = "# Run recording\n\nRun UUID: `" + raw(run, "run_id") + "`\n\nStarted (UTC): `" + raw(run, "started_at") +
         "`. Backend: `" + raw(run, "backend") + "`. Mode: `" + raw(run, "mode") + "`.\n\n## Invocation and provenance\n\n"
         "Evidence: `runs.metadata_json`; per-episode setup identity is in `episodes.summary_json`.\n\n```json\n" +
@@ -42,6 +45,10 @@ std::string render(const Query& query) {
         "The extrema below exclude forwarded energy rows; cumulative fields are reported as final values and are not summed. "
         "Missing/nonfinite coverage is reported explicitly.\n\n";
     if (episodes.empty()) out += "No episode was sealed. No physical or checked-replay claim is available.\n\n";
+    if (spatial) out += "## Spatial channels\n\nContainer 2 carries root position/quaternion, steering, local contact and sensor-schema-2 measurements. "
+        "Euler angles are unavailable when `attitude_valid` is false. Contact values are unavailable when their wheel validity is false; "
+        "IMU components additionally require their `valid_mask` bit. Source timestamps and delivery timestamps remain distinct. "
+        "Use `bike-recording report RUN --episode N --output report.html` for offline figures.\n\n";
     for (const auto& episode : episodes) {
         const auto id = count(field(episode, "episode_id")); const std::array params{integer(id)};
         const auto saved = io::parse_recording_json(string(field(episode, "summary_json")));

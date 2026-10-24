@@ -81,6 +81,7 @@ int inspect(const Arguments& args, std::optional<std::int64_t> episode) {
 } // namespace
 
 int replay_command(const Arguments& args) {
+    if (args.flag("checked") && args.flag("view")) throw ArgumentError("--checked and --view are mutually exclusive");
     if (args.has("time_scale") && !args.flag("viewer")) throw ArgumentError("--time-scale requires --viewer");
     if (args.flag("viewer") && args.flag("view")) throw ArgumentError("--viewer and --view are mutually exclusive");
     const auto episode = args.has("episode") ? std::optional(args.integer("episode")) : std::nullopt;

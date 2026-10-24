@@ -1,0 +1,2053 @@
+{
+  "spatial_manifest_version": 1,
+  "examples_manifest": "examples/spatial/examples_manifest.json",
+  "entries": [
+    {
+      "test": "spatial.baseline",
+      "source_task": "W01",
+      "classification": "deterministic",
+      "executable": "bike_spatial_baseline",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.bootstrap_hold",
+      "source_task": "W30",
+      "classification": "deterministic",
+      "executable": "bike_spatial_bootstrap_hold",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.brake_static_3d",
+      "source_task": "W26",
+      "classification": "deterministic",
+      "executable": "bike_spatial_brake_static_3d",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.checked_replay",
+      "source_task": "W43",
+      "classification": "deterministic",
+      "executable": "bike_spatial_checked_replay",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [
+        "spatial.root_position_world_m",
+        "spatial.root_quat_world_from_body_wxyz"
+      ],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.checkpoint",
+      "source_task": "W42",
+      "classification": "deterministic",
+      "executable": "bike_spatial_checkpoint",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.cli",
+      "source_task": "W45",
+      "classification": "deterministic",
+      "executable": "bike_spatial_cli",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.config",
+      "source_task": "W05",
+      "classification": "deterministic",
+      "executable": "bike_spatial_config",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.contracts_registry",
+      "source_task": "W04",
+      "classification": "deterministic",
+      "executable": "bike_spatial_contracts_registry",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.cornering",
+      "source_task": "W35",
+      "classification": "physical_reference",
+      "executable": "bike_spatial_cornering",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.documented_examples",
+      "source_task": "W49",
+      "classification": "deterministic",
+      "executable": "bike_spatial_documented_examples",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.drive",
+      "source_task": "W15",
+      "classification": "deterministic",
+      "executable": "bike_spatial_drive",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.equilibrium",
+      "source_task": "W29",
+      "classification": "deterministic",
+      "executable": "bike_spatial_equilibrium",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.force_mapping",
+      "source_task": "W14",
+      "classification": "deterministic",
+      "executable": "bike_spatial_force_mapping",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.frames",
+      "source_task": "W13",
+      "classification": "deterministic",
+      "executable": "bike_spatial_frames",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.golden_registry",
+      "source_task": "W44",
+      "classification": "deterministic",
+      "executable": "bike_spatial_golden_registry",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.grip",
+      "source_task": "W16",
+      "classification": "deterministic",
+      "executable": "bike_spatial_grip",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.harness",
+      "source_task": "W04",
+      "classification": "deterministic",
+      "executable": "bike_spatial_harness",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.installed_product",
+      "source_task": "W48",
+      "classification": "compatibility",
+      "executable": "cmake",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      },
+      "driver": "native/tests/spatial/installed_product.cmake"
+    },
+    {
+      "test": "spatial.meijaard",
+      "source_task": "W34",
+      "classification": "physical_reference",
+      "executable": "bike_spatial_meijaard",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.mirror",
+      "source_task": "W35",
+      "classification": "deterministic",
+      "executable": "bike_spatial_mirror",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.model",
+      "source_task": "W14",
+      "classification": "deterministic",
+      "executable": "bike_spatial_model",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.outcomes",
+      "source_task": "W33",
+      "classification": "deterministic",
+      "executable": "bike_spatial_outcomes",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.planar_bridge",
+      "source_task": "W18",
+      "classification": "compatibility",
+      "executable": "bike_spatial_planar_bridge",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.planar_bridge_long",
+      "source_task": "W18",
+      "classification": "compatibility",
+      "executable": "bike_spatial_planar_bridge_long",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.policy_v2",
+      "source_task": "W39",
+      "classification": "deterministic",
+      "executable": "bike_spatial_policy_v2",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.recording_assets",
+      "source_task": "W42",
+      "classification": "deterministic",
+      "executable": "bike_spatial_recording_assets",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [
+        "spatial.root_position_world_m",
+        "spatial.root_quat_world_from_body_wxyz"
+      ],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.recording_catalog",
+      "source_task": "W41",
+      "classification": "deterministic",
+      "executable": "bike_spatial_recording_catalog",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.references",
+      "source_task": "W03",
+      "classification": "deterministic",
+      "executable": "bike_spatial_references",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.reports_batch",
+      "source_task": "W47",
+      "classification": "deterministic",
+      "executable": "bike_spatial_reports_batch",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.rider",
+      "source_task": "W16",
+      "classification": "deterministic",
+      "executable": "bike_spatial_rider",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.runtime_state",
+      "source_task": "W17",
+      "classification": "deterministic",
+      "executable": "bike_spatial_runtime_state",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.sensor_mount",
+      "source_task": "W37",
+      "classification": "deterministic",
+      "executable": "bike_spatial_sensor_mount",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.sensor_pipeline",
+      "source_task": "W38",
+      "classification": "deterministic",
+      "executable": "bike_spatial_sensor_pipeline",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.startup_paths",
+      "source_task": "W31",
+      "classification": "deterministic",
+      "executable": "bike_spatial_startup_paths",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.steer_controller",
+      "source_task": "W32",
+      "classification": "deterministic",
+      "executable": "bike_spatial_steer_controller",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.target_rides",
+      "source_task": "W36",
+      "classification": "physical_reference",
+      "executable": "bike_spatial_target_rides",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [
+        "spatial.root_position_world_m",
+        "spatial.root_quat_world_from_body_wxyz"
+      ],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.terrain_acceptance",
+      "source_task": "W12",
+      "classification": "deterministic",
+      "executable": "bike_spatial_terrain_acceptance",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.terrain_budget_300m",
+      "source_task": "W12",
+      "classification": "deterministic",
+      "executable": "bike_spatial_terrain_budget_300m",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.terrain_codec",
+      "source_task": "W06",
+      "classification": "deterministic",
+      "executable": "bike_spatial_terrain_codec",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.terrain_extrusion",
+      "source_task": "W10",
+      "classification": "deterministic",
+      "executable": "bike_spatial_terrain_extrusion",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.terrain_generator",
+      "source_task": "W09",
+      "classification": "deterministic",
+      "executable": "bike_spatial_terrain_generator",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.terrain_raycast",
+      "source_task": "W08",
+      "classification": "deterministic",
+      "executable": "bike_spatial_terrain_raycast",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.terrain_sampling",
+      "source_task": "W07",
+      "classification": "deterministic",
+      "executable": "bike_spatial_terrain_sampling",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.terrain_startup",
+      "source_task": "W11",
+      "classification": "deterministic",
+      "executable": "bike_spatial_terrain_startup",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.timestep",
+      "source_task": "W35",
+      "classification": "deterministic",
+      "executable": "bike_spatial_timestep",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.topology",
+      "source_task": "W13",
+      "classification": "deterministic",
+      "executable": "bike_spatial_topology",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.topology_negatives",
+      "source_task": "W19",
+      "classification": "deterministic",
+      "executable": "bike_spatial_topology_negatives",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.truth_metrics",
+      "source_task": "W40",
+      "classification": "deterministic",
+      "executable": "bike_spatial_truth_metrics",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [
+        "spatial.root_position_world_m",
+        "spatial.root_quat_world_from_body_wxyz"
+      ],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.tyre_brush_detailed",
+      "source_task": "W24",
+      "classification": "deterministic",
+      "executable": "bike_spatial_tyre_brush_detailed",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.tyre_brush_fast",
+      "source_task": "W23",
+      "classification": "deterministic",
+      "executable": "bike_spatial_tyre_brush_fast",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.tyre_carcass",
+      "source_task": "W21",
+      "classification": "deterministic",
+      "executable": "bike_spatial_tyre_carcass",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.tyre_geometry",
+      "source_task": "W20",
+      "classification": "deterministic",
+      "executable": "bike_spatial_tyre_geometry",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.tyre_patches",
+      "source_task": "W22",
+      "classification": "deterministic",
+      "executable": "bike_spatial_tyre_patches",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.tyre_qualification",
+      "source_task": "W28",
+      "classification": "physical_reference",
+      "executable": "bike_spatial_tyre_qualification",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.tyre_state",
+      "source_task": "W27",
+      "classification": "deterministic",
+      "executable": "bike_spatial_tyre_state",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.tyre_writer",
+      "source_task": "W25",
+      "classification": "deterministic",
+      "executable": "bike_spatial_tyre_writer",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.viewer_pose",
+      "source_task": "W46",
+      "classification": "deterministic",
+      "executable": "bike_spatial_viewer_pose",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [
+        "spatial.root_position_world_m",
+        "spatial.root_quat_world_from_body_wxyz"
+      ],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      }
+    },
+    {
+      "test": "spatial.viewer_smoke",
+      "source_task": "W46",
+      "classification": "compatibility",
+      "executable": "cmake",
+      "status": "pending_verification",
+      "config_sha256": null,
+      "model_sha256": null,
+      "terrain_sha256": null,
+      "calibration_sha256": null,
+      "provider": null,
+      "schema_versions": {
+        "sensor": 2,
+        "catalog": 2,
+        "container": 2,
+        "replay": 4,
+        "tyre_state": 1,
+        "checkpoint": 1
+      },
+      "expected_channels": [],
+      "platforms": {
+        "macos-arm64": {
+          "status": "pending_verification",
+          "hashes": null
+        },
+        "linux-aarch64": {
+          "status": "pending_verification",
+          "hashes": null
+        }
+      },
+      "comparison": {
+        "same_platform": "bitwise",
+        "cross_platform_tolerances": {}
+      },
+      "driver": "native/tests/spatial/viewer_smoke.cmake"
+    }
+  ]
+}

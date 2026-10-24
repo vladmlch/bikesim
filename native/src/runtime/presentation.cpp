@@ -145,6 +145,30 @@ void PhysicalStep::capture_presentation(PresentationState &out) const {
                              : q[static_cast<std::size_t>(root_pitch_qposadr_)];
     model_access::require_id(frame_body_, model->nbody, "presentation frame");
     out.z_m = array(data->xpos, model->nbody, 3)[static_cast<std::size_t>(frame_body_) * 3U + 2U];
+    if (const auto& truth = spatial_truth(); truth && topology_) {
+        // The IMU/contact truth belongs to the just-accepted solve stage.
+        // The viewer skeleton carries the committed endpoint integration
+        // state after the runtime's forward. Read that already-current pose
+        // without evaluating the engine again, so camera and skeleton agree.
+        const auto endpoint=bike::spatial::body_pose(*model,*data,topology_->root);
+        const auto attitude=bike::spatial::euler_zyx(endpoint.quat_world_from_body_wxyz);
+        SpatialPresentation pose;
+        pose.position_world_m = endpoint.position_world_m;
+        pose.quat_wxyz = endpoint.quat_world_from_body_wxyz;
+        pose.attitude_valid = attitude.valid;
+        if (pose.attitude_valid) {
+            pose.heading_rad = attitude.yaw_rad;
+            pose.roll_rad = attitude.roll_rad;
+        }
+        pose.steer_angle_rad = truth->steer_angle_rad;
+        pose.steer_torque_nm = truth->steer_torque_nm;
+        pose.lateral_slip_mps = truth->lateral_slip_mps;
+        pose.contact_valid = truth->contact_valid;
+        pose.hold_active = spatial_state() && spatial_state()->hold.active;
+        pose.generation = static_cast<std::uint64_t>(generation());
+        out.spatial = pose;
+        out.root_x_dofadr = -1; // world longitudinal speed is not a scalar qvel alias
+    } else out.spatial.reset();
     out.crank_phase_rad = q[static_cast<std::size_t>(crank_spin_qposadr_)];
     out.fork_travel_mm = q[static_cast<std::size_t>(suspension.fork_qposadr())] * 1000.;
     out.shock_stroke_mm = q[static_cast<std::size_t>(suspension.shock_qposadr())] * 1000.;
@@ -295,6 +319,22 @@ WireObject PresentationState::as_wire() const {
     WireObject fields;
     for (std::size_t i = 0; i < model_fields.size(); ++i)
         fields.emplace_back(kModelFields[i], vector_wire(model_fields[i]));
+    if (spatial) {
+        const auto& pose = *spatial;
+        set(endpoint, "spatial", WireObject{
+            {"position_world_m", vector_wire(pose.position_world_m)}, {"quat_wxyz", vector_wire(pose.quat_wxyz)},
+            {"heading_rad", pose.heading_rad ? Wire{*pose.heading_rad} : Wire{nullptr}},
+            {"roll_rad", pose.roll_rad ? Wire{*pose.roll_rad} : Wire{nullptr}},
+            {"steer_angle_rad", pose.steer_angle_rad}, {"steer_torque_nm", pose.steer_torque_nm},
+            {"lateral_slip_mps", vector_wire(pose.lateral_slip_mps)},
+            {"front_contact_valid", pose.contact_valid[0]}, {"rear_contact_valid", pose.contact_valid[1]},
+            {"attitude_valid", pose.attitude_valid}, {"hold_active", pose.hold_active},
+            {"generation", static_cast<std::int64_t>(pose.generation)}});
+        set(row, "spatial.attitude_valid", static_cast<std::int64_t>(pose.attitude_valid));
+        set(row, "spatial.roll_rad", pose.roll_rad ? Wire{*pose.roll_rad} : Wire{nullptr});
+        set(row, "spatial.steer_angle_rad", pose.steer_angle_rad);
+        set(row, "spatial.steer_torque_nm", pose.steer_torque_nm);
+    }
     return {{"drive_mode", "articulated_effort"}, {"endpoint", Wire{std::move(endpoint)}},
             {"preview_row", Wire{std::move(row)}}, {"model_fields", Wire{std::move(fields)}}};
 }

@@ -709,10 +709,11 @@ if(BUILD_TESTING)
     "-DDEPENDENCY_ROOT=${BIKE_DEPENDENCY_ROOT}"
     "-DINSTALL_CONFIG=$<CONFIG>"
     "-DBIKE_TARGET_SYSTEM=${BIKE_TARGET_SYSTEM}"
+    "-DSPATIAL_FIXTURE_TOOL=$<TARGET_FILE:bike_spatial_installed_fixture>"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/native/tests/install/install_smoke.cmake")
   # The smoke builds the complete selected graph before exercising install;
   # no other CTest may use that same build tree while it is doing so.
-  set_tests_properties(install_smoke PROPERTIES RUN_SERIAL TRUE)
+  set_tests_properties(install_smoke PROPERTIES LABELS "package" RUN_SERIAL TRUE)
 endif()
 
 # ---------------------------------------------------------------------------

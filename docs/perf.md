@@ -1,5 +1,23 @@
 # Performance log
 
+## spatial-fast-v1 — targets, pending V09
+
+The native spatial fast profile targets realtime factors **2.0 headless** and
+**1.0 viewer** on the plan's qualified platform lanes. These are acceptance
+targets, not measurements. **There are no spatial performance measurements
+before V09.** W45–W49 authored the request/report/install paths without running
+a compiler, application or benchmark. The existing historical rows below must
+not be presented as spatial results.
+
+Qualification must preserve fixed terrain/calibration hashes, root/tyre tier,
+dt, sensor schema, seed, execution identity, recording state and validity.
+Report startup separately from scored intervals, exclude crashed/model-invalid
+jobs from speed aggregates, and retain their outcomes. Process worker count
+changes scheduling; canonical job keys/outcomes remain stable while elapsed
+wall time is measured separately. The scenario definitions live in
+[spatial-3d.md](spatial-3d.md). V07 physics and V08 delivery acceptance precede
+any claim that a diagnostic throughput value represents qualified physics.
+
 Standard measurement: `tools/measure_realtime.py --no-strict --duration 10 --runs 3 --warmup 1`,
 track `rough_uphill_savage`, physics `viewer_physics_welded.toml` (dt 1.25 ms), this Mac.
 `per-step` is from `tools/step_profile.py` (1600 loop steps, construction excluded).

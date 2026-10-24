@@ -1,5 +1,23 @@
 # Linux development guide
 
+## Spatial product — pending V08
+
+W45–W49 adds installed examples under `share/bike_sim/examples/spatial`, the
+schema2 catalog and native application/report paths. The new static owners use
+the existing dependency graph and `$ORIGIN` runtime search paths; no separate
+MuJoCo/BLAS/DuckDB discovery or developer-machine path is introduced. The
+install and binary-package smokes include `spatial/installed_product.cmake`
+with the built native fixture helper. They run from a fresh directory outside
+the checkout with Python and loader overrides removed, and test recording,
+inspection, checked replay, offline reports, schema1 reading and named
+incompatible-execution rejection.
+
+These are authored gates, **not executed results**. V08 must exercise the moved
+prefix on the supported Linux lane. The GUI smoke additionally requires a real
+`DISPLAY`; a missing display fails rather than counting as a pass. See
+[spatial workflows](../spatial-3d.md) and the
+[evidence ledger](../superpowers/audits/2026-10-22-spatial-3d-application-evidence.md).
+
 Active instructions for developing bike-sim on Linux. The sibling
 [macOS guide](macos.md) covers the Darwin toolchain; shared failure
 diagnosis lives in [troubleshooting.md](troubleshooting.md).

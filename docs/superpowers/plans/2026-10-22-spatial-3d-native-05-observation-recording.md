@@ -1,5 +1,10 @@
 # Spatial 3D Native — 05. Наблюдения, research, запись и replay (W-фаза: W37–W44)
 
+> **Source delivery 2026-10-24:** W37–W44 — `source_written`, V07 —
+> `pending_verification`. [Отчёт по патчу](../audits/2026-10-24-spatial-w37-w49-source.md)
+> фиксирует реализацию и C10-расхождения. Configure/build/tests/apps не запускались;
+> следующие acceptance-checkboxes сохранены открытыми.
+
 > **Для исполнителей:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development (рекомендуется) или superpowers:executing-plans. Все задачи — **one-shot write** против frozen headers W00 (`00-foundation.md` §W00.9, W00.10; блок «Контракты V2» ниже — дословный источник для `runtime/spatial_sensor_pipeline.hpp`). Запрещены configure/build/compile/ctest/запуск/freeze goldens. Проверка и acceptance — `09-verification.md` V07.
 
 **Goal:** Написать пространственные наблюдения V2, native research dispatch/ABI2, truth/metrics, catalog2/container2, полный checkpoint, checked replay4 и golden registry — целиком, без запуска.

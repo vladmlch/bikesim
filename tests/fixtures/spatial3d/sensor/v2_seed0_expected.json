@@ -1,0 +1,11 @@
+{
+  "sensor_schema_version": 2,
+  "seed": 0,
+  "rng_revision": "sensor-v2-rng/1",
+  "streams": ["sensor_v2/noise", "sensor_v2/dropout"],
+  "spawn_key_encoding": "one unsigned ASCII byte per uint32 word",
+  "value_count": 11,
+  "expected": null,
+  "status": "pending_verification",
+  "verification": "V07: independent capture and review on macos-arm64 and linux-aarch64"
+}

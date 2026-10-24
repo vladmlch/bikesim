@@ -121,7 +121,17 @@ function(bike_add_native_startup native_dir)
   target_sources(${_startup_core} PRIVATE
     "${native_dir}/src/writers/pneumatic_3d_tire.cpp"
     "${native_dir}/src/writers/spatial_tire_adapter.cpp"
-    "${native_dir}/src/runtime/spatial_tire_factory.cpp")
+    "${native_dir}/src/runtime/spatial_tire_factory.cpp"
+    # W37-W42: shared ownership in both native graphs, never a second runtime.
+    "${native_dir}/src/runtime/spatial_sensors.cpp"
+    "${native_dir}/src/runtime/spatial_sensor_pipeline.cpp"
+    "${native_dir}/src/runtime/spatial_truth.cpp"
+    "${native_dir}/src/runtime/spatial_checkpoint.cpp"
+    "${native_dir}/src/runtime/accounting_checkpoint.cpp"
+    "${native_dir}/src/runtime/presentation_checkpoint.cpp"
+    # Shared cold capture code is owned once by core so checkpoint restore
+    # does not introduce a runtime -> initialization-library cycle.
+    "${native_dir}/src/initialization/capture.cpp")
   target_link_libraries(${_startup_core} PUBLIC
     bike_tyre_profile bike_spatial bike_rider_spatial bike_terrain bike_pneumatic3d bike_model)
 
@@ -156,7 +166,6 @@ function(bike_add_native_startup native_dir)
     "${native_dir}/src/runtime/project_config.cpp"
     "${native_dir}/src/initialization/request.cpp"
     "${native_dir}/src/initialization/setup_owner.cpp"
-    "${native_dir}/src/initialization/capture.cpp"
     "${native_dir}/src/initialization/initial_pose.cpp"
     "${native_dir}/src/initialization/equilibrium.cpp"
     "${native_dir}/src/initialization/spatial_equilibrium.cpp"
@@ -198,10 +207,16 @@ function(bike_add_native_startup native_dir)
   endif()
   install(FILES "${native_dir}/src/numerics/SCIPY-LICENSE.txt"
     DESTINATION share/licenses/bike-native-ride)
+  # W48: install the same archives used by the native product. Terrain3d and
+  # pneumatic3d retain their locked engine/numerics providers through the
+  # existing link graph; installation introduces no discovery or downloads.
+  install(TARGETS bike_spatial bike_rider_spatial bike_terrain bike_pneumatic3d
+    bike_tyre_profile ARCHIVE DESTINATION lib)
   # Keep shipped TOML and relative rider assets together after relocation.
   # Missing optional legacy NPZ inputs remain explicit acquisition failures;
   # --fresh deliberately requests a new native equilibrium instead.
   install(DIRECTORY "${native_dir}/../examples/"
     DESTINATION share/bike_sim/examples
-    FILES_MATCHING PATTERN "*.toml" PATTERN "*.json" PATTERN "*.npz")
+    FILES_MATCHING PATTERN "*.toml" PATTERN "*.json" PATTERN "*.npz"
+    PATTERN "*.terrain3d")
 endfunction()

@@ -66,10 +66,13 @@ void write(const platform::FileHandle& file, const std::string& text_value) { pl
 io::Value export_data(const Recording& recording, std::int64_t episode, std::string_view table,
     std::string_view format, const std::filesystem::path& output, std::optional<std::uint64_t> maximum) {
     (void)recording.episode(episode);
-    const std::map<std::string_view, std::string_view> order{{"telemetry", "interval_id"}, {"legacy_telemetry", "interval_id"},
+    const std::map<std::string_view, std::string_view> order{{"telemetry", "interval_id"}, {"legacy_telemetry", "interval_id"}, {"channel_spatial","interval_id"},
+        {"channel_spatial_energy","interval_id"},{"channel_spatial_geometry","interval_id"},{"channel_spatial_outcome","interval_id"},
         {"forces", "interval_id,component"}, {"commands_requested", "request_id"}, {"commands_applied", "application_id"},
         {"observations", "observation_id"}, {"transitions", "transition_id"}, {"events", "event_id"}, {"metrics", "name"}};
     if (!order.contains(table) || (format != "csv" && format != "jsonl")) throw std::invalid_argument("unsupported explicit recording export");
+    if (table.starts_with("channel_spatial") && recording.schema_version() == 1)
+        throw std::invalid_argument("recording schema 1 has no spatial channels");
     std::vector<Value> parameters{integer(episode)};
     auto sql = "SELECT * FROM " + quote(table) + " WHERE episode_id=? ORDER BY " + std::string(order.at(table));
     if (maximum) { limit(*maximum); sql += " LIMIT ?"; parameters.push_back(integer(static_cast<std::int64_t>(*maximum))); }
@@ -92,6 +95,15 @@ io::Value export_data(const Recording& recording, std::int64_t episode, std::str
         }
     }
     file.close();
+    if (recording.schema_version() == 2) {
+        const auto catalog = recording.rows("SELECT * FROM field_catalog ORDER BY table_name,field_name");
+        Array fields; for (const auto& row : catalog) fields.push_back(Value{row});
+        const auto manifest = io::recording_json(Value{Object{{"schema_version",integer(2)},
+            {"table",text(table)},{"fields",Value{std::move(fields)}},
+            {"semantics",text("vector shapes, units, frames, phases, validity and presence are retained; array cells contain JSON")}}});
+        auto sidecar = output; sidecar += ".fields.json";
+        platform::write_exclusive(sidecar,std::as_bytes(std::span(manifest)));
+    }
     return Value{Object{{"output", text(output.string())}, {"format", text(format)}, {"table", text(table)}, {"rows", integer(rows)},
         {"semantics", text("explicit analytics export, not a checked-replay bundle")}}};
 }

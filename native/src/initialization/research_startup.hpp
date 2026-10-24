@@ -2,12 +2,14 @@
 #include "../io/value.hpp"
 #include "../runtime/research_metrics.hpp"
 #include "../runtime/sensors.hpp"
+#include "../runtime/spatial_sensor_pipeline.hpp"
 #include <mujoco/mujoco.h>
 
 namespace bike::initialization {
 struct SetupContext;
 struct ResearchStartup {
     runtime::SensorObservation observation;
+    std::optional<runtime::spatial::SensorObservationV2> observation_v2;
     runtime::TruthGeometry geometry;
     io::Value compiled_metadata;
     double position_m = 0.;

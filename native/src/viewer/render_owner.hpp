@@ -24,6 +24,8 @@ private:
     CameraMode mode_ = CameraMode::side;
     double smoothing_;
     std::optional<std::array<double, 3>> lookat_;
+    std::optional<double> prev_heading_;
+    double unwrapped_heading_ = 0.;
     bool reset_ = true;
 };
 // The object is main-thread confined. Construction and apply need no GL

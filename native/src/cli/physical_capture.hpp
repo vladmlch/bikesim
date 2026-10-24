@@ -10,4 +10,6 @@ namespace bike::cli {
     const app::PreparedSimulation&, const io::Value& launch_metadata);
 [[nodiscard]] io::Value launch_metadata(const initialization::SetupRequest&, const app::PreparedSimulation&,
     const std::optional<std::string>& seed_decimal = std::nullopt);
+[[nodiscard]] std::vector<recording::Asset> physical_final_assets(std::vector<recording::Asset>,
+    const runtime::NativeRideRuntime&, const io::Value& launch_metadata);
 } // namespace bike::cli

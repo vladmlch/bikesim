@@ -1,6 +1,8 @@
 #include "contracts.hpp"
+#include "versioned.hpp"
 #include "value_util.hpp"
 #include "../research/evidence.hpp"
+#include "../runtime/spatial_checkpoint.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -22,7 +24,10 @@ public:
     }
     void tables(std::size_t maximum, const BatchSink& sink) const override {
         if (!maximum || maximum > static_cast<std::size_t>(std::numeric_limits<std::int64_t>::max())) throw std::invalid_argument("batch_rows must be positive int64");
-        for (const auto& spec : research_tables()) {
+        const auto version = !episode_->observations.empty() && std::holds_alternative<runtime::spatial::SensorObservationV2>(episode_->observations.front())
+            ? CatalogVersion::spatial2 : CatalogVersion::planar1;
+        for (const auto& spec : all_tables(version)) {
+            if (spec.name != "commands_requested" && spec.name != "commands_applied" && spec.name != "observations" && spec.name != "transitions") continue;
             const auto count = episode_->row_count(spec.name);
             for (std::size_t first = 0; first < count;) {
                 const auto size = std::min(maximum, count-first);
@@ -55,6 +60,7 @@ std::shared_ptr<const EpisodeEvidence> make_research_evidence(std::int64_t id, r
     if (episode.configuration.capture_mode != runtime::ResearchCaptureMode::full) throw std::invalid_argument("persistent research recording requires full capture");
     auto const owner = std::make_shared<const runtime::OwnedResearchEpisode>(std::move(episode));
     auto physical_owner = std::shared_ptr<const runtime::OwnedNativeEpisode>(owner, &owner->physical);
+    const auto version = catalog_version(catalog);
     auto physical = make_physical_source(std::move(physical_owner), std::move(catalog), false);
     bool eligible = false;
     if (const auto* extents = io::find_member(io::as_object(summary, "research summary"), "recording_extents"))
@@ -65,9 +71,32 @@ std::shared_ptr<const EpisodeEvidence> make_research_evidence(std::int64_t id, r
         std::ranges::all_of(owner->final_snapshot.integration_state, [](double n) { return std::isfinite(n); });
     std::vector<Asset> assets;
     if (owner->configuration.assets) for (const auto& a : *owner->configuration.assets) assets.push_back(Asset{.name=a.name, .media_type=a.media_type, .sha256=a.sha256, .content=a.content});
+    if(version==CatalogVersion::spatial2) {
+        const auto initial=runtime::spatial::decode_checkpoint(owner->checkpoint_initial);
+        assets.push_back(json_asset("spatial/checkpoint_initial.json",owner->checkpoint_initial));
+        if(owner->checkpoint_unavailable_reason) {
+            if(!io::is_null(owner->checkpoint_final))throw std::invalid_argument("unavailable checkpoint cannot also advertise complete state");
+            eligible=false;
+            assets.push_back(json_asset("spatial/checkpoint_final.json",io::Value{io::Value::Object{
+                {"spatial_checkpoint_unavailable",value::integer(1)},{"replayable",io::Value{false}},
+                {"reason",value::text(*owner->checkpoint_unavailable_reason)}}}));
+        } else {
+        (void)runtime::spatial::decode_checkpoint(owner->checkpoint_final);
+        assets.push_back(json_asset("spatial/checkpoint_final.json",owner->checkpoint_final));
+        const auto source=std::ranges::find_if(assets,[](const auto& a){return a.name=="spatial/terrain_source.json";});
+        if(source==assets.end())throw std::invalid_argument("spatial research recording lacks terrain source");
+        const auto document=io::parse_recording_json(std::string(reinterpret_cast<const char*>(source->content.data()),source->content.size()));
+        const auto kind=io::as_string(value::require(document,"kind"),"terrain kind");
+        const io::Value recipe{io::Value::Object{{"replay_contract_version",value::integer(4)},
+            {"terrain_kind",value::text(kind)},{"terrain_sha256",value::require(initial.identity,"terrain_sha256")},
+            {"config_spatial",value::require(summary,"resolved_config")},{"checkpoint_initial",owner->checkpoint_initial},
+            {"checkpoint_final",owner->checkpoint_final},{"execution_identity_sha256",value::require(initial.identity,"solver")}}};
+        assets=replace_recipe(std::move(assets),recipe);
+        }
+    }
     auto out = std::make_shared<const EpisodeEvidence>(EpisodeEvidence{.episode_id=id, .generation=owner->physical.generation, .physical=std::move(physical), .summary=std::move(summary), .assets=std::move(assets),
         .research=ResearchEvidence{.history=make_research_source(owner), .initial_integration_state=owner->initial_integration_state, .final_integration_state=owner->final_snapshot.integration_state,
-            .replay_contract_version=replay_contract_version, .complete_control_steps=static_cast<std::int64_t>(owner->transitions.size()), .replay_eligible=eligible}});
+            .replay_contract_version=version == CatalogVersion::spatial2 ? 4 : replay_contract_version, .complete_control_steps=static_cast<std::int64_t>(owner->transitions.size()), .replay_eligible=eligible}});
     out->validate(); return out;
 }
 } // namespace bike::recording

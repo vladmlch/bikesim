@@ -3,6 +3,9 @@
 #include "../model/rider_geometry.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../terrain/trackfile.hpp"
+#include "../spatial/config.hpp"
+#include "../io/hash.hpp"
+#include "../io/json.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -30,6 +33,56 @@ void add_number(Value& object, const Arguments& args, std::string_view option, s
 }
 void add_text(Value& object, const Arguments& args, std::string_view option, std::string_view field_name) {
     if (args.has(option)) set(object, field_name, text(args.text(option)));
+}
+void spatial_arguments(configuration::SimulationPhysicsConfig& physics, const Arguments& args, bool choose_defaults = true) {
+    if (args.present("spatial")) {
+        if (args.text("spatial") == "planar") physics.spatial.reset();
+        else if (!physics.spatial) {
+            physics.spatial.emplace();
+            physics.spatial->mode = spatial::Mode::spatial3d;
+            physics.spatial->root = spatial::RootKind::free6;
+            physics.spatial->steer.profile_id = "roll-heading-v1";
+        }
+    }
+    const bool enabled = physics.spatial && physics.spatial->mode == spatial::Mode::spatial3d;
+    if (args.has("terrain3d")) {
+        if (!enabled) throw ArgumentError("--terrain3d requires --spatial 3d");
+        if (args.present("track") || args.present("track_file") || args.present("gen_spec"))
+            throw ArgumentError("--terrain3d conflicts with --track/--track-file/--gen-spec");
+        auto& terrain = physics.spatial->terrain;
+        terrain.path = std::filesystem::absolute(args.text("terrain3d")).lexically_normal();
+        if (terrain.path.extension() == ".terrain3d") terrain.kind = spatial::TerrainRequestKind::grid_asset;
+        else if (terrain.path.extension() == ".toml") terrain.kind = spatial::TerrainRequestKind::genspec;
+        else throw ArgumentError("--terrain3d requires a .terrain3d asset or .toml genspec");
+    }
+    // The explicit 3D mode has coherent native defaults when there is no
+    // supplied physics document. A supplied document keeps its other choices
+    // and incompatible combinations fail the ordinary capability boundary.
+    if (enabled && choose_defaults && !args.has("physics_config")) {
+        physics.physics_mode = "physical";
+        physics.drive_mode = args.text("rider") == "articulated_planar" ? "articulated_effort" : "crank_effort";
+        physics.tires.backend = "pneumatic_3d";
+        physics.tires.surface_mode = "track";
+        physics.timestep_s = .00125;
+        physics.initial_speed_mps = 2.;
+        physics.initial_front_brake = physics.initial_rear_brake = 0.;
+        physics.pitch_assist = false;
+        physics.drive.transmission_model = "ideal_mid_drive";
+        physics.drive.shifting.enabled = false;
+        physics.resistance.cda_m2 = 0.;
+    }
+}
+void require_spatial_capability(const configuration::SimulationPhysicsConfig& physics) {
+    if (physics.spatial && physics.spatial->mode == spatial::Mode::spatial3d) {
+        const auto report = spatial::check_spatial_capability(*physics.spatial, physics);
+        if (!report.implemented) {
+            std::string why = "spatial capability rejected";
+            for (const auto& rejection : report.rejections) why += "; " + rejection;
+            throw ArgumentError(why);
+        }
+        if (physics.spatial->terrain.kind == spatial::TerrainRequestKind::none)
+            throw ArgumentError("spatial terrain is required: use --terrain3d or [spatial_3d.terrain]");
+    }
 }
 } // namespace
 
@@ -79,11 +132,13 @@ std::unique_ptr<configuration::SimulationPhysicsConfig> ride_physics(Arguments& 
     if (!io::as_object(assist, "assist").empty()) set(drive, "assist", assist);
     if (!io::as_object(drive, "drive").empty()) set(overrides, "drive", drive);
     auto physics = load_ride_physics(args);
+    spatial_arguments(*physics, args);
     resolve_physics_into(*physics, overrides);
     if (physics->physics_mode == "physical" && args.has("assist")) {
         set(assist, "mode", text(args.text("assist"))); set(drive, "assist", assist); set(overrides, "drive", drive);
         resolve_physics_into(*physics, overrides);
     }
+    require_spatial_capability(*physics);
     args.set("physics", physics->physics_mode); args.set("drive", physics->drive_mode.value_or("coast"));
     return physics;
 }
@@ -95,7 +150,12 @@ std::unique_ptr<initialization::SetupRequest> ride_setup_request(Arguments const
     auto seed = args.optional_text("seed");
     // In research a frozen authored file retains its own terrain seed.
     if (experiment && std::filesystem::path(args.text("track")).extension() == ".toml") seed.reset();
-    request.track = resolve_track(args.text("track", "road_worn"), seed, args.optional_real("length"));
+    if (physics.spatial) {
+        // Physical geometry/domain is resolved by SetupOwner from the typed
+        // terrain request. No implicit planar track/extrusion is loaded here.
+        request.track.name = "spatial-terrain";
+        request.model.spatial = physics.spatial;
+    } else request.track = resolve_track(args.text("track", "road_worn"), seed, args.optional_real("length"));
     request.seed_decimal = research::validate_seed(args.text("seed", "0"));
     request.model.mode = "ride"; request.model.field = terrain::HeightFieldSpec::for_track(request.track);
     request.model.physics = physics;
@@ -163,6 +223,8 @@ std::unique_ptr<ResolvedRide> resolve_ride(Arguments args, bool settling) {
     // Build the setup before moving args — member-order evaluation would
     // otherwise hand ride_setup_request a moved-from Arguments.
     auto resolved = std::make_unique<ResolvedRide>();
+    const auto canonical = io::canonical_json(configuration::to_value(*physics));
+    resolved->effective_config_sha256 = io::sha256(std::as_bytes(std::span(canonical)));
     resolved->setup = std::move(*ride_setup_request(args, *physics, physical, experiment));
     resolved->arguments = std::move(args);
     return resolved;
@@ -190,7 +252,6 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     auto owner = std::make_unique<research::ResearchRequest>();
     auto& request = *owner;
     request.setup.origin = "bike-research"; request.setup.asset_root = std::filesystem::current_path();
-    request.setup.track = research::resolve_research_track(file(args, "track_file"), args.text("scenario"), file(args, "gen_spec"), args.text("seed"));
     request.setup.model.mode = "ride"; request.setup.model.crank_joint = true;
     request.setup.model.rider = model::rider_from_args(args.text("rider"), args.real("rider_mass"), args.real("rider_height"));
     request.setup.model.include_rider = true;
@@ -220,7 +281,18 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     add_number(drive, args, "chain_stiffness", "chain_k_n_m");
     add_number(drive, args, "freehub_stiffness", "freehub_k_nm_rad");
     if (!io::as_object(drive, "drive").empty()) set(overrides, "drive", std::move(drive));
+    if (!args.has("physics_config")) spatial_arguments(*defaults, args);
     request.setup.model.physics = research::resolve_research_physics(*defaults, file(args, "physics_config"), overrides);
+    // Explicit CLI selection overrides a loaded TOML extension, while an
+    // omitted --spatial leaves the TOML-selected mode unchanged.
+    spatial_arguments(*request.setup.model.physics, args, false);
+    if(args.present("spatial")||args.has("terrain3d"))
+        resolve_physics_into(*request.setup.model.physics,Value{Object{}});
+    require_spatial_capability(*request.setup.model.physics);
+    if (request.setup.model.physics->spatial) {
+        request.setup.model.spatial = request.setup.model.physics->spatial;
+        request.setup.track.name = "spatial-terrain";
+    } else request.setup.track = research::resolve_research_track(file(args, "track_file"), args.text("scenario"), file(args, "gen_spec"), args.text("seed"));
     if (request.setup.model.physics->drive.transmission_model != "elastic_chain" && (args.has("chain_stiffness") || args.has("freehub_stiffness"))) throw ArgumentError("--chain-stiffness/--freehub-stiffness apply only to elastic_chain");
     request.experiment.control_period_s = args.real("control_period"); request.experiment.actuator_delay_s = args.real("actuator_delay");
     request.experiment.duration_s = args.real("duration"); request.experiment.seed_decimal = research::validate_seed(args.text("seed"));
@@ -231,6 +303,17 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     request.sensors = args.flag("ideal_sensors") ? research::SensorConfig::ideal() : research::SensorConfig{};
     if (!args.flag("ideal_sensors")) request.sensors.delivery.latency_s = args.real("sensor_delay");
     request.sensors.sample_period_s = args.real("sensor_period");
+    if (request.setup.model.physics->spatial) {
+        request.sensors_v2.sample_period_s = args.real("sensor_period");
+        request.sensors_v2.maximum_read_period_s = request.experiment.control_period_s;
+        request.sensors_v2.latency_s = args.flag("ideal_sensors") ? 0. : args.real("sensor_delay");
+        if (args.flag("ideal_sensors")) {
+            request.sensors_v2.acceleration_std = {};
+            request.sensors_v2.gyro_std = {};
+            request.sensors_v2.encoder_std = request.sensors_v2.torque_std = 0.;
+        }
+        request.sensors_v2.validate();
+    }
     request.programs = research::load_programs(file(args, "rider_program"), file(args, "demand_file"));
     if (args.has("demand")) request.programs.demand_frames = research::constant_demand(args.real("demand")).demand_frames;
     if (args.flag("rider_random")) { request.rider_random = random::RiderRandomSpec{}; request.rider_seed_decimal = args.text("rider_seed", request.experiment.seed_decimal); }

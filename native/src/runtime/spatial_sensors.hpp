@@ -24,7 +24,7 @@ ImuMountBinding bind_imu_mount(const mjModel&, const bike::spatial::Config&,
                                const bike::spatial::Topology&);
 // Sample after the constraint solve, before endpoint forward recomputation.
 ImuTruth read_imu_truth(const mjModel&, const mjData&, const ImuMountBinding&,
-                       double time_s) noexcept;
+                       double time_s);
 bool is_rotation_matrix(const Matrix3&, double tol = 1e-9) noexcept;
 
 } // namespace runtime::spatial

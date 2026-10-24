@@ -9,6 +9,7 @@
 #include "../research/evidence.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../terrain/trackfile.hpp"
+#include "../runtime/spatial_checkpoint_internal.hpp"
 #include "../tyre/profile.hpp"
 #include <algorithm>
 #include <cmath>
@@ -37,7 +38,7 @@ initialization::ResearchStartup compiled_snapshot(const app::PreparedSimulation&
     // Regenerating an authored profile at an arbitrary spacing loses those.
     engine::kinematics(model.get(),data.get());
     initialization::ResearchStartup result;
-    for(const auto& vertex:biketyre::compiled_profile_vertices(model.get(),data.get(),"terrain")) {
+    if(!bootstrap.config.spatial) for(const auto& vertex:biketyre::compiled_profile_vertices(model.get(),data.get(),"terrain")) {
         result.geometry.x.push_back(vertex[0]);result.geometry.z.push_back(vertex[1]);
     }
     result.compiled_metadata=initialization::compiled_physical_metadata(*model);
@@ -55,7 +56,8 @@ recording::Catalog model_catalog(const runtime::ModelImage& image) {
     if(io::sha256(image.mjb)!=image.sha256)throw std::invalid_argument("recording model digest mismatch");
     model::ModelOwner const model{engine::load_model_image(image.mjb)};
     if(!model)throw std::runtime_error("cannot load recording catalog model");
-    return recording::build_catalog(*model);
+    return recording::build_catalog(*model, mj_name2id(model.get(),mjOBJ_SITE,"imu_site_spatial")>=0
+        ? recording::CatalogVersion::spatial2 : recording::CatalogVersion::planar1);
 }
 io::Value launch_metadata(const initialization::SetupRequest& request,const app::PreparedSimulation& prepared,
     const std::optional<std::string>& seed_decimal) {
@@ -84,6 +86,12 @@ io::Value physical_summary(runtime::NativeRideRuntime const& environment,const i
     set(result,"component_work_j",field(history,"work_j"));
     set(result,"airtime_threshold_s",field(history,"airtime_s"));set(result,"duration_s",field(history,"duration_s"));
     set(result,"input_identity_at_finalization",recording::input_identity_at_finalization(metadata));
+    if(frame.state.spatial) {
+        const auto unavailable=environment.checkpoint_unavailable_reason();
+        set(result,"spatial_checkpoint",Value{Object{
+            {"checkpoint_final_available",Value{!unavailable.has_value()}},
+            {"checkpoint_unavailable_reason",unavailable?text(*unavailable):Value{}}}});
+    }
     return result;
 }
 std::vector<recording::Asset> physical_assets(const initialization::SetupRequest& request,const app::PreparedSimulation& prepared,
@@ -91,6 +99,17 @@ std::vector<recording::Asset> physical_assets(const initialization::SetupRequest
     if(io::as_string(field(metadata,"model_sha256"),"model_sha256")!=prepared.bootstrap.model.sha256)
         throw std::invalid_argument("recording model differs from captured launch metadata");
     std::vector<recording::Asset> assets;
+    if(prepared.bootstrap.config.spatial) {
+        for(auto& a:research::snapshot_spatial_assets(request,prepared.bootstrap,metadata))
+            assets.push_back(recording::Asset{.name=std::move(a.name),.media_type=std::move(a.media_type),.sha256=std::move(a.sha256),.content=std::move(a.content)});
+        runtime::NativeRideRuntime initial(prepared.bootstrap);
+        const auto checkpoint=runtime::spatial::capture_checkpoint(initial,runtime::spatial::inactive_research_checkpoint(),
+            runtime::spatial::inactive_sensor_checkpoint(),Value{Object{{"resumable",Value{false}},{"state",Value{}}}},runtime::spatial::checkpoint_identity(metadata));
+        assets.push_back(recording::json_asset("spatial/checkpoint_initial.json",runtime::spatial::encode_checkpoint(checkpoint)));
+        assets.push_back(recording::asset("model.mjb","application/x-mujoco",prepared.bootstrap.model.mjb));
+        assets.push_back(recording::json_asset("resolved_config.json",field(metadata,"resolved_config")));
+        return assets;
+    }
     const auto source=terrain::dump_track(request.track);
     assets.push_back(recording::asset("track.toml","application/toml",std::vector<std::byte>(std::as_bytes(std::span{source.data(),source.size()}).begin(),std::as_bytes(std::span{source.data(),source.size()}).end())));
     const auto vertices=vertices_array(compiled_snapshot(prepared));
@@ -113,6 +132,21 @@ std::vector<recording::Asset> physical_assets(const initialization::SetupRequest
             throw std::invalid_argument(std::string(key)+" changed before recording setup could snapshot it");
         assets.push_back(std::move(profile));
     }
+    return assets;
+}
+std::vector<recording::Asset> physical_final_assets(std::vector<recording::Asset> assets,
+    const runtime::NativeRideRuntime& environment,const io::Value& metadata) {
+    if(!environment.snapshot().spatial)return assets;
+    if(const auto reason=environment.checkpoint_unavailable_reason()) {
+        std::erase_if(assets,[](const auto& a){return a.name=="spatial/checkpoint_final.json";});
+        assets.push_back(recording::json_asset("spatial/checkpoint_final.json",Value{Object{
+            {"spatial_checkpoint_unavailable",integer(1)},{"replayable",Value{false}},{"reason",text(*reason)}}}));
+        return assets;
+    }
+    const auto checkpoint=runtime::spatial::capture_checkpoint(environment,runtime::spatial::inactive_research_checkpoint(),
+        runtime::spatial::inactive_sensor_checkpoint(),Value{Object{{"resumable",Value{false}},{"state",Value{}}}},runtime::spatial::checkpoint_identity(metadata));
+    std::erase_if(assets,[](const auto& a){return a.name=="spatial/checkpoint_final.json";});
+    assets.push_back(recording::json_asset("spatial/checkpoint_final.json",runtime::spatial::encode_checkpoint(checkpoint)));
     return assets;
 }
 } // namespace bike::cli

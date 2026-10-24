@@ -16,6 +16,9 @@ struct PlaybackData {
     std::int64_t episode_id = 0;
     double duration_s = 0.;
     bool intervals_hash_verified = true;
+    // The accepted saved truth supplies inspection camera/HUD values. These
+    // samples are never reconstructed by a controller or a dynamics step.
+    std::vector<runtime::SpatialPresentation> spatial;
 };
 void validate_playback(const PlaybackData&, std::size_t nq, std::size_t nv);
 [[nodiscard]] PlaybackData load_playback(const std::filesystem::path&, std::optional<std::int64_t> episode = {});

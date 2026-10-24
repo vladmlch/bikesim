@@ -1,6 +1,7 @@
 #include "reader.hpp"
 #include "analysis_detail.hpp"
 #include "database.hpp"
+#include "versioned.hpp"
 #include "../io/hash.hpp"
 #include "../platform/files.hpp"
 #include <array>
@@ -35,7 +36,7 @@ io::Value read_manifest(const std::filesystem::path& directory) {
     const auto& object = io::as_object(manifest, "manifest");
     exact_keys(object, {"schema_version", "sealed", "run_id", "database", "file_sha256", "row_counts", "report_status", "report_error"},
         "unsupported recording manifest/container schema");
-    if (count(field(object, "schema_version")) != 1 || !io::as_bool(field(object, "sealed"), "manifest.sealed") ||
+    if ((count(field(object, "schema_version")) != 1 && count(field(object, "schema_version")) != 2) || !io::as_bool(field(object, "sealed"), "manifest.sealed") ||
         string(field(object, "database")) != "run.duckdb") throw RecordingError("unsupported recording manifest/container schema");
     if (!std::regex_match(string(field(object, "run_id")), std::regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")))
         throw RecordingError("invalid recording run UUID");
@@ -56,6 +57,8 @@ io::Value read_manifest(const std::filesystem::path& directory) {
 
 Recording::Recording(std::filesystem::path path) : path_(std::move(path)), manifest_(read_manifest(path_)),
     database_(std::make_unique<Database>(path_ / "run.duckdb", true)) {
+    schema_version_ = count(field(manifest_, "schema_version"));
+    if (static_cast<int>(database_version(database_->connection())) != schema_version_) throw RecordingError("manifest/container schema disagree");
     const auto expected_database = string(field(field(manifest_, "file_sha256"), "run.duckdb"));
     if (database_->opened_sha256() != expected_database) throw RecordingError("opened database checksum differs from manifest");
     const auto counts = validate_database(database_->connection());
@@ -116,7 +119,7 @@ io::Value Recording::episode(std::optional<std::int64_t> episode_id, bool resear
         if (selected.size() != 1) throw RecordingError("recording has multiple or no episodes; select --episode explicitly");
     }
     if (selected.size() != 1) throw RecordingError("duplicate recording episode");
-    if (research && (io::is_null(field(selected[0], "replay_contract_version")) || count(field(selected[0], "replay_contract_version")) != 3))
+    if (research && (io::is_null(field(selected[0], "replay_contract_version")) || count(field(selected[0], "replay_contract_version")) != (schema_version_ == 2 ? 4 : 3)))
         throw RecordingError("ordinary physical recordings are not checked research replay recipes");
     return Value{std::move(selected[0])};
 }

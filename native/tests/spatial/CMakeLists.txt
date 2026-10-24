@@ -26,7 +26,7 @@ target_link_libraries(bike_spatial_support PUBLIC
   bike_io bike_terrain bike_spatial bike_model bike_engine bike_pneumatic3d)
 
 function(bike_add_spatial_test slug)
-  cmake_parse_arguments(ARG "" "" "SOURCES;LIBRARIES;LABELS" ${ARGN})
+  cmake_parse_arguments(ARG "" "" "SOURCES;LIBRARIES;LABELS;ARGUMENTS" ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "bike_add_spatial_test(${slug}): unrecognized arguments: ${ARG_UNPARSED_ARGUMENTS}")
   endif()
@@ -39,7 +39,7 @@ function(bike_add_spatial_test slug)
   target_include_directories(bike_spatial_${slug} SYSTEM PRIVATE
     "${BIKE_DEP_mujoco_ROOT}/include" "${BIKE_DEP_eigen_ROOT}")
   bike_apply_native_policy(bike_spatial_${slug})
-  add_test(NAME spatial.${slug} COMMAND bike_spatial_${slug})
+  add_test(NAME spatial.${slug} COMMAND bike_spatial_${slug} ${ARG_ARGUMENTS})
   set_tests_properties(spatial.${slug} PROPERTIES LABELS "spatial;${ARG_LABELS}")
 endfunction()
 
@@ -123,11 +123,70 @@ bike_add_spatial_test(timestep SOURCES timestep.cpp
 bike_add_spatial_test(target_rides SOURCES target_rides.cpp
   LIBRARIES bike_initialization bike_validation LABELS balance ride slow)
 
+# W37-W49: source-only registrations. V07/V08 execute these later; neither
+# fixture creation nor golden freezing occurs during configuration.
+bike_add_spatial_test(sensor_mount SOURCES sensor_mount.cpp
+  LIBRARIES bike_startup_runtime bike_spatial bike_model LABELS sensor unit)
+bike_add_spatial_test(sensor_pipeline SOURCES sensor_pipeline.cpp
+  LIBRARIES bike_startup_runtime bike_app LABELS sensor unit)
+add_library(bike_spatial_policy_v2_control MODULE plugins/policy_v2_control.cpp)
+bike_apply_native_policy(bike_spatial_policy_v2_control)
+target_include_directories(bike_spatial_policy_v2_control PRIVATE "${CMAKE_SOURCE_DIR}/native/include")
+set_target_properties(bike_spatial_policy_v2_control PROPERTIES PREFIX "")
+bike_add_spatial_test(policy_v2 SOURCES policy_v2.cpp
+  LIBRARIES bike_app bike_startup_runtime LABELS sensor research slow
+  ARGUMENTS "$<TARGET_FILE:bike_spatial_policy_v2_control>")
+add_dependencies(bike_spatial_policy_v2 bike_spatial_policy_v2_control)
+bike_add_spatial_test(truth_metrics SOURCES truth_metrics.cpp
+  LIBRARIES bike_startup_runtime bike_app bike_spatial LABELS research unit)
+bike_add_spatial_test(recording_catalog SOURCES recording_catalog.cpp
+  LIBRARIES bike_recording bike_model LABELS recording unit)
+bike_add_spatial_test(checkpoint SOURCES checkpoint.cpp
+  LIBRARIES bike_startup_runtime bike_recording bike_app bike_initialization bike_spatial
+  LABELS recording lifecycle slow)
+bike_add_spatial_test(recording_assets SOURCES recording_assets.cpp
+  LIBRARIES bike_recording bike_app bike_initialization LABELS recording slow)
+bike_add_spatial_test(checked_replay SOURCES checked_replay.cpp
+  LIBRARIES bike_replay bike_recording bike_app bike_initialization LABELS replay slow)
+bike_add_spatial_test(golden_registry SOURCES golden_registry.cpp
+  LIBRARIES bike_golden bike_io LABELS recording unit)
+bike_add_spatial_test(cli SOURCES cli.cpp
+  LIBRARIES bike_cli bike_configuration bike_spatial LABELS application unit)
+bike_add_spatial_test(viewer_pose SOURCES viewer_pose.cpp
+  LIBRARIES bike_viewer bike_startup_runtime bike_spatial LABELS application unit)
+bike_add_spatial_test(reports_batch SOURCES reports_batch.cpp
+  LIBRARIES bike_viz bike_recording bike_recording_reader bike_batch bike_cli LABELS application batch)
+bike_add_spatial_test(documented_examples SOURCES documented_examples.cpp
+  LIBRARIES bike_cli bike_configuration bike_recording_cli bike_batch LABELS application unit)
+
+add_executable(bike_spatial_installed_fixture installed_fixture.cpp)
+bike_apply_native_policy(bike_spatial_installed_fixture)
+target_include_directories(bike_spatial_installed_fixture PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/tests" "${CMAKE_SOURCE_DIR}/native/src")
+target_link_libraries(bike_spatial_installed_fixture PRIVATE
+  bike_recording bike_recording_reader bike_platform bike_io)
+bike_rewrite_mujoco_load_name(bike_spatial_installed_fixture "${BIKE_DEP_mujoco_LIBRARY}")
+add_test(NAME spatial.installed_product COMMAND "${CMAKE_COMMAND}"
+  "-DSPATIAL_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}"
+  "-DSPATIAL_FIXTURE_TOOL=$<TARGET_FILE:bike_spatial_installed_fixture>"
+  -P "${CMAKE_CURRENT_SOURCE_DIR}/installed_product.cmake")
+set_tests_properties(spatial.installed_product PROPERTIES LABELS "spatial;package;slow" RUN_SERIAL TRUE)
+if(BIKE_BUILD_GUI)
+  add_test(NAME spatial.viewer_smoke COMMAND "${CMAKE_COMMAND}"
+    "-DBIKE_RIDE=$<TARGET_FILE:bike-ride>"
+    "-DEXAMPLE=${CMAKE_SOURCE_DIR}/examples/spatial/cross_slope.toml"
+    "-DPHYSICS_CONFIG=${CMAKE_SOURCE_DIR}/examples/spatial/free_fast.toml"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/viewer_smoke.cmake")
+  set_tests_properties(spatial.viewer_smoke PROPERTIES LABELS "spatial;gui;slow" RUN_SERIAL TRUE)
+endif()
+
 foreach(_spatial_test IN ITEMS terrain_codec terrain_sampling terrain_raycast terrain_generator
     terrain_extrusion terrain_startup terrain_acceptance terrain_budget_300m topology frames model
     force_mapping drive rider grip runtime_state planar_bridge planar_bridge_long topology_negatives
     tyre_geometry tyre_carcass tyre_patches tyre_brush_fast tyre_brush_detailed tyre_writer
     brake_static_3d tyre_state tyre_qualification equilibrium bootstrap_hold startup_paths steer_controller outcomes meijaard
-    cornering mirror timestep target_rides)
+    cornering mirror timestep target_rides sensor_mount sensor_pipeline policy_v2 truth_metrics
+    recording_catalog checkpoint recording_assets checked_replay golden_registry cli viewer_pose
+    reports_batch documented_examples)
   bike_rewrite_mujoco_load_name(bike_spatial_${_spatial_test} "${BIKE_DEP_mujoco_LIBRARY}")
 endforeach()

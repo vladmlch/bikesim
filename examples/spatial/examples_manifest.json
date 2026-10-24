@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "verification": "pending V08",
+  "paths": {"EXAMPLES": "installed share/bike_sim/examples/spatial", "RUN": "printed sealed directory from noise2", "OUT": "fresh caller output directory"},
+  "examples": [
+    {
+      "id": "planar", "program": "bike-ride", "kind": "producer",
+      "argv": ["--physics", "physical", "--duration", "1", "--headless", "--no-plots"],
+      "expected": {"mode": "planar", "root": "planar", "sensor_schema": 1, "container_schema": 1, "duration_s": 1.0, "record": false}
+    },
+    {
+      "id": "constrained", "program": "bike-ride", "kind": "producer",
+      "argv": ["--spatial", "3d", "--terrain3d", "${EXAMPLES}/flat.toml", "--physics-config", "${EXAMPLES}/constrained_fast.toml", "--duration", "2", "--headless", "--no-plots"],
+      "expected": {"mode": "3d", "root": "constrained", "sensor_schema": 2, "container_schema": 2, "duration_s": 2.0, "record": false}
+    },
+    {
+      "id": "free-straight", "program": "bike-ride", "kind": "producer",
+      "argv": ["--spatial", "3d", "--terrain3d", "${EXAMPLES}/flat.toml", "--physics-config", "${EXAMPLES}/free_fast.toml", "--duration", "2", "--headless", "--no-plots"],
+      "expected": {"mode": "3d", "root": "free", "sensor_schema": 2, "container_schema": 2, "duration_s": 2.0, "record": false}
+    },
+    {
+      "id": "cross-slope", "program": "bike-ride", "kind": "producer",
+      "argv": ["--spatial", "3d", "--terrain3d", "${EXAMPLES}/cross_slope.toml", "--physics-config", "${EXAMPLES}/free_fast.toml", "--duration", "2", "--no-plots", "--close-on-finish"],
+      "expected": {"mode": "3d", "root": "free", "sensor_schema": 2, "container_schema": 2, "duration_s": 2.0, "record": false}
+    },
+    {
+      "id": "record", "program": "bike-ride", "kind": "producer",
+      "argv": ["--spatial", "3d", "--terrain3d", "${EXAMPLES}/cross_slope.toml", "--physics-config", "${EXAMPLES}/free_fast.toml", "--duration", "2", "--headless", "--no-plots", "--record", "--out", "${OUT}/ride"],
+      "expected": {"mode": "3d", "root": "free", "sensor_schema": 2, "container_schema": 2, "duration_s": 2.0, "record": true}
+    },
+    {
+      "id": "noise2", "program": "bike-research", "kind": "producer",
+      "argv": ["--spatial", "3d", "--terrain3d", "${EXAMPLES}/flat.toml", "--physics-config", "${EXAMPLES}/free_fast.toml", "--duration", "2", "--rider", "lumped", "--motor-torque", "0", "--seed", "0", "--sensor-period", "0.01", "--sensor-delay", "0.01", "--record", "--out", "${OUT}/research"],
+      "expected": {"mode": "3d", "root": "free", "sensor_schema": 2, "container_schema": 2, "duration_s": 2.0, "record": true}
+    },
+    {
+      "id": "inspect", "program": "bike-recording", "kind": "inspection", "source": "noise2",
+      "argv": ["inspect", "${RUN}"],
+      "expected": {"mode": "3d", "root": "free", "sensor_schema": 2, "container_schema": 2, "duration_s": 2.0, "record": false}
+    },
+    {
+      "id": "checked", "program": "bike-replay", "kind": "checked_replay", "source": "noise2",
+      "argv": ["--checked", "${RUN}"],
+      "expected": {"mode": "3d", "root": "free", "sensor_schema": 2, "container_schema": 2, "duration_s": 2.0, "record": false}
+    },
+    {
+      "id": "report", "program": "bike-recording", "kind": "report", "source": "noise2",
+      "argv": ["report", "${RUN}", "--episode", "0", "--output", "${OUT}/spatial.html"],
+      "expected": {"mode": "3d", "root": "free", "sensor_schema": 2, "container_schema": 2, "duration_s": 2.0, "record": false}
+    },
+    {
+      "id": "sweep", "program": "bike-research-sweep", "kind": "sweep",
+      "argv": ["--out", "${OUT}/sweep", "--seeds", "0-3", "--jobs", "2", "--", "--spatial", "3d", "--terrain3d", "${EXAMPLES}/flat.toml", "--physics-config", "${EXAMPLES}/free_fast.toml", "--duration", "2", "--rider", "lumped", "--motor-torque", "0", "--record"],
+      "expected": {"mode": "3d", "root": "free", "sensor_schema": 2, "container_schema": 2, "duration_s": 2.0, "record": true}
+    }
+  ]
+}

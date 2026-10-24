@@ -35,6 +35,8 @@
 #include "bootstrap.hpp"
 #include "control.hpp"
 #include "static_brake.hpp"
+#include "spatial_sensors.hpp"
+#include "spatial_truth.hpp"
 #include "../rider/steer_balance.hpp"
 
 class Stepper;
@@ -42,6 +44,7 @@ namespace bike::validation { class RuntimeRigAccess; class SpatialRideAccess; }
 namespace bike::golden { class RuntimeAccess; }
 
 namespace runtime {
+namespace spatial { class CheckpointAccess; }
 struct PresentationState;
 
 // The step-owned slice of the runtime config — decoded in the binding.
@@ -179,6 +182,7 @@ struct MassObservations {
 };
 
 class PhysicalStep {
+    friend class spatial::CheckpointAccess;
     friend class bike::validation::RuntimeRigAccess;
     friend class bike::validation::SpatialRideAccess;
     friend class bike::initialization::PhysicalInitialState;
@@ -281,6 +285,11 @@ public:
     [[nodiscard]] double longitudinal_position_m() const;
     [[nodiscard]] double root_pitch_rad() const;
     [[nodiscard]] WireObject spatial_observation() const;
+    [[nodiscard]] const std::optional<spatial::SpatialTruth>& spatial_truth() const noexcept { return spatial_truth_; }
+    [[nodiscard]] const std::optional<spatial::ImuTruth>& imu_truth() const noexcept { return imu_truth_; }
+    // Cold initialization/reset only, after the owner refreshed engine stages.
+    // Presentation and accepted interval publication only read cached values.
+    void refresh_spatial_observation_cache();
     void initialize_presentation(PresentationState &out) const;
     void capture_presentation(PresentationState &out) const;
     void capture_accounted_presentation(PresentationState &out) const;
@@ -437,7 +446,8 @@ private:
         bool full = false;
         std::vector<std::pair<std::string, std::vector<double>>> components;
         std::array<int, 3> warning_counts{};
-        WireObject spatial;
+        std::optional<runtime::spatial::SpatialTruth> truth;
+        std::optional<runtime::spatial::ImuTruth> imu;
         // Produced by solve_tail, consumed by publish_raw.
         std::vector<std::pair<std::string, double>> constraint_powers{};
         writers::RiderSettleOutcome settle{};
@@ -460,6 +470,10 @@ private:
     Stepper *stepper_;
     StepConfig config_;
     std::optional<bike::spatial::Topology> topology_;
+    [[nodiscard]] spatial::SpatialTruth capture_spatial_truth() const;
+    std::optional<spatial::ImuMountBinding> imu_mount_;
+    std::optional<spatial::ImuTruth> imu_truth_;
+    std::optional<spatial::SpatialTruth> spatial_truth_;
     // Causal state is copied through all cold boundaries. W26/W30–W33 bind
     // their active owners to this inventory; probes never mutate it.
     std::optional<SpatialBootstrapState> spatial_state_;

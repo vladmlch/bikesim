@@ -59,6 +59,9 @@ struct SitePosEntry {
 struct ModelMutableState {
     std::vector<FrictionLossEntry> dof_frictionloss;
     std::vector<SitePosEntry> site_pos;
+    // Spatial continuation only: full dof/site/tendon/wrap rows in the fixed
+    // order declared by the checkpoint codec; sparse entries stay empty.
+    std::optional<std::array<std::vector<double>,7>> spatial_arrays;
 };
 
 // The captured model dimensions — validated against the live model when

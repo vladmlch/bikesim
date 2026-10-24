@@ -32,7 +32,7 @@ public:
     Recording& operator=(Recording&&) = delete;
     [[nodiscard]] const std::filesystem::path& path() const noexcept { return path_; }
     [[nodiscard]] const io::Value& manifest() const noexcept { return manifest_; }
-    [[nodiscard]] std::int64_t schema_version() const noexcept { return 1; }
+    [[nodiscard]] std::int64_t schema_version() const noexcept { return schema_version_; }
     [[nodiscard]] io::Value metadata() const;
     [[nodiscard]] std::vector<std::int64_t> episode_ids() const;
     [[nodiscard]] io::Value episode(std::optional<std::int64_t> = {}, bool research = false) const;
@@ -44,6 +44,7 @@ public:
 private:
     std::filesystem::path path_;
     io::Value manifest_;
+    std::int64_t schema_version_ = 1;
     std::unique_ptr<Database> database_;
 };
 [[nodiscard]] std::unique_ptr<Recording> open_recording(const std::filesystem::path&);

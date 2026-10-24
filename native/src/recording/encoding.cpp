@@ -143,7 +143,9 @@ void distribute(const TableSpec& spec, const std::vector<std::string>& prefix, c
         value::set(out, leaf->key, payload); return;
     }
     Object remainder;
+    std::set<std::string> members;
     for (const auto& [key, v] : *object) {
+        if(!members.insert(key).second)invalid(spec.name+"."+value::join(prefix),"duplicate channel member "+key);
         const bool deeper = std::ranges::any_of(spec.fields, [&](const auto& f) { return f.path.size() > prefix.size() && std::equal(prefix.begin(), prefix.end(), f.path.begin()) && f.path[prefix.size()] == key; });
         if (!deeper) { remainder.emplace_back(key, v); continue; }
         auto path = prefix; path.push_back(key);
@@ -351,6 +353,9 @@ void validate_pieces(const runtime::EncodedTable& table, const TableSpec& spec) 
         return piece.b[row] != 0;
     };
     for (std::size_t row = 0; std::cmp_less(row ,table.rows); ++row) {
+        if(spec.name=="channel_spatial"||spec.name=="channel_spatial_energy"||spec.name=="channel_spatial_geometry"||spec.name=="channel_spatial_outcome")
+            for(const auto& root:spec.claims)
+                if(!flag("__"+root+"_present",row)||!flag("__"+root+"_valid",row))invalid(spec.name,"spatial physical interval requires explicit source root");
         for (const auto& parent : parents) {
             const auto marker = "__" + value::join(parent);
             const bool present = flag(marker+"_present",row), valid = flag(marker+"_valid",row);
@@ -371,6 +376,7 @@ void validate_pieces(const runtime::EncodedTable& table, const TableSpec& spec) 
             bool empty_remainder = false;
             if (field.optional) {
                 const bool present = flag(field.key+"_present",row);
+                if(spec.name=="channel_spatial"&&!present)invalid(spec.name+"."+field.key,"nullable spatial fields must be explicit, including null values");
                 if ((!present&&valid)||(!active&&(present||valid))) invalid(spec.name+"."+field.key,"inconsistent source presence");
                 // _distribute deliberately leaves a root container's terminal
                 // absent when its routed remainder is empty. The raw root

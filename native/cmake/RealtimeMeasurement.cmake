@@ -11,7 +11,7 @@ function(bike_add_realtime_measurement native_dir)
     "${native_dir}/src/runtime/realtime_provenance.cpp"
     "${native_dir}/src/runtime/realtime_command.cpp")
   bike_startup_target_policy(bike_realtime_measurement "${native_dir}")
-  target_link_libraries(bike_realtime_measurement PUBLIC bike_cli)
+  target_link_libraries(bike_realtime_measurement PUBLIC bike_cli bike_spatial bike_pneumatic3d)
   foreach(_lane IN ITEMS address realtime coverage)
     set(_measurement_${_lane} false)
   endforeach()

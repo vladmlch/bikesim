@@ -7,6 +7,10 @@
 #include "../platform/provenance.hpp"
 #include "../runtime/provenance.hpp"
 #include "../terrain/trackfile.hpp"
+#include "../terrain/asset3d.hpp"
+#include "../terrain/spec_io.hpp"
+#include "../runtime/research_io.hpp"
+#include "../runtime/spatial_checkpoint.hpp"
 #include "../rider/allocation.hpp"
 #include <algorithm>
 #include <cstdlib>
@@ -71,6 +75,7 @@ configuration::RiderSpecs rider_specs(const Value& value) {
 Value configuration_hashable(Value resolved) {
     auto physics = field(resolved, "physics"), articulated = field(physics, "articulated");
     for (auto key : {"joint_envelope", "joint_strength"}) set(articulated, std::string(key) + "_path", maybe(resolved, std::string(key) + "_sha256"));
+    if(find(articulated,"shoulder_profile"))set(articulated,"shoulder_profile",maybe(resolved,"shoulder_profile_asset_sha256"));
     set(physics, "articulated", std::move(articulated)); set(resolved, "physics", std::move(physics)); return resolved;
 }
 } // namespace
@@ -81,6 +86,13 @@ FixedAssets::FixedAssets(const ReplayInput& input) {
     if (!made) throw std::system_error(errno, std::generic_category(), "create replay input directory");
     path_ = made;
     try {
+        if(input.spatial_recipe) {
+            std::filesystem::create_directory(path_/"spatial");
+            if(const auto it=input.assets.find("spatial/terrain.terrain3d");it!=input.assets.end())
+                platform::write_exclusive(path_/"spatial/terrain.terrain3d",it->second);
+            if(const auto it=input.assets.find("spatial/shoulder_profile.json");it!=input.assets.end())
+                platform::write_exclusive(path_/"spatial/shoulder_profile.json",it->second);
+        }
         for (auto file : {"track.toml", "rider_joint_envelope.json", "rider_joint_strength.json"})
             if (const auto it = input.assets.find(file); it != input.assets.end()) platform::write_exclusive(path_ / file, it->second);
     } catch (...) { std::error_code ignored; std::filesystem::remove_all(path_, ignored); throw; }
@@ -97,6 +109,12 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
         if (declared && !io::is_null(*declared) && !bundled) throw IncompatibleExecution(std::string("legacy recording lacks bundled ") + key);
         set(articulated, std::string(key) + "_path", bundled ? text((assets.path() / name).string()) : Value{});
     }
+    if(input.spatial_recipe) {
+        const auto* declared=find(articulated,"shoulder_profile");
+        const bool bundled=input.assets.contains("spatial/shoulder_profile.json");
+        if((declared&&!io::is_null(*declared))!=bundled)throw IncompatibleExecution("spatial shoulder profile lacks its immutable bundle");
+        if(bundled)set(articulated,"shoulder_profile",text((assets.path()/"spatial/shoulder_profile.json").string()));
+    }
     set(physics, "articulated", std::move(articulated));
     if (const auto* initial_file = find(physics, "equilibrium_state_file"); initial_file && !io::is_null(*initial_file))
         throw IncompatibleExecution("recording startup depends on an unbundled initial-state file; recorded paths are never followed");
@@ -105,7 +123,7 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
     set(physics, "equilibrium_cache_enabled", Value{false});
     auto owner = std::make_unique<research::ResearchRequest>();
     auto& request = *owner;
-    request.capture_mode = runtime::ResearchCaptureMode::verify;
+    request.capture_mode = input.spatial_recipe ? runtime::ResearchCaptureMode::full : runtime::ResearchCaptureMode::verify;
     request.setup.model.physics = configuration::detail::construct_config(physics);
     request.setup.model.bike = bike_specs(field(resolved, "geometry_and_suspension"));
     request.setup.model.masses = mass_specs(field(resolved, "mass_budget"));
@@ -113,6 +131,21 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
     request.setup.model.mode = "ride"; request.setup.model.crank_joint = true;
     request.setup.asset_root = assets.path(); request.setup.origin = "validated replay recipe";
     request.setup.track = terrain::track_from_dict(terrain::parse_track_toml(asset_text(input, "track.toml"), "recording/track.toml"));
+    if(input.spatial_recipe) {
+        const auto& recipe=*input.spatial_recipe;
+        const auto source=io::parse_recording_json(asset_text(input,"spatial/terrain_source.json"));
+        if(recipe.terrain_kind==terrain::Terrain3dKind::grid) {
+            auto grid=terrain::read_terrain3d(input.assets.at("spatial/terrain.terrain3d"));
+            if(!grid)throw IncompatibleExecution("spatial terrain: "+grid.error());
+            request.setup.model.terrain3d=std::make_shared<const terrain::Terrain3dSource>(std::move(*grid));
+        } else {
+            auto extrusion=terrain::detail::load_profile_extrusion3d(assets.path()/"track.toml",io::as_double(field(source,"corridor"),"corridor"));
+            request.setup.model.terrain3d=std::make_shared<const terrain::Terrain3dSource>(std::move(extrusion));
+        }
+        if(request.setup.model.terrain3d->fingerprint_hex()!=recipe.terrain_sha256_hex)
+            throw IncompatibleExecution("spatial terrain rebuilt source identity differs");
+        request.setup.start_x_m=io::as_double(field(recipe.config_spatial,"start_x_m"),"start_x_m");
+    } else {
     request.setup.start_x_m = io::as_double(field(input.manifest, "start_x_m"), "start_x_m");
     auto& f = request.setup.model.field; const auto& field_value = field(input.manifest, "heightfield");
     integers(f, field_value, {{"nrow", &terrain::HeightFieldSpec::nrow}, {"ncol", &terrain::HeightFieldSpec::ncol}});
@@ -121,6 +154,7 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
     f.validate(); request.road_resolution_m = f.resolution_m();
     if (!(research::research_field(request.setup.track, request.road_resolution_m) == f))
         throw IncompatibleExecution("recorded heightfield differs from the native research field contract");
+    }
     auto& e = request.experiment;
     reals(e, experiment, {{"control_period_s", &research::ExperimentConfig::control_period_s}, {"actuator_delay_s", &research::ExperimentConfig::actuator_delay_s},
         {"duration_s", &research::ExperimentConfig::duration_s}, {"wheelie_persistence_s", &research::ExperimentConfig::wheelie_persistence_s},
@@ -133,7 +167,10 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
     if (const auto* number = std::get_if<io::Number>(&seed.data)) e.seed_decimal = research::validate_seed(number->lexeme);
     else throw recording::RecordingError("actual_sensor_seed must be a nonnegative integer");
     request.setup.seed_decimal = e.seed_decimal;
-    const auto& sensors = field(research_data, "sensor_config"); auto& s = request.sensors;
+    const auto& sensors = field(research_data, "sensor_config");
+    if(input.spatial_recipe)request.sensors_v2=runtime::decode_sensor_config_v2(sensors);
+    else {
+    auto& s = request.sensors;
     reals(s, sensors, {{"sample_period_s", &research::SensorConfig::sample_period_s}});
     reals(s.delivery, sensors, {{"latency_s", &runtime::SensorConfig::latency_s}, {"maximum_age_s", &runtime::SensorConfig::maximum_age_s},
         {"dropout_probability", &runtime::SensorConfig::dropout_probability}, {"gyro_bias_rad_s", &runtime::SensorConfig::gyro_bias}});
@@ -146,11 +183,14 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
         if (vector.size() != 3) throw recording::RecordingError("acceleration bias must have width 3");
         std::ranges::copy(vector, s.delivery.acceleration_bias.begin());
     }
+    }
     const auto program = maybe(research_data, "rider_program");
     if (!io::is_null(program) && (!find(research_data, "rider_command_recording") || string(field(research_data, "rider_command_recording")) != "program_inputs"))
         throw IncompatibleExecution("native replay requires the recorded rider program input contract");
     request.programs = research::programs_from_documents(program, maybe(research_data, "demand_program"));
-    request.experiment.validate(); request.sensors.validate(); return owner;
+    request.experiment.validate();
+    if(input.spatial_recipe)request.sensors_v2.validate();else request.sensors.validate();
+    return owner;
 }
 
 void verify_configuration(const ReplayInput& input, const research::PreparedEnvironment& prepared) {
@@ -166,6 +206,20 @@ void verify_configuration(const ReplayInput& input, const research::PreparedEnvi
         throw IncompatibleExecution("reconstructed configuration differs from the recorded recipe");
     if (string(field(prepared.metadata, "terrain_sha256")) != string(field(input.summary, "terrain_sha256")))
         throw IncompatibleExecution("reconstructed terrain differs from the recorded compiled road");
+    if(input.spatial_recipe) {
+        const auto& bootstrap=prepared.bootstrap.ride;
+        const auto expected_checkpoint=runtime::spatial::decode_checkpoint(input.spatial_recipe->checkpoint_initial);
+        if(!bootstrap.state.spatial || !bootstrap.config.terrain3d ||
+            bootstrap.config.terrain3d->fingerprint_hex()!=input.spatial_recipe->terrain_sha256_hex ||
+            bootstrap.state.spatial->topology_fingerprint!=runtime::decode_spatial_bootstrap(field(expected_checkpoint.bootstrap2,"spatial")).topology_fingerprint ||
+            bootstrap.model.sha256!=string(field(expected_checkpoint.identity,"model_digest")))
+            throw IncompatibleExecution("spatial model/topology/terrain/state identity differs");
+        const Value expected_calibration{Object{{"calibration_sha256",text(bootstrap.state.spatial->calibration_sha256)},
+            {"tire",field(bootstrap.config.writer_config,"tire")},{"imu",field(spatial::spatial_config_to_wire(*bootstrap.config.spatial),"imu")}}};
+        if(!equal(expected_calibration,io::parse_recording_json(asset_text(input,"spatial/calibration.json"))))
+            throw IncompatibleExecution("spatial calibration coefficients/revision differ from reconstructed configuration");
+        return;
+    }
     const auto& geometry = prepared.bootstrap.config.geometry;
     if (geometry.x.size() * 2 != input.terrain_vertices.size()) throw IncompatibleExecution("compiled terrain width differs");
     for (std::size_t i = 0; i < geometry.x.size(); ++i)

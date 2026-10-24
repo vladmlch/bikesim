@@ -32,6 +32,7 @@ struct ResearchRequest {
     initialization::SetupRequest setup;
     ExperimentConfig experiment;
     SensorConfig sensors;
+    runtime::spatial::SensorConfigV2 sensors_v2;
     runtime::ResearchPrograms programs;
     std::optional<random::RiderRandomSpec> rider_random;
     std::optional<std::string> rider_seed_decimal;
@@ -86,6 +87,8 @@ public:
 void sample_rider(ResearchRequest&);
 [[nodiscard]] runtime::NoiseTape make_sensor_tape(const SensorConfig&, std::string_view seed_decimal,
                                                 std::int64_t count);
+[[nodiscard]] runtime::spatial::NoiseTapeV2 make_sensor_tape_v2(const runtime::spatial::SensorConfigV2&,
+    std::string_view seed_decimal, std::int64_t count);
 [[nodiscard]] runtime::SensorState startup_sensor_state(const SensorConfig&,
     const runtime::NoiseTape&, const runtime::SensorObservation& raw_initial);
 [[nodiscard]] io::Value experiment_value(const ExperimentConfig&);

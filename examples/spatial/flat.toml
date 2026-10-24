@@ -1,0 +1,14 @@
+# W49 straight-line control, the same grid/material/seed as cross_slope.toml.
+base_track = { name = "spatial-flat", length_m = 60.0, surface = "hardpack", obstacles = [] }
+
+[terrain3d]
+seed = 0
+generator_version = "grid3d-gen/1"
+dx_m = 0.005
+dy_m = 0.01
+half_width_m = 1.5
+lead_in_m = 4.0
+lead_out_m = 5.0
+roughness = { sigma_m = 0.0, ell_m = 0.1 }
+banks = []
+surfaces = [{ id = 1, name = "hardpack", mu_peak = 0.8, mu_slide = 0.6, slip_stiffness_per_load = 12.0, stribeck_speed_mps = 4.5 }]

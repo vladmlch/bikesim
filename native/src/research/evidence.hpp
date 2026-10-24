@@ -25,7 +25,9 @@ struct EnergyQuality {
 [[nodiscard]] io::Value identity_receipt(const io::Value&);
 [[nodiscard]] io::Value research_recipe(const ResearchRequest&, const io::Value& metadata);
 [[nodiscard]] runtime::ResearchAssets snapshot_research_assets(const ResearchRequest&,
-    const initialization::ResearchStartup&, const io::Value& metadata);
+    const initialization::ResearchStartup&, const io::Value& metadata, const runtime::RuntimeBootstrap&);
+[[nodiscard]] std::vector<runtime::ResearchAsset> snapshot_spatial_assets(
+    const initialization::SetupRequest&, const runtime::RuntimeBootstrap&, const io::Value& metadata);
 [[nodiscard]] runtime::ResearchAssets reseed_assets(const runtime::ResearchAssets&, const io::Value& metadata);
 // Adds stable logical IDs without altering the historical T10 batch shape.
 [[nodiscard]] runtime::WireArray recording_batch(const runtime::OwnedResearchEpisode&, std::string_view stream,

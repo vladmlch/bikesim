@@ -3,6 +3,7 @@
 #include "../model/mapping.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../runtime/step.hpp"
+#include "../runtime/research.hpp"
 #include "../stepper.hpp"
 #include "../writers/drivetrain.hpp"
 #include <algorithm>
@@ -50,8 +51,6 @@ Value compiled_physical_metadata(const mjModel& model) {
 ResearchStartup prepare_research_startup(SetupContext& context) {
     if (!context.completed || !context.equilibrium || context.stepper.time() != 0.)
         throw std::invalid_argument("research startup requires completed t=0 equilibrium");
-    if(context.topology && context.topology->root.kind==spatial::RootKind::free6)
-        throw std::invalid_argument("research_startup.spatial.geometry: free-root research packet requires W37");
     auto& stepper = context.stepper;
     auto& physical = context.physical;
     if (physical.drive_mode() != "crank_effort" && physical.drive_mode() != "articulated_effort")
@@ -66,6 +65,7 @@ ResearchStartup prepare_research_startup(SetupContext& context) {
     safe.human_torque_nm = 0.;
     (void)physical.apply_forces(true, false, 0., 0., std::nullopt, safe);
     stepper.forward();
+    physical.refresh_spatial_observation_cache();
     auto channels = physical.sensor_channels(stepper.qvel(), stepper.drive().diagnostics(true).to_map());
     if (context.physics.seated_climb.enabled) {
         auto signals = channels;
@@ -75,7 +75,8 @@ ResearchStartup prepare_research_startup(SetupContext& context) {
     runtime::PhysicalSampleData initial;
     initial.channels.emplace_back("sensors", runtime::Wire{std::move(channels)});
     ResearchStartup result;
-    result.observation = runtime::raw_sensor_observation(initial);
+    if(context.topology) result.observation_v2=runtime::raw_sensor_observation_v2(initial);
+    else result.observation = runtime::raw_sensor_observation(initial);
     for (const auto& vertex : physical.terrain_vertices()) {
         result.geometry.x.push_back(vertex[0]);
         result.geometry.z.push_back(vertex[1]);
@@ -83,12 +84,14 @@ ResearchStartup prepare_research_startup(SetupContext& context) {
     const auto radii = std::views::counted(model->geom_size, model->ngeom * 3);
     result.geometry.front_radius = radii[static_cast<std::size_t>(context.front_geom_id) * 3];
     result.geometry.rear_radius = radii[static_cast<std::size_t>(context.rear_geom_id) * 3];
+    if(!context.topology) {
     const auto x = joint_address(context, "root_x"), pitch = joint_address(context, "root_pitch");
     result.geometry.root_x_qpos = static_cast<std::size_t>(x.qpos);
     result.geometry.root_x_dof = static_cast<std::size_t>(x.dof);
     result.geometry.root_pitch_qpos = static_cast<std::size_t>(pitch.qpos);
     result.geometry.root_pitch_dof = static_cast<std::size_t>(pitch.dof);
     result.position_m = std::views::counted(data->qpos, model->nq)[result.geometry.root_x_qpos];
+    } else result.position_m=physical.longitudinal_position_m();
     result.compiled_metadata = compiled_physical_metadata(*model);
     if(context.terrain3d) {
         auto& metadata=std::get<Object>(result.compiled_metadata.data);

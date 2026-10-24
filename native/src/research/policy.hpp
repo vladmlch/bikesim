@@ -6,9 +6,12 @@
 #include <string_view>
 #include "../io/value.hpp"
 #include "../runtime/sensors.hpp"
+#include "../runtime/spatial_sensor_pipeline.hpp"
 #include "../../include/bike/policy_v1.h"
+#include "../../include/bike/policy_v2.h"
 
 namespace bike::research {
+enum class PolicyAbi : std::uint8_t { v1, v2 };
 
 class PolicyFailure : public std::runtime_error {
 public:
@@ -30,6 +33,7 @@ public:
     Policy& operator=(Policy&&) = delete;
     virtual void reset(std::string_view seed_decimal) = 0;
     [[nodiscard]] virtual runtime::RideControl act(const runtime::SensorObservation&, std::optional<double> demand_nm) = 0;
+    [[nodiscard]] virtual runtime::RideControl act_v2(const runtime::spatial::SensorObservationV2&, std::optional<double> demand_nm);
     [[nodiscard]] virtual io::Value metadata() const;
     virtual void close() {}
 };
@@ -52,6 +56,7 @@ public:
     TractionControlPolicy& operator=(TractionControlPolicy&&) = delete;
     void reset(std::string_view seed_decimal) override;
     [[nodiscard]] runtime::RideControl act(const runtime::SensorObservation&, std::optional<double>) override;
+    [[nodiscard]] runtime::RideControl act_v2(const runtime::spatial::SensorObservationV2&, std::optional<double>) override;
     [[nodiscard]] io::Value metadata() const override;
     void close() override;
     [[nodiscard]] std::optional<double> limit_nm() const noexcept { return cap_nm_; }
@@ -64,13 +69,19 @@ private:
 
 [[nodiscard]] std::unique_ptr<Policy> load_policy(std::string_view specification);
 [[nodiscard]] std::unique_ptr<Policy> load_policy(std::string_view specification, const io::Value& config);
-[[nodiscard]] std::unique_ptr<Policy> make_builtin_policy(std::string_view specification, const io::Value& config);
+[[nodiscard]] std::unique_ptr<Policy> load_policy(std::string_view specification, PolicyAbi);
+[[nodiscard]] std::unique_ptr<Policy> load_policy(std::string_view specification, const io::Value& config, PolicyAbi);
+[[nodiscard]] std::unique_ptr<Policy> make_builtin_policy(std::string_view specification, const io::Value& config, PolicyAbi = PolicyAbi::v1);
 [[nodiscard]] std::unique_ptr<Policy> load_plugin_policy(std::string_view filename, const io::Value& config);
+[[nodiscard]] std::unique_ptr<Policy> load_plugin_policy_v2(std::string_view filename, const io::Value& config);
 void validate_policy_input(const runtime::SensorObservation&, std::optional<double> demand_nm);
+void validate_policy_input(const runtime::spatial::SensorObservationV2&, std::optional<double> demand_nm);
 void validate_motor_policy_control(const runtime::RideControl&);
 // Shared loader seam permits ABI negative controls without loading a test library.
 void validate_policy_abi(const BikePolicyV1*);
 [[nodiscard]] runtime::RideControl policy_control_from_abi(const BikeControlV1&);
 [[nodiscard]] BikeObservationV1 policy_observation_to_abi(const runtime::SensorObservation&);
+void validate_policy_abi_v2(const BikePolicyV2*);
+[[nodiscard]] BikeObservationV2 policy_observation_to_abi_v2(const runtime::spatial::SensorObservationV2&);
 
 } // namespace bike::research

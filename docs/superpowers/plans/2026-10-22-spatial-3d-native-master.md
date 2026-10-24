@@ -12,6 +12,12 @@
 
 ## Global Constraints
 
+**Поставка исходников 2026-10-24:** W37–W49 написаны поверх присланного
+snapshot W00–W36. [Source report](../audits/2026-10-24-spatial-w37-w49-source.md)
+и `migration/spatial3d/task-index.json` фиксируют `source_written`, без
+execution claims. V07/V08 и предшествующая qualification остаются pending.
+W50–W55 не входят в эту поставку.
+
 - База: **зафиксированный фактический SHA PFC**, полученный в настоящем Git checkout в S00. `9c08ff1` из аудита — историческая ссылка, не объявление SHA присланного дерева.
 - Новая реализация предназначена для no-Python root graph. Удаление Python и общая миграционная квалификация остаются работой PFC, а не spatial workers.
 - Planar по умолчанию и legacy сохраняют прежние входы/численное поведение. Переход live oracle → native golden выполняется по ADR-0003 на уровне конкретного файла.

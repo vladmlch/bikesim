@@ -1,0 +1,18 @@
+{
+  "sensor_schema_version": 1,
+  "seed": 0,
+  "source": "tests/fixtures/migration/replay/historical_v2/transitions.jsonl:first.observation",
+  "provenance": "Copied existing planar observation. Seed is recorded as research.actual_sensor_seed=0 in the adjacent summary.json. This is a codec fixture, not a newly generated sensor-noise golden.",
+  "expected": {
+    "crank_rad_s": 0.008193146900571074,
+    "front_wheel_rad_s": 0.00853381789726193,
+    "human_torque_nm": 4.410425244012236,
+    "motor_torque_nm": 0.040282784129525566,
+    "pitch_rate_up_rad_s": 1.1754080810188622e-05,
+    "rear_wheel_rad_s": 0.001609480326942554,
+    "source_time_s": 0.0,
+    "specific_force_body_mps2": [0.20028031478222103, -0.04479729881928707, 9.952767009826104],
+    "time_s": 0.01,
+    "valid": true
+  }
+}

@@ -27,6 +27,11 @@ public:
         if (limit_) control.motor_limit_nm = 40.;
         return control;
     }
+    runtime::RideControl act_v2(const runtime::spatial::SensorObservationV2& observation,std::optional<double> demand) override {
+        validate_policy_input(observation,demand);runtime::RideControl control;
+        control.motor_torque_nm=zero_?std::optional(0.):zero_missing_?std::optional(demand.value_or(0.)):demand;
+        if(limit_)control.motor_limit_nm=40.;return control;
+    }
     io::Value metadata() const override {
         return Value{Object{{"reference", text(name_)}, {"class", text("native::" + name_)},
             {"kind", text("builtin")}, {"missing_demand", text(zero_missing_ ? "zero" : "automatic_assistance")}}};
@@ -95,9 +100,28 @@ io::Value TractionControlPolicy::metadata() const {
         {"kind", text("builtin")}, {"configuration", config},
         {"configuration_sha256", text(io::sha256(std::as_bytes(std::span{bytes.data(), bytes.size()})))}}};
 }
+runtime::RideControl TractionControlPolicy::act_v2(const runtime::spatial::SensorObservationV2& observation,std::optional<double> demand) {
+    validate_policy_input(observation,demand);runtime::RideControl control;
+    if(base_)control=base_->act_v2(observation,demand);else control.motor_torque_nm=demand;
+    runtime::control_validate_for(control,true);
+    const double elapsed=last_time_?std::max(0.,observation.time_s-*last_time_):0.;last_time_=observation.time_s;
+    constexpr std::uint16_t required=static_cast<std::uint16_t>((1U<<6U)|(1U<<7U)|(1U<<9U));
+    if(!observation.valid||(observation.valid_mask&required)!=required)return control;
+    const double slip=config_.rear_radius_m*observation.values[7]-config_.front_radius_m*observation.values[6];
+    const double ceiling=std::max(0.,control.motor_limit_nm.value_or(control.motor_torque_nm.value_or(observation.values[9])));
+    auto cap=cap_nm_;if(!cap){if(slip>config_.slip_target_mps)cap=ceiling;}else cap=std::min(*cap,ceiling);
+    if(cap){if(slip>config_.slip_target_mps)*cap-=config_.cut_gain_nm_s_per_mps*(slip-config_.slip_target_mps)*elapsed;
+        else *cap+=config_.recover_nm_s*elapsed;
+        *cap=std::min(std::max(*cap,std::min(config_.min_limit_nm,ceiling)),ceiling);if(*cap>=ceiling)cap.reset();
+        cap_nm_=cap;if(cap)control.motor_limit_nm=cap;}
+    const bool stopped=std::abs(observation.values[7])<config_.standstill_wheel_rad_s;
+    if(stopped&&control.motor_torque_nm)standstill_s_+=elapsed;else if(!stopped)standstill_s_=0.;
+    if(stopped&&standstill_s_>=config_.standstill_release_s)control.motor_torque_nm.reset();
+    runtime::control_validate_for(control,true);return control;
+}
 void TractionControlPolicy::close() { if (base_) base_->close(); }
 
-std::unique_ptr<Policy> make_builtin_policy(std::string_view name, const io::Value& config) {
+std::unique_ptr<Policy> make_builtin_policy(std::string_view name, const io::Value& config, PolicyAbi abi) {
     constexpr std::string_view module = "bike_sim.sim.research.policies:";
     const bool factory = name.starts_with(module);
     const std::string reference(name);
@@ -133,7 +157,7 @@ std::unique_ptr<Policy> make_builtin_policy(std::string_view name, const io::Val
     assign("standstill_wheel_rad_s", out.standstill_wheel_rad_s); assign("standstill_release_s", out.standstill_release_s);
     std::unique_ptr<Policy> base;
     if (const auto* spec = find(config, "base"))
-        base = load_policy(io::as_string(*spec, "traction base"), find(config, "base_config") ? field(config, "base_config") : Value{Object{}});
+        base = load_policy(io::as_string(*spec, "traction base"), find(config, "base_config") ? field(config, "base_config") : Value{Object{}},abi);
     else if (find(config, "base_config")) throw std::invalid_argument("base_config requires a base policy");
     return std::make_unique<TractionControlPolicy>(out, std::move(base));
 }

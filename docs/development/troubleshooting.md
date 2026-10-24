@@ -1,5 +1,25 @@
 # Failure diagnosis — Linux and macOS
 
+## Spatial product — pending V08
+
+The spatial application changes are implemented in source and unexecuted in
+W45–W49. Preserve the exact selected binary/configuration/terrain/calibration
+identity and the first diagnostic when qualifying them locally.
+
+| Spatial symptom | Meaning and bounded action |
+| --- | --- |
+| `--terrain3d requires --spatial 3d` | The effective physics mode is planar. Select 3D explicitly or remove the terrain override. |
+| Conflicting track/terrain options | Choose the typed terrain request; legacy profile extrusion is never inferred from a filename. |
+| `profile_extrusion` capability rejection | C10/V04 must resolve the frozen material-registry limitation. Use a supported authored grid/genspec for the documented scenarios. |
+| `recording schema 1 has no spatial channels` | The reader accepted a planar recording. Request its existing fields; no spatial zeros are synthesized. |
+| `incompatible-execution` during checked replay | Preserve the accepted recording and use its exact numerical execution identity. Inspection/reporting may remain available; do not relax comparison or rename inspection as verified. |
+| `N/A` attitude/contact/IMU | Inspect validity, per-component mask and source/delivery timestamps before interpreting the value. |
+| Missing display | Run the explicit GUI gate on a real supported display. Headless application success does not cover it. |
+| Missing installed examples/catalog/library | Retain install/package logs and inspect the moved prefix and existing rpaths/load names. Do not patch loader paths to a developer checkout. |
+
+Scenario argv and the outstanding evidence are in [spatial-3d.md](../spatial-3d.md)
+and its linked V08 ledger.
+
 Preserve the original error and the selected build's
 `native_check_context.json` and `bike_policy_report.json`. Configure owns
 native dependency/toolchain/ABI diagnostics; there is no separate Python

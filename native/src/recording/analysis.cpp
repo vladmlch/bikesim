@@ -52,6 +52,20 @@ std::vector<Selection> selection(const Recording& reader, std::int64_t episode_i
         if (label.empty()) throw std::invalid_argument("fields must contain nonempty catalog names");
         if (labels.contains(label)) continue;
         Selection chosen{.label=label, .canonical=label, .root={}, .expression={}, .index={}, .parameter={}, .definition={}};
+        if (label.starts_with("spatial.")) {
+            if (reader.schema_version() == 1) throw std::invalid_argument("recording schema 1 has no spatial channels");
+            chosen.canonical = "channel_spatial." + label.substr(8);
+            if(label=="spatial.hold_work_j"||label=="spatial.tyre_loss_j")chosen.canonical="channel_spatial_energy."+label.substr(8);
+            for(const auto side:{"front","rear"}) {
+                const std::string base=std::string("spatial.")+side+"_wheel_";
+                if(label==base+"position_world_m")chosen.canonical="channel_spatial_geometry."+std::string(side)+"_wheel_position_world_m";
+                constexpr std::array axes{"x","y","z"};
+                for(std::size_t axis=0;axis<axes.size();++axis)if(label==base+axes[axis]+"_m") {
+                    chosen.canonical="channel_spatial_geometry."+std::string(side)+"_wheel_position_world_m";
+                    chosen.index=integer(static_cast<std::int64_t>(axis));
+                }
+            }
+        }
         if (!catalog.contains(chosen.canonical)) {
             for (const auto& alias : aliases) {
                 const auto name = string(field(alias, "alias"));

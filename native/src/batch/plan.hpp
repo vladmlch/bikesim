@@ -7,8 +7,9 @@
 #include <stop_token>
 #include <string>
 #include <string_view>
-#include <string_view>
 #include <vector>
+
+namespace bike::cli { struct Arguments; }
 
 namespace bike::batch {
 struct Job {
@@ -19,6 +20,9 @@ struct Job {
     std::filesystem::path output{};
     // User tokens before the native executable/output suffix is attached.
     std::optional<std::vector<std::string>> requested_argv{};
+    // Spatial source identity; assigned before any child/output is created.
+    std::optional<std::string> key;
+    io::Value identity;
 };
 struct Result {
     std::string id;
@@ -34,6 +38,7 @@ struct ExecuteOptions {
     std::function<void(std::size_t, const Result&)> completed;
 };
 [[nodiscard]] std::vector<Job> expand_spec(const io::Value&);
+void resolve_job_identity(Job&, const cli::Arguments&);
 // Preserve arbitrary-width TOML integer values and source table/key order.
 // The existing ordered TOML parser remains authoritative for syntax/types.
 [[nodiscard]] io::Value parse_spec_toml(std::string_view, std::string_view origin = "batch");
@@ -45,5 +50,13 @@ struct ExecuteOptions {
 [[nodiscard]] io::Value result_record(const Job&, const Result&);
 [[nodiscard]] io::Value summarize(std::span<const Job>, std::span<const Result>,
     double elapsed_s, const std::filesystem::path&, bool interrupted);
+struct SweepRequest {
+    std::filesystem::path output;
+    std::vector<std::string> seeds, passthrough;
+    unsigned workers = 1;
+    std::int64_t requested_workers = 1;
+    bool dry_run = false, help = false;
+};
+[[nodiscard]] SweepRequest parse_sweep_arguments(std::span<const std::string_view>);
 [[nodiscard]] int research_sweep(std::span<const std::string_view>, const std::filesystem::path& executable);
 } // namespace bike::batch

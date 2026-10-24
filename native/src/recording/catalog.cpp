@@ -1,4 +1,5 @@
 #include "catalog.hpp"
+#include "versioned.hpp"
 #include "value_util.hpp"
 #include <algorithm>
 #include <array>
@@ -11,6 +12,7 @@
 namespace bike::recording {
 namespace {
 #include "catalog_data.inc"
+#include "catalog_v2_data.inc"
 using io::Value;
 std::vector<std::string> read_strings(const Value& value) {
     std::vector<std::string> out;
@@ -67,6 +69,20 @@ const Descriptors& descriptors() {
     }();
     return out;
 }
+
+const Descriptors& spatial_descriptors() {
+    static const Descriptors out = [] {
+        std::string source; for (const auto part : kCatalogV2DocumentParts) source += part;
+        const auto document = io::parse_json(source);
+        if (io::as_int64(value::require(document, "schema"), "catalog.schema") != 2)
+            throw std::invalid_argument("recording catalog schema differs from spatial2");
+        Descriptors result;
+        for (const auto& t : io::as_array(value::require(document, "tables"), "tables")) result.physical.push_back(read_table(t));
+        for (const auto& t : io::as_array(value::require(document, "research_tables"), "research_tables")) result.research.push_back(read_table(t));
+        return result;
+    }(); return out;
+}
+
 // NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 std::optional<AliasSpec> walk_struct(const FieldSpec& field, std::span<const std::string> rest,
                                     const std::string& table, std::string_view name) {
@@ -189,6 +205,28 @@ std::optional<AliasSpec> Catalog::resolve_alias(std::string_view name) const {
 const Catalog& schema_catalog() { static const Catalog out(descriptors().physical, {}, {}); return out; }
 const std::vector<TableSpec>& research_tables() { return descriptors().research; }
 const std::vector<TableSpec>& all_tables() { static const auto out = [] { auto result = descriptors().physical; result.insert(result.end(), descriptors().research.begin(), descriptors().research.end()); return result; }(); return out; }
+
+const Catalog& schema_catalog(CatalogVersion version) {
+    if (version == CatalogVersion::planar1) return schema_catalog();
+    if (version != CatalogVersion::spatial2) throw std::invalid_argument("unsupported recording catalog version");
+    static const Catalog out(spatial_descriptors().physical, {}, {}); return out;
+}
+std::span<const TableDescriptor> all_tables(CatalogVersion version) {
+    if (version == CatalogVersion::planar1) return all_tables();
+    if (version != CatalogVersion::spatial2) throw std::invalid_argument("unsupported recording catalog version");
+    static const auto out = [] { auto result = spatial_descriptors().physical;
+        result.insert(result.end(), spatial_descriptors().research.begin(), spatial_descriptors().research.end()); return result; }();
+    return out;
+}
+
+CatalogVersion catalog_version(const Catalog& catalog) noexcept {
+    for (const auto& t : catalog.table_order()) if (t.name == "channel_spatial") return CatalogVersion::spatial2;
+    return CatalogVersion::planar1;
+}
+const TableSpec& table_spec(std::string_view name, CatalogVersion version) {
+    for (const auto& spec : all_tables(version)) if (spec.name == name) return spec;
+    throw std::invalid_argument("unreviewed recording table: " + std::string(name));
+}
 const TableSpec& table_spec(std::string_view name) { for (const auto& spec : all_tables()) if (spec.name == name) return spec; throw std::invalid_argument("unreviewed recording table: " + std::string(name)); }
 
 // NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure

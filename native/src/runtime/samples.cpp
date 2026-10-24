@@ -10,6 +10,7 @@
 
 #include "../cblas_abi.hpp"
 #include "../numeric_sum.hpp"
+#include "../spatial/frames.hpp"
 
 namespace runtime {
 namespace sample_wire {
@@ -303,9 +304,21 @@ PhysicalSampleData::flat_columns(const ColumnLayout &layout) const {
     assigned.reserve(qpos.size() + qvel.size() + 2 * powers_w.size() + 16);
     if(layout.spatial) {
         const auto& spatial=object(required(channels,"spatial"));
-        assigned.emplace_back("x_m",number(required(spatial,"x_m")));
-        assigned.emplace_back("speed_mps",number(required(spatial,"speed_mps")));
-        assigned.emplace_back("pitch_rad",number(required(spatial,"pitch_rad")));
+        const auto& position=array(required(spatial,"root_position_world_m"));
+        const auto& velocity=array(required(spatial,"root_linear_velocity_world_mps"));
+        const auto& rotation=array(required(spatial,"root_quat_world_from_body_wxyz"));
+        if(position.size()!=3||velocity.size()!=3||rotation.size()!=4)
+            throw std::invalid_argument("accounting: spatial root pose has invalid dimensions");
+        const bike::spatial::Quat quat{number(rotation[0]),number(rotation[1]),
+            number(rotation[2]),number(rotation[3])};
+        const auto heading=bike::spatial::rotate_body_to_world(quat,{1.,0.,0.});
+        const double length=std::hypot(heading[0],heading[1]);
+        const double speed=length>1e-12?
+            (heading[0]*number(velocity[0])+heading[1]*number(velocity[1]))/length:0.;
+        assigned.emplace_back("x_m",number(position[0]));
+        assigned.emplace_back("speed_mps",speed);
+        assigned.emplace_back("pitch_rad",bike::spatial::euler_zyx(quat).pitch_rad);
+        assigned.emplace_back("speed_valid",length>1e-12?1.:0.);
     } else {
         assigned.emplace_back("x_m", qpos.at(layout.root_x_qpos));
         assigned.emplace_back("speed_mps", qvel.at(layout.root_x_dof));

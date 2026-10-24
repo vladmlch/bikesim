@@ -148,14 +148,15 @@ runtime::ModelImage capture_model_image(const mjModel& model) {
 
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
-runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
+static Value capture_state_document(Stepper const& stepper,
     runtime::PhysicalStep const& physical, const runtime::RuntimeConfig& config,
-    const runtime::ModelImage* immutable_spatial_model) {
+    const runtime::ModelImage* immutable_spatial_model, bool initial,
+    runtime::ModelImage& image) {
     if(config.spatial && (!stepper.has_spatial_tire() || !physical.spatial_state()))
         throw std::invalid_argument("bootstrap.spatial.tire: producer state missing");
     const auto state_ptr = std::make_unique<runtime::StepState>(physical.state());
     const auto& state = *state_ptr;
-    if (state.step != 0 || stepper.time() != 0.)
+    if (initial && (state.step != 0 || stepper.time() != 0.))
         throw std::invalid_argument("bootstrap capture requires t=0");
     if (state.initializing || !state.research_accounting_valid || !state.energy.initial_energy_j)
         throw std::invalid_argument("bootstrap capture requires a completed physical reset");
@@ -164,7 +165,6 @@ runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
         throw std::invalid_argument("bootstrap.spatial.hold: capture requires released scored state");
     const auto& m = *stepper.model();
     const auto& d = *stepper.data();
-    runtime::ModelImage image;
     if(config.spatial) {
         if(!immutable_spatial_model || !physical.topology() ||
            immutable_spatial_model->sha256!=physical.topology()->model_sha256_hex ||
@@ -221,6 +221,23 @@ runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
     doc_obj.emplace_back("integration_state", reals(integration));
     doc_obj.emplace_back("model_mutable", Value{Object{{"dof_frictionloss", Value{std::move(friction)}},
         {"site_pos", Value{std::move(sites)}}}});
+    if(config.spatial && !initial) {
+        // Full model rows have one owner in a continuation. Do not keep a
+        // competing sparse friction/site copy beside them.
+        const auto row=[](const double* values,mjtSize count) {
+            return reals(std::span<const double>(values,static_cast<std::size_t>(count)));
+        };
+        Value full_rows{Object{
+                {"dof_frictionloss",row(m.dof_frictionloss,m.nv)},
+                {"site_pos",row(m.site_pos,3*m.nsite)},
+                {"tendon_stiffness",row(m.tendon_stiffness,m.ntendon)},
+                {"tendon_damping",row(m.tendon_damping,m.ntendon)},
+                {"tendon_lengthspring",row(m.tendon_lengthspring,2*m.ntendon)},
+                {"tendon_range",row(m.tendon_range,2*m.ntendon)},
+                {"wrap_prm",row(m.wrap_prm,m.nwrap)}}};
+        doc_obj.back().second=Value{Object{{"dof_frictionloss",Value{Object{}}},
+            {"site_pos",Value{Object{}}}, {"spatial_arrays",std::move(full_rows)}}};
+    }
     if(config.spatial) {
         const auto& tire=stepper.spatial_tire_writer().state();
         if(tire.identity.topology_fingerprint_hex!=state.spatial->topology_fingerprint ||
@@ -240,10 +257,23 @@ runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
     doc_obj.emplace_back("signals", ::rider::encode_intent_signals(state.signals));
     doc_obj.emplace_back("runtime", runtime_state(state, config));
     if(config.spatial)doc_obj.emplace_back("spatial",runtime::encode_spatial_bootstrap(*state.spatial));
-    Value const document{std::move(doc_obj)};
-    // Decode into the exact same owned state used by the captured-file path.
-    return runtime::compose_bootstrap(config, std::move(image), document);
+    return Value{std::move(doc_obj)};
 }
 NATIVE_DIAG_POP
+
+runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
+    runtime::PhysicalStep const& physical, const runtime::RuntimeConfig& config,
+    const runtime::ModelImage* immutable_spatial_model) {
+    runtime::ModelImage image;
+    const auto document=capture_state_document(stepper,physical,config,immutable_spatial_model,true,image);
+    return runtime::compose_bootstrap(config,std::move(image),document);
+}
+bike::io::Value capture_current_state(Stepper const& stepper,
+    runtime::PhysicalStep const& physical,const runtime::RuntimeConfig& config,
+    const runtime::ModelImage& immutable_spatial_model) {
+    if(!config.spatial)throw std::invalid_argument("spatial checkpoint requires runtime2");
+    runtime::ModelImage image;
+    return capture_state_document(stepper,physical,config,&immutable_spatial_model,false,image);
+}
 
 } // namespace bike::initialization

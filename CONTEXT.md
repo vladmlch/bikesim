@@ -4,6 +4,13 @@ Ubiquitous language. Terms that resolved into stable shared vocabulary; use exac
 
 ## Simulation runtime
 
+- **spatial mode** — explicit native 3D physics extension; the default planar request remains separate. Source implementation is not qualification; W45–W49 application verification is pending V08.
+- **spatial root** — `constrained` control root or `free` six-degree root; qpos quaternion coordinates and qvel tangent coordinates have independent widths.
+- **accepted spatial pose** — committed world position/quaternion used by the render replica, reports and schema2 channels. Render smoothing never writes back to physical state.
+- **sensor schema2 / noise2** — eleven ordered spatial measurement components with source/delivery clocks, validity mask and ABI2; sensor-frame IMU axes are not world-frame truth.
+- **recipe4** — spatial checked research replay contract inside container2; inspection alone never grants checked status.
+- **spatial-fast-v1** — source-defined fast profile; realtime-factor targets 2.0/1.0 have no measurement until V09. See [spatial workflows](docs/spatial-3d.md).
+
 - **physics step** — one `mj_step` call; dt = 0.5 ms of simulated time.
 - **control tick** — the slower cadence on which the rider controller recomputes (e.g. 200 Hz); spans many physics steps.
 - **intent-tick** — 10 ms boundary at which Python hands commands into the runtime ("intent-programs": scripted control intentions that play out inside the step loop).

@@ -1,5 +1,10 @@
 # Spatial 3D Native — 06. CLI, viewer, отчёты и доставка (W-фаза: W45–W49)
 
+> **Source delivery 2026-10-24:** W45–W49 — `source_written`, V08 —
+> `pending_verification`. [Отчёт по патчу](../audits/2026-10-24-spatial-w37-w49-source.md)
+> описывает CLI/viewer/report/install source changes. Ни build, ни install,
+> ни GUI не выполнялись; acceptance-checkboxes остаются открытыми.
+
 > **Для исполнителей:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development (рекомендуется) или superpowers:executing-plans. Все задачи — **one-shot write** против frozen headers W00 (`00-foundation.md` §W00.10: `viz/spatial.hpp`, `viewer/camera.hpp (+update_spatial)`). Запрещены configure/build/compile/ctest/запуск/install/GUI. Проверка и acceptance — `09-verification.md` V08.
 
 **Goal:** Написать spatial-расширение существующих native executables, viewer pose/camera/HUD, отчёты/batch, install-листы и документацию — целиком, без запуска.

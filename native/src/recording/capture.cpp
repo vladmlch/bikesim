@@ -1,4 +1,5 @@
 #include "capture.hpp"
+#include "versioned.hpp"
 #include "value_util.hpp"
 #include <algorithm>
 #include <array>
@@ -72,7 +73,7 @@ void Asset::validate() const {
     if (sha256.size() != 64 || !std::ranges::all_of(sha256, lower_hex)) throw std::invalid_argument("asset sha256 must be lowercase hex");
 }
 void ResearchEvidence::validate() const {
-    if (!history || replay_contract_version != recording::replay_contract_version || complete_control_steps < 0 || initial_integration_state.size() != final_integration_state.size())
+    if (!history || (replay_contract_version != recording::replay_contract_version && replay_contract_version != 4) || complete_control_steps < 0 || initial_integration_state.size() != final_integration_state.size())
         throw std::invalid_argument("invalid research evidence ownership/state/version");
 }
 void EpisodeEvidence::validate() const {
@@ -83,7 +84,15 @@ void EpisodeEvidence::validate() const {
     for (const auto& a : assets) { a.validate(); if (!names.insert(a.name).second) throw std::invalid_argument("duplicate episode asset " + a.name); }
     if (research) research->validate();
 }
-RunCapture::RunCapture(RunMetadata metadata, bool enabled) : metadata_(std::move(metadata)), enabled_(enabled) { metadata_.validate(); }
+CatalogVersion capture_version(const RunCapture& capture) {
+    const auto& metadata = io::as_object(capture.metadata().values, "run metadata");
+    const auto* v = io::find_member(metadata, "recording_schema_version");
+    if (!v) return CatalogVersion::planar1;
+    const auto number = io::as_int64(*v, "recording_schema_version");
+    if (number != 1 && number != 2) throw std::invalid_argument("unknown recording schema version");
+    return static_cast<CatalogVersion>(number);
+}
+RunCapture::RunCapture(RunMetadata metadata, bool enabled) : metadata_(std::move(metadata)), enabled_(enabled) { metadata_.validate(); (void)capture_version(*this); }
 std::string_view RunCapture::state_name() const noexcept {
     switch (state_) { case State::collecting: return "collecting"; case State::publishing: return "publishing"; case State::published: return "published"; case State::publication_failed: return "publication_failed"; }
     return "unknown";
@@ -102,6 +111,10 @@ void RunCapture::add_episode(const std::shared_ptr<const EpisodeEvidence>& evide
     if (!evidence) throw std::invalid_argument("null episode evidence");
     evidence->validate(); require_collecting("episode");
     if (!enabled_) return;
+    if (const auto* catalog = evidence->physical->catalog(); catalog && catalog_version(*catalog) != capture_version(*this))
+        throw std::invalid_argument("recording run cannot mix planar and spatial episodes");
+    if (evidence->research && evidence->research->replay_contract_version != (capture_version(*this) == CatalogVersion::spatial2 ? 4 : 3))
+        throw std::invalid_argument("recording run family and replay contract differ");
     for (std::size_t i = 0; i < episodes_.size(); ++i) if (episodes_[i]->episode_id == evidence->episode_id) {
         if (episode_origins_[i].lock() == evidence) return;
         throw std::invalid_argument("conflicting evidence for episode " + std::to_string(evidence->episode_id));

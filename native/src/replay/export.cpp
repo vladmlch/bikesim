@@ -203,6 +203,8 @@ void destination_check(const std::filesystem::path& destination, bool overwrite)
 
 LegacySnapshot capture_legacy(runtime::OwnedResearchEpisode episode) {
     const auto& c = episode.configuration;
+    if(c.sensors_v2)
+        throw recording::RecordingError("spatial observations require container2 export; legacy V1 export is unavailable");
     if (c.capture_mode != runtime::ResearchCaptureMode::legacy && c.capture_mode != runtime::ResearchCaptureMode::full)
         throw recording::RecordingError("legacy export requires retained legacy or full capture");
     const auto evaluation = research::wire_value(runtime::Wire{episode.evaluation});
@@ -243,6 +245,8 @@ LegacySnapshot capture_legacy(runtime::OwnedResearchEpisode episode) {
 LegacySnapshot capture_legacy(runtime::NativeResearchRuntime const& environment) { return capture_legacy(environment.legacy_snapshot()); }
 
 io::Value export_legacy(const LegacySnapshot& snapshot, const std::filesystem::path& destination, bool overwrite) {
+    if(snapshot.data.replay_contract_version==4)
+        throw recording::RecordingError("spatial replay4 requires container2 export; legacy V1 export is unavailable");
     if (destination.empty()) throw std::invalid_argument("legacy output directory is required");
     destination_check(destination, overwrite);
     const auto& data = snapshot.data; const auto& recipe = data.manifest;

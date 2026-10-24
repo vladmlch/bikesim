@@ -1,6 +1,11 @@
 #include "plan.hpp"
 #include "integer_detail.hpp"
 #include "../io/json.hpp"
+#include "../io/hash.hpp"
+#include "../cli/application.hpp"
+#include "../configuration/load.hpp"
+#include "../runtime/spatial_tire_factory.hpp"
+#include "../terrain/spec_io.hpp"
 #include "../runtime/setup_values.hpp"
 #include <algorithm>
 #include <array>
@@ -133,6 +138,29 @@ std::vector<Value> grid_values(std::string_view key,const Value& raw) {
     return result;
 }
 } // namespace
+void resolve_job_identity(Job& job, const cli::Arguments& args) {
+    if (!args.has("spatial") && !args.has("terrain3d") && !args.has("physics_config")) return;
+    auto request = cli::resolve_research(args);
+    auto& physics = *request->setup.model.physics;
+    if (!physics.spatial) return;
+    runtime::resolve_spatial_runtime_profiles(physics);
+    const auto terrain_owner = terrain::detail::load_terrain3d_source(physics.spatial->terrain);
+    Array tokens;
+    for (const auto& [key,value]:args.values) {
+        if (key == "out" || key == "overwrite" || key == "viewer" || key == "time_scale" || key == "headless") continue;
+        tokens.push_back(Value{Object{{"name",text(key)},{"value",text(value)}}});
+    }
+    // Serialize sorted parser values so spelling order and worker completion
+    // order cannot enter the key. Physical threads stay one until W52.
+    std::ranges::sort(tokens,{},[](const Value& value){return io::as_string(field(value,"name"),"name");});
+    job.identity = Value{Object{{"job_identity_schema",integer(1)},
+        {"config",configuration::to_value(physics)}, {"arguments",Value{std::move(tokens)}},
+        {"terrain_sha256",text(terrain_owner->fingerprint_hex())},
+        {"tyre_calibration_sha256",text(physics.spatial->tyre.lateral_coefficients_sha256)},
+        {"sensor_schema",integer(2)},{"seed",text(request->experiment.seed_decimal)},{"threads",integer(1)}}};
+    const auto encoded = io::canonical_json(job.identity);
+    job.key = io::sha256(std::as_bytes(std::span(encoded)));
+}
 std::vector<Job> expand_spec(const io::Value& document) {
     const auto& root=io::as_object(document,"batch spec");
     for(const auto& [key,value]:root) {

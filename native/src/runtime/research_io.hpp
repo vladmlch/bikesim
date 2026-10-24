@@ -29,6 +29,8 @@ struct ResearchBootstrap {
     ResearchConfig config;
     NoiseTape tape;
     SensorState startup;
+    std::optional<spatial::NoiseTapeV2> tape_v2;
+    std::optional<spatial::SensorStateV2> startup_v2;
 };
 
 // Loads one research capture directory — the ride documents via
@@ -59,5 +61,10 @@ decode_noise_tape(const bike::io::Value &noise,
                   const bike::io::Value &dropout_uniform);
 [[nodiscard]] SensorState
 decode_sensor_state(const bike::io::Value &document);
+[[nodiscard]] WireObject sensor_config_v2_to_wire(const spatial::SensorConfigV2&);
+[[nodiscard]] spatial::SensorConfigV2 decode_sensor_config_v2(const bike::io::Value&);
+[[nodiscard]] WireObject encode_sensor_state_v2(const spatial::SensorStateV2&);
+[[nodiscard]] spatial::SensorStateV2 decode_sensor_state_v2(const bike::io::Value&);
+[[nodiscard]] spatial::NoiseTapeV2 decode_noise_tape_v2(const bike::io::Value&, const bike::io::Value&);
 
 } // namespace runtime

@@ -13,6 +13,10 @@
 #include "../runtime/setup_values.hpp"
 #include "../rider/allocation.hpp"
 #include "../terrain/trackfile.hpp"
+#include "../terrain/asset3d.hpp"
+#include "../terrain/source3d.hpp"
+#include "../spatial/config.hpp"
+#include "../runtime/research_io.hpp"
 #include "../writers/pyfloat.hpp"
 #include <algorithm>
 #include <bit>
@@ -71,6 +75,10 @@ std::string configuration_digest(const Value& resolved) {
         const auto* digest = find(resolved, std::string(key) + "_sha256");
         set(articulated, std::string(key) + "_path", digest ? *digest : Value{});
     }
+    if(find(articulated,"shoulder_profile")) {
+        const auto* digest=find(resolved,"shoulder_profile_asset_sha256");
+        set(articulated,"shoulder_profile",digest?*digest:Value{});
+    }
     set(physics, "articulated", std::move(articulated));
     set(hashable, "physics", std::move(physics));
     const auto json = io::canonical_json(hashable);
@@ -115,7 +123,8 @@ io::Value physical_configuration_metadata(const initialization::SetupRequest& re
     if (!request.model.physics) throw std::invalid_argument("physical metadata requires resolved physics");
     const auto& physics = *request.model.physics;
     const auto& inputs = field(setup_metadata, "inputs");
-    const auto hash = terrain_digest(startup.geometry);
+    if (bootstrap.config.spatial && !bootstrap.config.terrain3d) throw std::invalid_argument("spatial metadata requires immutable terrain owner");
+    const auto hash = bootstrap.config.spatial ? bootstrap.config.terrain3d->fingerprint_hex() : terrain_digest(startup.geometry);
     const auto seed = seed_decimal ? Value{io::Number{validate_seed(*seed_decimal)}} : Value{};
     Value resolved{Object{{"physics", configuration::detail::plain_document(configuration::to_value(physics))},
         {"geometry_and_suspension", field(inputs, "specs")}, {"mass_budget", field(inputs, "mass_specs")},
@@ -129,6 +138,11 @@ io::Value physical_configuration_metadata(const initialization::SetupRequest& re
                                  std::pair{"joint_strength", physics.articulated.joint_strength_path}}) {
         set(resolved, std::string(key) + "_status", text(path ? "declared_unvalidated" : "unspecified"));
         if (path) set(resolved, std::string(key) + "_sha256", text(platform::file_sha256(*path)));
+    }
+    if (bootstrap.config.spatial) {
+        set(resolved,"start_x_m",real(request.start_x_m));
+        if(physics.articulated.shoulder_profile)
+            set(resolved,"shoulder_profile_asset_sha256",text(platform::file_sha256(*physics.articulated.shoulder_profile)));
     }
     const auto configuration_hash = configuration_digest(resolved);
     const auto identity = runtime::runtime_identity();
@@ -151,7 +165,7 @@ io::Value physical_configuration_metadata(const initialization::SetupRequest& re
         set(execution, "allocation_solver", text(bike::rider::allocation_numeric_identity));
         set(execution, "allocation_solver_qualification", text("pending"));
     }
-    return Value{Object{{"schema_version", integer(2)}, {"physics_revision", text("physical-2026-09-29")},
+    Value result{Object{{"schema_version", integer(2)}, {"physics_revision", text("physical-2026-09-29")},
         {"model_commit", Value{}}, {"model_source_dirty", Value{}}, {"model_source_sha256", text(identity.native_source_sha256)},
         {"versions", Value{Object{{"mujoco", text(identity.mujoco_version)}, {"compiler", text(build.compiler)}}}},
         {"configuration_sha256", text(configuration_hash)}, {"terrain_sha256", text(hash)},
@@ -167,6 +181,16 @@ io::Value physical_configuration_metadata(const initialization::SetupRequest& re
         {"limitations", Value{Array{text("planar X-Z dynamics"), text("synthetic material and drive parameters"),
             text(limitation), text("native contact work is a solver diagnostic, not material tire hysteresis")}}},
         {"execution", std::move(execution)}, {"setup", setup_metadata}, {"model_sha256", text(bootstrap.model.sha256)}}};
+    if (bootstrap.config.spatial) {
+        if (!bootstrap.state.spatial) throw std::invalid_argument("spatial metadata requires bootstrap identity");
+        set(result,"recording_schema_version",integer(2));
+        set(result,"sensor_schema_version",integer(2));
+        set(result,"calibration_sha256",text(bootstrap.state.spatial->calibration_sha256));
+        set(result,"topology_fingerprint",text(bootstrap.state.spatial->topology_fingerprint));
+        set(result,"spatial",spatial::spatial_config_to_wire(*bootstrap.config.spatial));
+        set(result,"limitations",Value{Array{text("spatial 3D; numerical qualification pending V07/V08"),text("synthetic tyre coefficients; calibration not measured")}});
+    }
+    return result;
 }
 
 io::Value configuration_metadata(const ResearchRequest& request, const initialization::ResearchStartup& startup,
@@ -174,7 +198,9 @@ io::Value configuration_metadata(const ResearchRequest& request, const initializ
     auto metadata = physical_configuration_metadata(request.setup, startup, bootstrap, setup_metadata,
         request.experiment.seed_decimal);
     set(metadata, "experiment", experiment_value(request.experiment));
-    set(metadata, "sensor_config", sensor_config_value(request.sensors));
+    set(metadata, "sensor_config", bootstrap.config.spatial
+        ? wire_value(runtime::Wire(runtime::sensor_config_v2_to_wire(request.sensors_v2))) : sensor_config_value(request.sensors));
+    if (bootstrap.config.spatial) set(metadata,"sensor_rng_revision",text("sensor-v2-rng/1"));
     set(metadata, "rider_program", rider_program_value(request.programs));
     set(metadata, "demand_program", demand_program_value(request.programs));
     return metadata;
@@ -212,6 +238,8 @@ io::Value identity_receipt(const io::Value& metadata) {
             if (path && !io::is_null(*path))
                 set(resolved, std::string(key) + "_sha256", text(platform::file_sha256(io::as_string(*path, key))));
         }
+        if(const auto* path=find(articulated,"shoulder_profile");path&&!io::is_null(*path))
+            set(resolved,"shoulder_profile_asset_sha256",text(platform::file_sha256(io::as_string(*path,"shoulder_profile"))));
         const bool source_changed = identity.native_source_sha256 !=
             io::as_string(field(metadata, "model_source_sha256"), "model_source_sha256");
         const bool config_changed = configuration_digest(resolved) !=
@@ -248,7 +276,23 @@ io::Value research_recipe(const ResearchRequest& request, const io::Value& metad
     return recipe;
 }
 runtime::ResearchAssets snapshot_research_assets(const ResearchRequest& request,
-    const initialization::ResearchStartup& startup, const io::Value& metadata) {
+    const initialization::ResearchStartup& startup, const io::Value& metadata, const runtime::RuntimeBootstrap& bootstrap) {
+    if (bootstrap.config.spatial) {
+        auto result = snapshot_spatial_assets(request.setup,bootstrap,metadata);
+        result.push_back(asset("model.mjb","application/x-mujoco",bootstrap.model.mjb));
+        result.push_back(text_asset("resolved_config.json","application/json",io::recording_json(field(metadata,"resolved_config"))+"\n"));
+        const auto& articulated = field(field(field(metadata,"resolved_config"),"physics"),"articulated");
+        for (const auto& [key,name] : {std::pair{"joint_envelope","rider_joint_envelope.json"},std::pair{"joint_strength","rider_joint_strength.json"}}) {
+            const auto* path=find(articulated,std::string(key)+"_path");
+            if (path && !io::is_null(*path)) {
+                auto profile=asset(name,"application/json",io::read_numpy_bytes(io::as_string(*path,key)));
+                if (profile.sha256!=io::as_string(field(field(metadata,"resolved_config"),std::string(key)+"_sha256"),key))
+                    throw std::invalid_argument(std::string(key)+": profile changed during capture");
+                result.push_back(std::move(profile));
+            }
+        }
+        return std::make_shared<const std::vector<runtime::ResearchAsset>>(std::move(result));
+    }
     (void)terrain_digest(startup.geometry); // validate before indexed interleave
     std::vector<runtime::ResearchAsset> result;
     result.push_back(text_asset("track.toml", "application/toml", terrain::dump_track(request.setup.track)));
@@ -274,12 +318,37 @@ runtime::ResearchAssets snapshot_research_assets(const ResearchRequest& request,
     result.push_back(text_asset("recipe.json", "application/json", io::recording_json(research_recipe(request, metadata)) + "\n"));
     return std::make_shared<const std::vector<runtime::ResearchAsset>>(std::move(result));
 }
+std::vector<runtime::ResearchAsset> snapshot_spatial_assets(const initialization::SetupRequest& request,
+    const runtime::RuntimeBootstrap& bootstrap,const io::Value& metadata) {
+    if(!bootstrap.config.spatial || !bootstrap.config.terrain3d || !bootstrap.state.spatial)
+        throw std::invalid_argument("spatial assets require complete bootstrap/terrain");
+    const auto& source_owner=*bootstrap.config.terrain3d;
+    const auto track=terrain::dump_track(request.track);
+    Value source{Object{{"kind",text(source_owner.kind()==terrain::Terrain3dKind::grid?"grid":"profile_extrusion")},
+        {"sha256",text(source_owner.fingerprint_hex())},{"corridor",real(source_owner.half_width_m())},
+        {"source_track_toml",source_owner.kind()==terrain::Terrain3dKind::profile_extrusion?text(track):Value{}}}};
+    std::vector<runtime::ResearchAsset> out;
+    out.push_back(text_asset("track.toml","application/toml",track));
+    out.push_back(text_asset("spatial/terrain_source.json","application/json",io::recording_json(source)+"\n"));
+    if(const auto* grid=source_owner.grid()) out.push_back(asset("spatial/terrain.terrain3d","application/x-bike-terrain3d",terrain::write_terrain3d(*grid)));
+    out.push_back(text_asset("spatial/config.json","application/json",io::recording_json(field(metadata,"resolved_config"))+"\n"));
+    const Value calibration{Object{{"calibration_sha256",text(bootstrap.state.spatial->calibration_sha256)},
+        {"tire",field(bootstrap.config.writer_config,"tire")},{"imu",field(spatial::spatial_config_to_wire(*bootstrap.config.spatial),"imu")}}};
+    out.push_back(text_asset("spatial/calibration.json","application/json",io::recording_json(calibration)+"\n"));
+    if(request.model.physics && request.model.physics->articulated.shoulder_profile) {
+        auto shoulder=asset("spatial/shoulder_profile.json","application/json",io::read_numpy_bytes(*request.model.physics->articulated.shoulder_profile));
+        if(shoulder.sha256!=io::as_string(field(field(metadata,"resolved_config"),"shoulder_profile_asset_sha256"),"shoulder_profile_asset_sha256"))
+            throw std::invalid_argument("shoulder profile changed during asset capture");
+        out.push_back(std::move(shoulder));
+    }
+    return out;
+}
 runtime::ResearchAssets reseed_assets(const runtime::ResearchAssets& assets, const io::Value& metadata) {
     if (!assets) return {};
     auto copy = *assets;
     bool replaced = false;
     for (auto& value : copy)
-        if (value.name == "resolved_config.json") {
+        if (value.name == "resolved_config.json" || value.name == "spatial/config.json") {
             value = text_asset(value.name, value.media_type, io::recording_json(field(metadata, "resolved_config")) + "\n");
             replaced = true;
         }

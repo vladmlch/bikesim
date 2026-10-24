@@ -64,6 +64,7 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
   target_link_libraries(bike_recording PUBLIC bike_recording_reader bike_app)
 
   add_library(bike_replay STATIC
+    "${native_dir}/src/replay/spatial_recipe.cpp"
     "${native_dir}/src/replay/input.cpp"
     "${native_dir}/src/replay/legacy.cpp"
     "${native_dir}/src/replay/rebuild.cpp"
@@ -109,6 +110,7 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
   endif()
 
   add_library(bike_viz STATIC
+    "${native_dir}/src/viz/spatial.cpp"
     "${native_dir}/src/viz/plot.cpp"
     "${native_dir}/src/viz/svg.cpp"
     "${native_dir}/src/viz/png.cpp"
@@ -150,6 +152,10 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
   add_library(bike_cli_arguments STATIC "${native_dir}/src/cli/arguments.cpp")
   bike_startup_target_policy(bike_cli_arguments "${native_dir}")
   target_link_libraries(bike_cli_arguments PUBLIC bike_io bike_configuration)
+  add_library(bike_cli_configuration STATIC "${native_dir}/src/cli/configuration.cpp")
+  bike_startup_target_policy(bike_cli_configuration "${native_dir}")
+  target_link_libraries(bike_cli_configuration PUBLIC bike_cli_arguments bike_app bike_configuration)
+  install(TARGETS bike_cli_configuration ARCHIVE DESTINATION lib)
   add_library(bike_batch STATIC
     "${native_dir}/src/batch/plan.cpp"
     "${native_dir}/src/batch/spec.cpp"
@@ -157,11 +163,10 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
     "${native_dir}/src/batch/summary.cpp"
     "${native_dir}/src/batch/sweep.cpp")
   bike_startup_target_policy(bike_batch "${native_dir}")
-  target_link_libraries(bike_batch PUBLIC bike_cli_arguments bike_terrain bike_platform Threads::Threads)
+  target_link_libraries(bike_batch PUBLIC bike_cli_configuration bike_terrain bike_platform Threads::Threads)
 
   add_library(bike_cli STATIC
     "${native_dir}/src/cli/application.cpp"
-    "${native_dir}/src/cli/configuration.cpp"
     "${native_dir}/src/cli/physical_capture.cpp"
     "${native_dir}/src/cli/ride.cpp"
     "${native_dir}/src/cli/research.cpp"
@@ -172,7 +177,7 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
     "${native_dir}/src/cli/replay.cpp"
     "${native_dir}/src/cli/batch.cpp")
   bike_startup_target_policy(bike_cli "${native_dir}")
-  target_link_libraries(bike_cli PUBLIC bike_cli_arguments bike_recording bike_replay bike_viewer bike_viz bike_batch)
+  target_link_libraries(bike_cli PUBLIC bike_cli_configuration bike_cli_arguments bike_recording bike_replay bike_viewer bike_viz bike_batch bike_spatial bike_pneumatic3d)
   # One compile-database entry for each main; do not compile the same TU eight
   # times and break the produced source/ODR checks.
   add_library(bike_cli_main OBJECT "${native_dir}/src/cli/main.cpp")
@@ -198,6 +203,7 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
   # The analyst library remains engine-free. Golden simulation belongs to a
   # separate library used only by the explicit recording golden subcommand.
   add_library(bike_golden STATIC
+    "${native_dir}/src/golden/spatial_registry.cpp"
     "${native_dir}/src/golden/episode.cpp"
     "${native_dir}/src/golden/capture.cpp")
   bike_startup_target_policy(bike_golden "${native_dir}")
@@ -206,7 +212,7 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
     "${native_dir}/src/cli/recording.cpp"
     "${native_dir}/src/cli/recording_golden.cpp")
   bike_startup_target_policy(bike_recording_cli "${native_dir}")
-  target_link_libraries(bike_recording_cli PUBLIC bike_recording_reader bike_golden)
+  target_link_libraries(bike_recording_cli PUBLIC bike_recording_reader bike_golden bike_viz)
   target_link_libraries(bike_cli PRIVATE bike_recording_cli)
   add_executable(bike-recording "${native_dir}/src/cli/recording_main.cpp")
   bike_startup_target_policy(bike-recording "${native_dir}")
@@ -237,5 +243,6 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
   endif()
   install(FILES "${BIKE_DEP_duckdb_LIBRARY}" DESTINATION lib)
   install(FILES "${native_dir}/resources/recording/catalog-v1.json" DESTINATION share/bike_sim/recording)
+  install(FILES "${native_dir}/resources/recording/catalog-v2.json" DESTINATION share/bike_sim/recording)
   install(FILES "${native_dir}/resources/reports/summary.md.in" DESTINATION share/bike_sim/reports)
 endfunction()

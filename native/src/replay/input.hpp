@@ -1,5 +1,6 @@
 #pragma once
 #include "../io/value.hpp"
+#include "spatial_recipe.hpp"
 #include <cstdint>
 #include <filesystem>
 #include <map>
@@ -15,6 +16,7 @@ struct ReplayInput {
     std::int64_t episode_id = 0;
     std::optional<int> container_schema_version;
     int replay_contract_version = 0;
+    std::optional<SpatialRecipe4> spatial_recipe;
 };
 // Validates either the historical schema-2 execution object or the explicitly
 // distinct native-executable identity. This is data-only and loads no policy.

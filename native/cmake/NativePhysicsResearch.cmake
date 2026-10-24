@@ -42,6 +42,7 @@ function(bike_add_physics_research native_dir core_target)
     "${native_dir}/src/research/program_loader.cpp"
     "${native_dir}/src/research/rider_random.cpp"
     "${native_dir}/src/research/policy.cpp"
+    "${native_dir}/src/research/policy_v2_host.cpp"
     "${native_dir}/src/research/builtin_policies.cpp"
     "${native_dir}/src/research/plugin_policy.cpp"
     "${native_dir}/src/research/policy_session.cpp"
@@ -85,5 +86,6 @@ function(bike_add_physics_research native_dir core_target)
     set_target_properties(bike_traction_policy PROPERTIES PREFIX "")
     install(TARGETS bike_traction_policy LIBRARY DESTINATION lib/bike_sim/policies)
   endif()
-  install(FILES "${native_dir}/include/bike/policy_v1.h" DESTINATION include/bike)
+  install(FILES "${native_dir}/include/bike/policy_v1.h"
+    "${native_dir}/include/bike/policy_v2.h" DESTINATION include/bike)
 endfunction()

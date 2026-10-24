@@ -8,6 +8,7 @@
 // trees the binding boxes after the mutable section commits.
 
 #include "step.hpp"
+#include "value_readers.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -1056,6 +1057,7 @@ PhysicalStep::PhysicalStep(
     frame_body_ = mj_name2id(m, mjOBJ_BODY, "frame");
     if(config_.spatial) {
         topology_=bike::spatial::bind_topology(*m,*config_.spatial);
+        imu_mount_=spatial::bind_imu_mount(*m,*config_.spatial,*topology_);
         if(!config_.terrain3d)
             throw std::invalid_argument("runtime.spatial.terrain: physical source missing");
         spatial_state_.emplace();
@@ -1142,6 +1144,72 @@ PhysicalStep::PhysicalStep(
     if(topology_)spatial_brake_force_.assign(nv,0.);
     mul_scratch_.assign(nv, 0.);
     measurement_decimation_ = config_.measurement_decimation;
+    if(topology_){spatial_truth_=capture_spatial_truth();imu_truth_=spatial::read_imu_truth(*m,*stepper_->data(),*imu_mount_,stepper_->data()->time);}
+}
+
+spatial::SpatialTruth PhysicalStep::capture_spatial_truth() const {
+    if(!topology_||!config_.terrain3d)throw std::logic_error("spatial truth requires a bound physical topology");
+    const auto* model=stepper_->model();const auto* data=stepper_->data();
+    const auto qpos=buf(data->qpos,model->nq),qvel=buf(data->qvel,model->nv);
+    spatial::SpatialTruth truth;truth.root=bike::spatial::body_pose(*model,*data,topology_->root);
+    truth.attitude=bike::spatial::euler_zyx(truth.root.quat_world_from_body_wxyz);
+    truth.lateral_displacement_m=truth.root.position_world_m[1];
+    if(topology_->steer.joint.qpos_adr>=0)truth.steer_angle_rad=qpos[static_cast<std::size_t>(topology_->steer.joint.qpos_adr)];
+    if(topology_->steer.joint.dof_adr>=0)truth.steer_rate_rad_s=qvel[static_cast<std::size_t>(topology_->steer.joint.dof_adr)];
+    if(spatial_state_){truth.steer_torque_nm=spatial_state_->steer.last_applied_nm;truth.steer_work_j=spatial_state_->steer.work_j;}
+    const auto terrain=config_.terrain3d->query_view();
+    for(std::size_t w=0;w<2;++w){
+        auto binding=topology_->root;binding.body_id=topology_->wheels[w].wheel_body_id;
+        const auto motion=bike::spatial::body_pose(*model,*data,binding);
+        auto hub_binding=binding;hub_binding.body_id=topology_->wheels[w].hub_body_id;
+        const auto hub=bike::spatial::body_pose(*model,*data,hub_binding);
+        const auto axle=bike::spatial::rotate_body_to_world(hub.quat_world_from_body_wxyz,topology_->wheels[w].axle_axis_hub);
+        for(const auto& patch:stepper_->spatial_tire_writer().wrenches(w)){
+            if(!patch.valid)continue;
+            const auto support=terrain.sample(patch.point_world_m[0],patch.point_world_m[1]);
+            if(support.status!=bike::terrain::QueryStatus3d::ok)continue;
+            const auto& n=support.normal_world;
+            double normal_load=0.;for(std::size_t i=0;i<3;++i)normal_load+=patch.force_world_n[i]*n[i];
+            if(normal_load<=0.)continue;
+            // Lateral is the wheel axle projected into the tangent plane;
+            // this is the same physical frame as the writer's patch wrench.
+            double projection=0.;for(std::size_t i=0;i<3;++i)projection+=axle[i]*n[i];
+            bike::spatial::Vec3 lateral{};double length2=0.;
+            for(std::size_t i=0;i<3;++i){lateral[i]=axle[i]-projection*n[i];length2+=lateral[i]*lateral[i];}
+            if(length2<=1e-20)continue;
+            const auto velocity=bike::spatial::point_velocity_world(motion,patch.point_world_m);
+            double slip=0.;for(std::size_t i=0;i<3;++i){slip+=velocity[i]*lateral[i]/std::sqrt(length2);
+                truth.support_normal_world[w][i]+=normal_load*n[i];}
+            truth.normal_load_n[w]+=normal_load;truth.lateral_slip_mps[w]+=normal_load*slip;truth.contact_valid[w]=true;
+        }
+        if(truth.contact_valid[w]){
+            truth.lateral_slip_mps[w]/=truth.normal_load_n[w];
+            const auto& normal=truth.support_normal_world[w];
+            const double length=std::hypot(normal[0],normal[1],normal[2]);
+            for(double& x:truth.support_normal_world[w])x/=length;
+        }
+    }
+    const double gravity=std::sqrt(model->opt.gravity[0]*model->opt.gravity[0]+model->opt.gravity[1]*model->opt.gravity[1]+model->opt.gravity[2]*model->opt.gravity[2]);
+    const auto masses=buf(model->body_mass,model->nbody),positions=buf(data->xpos,3*model->nbody);
+    const auto com=compiled_com(model,data);
+    const double mass=numpy_sum(masses);
+    // Front static load is estimated from the current CoM and wheel span, not
+    // the sum of dynamic contacts (which would misclassify simultaneous flight).
+    const auto front=static_cast<std::size_t>(topology_->wheels[0].wheel_body_id)*3;
+    const auto rear=static_cast<std::size_t>(topology_->wheels[1].wheel_body_id)*3;
+    const double dx=positions[front]-positions[rear],dy=positions[front+1]-positions[rear+1],span2=dx*dx+dy*dy;
+    const double fraction=span2>1e-20?std::clamp(((com[0]-positions[rear])*dx+
+        (com[1]-positions[rear+1])*dy)/span2,0.,1.):.5;
+    truth.front_unloaded=truth.normal_load_n[0]<.05*mass*gravity*fraction;
+    truth.front_lift=!truth.contact_valid[0];truth.flight=!truth.contact_valid[0]&&!truth.contact_valid[1];
+    return truth;
+}
+
+void PhysicalStep::refresh_spatial_observation_cache() {
+    if(!topology_)return;
+    auto truth=capture_spatial_truth();
+    auto imu=spatial::read_imu_truth(*stepper_->model(),*stepper_->data(),*imu_mount_,stepper_->data()->time);
+    spatial_truth_=std::move(truth);imu_truth_=std::move(imu);
 }
 
 double PhysicalStep::longitudinal_speed_mps() const {
@@ -1730,7 +1798,6 @@ RawStep PhysicalStep::advance_body(
         const double t = d->time;
         std::vector<double> q = buffer_copy(d->qpos, m->nq);
         std::vector<double> v = buffer_copy(d->qvel, m->nv);
-        auto spatial_pre=spatial_observation();
         const bool braking = front > 0. || rear > 0.;
         const double hold = rollback_brake_demand(
             longitudinal_speed_mps(),
@@ -1820,8 +1887,7 @@ RawStep PhysicalStep::advance_body(
                            .mass0 = std::move(mass0),
                            .full = full,
                            .components = std::move(components),
-                           .warning_counts = warning_counts,
-                           .spatial = std::move(spatial_pre)});
+                           .warning_counts = warning_counts});
 }
 
 RawStep PhysicalStep::solve_tail(SolvedInputs in) {
@@ -1876,6 +1942,7 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         const drivetrain::Diagnostics drive_last =
             stepper_->drive().diagnostics(false).to_map();
         in.sensors = sensor_channels(v, drive_last);
+        if(imu_mount_)in.imu=spatial::read_imu_truth(*m,*d,*imu_mount_,t);
         for (auto &[name, f]: actuator_components(m, d))
             ordered_set(components, name, std::move(f));
         if(steer_balance_) {
@@ -1975,6 +2042,12 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
             diag_wire_default_zero(drive_last, "electrical_power_w");
         in.solved_actuator = buffer_copy(d->actuator_force, m->nu);
         in.solved_passive = buffer_copy(d->qfrc_passive, m->nv);
+        if(topology_){in.truth=capture_spatial_truth();
+            if(topology_->steer.joint.qpos_adr>=0)in.truth->steer_angle_rad=q[static_cast<std::size_t>(topology_->steer.joint.qpos_adr)];
+            if(topology_->steer.joint.dof_adr>=0)in.truth->steer_rate_rad_s=v[static_cast<std::size_t>(topology_->steer.joint.dof_adr)];
+            if(spatial_truth_)in.truth->slip_path_m=spatial_truth_->slip_path_m;
+            for(std::size_t wheel=0;wheel<2;++wheel)if(in.truth->contact_valid[wheel])
+                in.truth->slip_path_m[wheel]=spatial::integrate_abs_slip(in.truth->slip_path_m[wheel],in.truth->lateral_slip_mps[wheel],dt);}
         // Deliberately a FULL forward: this refreshes the pos/vel caches
         // for the integrated state, seeding the next interval's skip
         // eligibility (and the endpoint kinematics the oracle records).
@@ -2124,9 +2197,26 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         channels.emplace_back("sensors", Wire(sensors));
         channels.emplace_back("mass", Wire(mass0));
         if(topology_) {
-            for(auto& lane:spatial_control_energy(spatial_state_->hold,spatial_state_->steer))
-                in.spatial.emplace_back(std::move(lane));
-            channels.emplace_back("spatial",Wire(std::move(in.spatial)));
+            if(!in.truth)throw std::logic_error("spatial interval lacks its solved truth snapshot");
+            // The schema2 root is exact: no scalar planar aliases or duplicate
+            // steering fields may leak in from the force-stage diagnostics.
+            channels.emplace_back("spatial",vread::wire_from_value(
+                spatial::spatial_truth_to_wire(*in.truth),"spatial.truth"));
+            const auto& material=stepper_->spatial_tire_writer().state();
+            double tyre_loss_j=0.;
+            for(std::size_t wheel=0;wheel<2;++wheel)
+                tyre_loss_j+=material.carcass[wheel].dissipated_j+
+                    material.brush[wheel].sliding_loss_j+
+                    material.brush[wheel].convective_release_j;
+            channels.emplace_back("spatial_energy",Wire(WireObject{
+                {"hold_work_j",spatial_state_->hold.work_j},{"tyre_loss_j",tyre_loss_j}}));
+            // Tire snapshots were captured for this interval before endpoint
+            // forwarding; their axes are the model-bound wheel positions.
+            channels.emplace_back("spatial_geometry",Wire(WireObject{
+                {"front_wheel_position_world_m",sample_wire::required(
+                    sample_wire::object(sample_wire::required(tires,"front")),"wheel_axis_m")},
+                {"rear_wheel_position_world_m",sample_wire::required(
+                    sample_wire::object(sample_wire::required(tires,"rear")),"wheel_axis_m")}}));
         }
         if (contact_crash.has_value())
             channels.emplace_back("contact_crash_cause",
@@ -2228,6 +2318,8 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         raw.constraint_snapshot = last_constraint_snapshot_;
         raw.full = in.full;
         step_ += 1;
+        if(in.imu)imu_truth_=in.imu;
+        if(in.truth)spatial_truth_=in.truth;
         if(topology_ && spatial_state_) {
             const auto pose=bike::spatial::body_pose(*m,*d,topology_->root);
             bool inside=true;
@@ -2408,6 +2500,11 @@ PhysicalStep::sensor_channels(std::span<const double> qvel,
                      Wire(diag_number(last, "motor_torque_nm")));
     out.emplace_back("human_torque_nm",
                      Wire(diag_number(last, "human_sensor_nm")));
+    if(imu_mount_){
+        const auto mounted=spatial::read_imu_truth(*m,*d,*imu_mount_,d->time);
+        out.emplace_back("specific_force_sensor_mps2",wire_vec3(mounted.specific_force_sensor_mps2));
+        out.emplace_back("angular_rate_sensor_rad_s",wire_vec3(mounted.angular_rate_sensor_rad_s));
+    }
     return out;
 }
 
@@ -3051,6 +3148,8 @@ void PhysicalStep::restore(const StepState &s) {
     last_constraint_snapshot_ = ConstraintSnapshot{};
     snapshots_ = WheelSnapshots{};
     rider_state_.reset();
+    if(topology_){spatial_truth_=capture_spatial_truth();imu_truth_=spatial::read_imu_truth(*stepper_->model(),*stepper_->data(),*imu_mount_,stepper_->data()->time);}
+    else {spatial_truth_.reset();imu_truth_.reset();}
 }
 
 } // namespace runtime

@@ -8,6 +8,9 @@
 
 namespace bike::research {
 PolicyFailure::~PolicyFailure() = default;
+runtime::RideControl Policy::act_v2(const runtime::spatial::SensorObservationV2&, std::optional<double>) {
+    throw std::invalid_argument("policy: unsupported sensor schema 2");
+}
 io::Value Policy::metadata() const {
     using namespace runtime::setupvalue;
     return Value{Object{{"reference", Value{}}, {"class", text("native::Policy")},
@@ -17,6 +20,10 @@ void validate_policy_input(const runtime::SensorObservation& observation, std::o
     observation.validate();
     if (demand && (!std::isfinite(*demand) || *demand < 0.))
         throw std::invalid_argument("policy demand must be finite and nonnegative when present");
+}
+void validate_policy_input(const runtime::spatial::SensorObservationV2& observation,std::optional<double> demand) {
+    observation.validate();
+    if(demand&&(!std::isfinite(*demand)||*demand<0.))throw std::invalid_argument("policy demand must be finite and nonnegative when present");
 }
 void validate_motor_policy_control(const runtime::RideControl& control) {
     runtime::control_validate_for(control, true);
@@ -33,6 +40,16 @@ std::unique_ptr<Policy> load_policy(std::string_view specification, const io::Va
     if (auto builtin = make_builtin_policy(specification, config)) return builtin;
     throw std::invalid_argument("unknown native policy '" + std::string(specification) +
         "': use a supported builtin:name or plugin:/absolute/library path; Python module factories require a native port");
+}
+std::unique_ptr<Policy> load_policy(std::string_view specification,PolicyAbi abi) {
+    return load_policy(specification,io::Value{io::Value::Object{}},abi);
+}
+std::unique_ptr<Policy> load_policy(std::string_view specification,const io::Value& config,PolicyAbi abi) {
+    if(abi==PolicyAbi::v1)return load_policy(specification,config);
+    (void)io::as_object(config,"policy configuration");
+    if(specification.starts_with("plugin:"))return load_plugin_policy_v2(specification.substr(7),config);
+    if(auto builtin=make_builtin_policy(specification,config,abi))return builtin;
+    throw std::invalid_argument("unknown native ABI2 policy: "+std::string(specification));
 }
 void validate_policy_abi(const BikePolicyV1* api) {
     if (api == nullptr) throw PolicyFailure("policy entrypoint returned a null ABI descriptor");

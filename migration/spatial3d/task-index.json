@@ -1656,9 +1656,13 @@
           "native/tests/spatial/sensor_mount.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V07",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W38",
@@ -1686,9 +1690,13 @@
           "tests/fixtures/spatial3d/sensor/{v1_seed0_expected.json,v2_seed0_expected.json}"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V07",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W39",
@@ -1719,9 +1727,13 @@
           "native/tests/spatial/plugins/policy_v2_control.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V07",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W40",
@@ -1751,9 +1763,13 @@
           "native/tests/spatial/truth_metrics.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V07",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W41",
@@ -1788,9 +1804,13 @@
           "native/tests/spatial/recording_catalog.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V07",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W42",
@@ -1823,9 +1843,13 @@
           "native/tests/spatial/recording_assets.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V07",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W43",
@@ -1851,9 +1875,13 @@
           "native/tests/spatial/checked_replay.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V07",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W44",
@@ -1886,9 +1914,13 @@
           "native/tests/spatial/golden_registry.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V07",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W45",
@@ -1913,9 +1945,13 @@
           "native/tests/spatial/cli.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V08",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W46",
@@ -1941,9 +1977,13 @@
           "native/tests/spatial/viewer_smoke.cmake"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V08",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W47",
@@ -1974,9 +2014,13 @@
           "native/tests/spatial/reports_batch.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V08",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W48",
@@ -2009,9 +2053,13 @@
           "native/tests/package/package_smoke.cmake"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V08",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W49",
@@ -2043,9 +2091,13 @@
           "tests/fixtures/spatial3d/manifest.json"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V08",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W50",
@@ -2610,7 +2662,7 @@
         "modify": [],
         "test": []
       },
-      "status": "blocked_on_W",
+      "status": "pending_verification",
       "requires_w": [
         "W37",
         "W38",
@@ -2634,6 +2686,12 @@
       "upstream_gates": [
         "G3-research",
         "G4-recording"
+      ],
+      "project_execution_performed": false,
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "verification_blockers": [
+        "Predecessor V gates and upstream evidence remain unverified; no configure/build/compile/test/application/GUI/install execution was authorized in this delivery.",
+        "C10 must review IMU noexcept correction, target-bound staging, complete continuation/cache ownership, schema2 auxiliary channels and diagnostic-only unavailable checkpoints. All V07 tests and platform golden captures remain unexecuted."
       ]
     },
     {
@@ -2656,7 +2714,7 @@
         "modify": [],
         "test": []
       },
-      "status": "blocked_on_W",
+      "status": "pending_verification",
       "requires_w": [
         "W45",
         "W46",
@@ -2674,6 +2732,12 @@
       "upstream_gates": [
         "G5-gui",
         "G6-qualification"
+      ],
+      "project_execution_performed": false,
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "verification_blockers": [
+        "Predecessor V gates and upstream evidence remain unverified; no configure/build/compile/test/application/GUI/install execution was authorized in this delivery.",
+        "CLI/example/report/batch/install/package and real-display GUI acceptance remain unexecuted; source registration is not qualified capability."
       ]
     },
     {
@@ -2783,36 +2847,35 @@
   ],
   "latest_source_delivery": {
     "tasks": [
-      "W20",
-      "W21",
-      "W22",
-      "W23",
-      "W24",
-      "W25",
-      "W26",
-      "W27",
-      "W28",
-      "W29",
-      "W30",
-      "W31",
-      "W32",
-      "W33",
-      "W34",
-      "W35",
-      "W36"
+      "W37",
+      "W38",
+      "W39",
+      "W40",
+      "W41",
+      "W42",
+      "W43",
+      "W44",
+      "W45",
+      "W46",
+      "W47",
+      "W48",
+      "W49"
     ],
-    "date": "2026-10-23",
-    "report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
-    "archive_name": "repomix-output.xml(20261023-195843).zip",
-    "archive_sha256": "5f9eb94e53c830aca25d07d81e0bcce056040997d9a7c2a09e8232e3ccd48631",
-    "repomix_xml_sha256": "98ac06d6c3e724e1a804c5a7ab47cf7abb2b90914dc8927aa890990a71754dc5",
-    "extracted_file_count": 2439,
+    "date": "2026-10-24",
+    "report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+    "archive_name": "repomix-output.xml(20261024-043811).zip",
+    "archive_sha256": "e17e4c119abd26dc661d903739d2abf45be1e556be8db8d8e9cc45a0a93cade5",
+    "repomix_xml_sha256": "e2cad908de260ad92a0241a2fd0892ac2b1d2336010ead4c88b1c7885108c578",
+    "extracted_file_count": 2506,
     "original_git_history_available": false,
     "synthetic_local_baseline_for_diff_only": true,
     "project_execution_performed": false,
-    "verification_status": "pending_V04_V06_and_predecessors",
+    "verification_status": "pending_V07_V08_and_predecessors",
     "delivery_format": "git unified patch against normalized repomix input",
-    "frozen_W00_declarations_modified": false,
+    "frozen_W00_declarations_modified": true,
+    "frozen_declaration_changes": [
+      "runtime/spatial_sensors.hpp: read_imu_truth removes contradictory noexcept; C10 review pending"
+    ],
     "qualification_claimed": false
   },
   "source_delivery_history": [
@@ -2865,6 +2928,40 @@
       "verification_status": "pending_V02_V03_V05",
       "delivery_format": "git unified patch against normalized repomix input",
       "frozen_W00_declarations_modified": false
+    },
+    {
+      "tasks": [
+        "W20",
+        "W21",
+        "W22",
+        "W23",
+        "W24",
+        "W25",
+        "W26",
+        "W27",
+        "W28",
+        "W29",
+        "W30",
+        "W31",
+        "W32",
+        "W33",
+        "W34",
+        "W35",
+        "W36"
+      ],
+      "date": "2026-10-23",
+      "report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "archive_name": "repomix-output.xml(20261023-195843).zip",
+      "archive_sha256": "5f9eb94e53c830aca25d07d81e0bcce056040997d9a7c2a09e8232e3ccd48631",
+      "repomix_xml_sha256": "98ac06d6c3e724e1a804c5a7ab47cf7abb2b90914dc8927aa890990a71754dc5",
+      "extracted_file_count": 2439,
+      "original_git_history_available": false,
+      "synthetic_local_baseline_for_diff_only": true,
+      "project_execution_performed": false,
+      "verification_status": "pending_V04_V06_and_predecessors",
+      "delivery_format": "git unified patch against normalized repomix input",
+      "frozen_W00_declarations_modified": false,
+      "qualification_claimed": false
     }
   ]
 }

@@ -167,7 +167,7 @@ int run_research(std::unique_ptr<research::ResearchRequest> request, const Argum
             policy_name = "bike_sim.sim.research.policies:passthrough_factory";
         if (policy_name) {
             try {
-                auto policy = research::load_policy(*policy_name);
+                auto policy = research::load_policy(*policy_name, environment->configuration().sensors_v2 ? research::PolicyAbi::v2 : research::PolicyAbi::v1);
                 session = std::make_unique<research::PolicySession>(std::move(owned_environment), std::move(policy));
             } catch (...) {
                 // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately

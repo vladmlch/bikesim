@@ -175,7 +175,9 @@ void require_observation(const runtime::SensorObservation &actual,
 
 void require_transition(const runtime::ResearchTransition &actual,
                         const bio::Value &expected, std::string_view what) {
-    require_observation(actual.observation, member(expected, "observation"),
+    bt::require(std::holds_alternative<runtime::SensorObservation>(actual.observation),
+                "planar transition retains SensorObservation V1");
+    require_observation(std::get<runtime::SensorObservation>(actual.observation), member(expected, "observation"),
                         what);
     bt::require(actual.physics_steps ==
                     as_int(member(expected, "physics_steps")),
@@ -554,14 +556,19 @@ void checks_reset_semantics() {
     // Native-vs-native replay is bitwise: same binary, same staged state.
     bt::require(replay.physics_steps == first.physics_steps,
                 "reset replay commits the same window");
-    for (std::size_t i = 0; i < replay.observation.values.size(); ++i)
-        require_bitwise(replay.observation.values[i],
-                        first.observation.values[i],
+    bt::require(std::holds_alternative<runtime::SensorObservation>(replay.observation) &&
+                    std::holds_alternative<runtime::SensorObservation>(first.observation),
+                "planar reset retains the V1 sensor schema");
+    const auto& replay_observation = std::get<runtime::SensorObservation>(replay.observation);
+    const auto& first_observation = std::get<runtime::SensorObservation>(first.observation);
+    for (std::size_t i = 0; i < replay_observation.values.size(); ++i)
+        require_bitwise(replay_observation.values[i],
+                        first_observation.values[i],
                         "reset replay observation is bitwise-identical");
-    require_bitwise(replay.observation.time_s, first.observation.time_s,
+    require_bitwise(replay_observation.time_s, first_observation.time_s,
                     "reset replay observation clock is bitwise-identical");
-    require_bitwise(replay.observation.source_time_s,
-                    first.observation.source_time_s,
+    require_bitwise(replay_observation.source_time_s,
+                    first_observation.source_time_s,
                     "reset replay source clock is bitwise-identical");
     run->close();
 }

@@ -23,10 +23,10 @@ int batch_command(const Arguments& args) {
     auto jobs=batch::expand_spec(batch::parse_spec_toml(source,args.text("spec")));
     // Validate every job with the exact research parser before any process or
     // output is created. Typed setup is resolved later in each isolated child.
-    for(const auto& job:jobs) {
+    for(auto& job:jobs) {
         std::vector<std::string_view> views;views.reserve(job.argv.size());
 for(const auto& arg:job.argv)views.push_back(arg);
-        try {const auto parsed=parse_arguments("bike-research",views);if(!parsed.help)validate_research_arguments(parsed);}
+        try {const auto parsed=parse_arguments("bike-research",views);if(!parsed.help){validate_research_arguments(parsed);batch::resolve_job_identity(job,parsed);}}
         catch(const std::exception& error){throw ArgumentError("job "+job.id+": "+error.what());}
     }
     if(args.flag("dry_run")) {
@@ -39,6 +39,7 @@ for(const auto& arg:job.argv)views.push_back(arg);
     if(std::filesystem::exists(root)&&!std::filesystem::is_empty(root)&&!args.flag("overwrite"))throw ArgumentError("output exists; choose another --out or pass --overwrite: "+root.string());
     std::filesystem::create_directories(root);
     const auto results_path=root/"batch_results.jsonl";
+    const bool spatial = std::ranges::any_of(jobs,[](const auto& job){return job.key.has_value();});
     // --overwrite explicitly permits replacement of the batch log, but never
     // adoption or truncation of an already published run directory.
     auto results_file=batch::open_log(results_path,args.flag("overwrite"));
@@ -56,7 +57,7 @@ for(const auto& arg:job.argv)views.push_back(arg);
     options.cancelled=[&]{return interrupt.deferred()!=0;};
     options.completed=[&](std::size_t index,const batch::Result& result) {
         const auto record=batch::result_record(jobs[index],result);
-        batch::append_log(results_file,io::recording_json(record)+"\n");
+        if (!spatial) batch::append_log(results_file,io::recording_json(record)+"\n");
         // Raw worker streams are kept for diagnostics without changing cwd.
         for(const auto& [name,text]:{std::pair{"stdout.log",&result.out},std::pair{"stderr.log",&result.err}}) {
             batch::write_log(jobs[index].output/name,*text,args.flag("overwrite"));
@@ -64,6 +65,11 @@ for(const auto& arg:job.argv)views.push_back(arg);
         std::cout<<'['<<++done<<'/'<<jobs.size()<<"] "<<result.id<<" exit="<<result.exit_code<<" wall="<<result.wall_s<<"s\n";
     };
     const auto results=batch::execute(jobs,static_cast<unsigned>(count),options);
+    if (spatial) {
+        std::vector<std::size_t> order; for(std::size_t i=0;i<jobs.size();++i)order.push_back(i);
+        std::ranges::sort(order,{},[&](std::size_t i){return jobs[i].key.value_or(jobs[i].id);});
+        for(const auto i:order)batch::append_log(results_file,io::recording_json(batch::result_record(jobs[i],results[i]))+"\n");
+    }
     const auto elapsed=std::chrono::duration<double>(Clock::now()-started).count();
     results_file.close();
     std::cout<<io::recording_json(batch::summarize(jobs,results,elapsed,results_path,interrupt.deferred()!=0))<<'\n';

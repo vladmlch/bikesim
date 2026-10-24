@@ -46,4 +46,20 @@ runtime::SensorState startup_sensor_state(const SensorConfig& config, const runt
     (void)pipeline.read(0.);
     return pipeline.state();
 }
+runtime::spatial::NoiseTapeV2 make_sensor_tape_v2(const runtime::spatial::SensorConfigV2& config,
+        std::string_view seed_decimal, std::int64_t count) {
+    config.validate();
+    if(count<0||std::cmp_greater(count,std::numeric_limits<std::size_t>::max()))
+        throw std::invalid_argument("sensor_v2 tape count must be a representable nonnegative integer");
+    // Domain separation is the literal ASCII stream name, one byte per uint32
+    // spawn-key word. Revision sensor-v2-rng/1 pins this mapping and draw order.
+    const auto stream=[&](std::string_view name){std::vector<std::uint32_t> key;key.reserve(name.size());
+        for(unsigned char c:name)key.push_back(c);
+        return random::SeedSequence(validate_seed(seed_decimal),key);};
+    random::NumpyRng normal(stream("sensor_v2/noise")),dropout(stream("sensor_v2/dropout"));
+    runtime::spatial::NoiseTapeV2 tape;
+    const auto size=static_cast<std::size_t>(count);tape.noise.resize(size);tape.dropout_uniform.resize(size);
+    for(std::size_t i=0;i<size;++i){normal.normal(0.,1.,tape.noise[i]);tape.dropout_uniform[i]=dropout.uniform01();}
+    tape.validate();return tape;
+}
 } // namespace bike::research

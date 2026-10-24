@@ -1,4 +1,5 @@
 #include "catalog.hpp"
+#include "versioned.hpp"
 #include "duckdb.hpp"
 #include "value_util.hpp"
 #include <algorithm>
@@ -34,11 +35,19 @@ std::vector<std::pair<std::string, std::string>> column_types(const TableSpec& s
     for (const auto& mask : parent_masks(spec)) out.emplace_back(mask, "BOOLEAN");
     return out;
 }
-std::vector<io::Value::Array> catalog_rows() {
+std::vector<io::Value::Array> catalog_rows() { return catalog_rows(CatalogVersion::planar1); }
+std::vector<io::Value::Array> catalog_rows(CatalogVersion version) {
     std::vector<io::Value::Array> rows;
-    for (const auto& spec : all_tables()) {
+    for (const auto& spec : all_tables(version)) {
         auto const add = [&](const FieldSpec& f) {
-            rows.push_back({value::text(spec.name), value::text(f.key), value::text(f.duckdb_type()), value::text(f.unit), value::text(f.phase), io::Value{f.optional}, value::text(f.measurement), value::text(f.source), value::text(f.frame), value::text(io::recording_json(describe_field(f)))});
+            auto definition=describe_field(f);
+            if(version==CatalogVersion::spatial2) {
+                auto& object=std::get<io::Value::Object>(definition.data);
+                value::set(object,"name",value::text(f.key));value::set(object,"type",value::text(f.dtype));
+                value::set(object,"classification",value::text(f.measurement=="measured"?"measurement":"truth"));
+                value::set(object,"nullable",io::Value{f.optional});value::set(object,"presence",value::text("explicit"));
+            }
+            rows.push_back({value::text(spec.name), value::text(f.key), value::text(f.duckdb_type()), value::text(f.unit), value::text(f.phase), io::Value{f.optional}, value::text(f.measurement), value::text(f.source), value::text(f.frame), value::text(io::recording_json(definition))});
             if (f.optional) rows.push_back({value::text(spec.name), value::text(f.key + "_present"), value::text("BOOLEAN"), value::text("1"), value::text(f.phase), io::Value{false}, value::text("declared"), value::text(f.source), value::text("n/a"), value::text(io::recording_json(io::Value{io::Value::Object{{"presence_of", value::text(f.key)}, {"description", value::text("field existed in source payload")}}}))});
         };
         for (const auto& f : spec.keys) add(f);
@@ -61,8 +70,9 @@ void create_metadata(Connection const& connection) {
         {"metrics", "episode_id BIGINT NOT NULL, name VARCHAR NOT NULL, kind VARCHAR NOT NULL, double_value DOUBLE, bigint_value BIGINT, boolean_value BOOLEAN, text_value VARCHAR, list_value DOUBLE[], json_value VARCHAR, PRIMARY KEY(episode_id,name)"}});
     for (const auto& [name, definition] : definitions) connection.execute("CREATE TABLE " + quote(name) + " (" + std::string(definition) + ")");
 }
-void create_streams(Connection const& connection) {
-    for (const auto& spec : all_tables()) {
+void create_streams(Connection const& connection) { create_streams(connection, CatalogVersion::planar1); }
+void create_streams(Connection const& connection, CatalogVersion version) {
+    for (const auto& spec : all_tables(version)) {
         std::string sql = "CREATE TABLE " + quote(spec.name) + " (";
         bool first = true;
         for (const auto& [name, dtype] : column_types(spec)) { if (!first) sql += ", "; first = false; sql += quote(name) + " " + dtype; }
@@ -71,10 +81,11 @@ void create_streams(Connection const& connection) {
         connection.execute(sql + "))");
     }
 }
-void create_views(Connection const& connection) {
+void create_views(Connection const& connection) { create_views(connection, CatalogVersion::planar1); }
+void create_views(Connection const& connection, CatalogVersion version) {
     std::string select = "p.episode_id, p.interval_id", joins;
     std::size_t index = 0;
-    for (const auto& spec : schema_catalog().table_order()) {
+    for (const auto& spec : schema_catalog(version).table_order()) {
         const auto current = index++;
         if (spec.name == "forces") continue;
         const std::string alias = spec.name == "physics" ? "p" : "c" + std::to_string(current);

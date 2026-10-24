@@ -118,6 +118,16 @@ std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::
     add("BAL","BAL="+pad(status,14)); sep();
     add("slip f/r","κ="+optional_number(number(path(tires,{"front","slip_ratio"})),5,2,true)+"/"+
         optional_number(number(path(tires,{"rear","slip_ratio"})),5,2,true));
+    if (p.spatial) {
+        const auto& spatial = *p.spatial;
+        sep();
+        add("roll", "roll=" + (spatial.attitude_valid && spatial.roll_rad ? f(*spatial.roll_rad * (180. / std::numbers::pi),0,2,true) + "deg" : "N/A"));
+        add("steer", "steer=" + f(spatial.steer_angle_rad * (180. / std::numbers::pi),0,2,true) + "deg/" + f(spatial.steer_torque_nm,0,2,true) + "Nm");
+        add("lateral slip F/R", "lat=" + (spatial.contact_valid[0] ? f(spatial.lateral_slip_mps[0],0,3,true) : "N/A") + "/" +
+            (spatial.contact_valid[1] ? f(spatial.lateral_slip_mps[1],0,3,true) : "N/A") + "m/s");
+        add("contact F/R", std::string("contact=") + (spatial.contact_valid[0] ? "valid" : "—") + "/" + (spatial.contact_valid[1] ? "valid" : "—"));
+        if (spatial.hold_active) add("hold", "HOLD");
+    }
     auto coast=text(child(drive,"coasting_reason")); if(coast.empty()&&!truth(child(drive,"freehub_engaged"),true))coast="freehub";
     add("coast","coast="+pad(coast.empty()?"-":coast,12));sep();add("shaft W","motor="+f(n("motor_shaft_power_w"),5,0,true)+"W");
     return out;
@@ -146,7 +156,16 @@ std::string hud_line(const runtime::RenderFrame& frame,const InputState& input,s
 }
 std::string overlay_text(const runtime::RenderFrame& frame,const InputState& input,std::optional<double> achieved,Mode mode) {
     const auto& p=frame.presentation;
-    return "t="+f(frame.state.time_s,0,2)+" s  x="+f(p.position_m,0,1)+" m  speed="+f(p.speed_mps*3.6,0,1)+" km/h\n"+
+    std::string spatial_line;
+    if (p.spatial) {
+        const auto& s = *p.spatial;
+        spatial_line = "roll " + (s.attitude_valid && s.roll_rad ? f(*s.roll_rad * (180. / std::numbers::pi),0,2,true) + " deg" : "N/A") +
+            "  steer " + f(s.steer_angle_rad * (180. / std::numbers::pi),0,2,true) + " deg / " + f(s.steer_torque_nm,0,2,true) + " Nm\n" +
+            "lateral slip F/R " + (s.contact_valid[0] ? f(s.lateral_slip_mps[0],0,3,true) : "N/A") + "/" +
+            (s.contact_valid[1] ? f(s.lateral_slip_mps[1],0,3,true) : "N/A") + " m/s  contact " +
+            (s.contact_valid[0] ? "valid" : "—") + "/" + (s.contact_valid[1] ? "valid" : "—") + (s.hold_active ? "  HOLD\n" : "\n");
+    }
+    return "t="+f(frame.state.time_s,0,2)+" s  x="+f(p.position_m,0,1)+" m  speed="+f(p.speed_mps*3.6,0,1)+" km/h\n"+spatial_line+
         "Fork "+f(p.fork_travel_mm)+" mm  Shock "+f(p.shock_stroke_mm)+" mm  Load F/R "+f(p.front_load_n,0,0)+"/"+f(p.rear_load_n,0,0)+" N\n"+
         "playback="+std::to_string(input.scale)+"x  achieved="+(achieved?f(*achieved,0,2):"--")+"x"+
         (input.paused?"  PAUSED":"")+(input.braking?"  BRAKING":"")+"\n"+

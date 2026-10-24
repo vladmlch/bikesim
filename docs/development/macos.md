@@ -1,5 +1,23 @@
 # macOS development guide
 
+## Spatial product — pending V08
+
+The source-authored spatial application uses the existing `@loader_path`
+install rpaths, copied-library load-name relocation and native dependency
+owner. Examples, schema2 catalog, ABI2 header and spatial libraries travel with
+the normal product; no source checkout or Python import is required by the
+installed run/report/replay paths. Install/package smokes invoke the same
+native `spatial/installed_product.cmake` gate using its built fixture helper.
+It keeps logs from a fresh directory outside the checkout and checks both
+successful inspection and named rejection of incompatible checked replay.
+
+**Verification is pending V08.** No compiler, executable, installation or GUI
+was run for W45–W49. The real-display GUI lane must run the viewer on its main
+thread and retain C/1/2/R interaction evidence. The Linux DISPLAY predicate is
+not a macOS display detector; a headless macOS session is not GUI evidence.
+See [spatial workflows](../spatial-3d.md) and the
+[evidence ledger](../superpowers/audits/2026-10-22-spatial-3d-application-evidence.md).
+
 Active instructions for developing bike-sim on macOS (Apple Silicon). The
 sibling [Linux guide](linux.md) covers the Linux toolchain; shared failure
 diagnosis lives in [troubleshooting.md](troubleshooting.md).

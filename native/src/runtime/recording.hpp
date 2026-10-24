@@ -10,6 +10,11 @@ public:
     [[nodiscard]] OwnedNativeEpisode seal() const;
     [[nodiscard]] WireArray intervals() const;
     [[nodiscard]] std::size_t rows() const noexcept { return samples_.size(); }
+    // Cold continuation inventory. Samples are rebound to the staged plant's
+    // immutable retained index; the recorder does not own a second encoding.
+    [[nodiscard]] WireObject continuation_state() const;
+    void restore_continuation(const WireObject&, std::span<const SamplePtr>,
+                              std::int64_t sample_cursor);
 private:
     int decimation_;
     ColumnLayout layout_;

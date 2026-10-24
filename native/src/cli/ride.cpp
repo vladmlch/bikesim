@@ -16,11 +16,14 @@
 #include "../platform/signals.hpp"
 #include "../recording/capture.hpp"
 #include "../recording/publish.hpp"
+#include "../recording/spatial_analysis.hpp"
 #include "../research/preview_csv.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../terrain/trackfile.hpp"
+#include "../terrain/source3d.hpp"
 #include "../viewer/session.hpp"
 #include "../viz/plot.hpp"
+#include "../viz/spatial.hpp"
 #include <algorithm>
 #include <cmath>
 #include <exception>
@@ -125,13 +128,19 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
     std::optional<recording::Catalog> catalog;
     std::vector<recording::Asset> assets;
     if(args.flag("record")) {catalog=model_catalog(prepared->bootstrap.model);assets=physical_assets(request,*prepared,metadata);}
+    const double physical_end = prepared->bootstrap.config.terrain3d
+        ? prepared->bootstrap.config.terrain3d->x_max_m() : request.track.length_m;
     auto runtime=app::make_ride(std::move(prepared));
     const auto dt=request.model.physics.value().timestep_s; // NOLINT(bugprone-unchecked-optional-access) request/parse schema guarantees engagement; .value() is the loud contract
-    const auto limits=legacy::RunLimits::for_track(request.track.length_m,request.start_x_m,dt);
+    const auto limits=legacy::RunLimits::for_track(physical_end,request.start_x_m,dt);
     const double requested_steps=args.has("duration")?std::ceil(args.real("duration")/dt):static_cast<double>(limits.max_steps);
     if(!std::isfinite(requested_steps)||requested_steps>=static_cast<double>(std::numeric_limits<std::int64_t>::max()))throw ArgumentError("duration exceeds step range");
     const auto max_steps=static_cast<std::int64_t>(requested_steps);
-    runtime->set_finish_position(limits.finish_x_m);
+    // Spatial runs use the committed W33 terrain-domain/corridor outcome.
+    // A planar TrackSpec is not their physical finish boundary.
+    if (request.model.physics->spatial) {
+        if(args.has("duration"))runtime->set_completion_step(max_steps);
+    } else runtime->set_finish_position(limits.finish_x_m);
     recording::RunCapture capture(recording::make_run_metadata("native",args.flag("headless")?"physical_headless":"physical_viewer",metadata),args.flag("record"));
     std::int64_t episode_id=0;
     auto journal=std::make_unique<recording::EpisodeJournal>(capture,episode_id);
@@ -164,7 +173,7 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
             auto evidence=std::make_shared<recording::EpisodeEvidence>();
             evidence->episode_id=episode_id;evidence->generation=owned.generation;
             evidence->physical=recording::make_physical_source(std::move(owned),*catalog,true);
-            evidence->summary=value;evidence->assets=assets;
+            evidence->summary=value;evidence->assets=physical_final_assets(assets,*runtime,metadata);
             capture.add_episode(std::move(evidence));journal->emit_all(events);summary=std::move(value);
         } else {runtime->flush();summary=physical_summary(*runtime,metadata,end_reason);}
         sealed=true;
@@ -217,9 +226,20 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
         try {
             if(preview){const auto bytes=preview_bytes.str();platform::write_exclusive(publication->directory/"preview.csv",std::as_bytes(std::span(bytes)));}
             if(!args.flag("no_plots")) {
-                const auto columns=plot_columns(runtime->recorded_columns());
-                if(!columns.empty())for(const auto& report:viz::physical_ride_plots(columns))viz::write_artifact(report,publication->directory/(report.title+".png"));
-                if(preview)(void)viz::plot_physical_ride_html(viz::load_ride_csv(publication->directory/"preview.csv"),publication->directory);
+                if(request.model.spatial) {
+                    const recording::Recording accepted(publication->directory);
+                    const auto columns=recording::spatial_report_channels(accepted,episode_id);
+                    std::vector<viz::Report> reports{viz::spatial_attitude_plot(columns),viz::spatial_contact_plot(columns),viz::spatial_energy_plot(columns)};
+                    if(viz::numeric(columns,"spatial.front_wheel_x_m"))reports.push_back(viz::spatial_wheel_path_plot(columns));
+                    if(const auto* times=viz::numeric(columns,"observations.time_s");times&&!times->empty())reports.push_back(viz::spatial_imu_plot(columns));
+                    for(const auto& report:reports)viz::write_artifact(report,publication->directory/(report.title+".png"));
+                    const auto html=viz::to_html(reports);
+                    platform::write_exclusive(publication->directory/"spatial.html",std::as_bytes(std::span(html)));
+                } else {
+                    const auto columns=plot_columns(runtime->recorded_columns());
+                    if(!columns.empty())for(const auto& report:viz::physical_ride_plots(columns))viz::write_artifact(report,publication->directory/(report.title+".png"));
+                    if(preview)(void)viz::plot_physical_ride_html(viz::load_ride_csv(publication->directory/"preview.csv"),publication->directory);
+                }
             }
         } catch(...) {if(!failure)failure=std::current_exception();else std::cerr<<"plot/preview publication also failed\n";}
     }
@@ -230,7 +250,7 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
     if(reason=="operator_stop")return 130;
     if(const auto* status=io::find_member(io::as_object(summary,"summary"),"model_status"))
         if(const auto* valid=io::find_member(io::as_object(*status,"model_status"),"model_valid");valid&&!io::as_bool(*valid,"model_valid"))return 2;
-    return reason=="duration_reached"||reason=="end_of_track"||reason=="viewer_closed"?0:1;
+    return reason=="duration_reached"||reason=="end_of_track"||reason=="viewer_closed"||reason=="completed"?0:1;
 }
 
 // RideOptions embeds the multi-KB setup request; the options builder and the
@@ -345,6 +365,12 @@ int ride_command(const Arguments& input) {
         request->experiment.duration_s=input.real("duration",90.);request->experiment.seed_decimal=resolved->setup.seed_decimal;
         request->experiment.control_period_s=input.real("control_period",.01);request->experiment.actuator_delay_s=input.real("actuator_delay",.005);request->experiment.record_decimation=resolved->setup.runtime.measurement_decimation;request->experiment.stop_on_model_violation=resolved->setup.runtime.strict;request->experiment.async_telemetry=input.flag("async_telemetry");
         request->sensors.sample_period_s=input.real("sensor_period",.005);request->sensors.delivery.latency_s=input.real("sensor_delay",.01);
+        if (request->setup.model.physics->spatial) {
+            request->sensors_v2.sample_period_s = input.real("sensor_period",.005);
+            request->sensors_v2.latency_s = input.real("sensor_delay",.01);
+            request->sensors_v2.maximum_read_period_s = request->experiment.control_period_s;
+            request->sensors_v2.validate();
+        }
         request->road_resolution_m=input.real("road_resolution",.005);
         request->programs=research::load_programs(input.has("rider_program")?std::optional<std::filesystem::path>(input.text("rider_program")):std::nullopt,{});
         if(input.has("demand"))request->programs.demand_frames=research::constant_demand(input.real("demand")).demand_frames;

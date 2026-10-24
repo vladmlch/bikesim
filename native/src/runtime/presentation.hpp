@@ -3,6 +3,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
@@ -15,6 +16,16 @@ namespace runtime {
 struct PresentationSupport {
     bool in_platform = false;
     double normal_load_n = 0., gap_m = 0.;
+};
+struct SpatialPresentation {
+    std::array<double, 3> position_world_m{};
+    std::array<double, 4> quat_wxyz{1., 0., 0., 0.};
+    std::optional<double> heading_rad, roll_rad;
+    double steer_angle_rad = 0., steer_torque_nm = 0.;
+    std::array<double, 2> lateral_slip_mps{};
+    std::array<bool, 2> contact_valid{};
+    bool attitude_valid = false, hold_active = false;
+    std::uint64_t generation = 0;
 };
 struct PresentationState {
     double time_s = 0., position_m = 0., speed_mps = 0., pitch_rad = 0., z_m = 0.;
@@ -37,6 +48,7 @@ struct PresentationState {
     std::array<double, 2> tire_slip{}, tire_mu{};
     // Array extents are initialized once from the owned model.
     std::array<std::vector<double>, 6> model_fields;
+    std::optional<SpatialPresentation> spatial;
     [[nodiscard]] WireObject as_wire() const;
 };
 } // namespace runtime

@@ -119,17 +119,23 @@ void ResearchRun::reset(std::optional<std::string> seed) {
     if (runtime::sample_wire::boolean(runtime::sample_wire::required(status, "active")) ||
         runtime::sample_wire::boolean(runtime::sample_wire::required(status, "delivery_pending")))
         throw std::runtime_error("drain the accepted control window before resetting a recorded episode");
-    std::optional<runtime::NoiseTape> tape;
-    std::optional<runtime::SensorState> state;
+    std::optional<runtime::ResearchNoiseTape> tape;
+    std::optional<runtime::ResearchSensorState> state;
     auto metadata = reseed_metadata(config.metadata, chosen);
     auto assets = reseed_assets(config.assets, metadata);
-    if (config.raw_initial) {
+    if(config.raw_initial_v2&&config.sensors_v2) {
+        auto generated=make_sensor_tape_v2(*config.sensors_v2,chosen,1+config.max_steps/config.sensor_steps);
+        runtime::spatial::SensorPipelineV2 pipeline(*config.sensors_v2,generated);
+        pipeline.reset(*config.raw_initial_v2);
+        (void)pipeline.read(0.);
+        state=pipeline.state();tape=std::move(generated);
+    } else if (config.raw_initial) {
         SensorConfig sensors;
         sensors.delivery = config.sensors;
         sensors.sample_period_s = static_cast<double>(config.sensor_steps) * config.timestep_s;
         sensors.noise = {.acceleration_std_mps2=config.noise_std[0], .gyro_std_rad_s=config.noise_std[1], .encoder_std_rad_s=config.noise_std[2], .torque_std_nm=config.noise_std[3]};
         tape = make_sensor_tape(sensors, chosen, 1 + config.max_steps / config.sensor_steps);
-        state = startup_sensor_state(sensors, *tape, *config.raw_initial);
+        state = startup_sensor_state(sensors, std::get<runtime::NoiseTape>(*tape), *config.raw_initial);
     } else if (chosen != config.seed_decimal) {
         throw std::invalid_argument("a captured bootstrap without raw startup sensors cannot be reseeded");
     }

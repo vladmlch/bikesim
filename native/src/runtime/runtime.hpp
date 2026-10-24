@@ -36,6 +36,7 @@ namespace bike::golden { class RuntimeAccess; }
 namespace bike::validation { class RuntimeRigAccess; class SpatialRideAccess; }
 
 namespace runtime {
+namespace spatial { class CheckpointAccess; }
 
 // The compiled-model artifact, owned. `mjb` is the verbatim model.mjb
 // image; `sha256` is the lowercase-hex content digest the bootstrap's
@@ -161,6 +162,12 @@ public:
     // Frontend-only finish gate, checked after every committed physics step.
     // Research installs its own experiment limits and leaves this unset.
     void set_finish_position(double position_m);
+    // Spatial duration limit, configured at t=0 and latched by the accepted
+    // physical interval after higher-priority invalid/physical outcomes.
+    void set_completion_step(std::int64_t step);
+    // Diagnostic-only, reads accepted-owner availability without touching
+    // poisoned engine state or manufacturing a resumable checkpoint.
+    [[nodiscard]] std::optional<std::string> checkpoint_unavailable_reason() const;
     // Process-isolated regression hook; never armed by an application.
     void test_fail_at_step(std::int64_t step);
     // Replays the stored bootstrap: integration vector, model coefficients,
@@ -178,6 +185,7 @@ public:
 
 private:
     friend class NativeResearchRuntime;
+    friend class spatial::CheckpointAccess;
     friend class bike::golden::RuntimeAccess;
     friend class bike::validation::RuntimeRigAccess;
     // W35/W36 cold qualification fixtures; no application checkpoint API.
@@ -209,9 +217,11 @@ private:
     void require_boundary_ready() const;
     // The ctor's decode/build/restore half — its own frame keeps the
     // stack-budget sweep green on unoptimized builds.
-    void init();
+    struct ContinuationTag {};
+    NativeRideRuntime(RuntimeBootstrap bootstrap, ContinuationTag);
+    void init(bool continuation = false);
     void apply_bootstrap();
-    void initialize_accounting();
+    void initialize_accounting(bool continuation = false);
     void test_failure_boundary();
     [[nodiscard]] std::optional<std::string> outcome_reason() const;
 
@@ -248,6 +258,7 @@ private:
     // preceding snapshot readable, but require reset before further inputs.
     bool boundary_recovery_required_ = false;
     std::optional<double> finish_position_m_;
+    std::optional<std::int64_t> completion_step_;
     std::optional<std::int64_t> test_failure_step_;
     // reset() replaces the accounting owner mid-flight; a warning raised
     // by the reset-time flush moves here so take_pending_warning() still

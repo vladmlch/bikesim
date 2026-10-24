@@ -10,6 +10,7 @@
 #include <exception>
 #include <limits>
 #include <utility>
+#include <type_traits>
 
 namespace bike::research {
 namespace {
@@ -109,15 +110,19 @@ struct PolicySession::Impl {
     void reset_now(const std::optional<std::string>& seed) {
         const auto chosen = seed ? validate_seed(*seed) : config.seed_decimal;
         // Stage the complete deterministic tape and delivery state first.
-        std::optional<runtime::NoiseTape> tape;
-        std::optional<runtime::SensorState> state;
-        if (config.raw_initial) {
+        std::optional<runtime::ResearchNoiseTape> tape;
+        std::optional<runtime::ResearchSensorState> state;
+        if(config.raw_initial_v2&&config.sensors_v2) {
+            auto generated=make_sensor_tape_v2(*config.sensors_v2,chosen,1+config.max_steps/config.sensor_steps);
+            runtime::spatial::SensorPipelineV2 pipeline(*config.sensors_v2,generated);
+            pipeline.reset(*config.raw_initial_v2);(void)pipeline.read(0.);state=pipeline.state();tape=std::move(generated);
+        } else if (config.raw_initial) {
             SensorConfig sensors;
             sensors.delivery = config.sensors;
             sensors.sample_period_s = static_cast<double>(config.sensor_steps) * config.timestep_s;
             sensors.noise = {.acceleration_std_mps2=config.noise_std[0], .gyro_std_rad_s=config.noise_std[1], .encoder_std_rad_s=config.noise_std[2], .torque_std_nm=config.noise_std[3]};
             tape = make_sensor_tape(sensors, chosen, 1 + config.max_steps / config.sensor_steps);
-            state = startup_sensor_state(sensors, *tape, *config.raw_initial);
+            state = startup_sensor_state(sensors, std::get<runtime::NoiseTape>(*tape), *config.raw_initial);
         } else if (chosen != config.seed_decimal) {
             throw std::invalid_argument("a captured bootstrap without raw startup sensors cannot be reseeded; construct a native environment");
         }
@@ -192,14 +197,16 @@ void PolicySession::begin_advance(std::optional<double> front, std::optional<dou
             throw std::runtime_error("retry a staged policy command with its original brakes");
     } else {
         try {
-            const auto observation = runtime::SensorObservation::from_wire(runtime::sample_wire::object(
+            const auto observation = runtime::research_observation_from_wire(runtime::sample_wire::object(
                 runtime::sample_wire::required(status, "observation")));
             const auto& requested = runtime::sample_wire::required(status, "demand_nm");
             const auto demand = runtime::sample_wire::is_none(requested) ? std::nullopt
                 : std::optional(runtime::sample_wire::number(requested));
-            auto command = s.policy->act(observation, demand);
+            auto command = std::visit([&](const auto& measured){
+                if constexpr(std::is_same_v<std::decay_t<decltype(measured)>,runtime::SensorObservation>)return s.policy->act(measured,demand);
+                else return s.policy->act_v2(measured,demand);},observation);
             validate_motor_policy_control(command);
-            if (s.rider_behavior) command.posture = s.rider_behavior->act(observation.time_s,
+            if (s.rider_behavior) command.posture = s.rider_behavior->act(std::visit([](const auto& measured){return measured.time_s;},observation),
                 signals_from_sample(s.environment->snapshot().latest_sample));
             s.config.programs.validate_control(command);
             runtime::control_validate_for(command, true);

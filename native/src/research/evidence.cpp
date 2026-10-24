@@ -90,6 +90,13 @@ io::Value summarize(const runtime::OwnedResearchEpisode& episode) {
         set(research,"spatial",wire_value(*spatial));
         if(!wire::boolean(wire::required(wire::object(*spatial),"valid")))set(research,"valid_for_learning",Value{false});
     }
+    if(config.sensors_v2) {
+        set(research,"sensor_schema_version",integer(2));
+        set(research,"policy_inputs",text("mounted three-axis proper acceleration and angular rate, wheel/crank encoders, motor/human torque sensors"));
+        set(research,"privileged_outputs",text("world root pose, support normals, wheel contact loads and lateral slip, simulator velocity"));
+        set(research,"checkpoint_final_available",Value{!episode.checkpoint_unavailable_reason.has_value()});
+        set(research,"checkpoint_unavailable_reason",episode.checkpoint_unavailable_reason?text(*episode.checkpoint_unavailable_reason):Value{});
+    }
     bool identities_unchanged = true;
     const auto* receipt = member(episode.run_metadata, "identity_checks");
     for (const auto key : {"source_changed_during_run", "configuration_changed_during_run", "execution_changed_during_run"}) {
@@ -112,7 +119,7 @@ io::Value summarize(const runtime::OwnedResearchEpisode& episode) {
         !status_flag(s, "active") && !status_flag(s, "delivery_pending") && requested_count == completed_count &&
         std::cmp_equal(episode.requested.size(), requested_count) && std::cmp_equal(episode.transitions.size(), completed_count) &&
         std::cmp_equal(episode.physical.samples.size(), episode.final_snapshot.step);
-    const bool eligible = complete && finite && !episode.initial_integration_state.empty() && !error && !launch_failure && !failure_seal && identities_unchanged &&
+    const bool eligible = complete && finite && !episode.initial_integration_state.empty() && !episode.checkpoint_unavailable_reason && !error && !launch_failure && !failure_seal && identities_unchanged &&
         !metadata_flag(episode.run_metadata, "policy_source_changed_during_run");
     const auto& accounting = wire::object(wire::required(s, "accounting"));
     const auto& history = wire::object(wire::required(accounting, "history"));
@@ -127,7 +134,7 @@ io::Value summarize(const runtime::OwnedResearchEpisode& episode) {
         {"requested_duration_s", real(static_cast<double>(config.max_steps) * config.timestep_s)},
         {"achieved_duration_s", real(episode.final_snapshot.time_s)}, {"replay_eligible", Value{eligible}}}};
     set(out, "research", std::move(research)); set(out, "episode_metrics", episode_metrics(episode));
-    set(out, "recording_extents", std::move(extents)); set(out, "research_replay_contract", integer(3));
+    set(out, "recording_extents", std::move(extents)); set(out, "research_replay_contract", integer(config.sensors_v2?4:3));
     return out;
 }
 

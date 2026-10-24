@@ -4,6 +4,7 @@
 #include "../research/evidence.hpp"
 #include "../platform/provenance.hpp"
 #include "../rider/state_codec.hpp"
+#include "../runtime/spatial_checkpoint_internal.hpp"
 #include <algorithm>
 #include <set>
 #include <utility>
@@ -39,9 +40,17 @@ void compare_tree(const Value& actual, const Value& expected, const std::string&
         for (std::size_t i = 0; i < array->size(); ++i) compare_tree((*current)[i], (*array)[i], path + '[' + std::to_string(i) + ']', result);
     } else if (std::holds_alternative<io::Number>(expected.data)) {
         if (!std::holds_alternative<io::Number>(actual.data)) { fail("numerical replay mismatch: different type"); return; }
+        const auto& expected_number=std::get<io::Number>(expected.data);
+        const auto& actual_number=std::get<io::Number>(actual.data);
+        if(io::is_integer_lexeme(expected_number.lexeme)) {
+            if(!io::is_integer_lexeme(actual_number.lexeme) || expected_number.lexeme!=actual_number.lexeme)fail("integer/schema replay mismatch");
+            return;
+        }
         const auto a = io::as_double(actual, path), e = io::as_double(expected, path);
         const auto error = std::abs(a - e); result.max_absolute_error = std::max(result.max_absolute_error, error);
-        if (!std::isfinite(error) || error > std::max(1e-9, 1e-9 * std::max(std::abs(a), std::abs(e))))
+        const auto tolerance=path.starts_with("checkpoint_final.") ? 1e-9+1e-9*std::abs(e)
+            : std::max(1e-9, 1e-9 * std::max(std::abs(a), std::abs(e)));
+        if (!std::isfinite(error) || error > tolerance)
             fail("numerical replay mismatch (" + io::recording_json(actual) + " vs " + io::recording_json(expected) + ')');
     } else if (std::holds_alternative<io::Tagged>(expected.data) || std::holds_alternative<io::Tagged>(actual.data)) {
         fail("nonfinite/tagged evidence cannot certify finite checked replay");
@@ -107,6 +116,7 @@ struct ReplaySession::Impl {
         verify_configuration(input, *prepared);
         model = prepared->bootstrap.ride.model.mjb;
         environment = runtime::make_research(std::move(prepared->bootstrap));
+        if(input.spatial_recipe)environment->restore_checkpoint(input.spatial_recipe->checkpoint_initial);
     }
     void require_open() const { if (closed) throw std::runtime_error("replay session is closed"); }
     void applied_prefix() {
@@ -144,6 +154,8 @@ struct ReplaySession::Impl {
         if (const auto* saved_status = find(saved_research, "model_status")) require_evidence(field(summary, "model_status"), *saved_status, "model status", max_error);
         if (!io::is_null(input.metrics)) require_evidence(research::episode_metrics(evidence), input.metrics, "episode metrics", max_error);
         const auto final_error = require_state(environment->snapshot().integration_state, input.final_state, "final integration state");
+        if(input.spatial_recipe)require_evidence(runtime::spatial::checkpoint_comparison_value(evidence.checkpoint_final),
+            runtime::spatial::checkpoint_comparison_value(input.spatial_recipe->checkpoint_final),"checkpoint_final",max_error);
         check_execution(input);
         if (platform::build_identity().executable_sha256 != replay_executable_sha256)
             throw IncompatibleExecution("replay execution image changed during playback");

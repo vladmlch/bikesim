@@ -28,6 +28,32 @@ void append(PlaybackData& output, const Value& row, std::size_t& stored_values) 
     output.ends_s.push_back(io::as_double(field(row, "interval_end_s"), "playback.interval_end_s"));
     output.qpos.push_back(std::move(q)); output.qvel.push_back(std::move(v));
 }
+runtime::SpatialPresentation saved_spatial(const Value& row) {
+    runtime::SpatialPresentation out;
+    const auto vector = [&](std::string_view key, auto& destination) {
+        const auto values = double_vector(field(row,key),key);
+        if(values.size()!=destination.size() || !std::ranges::all_of(values,[](double x){return std::isfinite(x);}))
+            throw recording::RecordingError("stored spatial presentation vector has invalid width/value");
+        std::ranges::copy(values,destination.begin());
+    };
+    vector("root_position_world_m",out.position_world_m);
+    vector("root_quat_world_from_body_wxyz",out.quat_wxyz);
+    out.attitude_valid=io::as_bool(field(row,"attitude_valid"),"attitude_valid");
+    if(out.attitude_valid) {
+        out.heading_rad=io::as_double(field(row,"heading_rad"),"heading_rad");
+        out.roll_rad=io::as_double(field(row,"roll_rad"),"roll_rad");
+    }
+    out.steer_angle_rad=io::as_double(field(row,"steer_angle_rad"),"steer_angle_rad");
+    out.steer_torque_nm=io::as_double(field(row,"steer_torque_nm"),"steer_torque_nm");
+    for(std::size_t i=0;i<2;++i) {
+        const std::string side=i==0?"front":"rear";
+        out.contact_valid[i]=io::as_bool(field(row,side+"_contact_valid"),"contact_valid");
+        if(out.contact_valid[i])out.lateral_slip_mps[i]=io::as_double(field(row,side+"_lateral_slip_mps"),"lateral_slip_mps");
+    }
+    // Scored container2 checkpoints require the bootstrap hold to be removed.
+    out.hold_active=false;
+    return out;
+}
 runtime::ModelImage reconstruct_model(const ReplayInput& input) {
     FixedAssets const assets(input);
     auto request = request_from_input(input, assets);
@@ -92,6 +118,8 @@ void validate_playback(const PlaybackData& data, std::size_t nq, std::size_t nv)
     if (size < 2) throw recording::RecordingError("stored-state playback needs at least two recorded frames");
     if (data.ends_s.size() != size || data.qpos.size() != size || data.qvel.size() != size)
         throw recording::RecordingError("playback arrays have inconsistent frame counts");
+    if(!data.spatial.empty() && data.spatial.size()!=size)
+        throw recording::RecordingError("stored spatial truth and physical frame counts differ");
     for (std::size_t i = 0; i < size; ++i) {
         const auto label = "frame " + std::to_string(i);
         if (data.qpos[i].size() != nq || data.qvel[i].size() != nv) throw recording::RecordingError(label + ": recorded state dimensions differ from model");
@@ -135,6 +163,11 @@ PlaybackData load_playback(const std::filesystem::path& path, std::optional<std:
         }
         auto cursor = reader.stream("SELECT time_s,interval_end_s,qpos,qvel FROM physics WHERE episode_id=? ORDER BY interval_id", params);
         for (;;) { const auto batch = cursor.next_batch(); if (batch.empty()) break; for (const auto& row : batch) append(output, Value{row}, values); }
+        if(reader.schema_version()==2) {
+            auto truth=reader.stream("SELECT * FROM channel_spatial WHERE episode_id=? ORDER BY interval_id",params);
+            for(;;){const auto batch=truth.next_batch();if(batch.empty())break;
+                for(const auto& row:batch)output.spatial.push_back(saved_spatial(Value{row}));}
+        }
     } else {
         const auto input = load_legacy_input(path, episode); output.summary = input.summary;
         output.model = reconstruct_model(input);
@@ -228,6 +261,11 @@ runtime::RenderFrame PlaybackSession::frame(double time_s, int generation) {
     view.speed_mps = velocity(*p.model, *p.data, "root_x"); view.pitch_rad = position(*p.model, *p.data, "root_pitch");
     const int root = joint(*p.model, "root_x");
     if (root >= 0) view.root_x_dofadr = model_access::readonly_buffer(p.model->jnt_dofadr,p.model->njnt)[static_cast<std::size_t>(root)];
+    if(!p.evidence.spatial.empty()) {
+        view.spatial=p.evidence.spatial.at(index);
+        view.spatial->generation=static_cast<std::uint64_t>(generation);
+        view.position_m=view.spatial->position_world_m[0];view.z_m=view.spatial->position_world_m[2];
+    }
     const auto copy = [](const mjtNum* first, mjtSize count,std::size_t width=1) {
         if(count<0)throw recording::RecordingError("negative playback model array extent");
         const auto extent=model_access::checked_product(static_cast<std::size_t>(count),width,static_cast<std::size_t>(std::numeric_limits<mjtSize>::max()));

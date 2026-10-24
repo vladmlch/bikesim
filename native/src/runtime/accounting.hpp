@@ -65,6 +65,8 @@ struct AccountingConfig {
     std::size_t max_dofs = 0;
     AttachmentBudget attachment_budget;
     ColumnLayout columns;
+    // Model-bound continuation validation; never a substitute for nv.
+    std::size_t max_actuators = 0;
 };
 
 // Identity of the interval that produced the last committed energy
@@ -174,6 +176,10 @@ public:
     [[nodiscard]] const SamplePtr &latest_sample() const noexcept { return latest_; }
     [[nodiscard]] const AccountingState &state() const noexcept { return state_; }
     [[nodiscard]] WireObject state_wire() const;
+    // Spatial continuation keeps partial periods, measurement caches and
+    // publication cursors. The legacy state_wire() remains byte-compatible.
+    [[nodiscard]] bike::io::Value checkpoint_state() const;
+    void restore_checkpoint_state(const bike::io::Value&);
     [[nodiscard]] SampleColumns recorded_columns() const;
     [[nodiscard]] std::span<const SamplePtr> recorded_samples() const noexcept { return retained_; }
     // The owned immutable prefix design A2 publishes: the shared_ptr

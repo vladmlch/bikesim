@@ -6,10 +6,11 @@
 #include <filesystem>
 #include <memory>
 #include <span>
+#include <string>
 #include <string_view>
 
 namespace bike::cli {
-struct ResolvedRide { Arguments arguments; initialization::SetupRequest setup; };
+struct ResolvedRide { Arguments arguments; initialization::SetupRequest setup; std::string effective_config_sha256; };
 [[nodiscard]] std::unique_ptr<ResolvedRide> resolve_ride(Arguments, bool settling = false);
 [[nodiscard]] terrain::TrackSpec resolve_track(std::string_view, std::optional<std::string> seed = {},
     std::optional<double> length = {});

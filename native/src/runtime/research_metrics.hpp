@@ -12,6 +12,9 @@ struct SpatialEpisodeMetrics {
     std::int64_t last_interval=-1;
     bool valid=true;
     bike::spatial::SpatialReason terminal_reason=bike::spatial::SpatialReason::none;
+    std::int64_t terminal_tick=-1;
+    std::array<double,2> lateral_slip_path_m{};
+    double front_unloaded_s=0.,front_lift_s=0.,flight_s=0.;
     [[nodiscard]] WireObject as_wire() const;
 };
 // Accepted physical intervals only. Repeated accounting publication does not

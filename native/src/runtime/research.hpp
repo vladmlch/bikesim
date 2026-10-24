@@ -8,13 +8,21 @@
 #include <deque>
 #include <memory>
 #include <optional>
+#include <variant>
 #include "programs.hpp"
 #include "recording.hpp"
 #include "research_metrics.hpp"
 #include "runtime.hpp"
 #include "sensors.hpp"
+#include "spatial_sensor_pipeline.hpp"
 
 namespace runtime {
+using ResearchObservation = std::variant<SensorObservation, spatial::SensorObservationV2>;
+using ResearchNoiseTape = std::variant<NoiseTape, spatial::NoiseTapeV2>;
+using ResearchSensorState = std::variant<SensorState, spatial::SensorStateV2>;
+[[nodiscard]] WireObject research_observation_wire(const ResearchObservation&);
+[[nodiscard]] ResearchObservation research_observation_from_wire(const WireObject&);
+[[nodiscard]] spatial::SensorObservationV2 raw_sensor_observation_v2(const PhysicalSampleData&);
 enum class ResearchCaptureMode : std::uint8_t { off, full, legacy, verify };
 struct ResearchAsset {
     std::string name, media_type, sha256;
@@ -29,6 +37,7 @@ struct ResearchConfig {
     ResearchCaptureMode capture_mode = ResearchCaptureMode::legacy;
     bool stop_on_model_violation = true;
     SensorConfig sensors;
+    std::optional<spatial::SensorConfigV2> sensors_v2;
     TruthGeometry geometry;
     ResearchPrograms programs;
     RideControl startup_control;
@@ -37,6 +46,7 @@ struct ResearchConfig {
     std::string seed_decimal = "0";
     std::array<double, 4> noise_std{.05, .002, .01, .05};
     std::optional<SensorObservation> raw_initial;
+    std::optional<spatial::SensorObservationV2> raw_initial_v2;
     bike::io::Value metadata;
     ResearchAssets assets;
 };
@@ -48,8 +58,9 @@ struct ResearchCommand {
     [[nodiscard]] WireObject as_wire(bool requested) const;
 };
 struct ResearchTransition {
-    SensorObservation observation;
+    ResearchObservation observation;
     std::optional<WheelieTruth> truth;
+    std::optional<WireObject> spatial_truth;
     std::string contact_state;
     bool terminated = false, truncated = false, numerically_valid = true, model_valid = true;
     std::optional<std::string> reason;
@@ -67,8 +78,9 @@ struct ResearchWindow {
     std::optional<double> seen_demand;
 };
 struct ResearchEpisode {
-    ResearchEpisode(const ResearchConfig &config, NoiseTape tape, SensorState startup);
+    ResearchEpisode(const ResearchConfig &config, ResearchNoiseTape tape, ResearchSensorState startup);
     SensorPipeline sensors;
+    std::optional<spatial::SensorPipelineV2> sensors_v2;
     WheelieTracker tracker;
     ResearchRecorder recorder;
     std::int64_t next_sensor_step = 0, sample_cursor = -1;
@@ -80,13 +92,15 @@ struct ResearchEpisode {
     std::optional<ResearchCommand> last_requested;
     std::int64_t requested_count = 0, completed_count = 0, applied_base = 0;
     std::vector<ResearchCommand> requested, applied_records;
-    std::vector<SensorObservation> observations;
+    std::vector<ResearchObservation> observations;
     std::vector<ResearchTransition> transitions;
-    SensorObservation observation;
+    ResearchObservation observation;
     std::optional<WheelieTruth> truth;
     std::optional<SpatialEpisodeMetrics> spatial_metrics;
+    std::optional<WireObject> spatial_truth;
     bool terminated = false, truncated = false, numerically_valid = true;
     std::optional<std::string> reason, error;
+    std::optional<std::string> checkpoint_unavailable_reason;
     std::vector<std::string> cleanup_notes;
     double max_energy_residual_ratio = 0., torque_delivered_nms = 0., torque_requested_nms = 0.;
     std::optional<double> demand_integral_nms, demand_nm;
@@ -98,13 +112,15 @@ struct ResearchEpisode {
 struct OwnedResearchEpisode {
     OwnedNativeEpisode physical;
     std::vector<ResearchCommand> requested, applied;
-    std::vector<SensorObservation> observations;
+    std::vector<ResearchObservation> observations;
     std::vector<ResearchTransition> transitions;
     WireObject evaluation;
     RuntimeSnapshot final_snapshot;
     ResearchConfig configuration;
     std::vector<double> initial_integration_state;
     bike::io::Value run_metadata;
+    bike::io::Value checkpoint_initial, checkpoint_final;
+    std::optional<std::string> checkpoint_unavailable_reason;
     [[nodiscard]] std::size_t row_count(std::string_view stream) const;
     [[nodiscard]] WireArray batch(std::string_view stream, std::int64_t start,
                                   std::int64_t limit) const;
@@ -112,7 +128,7 @@ struct OwnedResearchEpisode {
 class NativeResearchRuntime {
 public:
     NativeResearchRuntime(std::unique_ptr<NativeRideRuntime> runtime, ResearchConfig config,
-                          NoiseTape tape, SensorState startup);
+                          ResearchNoiseTape tape, ResearchSensorState startup);
     ~NativeResearchRuntime();
     NativeResearchRuntime(const NativeResearchRuntime &) = delete;
     NativeResearchRuntime &operator=(const NativeResearchRuntime &) = delete;
@@ -141,11 +157,16 @@ public:
     [[nodiscard]] WireArray transitions() const;
     [[nodiscard]] SampleColumns recorded_columns() const;
     [[nodiscard]] WireArray recorded_intervals() const;
-    void reset(NoiseTape tape, SensorState startup,
+    void reset(ResearchNoiseTape tape, ResearchSensorState startup,
                std::optional<std::string> seed_decimal = std::nullopt,
                std::optional<bike::io::Value> metadata = std::nullopt,
                ResearchAssets assets = {});
     void reset();
+    // Cold continuation boundary: does not reset the plant or replay policy.
+    [[nodiscard]] WireObject continuation_state() const;
+    void restore_continuation(const WireObject&);
+    [[nodiscard]] bike::io::Value checkpoint() const;
+    void restore_checkpoint(const bike::io::Value&);
     void stop();
     void fail_policy(std::string message);
     void set_error_text(std::string message);
@@ -166,14 +187,19 @@ private:
     [[nodiscard]] bool model_valid() const;
     [[nodiscard]] WireObject status_unlocked() const;
     [[nodiscard]] OwnedResearchEpisode evidence_unlocked(OwnedNativeEpisode physical) const;
-    void reset_unlocked(NoiseTape tape, SensorState startup,
+    [[nodiscard]] WireObject continuation_state_unlocked() const;
+    [[nodiscard]] bike::io::Value checkpoint_unlocked() const;
+    [[nodiscard]] std::unique_ptr<ResearchEpisode> prepare_continuation(
+        const WireObject&,const NativeRideRuntime&) const;
+    void reset_unlocked(ResearchNoiseTape tape, ResearchSensorState startup,
                         std::optional<std::string> seed_decimal,
                         std::optional<bike::io::Value> metadata, ResearchAssets assets);
     std::unique_ptr<NativeRideRuntime> runtime_;
     ResearchConfig config_;
-    NoiseTape reset_tape_;
-    SensorState reset_startup_;
+    ResearchNoiseTape reset_tape_;
+    ResearchSensorState reset_startup_;
     std::vector<double> initial_integration_state_;
+    bike::io::Value initial_checkpoint_;
     std::unique_ptr<ResearchEpisode> episode_;
     mutable std::atomic<bool> busy_{false};
     std::atomic<bool> closed_{false};

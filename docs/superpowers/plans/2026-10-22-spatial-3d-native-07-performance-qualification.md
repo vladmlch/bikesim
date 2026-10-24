@@ -4,6 +4,11 @@
 
 **Goal:** Написать measurement driver/report/profile, детерминированный контракт пула и его реализацию, probe engine pool, qualification validator и скелеты evidence — целиком, без запуска.
 
+**Source handoff 2026-10-24:** W50–W54 имеют статус `source_written`;
+[отчёт поставки](../audits/2026-10-24-spatial-w50-w55-source.md) описывает
+реальные owners/CMake targets и C10-расхождения. Configure/build/test/run не
+выполнялись. Checkbox-приёмка и решения остаются pending V09/V10.
+
 **Architecture:** Один детерминированный C++-шаг и один владелец `mjData`. Пул вычисляет независимые элементы шины в заранее назначенных ячейках; суммирование и commit — владелец в неизменном порядке. Процессы batch, потоки шины и внутренний пул MuJoCo — три независимых параметра.
 
 **Tech Stack:** C++23; существующий `bike-measure-realtime` (`native/cmake/RealtimeMeasurement.cmake`, `runtime/realtime_measurement.cpp:35–112`, `realtime_report.cpp:92–108`, `realtime_driver.cpp:37–56,139–157`); монотонные часы; `bt`.

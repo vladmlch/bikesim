@@ -283,8 +283,11 @@ void validate_capabilities(Value &context) {
     Value *capabilities = member_mut(context, "capabilities");
     if (!is_object(capabilities))
         throw CheckError("native check context has no capabilities record");
-    for (const std::string_view capability : {"asan", "rtsan", "coverage"}) {
+    for (const std::string_view capability : {"asan", "rtsan", "coverage", "tsan"}) {
         Value *record = member_mut(*capabilities, capability);
+        // Earlier schema-2 captures predate TSan. A present record is held
+        // to the same support/runtime/identity requirements as other lanes.
+        if (capability == "tsan" && record == nullptr) continue;
         if (!is_object(record))
             throw CheckError("native check context has no " + std::string(capability) +
                              " capability record");

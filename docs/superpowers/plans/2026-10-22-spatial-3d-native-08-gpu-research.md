@@ -1,5 +1,10 @@
 # Spatial 3D Native — 08. Необязательное исследование GPU (W-фаза: W55)
 
+**Source handoff 2026-10-24:** W55 — `source_written`, execution — `not_run`.
+Standalone helper/test и memo описаны в
+[отчёте поставки](../audits/2026-10-24-spatial-w50-w55-source.md).
+SDK, GPU и benchmark не запускались; все решения остаются pending V11.
+
 > **Для исполнителей:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development (рекомендуется) или superpowers:executing-plans. W55 — **one-shot write** записки-скелета, decision helper и его теста. Запрещены configure/build/compile/ctest/запуск/установка GPU SDK. Измерения и решение — `09-verification.md` V11 (optional). Незавершённость W55/V11 не блокирует V10.
 
 **Goal:** Зафиксировать вопрос, критерии и инструмент решения о GPU до появления измерений; не выбирать backend и не менять CPU-контракт.

@@ -144,4 +144,5 @@ std::span<const PatchWrench> Pneumatic3dTireWriter::wrenches(std::size_t w) cons
 double Pneumatic3dTireWriter::axle_moment_nm(std::size_t w) const noexcept{return w<2?axle_moment_[w]:0.;}
 ReasonCode3d Pneumatic3dTireWriter::last_reason() const noexcept{return kernels_.last_reason();}
 const Pneumatic3dModel& Pneumatic3dTireWriter::model() const noexcept{return kernels_;}
+void Pneumatic3dTireWriter::set_worker_threads(unsigned count){kernels_.set_worker_threads(count);}
 } // namespace bike::pneumatic3d

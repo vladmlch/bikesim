@@ -2115,20 +2115,34 @@
       "files": {
         "create": [
           "native/src/runtime/spatial_performance.cpp",
-          "docs/superpowers/audits/2026-10-22-spatial-3d-performance.md"
+          "docs/superpowers/audits/2026-10-22-spatial-3d-performance.md",
+          "native/src/runtime/spatial_measurement.hpp",
+          "native/src/runtime/spatial_timing.hpp",
+          "examples/spatial/performance_fast.toml",
+          "examples/spatial/performance_flat.toml"
         ],
         "modify": [
           "native/src/runtime/{realtime_measurement.cpp,realtime_report.cpp,realtime_options.cpp,realtime_provenance.cpp,realtime_driver.cpp}",
           "native/src/viewer/pacer.{hpp,cpp}",
-          "docs/perf.md"
+          "docs/perf.md",
+          "native/src/runtime/{realtime_measurement.hpp,realtime_runner.hpp,realtime_command.cpp,step.cpp,runtime.cpp}",
+          "native/src/viewer/{session.hpp,ride.cpp}",
+          "native/src/cli/ride.cpp",
+          "native/cmake/RealtimeMeasurement.cmake",
+          "native/tests/spatial/CMakeLists.txt"
         ],
         "test": [
-          "native/tests/spatial/performance_report.cpp"
+          "native/tests/spatial/performance_report.cpp",
+          "native/tests/spatial/pacer_report.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V09",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w50-w55-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W51",
@@ -2153,9 +2167,13 @@
           "native/tests/spatial/worker_ranges.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V09",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w50-w55-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W52",
@@ -2175,22 +2193,40 @@
       ],
       "files": {
         "create": [
-          "native/src/runtime/spatial_worker_pool.cpp"
+          "native/src/runtime/spatial_worker_pool.cpp",
+          "native/src/pneumatic3d/element_work.hpp"
         ],
         "modify": [
           "native/src/pneumatic3d/model.cpp",
           "native/src/cli/{argument_contracts.inc,configuration.cpp}",
           "CMakePresets.json",
-          "native/cmake/BikeCompilerPolicy.cmake"
+          "native/cmake/BikeCompilerPolicy.cmake",
+          "native/src/pneumatic3d/{model.hpp,geometry.cpp,carcass.cpp}",
+          "native/src/writers/pneumatic_3d_tire.{hpp,cpp}",
+          "native/src/runtime/{config.hpp,project_config.hpp,project_config.cpp,bootstrap.cpp,runtime.cpp,spatial_tire_factory.cpp}",
+          "native/src/initialization/setup_owner.cpp",
+          "native/src/research/metadata.cpp",
+          "native/src/replay/{rebuild.cpp,legacy.cpp}",
+          "native/src/cli/arguments.cpp",
+          "native/cmake/{BikeCheckContext.cmake,NativeStartup.cmake}",
+          "native/src/tools/check_context.cpp",
+          "tools/{native_checks.py,native_runtime.py}",
+          "native/tests/spatial/CMakeLists.txt"
         ],
         "test": [
           "native/tests/spatial/worker_pool.cpp",
-          "native/tests/spatial/thread_invariance.cpp"
+          "native/tests/spatial/thread_invariance.cpp",
+          "native/tests/spatial/support/thread_comparison.hpp",
+          "native/tests/spatial/cli.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V09",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w50-w55-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W53",
@@ -2213,9 +2249,13 @@
           "native/tests/spatial/engine_pool_probe.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V09",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w50-w55-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W54",
@@ -2243,9 +2283,13 @@
           "native/tests/spatial/qualification_registry.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V10",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w50-w55-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W55",
@@ -2264,12 +2308,18 @@
           "tools/spatial_gpu/decision_test.cpp",
           "tools/spatial_gpu/CMakeLists.txt"
         ],
-        "modify": [],
+        "modify": [
+          "CMakeLists.txt"
+        ],
         "test": []
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V11",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w50-w55-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "V00",
@@ -2760,7 +2810,7 @@
         "modify": [],
         "test": []
       },
-      "status": "blocked_on_W",
+      "status": "pending_verification",
       "requires_w": [
         "W50",
         "W51",
@@ -2775,6 +2825,13 @@
       ],
       "upstream_gates": [
         "G1-core"
+      ],
+      "project_execution_performed": false,
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w50-w55-source.md",
+      "verification_blockers": [
+        "Predecessor physical V06/V07 and producer gates remain unverified; no configure/build/test/run/measurement/sanitizer execution was authorized.",
+        "C10/V00 must review the cold Pneumatic3dModel/writer execution-policy owner extension and resolve the existing extrusion material-view blocker before the unconditional full N-invariance case can pass.",
+        "Serial baseline, pool selection, complete N=1/2/4/8 state, Linux TSan positive/negative controls, RTSan, full observer overhead and engine-pool decision remain unexecuted."
       ]
     },
     {
@@ -2802,7 +2859,7 @@
         "modify": [],
         "test": []
       },
-      "status": "blocked_on_W",
+      "status": "pending_verification",
       "requires_w": [
         "W54"
       ],
@@ -2817,6 +2874,12 @@
         "G4-recording",
         "G5-gui",
         "G6-qualification"
+      ],
+      "project_execution_performed": false,
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w50-w55-source.md",
+      "verification_blockers": [
+        "All predecessor V gates, candidate identity and per-platform evidence remain unverified.",
+        "qualification.json has identity:null and every milestone/gate pending. Structural source validation does not authenticate evidence or close installed-product, recording or real-display qualification."
       ]
     },
     {
@@ -2835,46 +2898,47 @@
         "modify": [],
         "test": []
       },
-      "status": "blocked_on_W",
+      "status": "pending_verification",
       "requires_w": [
         "W55"
       ],
       "covers_w": [
         "W55"
       ],
-      "upstream_gates": []
+      "upstream_gates": [],
+      "project_execution_performed": false,
+      "source_delivery_report": "docs/superpowers/audits/2026-10-24-spatial-w50-w55-source.md",
+      "verification_blockers": [
+        "Optional standalone source is written; V09 CPU identity/baseline and GPU host/toolchain evidence remain unavailable.",
+        "No SDK acquisition, standalone build, GPU kernel, benchmark or go/no-go measurement was executed. V11 does not block core spatial qualification."
+      ]
     }
   ],
   "latest_source_delivery": {
     "tasks": [
-      "W37",
-      "W38",
-      "W39",
-      "W40",
-      "W41",
-      "W42",
-      "W43",
-      "W44",
-      "W45",
-      "W46",
-      "W47",
-      "W48",
-      "W49"
+      "W50",
+      "W51",
+      "W52",
+      "W53",
+      "W54",
+      "W55"
     ],
     "date": "2026-10-24",
-    "report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
-    "archive_name": "repomix-output.xml(20261024-043811).zip",
-    "archive_sha256": "e17e4c119abd26dc661d903739d2abf45be1e556be8db8d8e9cc45a0a93cade5",
-    "repomix_xml_sha256": "e2cad908de260ad92a0241a2fd0892ac2b1d2336010ead4c88b1c7885108c578",
-    "extracted_file_count": 2506,
+    "report": "docs/superpowers/audits/2026-10-24-spatial-w50-w55-source.md",
+    "archive_name": "repomix-output.xml(20261024-051341).zip",
+    "archive_sha256": "d3ee1137abc327ad44f1df88e3b734a59988026ee1873440a2913bc2e23c57ae",
+    "repomix_xml_sha256": "b1c3353d767d03c4f284496a1ae60f43ace40b3e465a774ce2e6196c5e4e56b8",
+    "extracted_file_count": 2555,
     "original_git_history_available": false,
     "synthetic_local_baseline_for_diff_only": true,
+    "git_commit_created": false,
     "project_execution_performed": false,
-    "verification_status": "pending_V07_V08_and_predecessors",
+    "verification_status": "pending_V09_V10_V11_and_predecessors",
     "delivery_format": "git unified patch against normalized repomix input",
     "frozen_W00_declarations_modified": true,
     "frozen_declaration_changes": [
-      "runtime/spatial_sensors.hpp: read_imu_truth removes contradictory noexcept; C10 review pending"
+      "pneumatic3d/model.hpp: cold thread setter/count, destructor and private pool owner; C10 review pending",
+      "writers/pneumatic_3d_tire.hpp: cold thread-policy forwarding setter; C10 review pending"
     ],
     "qualification_claimed": false
   },
@@ -2961,6 +3025,39 @@
       "verification_status": "pending_V04_V06_and_predecessors",
       "delivery_format": "git unified patch against normalized repomix input",
       "frozen_W00_declarations_modified": false,
+      "qualification_claimed": false
+    },
+    {
+      "tasks": [
+        "W37",
+        "W38",
+        "W39",
+        "W40",
+        "W41",
+        "W42",
+        "W43",
+        "W44",
+        "W45",
+        "W46",
+        "W47",
+        "W48",
+        "W49"
+      ],
+      "date": "2026-10-24",
+      "report": "docs/superpowers/audits/2026-10-24-spatial-w37-w49-source.md",
+      "archive_name": "repomix-output.xml(20261024-043811).zip",
+      "archive_sha256": "e17e4c119abd26dc661d903739d2abf45be1e556be8db8d8e9cc45a0a93cade5",
+      "repomix_xml_sha256": "e2cad908de260ad92a0241a2fd0892ac2b1d2336010ead4c88b1c7885108c578",
+      "extracted_file_count": 2506,
+      "original_git_history_available": false,
+      "synthetic_local_baseline_for_diff_only": true,
+      "project_execution_performed": false,
+      "verification_status": "pending_V07_V08_and_predecessors",
+      "delivery_format": "git unified patch against normalized repomix input",
+      "frozen_W00_declarations_modified": true,
+      "frozen_declaration_changes": [
+        "runtime/spatial_sensors.hpp: read_imu_truth removes contradictory noexcept; C10 review pending"
+      ],
       "qualification_claimed": false
     }
   ]

@@ -1,0 +1,23 @@
+{
+  "qualification_schema": 1,
+  "status": "pending",
+  "identity": null,
+  "milestones": [
+    {"id": "M0", "status": "pending", "evidence": []},
+    {"id": "M1", "status": "pending", "evidence": []},
+    {"id": "M2", "status": "pending", "evidence": []},
+    {"id": "M3", "status": "pending", "evidence": []},
+    {"id": "M4", "status": "pending", "evidence": []},
+    {"id": "M5", "status": "pending", "evidence": []},
+    {"id": "M6", "status": "pending", "evidence": []}
+  ],
+  "upstream_gates": [
+    {"id": "G0", "status": "pending", "evidence": []},
+    {"id": "G1", "status": "pending", "evidence": []},
+    {"id": "G2", "status": "pending", "evidence": []},
+    {"id": "G3", "status": "pending", "evidence": []},
+    {"id": "G4", "status": "pending", "evidence": []},
+    {"id": "G5", "status": "pending", "evidence": []},
+    {"id": "G6", "status": "pending", "evidence": []}
+  ]
+}

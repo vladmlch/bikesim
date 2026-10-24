@@ -164,6 +164,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
     "options": [
       {"names":["--spatial"],"dest":"spatial","default":null,"type":"str","choices":["planar","3d"],"flag":false,"required":false,"positional":false},
       {"names":["--terrain3d"],"dest":"terrain3d","default":null,"type":"str","choices":null,"flag":false,"required":false,"positional":false},
+      {"names":["--threads"],"dest":"threads","default":1,"type":"int","choices":null,"flag":false,"required":false,"positional":false},
       {
         "names": [
           "--track"
@@ -844,6 +845,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
     "options": [
       {"names":["--spatial"],"dest":"spatial","default":null,"type":"str","choices":["planar","3d"],"flag":false,"required":false,"positional":false},
       {"names":["--terrain3d"],"dest":"terrain3d","default":null,"type":"str","choices":null,"flag":false,"required":false,"positional":false},
+      {"names":["--threads"],"dest":"threads","default":1,"type":"int","choices":null,"flag":false,"required":false,"positional":false},
       {
         "names": [
           "--physics-config"
@@ -1123,6 +1125,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
     "options": [
       {"names":["--spatial"],"dest":"spatial","default":null,"type":"str","choices":["planar","3d"],"flag":false,"required":false,"positional":false},
       {"names":["--terrain3d"],"dest":"terrain3d","default":null,"type":"str","choices":null,"flag":false,"required":false,"positional":false},
+      {"names":["--threads"],"dest":"threads","default":1,"type":"int","choices":null,"flag":false,"required":false,"positional":false},
       {
         "names": [
           "--backend"

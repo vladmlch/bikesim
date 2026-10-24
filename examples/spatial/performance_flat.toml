@@ -1,0 +1,14 @@
+# W36 F analytic flat arena, expressed through the installed native generator.
+# This is authored input, not a captured or physically qualified result.
+base_track = { name = "spatial-performance-flat", length_m = 200.0, surface = "hardpack", obstacles = [] }
+[terrain3d]
+seed = 73421
+generator_version = "grid3d-gen/1"
+dx_m = 0.5
+dy_m = 0.5
+half_width_m = 6.0
+lead_in_m = 0.0
+lead_out_m = 0.0
+roughness = { sigma_m = 0.0, ell_m = 0.1 }
+banks = []
+surfaces = [{ id = 1, name = "hardpack", mu_peak = 0.8, mu_slide = 0.6, slip_stiffness_per_load = 20.0, stribeck_speed_mps = 0.1 }]

@@ -65,6 +65,8 @@ struct RuntimeConfig {
     // Owned raw periods are evaluated on a data-only worker. Publication is
     // applied at the following main-thread boundary; explicit flush drains it.
     bool async_telemetry = false;
+    // Spatial tyre execution policy only; physics coefficients stay unchanged.
+    unsigned tyre_threads = 1;
     // The expensive energy/momentum measurement cadence — historically the
     // `record_decimation` wire/argument value, now named for what it gates.
     int measurement_decimation = 0;

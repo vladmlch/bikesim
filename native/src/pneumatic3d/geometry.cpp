@@ -1,4 +1,5 @@
 #include "pneumatic3d/geometry.hpp"
+#include "pneumatic3d/element_work.hpp"
 #include "pneumatic3d/kernel_math.hpp"
 
 #include <algorithm>
@@ -69,11 +70,12 @@ FanFrame fan_frame(const WheelKinematics3d& kin) noexcept {
     return frame;
 }
 
-CoreStatus query_geometry(const TorusGrid3d& grid, const WheelKinematics3d& kin,
+CoreStatus detail::query_geometry_range(const TorusGrid3d& grid, const WheelKinematics3d& kin,
                          const bike::terrain::Terrain3dQueryView& view,
-                         std::span<ContactElement3d> out) noexcept {
+                         std::span<ContactElement3d> out,
+                         std::size_t begin, std::size_t end) noexcept {
     using QS=bike::terrain::QueryStatus3d;
-    if (out.size()!=grid.element_count() || grid.phi.size()!=grid.dims.n_phi ||
+    if (begin>end || end>out.size() || out.size()!=grid.element_count() || grid.phi.size()!=grid.dims.n_phi ||
         grid.theta_fan.size()!=grid.dims.n_theta_fan ||
         grid.local_position_fan.size()!=out.size() || grid.geometric_area_m2.size()!=out.size() ||
         grid.dims.n_theta_material==0 || !finite(kin.hub.position_world_m) ||
@@ -81,7 +83,7 @@ CoreStatus query_geometry(const TorusGrid3d& grid, const WheelKinematics3d& kin,
         return CoreStatus::invalid_input;
     const auto frame=fan_frame(kin);
     if (!frame.valid) {
-        for (auto& e:out) { e={}; e.reason=ReasonCode3d::degenerate_down_projection; }
+        for (std::size_t i=begin;i<end;++i) { auto& e=out[i]; e={}; e.reason=ReasonCode3d::degenerate_down_projection; }
         return CoreStatus::invalid_geometry;
     }
     const auto world=[&](const Vec3& p) noexcept {
@@ -89,54 +91,57 @@ CoreStatus query_geometry(const TorusGrid3d& grid, const WheelKinematics3d& kin,
     };
     const double clearance=2.*grid.r_m;
     if (!(clearance>0.) || !std::isfinite(clearance)) return CoreStatus::invalid_input;
-    for (std::size_t it=0;it<grid.dims.n_theta_fan;++it) {
+    for (std::size_t i=begin;i<end;++i) {
+        const std::size_t it=i/grid.dims.n_phi, ip=i%grid.dims.n_phi;
         const double theta=grid.theta_fan[it];
         const double material_theta=wrapped(theta+kin.wheel_phase_rad);
         const auto material_row=std::min(grid.dims.n_theta_material-1,
             static_cast<std::uint32_t>(material_theta/two_pi*grid.dims.n_theta_material));
-        for (std::size_t ip=0;ip<grid.dims.n_phi;++ip) {
-            const std::size_t i=it*grid.dims.n_phi+ip;
-            const Vec3 previous_longitudinal=out[i].longitudinal_world;
-            const bool previous_valid=out[i].valid;
-            auto& e=out[i]; e={};
-            e.material_cell=material_row*grid.dims.n_phi+static_cast<std::uint32_t>(ip);
-            e.geometric_area_m2=grid.geometric_area_m2[i];
-            const double phi=grid.phi[ip];
-            const Vec3 nout=unit(world({std::cos(phi)*std::sin(theta),std::sin(phi),-std::cos(phi)*std::cos(theta)}));
-            const Vec3 point=add(kin.hub.position_world_m,world(grid.local_position_fan[i]));
-            // Start inside the casing, above a lower contact, and cast outwards.
-            // The opposite sign in the W prose starts below the road.
-            const auto hit=view.ray_cast(sub(point,scale(nout,clearance)),nout,2.*clearance);
-            e.ray_status=hit.status;
-            if (hit.status!=QS::ok) {
-                if (hit.status==QS::origin_below_surface) e.reason=ReasonCode3d::origin_below_surface;
-                else if (hit.status==QS::budget_exhausted) e.reason=ReasonCode3d::terrain_budget_exhausted;
-                else if (hit.status!=QS::miss && hit.status!=QS::outside) e.reason=ReasonCode3d::terrain_query_failed;
-                continue;
-            }
-            if (!finite(hit.point_world_m) || !finite(hit.normal_world) ||
-                !std::isfinite(hit.distance_m) || std::abs(norm(hit.normal_world)-1.)>1e-6) {
+        const Vec3 previous_longitudinal=out[i].longitudinal_world;
+        const bool previous_valid=out[i].valid;
+        auto& e=out[i]; e={};
+        e.material_cell=material_row*grid.dims.n_phi+static_cast<std::uint32_t>(ip);
+        e.geometric_area_m2=grid.geometric_area_m2[i];
+        const double phi=grid.phi[ip];
+        const Vec3 nout=unit(world({std::cos(phi)*std::sin(theta),std::sin(phi),-std::cos(phi)*std::cos(theta)}));
+        const Vec3 point=add(kin.hub.position_world_m,world(grid.local_position_fan[i]));
+        // Start inside the casing, above a lower contact, and cast outwards.
+        // The opposite sign in the W prose starts below the road.
+        const auto hit=view.ray_cast(sub(point,scale(nout,clearance)),nout,2.*clearance);
+        e.ray_status=hit.status;
+        if (hit.status!=QS::ok) {
+            if (hit.status==QS::origin_below_surface) e.reason=ReasonCode3d::origin_below_surface;
+            else if (hit.status==QS::budget_exhausted) e.reason=ReasonCode3d::terrain_budget_exhausted;
+            else if (hit.status!=QS::miss && hit.status!=QS::outside) e.reason=ReasonCode3d::terrain_query_failed;
+            continue;
+        }
+        if (!finite(hit.point_world_m) || !finite(hit.normal_world) ||
+            !std::isfinite(hit.distance_m) || std::abs(norm(hit.normal_world)-1.)>1e-6) {
+            e.reason=ReasonCode3d::nonfinite_geometry; continue;
+        }
+        e.point_world_m=hit.point_world_m; e.normal_world=hit.normal_world;
+        e.surface_id=hit.surface_id;
+        const double projection=std::max(0.,-dot(nout,e.normal_world));
+        // Normal indentation is conjugate to a normal load. Using ray
+        // indentation directly loses the virtual-work projection.
+        e.penetration_m=(clearance-hit.distance_m)*projection;
+        e.projected_area_m2=e.geometric_area_m2*projection;
+        Vec3 longitudinal=sub(frame.forward,scale(e.normal_world,dot(frame.forward,e.normal_world)));
+        if (norm(longitudinal)<1e-9) {
+            longitudinal=sub(previous_longitudinal,scale(e.normal_world,dot(previous_longitudinal,e.normal_world)));
+            if (!previous_valid || norm(longitudinal)<=1e-12) {
                 e.reason=ReasonCode3d::nonfinite_geometry; continue;
             }
-            e.point_world_m=hit.point_world_m; e.normal_world=hit.normal_world;
-            e.surface_id=hit.surface_id;
-            const double projection=std::max(0.,-dot(nout,e.normal_world));
-            // Normal indentation is conjugate to a normal load. Using ray
-            // indentation directly loses the virtual-work projection.
-            e.penetration_m=(clearance-hit.distance_m)*projection;
-            e.projected_area_m2=e.geometric_area_m2*projection;
-            Vec3 longitudinal=sub(frame.forward,scale(e.normal_world,dot(frame.forward,e.normal_world)));
-            if (norm(longitudinal)<1e-9) {
-                longitudinal=sub(previous_longitudinal,scale(e.normal_world,dot(previous_longitudinal,e.normal_world)));
-                if (!previous_valid || norm(longitudinal)<=1e-12) {
-                    e.reason=ReasonCode3d::nonfinite_geometry; continue;
-                }
-            }
-            e.longitudinal_world=unit(longitudinal);
-            e.lateral_world=unit(cross(e.normal_world,e.longitudinal_world));
-            e.valid=projection>0.;
         }
+        e.longitudinal_world=unit(longitudinal);
+        e.lateral_world=unit(cross(e.normal_world,e.longitudinal_world));
+        e.valid=projection>0.;
     }
     return CoreStatus::ok;
+}
+CoreStatus query_geometry(const TorusGrid3d& grid, const WheelKinematics3d& kin,
+                         const bike::terrain::Terrain3dQueryView& view,
+                         std::span<ContactElement3d> out) noexcept {
+    return detail::query_geometry_range(grid,kin,view,out,0,out.size());
 }
 } // namespace bike::pneumatic3d

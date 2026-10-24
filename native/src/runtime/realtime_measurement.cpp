@@ -1,6 +1,7 @@
 #include "realtime_measurement.hpp"
 #include "setup_values.hpp"
 #include "status.hpp"
+#include "spatial_measurement.hpp"
 #include "../io/json.hpp"
 #include <algorithm>
 #include <chrono>
@@ -60,6 +61,9 @@ Value measured(Driver& driver, double setup_start,
     const double wall = elapsed(measured_end, measured_start);
     const auto frame = driver.boundary();
     const double simulated = frame.time_s - initial.time_s;
+    const bool spatial_run = driver.settings().spatial_profile.has_value();
+    if (spatial_run && (!std::isfinite(simulated) || simulated < 0. || wall <= 0.))
+        throw std::invalid_argument("spatial measurement requires finite simulated time and positive elapsed wall time");
     std::string reason = driver.reason().value_or("");
     if (!errors.empty()) {
         reason = io::as_string(field(errors.front(), "type"), "error.type") == "InvalidReferenceRun"
@@ -98,7 +102,7 @@ Value measured(Driver& driver, double setup_start,
     if (!valid) limits.push_back(text("Model/numerical validity is not established for this prefix."));
     if (!errors.empty()) limits.push_back(text("A failed run is evidence, not a successful performance measurement."));
     const bool measured_ok = errors.empty() && steps > 0 && wall > 0.;
-    return Value{Object{{"backend", text(driver.settings().backend)}, {"comparability", key},
+    Value result{Object{{"backend", text(driver.settings().backend)}, {"comparability", key},
         {"execution", execution}, {"identity_unchanged", Value{identity_unchanged}},
         {"setup_wall_s", real(elapsed(setup_end, setup_start))}, {"wall_clock_s", real(wall)},
         {"final_flush_wall_s", real(elapsed(measured_end, flush_start))}, {"export_wall_s", real(export_wall)},
@@ -110,6 +114,30 @@ Value measured(Driver& driver, double setup_start,
         {"prefix", std::move(prefix)}, {"measured_ok", Value{measured_ok}},
         {"valid_prefix", Value{errors.empty() && steps > 0 && valid && identity_unchanged}},
         {"errors", Value{std::move(errors)}}, {"limitations", Value{std::move(limits)}}}};
+    if (spatial_run) {
+        const auto timings = driver.timings();
+        if (!std::isfinite(timings.clock_overhead_estimate_s) || timings.clock_overhead_estimate_s < 0.)
+            throw std::invalid_argument("spatial instrumentation overhead estimate must be finite and nonnegative");
+        set(result, "profile", spatial_profile_value(*driver.settings().spatial_profile));
+        set(result, "regions", region_timings_value(timings.regions));
+        set(result, "instrumentation_available", Value{timings.available});
+        set(result, "instrumentation_clock_reads", Value{io::Number{std::to_string(timings.clock_reads)}});
+        set(result, "instrumentation_overhead_s", real(timings.clock_overhead_estimate_s));
+        set(result, "instrumentation_overhead_kind", text("estimated clock-read cost; not subtracted from full wall time"));
+        set(result, "instrumentation_total_overhead_s", Value{});
+        set(result, "instrumentation_total_overhead_pending", Value{true});
+        const bool complete = measured_ok && identity_unchanged && valid && driver.settings().strict &&
+            steps == requested_steps && requested_steps > 0 &&
+            (reason == "duration_reached" || reason == "requested_completion");
+        set(result, "rtf", real(simulated / wall));
+        set(result, "terminal_reason", text(reason));
+        set(result, "steps", integer(steps));
+        set(result, "valid", Value{complete});
+        set(result, "classification", text(complete ? "valid_episode" : "diagnostic"));
+        // The command/report builder assigns the actual warmup role.
+        set(result, "warmup", Value{false});
+    }
+    return result;
 }
 } // namespace
 
@@ -127,7 +155,7 @@ bike::io::Value comparison_key(const Settings& settings) {
     const auto* source = find(execution, "python_source_sha256");
     if (source == nullptr) source = find(execution, "native_source_sha256");
     if (source == nullptr) throw std::invalid_argument("measurement execution has no source digest");
-    return Value{Object{{"configuration_sha256", field(metadata, "configuration_sha256")},
+    Value result{Object{{"configuration_sha256", field(metadata, "configuration_sha256")},
         {"terrain_sha256", field(metadata, "terrain_sha256")}, {"python_source_sha256", *source},
         {"versions", field(metadata, "versions")}, {"timestep_s", real(settings.timestep_s)},
         {"internal_controller_period_s", field(metadata, "controller_interval_s")},
@@ -135,6 +163,15 @@ bike::io::Value comparison_key(const Settings& settings) {
         {"record_decimation", integer(settings.record_decimation)}, {"strict", Value{settings.strict}},
         {"compute_slice_s", real(compute_slice_s)},
         {"controls", text("default RideControl; front/rear brake demand 0; profile-owned rider/assist")}}};
+    if (settings.spatial_profile) {
+        set(result, "spatial_profile", spatial_profile_value(*settings.spatial_profile));
+        set(result, "terrain_kind", field(metadata, "terrain_kind"));
+        set(result, "measurement_demand_sha256", optional_field(metadata, "measurement_demand_sha256"));
+        set(result, "controls", optional_field(metadata, "measurement_controls"));
+        set(result, "minimum_simulated_time_s", real(30.));
+        set(result, "region_timing", optional_field(metadata, "region_timing"));
+    }
+    return result;
 }
 bike::io::Value chunk_statistics(std::span<const double> values) {
     using namespace setupvalue;

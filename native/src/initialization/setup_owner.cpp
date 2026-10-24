@@ -193,6 +193,9 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     }
     const bool spatial_requested=request.model.physics->spatial &&
         request.model.physics->spatial->mode==spatial::Mode::spatial3d;
+    if(request.runtime.tyre_threads<1 || request.runtime.tyre_threads>64 ||
+       (!spatial_requested && request.runtime.tyre_threads!=1))
+        throw std::invalid_argument("setup.runtime.tyre_threads: expected [1,64] for spatial, 1 for planar");
     if(!spatial_requested && (request.model.terrain3d ||
        (request.model.spatial && request.model.spatial->mode==spatial::Mode::spatial3d)))
         throw std::invalid_argument("setup.spatial: spatial model/source requires spatial physics");
@@ -349,6 +352,7 @@ io::Value SetupOwner::metadata() const {
         {"equilibrium", impl_->result ? equilibrium_value(*impl_->result) : Value{}},
         {"sealed", Value{impl_->sealed}}};
     if(context.terrain3d && context.render3d) {
+        fields.emplace_back("tyre_threads",integer(impl_->config.tyre_threads));
         fields.emplace_back("terrain3d",Value{Object{
             {"physical_asset_sha256",text(context.terrain3d->fingerprint_hex())},
             {"render_nrow",integer(context.render3d->nrow)}, {"render_ncol",integer(context.render3d->ncol)},

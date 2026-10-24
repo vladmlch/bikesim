@@ -132,6 +132,11 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
     request.setup.asset_root = assets.path(); request.setup.origin = "validated replay recipe";
     request.setup.track = terrain::track_from_dict(terrain::parse_track_toml(asset_text(input, "track.toml"), "recording/track.toml"));
     if(input.spatial_recipe) {
+        if(const auto* threads=find(field(saved,"execution"),"tyre_threads")) {
+            const auto value=count(*threads);
+            if(value<1 || value>64)throw IncompatibleExecution("execution.tyre_threads: expected [1,64]");
+            request.setup.runtime.tyre_threads=static_cast<unsigned>(value);
+        }
         const auto& recipe=*input.spatial_recipe;
         const auto source=io::parse_recording_json(asset_text(input,"spatial/terrain_source.json"));
         if(recipe.terrain_kind==terrain::Terrain3dKind::grid) {

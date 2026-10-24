@@ -8,6 +8,7 @@
 // trees the binding boxes after the mutable section commits.
 
 #include "step.hpp"
+#include "spatial_timing.hpp"
 #include "value_readers.hpp"
 
 #include <algorithm>
@@ -1265,6 +1266,7 @@ bool PhysicalStep::posvel_fresh() {
 }
 
 void PhysicalStep::refresh_forward(mjModel *m, mjData *d) {
+    const spatial::timing::Scope timing(spatial::timing::Region::engine_step);
     if (posvel_fresh())
         engine::forward_skip(m, d);
     else
@@ -1275,6 +1277,7 @@ void PhysicalStep::refresh_forward(mjModel *m, mjData *d) {
 
 void PhysicalStep::ensure_posvel_fresh(mjModel *m, mjData *d) {
     if (!posvel_fresh()) {
+        const spatial::timing::Scope timing(spatial::timing::Region::engine_step);
         engine::forward(m, d);
         stepper_->note_posvel_fresh();
     }
@@ -1359,6 +1362,7 @@ PhysicalStep::apply_forces_body(
         const double dt = config_.timestep_s;
         const bool control_tick =
             !advance || initializing_ || control_clock_.is_tick(step_);
+        spatial::timing::Scope intent_timing(spatial::timing::Region::rider_steer);
         if (rider_control_.has_value() && control_tick) {
             const auto xpos = buf(d->xpos, 3 * m->nbody);
             wheel_x_m_ = {xpos[3 * static_cast<std::size_t>(
@@ -1386,6 +1390,7 @@ PhysicalStep::apply_forces_body(
         }
         if (advance)
             applied_control_ = control;
+        intent_timing.stop();
         const bool braking =
             braking_opt.value_or(front > 0. || rear > 0.);
 
@@ -1445,6 +1450,7 @@ PhysicalStep::apply_forces_body(
         if (std::ranges::any_of(brake_hold, [](double x) { return x != 0.; }))
             accumulator_.add("brake_hold", brake_hold);
         if(steer_balance_) {
+            const spatial::timing::Scope timing(spatial::timing::Region::rider_steer);
             if(advance && !initializing_ && control_clock_.is_tick(step_)) {
                 const double previous_work=spatial_state_->steer.work_j;
                 const auto pose=bike::spatial::body_pose(*m,*d,topology_->root);
@@ -1509,10 +1515,12 @@ PhysicalStep::apply_forces_body(
         }
         if (stepper_->has_rider_forces() &&
             stepper_->rider_forces().active()) {
+            const spatial::timing::Scope timing(spatial::timing::Region::rider_steer);
             stepper_->rider_forces().compute_into(d, component_out_);
             accumulator_.add("seated_interfaces", component_out_);
         }
         if (rider_control_.has_value()) {
+            const spatial::timing::Scope timing(spatial::timing::Region::rider_steer);
             stepper_->rider_contacts().compute_qfrc_into(
                 d, dt, advance, /*detailed=*/true, component_out_);
             accumulator_.add("rider_interfaces", component_out_);
@@ -1549,6 +1557,7 @@ PhysicalStep::apply_forces_body(
                              tick.components[i].values);
         stepper_->drive().commit(tick);
         if (rider_control_.has_value()) {
+            const spatial::timing::Scope timing(spatial::timing::Region::rider_steer);
             std::optional<double> crank_goal = pedaling.target_phase_rad;
             if (!active && stepper_->drive().transmission_storage() != nullptr)
                 crank_goal = stepper_->drive().config().crank_phase_rad;
@@ -1863,6 +1872,8 @@ RawStep PhysicalStep::advance_body(
         // stages skipped; the same freshness gate applies — a stale
         // cache gets the untouched full step. Integration invalidates
         // the flag for the next interval.
+        {
+        const spatial::timing::Scope timing(spatial::timing::Region::engine_step);
         if (posvel_fresh()) {
             // R2: identical acc-stage inputs since the force-phase forward
             // mean mj_step's own forward would leave the same bits — skip it.
@@ -1872,6 +1883,7 @@ RawStep PhysicalStep::advance_body(
                 engine::step_skip(m, d);
         } else {
             engine::step(m, d);
+        }
         }
         acc_inputs_valid_ = false;
         stepper_->note_posvel_stale();
@@ -1891,6 +1903,7 @@ RawStep PhysicalStep::advance_body(
 }
 
 RawStep PhysicalStep::solve_tail(SolvedInputs in) {
+        const spatial::timing::Scope timing(spatial::timing::Region::accounting);
         const mjModel *m = stepper_->model();
         mjData *d = stepper_->data();
         const std::size_t nv = static_cast<std::size_t>(m->nv);
@@ -1941,8 +1954,11 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         // the map can't diverge between them.
         const drivetrain::Diagnostics drive_last =
             stepper_->drive().diagnostics(false).to_map();
-        in.sensors = sensor_channels(v, drive_last);
-        if(imu_mount_)in.imu=spatial::read_imu_truth(*m,*d,*imu_mount_,t);
+        {
+            const spatial::timing::Scope sensor_timing(spatial::timing::Region::sensors);
+            in.sensors = sensor_channels(v, drive_last);
+            if(imu_mount_)in.imu=spatial::read_imu_truth(*m,*d,*imu_mount_,t);
+        }
         for (auto &[name, f]: actuator_components(m, d))
             ordered_set(components, name, std::move(f));
         if(steer_balance_) {

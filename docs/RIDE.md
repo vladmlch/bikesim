@@ -11,6 +11,31 @@ The spatial changes have not been built or run in the write phase. Historical
 planar results below do not qualify them. See the
 [V08 evidence ledger](superpowers/audits/2026-10-22-spatial-3d-application-evidence.md).
 
+Final acceptance is tracked separately in the
+[spatial qualification ledger](superpowers/audits/2026-10-22-spatial-3d-qualification.md).
+Its W54 skeleton has a null candidate identity and pending M0–M6/G0–G6 evidence.
+A valid ledger structure is not proof of a completed ride, physical accuracy,
+installed-product support or realtime performance; those results belong to V10.
+
+Spatial physical GUI rides now emit a `viewer_performance` object in the final
+stdout summary. It reports the observed simulation and viewer wall durations,
+achieved RTF, actual positive-framebuffer draw/swap count, frame rate, current
+and maximum observed pacing debt, and lateness between completed presentations.
+Timing freezes after the first terminal presentation and its callbacks, so
+leaving the completed ride open does not dilute the measured rate. Pause,
+non-1x scaling, hidden/zero-framebuffer presentation, reset, early termination,
+non-strict operation or invalid physics makes the run diagnostic. The 1x target
+also requires the free-root fast-tyre profile and a complete 30-second window;
+the measured rate is never rounded up to meet the target.
+
+Seal/flush, preview finalization, recording publication and runtime close are
+timed separately and included in a second RTF denominator. Setup, terminal
+idle, window teardown and plot export are explicitly outside that denominator;
+plot export has its own field. This complete timing object exists in stdout
+only, because publication timing is known after stored episode summaries have
+already been published. `full_acceptance_verified` remains false: the new
+source and its deterministic-clock tests await V09/V10 and real-display checks.
+
 ## Status and prerequisites
 
 The 2026-10-13 run-recording delivery changes normal physical/research output

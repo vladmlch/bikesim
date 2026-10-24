@@ -12,6 +12,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <vector>
 
@@ -31,6 +32,10 @@ class Pneumatic3dModel {
 public:
     Pneumatic3dModel(Pneumatic3dSpec, bike::terrain::Terrain3dQueryView,
                      TyreStateIdentity3d);
+    ~Pneumatic3dModel();
+    // Cold, owner-confined execution policy; not part of material identity.
+    void set_worker_threads(unsigned);
+    unsigned worker_threads() const noexcept;
     CoreStatus evaluate(
         const std::array<WheelKinematics3d, 2>&,
         std::span<const bike::spatial::Vec3> patch_point_velocity_world_mps,
@@ -45,6 +50,8 @@ public:
     const Pneumatic3dSpec& spec() const noexcept;
 
 private:
+    struct ElementWorkers;
+    std::unique_ptr<ElementWorkers> workers_;
     Pneumatic3dSpec spec_;
     bike::terrain::Terrain3dQueryView view_;
     std::array<TorusGrid3d, 2> grid_;

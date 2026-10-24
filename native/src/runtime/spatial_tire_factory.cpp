@@ -175,8 +175,10 @@ void install_spatial_tire(Stepper& stepper,const RuntimeConfig& config) {
         if(digest(pn::tyre_identity_to_wire(stepper.spatial_tire_writer().state().identity))!=
            digest(pn::tyre_identity_to_wire(identity)))
             throw std::invalid_argument("config.tire.pneumatic_3d: installed producer identity mismatch");
+        stepper.spatial_tire_writer().set_worker_threads(config.tyre_threads);
         return;
     }
     stepper.install_spatial_tire(*config.spatial,config.terrain3d,std::move(spec),std::move(identity));
+    stepper.spatial_tire_writer().set_worker_threads(config.tyre_threads);
 }
 }

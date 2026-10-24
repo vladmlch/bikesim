@@ -160,6 +160,7 @@ io::Value physical_configuration_metadata(const initialization::SetupRequest& re
         {"execution_identity", text(platform::execution_identity())}, {"mujoco_library_sha256", text(engine_identity.library_sha256)},
         {"numeric_provider", text(engine_identity.numeric_provider)}, {"executable_sha256", text(build.executable_sha256)},
         {"source_identity_scope", text("compiled first-party source manifest; running image hashed separately")}}};
+    if(bootstrap.config.spatial)set(execution,"tyre_threads",integer(bootstrap.config.tyre_threads));
     if (io::as_string(field(field(inputs, "rider"), "variant"), "rider variant") == "articulated_planar" &&
         physics.articulated.pedal_attachment != "spindle") {
         set(execution, "allocation_solver", text(bike::rider::allocation_numeric_identity));

@@ -108,6 +108,14 @@ function(bike_add_native_startup native_dir)
   target_link_libraries(bike_terrain PUBLIC
     bike_configuration bike_geometry bike_random bike_io bike_platform bike_tyre_profile)
   # W20-W28: one engine-independent material owner, shared by both graphs.
+  # W51/W52: an independent owner avoids a pneumatic3d -> runtime ->
+  # pneumatic3d static link cycle. A one-thread instance creates no workers.
+  find_package(Threads REQUIRED)
+  add_library(bike_spatial_workers STATIC
+    "${native_dir}/src/runtime/spatial_worker_pool_ranges.cpp"
+    "${native_dir}/src/runtime/spatial_worker_pool.cpp")
+  bike_startup_target_policy(bike_spatial_workers "${native_dir}")
+  target_link_libraries(bike_spatial_workers PUBLIC Threads::Threads)
   add_library(bike_pneumatic3d STATIC
     "${native_dir}/src/pneumatic3d/geometry.cpp"
     "${native_dir}/src/pneumatic3d/carcass.cpp"
@@ -117,7 +125,7 @@ function(bike_add_native_startup native_dir)
     "${native_dir}/src/pneumatic3d/model.cpp"
     "${native_dir}/src/pneumatic3d/state.cpp")
   bike_startup_target_policy(bike_pneumatic3d "${native_dir}")
-  target_link_libraries(bike_pneumatic3d PUBLIC bike_spatial bike_terrain bike_io)
+  target_link_libraries(bike_pneumatic3d PUBLIC bike_spatial bike_terrain bike_io bike_spatial_workers)
   target_sources(${_startup_core} PRIVATE
     "${native_dir}/src/writers/pneumatic_3d_tire.cpp"
     "${native_dir}/src/writers/spatial_tire_adapter.cpp"
@@ -210,7 +218,7 @@ function(bike_add_native_startup native_dir)
   # W48: install the same archives used by the native product. Terrain3d and
   # pneumatic3d retain their locked engine/numerics providers through the
   # existing link graph; installation introduces no discovery or downloads.
-  install(TARGETS bike_spatial bike_rider_spatial bike_terrain bike_pneumatic3d
+  install(TARGETS bike_spatial bike_rider_spatial bike_terrain bike_pneumatic3d bike_spatial_workers
     bike_tyre_profile ARCHIVE DESTINATION lib)
   # Keep shipped TOML and relative rider assets together after relocation.
   # Missing optional legacy NPZ inputs remain explicit acquisition failures;

@@ -1,5 +1,6 @@
 #pragma once
 #include "input.hpp"
+#include "pacer.hpp"
 #include "../runtime/runtime.hpp"
 #include <functional>
 #include <optional>
@@ -43,7 +44,11 @@ struct SessionHooks {
     std::function<std::string(const runtime::RenderFrame&,const InputState&,std::optional<double>)> hud;
     std::function<void(const runtime::RenderFrame&,std::optional<double>)> presented;
 };
-struct RunResult { bool terminal = false, closed_by_user = false; std::uint64_t resets = 0; };
+struct RunResult {
+    bool terminal = false, closed_by_user = false;
+    std::uint64_t resets = 0;
+    std::optional<PacingReport> pacing;
+};
 [[nodiscard]] bool gui_available() noexcept;
 [[nodiscard]] RunResult run(SessionHooks, const runtime::ModelImage&, const ViewerOptions& = {});
 struct LifecycleHooks {

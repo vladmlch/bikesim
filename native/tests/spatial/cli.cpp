@@ -20,7 +20,10 @@ void contracts() {
     bt::invalid([]{(void)ride({"--spatial","3d","--spatial","planar"});});
     bt::invalid([]{(void)ride({"--spatial"});});
     bt::invalid([]{(void)ride({"--duration","NaN"});});
-    bt::invalid([]{(void)ride({"--threads","2"});});
+    bt::require(ride({"--threads","2"}).integer("threads")==2,"thread option is parsed as an integer");
+    bt::invalid([]{(void)ride({"--threads","2","--threads","4"});});
+    bt::invalid([]{(void)ride({"--threads","1.5"});});
+    bt::invalid([]{(void)bike::cli::resolve_ride(ride({"--threads","2"}));});
     bt::invalid([]{(void)ride({"--terrain3d","a.toml","--terrain3d","b.toml"});});
     const bt::TemporaryDirectory output("spatial-cli");
     const auto destination=(output.path()/"should-not-exist").string();
@@ -32,6 +35,13 @@ void contracts() {
     const auto free=bike::cli::resolve_ride(ride({"--spatial","3d","--terrain3d",terrain,"--duration","2","--headless"}));
     bt::require(free->setup.model.spatial&&free->setup.model.spatial->root==bike::spatial::RootKind::free6,"explicit spatial mode reaches one SetupRequest");
     bt::require(free->setup.model.spatial->terrain.kind==bike::spatial::TerrainRequestKind::genspec,"TOML terrain maps to genspec");
+    for(const auto invalid:{"0","-1","65","18446744073709551616"})
+        bt::invalid([&]{(void)bike::cli::resolve_ride(ride({"--spatial","3d","--terrain3d",terrain,"--threads",invalid}));});
+    const auto parallel=bike::cli::resolve_ride(ride({"--spatial","3d","--terrain3d",terrain,"--threads","4","--duration","2","--headless"}));
+    bt::require(free->setup.runtime.tyre_threads==1 && parallel->setup.runtime.tyre_threads==4,
+        "serial default and explicit thread policy reach the typed request");
+    bt::require(parallel->effective_config_sha256==free->effective_config_sha256,
+        "execution parallelism does not alter physical configuration identity");
     const auto interactive=bike::cli::resolve_ride(ride({"--spatial","3d","--terrain3d",terrain,"--duration","2"}));
     bt::require(free->effective_config_sha256==interactive->effective_config_sha256,"pacing and display do not change physical configuration identity");
     const auto config=output.path()/"resolved.toml";

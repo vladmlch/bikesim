@@ -28,6 +28,12 @@ int bounded_integer(const Arguments& args, std::string_view key, int fallback) {
     if (value < 1 || value > std::numeric_limits<int>::max()) throw ArgumentError(std::string(key) + " must be a positive representable integer");
     return static_cast<int>(value);
 }
+unsigned tyre_threads(const Arguments& args,bool spatial_enabled) {
+    const auto count=args.integer("threads",1);
+    if(count<1 || count>64)throw ArgumentError("--threads must be an integer in [1,64]");
+    if(args.present("threads") && !spatial_enabled)throw ArgumentError("--threads requires spatial 3D");
+    return static_cast<unsigned>(count);
+}
 void add_number(Value& object, const Arguments& args, std::string_view option, std::string_view field_name) {
     if (args.has(option)) set(object, field_name, real(args.real(option)));
 }
@@ -168,6 +174,7 @@ std::unique_ptr<initialization::SetupRequest> ride_setup_request(Arguments const
     request.runtime.measurement_decimation = bounded_integer(args, "decimate", experiment ? 80 : 1);
     request.runtime.record_retention = args.flag("record") ? runtime::RetentionMode::full : runtime::RetentionMode::off;
     request.runtime.async_telemetry = args.flag("async_telemetry");
+    request.runtime.tyre_threads = tyre_threads(args,physics.spatial.has_value());
     return owner;
 }
 } // namespace
@@ -289,6 +296,7 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     if(args.present("spatial")||args.has("terrain3d"))
         resolve_physics_into(*request.setup.model.physics,Value{Object{}});
     require_spatial_capability(*request.setup.model.physics);
+    request.setup.runtime.tyre_threads = tyre_threads(args,request.setup.model.physics->spatial.has_value());
     if (request.setup.model.physics->spatial) {
         request.setup.model.spatial = request.setup.model.physics->spatial;
         request.setup.track.name = "spatial-terrain";

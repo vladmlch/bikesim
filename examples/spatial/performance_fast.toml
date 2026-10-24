@@ -1,0 +1,49 @@
+# W50 measurement workload. W36 F coefficients/demand, 30 s measurement window.
+# Source authoring only; physical acceptance V06 and speed V09 are pending.
+physics_mode = "physical"
+drive_mode = "articulated_effort"
+spatial = "3d"
+timestep_s = 0.00125
+control_period_s = 0.005
+initial_speed_mps = 3.0
+initial_front_brake = 0.0
+initial_rear_brake = 0.0
+pitch_assist = false
+equilibrium_cache_enabled = false
+
+[drive]
+transmission_model = "ideal_mid_drive"
+human_torque_nm = 0.0
+[drive.assist]
+gain = 0.0
+[drive.shifting]
+enabled = false
+[resistance]
+crr = 0.0
+cda_m2 = 0.0
+[articulated]
+pedal_attachment = "spindle"
+saddle_attachment = "pin"
+grip_attachment = "connect"
+shoulder_profile = "../research/profiles/spatial-shoulder.json"
+
+[spatial_3d]
+root = "free"
+corridor_half_width_m = 1.5
+capsize_roll_rad = 1.0471975511965976
+[spatial_3d.steer]
+controller = "roll_heading"
+profile_id = "roll-heading-v1"
+range_deg = 60.0
+torque_cap_nm = 40.0
+reaction_delay_s = 0.1
+[spatial_3d.terrain]
+kind = "genspec"
+path = "performance_flat.toml"
+
+[tires]
+backend = "pneumatic_3d"
+surface_mode = "track"
+[tires.pneumatic_3d]
+tier = "fast"
+lateral_coefficients = "mtb-provisional-v1"

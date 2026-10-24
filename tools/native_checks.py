@@ -340,7 +340,12 @@ def validate_platform_context(context: dict[str, Any]) -> dict[str, Any]:
         capabilities = context.get("capabilities")
         if not isinstance(capabilities, dict):
             raise CheckError("native check context has no capabilities record")
-        for capability in ("asan", "rtsan", "coverage"):
+        # TSan was added after the schema-2 contexts. Validate it whenever
+        # present while retaining support for prior captures without the lane.
+        sanitizer_capabilities = ("asan", "rtsan", "coverage")
+        if "tsan" in capabilities:
+            sanitizer_capabilities += ("tsan",)
+        for capability in sanitizer_capabilities:
             record = capabilities.get(capability)
             if not isinstance(record, dict):
                 raise CheckError(
@@ -399,10 +404,9 @@ def validate_platform_context(context: dict[str, Any]) -> dict[str, Any]:
                         f"{runtime_path}"
                     )
                 record["runtime"] = str(runtime_path)
-            if capability in {"asan", "rtsan"}:
-                # A preloadable sanitizer runtime is mandatory on an
-                # enabled lane — tools/native_runtime.py refuses to run an
-                # enabled record without one.
+            if capability in {"asan", "rtsan", "tsan"}:
+                # A compiler-resolved runtime is mandatory on an enabled
+                # sanitizer lane. TSan is linked, never preloaded.
                 if record["enabled"] and record["runtime"] is None:
                     raise CheckError(
                         f"native check context capability {capability} is "

@@ -4,6 +4,7 @@ function(bike_add_realtime_measurement native_dir)
     return()
   endif()
   add_library(bike_realtime_measurement STATIC
+    "${native_dir}/src/runtime/spatial_performance.cpp"
     "${native_dir}/src/runtime/realtime_measurement.cpp"
     "${native_dir}/src/runtime/realtime_report.cpp"
     "${native_dir}/src/runtime/realtime_options.cpp"
@@ -12,7 +13,7 @@ function(bike_add_realtime_measurement native_dir)
     "${native_dir}/src/runtime/realtime_command.cpp")
   bike_startup_target_policy(bike_realtime_measurement "${native_dir}")
   target_link_libraries(bike_realtime_measurement PUBLIC bike_cli bike_spatial bike_pneumatic3d)
-  foreach(_lane IN ITEMS address realtime coverage)
+  foreach(_lane IN ITEMS address realtime coverage thread)
     set(_measurement_${_lane} false)
   endforeach()
   if(NATIVE_SANITIZE)
@@ -24,6 +25,9 @@ function(bike_add_realtime_measurement native_dir)
   if(NATIVE_COVERAGE)
     set(_measurement_coverage true)
   endif()
+  if(NATIVE_TSAN)
+    set(_measurement_thread true)
+  endif()
   # Paths stay out of quoted COMPILE_DEFINITIONS: those are serialized into
   # the shared native check context. One private generated header owns them.
   get_filename_component(_measurement_source "${native_dir}/.." ABSOLUTE)
@@ -33,7 +37,7 @@ function(bike_add_realtime_measurement native_dir)
     endif()
   endforeach()
   file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/measurement/bike_measurement_paths.hpp"
-    CONTENT "// Generated; no runtime qualification is implied.\n#pragma once\nnamespace runtime::measurement::build {\ninline constexpr char source_root[] = \"${_measurement_source}\";\ninline constexpr char context_directory[] = \"${CMAKE_BINARY_DIR}\";\ninline constexpr bool address_sanitizer = ${_measurement_address};\ninline constexpr bool realtime_sanitizer = ${_measurement_realtime};\ninline constexpr bool coverage = ${_measurement_coverage};\n}\n")
+    CONTENT "// Generated; no runtime qualification is implied.\n#pragma once\nnamespace runtime::measurement::build {\ninline constexpr char source_root[] = \"${_measurement_source}\";\ninline constexpr char context_directory[] = \"${CMAKE_BINARY_DIR}\";\ninline constexpr bool address_sanitizer = ${_measurement_address};\ninline constexpr bool realtime_sanitizer = ${_measurement_realtime};\ninline constexpr bool coverage = ${_measurement_coverage};\ninline constexpr bool thread_sanitizer = ${_measurement_thread};\n}\n")
   target_include_directories(bike_realtime_measurement PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/measurement")
   add_executable(bike-measure-realtime "${native_dir}/src/tools/measure_realtime_main.cpp")
   bike_startup_target_policy(bike-measure-realtime "${native_dir}")

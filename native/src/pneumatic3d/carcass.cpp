@@ -1,4 +1,5 @@
 #include "pneumatic3d/carcass.hpp"
+#include "pneumatic3d/element_work.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -23,9 +24,9 @@ MaxwellStep maxwell(double q0, double rate, double k, double tau, double dt) noe
 }
 }
 
-CoreStatus update_carcass(const CarcassSpec3d& spec,
-    std::span<const ContactElement3d> elements, double dt, bool advance,
-    CarcassState3d& state, std::span<NormalElement3d> out) noexcept {
+CoreStatus detail::prepare_carcass(const CarcassSpec3d& spec,
+    std::span<const ContactElement3d> elements, double dt,
+    const CarcassState3d& state, std::span<NormalElement3d> out, double& pressure) noexcept {
     const auto cells=state.deflection_m.size();
     if (out.size()!=elements.size() || state.maxwell_q_n_per_m2.size()!=cells ||
         state.previous_penetration_m.size()!=cells || state.active.size()!=cells ||
@@ -48,10 +49,16 @@ CoreStatus update_carcass(const CarcassSpec3d& spec,
     if (!std::isfinite(displaced_volume) ||
         (!spec.constant_pressure && displaced_volume>=spec.initial_volume_m3))
         return CoreStatus::invalid_geometry;
-    const double pressure=spec.constant_pressure ? spec.pressure_pa :
+    pressure=spec.constant_pressure ? spec.pressure_pa :
         spec.pressure_pa*spec.initial_volume_m3/(spec.initial_volume_m3-displaced_volume);
-    double stored=0., lost=0.;
-    for (std::size_t i=0;i<elements.size();++i) {
+    return CoreStatus::ok;
+}
+
+CoreStatus detail::evaluate_carcass_range(const CarcassSpec3d& spec,
+    std::span<const ContactElement3d> elements, double dt, const CarcassState3d& state,
+    std::span<NormalElement3d> out, double pressure, std::size_t begin, std::size_t end) noexcept {
+    if(begin>end || end>elements.size() || out.size()!=elements.size())return CoreStatus::invalid_input;
+    for (std::size_t i=begin;i<end;++i) {
         const auto& e=elements[i]; auto& n=out[i]; n={};
         n.element=static_cast<std::uint32_t>(i);
         if (!e.valid || !(e.penetration_m>0.) || !(e.geometric_area_m2>0.)) continue;
@@ -72,9 +79,19 @@ CoreStatus update_carcass(const CarcassSpec3d& spec,
             n.stored_energy_j+=.5*branch.q*branch.q/spec.maxwell_k_n_per_m3*area;
         n.dissipated_work_j=branch.loss_density*area;
         n.active=true;
-        stored+=n.stored_energy_j; lost+=n.dissipated_work_j;
-        if (!std::isfinite(n.normal_load_n) || !std::isfinite(stored) || !std::isfinite(lost))
-            return CoreStatus::invalid_geometry;
+        if (!std::isfinite(n.normal_load_n)) return CoreStatus::invalid_geometry;
+    }
+    return CoreStatus::ok;
+}
+
+CoreStatus detail::finish_carcass(const CarcassSpec3d& spec,
+    std::span<const ContactElement3d> elements, double dt, bool advance,
+    CarcassState3d& state, std::span<const NormalElement3d> out) noexcept {
+    const auto cells=state.deflection_m.size();
+    double stored=0., lost=0.;
+    for (std::size_t i=0;i<elements.size();++i)if(out[i].active) {
+        stored+=out[i].stored_energy_j; lost+=out[i].dissipated_work_j;
+        if (!std::isfinite(stored) || !std::isfinite(lost))return CoreStatus::invalid_geometry;
     }
     if (advance && dt>0.) {
         // Inputs carry absolute material-cell identities. Do not rotate this
@@ -96,5 +113,15 @@ CoreStatus update_carcass(const CarcassSpec3d& spec,
         state.stored_energy_j=stored; state.dissipated_j+=lost;
     }
     return CoreStatus::ok;
+}
+CoreStatus update_carcass(const CarcassSpec3d& spec,
+    std::span<const ContactElement3d> elements, double dt, bool advance,
+    CarcassState3d& state, std::span<NormalElement3d> out) noexcept {
+    double pressure=0.;
+    auto result=detail::prepare_carcass(spec,elements,dt,state,out,pressure);
+    if(result!=CoreStatus::ok)return result;
+    result=detail::evaluate_carcass_range(spec,elements,dt,state,out,pressure,0,elements.size());
+    if(result!=CoreStatus::ok)return result;
+    return detail::finish_carcass(spec,elements,dt,advance,state,out);
 }
 } // namespace bike::pneumatic3d

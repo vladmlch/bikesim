@@ -48,13 +48,15 @@ bike::io::Value native_build_provenance(const std::filesystem::path& build_direc
         set(out, "context_error", text(std::string("cannot read native_check_context.json: ") + error.what()));
     }
     Value sanitizers{Object{{"address", Value{build::address_sanitizer}},
-        {"realtime", Value{build::realtime_sanitizer}}, {"coverage", Value{build::coverage}}}};
+        {"realtime", Value{build::realtime_sanitizer}}, {"coverage", Value{build::coverage}},
+        {"thread", Value{build::thread_sanitizer}}}};
     try {
         std::istringstream cache(read(build_directory / "CMakeCache.txt"));
         std::string line;
         while (std::getline(cache, line)) {
             for (const auto& [key, flag] : {std::pair{"NATIVE_SANITIZE:BOOL=", "address"},
-                    std::pair{"NATIVE_RTSAN:BOOL=", "realtime"}, std::pair{"NATIVE_COVERAGE:BOOL=", "coverage"}})
+                    std::pair{"NATIVE_RTSAN:BOOL=", "realtime"}, std::pair{"NATIVE_COVERAGE:BOOL=", "coverage"},
+                    std::pair{"NATIVE_TSAN:BOOL=", "thread"}})
                 if (line.starts_with(key)) set(sanitizers, flag, Value{trim_line(line.substr(std::string_view(key).size())) == "ON"});
         }
     } catch (const std::exception& error) { set(out, "cache_error", text(error.what())); }
@@ -69,6 +71,9 @@ bike::io::Value native_provenance() {
     const auto identity = runtime_identity();
     set(out, "native_source_sha256", text(identity.native_source_sha256));
     set(out, "build_context", io::parse_json(identity.build_context_json));
+    set(out, "numerics_provider_policy", io::parse_json(numerics_provider_policy_json()));
+    set(out, "spatial_worker_default", integer(1));
+    set(out, "engine_worker_production_default", integer(1));
     set(out, "git_sha", Value{}); set(out, "working_tree_dirty", Value{});
     try {
         const std::filesystem::path source_root(build::source_root);

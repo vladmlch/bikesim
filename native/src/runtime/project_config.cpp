@@ -431,7 +431,7 @@ bio::Value project_spatial_runtime_envelope(const cfg::SimulationPhysicsConfig& 
     vread::exact(root, vread::keys("timestep_s", "control_period_s", "control_period_steps",
         "physics_mode", "drive_mode", "strict", "measurement_decimation", "record_retention",
         "writer_config", "rider_controller", "rider_intent", "monitors", "geometry"),
-        vread::keys("async_telemetry"));
+        vread::keys("async_telemetry", "tyre_threads"));
     const auto positive = [](const vread::Dict& d, const char* name) {
         const double value = vread::finite_real(vread::field(d, name), d.child(name));
         if (!(value > 0.)) vread::invalid(d.child(name), "expected positive value");
@@ -457,6 +457,10 @@ bio::Value project_spatial_runtime_envelope(const cfg::SimulationPhysicsConfig& 
     (void)vread::boolean(vread::field(root, "strict"), root.child("strict"));
     if (root.contains("async_telemetry"))
         (void)vread::boolean(vread::field(root, "async_telemetry"), root.child("async_telemetry"));
+    if (root.contains("tyre_threads")) {
+        const auto count=vread::integer32(vread::field(root,"tyre_threads"),root.child("tyre_threads"));
+        if(count<1 || count>64)vread::invalid(root.child("tyre_threads"),"expected [1,64]");
+    }
     if (vread::integer32(vread::field(root, "measurement_decimation"), root.child("measurement_decimation")) <= 0)
         vread::invalid(root.child("measurement_decimation"), "expected positive integer");
     const auto& retention = vread::string(vread::field(root, "record_retention"), root.child("record_retention"));
@@ -631,6 +635,8 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
 RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& model,
                               const trn::TrackSpec& track, const ProjectionOptions& options) {
     const auto config = physics(request);
+    if(options.tyre_threads<1 || options.tyre_threads>64 || (!config.spatial && options.tyre_threads!=1))
+        throw std::invalid_argument("project_runtime.tyre_threads: expected [1,64] for spatial, 1 for planar");
     require_connected_spatial(config);
     const auto resolved_rider = rider(request);
     validate_native_supported(config, resolved_rider);
@@ -683,6 +689,7 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
             {"com_marker_site", com < 0 ? Value{} : text("site_CG")},
             {"pose", pose}}}}}};
     if(config.spatial) {
+        set(envelope,"tyre_threads",integer(options.tyre_threads));
         std::erase_if(std::get<Object>(envelope.data),[](const auto& entry){return entry.first=="runtime_schema";});
         auto resolved=decode_runtime_config(project_spatial_runtime_envelope(config,envelope));
         resolved.terrain3d=request.terrain3d;

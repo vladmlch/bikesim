@@ -22,6 +22,7 @@
 // fresh (the running loop's entry forward is conditional on
 // `initializing` and never runs post-bootstrap).
 #include "runtime.hpp"
+#include "spatial_timing.hpp"
 #include "spatial_tire_factory.hpp"
 #include "checkpoint_io.hpp"
 #include "presentation_checkpoint.hpp"
@@ -802,12 +803,15 @@ void NativeRideRuntime::advance_interval(const RideControl &command, double fron
     require_boundary_ready();
     // Async closes become visible only at a main-thread step boundary. The
     // worker never changes presentation or the live controller/contact state.
+    {
+    const spatial::timing::Scope timing(spatial::timing::Region::accounting);
     try { accounting_->collect(false); }
     catch (const InvalidReferenceRun&) {
         physical_->capture_accounted_presentation(committed_presentation_);
         throw;
     }
     physical_->capture_accounted_presentation(committed_presentation_);
+    }
     try { test_failure_boundary(); }
     catch(...) { if(config_.spatial)boundary_recovery_required_=true; throw; }
     RawStep raw = [&] {
@@ -835,6 +839,7 @@ void NativeRideRuntime::advance_interval(const RideControl &command, double fron
         }
     }();
     try {
+        const spatial::timing::Scope timing(spatial::timing::Region::accounting);
         engine::get_state(stepper_->model(), stepper_->data(),
             next_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));
         physical_->capture_presentation(next_presentation_);
@@ -871,6 +876,7 @@ void NativeRideRuntime::advance_interval(const RideControl &command, double fron
     }
     if (committed_outcome_) flush_accounting();
     else if (accounting_->full()) {
+        const spatial::timing::Scope timing(spatial::timing::Region::accounting);
         try { accounting_->close_period(); }
         catch (const InvalidReferenceRun&) {
             physical_->capture_accounted_presentation(committed_presentation_);
@@ -881,6 +887,7 @@ void NativeRideRuntime::advance_interval(const RideControl &command, double fron
 }
 
 void NativeRideRuntime::flush_accounting() {
+    const spatial::timing::Scope timing(spatial::timing::Region::accounting);
     try {
         accounting_->flush();
     } catch (const InvalidReferenceRun &) {
@@ -1163,7 +1170,7 @@ std::string config_digest(const RuntimeConfig& c) {
     const auto named=[](const std::optional<std::string>& name){return name?text(*name):Value{};};
     const Value document{Object{{"schema",integer(c.schema)},{"dt",real(c.timestep_s)},
         {"period",real(c.control_period_s)},{"period_steps",integer(c.control_period_steps)},
-        {"strict",Value{c.strict}},{"async",Value{c.async_telemetry}},
+        {"strict",Value{c.strict}},{"async",Value{c.async_telemetry}},{"tyre_threads",integer(c.tyre_threads)},
         {"measurement",integer(c.measurement_decimation)},{"retention",integer(static_cast<int>(c.record_retention))},
         {"writer",c.writer_config},{"rider_controller",c.rider_controller},{"rider_intent",c.rider_intent},
         {"spatial",std::move(spatial)},

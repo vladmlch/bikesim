@@ -1478,3 +1478,58 @@ manifest/reference paths. Within-platform references require matching
 execution/provider/config/asset identities and byte-exact comparison;
 cross-platform comparisons permit only the declared per-field manifest
 policy. A hash of newly generated output is not an independent expected value.
+
+## Spatial GUI pacing observations — W50
+
+`spatial.pacer_report` uses deterministic timestamps and no display or physics
+execution. Its authored controls cover debt without changing scheduling,
+actual presentation counts, render durations, frame lateness, achieved RTF and
+FPS, frozen terminal timing, and rejection of pause/scale/reset/hidden/empty or
+interrupted windows. Invalid and overlapping render clocks are rejected.
+
+The source connects those observations to positive-size framebuffer draw/swap
+completion in `viewer::run` and to the final spatial physical ride stdout
+summary's `viewer_performance` object. Seal/flush, preview, recording
+publication and runtime close have separate timings and an inclusive RTF;
+plot export is separate. The complete timing object is stdout-only, since
+publication must finish before its duration is available. The report requires
+strict, valid, complete free-root fast-tyre operation for an eligible 1x result,
+and never turns that result into full qualification automatically.
+
+The test and GUI integration have not been compiled or run. Once execution is
+authorized, the deterministic control can be selected with:
+
+```sh
+ctest --test-dir "$BUILD" --output-on-failure -R '^spatial\.pacer_report$'
+```
+
+V10 still needs actual frames, physical results and the matching candidate's
+both-platform evidence. A headless clock test cannot establish display
+acceptance or a measured speedup.
+
+## Spatial qualification and optional GPU decision controls — W54/W55
+
+The [qualification ledger](superpowers/audits/2026-10-22-spatial-3d-qualification.md)
+and `migration/spatial3d/qualification.json` begin with pending M0–M6/G0–G6
+entries and a null candidate identity. `spatial.qualification_registry` checks
+the schema, exact/unique milestone and gate inventories, complete identity,
+evidence path/digest structure and rejection of a false overall pass. It also
+has a complete synthetic accepted control; this only tests structural
+validation and is never recorded as actual qualification.
+
+The test was authored without compilation or execution. V10 must independently
+verify evidence files, hashes, source/build/input identities and actual results
+on macOS arm64 and Linux aarch64. A structural validator cannot substitute for
+those checks. Once execution is authorized, select the native test with:
+
+```sh
+ctest --test-dir "$BUILD" --output-on-failure -R '^spatial\.qualification_registry$'
+```
+
+The optional `spatial.gpu_decision` test is a separate CMake project under
+[`tools/spatial_gpu`](../tools/spatial_gpu/README.md). It is absent from the
+product test graph and installs no SDK. Its helpers check the predeclared
+twofold section, ten-percent full-ride, twentyfold batch and threefold offline
+thresholds with the required correctness flags. All GPU evidence remains
+pending V11 in the [feasibility memo](superpowers/audits/2026-10-22-spatial-3d-gpu-feasibility.md).
+It does not block V10. No command in these W54/W55 instructions has been run.

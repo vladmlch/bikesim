@@ -13,6 +13,8 @@ struct ProjectionOptions {
     // strict=False); strict arrives only through an explicit check policy.
     bool strict = false;
     bool async_telemetry = false;
+    // Spatial tyre execution policy only; physics coefficients stay unchanged.
+    unsigned tyre_threads = 1;
     int measurement_decimation = 1;
     RetentionMode record_retention = RetentionMode::off;
     // Legacy cruise target; the physical runtime never enables speed control.

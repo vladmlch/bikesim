@@ -27,7 +27,7 @@
 # Build options owned here (declared once so targets created while a
 # sibling cmake module is being included — e.g. bike_native_numerics —
 # already see them):
-#   NATIVE_SANITIZE / NATIVE_RTSAN / NATIVE_COVERAGE
+#   NATIVE_SANITIZE / NATIVE_RTSAN / NATIVE_TSAN / NATIVE_COVERAGE
 #   BIKE_LIBCPP_HARDENING=EXTENSIVE|FAST
 #
 # Test-only knobs (production builds leave them empty): the overrides
@@ -51,6 +51,7 @@ endif()
 
 option(NATIVE_SANITIZE "ASan+UBSan build" OFF)
 option(NATIVE_RTSAN "RealtimeSanitizer build (brew clang only)" OFF)
+option(NATIVE_TSAN "ThreadSanitizer build (Linux only)" OFF)
 option(NATIVE_COVERAGE "llvm-cov instrumented build" OFF)
 
 # ASan and RTSan are mutually exclusive lanes: their runtimes compete for
@@ -58,6 +59,15 @@ option(NATIVE_COVERAGE "llvm-cov instrumented build" OFF)
 # inside an ASan-instrumented image. The runner-side environment helper
 # (tools/native_runtime.py) refuses the same combination; rejecting it at
 # configure time keeps a mixed-request tree from building at all.
+if(NATIVE_TSAN AND BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+  message(FATAL_ERROR "TSan runtime unsupported on arm64-Darwin")
+endif()
+if(NATIVE_TSAN AND NOT BIKE_TARGET_SYSTEM STREQUAL "Linux")
+  message(FATAL_ERROR "NATIVE_TSAN requires a Linux target")
+endif()
+if(NATIVE_TSAN AND (NATIVE_SANITIZE OR NATIVE_RTSAN OR NATIVE_COVERAGE))
+  message(FATAL_ERROR "NATIVE_TSAN requires a separate build tree from ASan, RTSan and coverage")
+endif()
 if(NATIVE_SANITIZE AND NATIVE_RTSAN)
   message(FATAL_ERROR
     "NATIVE_SANITIZE and NATIVE_RTSAN are mutually exclusive; configure "
@@ -638,6 +648,10 @@ if(NATIVE_SANITIZE)
       "no GCC spelling on this target; the default shared libasan is linked")
   endif()
 endif()
+if(NATIVE_TSAN)
+  list(APPEND _bike_instrument_options -fsanitize=thread -fno-omit-frame-pointer)
+  list(APPEND _bike_instrument_link_options -fsanitize=thread)
+endif()
 if(NATIVE_RTSAN)
   if(_bike_clang_family)
     list(APPEND _bike_instrument_options -fsanitize=realtime)
@@ -770,6 +784,29 @@ _bike_probe_capability(BIKE_CAP_RTSAN_SUPPORTED rtsan
   INCLUDE_DIRS "${BIKE_NATIVE_ROOT}/src")
 _bike_probe_capability(BIKE_CAP_COVERAGE_SUPPORTED coverage
   COMPILE_FLAGS ${_bike_cap_compile_coverage})
+
+# TSan is never represented as supported on the known-broken Darwin lane.
+# Probe instrumentation plus linking, not flag spelling alone. The enabled
+# lane below also executes a clean control using the same linker-selected
+# runtime as native executables (no foreign preload).
+set(_bike_cap_compile_tsan -fsanitize=thread -fno-omit-frame-pointer -pthread)
+set(_bike_cap_link_tsan -fsanitize=thread -pthread)
+if(BIKE_TARGET_SYSTEM STREQUAL "Linux")
+  file(WRITE "${_bike_capability_probe_dir}/tsan_probe.cpp"
+    "#if defined(__SANITIZE_THREAD__)\n"
+    "#elif defined(__has_feature)\n"
+    "#if !__has_feature(thread_sanitizer)\n#error TSan instrumentation missing\n#endif\n"
+    "#else\n#error TSan instrumentation missing\n#endif\n"
+    "#include <thread>\n"
+    "int main() { int value=0; std::thread worker([&]{value=1;}); worker.join(); return value==1?0:1; }\n")
+  _bike_probe_capability(BIKE_CAP_TSAN_SUPPORTED tsan
+    COMPILE_FLAGS ${_bike_cap_compile_tsan} LINK_FLAGS ${_bike_cap_link_tsan}
+    SOURCE "${_bike_capability_probe_dir}/tsan_probe.cpp")
+else()
+  set(BIKE_CAP_TSAN_SUPPORTED FALSE)
+  set(BIKE_CAP_TSAN_SUPPORTED_EVIDENCE "unsupported target; TSan is Linux-only")
+endif()
+
 
 # Coverage toolchain qualification (T17) — a requested coverage lane is
 # qualified only when BOTH gates pass under this toolchain:
@@ -1091,6 +1128,42 @@ endif()
 if(BIKE_CAP_RTSAN_SUPPORTED AND NOT BIKE_RTSAN_RUNTIME_NAME STREQUAL "")
   _bike_driver_file_name(BIKE_CAP_RTSAN_RUNTIME BIKE_CAP_RTSAN_RUNTIME_QUERY
     "${BIKE_RTSAN_RUNTIME_NAME}")
+endif()
+
+set(BIKE_CAP_TSAN_RUNTIME "")
+set(BIKE_CAP_TSAN_RUNTIME_QUERY "TSan runtime not queried on this target")
+set(BIKE_CAP_TSAN_RUN_CONTROL "TSan clean control not executed")
+set(BIKE_CAP_TSAN_ANNOTATION_CONTROL "TSan instruments all accesses; no function annotation")
+set(BIKE_CAP_TSAN_MACRO_CONTROL "instrumented feature macro is checked by the compile control")
+set(BIKE_CAP_TSAN_VIOLATION_CONTROL "pending V09: bike_spatial_worker_pool --tsan-race-control")
+set(BIKE_CAP_TSAN_TOOLS "coverage-tool evidence is not applicable to TSan")
+set(BIKE_CAP_TSAN_FORMAT_PROBE "coverage format is not applicable to TSan")
+if(BIKE_CAP_TSAN_SUPPORTED)
+  if(_bike_clang_family)
+    # Clang links compiler-rt's archive by default; this is the actual linked
+    # runtime identity, not a preload request for a similarly named DSO.
+    set(_bike_tsan_runtime_name "libclang_rt.tsan-${BIKE_POLICY_MACHINE}.a")
+  else()
+    set(_bike_tsan_runtime_name "libtsan.so")
+  endif()
+  _bike_driver_file_name(BIKE_CAP_TSAN_RUNTIME BIKE_CAP_TSAN_RUNTIME_QUERY "${_bike_tsan_runtime_name}")
+endif()
+if(NATIVE_TSAN)
+  if(NOT BIKE_CAP_TSAN_SUPPORTED OR NOT BIKE_CAP_TSAN_RUNTIME)
+    message(FATAL_ERROR "NATIVE_TSAN requires instrumented compile/link and a compiler-resolved runtime: ${BIKE_CAP_TSAN_SUPPORTED_EVIDENCE}; ${BIKE_CAP_TSAN_RUNTIME_QUERY}")
+  endif()
+  try_run(_bike_tsan_run_rc _bike_tsan_compile
+    "${_bike_capability_probe_dir}/run-tsan"
+    SOURCES "${_bike_capability_probe_dir}/tsan_probe.cpp"
+    CMAKE_FLAGS "-DCMAKE_CXX_STANDARD:STRING=23" "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
+    COMPILE_DEFINITIONS ${_bike_cap_compile_tsan}
+    LINK_OPTIONS ${_bike_cap_link_tsan}
+    RUN_OUTPUT_VARIABLE _bike_tsan_run_output
+    COMPILE_OUTPUT_VARIABLE _bike_tsan_compile_output)
+  if(NOT _bike_tsan_compile OR NOT _bike_tsan_run_rc EQUAL 0)
+    message(FATAL_ERROR "TSan clean instrumented control failed on this Linux host: ${_bike_tsan_compile_output}; ${_bike_tsan_run_output}")
+  endif()
+  set(BIKE_CAP_TSAN_RUN_CONTROL "clean instrumented thread/join control exited 0 with the compiler-linked runtime")
 endif()
 
 # A requested-but-unsupported sanitizer fails at configure time — a build

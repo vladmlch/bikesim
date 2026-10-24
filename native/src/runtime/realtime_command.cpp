@@ -45,6 +45,9 @@ int measure_realtime_command(std::span<const std::string_view> arguments, std::o
             out << "bike-measure-realtime --out DIR [--backend native] [--physics-config FILE] [--track FILE|PRESET]\n"
                 << "  [--duration SECONDS] [--dt SECONDS] [--warmup COUNT] [--runs COUNT]\n"
                 << "  [--record-decimation COUNT|--decimate COUNT] [--seed INTEGER] [--compare report.json] [--benchmark]\n";
+            out << "  [--profile spatial-fast-v1] [--spatial planar|3d] [--terrain3d FILE] [--threads 1..64]\n"
+                << "  [--demand-trace W36_QUALIFICATION.toml] [--no-region-timing]\n"
+                << "  spatial acceptance needs >=1 warmup and >=3 full runs >=30 s; timing-disabled runs are overhead controls\n";
             return 0;
         }
         require_empty_output(options.output);
@@ -59,6 +62,7 @@ int measure_realtime_command(std::span<const std::string_view> arguments, std::o
                 auto run = measure_run([&] { return make_native_driver(options); }, options.output / name);
                 effective_dt = io::as_double(field(field(run, "comparability"), "timestep_s"), "timestep_s");
                 const bool measured_run = std::string_view(phase) == "run";
+                if (find(run, "profile") != nullptr) set(run, "warmup", Value{!measured_run});
                 if (measured_run) set(run, "steady_state", steady_state_evidence(run, options.duration_s));
                 all_measured = all_measured && yes(field(run, "measured_ok"));
                 std::filesystem::create_directories(options.output);

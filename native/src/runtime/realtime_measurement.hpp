@@ -6,6 +6,7 @@
 #pragma once
 
 #include "../io/value.hpp"
+#include "spatial_performance.hpp"
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -25,6 +26,13 @@ struct Settings {
     int record_decimation = 80;
     bool strict = true;
     bike::io::Value metadata;
+    std::optional<spatial::SpatialPerformanceProfile> spatial_profile;
+};
+struct MeasurementTimings {
+    spatial::RegionTimings regions;
+    double clock_overhead_estimate_s = 0.;
+    std::uint64_t clock_reads = 0;
+    bool available = false;
 };
 
 // A fresh owned driver is required for each warmup and measured repetition.
@@ -48,6 +56,7 @@ public:
     virtual void flush() = 0;
     [[nodiscard]] virtual bike::io::Value summary(std::string_view reason) const = 0;
     [[nodiscard]] virtual bike::io::Value execution_identity() const = 0;
+    [[nodiscard]] virtual MeasurementTimings timings() const { return {}; }
     virtual void export_run(const std::filesystem::path&, std::string_view reason) = 0;
     virtual void close() = 0;
 };

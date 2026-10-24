@@ -36,6 +36,11 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
     using Clock = std::chrono::steady_clock;
     auto now = Clock::now(); pacer.reset(now);
     AchievedRate rate(now, frame.state.time_s);
+    std::optional<PacingMeasurement> pacing_measurement;
+    if (frame.state.spatial && (options.mode == Mode::physical || options.mode == Mode::research))
+        pacing_measurement.emplace(now, frame.state.time_s,
+            options.render_interval_s, options.time_scale, options.hidden);
+    int pacing_generation = frame.state.generation;
     auto last_hud = now;
     int legend_generation = -1;
     int clock_generation = frame.state.generation;
@@ -58,6 +63,10 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
             if (action == Action::close) { result.closed_by_user = true; window.request_close(); break; }
             if (action == Action::reset) {
                 if (!hooks.reset) continue;
+                if (pacing_measurement) {
+                    const auto observed = Clock::now();
+                    pacing_measurement->observe(observed, frame.state.time_s, pacer.debt_s_at(observed));
+                }
                 // The caller seals/drains the previous episode before reset.
                 hooks.reset();
                 ++result.resets; stopped = false; terminal_drawn = false;
@@ -66,6 +75,10 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
                 if (hooks.pause) hooks.pause(false);
                 frame = hooks.frame();
                 now = Clock::now(); pacer.set_paused(false); pacer.reset(now); rate.rebase(now,frame.state.time_s);
+                if (pacing_measurement) {
+                    pacing_measurement->reset(now, frame.state.time_s);
+                    pacing_generation = frame.state.generation;
+                }
                 renderer->reset_camera(); request_frame = true;
                 continue;
             }
@@ -75,6 +88,7 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
             if (action == Action::toggle_brakes || action == Action::brake_less || action == Action::brake_more)
                 if(hooks.brakes) hooks.brakes(input.brake_demand(),input.brake_demand());
             if (input.scale != previous_scale) pacer.set_scale(input.scale);
+            if (pacing_measurement) pacing_measurement->mode(input.paused, input.scale);
             if (action == Action::camera_cycle) renderer->cycle_camera();
             if (action == Action::camera_side) renderer->set_camera(CameraMode::side);
             if (action == Action::camera_chase) renderer->set_camera(CameraMode::chase);
@@ -100,6 +114,13 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
         const bool time_complete = options.duration_s && frame.state.time_s >= *options.duration_s;
         result.terminal = hooks.terminal() || time_complete;
         const auto decision = pacer.poll(now);
+        if (pacing_measurement) {
+            if (frame.state.generation != pacing_generation) {
+                pacing_measurement->reset(now, frame.state.time_s);
+                pacing_generation = frame.state.generation;
+            }
+            pacing_measurement->observe(now, frame.state.time_s, pacer.debt_s());
+        }
         if (!result.terminal && !input.paused && decision.physics_steps != 0) {
             const auto before = frame.state;
             const auto room = std::numeric_limits<std::int64_t>::max() - before.step;
@@ -137,11 +158,27 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
         // Stored-state inspection can seek and run backwards. Its cursor is
         // not an integrated simulation clock, so it has no achieved RTF.
         const auto achieved = options.mode==Mode::inspection?std::optional<double>{}:rate.update(Clock::now(),frame.state.time_s);
+        if (pacing_measurement) {
+            const auto observed = Clock::now();
+            if (frame.state.generation != pacing_generation) {
+                pacing_measurement->reset(observed, frame.state.time_s);
+                pacing_generation = frame.state.generation;
+            }
+            pacing_measurement->observe(observed, frame.state.time_s, pacer.debt_s_at(observed));
+        }
         if (request_frame || decision.request_frame) {
+            const auto render_started = pacing_measurement ? Clock::now() : Clock::time_point{};
             renderer->apply(frame);
             renderer->set_overlay(overlay_text(frame,input,achieved,options.mode));
             const auto [width,height]=window.framebuffer_size();renderer->draw(width,height);
-            if(width>0&&height>0)window.swap();
+            if(width>0&&height>0) {
+                window.swap();
+                if (pacing_measurement) {
+                    const auto presented = Clock::now();
+                    pacing_measurement->presented(render_started, presented,
+                        frame.state.time_s, pacer.debt_s_at(presented));
+                }
+            } else if (pacing_measurement) pacing_measurement->unavailable_framebuffer();
             if(hooks.presented)hooks.presented(frame,achieved);
             request_frame=false;
         }
@@ -154,6 +191,10 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
             }
             legend_generation=frame.state.generation;last_hud=now;print(hooks.hud?hooks.hud(frame,input,achieved):hud_line(frame,input,achieved,options.mode));
         }
+        if (result.terminal && pacing_measurement) {
+            const auto completed = Clock::now();
+            pacing_measurement->stop(completed, frame.state.time_s, pacer.debt_s_at(completed), true);
+        }
         if (result.terminal && options.close_on_terminal) break;
         if (result.terminal || input.paused || decision.physics_steps==0) window.wait(.005);
     }
@@ -161,6 +202,17 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
     // Stop may have finished an already-issued research window. Its capture
     // remains available to the caller's finalization; no new policy was asked.
     result.terminal = hooks.terminal() || result.terminal;
+    if (pacing_measurement) {
+        // If no terminal frame already froze the window, this is an early
+        // close. A pending research interval drained by stop cannot turn an
+        // operator interruption into successful GUI performance evidence.
+        const auto final_frame = hooks.frame();
+        const auto completed = Clock::now();
+        if (final_frame.state.generation != pacing_generation)
+            pacing_measurement->reset(completed, final_frame.state.time_s);
+        pacing_measurement->stop(completed, final_frame.state.time_s, pacer.debt_s_at(completed), false);
+        result.pacing = pacing_measurement->report();
+    }
     renderer->close();
     return result;
 }

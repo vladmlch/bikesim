@@ -31,6 +31,8 @@ public:
     double axle_moment_nm(std::size_t wheel) const noexcept;
     ReasonCode3d last_reason() const noexcept;
     const Pneumatic3dModel& model() const noexcept;
+    // Cold execution-policy change; owner must not be evaluating the writer.
+    void set_worker_threads(unsigned);
 
 private:
     const mjModel* model_ = nullptr;

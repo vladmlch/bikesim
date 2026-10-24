@@ -170,7 +170,7 @@ Arguments parse_arguments(std::string_view command, std::span<const std::string_
             if (!chosen) throw ArgumentError("unrecognized arguments: " + std::string(token));
             attached = token;
         }
-        if ((chosen->dest == "spatial" || chosen->dest == "terrain3d") && args.present(chosen->dest))
+        if ((chosen->dest == "spatial" || chosen->dest == "terrain3d" || chosen->dest == "threads") && args.present(chosen->dest))
             throw ArgumentError("argument " + chosen->names.front() + ": may only be supplied once");
         if(chosen->type=="int")*attached=integer_token(*attached);
         validate_token(*chosen, *attached); args.set(chosen->dest, std::move(*attached), true);
@@ -186,6 +186,7 @@ std::string help_text(std::string_view command) {
     if (command == "bike-ride" || command == "bike-research" || command == "bike-settle")
         text += "\nSpatial options:\n  --spatial {planar,3d}  override the TOML spatial mode (default: preserve TOML)\n"
                 "  --terrain3d PATH      .terrain3d asset or .toml genspec; requires 3D\n"
+                "  --threads N           spatial tyre threads, 1..64 (default: 1)\n"
                 "  Recording requires --record; --out only selects its destination.\n";
     if (command == "bike-replay")
         text += "\n  --checked             explicitly select checked recalculation (the default)\n"

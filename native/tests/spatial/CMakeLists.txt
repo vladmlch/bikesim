@@ -16,7 +16,7 @@ configure_file(fixture_paths.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/fixture_paths.h
 
 add_library(bike_spatial_support STATIC
   support/spatial_fixture.cpp support/terrain_fixture.cpp support/startup_fixture.cpp
-  support/tyre_fixture.cpp)
+  support/tyre_fixture.cpp support/qualification_registry.cpp)
 bike_apply_native_policy(bike_spatial_support)
 target_include_directories(bike_spatial_support PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}"
@@ -159,6 +159,24 @@ bike_add_spatial_test(reports_batch SOURCES reports_batch.cpp
 bike_add_spatial_test(documented_examples SOURCES documented_examples.cpp
   LIBRARIES bike_cli bike_configuration bike_recording_cli bike_batch LABELS application unit)
 
+# W50-W54 are source-authored only. V09/V10 own all executions and decisions.
+# Use the real owners in this graph; there is no standalone bike_runtime target.
+bike_add_spatial_test(performance_report SOURCES performance_report.cpp
+  LIBRARIES bike_realtime_measurement bike_spatial LABELS performance unit)
+bike_add_spatial_test(pacer_report SOURCES pacer_report.cpp
+  LIBRARIES bike_viewer LABELS performance unit)
+bike_add_spatial_test(worker_ranges SOURCES worker_ranges.cpp
+  LIBRARIES bike_spatial_workers LABELS performance unit)
+bike_add_spatial_test(worker_pool SOURCES worker_pool.cpp
+  LIBRARIES bike_spatial_workers bike_pneumatic3d LABELS performance lifecycle)
+bike_add_spatial_test(thread_invariance SOURCES thread_invariance.cpp
+  LIBRARIES bike_startup_runtime bike_pneumatic3d bike_initialization bike_validation bike_spatial bike_app bike_recording
+  LABELS performance slow)
+bike_add_spatial_test(engine_pool_probe SOURCES engine_pool_probe.cpp
+  LIBRARIES bike_initialization bike_validation bike_engine LABELS performance perf slow)
+bike_add_spatial_test(qualification_registry SOURCES qualification_registry.cpp
+  LIBRARIES bike_io LABELS qualification unit)
+
 add_executable(bike_spatial_installed_fixture installed_fixture.cpp)
 bike_apply_native_policy(bike_spatial_installed_fixture)
 target_include_directories(bike_spatial_installed_fixture PRIVATE
@@ -187,6 +205,7 @@ foreach(_spatial_test IN ITEMS terrain_codec terrain_sampling terrain_raycast te
     brake_static_3d tyre_state tyre_qualification equilibrium bootstrap_hold startup_paths steer_controller outcomes meijaard
     cornering mirror timestep target_rides sensor_mount sensor_pipeline policy_v2 truth_metrics
     recording_catalog checkpoint recording_assets checked_replay golden_registry cli viewer_pose
-    reports_batch documented_examples)
+    reports_batch documented_examples performance_report pacer_report worker_ranges worker_pool
+    thread_invariance engine_pool_probe qualification_registry)
   bike_rewrite_mujoco_load_name(bike_spatial_${_spatial_test} "${BIKE_DEP_mujoco_LIBRARY}")
 endforeach()

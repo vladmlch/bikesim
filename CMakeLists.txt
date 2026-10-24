@@ -40,6 +40,11 @@ endif()
 # via cmake -S native.
 option(BIKE_BUILD_PYTHON_BINDINGS "Root: refused; build the nanobind extension with cmake -S native (requires the Python native dev group)" OFF)
 option(BIKE_BUILD_GUI "Enable the native GLFW viewer; headless recording/plots remain available when OFF" OFF)
+option(BIKE_SPATIAL_GPU_TOOLS
+  "Standalone decision tools: configure tools/spatial_gpu separately; never part of the product graph" OFF)
+if(BIKE_SPATIAL_GPU_TOOLS)
+  message(STATUS "GPU decision tools are isolated: configure tools/spatial_gpu as a separate source directory")
+endif()
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

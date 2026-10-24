@@ -38,6 +38,10 @@ Environment contract for the enabled lane:
   ``ASAN_OPTIONS`` (last write wins, so the project contract is enforced);
 * ASan and RTSan enabled together — or a requested-but-disabled record,
   which means a stale context — fail instead of running uninstrumented.
+* Linux TSan uses the compiler-linked runtime qualified during configure;
+  it never preloads Clang's archive or a second sanitizer image. Its path
+  is recorded in ``NATIVE_TEST_LINKED_SANITIZER_RUNTIME`` and its options
+  enforce ``halt_on_error=1:exitcode=66``.
 
 CLI: ``python tools/native_runtime.py run --build PATH -- COMMAND [ARGS]``
 loads the validated schema-2 context, checks it against the build's
@@ -72,7 +76,7 @@ _REQUIRED_ASAN_OPTIONS = "detect_leaks=0:detect_stack_use_after_return=1"
 
 _CLANG_FAMILY_IDS = {"Clang", "AppleClang"}
 _GNU_FAMILY_IDS = {"GNU"}
-_SANITIZER_LANES = ("asan", "rtsan")
+_SANITIZER_LANES = ("asan", "rtsan", "tsan")
 
 # Normalized machine spellings shared with the CMake policy's normalized
 # BIKE_POLICY_MACHINE: arm64 and aarch64 are the same target.
@@ -412,8 +416,8 @@ def runtime_environment(
             lanes[name] = record
     if len(lanes) > 1:
         raise NativeRuntimeError(
-            "ASan and RTSan enabled together is not a runnable "
-            "configuration — their runtimes compete for the preload slot"
+            "ASan, RTSan and TSan require separate builds; multiple "
+            "sanitizer lanes are not a runnable configuration"
         )
     if not lanes:
         return dict(environ)
@@ -429,6 +433,39 @@ def runtime_environment(
         raise NativeRuntimeError("context has no platform record")
     system = platform_record.get("system")
     machine = _normalize_machine(platform_record.get("machine"))
+    if sanitizer == "tsan":
+        if system != "Linux":
+            raise NativeRuntimeError("TSan runtime unsupported outside Linux")
+        recorded = record.get("runtime")
+        if not isinstance(recorded, str) or not recorded:
+            raise NativeRuntimeError("TSan requires a recorded compiler-linked runtime")
+        runtime = Path(recorded)
+        if not runtime.is_absolute() or not runtime.is_file():
+            raise NativeRuntimeError("TSan recorded runtime is not an existing absolute file")
+        compiler = context.get("compiler")
+        compiler_id = compiler.get("id") if isinstance(compiler, Mapping) else None
+        if compiler_id in _CLANG_FAMILY_IDS:
+            # The successful compiler/link control validates the archive's
+            # target. A .a file is not a preloadable shared image.
+            if runtime.name != f"libclang_rt.tsan-{machine}.a":
+                raise NativeRuntimeError("TSan archive does not match the recorded compiler target")
+            with runtime.open("rb") as archive:
+                if archive.read(8) != b"!<arch>\n":
+                    raise NativeRuntimeError("TSan recorded archive has an invalid format")
+        elif compiler_id in _GNU_FAMILY_IDS:
+            if not re.fullmatch(r"libtsan\.so(?:\.\d+)*", runtime.name):
+                raise NativeRuntimeError("TSan runtime is not the GNU linked runtime")
+            _check_runtime_platform(runtime, system)
+            _check_runtime_arch(runtime, machine)
+        else:
+            raise NativeRuntimeError("TSan requires a recorded Clang or GNU compiler")
+        env["NATIVE_TEST_LINKED_SANITIZER_RUNTIME"] = str(runtime)
+        existing_options = env.get("TSAN_OPTIONS", "")
+        required_options = "halt_on_error=1:exitcode=66"
+        env["TSAN_OPTIONS"] = (
+            f"{existing_options}:{required_options}" if existing_options else required_options
+        )
+        return env
     runtime = _select_runtime(context, record, sanitizer, system, machine)
 
     preload_name = (
@@ -458,7 +495,7 @@ def runtime_environment(
 # CLI: run --build PATH -- COMMAND [ARGUMENTS]
 # ---------------------------------------------------------------------------
 
-_CACHE_SANITIZER = re.compile(r"^NATIVE_(SANITIZE|RTSAN):[A-Z]+=(.*)$")
+_CACHE_SANITIZER = re.compile(r"^NATIVE_(SANITIZE|RTSAN|TSAN):[A-Z]+=(.*)$")
 
 
 def _build_cache_modes(build: Path) -> dict[str, bool]:
@@ -470,7 +507,7 @@ def _build_cache_modes(build: Path) -> dict[str, bool]:
     for line in cache.read_text(encoding="utf-8", errors="replace").splitlines():
         match = _CACHE_SANITIZER.match(line)
         if match is not None:
-            key = "asan" if match.group(1) == "SANITIZE" else "rtsan"
+            key = {"SANITIZE": "asan", "RTSAN": "rtsan", "TSAN": "tsan"}[match.group(1)]
             modes[key] = match.group(2).strip().upper() in {
                 "1", "ON", "TRUE", "YES",
             }
@@ -487,17 +524,17 @@ def _cross_check_build_cache(
     the runner must refuse rather than instrument by guess.
     """
     modes = _build_cache_modes(build)
-    if modes.get("asan") and modes.get("rtsan"):
+    if sum(modes.values()) > 1:
         raise NativeRuntimeError(
-            "the selected build enables ASan and RTSan together; runtime "
-            "injection is ambiguous"
+            "the selected build enables multiple ASan, RTSan or TSan lanes; "
+            "separate build trees are required"
         )
     capabilities = context.get("capabilities")
     if not isinstance(capabilities, Mapping):
         # A context without capability records predates the sanitizer
         # lane records entirely — a build cache that still requests a
         # sanitizer cannot be served by it, so it is stale by definition.
-        if modes.get("asan") or modes.get("rtsan"):
+        if any(modes.values()):
             raise NativeRuntimeError(
                 "CMakeCache.txt requests a sanitizer but the recorded "
                 "context has no capability records — reconfigure the build"
@@ -528,6 +565,9 @@ def _sanitizer_evidence(context: Mapping[str, Any], env: Mapping[str, str]) -> s
         compiler_text = (
             f" compiler={compiler.get('id')}:{compiler.get('path')}"
         )
+    linked_runtime = env.get("NATIVE_TEST_LINKED_SANITIZER_RUNTIME")
+    if linked_runtime is not None:
+        return f"sanitizer=tsan runtime={linked_runtime} linkage=compiler-selected{compiler_text}"
     runtime = env.get("NATIVE_TEST_SANITIZER_RUNTIME")
     if runtime is None:
         return f"sanitizer=none{compiler_text}"

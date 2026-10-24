@@ -35,7 +35,8 @@
         "CMAKE_BUILD_TYPE": "Release",
         "NATIVE_SANITIZE": "OFF",
         "NATIVE_RTSAN": "OFF",
-        "NATIVE_COVERAGE": "OFF"
+        "NATIVE_COVERAGE": "OFF",
+        "NATIVE_TSAN": "OFF"
       }
     },
     {
@@ -79,6 +80,19 @@
       "cacheVariables": {
         "NATIVE_COVERAGE": "ON"
       }
+    },
+    {
+      "name": "linux-tsan",
+      "inherits": "_root",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "NATIVE_TSAN": "ON",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
     }
   ],
   "buildPresets": [
@@ -112,6 +126,10 @@
       "targets": [
         "coverage"
       ]
+    },
+    {
+      "name": "linux-tsan",
+      "configurePreset": "linux-tsan"
     }
   ],
   "testPresets": [
@@ -169,6 +187,25 @@
         "exclude": {
           "label": "slow|audit|package|coverage"
         }
+      }
+    },
+    {
+      "name": "linux-tsan",
+      "configurePreset": "linux-tsan",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "jobs": 1,
+        "noTestsAction": "error"
+      },
+      "filter": {
+        "include": {
+          "name": "^spatial\\.(worker_ranges|worker_pool|thread_invariance)$"
+        }
+      },
+      "environment": {
+        "TSAN_OPTIONS": "halt_on_error=1:exitcode=66"
       }
     }
   ],
@@ -272,6 +309,23 @@
         {
           "type": "build",
           "name": "coverage-report"
+        }
+      ]
+    },
+    {
+      "name": "linux-tsan",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "linux-tsan"
+        },
+        {
+          "type": "build",
+          "name": "linux-tsan"
+        },
+        {
+          "type": "test",
+          "name": "linux-tsan"
         }
       ]
     }

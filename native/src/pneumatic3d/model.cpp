@@ -1,4 +1,7 @@
 #include "pneumatic3d/model.hpp"
+#include "pneumatic3d/element_work.hpp"
+#include "runtime/spatial_worker_pool.hpp"
+#include "runtime/spatial_timing.hpp"
 #include "pneumatic3d/bristles.hpp"
 #include "pneumatic3d/brush_detail.hpp"
 #include "pneumatic3d/kernel_math.hpp"
@@ -69,6 +72,58 @@ double surface_mu(const terrain::Terrain3dQueryView& view,std::uint32_t id,doubl
 }
 }
 
+struct Pneumatic3dModel::ElementWorkers {
+    ElementWorkers(unsigned threads,std::size_t elements)
+        :pool(threads),ranges(::runtime::spatial::partition_ranges(elements,threads)),statuses(elements,0) {}
+    struct Work {
+        const TorusGrid3d* grid=nullptr;
+        const WheelKinematics3d* kin=nullptr;
+        const terrain::Terrain3dQueryView* view=nullptr;
+        const CarcassSpec3d* carcass=nullptr;
+        const CarcassState3d* state=nullptr;
+        std::span<ContactElement3d> elements;
+        std::span<NormalElement3d> normals;
+        std::span<std::uint8_t> statuses;
+        double dt=0.,pressure=0.;
+    };
+    static void geometry_work(void* raw,std::size_t begin,std::size_t end) noexcept {
+        auto& w=*static_cast<Work*>(raw);
+        const auto status=detail::query_geometry_range(*w.grid,*w.kin,*w.view,w.elements,begin,end);
+        std::fill(w.statuses.begin()+static_cast<std::ptrdiff_t>(begin),
+                  w.statuses.begin()+static_cast<std::ptrdiff_t>(end),static_cast<std::uint8_t>(status));
+    }
+    static void normal_work(void* raw,std::size_t begin,std::size_t end) noexcept {
+        auto& w=*static_cast<Work*>(raw);
+        const auto status=detail::evaluate_carcass_range(*w.carcass,w.elements,w.dt,*w.state,
+            w.normals,w.pressure,begin,end);
+        std::fill(w.statuses.begin()+static_cast<std::ptrdiff_t>(begin),
+                  w.statuses.begin()+static_cast<std::ptrdiff_t>(end),static_cast<std::uint8_t>(status));
+    }
+    CoreStatus run(Work& work,::runtime::spatial::ElementWork callback) noexcept {
+        work.statuses=statuses;
+        try { pool.run(ranges,callback,&work); }
+        catch (...) { return CoreStatus::invalid_input; }
+        for(const auto status:statuses)
+            if(status!=static_cast<std::uint8_t>(CoreStatus::ok))return static_cast<CoreStatus>(status);
+        return CoreStatus::ok;
+    }
+    ::runtime::spatial::WorkerPool pool;
+    std::vector<::runtime::spatial::IndexRange> ranges;
+    std::vector<std::uint8_t> statuses;
+};
+
+Pneumatic3dModel::~Pneumatic3dModel() = default;
+void Pneumatic3dModel::set_worker_threads(unsigned threads) {
+    if(threads==0 || threads>64)throw std::invalid_argument("pneumatic3d.tyre_threads: expected [1,64]");
+    if(threads==worker_threads())return;
+    if(threads==1){workers_.reset();return;}
+    auto candidate=std::make_unique<ElementWorkers>(threads,grid_[0].element_count());
+    workers_=std::move(candidate);
+}
+unsigned Pneumatic3dModel::worker_threads() const noexcept {
+    return workers_?workers_->pool.worker_count()+1U:1U;
+}
+
 Pneumatic3dModel::Pneumatic3dModel(Pneumatic3dSpec spec,terrain::Terrain3dQueryView view,TyreStateIdentity3d identity)
     :spec_(std::move(spec)),view_(view) {
     if(!view.context || !view.sample_fn || !view.ray_fn)
@@ -122,12 +177,31 @@ CoreStatus Pneumatic3dModel::evaluate(const std::array<WheelKinematics3d,2>& kin
     // lives in the runtime adapter; this engine-independent signature has no
     // time/interval token (C10). A probe never changes accepted_interval.
     for(std::size_t w=0;w<2;++w) {
-        auto result=query_geometry(grid_[w],kin[w],view_,elements_[w]);
+        CoreStatus result=CoreStatus::ok;
+        {
+            ::runtime::spatial::timing::Scope rays(::runtime::spatial::timing::Region::terrain_rays);
+            if(workers_) {
+                ElementWorkers::Work work;work.grid=&grid_[w];work.kin=&kin[w];work.view=&view_;
+                work.elements=elements_[w];
+                result=workers_->run(work,ElementWorkers::geometry_work);
+            } else result=query_geometry(grid_[w],kin[w],view_,elements_[w]);
+        }
         if(result!=CoreStatus::ok){reason_=ReasonCode3d::degenerate_down_projection;return result;}
         for(const auto& e:elements_[w])if(e.reason!=ReasonCode3d::none) {
             reason_=e.reason;return CoreStatus::invalid_geometry;
         }
-        result=update_carcass(spec_.carcass[w],elements_[w],dt,advance,staging_.carcass[w],normals_[w]);
+        ::runtime::spatial::timing::Scope tyre(::runtime::spatial::timing::Region::tyre_elements);
+        if(workers_) {
+            double pressure=0.;
+            result=detail::prepare_carcass(spec_.carcass[w],elements_[w],dt,staging_.carcass[w],normals_[w],pressure);
+            if(result==CoreStatus::ok) {
+                ElementWorkers::Work work;work.carcass=&spec_.carcass[w];work.state=&staging_.carcass[w];
+                work.elements=elements_[w];work.normals=normals_[w];work.dt=dt;work.pressure=pressure;
+                result=workers_->run(work,ElementWorkers::normal_work);
+            }
+            if(result==CoreStatus::ok)
+                result=detail::finish_carcass(spec_.carcass[w],elements_[w],dt,advance,staging_.carcass[w],normals_[w]);
+        } else result=update_carcass(spec_.carcass[w],elements_[w],dt,advance,staging_.carcass[w],normals_[w]);
         if(result!=CoreStatus::ok){reason_=ReasonCode3d::invalid_spec;return result;}
         if(advance && dt>0.) {
             // The low-level carcass kernel sees active quadrature only. Its

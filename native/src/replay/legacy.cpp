@@ -15,6 +15,11 @@ void validate_execution(const io::Value& execution) {
         std::set<std::string> expected{"backend", "native_source_sha256", "execution_identity", "mujoco_library_sha256", "numeric_provider",
             "executable_sha256", "source_identity_scope"};
         if (find(execution, "allocation_solver")) { expected.insert("allocation_solver"); expected.insert("allocation_solver_qualification"); }
+        if(const auto* threads=find(execution,"tyre_threads")) {
+            expected.insert("tyre_threads");
+            const auto value=count(*threads);
+            if(value<1 || value>64)throw recording::RecordingError("execution.tyre_threads: expected [1,64]");
+        }
         exact_keys(execution, expected, "native executable execution");
         if (backend != "native") throw recording::RecordingError("native executable profile requires native backend");
         for (auto key : {"native_source_sha256", "execution_identity", "mujoco_library_sha256", "executable_sha256"}) digest(field(execution, key), key);

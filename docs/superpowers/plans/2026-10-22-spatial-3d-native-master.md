@@ -12,11 +12,13 @@
 
 ## Global Constraints
 
-**Поставка исходников 2026-10-24:** W37–W49 написаны поверх присланного
-snapshot W00–W36. [Source report](../audits/2026-10-24-spatial-w37-w49-source.md)
-и `migration/spatial3d/task-index.json` фиксируют `source_written`, без
-execution claims. V07/V08 и предшествующая qualification остаются pending.
-W50–W55 не входят в эту поставку.
+**Последняя поставка исходников 2026-10-24:** W50–W55 написаны поверх
+присланного snapshot W00–W49.
+[Source report](../audits/2026-10-24-spatial-w50-w55-source.md) и
+`migration/spatial3d/task-index.json` фиксируют `source_written`, без
+execution claims. V09/V10/V11 и все предшествующие V-gates остаются pending;
+GPU остаётся optional. История W37–W49 сохранена в
+[предыдущем source report](../audits/2026-10-24-spatial-w37-w49-source.md).
 
 - База: **зафиксированный фактический SHA PFC**, полученный в настоящем Git checkout в S00. `9c08ff1` из аудита — историческая ссылка, не объявление SHA присланного дерева.
 - Новая реализация предназначена для no-Python root graph. Удаление Python и общая миграционная квалификация остаются работой PFC, а не spatial workers.

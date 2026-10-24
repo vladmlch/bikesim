@@ -280,7 +280,7 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
     const int version = vread::integer32(vread::field(root, "runtime_schema"),
                                          root.child("runtime_schema"));
     if (version == static_cast<int>(bike::spatial::kSpatialRuntimeSchema)) {
-        vread::exact(root, required, vread::keys("async_telemetry", "spatial"));
+        vread::exact(root, required, vread::keys("async_telemetry", "spatial", "tyre_threads"));
         (void)vread::field(root, "spatial");
     } else vread::exact(root, required, vread::keys("async_telemetry"));
     if (version != kRuntimeSchema && version != static_cast<int>(bike::spatial::kSpatialRuntimeSchema))
@@ -290,6 +290,11 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
     RuntimeConfig out;
     out.schema = version;
     if (version == static_cast<int>(bike::spatial::kSpatialRuntimeSchema)) {
+        if(root.contains("tyre_threads")) {
+            const auto threads=vread::integer32(vread::field(root,"tyre_threads"),root.child("tyre_threads"));
+            if(threads<1 || threads>64)vread::invalid(root.child("tyre_threads"),"expected [1,64]");
+            out.tyre_threads=static_cast<unsigned>(threads);
+        }
         out.spatial = bike::spatial::spatial_config_from_wire(*vread::field(root, "spatial").value);
         if (out.spatial->mode != bike::spatial::Mode::spatial3d)
             vread::invalid("config.spatial.mode", "runtime2 requires spatial mode");

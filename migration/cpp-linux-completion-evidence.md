@@ -3129,3 +3129,102 @@ dispositioned rows — 52 port / 3 drop — with dated evidence),
 `python-removal.json` (4 rows → `replacement_landed`), the two Python
 stale-seam fixes (+13/−3 total), and this evidence file (+125 lane
 section + seam blank line).
+
+## 2026-10-25 — Task 3.14b (lane/c): rider forces, attachment wrench, and contact safety (T52 batch)
+
+### Scope
+
+Five source files, 79 records, 159 collected pytest nodes:
+
+- `test_contact_safety.py` — 10 records / 10 nodes / 9 golden nodes
+- `test_attachment_budget.py` — 9 records / 19 nodes / no goldens
+- `test_attachment_wrench.py` — 8 records / 11 nodes / 7 golden nodes
+- `test_native_attachment_wrench.py` — 42 records / 101 nodes / 95
+  golden nodes (includes 3 `owner_task: T53` rows whose symbols live
+  in this file — all 42 are ported in this batch)
+- `test_native_rider_forces.py` — 10 records / 18 nodes / 14 golden
+  nodes
+
+Dispositions: 62 golden / 17 port / 0 drop across all 79 rows;
+`collected_node_ids` measured on both platforms for every record.
+`python-removal.json` marks all five files `replacement_landed`;
+deletion remains deferred to T63 per ADR-0003.
+
+### Native fixes landed in this batch
+
+- `EqualityReactions::force_on_rider()` returns at most three values
+  (matching the Python `lam[:3]`); a naive port indexing `lam[4]`
+  SIGTRAPs under libc++ hardening. `test_attachment_wrench.cpp` adds a
+  `full_lambda()` helper reconstructing complete equality multipliers
+  from `rows_of()` + `d->efc_force`. PASS 604 checks.
+- `golden::Node::has_next()` added to the test support — `peek_label()`
+  returns `""` both for a legitimate empty golden label and at
+  end-of-node, which caused phantom tuple consumption in the
+  least-squares output-tuple replay. PASS 214971 checks.
+- Fixture stepping repaired in `test_native_attachment_wrench.cpp`:
+  the MuJoCo `mjData` now steps in lockstep with the native `Stepper`
+  (`engine::step(m,d)`), removing an initial state divergence.
+- `concave_span_deg` gained a raw-facet span overload
+  (`profile.hpp` + `contact_safety.cpp`): scipy's smoothed RockGarden
+  `_nodes()` lowers ~1 ulp differently between darwin-arm64 and
+  linux-aarch64, so each garden's concrete `(s,z)` arrays are recorded
+  as `input.<label>.{s,z}` golden inputs and replayed through the
+  overload — no tolerance widening.
+
+### Platform episode artifact
+
+`pinned_savage_40` was captured per-platform under the
+`_pin_oracle_kernels` pytest config (`activation_tau_s = 0.025`). A
+direct `freeze.py` run against the committed `episode/physics.toml`
+does not converge (`physical equilibrium did not converge after 64000
+steps`) — the committed fixture config is a genuine, pre-existing gap
+distinct from this batch's artifact; the pinned-config capture is what
+the native test's oracle path reproduces. Artifact layout is the
+standard `{episode.npz,manifest.json,model.mjb}` under each
+`tests/fixtures/golden/<platform>/episode/pinned_savage_40/`.
+
+### Verification
+
+- Oracle pytest, all five files, `uv run --frozen --group native`:
+  **159 passed, 1 warning** on darwin-arm64 and on linux-aarch64. The
+  warning is the known `invalid reference step at 0.005000000:
+  ('energy.constraint_work',)` RuntimeWarning in
+  `test_native_rider_forces::test_accumulator_order_golden`.
+- CTest (`ctest -R` batch expression): `reference.contact_safety`
+  PASS (522 checks), `reference.attachment_budget` PASS,
+  `reference.attachment_wrench` PASS (604 checks),
+  `reference.native_attachment_wrench` PASS (214971 checks),
+  `reference.native_rider_forces` PASS — **5/5 on darwin-arm64 and
+  5/5 on linux-aarch64** (`100% tests passed, 0 tests failed out of
+  5`).
+- Golden corruption proof (one per batch): flipped one byte in
+  `test_contact_safety` `test_concave_span_...` `.bin` on
+  darwin-arm64 → `reference.contact_safety` FAIL with bitwise
+  mismatch on `bowl depth 1.2`; byte restored → PASS. Confirms the
+  bitwise comparator detects single-byte fixture corruption.
+- Linux build nits fixed in-flight: `std::from_range` (libstdc++
+  lacks it), `RiderSpecs` aggregate field-init order, and a
+  `-Wframe-larger-than=8192` bump in the native attachment-wrench TU.
+
+### Commits
+
+- `671d7a7` contact safety port (+ span overload seam, py oracle
+  input recording, 18 golden files per platform)
+- `49e83da` attachment budget port (analytic; no goldens)
+- `d8a7183` attachment wrench port (+ `full_lambda`, 18 golden files
+  per platform)
+- `87feebf` native attachment wrench port (+ `Node::has_next`,
+  lockstep fixture stepping, 190 golden files per platform)
+- `2961b67` native rider forces port (+ per-platform episode
+  artifacts, 28 golden files per platform)
+- `8cbc707` Phase3Ports registrations (labels `t52`, `reference`,
+  `golden`, `rider`, `terrain`) + `test-port-map.json` (79 rows) +
+  `python-removal.json` (5 rows `replacement_landed`)
+
+### Ledger notes
+
+`tests_reference_test_native_attachment_wrench.py` in the port map
+now carries all 42 records as dispositioned (39 `T52` + 3 `T53`
+owner rows). LAPACK `DLASCL` stderr warnings appear under
+`reference.native_attachment_wrench` — expected numerical-library
+noise matching NumPy's least-squares path, not a regression.

@@ -2982,3 +2982,150 @@ rows — 53 golden / 8 port — with dated evidence), `python-removal.json`
 this evidence file (+86 lane section), and 1272 golden sidecars under
 `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/` (~11.9 MiB per
 platform).
+## 2026-10-24 — Task 3.16 (lane/c) merge-back
+
+Merge of `lane/c` (`cc37bc1` stale test-seam fixes, `d167411` rider
+allocation port, `c2d97f3` rider dynamics port, `e2ed8a3` rider
+information-boundary port, `408ab79` constraint-mode-search port,
+`02f7b92` Phase3Ports registrations + ledgers, `7c95ea6` lane
+evidence) into `impl/python-free-cpp` at `e843f0d` via
+`git merge --no-ff lane/c` (D17 L2 in this worktree; merge commit
+`4ce3a43`). **One real conflict**: this evidence file — both sides
+appended dated sections at file end (HEAD: the two `2026-10-24` 3.12a
+sections; lane/c: the `2026-10-23` Task 3.16 section). Resolved by
+keeping all dated sections in chronological order — the lane's
+`2026-10-23` section sits ahead of the `2026-10-24` 3.12a sections —
+plus one blank line restored at the seam (the lane file had ended at
+EOF without a trailing blank). `test-port-map.json`,
+`python-removal.json` and `Phase3Ports.cmake` auto-merged: the edits
+were disjoint (lane record rows at its four batch files vs HEAD's
+pneumatic/3.28 rows; disjoint `python-removal.json` rows; disjoint
+registration sites — HEAD mid-file ~line 36, lane at EOF). **Review
+verdict**: the batch was reviewed and approved; the reviewer's one
+finding — the lane's ledger copies dropped the trailing EOF newline
+on `migration/{test-port-map,python-removal}.json` — was confirmed in
+the merge result and both LFs were restored per repo convention.
+
+### Ledger verification
+
+`migration/test-port-map.json` parses; **2381 records**; verified
+field-for-field as a record-level union against base `1eece88`, HEAD
+`e843f0d` and lane tip `7c95ea6` (0 union violations — every record
+matches the side that changed it). The lane's batch dispositions are
+intact: `test_rider_allocation.py` **29 port / 2 drop** (31),
+`test_rider_dynamics.py` **10 port** (10),
+`test_rider_information_boundary.py` **7 port / 1 drop** (8),
+`project/test_constraint_mode_search.py` **6 port** (6) — the
+documented **52 port / 3 drop / 0 golden**. Prior batches unchanged:
+3.12a pneumatic rows keep HEAD's **53 golden / 8 port** (the lane's
+stale `planned` copies correctly lost the merge), 3.28 keeps
+`test_native_atomicity.py` 16 port / 5 drop and
+`test_native_input_contracts.py` 8 port / 7 drop / 17 planned.
+`python-removal.json` parses; 535 rows; union verified — all four
+batch rows → `replacement_landed`
+(`reference.project_constraint_mode_search`,
+`reference.native_rider_{allocation,dynamics,information_boundary}`)
+alongside the untouched 3.12a pneumatic rows. `oracle-manifest.json`
+parses; unchanged (no golden rows this batch — consistent with the
+lane's 0-golden triage). `Phase3Ports.cmake` keeps every prior
+registration plus `reference.native_rider_allocation` (labels
+`t52 rider slow`), `reference.native_rider_dynamics`,
+`reference.native_rider_information_boundary` and
+`reference.project_constraint_mode_search` (labels `t52 rider`).
+`git ls-files -u` empty; no conflict markers in any file. The two
+Python stale-seam edits (`advance=False` non-advancing probes in
+`test_rider_information_boundary.py`; `hold_qfrc` stub in
+`test_rider_allocation.py`) are identical to the lane versions.
+
+### Green proof (merge nodes)
+
+macOS arm64 (`build/native-release`):
+
+    ctest --test-dir build/native-release \
+      -R 'reference\.(native_rider|project_constraint)' --output-on-failure
+    # reference.native_rider_allocation ......... Passed 17.72 s
+    # reference.native_rider_dynamics ........... Passed  0.61 s
+    # reference.native_rider_information_boundary Passed  0.70 s
+    # reference.project_constraint_mode_search .. Passed  0.95 s
+    # 100% tests passed out of 4
+
+Linux aarch64, container `bike-dev-python-free-cpp`
+(`bike-dev-linux:24.04`, clang++-18, `/build/root-clang`), after
+`tools/linux/container.sh sync`, a fresh `configure root-clang` and a
+target-scoped build — all four TUs compiled and linked clean under
+clang++-18 (no warnings in the build log):
+
+    tools/linux/container.sh build root-clang \
+      reference.native_rider_allocation reference.native_rider_dynamics \
+      reference.native_rider_information_boundary \
+      reference.project_constraint_mode_search
+    tools/linux/container.sh ctest root-clang \
+      -R 'reference\.(native_rider|project_constraint)' --output-on-failure
+    # reference.native_rider_allocation ......... Passed ~11.34 s
+    # reference.native_rider_dynamics ........... Passed  0.01 s
+    # reference.native_rider_information_boundary Passed  0.00 s
+    # reference.project_constraint_mode_search .. Passed  0.11 s
+    # 100% tests passed out of 4
+
+### L2 block results (bounded subset)
+
+The merge adds four test TUs plus ledger/docs rows and two additive
+Python stale-seam fixes — no `native/src` content — so the exercised
+L2 surface is bounded to both graph builds, the `reference` label
+sweep, and the binding-graph suite:
+
+- `cmake --build native/build -j10`: green (all targets).
+- `cmake --build build/native-release -j10`: green; all four new
+  reference executables compile/link clean.
+- `ctest --test-dir build/native-release -L reference -j8
+  --output-on-failure`: **38/45** — all seven reds are the documented
+  baseline/fixture-missing set with signatures identical to the 3.21a,
+  3.28 and 3.12a merge-backs: `native_static_brake`,
+  `pneumatic_tire_oracle`, `native_clock_contracts`,
+  `native_drive_policies`, `native_drivetrain` (`FAIL fixture is not a
+  regular file` family), `period_buffer` (`FAIL initial-state physical
+  model contract differs`) and `golden_episode_tool` (`FAIL task 3.03
+  oracle acquisition required … episode.npz` — the documented
+  fixture-missing baseline; it carries no `t52` label so it did not
+  appear in the earlier `-L t52` sweeps). All four new nodes pass
+  inside this run.
+- `ctest --test-dir native/build -j8 --output-on-failure`:
+  **60/62** — `migration_T09` (`integration vector resolves
+  bitwise`) and `migration_T29`
+  (`config.rider_controller.weld_servo_gain: unknown key`), the
+  documented baseline pair, unchanged.
+- `tools/run_native_checks.sh` (any kind) and `tools/run_tests.sh
+  native` (L3): not run — bounded per the merge-back scope; the merge
+  touches no `native/src` TU and all four new test TUs compiled clean
+  under each graph's warning set on both platforms.
+
+### Parity pytest (transitional gate — ADR-0003)
+
+    PYTHONPATH=tests/reference \
+    NATIVE_TEST_BUILD_PATH=$PWD/native/build \
+    uv run --frozen --group native python -m pytest -q \
+      tests/reference/test_rider_allocation.py \
+      tests/reference/test_rider_dynamics.py \
+      tests/reference/test_rider_information_boundary.py \
+      project/tests/reference/test_constraint_mode_search.py
+    # 97 passed, 5 benign RuntimeWarnings in 74.16 s — zero errors
+
+Matches the lane's documented 97-node green run exactly. The two
+edited oracle files (`test_rider_allocation.py`,
+`test_rider_information_boundary.py`) are inside this selection —
+their reviewer-verified stale-seam fixes (non-advancing `advance=False`
+probes; `hold_qfrc` stub) held green in the merged tree. No
+equilibrium-cache mediation concern surfaced.
+
+### Changed files (this merge)
+
+10 paths vs `e843f0d`, +3282/−401: four new reference TUs
+(`test_native_rider_allocation.cpp` +1372,
+`test_native_rider_dynamics.cpp` +539,
+`test_native_rider_information_boundary.cpp` +243,
+`project_test_constraint_mode_search.cpp` +328), `Phase3Ports.cmake`
+(+12: four registrations + comment), `test-port-map.json` (55
+dispositioned rows — 52 port / 3 drop — with dated evidence),
+`python-removal.json` (4 rows → `replacement_landed`), the two Python
+stale-seam fixes (+13/−3 total), and this evidence file (+125 lane
+section + seam blank line).

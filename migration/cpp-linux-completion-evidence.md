@@ -3230,3 +3230,164 @@ dispositioned rows — 52 port / 3 drop — with dated evidence),
 `python-removal.json` (4 rows → `replacement_landed`), the two Python
 stale-seam fixes (+13/−3 total), and this evidence file (+125 lane
 section + seam blank line).
+
+## 2026-10-24 — Task 3.12b (lane/a) merge-back
+
+Merge of `lane/a` (`2d78972` pneumatic model port, `d3bc3af` wire
+port, `4d8fe47` tire port + ledgers + evidence + TESTING.md) into
+`impl/python-free-cpp` at `e843f0d` via `git merge --no-ff lane/a`
+(D17 L2 in this worktree; merge commit `951f065`). **One real
+conflict**: this evidence file — both sides appended dated sections
+at file end (HEAD: the `2026-10-24` Task 3.16 merge-back; lane/a:
+the `2026-10-24` batch 3.12b section). Resolved by keeping all dated
+sections in chronological order — the lane's batch-3.12b section
+(lane events 22:46) sits ahead of the 3.16 merge-back (events
+22:55–23:03), matching the file's event-time ordering among
+same-dated sections — and the blank-line separator HEAD's seam had
+dropped at `platform).`/`##` is restored per file convention.
+`test-port-map.json`, `python-removal.json` and `Phase3Ports.cmake`
+auto-merged: the edits were disjoint (lane record rows at its three
+batch files vs HEAD's 3.16 rows; disjoint `python-removal.json`
+rows; disjoint registration sites — lane mid-file ~line 47, HEAD at
+EOF). **Golden payload note**: the ~49 MiB two-platform payload was
+committed as-is — the >20 MiB stop rule fired on the lane and the
+2026-10-24 user ruling ("commit as-is — no Git LFS, no trim") is
+recorded in the lane's batch section above; it carries through this
+merge unchanged.
+
+### Ledger verification
+
+`migration/test-port-map.json` parses; **2381 records**; verified
+field-for-field as a record-level union against base `e843f0d`, HEAD
+`2e59c28` and lane tip `4d8fe47` (0 union violations — every record
+matches the side that changed it). The lane's batch dispositions are
+intact: `test_native_pneumatic_model.py` **19 golden** (19),
+`test_native_pneumatic_tire.py` **10 golden / 1 port / 2 planned**
+(13 — the two `planned` are the parked baseline-red nodes
+`test_pneumatic_golden_episode_event_rich` and
+`test_pneumatic_probe_and_clock`), `test_native_pneumatic_wire.py`
+**9 golden / 8 port** (17): the documented **38 golden / 9 port /
+2 planned**. Prior batches unchanged: 3.12a keeps **53 golden /
+8 port** (geometry 13g/1p, carcass 19g/1p, brush 21g/6p), 3.28 keeps
+`test_native_atomicity.py` 16 port / 5 drop and
+`test_native_input_contracts.py` 8 port / 7 drop / 17 planned, 3.16
+keeps **52 port / 3 drop** (rider_allocation 29p/2d, rider_dynamics
+10p, rider_information_boundary 7p/1d, constraint_mode_search 6p).
+`python-removal.json` parses; 535 rows; union verified — the three
+batch rows → `replacement_landed`
+(`reference.native_pneumatic_{model,tire,wire}`) alongside the
+untouched 3.16/3.12a/3.28 rows (the lane's pre-3.16 stale `planned`
+copies correctly lost the merge). `oracle-manifest.json` parses;
+unchanged. `Phase3Ports.cmake` keeps every prior registration plus
+`reference.native_pneumatic_model`, `reference.native_pneumatic_wire`
+(labels `t52 tyre golden`) and `reference.native_pneumatic_tire`
+(labels `t52 tyre golden slow`). `git ls-files -u` empty; no conflict
+markers in any file. Both ledgers keep their trailing EOF LF. The
+three Python parity-source edits are byte-identical to the lane
+versions (HEAD never touched these files — nothing to union).
+
+### Green proof (merge nodes)
+
+macOS arm64 (`build/native-release`):
+
+    ctest --test-dir build/native-release \
+      -R 'reference\.native_pneumatic' --output-on-failure
+    # reference.native_pneumatic_geometry ... Passed 0.07 s
+    # reference.native_pneumatic_carcass .... Passed 0.15 s
+    # reference.native_pneumatic_brush ...... Passed 0.17 s
+    # reference.native_pneumatic_model ...... Passed 0.69 s
+    # reference.native_pneumatic_wire ....... Passed 0.76 s
+    # reference.native_pneumatic_tire ....... Passed 1.33 s
+    # 100% tests passed out of 6
+
+All six pneumatic nodes green — the 3.12a trio plus the three merge
+nodes. The missing-fixture reds the lane's own run reported (the
+fixtures only exist on the lane branch; they land in the integration
+tree with this merge) cleared as predicted:
+`reference.native_pneumatic_{model,wire,tire}` replay the committed
+darwin-arm64 sidecars.
+
+Linux aarch64, container `bike-dev-python-free-cpp`
+(`bike-dev-linux:24.04`, clang++-18, `/build/root-clang`), after
+`tools/linux/container.sh sync` and a target-scoped build — all
+three TUs compiled and linked clean under clang++-18 (zero
+`warning:` lines in the build log):
+
+    tools/linux/container.sh build root-clang \
+      reference.native_pneumatic_model reference.native_pneumatic_wire \
+      reference.native_pneumatic_tire
+    tools/linux/container.sh ctest root-clang \
+      -R 'reference\.native_pneumatic_(model|tire|wire)' --output-on-failure
+    # reference.native_pneumatic_model ... Passed 0.13 s
+    # reference.native_pneumatic_wire .... Passed 0.13 s
+    # reference.native_pneumatic_tire .... Passed 0.55 s
+    # 100% tests passed out of 3
+
+Validates the linux-aarch64 golden tree — the per-platform
+`pneumatic_tire/` runtime bundles (episodes `fast40`, `env_fast`)
+and sidecars resolve via `bt::oracle::root()/platform()` per the
+lane's structural finding above.
+
+### L2 block results (bounded subset)
+
+The merge adds three test TUs plus ledger/docs rows and additive
+Python capture-site edits — no `native/src` content — so the
+exercised L2 surface is bounded to both graph builds, the
+`reference` label sweep, and the parity pytest:
+
+- `cmake --build native/build -j10`: green (all targets).
+- `cmake --build build/native-release -j10`: green; all three new
+  reference executables compile/link clean.
+- `ctest --test-dir build/native-release -L reference -j8
+  --output-on-failure`: **41/48** — all seven reds are the documented
+  baseline/fixture-missing set with signatures identical to the
+  3.21a, 3.28, 3.12a and 3.16 merge-backs: `native_static_brake`,
+  `pneumatic_tire_oracle`, `native_clock_contracts`,
+  `native_drive_policies`, `native_drivetrain` (`FAIL fixture is not
+  a regular file` family), `period_buffer` (`FAIL initial-state
+  physical model contract differs`) and `golden_episode_tool`
+  (`FAIL task 3.03 oracle acquisition required … episode.npz` — the
+  documented fixture-missing baseline; it carries no `t52` label so
+  it did not appear in the earlier `-L t52` sweeps). All three new
+  nodes pass inside this run.
+- `tools/run_native_checks.sh` (any kind) and `tools/run_tests.sh
+  native` (L3): not run — bounded per the merge-back scope; the merge
+  touches no `native/src` TU and all three new test TUs compiled
+  clean under each graph's warning set on both platforms.
+
+### Parity pytest (transitional gate — ADR-0003)
+
+    PYTHONPATH=tests/reference \
+    NATIVE_TEST_BUILD_PATH=$PWD/native/build \
+    uv run --frozen --group native python -m pytest -q \
+      tests/reference/test_native_pneumatic_model.py \
+      tests/reference/test_native_pneumatic_tire.py \
+      tests/reference/test_native_pneumatic_wire.py
+    # 102 passed, 2 failed, 8 benign RuntimeWarnings in 120.54 s
+
+Matches the lane's documented counts exactly (model 36/36, wire
+55/55, tire 11 passed + 2 baseline-red — 104 collected). The two
+reds are the batch's documented baseline pair (added to
+`docs/TESTING.md` by this merge):
+`test_pneumatic_golden_episode_event_rich` (`RuntimeError: physical
+equilibrium did not converge after 64000 steps: residual=0.0814217;
+front_wheel_spin` — the savage-plant defect family) and
+`test_pneumatic_probe_and_clock` (`AssertionError: interval 1:
+bitwise mismatch`). Their C++ functions are authored but parked
+(`planned` records, `[[maybe_unused]]`), so no C++ node maps to them.
+
+### Changed files (this merge)
+
+409 paths vs `2e59c28`, +803750/−212: three new reference TUs
+(`test_native_pneumatic_model.cpp` +1004,
+`test_native_pneumatic_wire.cpp` +639,
+`test_native_pneumatic_tire.cpp` +1142), `Phase3Ports.cmake` (+14:
+three registrations + comment), `test-port-map.json` (49
+dispositioned records — 38 golden / 9 port / 2 planned — with dated
+evidence), `python-removal.json` (3 rows → `replacement_landed`),
+`docs/TESTING.md` (+8 baseline-red notes), the three additive Python
+capture-site edits (+385/−6 total), the lane's evidence section
+(+101), and 398 golden files — per-platform sidecars and runtime
+bundles under `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/`
+plus the shared `pneumatic_tire/`/`pneumatic_wire/` config trees
+(~49 MiB; committed as-is per the documented user ruling).

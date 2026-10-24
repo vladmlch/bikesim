@@ -2717,3 +2717,143 @@ Batch files: `tests/reference/test_native_pneumatic_geometry.py` (14),
   greens, two-platform captures, and the new CTest nodes green on both
   platforms — are listed above. L3 runs in the integration worktree at
   merge-back per D17.
+
+## 2026-10-24 — Task 3.12a (lane/a) merge-back
+
+Merge of `lane/a` (`938b2af` pneumatic-geometry port, `2941d1f`
+carcass port, `dfde47c` brush port + ledgers + evidence) into
+`impl/python-free-cpp` at `1eece88` via `git merge --no-ff lane/a`
+(D17 L2 in this worktree; merge commit `88bd2b3`). **One real
+conflict**: this evidence file — both sides appended dated sections at
+file end (HEAD: lane/c's 3.28 section + its merge-back section;
+lane/a: the 3.12a section). Resolved by keeping all dated sections in
+chronological order — no content dropped. `test-port-map.json`,
+`python-removal.json` and `Phase3Ports.cmake` auto-merged: the edits
+were disjoint (3.28 record rows vs the contiguous 3.12a record block
+at ~line 11181; disjoint `python-removal.json` rows; disjoint
+registration sites at lines ~33 vs ~51).
+
+### Ledger verification
+
+`migration/test-port-map.json` parses; **2381 records**; verified
+field-for-field as a record-level union —
+`test_native_pneumatic_geometry.py` **13 golden / 1 port** (14),
+`test_native_pneumatic_carcass.py` **19 golden / 1 port** (20),
+`test_native_pneumatic_brush.py` **21 golden / 6 port** (27): the
+lane's documented 53 golden / 8 port / 0 drop intact, all 61 records
+byte-identical to the lane versions. The 3.28 dispositions are
+unchanged (`test_native_atomicity.py` 16 port / 5 drop;
+`test_native_input_contracts.py` 8 port / 7 drop / 17 planned — all
+53 records identical to HEAD) and the remaining 2267 records match
+HEAD exactly. `python-removal.json` parses; all three pneumatic rows
+→ `replacement_landed` (`verification_ids` =
+`[reference.native_pneumatic_{brush,carcass,geometry}]`) alongside the
+untouched 3.28 rows (`atomicity` → `replacement_landed`;
+`input_contracts` stays `planned` with `reference.native_input_contracts`
+appended). `oracle-manifest.json` parses. `Phase3Ports.cmake` keeps
+every prior registration plus `reference.native_pneumatic_geometry`,
+`reference.native_pneumatic_carcass`, `reference.native_pneumatic_brush`
+(labels `t52 tyre golden`; `+bike_legacy` on carcass, `+bike_random`
+on brush). `git ls-files -u` empty; no conflict markers in any ledger.
+1272 new golden sidecar files (636 per platform = 318 `.bin`+`.json`
+pairs: geometry 49, carcass 90, brush 179 — matching the lane's
+documented counts).
+
+### Green proof (merge nodes)
+
+macOS arm64 (`build/native-release`):
+
+    ctest --test-dir build/native-release \
+      -R 'reference\.native_pneumatic' --output-on-failure
+    # reference.native_pneumatic_geometry ... Passed 0.04 s
+    # reference.native_pneumatic_carcass .... Passed 0.09 s
+    # reference.native_pneumatic_brush ...... Passed 0.11 s
+    # 100% tests passed out of 3
+
+Linux aarch64, container `bike-dev-python-free-cpp`
+(`bike-dev-linux:24.04`, clang++-18, `/build/root-clang`), after
+`tools/linux/container.sh sync` and a target-scoped build — all three
+TUs compiled and linked clean under clang++-18 (the lane's documented
+`-Wmissing-field-initializers` mitigations held; none of the
+pre-existing Linux full-build reds in `native/src/validation/*` are
+touched by this merge):
+
+    tools/linux/container.sh build root-clang \
+      reference.native_pneumatic_geometry \
+      reference.native_pneumatic_carcass reference.native_pneumatic_brush
+    tools/linux/container.sh ctest root-clang \
+      -R 'reference\.native_pneumatic' --output-on-failure
+    # reference.native_pneumatic_geometry ... Passed 0.04 s
+    # reference.native_pneumatic_carcass .... Passed 0.10 s
+    # reference.native_pneumatic_brush ...... Passed 0.09 s
+    # 100% tests passed out of 3
+
+The C++ golden nodes replay the recorded inputs through
+`bt::oracle::Node::f64_input`, so the green aarch64 run is itself the
+linux-aarch64 golden-tree validation (318 sidecar pairs consumed
+bitwise on-platform).
+
+### L2 block results (bounded subset)
+
+The merge adds three test TUs plus one support header, ledger/docs
+rows and golden fixtures — no `native/src` content — so the exercised
+L2 surface is bounded to both graph builds, the touched `t52` label
+family, and the binding-graph suite:
+
+- `cmake --build native/build -j10`: green (all targets).
+- `cmake --build build/native-release -j10`: green; all three new
+  reference executables link (one cosmetic
+  `ld: warning: ignoring duplicate libraries: 'libbike_random.a'` —
+  the same pattern other `bike_app bike_random` registrants show).
+- `ctest --test-dir build/native-release -L t52 -j8
+  --output-on-failure`: **25/31** — all six reds are the documented
+  baseline set with signatures identical to the 3.21a and 3.28
+  merge-backs: `native_static_brake`, `pneumatic_tire_oracle`,
+  `native_clock_contracts`, `native_drive_policies`,
+  `native_drivetrain` (`FAIL fixture is not a regular file` family)
+  and `period_buffer` (`FAIL initial-state physical model contract
+  differs`). All three new nodes pass inside this run;
+  `reference.native_numeric_completion`, `reference.native_atomicity`
+  and `reference.native_input_contracts` stay green.
+- `ctest --test-dir native/build -j8 --output-on-failure`:
+  **60/62** — `migration_T09` (`integration vector resolves
+  bitwise`) and `migration_T29`
+  (`config.rider_controller.weld_servo_gain: unknown key`), the
+  documented baseline pair, unchanged. (The task's literal
+  `ctest --test-dir native/build -L t52` selects zero tests — the
+  binding graph carries no `t52`-labelled tests; the meaningful label
+  sweep above ran against `build/native-release`, matching the 3.28
+  merge-back.)
+- `tools/run_native_checks.sh` (any kind) and `tools/run_tests.sh
+  native` (L3): not run — bounded per the merge-back scope; the merge
+  touches no `native/src` TU and all three new test TUs compiled clean
+  under each graph's warning set on both platforms.
+
+### Parity pytest (transitional gate — ADR-0003)
+
+    PYTHONPATH=tests/reference \
+    NATIVE_TEST_BUILD_PATH=$PWD/native/build \
+    uv run --frozen --group native python -m pytest -q \
+      tests/reference/test_native_pneumatic_geometry.py \
+      tests/reference/test_native_pneumatic_carcass.py \
+      tests/reference/test_native_pneumatic_brush.py
+    # 341 passed in 1.05 s — zero errors
+
+Matches the lane's documented `341 passed` (0.89 s darwin-arm64,
+pre-capture) exactly. No equilibrium-cache mediation in play this
+batch — none of the three sources uses the `resolved` fixture — so no
+cold-cache probe was needed.
+
+### Changed files (this merge)
+
+1283 paths vs `1eece88`, +635529/−380: three new reference TUs
+(`test_native_pneumatic_geometry.cpp` +453,
+`test_native_pneumatic_carcass.cpp` +758,
+`test_native_pneumatic_brush.cpp` +968) plus the shared
+`pneumatic_reference_support.hpp` (+392), `Phase3Ports.cmake` (+11:
+three registrations + comment), `test-port-map.json` (61 dispositioned
+rows — 53 golden / 8 port — with dated evidence), `python-removal.json`
+(3 rows), the three additive Python capture-site edits (+52 total),
+this evidence file (+86 lane section), and 1272 golden sidecars under
+`tests/fixtures/golden/{darwin-arm64,linux-aarch64}/` (~11.9 MiB per
+platform).

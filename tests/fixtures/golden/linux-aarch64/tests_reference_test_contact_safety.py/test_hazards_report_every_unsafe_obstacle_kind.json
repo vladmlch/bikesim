@@ -1,0 +1,72 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "hazard 0",
+  "nbytes": 33,
+  "node": "tests/reference/test_contact_safety.py::test_hazards_report_every_unsafe_obstacle_kind",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "hazard 1",
+  "nbytes": 40,
+  "node": "tests/reference/test_contact_safety.py::test_hazards_report_every_unsafe_obstacle_kind",
+  "offset": 33,
+  "rtol": null,
+  "shape": [
+   40
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "hazard 2",
+  "nbytes": 66,
+  "node": "tests/reference/test_contact_safety.py::test_hazards_report_every_unsafe_obstacle_kind",
+  "offset": 73,
+  "rtol": null,
+  "shape": [
+   66
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "hazard 3",
+  "nbytes": 60,
+  "node": "tests/reference/test_contact_safety.py::test_hazards_report_every_unsafe_obstacle_kind",
+  "offset": 139,
+  "rtol": null,
+  "shape": [
+   60
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "hazard 4",
+  "nbytes": 47,
+  "node": "tests/reference/test_contact_safety.py::test_hazards_report_every_unsafe_obstacle_kind",
+  "offset": 199,
+  "rtol": null,
+  "shape": [
+   47
+  ]
+ }
+]

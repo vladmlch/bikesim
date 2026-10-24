@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "span gentle",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_control_gentle_facets_stay_clean",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

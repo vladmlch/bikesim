@@ -1,0 +1,802 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.dirty.s",
+  "nbytes": 296,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   37
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.dirty.z",
+  "nbytes": 296,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 296,
+  "rtol": null,
+  "shape": [
+   37
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.clean.s",
+  "nbytes": 296,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 592,
+  "rtol": null,
+  "shape": [
+   37
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.clean.z",
+  "nbytes": 296,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 888,
+  "rtol": null,
+  "shape": [
+   37
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.0.03 s0.s",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 1184,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.0.03 s0.z",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 1704,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "input.0.03 s1.s",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 2224,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.0.03 s1.z",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 2744,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "input.0.03 s2.s",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 3264,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.0.03 s2.z",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 3784,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.0.03 s3.s",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 4304,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "input.0.03 s3.z",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 4824,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.0.03 s4.s",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 5344,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.0.03 s4.z",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 5864,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "input.0.03 s5.s",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 6384,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.0.03 s5.z",
+  "nbytes": 520,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 6904,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "input.0.05 s0.s",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 7424,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "input.0.05 s0.z",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 7864,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.0.05 s1.s",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 8304,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.0.05 s1.z",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 8744,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "input.0.05 s2.s",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 9184,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.0.05 s2.z",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 9624,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "input.0.05 s3.s",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 10064,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "input.0.05 s3.z",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 10504,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "input.0.05 s4.s",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 10944,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "input.0.05 s4.z",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 11384,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "input.0.05 s5.s",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 11824,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "input.0.05 s5.z",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 12264,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "input.0.10 s0.s",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 12704,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "input.0.10 s0.z",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 13568,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "input.0.10 s1.s",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 14432,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "input.0.10 s1.z",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 15296,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "input.0.10 s2.s",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 16160,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "input.0.10 s2.z",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 17024,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "input.0.10 s3.s",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 17888,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "input.0.10 s3.z",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 18752,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "input.0.10 s4.s",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 19616,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "input.0.10 s4.z",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 20480,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "input.0.10 s5.s",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 21344,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "input.0.10 s5.z",
+  "nbytes": 864,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 22208,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "span dirty",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23072,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "span clean",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23080,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "span 0.03 s0",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23088,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "span 0.03 s1",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23096,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "span 0.03 s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23104,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "span 0.03 s3",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23112,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "span 0.03 s4",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23120,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "span 0.03 s5",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23128,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "span 0.05 s0",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23136,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "span 0.05 s1",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23144,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "span 0.05 s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23152,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "span 0.05 s3",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23160,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "span 0.05 s4",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23168,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "span 0.05 s5",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23176,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "span 0.10 s0",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23184,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "span 0.10 s1",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23192,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "span 0.10 s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23200,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "span 0.10 s3",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23208,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "span 0.10 s4",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23216,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "span 0.10 s5",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+  "offset": 23224,
+  "rtol": null,
+  "shape": []
+ }
+]

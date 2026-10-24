@@ -1,0 +1,38 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "bump floor 0.10",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_bump_length_floor_matches_spike",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "bump floor 0.05",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_bump_length_floor_matches_spike",
+  "offset": 8,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "bump floor 0.15",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_bump_length_floor_matches_spike",
+  "offset": 16,
+  "rtol": null,
+  "shape": []
+ }
+]

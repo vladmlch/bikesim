@@ -57,6 +57,12 @@ inline constexpr double DEFAULT_CONTACT_WINDOW_M=.25;
 [[nodiscard]] double max_bowl_depth_m(double length_m,double min_radius_m=DEFAULT_MIN_CONTACT_RADIUS_M);
 [[nodiscard]] double concave_span_deg(const RockGarden& obstacle,double window_m=DEFAULT_CONTACT_WINDOW_M);
 [[nodiscard]] double concave_span_deg(const RoadRoughness& obstacle,double window_m=DEFAULT_CONTACT_WINDOW_M);
+// concave_span_deg on a raw (x, z) node pair — the StubGarden seam: the
+// faceted-obstacle guard computed directly on caller-supplied facet
+// vertices, the same computation the obstacle overloads run on their
+// nodes() output. x must hold at least two strictly ascending vertices.
+[[nodiscard]] double concave_span_deg(std::span<const double> x_m,
+    std::span<const double> z_m,double window_m=DEFAULT_CONTACT_WINDOW_M);
 [[nodiscard]] std::vector<std::string> single_contact_hazards(const TrackSpec& track,
     double min_radius_m=DEFAULT_MIN_CONTACT_RADIUS_M,double max_kink_deg=DEFAULT_MAX_KINK_DEG,
     double window_m=DEFAULT_CONTACT_WINDOW_M);

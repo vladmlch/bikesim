@@ -1,0 +1,42 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.crest.s",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_ignores_convex_crests",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.crest.z",
+  "nbytes": 440,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_ignores_convex_crests",
+  "offset": 440,
+  "rtol": null,
+  "shape": [
+   55
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "span crest",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_ignores_convex_crests",
+  "offset": 880,
+  "rtol": null,
+  "shape": []
+ }
+]

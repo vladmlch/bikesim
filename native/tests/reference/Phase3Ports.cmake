@@ -90,3 +90,15 @@ foreach(_loader_case IN ITEMS
   set_tests_properties("reference.native_loader.${_loader_case}" PROPERTIES
     LABELS "reference;t53;checks" TIMEOUT 45)
 endforeach()
+# 3.16 rider allocation and dynamics.
+bike_add_reference_test(native_rider_allocation ENGINE
+  SOURCES test_native_rider_allocation.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)
+bike_add_reference_test(native_rider_dynamics ENGINE
+  SOURCES test_native_rider_dynamics.cpp LIBRARIES bike_app LABELS t52 rider)
+bike_add_reference_test(native_rider_information_boundary ENGINE
+  SOURCES test_native_rider_information_boundary.cpp LIBRARIES bike_app
+  LABELS t52 rider)
+bike_add_reference_test(project_constraint_mode_search ENGINE
+  SOURCES project_test_constraint_mode_search.cpp LIBRARIES bike_app
+  LABELS t52 rider)

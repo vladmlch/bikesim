@@ -10,13 +10,22 @@
       "line": 39,
       "end_line": 65,
       "owner_task": "T52",
-      "native_test_id": "ported::project::tests::reference::test_constraint_mode_search::test_command_crosses_mode_boundaries_and_matches_current_forward",
+      "native_test_id": "reference.project_constraint_mode_search::test_command_crosses_mode_boundaries_and_matches_current_forward",
       "native_source": "native/tests/reference/project_test_constraint_mode_search.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "project/tests/reference/test_constraint_mode_search.py::test_command_crosses_mode_boundaries_and_matches_current_forward[tendon-20.0--20.0]",
+        "project/tests/reference/test_constraint_mode_search.py::test_command_crosses_mode_boundaries_and_matches_current_forward[tendon--20.0-20.0]",
+        "project/tests/reference/test_constraint_mode_search.py::test_command_crosses_mode_boundaries_and_matches_current_forward[friction-20.0-1.0]",
+        "project/tests/reference/test_constraint_mode_search.py::test_command_crosses_mode_boundaries_and_matches_current_forward[friction--20.0--1.0]",
+        "project/tests/reference/test_constraint_mode_search.py::test_command_crosses_mode_boundaries_and_matches_current_forward[friction-20.0--20.0]",
+        "project/tests/reference/test_constraint_mode_search.py::test_command_crosses_mode_boundaries_and_matches_current_forward[friction--20.0-20.0]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/project_test_constraint_mode_search.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.project_constraint_mode_search green on both platforms"
+      ]
     },
     {
       "source_path": "project/tests/reference/test_constraint_mode_search.py",
@@ -24,13 +33,20 @@
       "line": 70,
       "end_line": 95,
       "owner_task": "T52",
-      "native_test_id": "ported::project::tests::reference::test_constraint_mode_search::test_exact_mode_budget_distinguishes_exhaustion_from_truncation",
+      "native_test_id": "reference.project_constraint_mode_search::test_exact_mode_budget_distinguishes_exhaustion_from_truncation",
       "native_source": "native/tests/reference/project_test_constraint_mode_search.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "project/tests/reference/test_constraint_mode_search.py::test_exact_mode_budget_distinguishes_exhaustion_from_truncation[False-tendon-2]",
+        "project/tests/reference/test_constraint_mode_search.py::test_exact_mode_budget_distinguishes_exhaustion_from_truncation[False-friction-3]",
+        "project/tests/reference/test_constraint_mode_search.py::test_exact_mode_budget_distinguishes_exhaustion_from_truncation[True-tendon-2]",
+        "project/tests/reference/test_constraint_mode_search.py::test_exact_mode_budget_distinguishes_exhaustion_from_truncation[True-friction-3]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/project_test_constraint_mode_search.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.project_constraint_mode_search green on both platforms"
+      ]
     },
     {
       "source_path": "project/tests/reference/test_constraint_mode_search.py",
@@ -38,13 +54,17 @@
       "line": 98,
       "end_line": 114,
       "owner_task": "T52",
-      "native_test_id": "ported::project::tests::reference::test_constraint_mode_search::test_feasible_first_mode_stops_without_exploring_neighbors",
+      "native_test_id": "reference.project_constraint_mode_search::test_feasible_first_mode_stops_without_exploring_neighbors",
       "native_source": "native/tests/reference/project_test_constraint_mode_search.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "project/tests/reference/test_constraint_mode_search.py::test_feasible_first_mode_stops_without_exploring_neighbors"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/project_test_constraint_mode_search.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.project_constraint_mode_search green on both platforms"
+      ]
     },
     {
       "source_path": "project/tests/reference/test_constraint_mode_search.py",
@@ -52,13 +72,21 @@
       "line": 118,
       "end_line": 120,
       "owner_task": "T52",
-      "native_test_id": "ported::project::tests::reference::test_constraint_mode_search::test_invalid_mode_budget_fails_before_evaluating_dynamics",
+      "native_test_id": "reference.project_constraint_mode_search::test_invalid_mode_budget_fails_before_evaluating_dynamics",
       "native_source": "native/tests/reference/project_test_constraint_mode_search.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "project/tests/reference/test_constraint_mode_search.py::test_invalid_mode_budget_fails_before_evaluating_dynamics[0]",
+        "project/tests/reference/test_constraint_mode_search.py::test_invalid_mode_budget_fails_before_evaluating_dynamics[-1]",
+        "project/tests/reference/test_constraint_mode_search.py::test_invalid_mode_budget_fails_before_evaluating_dynamics[1.5]",
+        "project/tests/reference/test_constraint_mode_search.py::test_invalid_mode_budget_fails_before_evaluating_dynamics[True]",
+        "project/tests/reference/test_constraint_mode_search.py::test_invalid_mode_budget_fails_before_evaluating_dynamics[None]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/project_test_constraint_mode_search.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.project_constraint_mode_search green on both platforms"
+      ]
     },
     {
       "source_path": "project/tests/reference/test_constraint_mode_search.py",
@@ -66,13 +94,18 @@
       "line": 124,
       "end_line": 142,
       "owner_task": "T52",
-      "native_test_id": "ported::project::tests::reference::test_constraint_mode_search::test_guarded_grip_branch_preserves_sign_and_circle_budgets",
+      "native_test_id": "reference.project_constraint_mode_search::test_guarded_grip_branch_preserves_sign_and_circle_budgets",
       "native_source": "native/tests/reference/project_test_constraint_mode_search.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "project/tests/reference/test_constraint_mode_search.py::test_guarded_grip_branch_preserves_sign_and_circle_budgets[False]",
+        "project/tests/reference/test_constraint_mode_search.py::test_guarded_grip_branch_preserves_sign_and_circle_budgets[True]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/project_test_constraint_mode_search.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.project_constraint_mode_search green on both platforms"
+      ]
     },
     {
       "source_path": "project/tests/reference/test_constraint_mode_search.py",
@@ -80,13 +113,17 @@
       "line": 145,
       "end_line": 170,
       "owner_task": "T52",
-      "native_test_id": "ported::project::tests::reference::test_constraint_mode_search::test_guarded_grip_search_falls_back_from_remembered_pull_to_press",
+      "native_test_id": "reference.project_constraint_mode_search::test_guarded_grip_search_falls_back_from_remembered_pull_to_press",
       "native_source": "native/tests/reference/project_test_constraint_mode_search.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "project/tests/reference/test_constraint_mode_search.py::test_guarded_grip_search_falls_back_from_remembered_pull_to_press"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/project_test_constraint_mode_search.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.project_constraint_mode_search green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_acceptance_interval_capture.py",
@@ -22326,13 +22363,22 @@
       "line": 72,
       "end_line": 84,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_saddle_reserve_is_an_actual_configured_lower_bound",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_saddle_reserve_is_an_actual_configured_lower_bound",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_saddle_reserve_is_an_actual_configured_lower_bound[0.0-True]",
+        "tests/reference/test_rider_allocation.py::test_saddle_reserve_is_an_actual_configured_lower_bound[0.0-False]",
+        "tests/reference/test_rider_allocation.py::test_saddle_reserve_is_an_actual_configured_lower_bound[0.15-True]",
+        "tests/reference/test_rider_allocation.py::test_saddle_reserve_is_an_actual_configured_lower_bound[0.15-False]",
+        "tests/reference/test_rider_allocation.py::test_saddle_reserve_is_an_actual_configured_lower_bound[0.5-True]",
+        "tests/reference/test_rider_allocation.py::test_saddle_reserve_is_an_actual_configured_lower_bound[0.5-False]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22340,13 +22386,19 @@
       "line": 88,
       "end_line": 101,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_coupled_support_cone_allows_compression_and_rejects_tension",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_coupled_support_cone_allows_compression_and_rejects_tension",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_coupled_support_cone_allows_compression_and_rejects_tension[front]",
+        "tests/reference/test_rider_allocation.py::test_coupled_support_cone_allows_compression_and_rejects_tension[rear]",
+        "tests/reference/test_rider_allocation.py::test_coupled_support_cone_allows_compression_and_rejects_tension[saddle]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22354,13 +22406,18 @@
       "line": 105,
       "end_line": 117,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_finalizer_delivers_allocated_torque_instead_of_rebuilding_raw_wish",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_finalizer_delivers_allocated_torque_instead_of_rebuilding_raw_wish",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_finalizer_delivers_allocated_torque_instead_of_rebuilding_raw_wish[0.0]",
+        "tests/reference/test_rider_allocation.py::test_finalizer_delivers_allocated_torque_instead_of_rebuilding_raw_wish[0.04]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22368,13 +22425,17 @@
       "line": 120,
       "end_line": 129,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_support_moment_constraints_reject_cop_outside_the_physical_patch",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_support_moment_constraints_reject_cop_outside_the_physical_patch",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_support_moment_constraints_reject_cop_outside_the_physical_patch"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22382,13 +22443,17 @@
       "line": 132,
       "end_line": 141,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_activation_dynamics_shape_the_wish_before_support_allocation",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_activation_dynamics_shape_the_wish_before_support_allocation",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_activation_dynamics_shape_the_wish_before_support_allocation"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22396,13 +22461,18 @@
       "line": 145,
       "end_line": 183,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_allocation_forecast_includes_current_assembled_support_forces",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_allocation_forecast_includes_current_assembled_support_forces[False]",
+        "tests/reference/test_rider_allocation.py::test_allocation_forecast_includes_current_assembled_support_forces[True]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: drop \u2014 Python-only interception seam (__new__/SimpleNamespace inside apply_forces); the asserted ordering (forecast sees support-assembled acceleration) is load-bearing in reference.native_rider_allocation::test_allocated_wrenches_close_the_rider_dynamics, whose dynamics residual only closes when the committed forecast acceleration was produced with support wrenches applied; oracle node was red at HEAD (stale brake stub lacked hold_qfrc, physical_runtime.py:302) and is now green"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22410,13 +22480,17 @@
       "line": 188,
       "end_line": 192,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_intent_is_relaxed_but_physical_limit_is_not",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_intent_is_relaxed_but_physical_limit_is_not",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_intent_is_relaxed_but_physical_limit_is_not"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22424,13 +22498,17 @@
       "line": 195,
       "end_line": 198,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_infeasible_support_is_not_reported_as_valid_stall",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_infeasible_support_is_not_reported_as_valid_stall",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_infeasible_support_is_not_reported_as_valid_stall"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22438,13 +22516,17 @@
       "line": 201,
       "end_line": 213,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_scaled_grip_uses_a_circle_not_a_componentwise_square",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_scaled_grip_uses_a_circle_not_a_componentwise_square",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_scaled_grip_uses_a_circle_not_a_componentwise_square"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22452,13 +22534,17 @@
       "line": 218,
       "end_line": 229,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_diagonal_pull_beyond_the_circle_is_infeasible",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_diagonal_pull_beyond_the_circle_is_infeasible",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_diagonal_pull_beyond_the_circle_is_infeasible"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22466,13 +22552,17 @@
       "line": 232,
       "end_line": 239,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_grip_constraint_validation",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_grip_constraint_validation",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_grip_constraint_validation"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22480,13 +22570,17 @@
       "line": 242,
       "end_line": 254,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_pressing_branch_bounds_only_the_sign",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_pressing_branch_bounds_only_the_sign",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_pressing_branch_bounds_only_the_sign"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22494,13 +22588,17 @@
       "line": 257,
       "end_line": 268,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_inverse_dynamics_rows_layout_and_sign",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_inverse_dynamics_rows_layout_and_sign",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_inverse_dynamics_rows_layout_and_sign"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22508,13 +22606,17 @@
       "line": 271,
       "end_line": 277,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_allocation_rejects_bad_problem_data",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_allocation_rejects_bad_problem_data",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_allocation_rejects_bad_problem_data"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22522,13 +22624,17 @@
       "line": 280,
       "end_line": 287,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_nonfinite_constraint_eval_reports_infinite_violation",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_nonfinite_constraint_eval_reports_infinite_violation",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_nonfinite_constraint_eval_reports_infinite_violation"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22536,13 +22642,17 @@
       "line": 290,
       "end_line": 314,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_positive_power_cap_is_a_sum_not_a_net",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_positive_power_cap_is_a_sum_not_a_net",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_positive_power_cap_is_a_sum_not_a_net"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22550,13 +22660,17 @@
       "line": 317,
       "end_line": 333,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_isometric_joint_does_not_divide_by_zero_speed",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_isometric_joint_does_not_divide_by_zero_speed",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_isometric_joint_does_not_divide_by_zero_speed"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22564,13 +22678,17 @@
       "line": 336,
       "end_line": 343,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_solution_is_deterministic_for_identical_inputs",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_solution_is_deterministic_for_identical_inputs",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_solution_is_deterministic_for_identical_inputs"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22578,13 +22696,17 @@
       "line": 346,
       "end_line": 351,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_candidate_is_preserved_when_infeasible",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_candidate_is_preserved_when_infeasible",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_candidate_is_preserved_when_infeasible"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22592,13 +22714,17 @@
       "line": 356,
       "end_line": 363,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_warm_start_does_not_change_the_answer",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_warm_start_does_not_change_the_answer",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_warm_start_does_not_change_the_answer"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22606,13 +22732,17 @@
       "line": 366,
       "end_line": 378,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_warm_start_from_feasible_point_solves_once",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_warm_start_from_feasible_point_solves_once"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: drop \u2014 counts scipy.optimize.minimize invocations, an implementation observation the dense native solve cannot expose; behavioral content (a feasible warm start returns the cold answer) is covered by test_warm_start_does_not_change_the_answer"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22620,13 +22750,18 @@
       "line": 382,
       "end_line": 385,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_invalid_warm_start_is_rejected",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_invalid_warm_start_is_rejected",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_invalid_warm_start_is_rejected[x00]",
+        "tests/reference/test_rider_allocation.py::test_invalid_warm_start_is_rejected[x01]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22634,13 +22769,17 @@
       "line": 388,
       "end_line": 416,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_branch_memory_preserves_cold_ranking_and_full_fallback",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_branch_memory_preserves_cold_ranking_and_full_fallback",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_branch_memory_preserves_cold_ranking_and_full_fallback"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22648,13 +22787,17 @@
       "line": 419,
       "end_line": 426,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_vector_nonlinear_bounds_and_extra_equalities_keep_their_semantics",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_vector_nonlinear_bounds_and_extra_equalities_keep_their_semantics",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_vector_nonlinear_bounds_and_extra_equalities_keep_their_semantics"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22662,13 +22805,18 @@
       "line": 430,
       "end_line": 439,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_nonlinear_constraint_is_evaluated_at_the_bounded_start",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_nonlinear_constraint_is_evaluated_at_the_bounded_start",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_nonlinear_constraint_is_evaluated_at_the_bounded_start[None]",
+        "tests/reference/test_rider_allocation.py::test_nonlinear_constraint_is_evaluated_at_the_bounded_start[x01]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22676,13 +22824,17 @@
       "line": 442,
       "end_line": 466,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_real_grip_problem_changes_from_remembered_pull_to_press",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_real_grip_problem_changes_from_remembered_pull_to_press",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_real_grip_problem_changes_from_remembered_pull_to_press"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22690,13 +22842,17 @@
       "line": 486,
       "end_line": 499,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_healthy_step_allocates_a_feasible_command",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_healthy_step_allocates_a_feasible_command",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_healthy_step_allocates_a_feasible_command"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22704,13 +22860,17 @@
       "line": 503,
       "end_line": 562,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_allocated_wrenches_close_the_rider_dynamics",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_allocated_wrenches_close_the_rider_dynamics",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_allocated_wrenches_close_the_rider_dynamics"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22718,13 +22878,17 @@
       "line": 566,
       "end_line": 592,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_command_does_not_read_solved_reactions",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_command_does_not_read_solved_reactions",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_command_does_not_read_solved_reactions"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22732,13 +22896,17 @@
       "line": 596,
       "end_line": 620,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_infeasible_intent_keeps_the_physical_bounds",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_infeasible_intent_keeps_the_physical_bounds",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_infeasible_intent_keeps_the_physical_bounds"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_allocation.py",
@@ -22746,13 +22914,17 @@
       "line": 623,
       "end_line": 640,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_allocation::test_allocate_effort_returns_target_without_slsqp_when_target_is_feasible",
-      "native_source": "native/tests/reference/test_rider_allocation.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_allocate_effort_returns_target_without_slsqp_when_target_is_feasible",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_allocation.py::test_allocate_effort_returns_target_without_slsqp_when_target_is_feasible"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_allocation.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_allocation green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_dynamics.py",
@@ -22760,13 +22932,34 @@
       "line": 23,
       "end_line": 39,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_dynamics::test_model_response_predicts_current_acceleration_and_all_reactions",
-      "native_source": "native/tests/reference/test_rider_dynamics.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_dynamics::test_model_response_predicts_current_acceleration_and_all_reactions",
+      "native_source": "native/tests/reference/test_native_rider_dynamics.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.95--20.0-weld]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.95--20.0-tendon]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.95--20.0-friction]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.95-0.0-weld]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.95-0.0-tendon]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.95-0.0-friction]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.95-20.0-weld]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.95-20.0-tendon]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.95-20.0-friction]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.9999--20.0-weld]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.9999--20.0-tendon]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.9999--20.0-friction]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.9999-0.0-weld]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.9999-0.0-tendon]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.9999-0.0-friction]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.9999-20.0-weld]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.9999-20.0-tendon]",
+        "tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions[0.9999-20.0-friction]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 18 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_dynamics.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_dynamics green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_dynamics.py",
@@ -22774,13 +22967,17 @@
       "line": 42,
       "end_line": 51,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_dynamics::test_prediction_does_not_read_previous_reactions_or_acceleration",
-      "native_source": "native/tests/reference/test_rider_dynamics.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_dynamics::test_prediction_does_not_read_previous_reactions_or_acceleration",
+      "native_source": "native/tests/reference/test_native_rider_dynamics.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_dynamics.py::test_prediction_does_not_read_previous_reactions_or_acceleration"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_dynamics.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_dynamics green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_dynamics.py",
@@ -22788,13 +22985,17 @@
       "line": 54,
       "end_line": 63,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_dynamics::test_unilateral_mode_domain_rejects_a_command_that_changes_contact_state",
-      "native_source": "native/tests/reference/test_rider_dynamics.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_dynamics::test_unilateral_mode_domain_rejects_a_command_that_changes_contact_state",
+      "native_source": "native/tests/reference/test_native_rider_dynamics.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_dynamics.py::test_unilateral_mode_domain_rejects_a_command_that_changes_contact_state"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_dynamics.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_dynamics green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_dynamics.py",
@@ -22802,13 +23003,17 @@
       "line": 66,
       "end_line": 86,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_dynamics::test_allocation_crosses_from_infeasible_sliding_wish_to_valid_sticking_mode",
-      "native_source": "native/tests/reference/test_rider_dynamics.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_dynamics::test_allocation_crosses_from_infeasible_sliding_wish_to_valid_sticking_mode",
+      "native_source": "native/tests/reference/test_native_rider_dynamics.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_dynamics.py::test_allocation_crosses_from_infeasible_sliding_wish_to_valid_sticking_mode"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_dynamics.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_dynamics green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_dynamics.py",
@@ -22816,13 +23021,17 @@
       "line": 89,
       "end_line": 102,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_dynamics::test_predicted_weld_wrench_includes_the_actual_support_moment",
-      "native_source": "native/tests/reference/test_rider_dynamics.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_dynamics::test_predicted_weld_wrench_includes_the_actual_support_moment",
+      "native_source": "native/tests/reference/test_native_rider_dynamics.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_dynamics.py::test_predicted_weld_wrench_includes_the_actual_support_moment"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_dynamics.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_dynamics green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_dynamics.py",
@@ -22830,13 +23039,17 @@
       "line": 105,
       "end_line": 131,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_dynamics::test_feasible_ten_watt_wish_is_not_suppressed_by_mixing_watts_and_scaled_torque",
-      "native_source": "native/tests/reference/test_rider_dynamics.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_dynamics::test_feasible_ten_watt_wish_is_not_suppressed_by_mixing_watts_and_scaled_torque",
+      "native_source": "native/tests/reference/test_native_rider_dynamics.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_dynamics.py::test_feasible_ten_watt_wish_is_not_suppressed_by_mixing_watts_and_scaled_torque"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_dynamics.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_dynamics green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_dynamics.py",
@@ -22844,13 +23057,18 @@
       "line": 135,
       "end_line": 175,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_dynamics::test_actual_allocation_cannot_jump_outside_bounded_activation_reach",
-      "native_source": "native/tests/reference/test_rider_dynamics.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_dynamics::test_actual_allocation_cannot_jump_outside_bounded_activation_reach",
+      "native_source": "native/tests/reference/test_native_rider_dynamics.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_dynamics.py::test_actual_allocation_cannot_jump_outside_bounded_activation_reach[0.0]",
+        "tests/reference/test_rider_dynamics.py::test_actual_allocation_cannot_jump_outside_bounded_activation_reach[35.0]"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_dynamics.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_dynamics green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_dynamics.py",
@@ -22858,13 +23076,17 @@
       "line": 178,
       "end_line": 190,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_dynamics::test_activation_projection_and_jacobian_include_joint_and_whole_body_clamps",
-      "native_source": "native/tests/reference/test_rider_dynamics.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_dynamics::test_activation_projection_and_jacobian_include_joint_and_whole_body_clamps",
+      "native_source": "native/tests/reference/test_native_rider_dynamics.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_dynamics.py::test_activation_projection_and_jacobian_include_joint_and_whole_body_clamps"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_dynamics.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_dynamics green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_dynamics.py",
@@ -22872,13 +23094,17 @@
       "line": 193,
       "end_line": 199,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_dynamics::test_linear_mode_rejection_respects_the_existing_feasibility_tolerance",
-      "native_source": "native/tests/reference/test_rider_dynamics.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_dynamics::test_linear_mode_rejection_respects_the_existing_feasibility_tolerance",
+      "native_source": "native/tests/reference/test_native_rider_dynamics.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_dynamics.py::test_linear_mode_rejection_respects_the_existing_feasibility_tolerance"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_dynamics.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_dynamics green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_dynamics.py",
@@ -22886,13 +23112,17 @@
       "line": 202,
       "end_line": 228,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_dynamics::test_grip_branch_uses_the_fixed_bar_anchor_when_the_soft_hand_moves",
-      "native_source": "native/tests/reference/test_rider_dynamics.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_dynamics::test_grip_branch_uses_the_fixed_bar_anchor_when_the_soft_hand_moves",
+      "native_source": "native/tests/reference/test_native_rider_dynamics.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_dynamics.py::test_grip_branch_uses_the_fixed_bar_anchor_when_the_soft_hand_moves"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_dynamics.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_dynamics green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_information_boundary.py",
@@ -22900,13 +23130,17 @@
       "line": 39,
       "end_line": 43,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_information_boundary::test_kinematic_state_contract_fields",
-      "native_source": "native/tests/reference/test_rider_information_boundary.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_information_boundary::test_kinematic_state_contract_fields",
+      "native_source": "native/tests/reference/test_native_rider_information_boundary.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_information_boundary.py::test_kinematic_state_contract_fields"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_information_boundary.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_information_boundary green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_information_boundary.py",
@@ -22914,13 +23148,17 @@
       "line": 46,
       "end_line": 56,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_information_boundary::test_state_snapshots_and_freezes_the_interval",
-      "native_source": "native/tests/reference/test_rider_information_boundary.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_information_boundary::test_state_snapshots_and_freezes_the_interval",
+      "native_source": "native/tests/reference/test_native_rider_information_boundary.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_information_boundary.py::test_state_snapshots_and_freezes_the_interval"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_information_boundary.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_information_boundary green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_information_boundary.py",
@@ -22928,13 +23166,17 @@
       "line": 59,
       "end_line": 68,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_information_boundary::test_state_is_blind_to_solver_truth",
-      "native_source": "native/tests/reference/test_rider_information_boundary.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_information_boundary::test_state_is_blind_to_solver_truth",
+      "native_source": "native/tests/reference/test_native_rider_information_boundary.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_information_boundary.py::test_state_is_blind_to_solver_truth"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_information_boundary.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_information_boundary green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_information_boundary.py",
@@ -22942,13 +23184,17 @@
       "line": 71,
       "end_line": 86,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_information_boundary::test_road_window_is_bounded",
-      "native_source": "native/tests/reference/test_rider_information_boundary.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_information_boundary::test_road_window_is_bounded",
+      "native_source": "native/tests/reference/test_native_rider_information_boundary.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_information_boundary.py::test_road_window_is_bounded"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_information_boundary.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_information_boundary green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_information_boundary.py",
@@ -22956,13 +23202,17 @@
       "line": 89,
       "end_line": 98,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_information_boundary::test_planner_sources_do_not_read_solver_internals",
-      "native_source": "native/tests/reference/test_rider_information_boundary.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_rider_information_boundary.py::test_planner_sources_do_not_read_solver_internals"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: drop \u2014 AST scan of Python planner sources; the native boundary is structural (ConstraintDynamics and the kinematic-state snapshot have no solver-field inputs), asserted behaviorally by test_state_is_blind_to_solver_truth and reference.native_rider_allocation::test_command_does_not_read_solved_reactions"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_information_boundary.py",
@@ -22970,13 +23220,17 @@
       "line": 101,
       "end_line": 105,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_information_boundary::test_sensor_observation_contract_unchanged",
-      "native_source": "native/tests/reference/test_rider_information_boundary.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_information_boundary::test_sensor_observation_contract_unchanged",
+      "native_source": "native/tests/reference/test_native_rider_information_boundary.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_information_boundary.py::test_sensor_observation_contract_unchanged"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_information_boundary.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_information_boundary green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_information_boundary.py",
@@ -22984,13 +23238,17 @@
       "line": 108,
       "end_line": 126,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_information_boundary::test_motor_policy_cannot_take_ownership_of_rider_cadence",
-      "native_source": "native/tests/reference/test_rider_information_boundary.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_information_boundary::test_motor_policy_cannot_take_ownership_of_rider_cadence",
+      "native_source": "native/tests/reference/test_native_rider_information_boundary.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_information_boundary.py::test_motor_policy_cannot_take_ownership_of_rider_cadence"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: ported to native/tests/reference/test_native_rider_information_boundary.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_rider_information_boundary green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_rider_information_boundary.py",
@@ -22998,13 +23256,17 @@
       "line": 130,
       "end_line": 165,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_rider_information_boundary::test_same_kinematic_state_same_command",
-      "native_source": "native/tests/reference/test_rider_information_boundary.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.native_rider_allocation::test_command_does_not_read_solved_reactions",
+      "native_source": "native/tests/reference/test_native_rider_allocation.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_rider_information_boundary.py::test_same_kinematic_state_same_command"
+      ],
+      "assertions_capture": "2026-10-23: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-23 3.16 lane/c: port \u2014 covered by reference.native_rider_allocation::test_command_does_not_read_solved_reactions, which corrupts all three privileged channels (efc_force, qfrc_constraint, committed rider-contacts diagnostics) on the same controller and demands an identical command; oracle node was red at HEAD (second committing compute at one timestamp trips the once-per-timestamp activation guard) and now probes non-advancing \u2014 green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_runtime_single_path.py",

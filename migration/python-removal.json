@@ -35,12 +35,10 @@
       "native/tests/reference/project_test_constraint_mode_search.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.project_constraint_mode_search"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "7eee5f7ce4091cae163ef3e97055a56f23e1539b1ecef6388a06a2e3ac8a91d2",
     "snapshot_line_count": 170,
     "tracked": true,
@@ -17366,15 +17364,13 @@
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_rider_allocation.cpp"
+      "native/tests/reference/test_native_rider_allocation.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_rider_allocation"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "02f8181be739d2b765698f7f996816c41e94fbde4b9cde91f307f36fdf8c6ca1",
     "snapshot_line_count": 640,
     "tracked": true,
@@ -17387,15 +17383,13 @@
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_rider_dynamics.cpp"
+      "native/tests/reference/test_native_rider_dynamics.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_rider_dynamics"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "8ef451a5340ae2da93b317e868a6c1391eebc65fef13927a0206c7c75674377e",
     "snapshot_line_count": 228,
     "tracked": true,
@@ -17408,15 +17402,14 @@
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_rider_information_boundary.cpp"
+      "native/tests/reference/test_native_rider_information_boundary.cpp",
+      "native/tests/reference/test_native_rider_allocation.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_rider_information_boundary"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "c3df0dbfe6d13e6ec391eaca13141ea9c1d3a4fb71b52e7695d89646132fd2e3",
     "snapshot_line_count": 165,
     "tracked": true,

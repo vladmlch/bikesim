@@ -15197,12 +15197,10 @@
       "native/tests/reference/test_native_atomicity.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_atomicity"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "dc7d586dd7f8fe93d6b11220b07bcb62971ab8ca9b965ee84902bab71cabbf88",
     "snapshot_line_count": 533,
     "tracked": true,
@@ -15533,7 +15531,8 @@
     "verification_ids": [
       "migration_T53",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.native_input_contracts"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
     "status": "planned",

@@ -3766,13 +3766,15 @@
       "line": 64,
       "end_line": 77,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_failed_geometric_shift_is_atomic",
+      "native_test_id": "reference.native_atomicity::test_failed_geometric_shift_is_atomic",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3780,13 +3782,15 @@
       "line": 81,
       "end_line": 108,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_valid_shift_commits_atomically",
+      "native_test_id": "reference.native_atomicity::test_valid_shift_commits_atomically",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3794,13 +3798,15 @@
       "line": 112,
       "end_line": 133,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_rejected_then_reset_prepare_and_restore",
+      "native_test_id": "reference.native_atomicity::test_rejected_then_reset_prepare_and_restore",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3808,13 +3814,15 @@
       "line": 136,
       "end_line": 150,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_invalid_restore_is_atomic",
+      "native_test_id": "reference.native_atomicity::test_invalid_restore_is_atomic",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3822,13 +3830,15 @@
       "line": 153,
       "end_line": 160,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_rejected_timestamp_advance_is_atomic",
+      "native_test_id": "reference.native_atomicity::test_rejected_timestamp_advance_is_atomic",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3836,13 +3846,15 @@
       "line": 164,
       "end_line": 174,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_rejected_shift_preserves_auxiliary_transmissions",
+      "native_test_id": "reference.native_atomicity::test_rejected_shift_preserves_auxiliary_transmissions",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3850,13 +3862,15 @@
       "line": 177,
       "end_line": 189,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_probe_controls_do_not_publish",
+      "native_test_id": "reference.native_atomicity::test_probe_controls_do_not_publish",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3864,13 +3878,15 @@
       "line": 193,
       "end_line": 213,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_rejected_prepare_keeps_policy_state",
+      "native_test_id": "reference.native_atomicity::test_rejected_prepare_keeps_policy_state",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3878,13 +3894,15 @@
       "line": 223,
       "end_line": 235,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_rejected_compute_keeps_everything",
+      "native_test_id": "reference.native_atomicity::test_rejected_compute_keeps_everything",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3892,13 +3910,15 @@
       "line": 238,
       "end_line": 257,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_unsettled_pending_rejects_before_policy_advance",
+      "native_test_id": "reference.native_atomicity::test_unsettled_pending_rejects_before_policy_advance",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3906,13 +3926,15 @@
       "line": 260,
       "end_line": 269,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_prepare_duplicate_timestamp_is_atomic",
+      "native_test_id": "reference.native_atomicity::test_prepare_duplicate_timestamp_is_atomic",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3920,13 +3942,15 @@
       "line": 273,
       "end_line": 294,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_probe_atomicity",
+      "native_test_id": "reference.native_atomicity::test_probe_atomicity",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3934,13 +3958,15 @@
       "line": 297,
       "end_line": 311,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_python_probe_atomicity",
-      "native_source": "native/tests/reference/test_native_atomicity.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 Python-oracle mirror twin of the ported contract test_probe_atomicity; the C++ port covers the same native rejection/atomicity behavior, so no native coverage is lost; the oracle twin removes at T63."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3948,13 +3974,15 @@
       "line": 315,
       "end_line": 329,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_prepare_then_components_matches_internal_prepare",
+      "native_test_id": "reference.native_atomicity::test_prepare_then_components_matches_internal_prepare",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3962,13 +3990,15 @@
       "line": 332,
       "end_line": 344,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_python_rejected_prepare_keeps_policy_state",
-      "native_source": "native/tests/reference/test_native_atomicity.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 Python-oracle mirror twin of the ported contract test_rejected_prepare_keeps_policy_state; the C++ port covers the same native rejection/atomicity behavior, so no native coverage is lost; the oracle twin removes at T63."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3976,13 +4006,15 @@
       "line": 347,
       "end_line": 359,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_python_rejected_compute_keeps_everything",
-      "native_source": "native/tests/reference/test_native_atomicity.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 Python-oracle mirror twin of the ported contract test_rejected_compute_keeps_everything; the C++ port covers the same native rejection/atomicity behavior, so no native coverage is lost; the oracle twin removes at T63."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -3990,13 +4022,15 @@
       "line": 388,
       "end_line": 418,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_rejected_settle_keeps_everything",
+      "native_test_id": "reference.native_atomicity::test_rejected_settle_keeps_everything",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -4004,13 +4038,15 @@
       "line": 421,
       "end_line": 440,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_battery_budget_rejection_is_atomic",
+      "native_test_id": "reference.native_atomicity::test_battery_budget_rejection_is_atomic",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -4018,13 +4054,15 @@
       "line": 447,
       "end_line": 483,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_sparse_last_settle_debits_once",
+      "native_test_id": "reference.native_atomicity::test_sparse_last_settle_debits_once",
       "native_source": "native/tests/reference/test_native_atomicity.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -4032,13 +4070,15 @@
       "line": 487,
       "end_line": 514,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_python_rejected_settle_keeps_everything",
-      "native_source": "native/tests/reference/test_native_atomicity.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 Python-oracle mirror twin of the ported contract test_rejected_settle_keeps_everything; the C++ port covers the same native rejection/atomicity behavior, so no native coverage is lost; the oracle twin removes at T63."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_atomicity.py",
@@ -4046,13 +4086,15 @@
       "line": 517,
       "end_line": 533,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_atomicity::test_python_settle_debits_once_after_sparse_diagnostics",
-      "native_source": "native/tests/reference/test_native_atomicity.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 Python-oracle mirror twin of the ported contract test_sparse_last_settle_debits_once; the C++ port covers the same native rejection/atomicity behavior, so no native coverage is lost; the oracle twin removes at T63."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -9152,7 +9194,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9166,7 +9210,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9180,7 +9226,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9194,7 +9242,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9208,7 +9258,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9222,7 +9274,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9236,7 +9290,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9244,13 +9300,15 @@
       "line": 144,
       "end_line": 148,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_projection_rejects_original_mutated_attributes",
-      "native_source": "native/tests/reference/test_native_input_contracts.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 mutates a Python applier dataclass via object.__setattr__ before Python-side project_drive_policies; the applier object has no native twin. The wire-level equivalent (a wrongly typed pedaling member rejected naming its field path) is covered by this file's ported discriminator/state tests and the numeric_completion lockout_firm checks."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9258,13 +9316,15 @@
       "line": 151,
       "end_line": 156,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_projection_canonicalizes_valid_real_integer_after_validation",
+      "native_test_id": "reference.native_input_contracts::test_projection_canonicalizes_valid_real_integer_after_validation",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_input_contracts.cpp; CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.03s) and linux-aarch64 (root-clang container, 0.01s); the ported nodes pass in the required parity run."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9272,13 +9332,15 @@
       "line": 160,
       "end_line": 174,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_standalone_projection_checks_closed_discriminators",
+      "native_test_id": "reference.native_input_contracts::test_standalone_projection_checks_closed_discriminators",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_input_contracts.cpp; CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.03s) and linux-aarch64 (root-clang container, 0.01s); the ported nodes pass in the required parity run."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9292,7 +9354,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green. This record is a would-be golden (assert_bitwise_equal against the damper oracle)."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9306,7 +9370,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9320,7 +9386,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9328,13 +9396,15 @@
       "line": 223,
       "end_line": 234,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_control_and_recursive_state_keys_are_value_errors",
+      "native_test_id": "reference.native_input_contracts::test_control_and_recursive_state_keys_are_value_errors",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_input_contracts.cpp; CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.03s) and linux-aarch64 (root-clang container, 0.01s); the ported nodes pass in the required parity run."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9342,13 +9412,15 @@
       "line": 237,
       "end_line": 242,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_state_numeric_arrays_reject_boolean_before_cast",
+      "native_test_id": "reference.native_input_contracts::test_state_numeric_arrays_reject_boolean_before_cast",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_input_contracts.cpp; CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.03s) and linux-aarch64 (root-clang container, 0.01s); the ported nodes pass in the required parity run."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9356,13 +9428,15 @@
       "line": 246,
       "end_line": 254,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_public_numeric_arrays_are_checked_before_conversion",
-      "native_source": "native/tests/reference/test_native_input_contracts.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 checks.array plus set_state/total ndarray arguments \u2014 the NumPy-typed nanobind boundary. Native spans are statically typed; no C++ behavior is lost."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9370,13 +9444,15 @@
       "line": 257,
       "end_line": 260,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_public_state_accepts_ordered_sequences",
-      "native_source": "native/tests/reference/test_native_input_contracts.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 set_state(list/tuple/np.float64) acceptance is nanobind sequence marshalling \u2014 no C++-level contract."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9384,13 +9460,15 @@
       "line": 263,
       "end_line": 266,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_dynamic_result_keys_are_strings",
-      "native_source": "native/tests/reference/test_native_input_contracts.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 total({7: ...}) dict-key type check lives in the nanobind dict reader \u2014 no C++-level contract."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9398,13 +9476,15 @@
       "line": 275,
       "end_line": 278,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_policy_call_numeric_bools_are_rejected",
-      "native_source": "native/tests/reference/test_native_input_contracts.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 bound-method exact-bool argument checks (pedaling_update/assist_ceiling/battery_draw/freehub_torque signatures) live at the nanobind boundary; the typed C++ entry points cannot carry a bool where a double is declared."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9412,13 +9492,15 @@
       "line": 282,
       "end_line": 288,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_public_config_requires_mapping_before_model_load",
+      "native_test_id": "reference.native_input_contracts::test_public_config_requires_mapping_before_model_load",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_input_contracts.cpp; CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.03s) and linux-aarch64 (root-clang container, 0.01s); the ported nodes pass in the required parity run."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9432,7 +9514,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9446,7 +9530,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9460,7 +9546,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9468,13 +9556,15 @@
       "line": 333,
       "end_line": 346,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_chain_boundary_preserves_original_numeric_types",
-      "native_source": "native/tests/reference/test_native_input_contracts.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 chain_geometry/chain_center_gradient container-typing checks are nanobind argument readers over Python iterables/sets \u2014 no C++-level contract; the kernels themselves are covered by the numeric domains ports."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9488,7 +9578,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9496,13 +9588,15 @@
       "line": 362,
       "end_line": 366,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_projection_does_not_turn_unordered_or_scalar_cassette_into_sequence",
+      "native_test_id": "reference.native_input_contracts::test_projection_does_not_turn_unordered_or_scalar_cassette_into_sequence",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_input_contracts.cpp; CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.03s) and linux-aarch64 (root-clang container, 0.01s); the ported nodes pass in the required parity run."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9516,7 +9610,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9530,7 +9626,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9544,7 +9642,9 @@
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9552,13 +9652,15 @@
       "line": 416,
       "end_line": 423,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_empty_boolean_ndarray_is_not_numeric_state",
-      "native_source": "native/tests/reference/test_native_input_contracts.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: drop \u2014 checks.array + set_state empty-bool-ndarray dtype check \u2014 nanobind/NumPy boundary; no C++-level contract."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9566,13 +9668,15 @@
       "line": 426,
       "end_line": 432,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_huge_integer_real_conversion_and_large_finite_control",
+      "native_test_id": "reference.native_input_contracts::test_huge_integer_real_conversion_and_large_finite_control",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_input_contracts.cpp; CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.03s) and linux-aarch64 (root-clang container, 0.01s); the ported nodes pass in the required parity run."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -9580,13 +9684,15 @@
       "line": 436,
       "end_line": 445,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_wire_string_encoding_matches_native",
+      "native_test_id": "reference.native_input_contracts::test_wire_string_encoding_matches_native",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_input_contracts.cpp; CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.03s) and linux-aarch64 (root-clang container, 0.01s); the ported nodes pass in the required parity run."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_loader.py",

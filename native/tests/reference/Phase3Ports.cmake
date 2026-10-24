@@ -51,6 +51,12 @@ bike_add_reference_test(native_drive_policies ENGINE
 bike_add_reference_test(native_drivetrain ENGINE
   SOURCES test_native_drivetrain.cpp LIBRARIES bike_app bike_random
   LABELS t52 drive golden slow)
+bike_add_reference_test(native_atomicity ENGINE
+  SOURCES test_native_atomicity.cpp LIBRARIES bike_app bike_random
+  LABELS t52 contracts)
+bike_add_reference_test(native_input_contracts ENGINE
+  SOURCES test_native_input_contracts.cpp LIBRARIES bike_app
+  LABELS t52 contracts)
 bike_add_reference_test(drivetrain_policy_clone ENGINE
   SOURCES test_drivetrain_policy_clone.cpp LIBRARIES bike_app LABELS t52 drive)
 bike_add_reference_test(motor_freewheel_topology ENGINE

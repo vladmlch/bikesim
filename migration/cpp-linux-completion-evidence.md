@@ -2631,3 +2631,128 @@ two registrations), `test-port-map.json` (36 dispositioned rows —
 24 port / 12 drop — plus 17 explicitly-stopped `planned` rows, all
 with dated evidence), `python-removal.json` (2 rows), and this
 evidence file (+110 lane section).
+
+## 2026-10-23 — Task 3.16: rider allocation and dynamics (T52 batch labels `t52`/`rider`)
+
+### Scope
+
+Four source files, 55 records, 97 collected pytest nodes:
+
+- `tests/reference/test_rider_allocation.py` (31 records)
+- `tests/reference/test_rider_dynamics.py` (10 records)
+- `tests/reference/test_rider_information_boundary.py` (8 records)
+- `project/tests/reference/test_constraint_mode_search.py` (6 records)
+
+Triage: **52 port / 3 drop / 0 golden**. Every comparison in these files
+is production-output vs literal/closed-form or production self-consistency
+— no Python-oracle value is frozen, so no `_golden` capture sites, no
+`tests/fixtures/golden/` additions, and no platform-capture step applies.
+`collected_node_ids` on all 55 records now carry the measured pytest node
+sets (97 nodes total).
+
+### Oracle regressions found and fixed (test-is-wrong, written argument)
+
+The pre-capture green check surfaced three nodes red at HEAD that are not
+in the documented baseline lists — both causes are test-side staleness:
+
+- `test_rider_allocation.py::test_allocation_forecast_includes_current_
+  assembled_support_forces[False|True]` — the SimpleNamespace brake stub
+  lacked `hold_qfrc`, which `apply_forces` has called since the
+  static-brake latch landed (`physical_runtime.py:302`). Stub gained
+  `hold_qfrc` returning a zero nv qfrc. Both params green after the fix.
+- `test_rider_information_boundary.py::test_same_kinematic_state_same_command`
+  — the second `compute()` committed at the same `data.time`, which the
+  once-per-timestamp activation contract (`rider_effort.py:28`,
+  "rider activation advances once per timestamp") now rejects by design;
+  an advancing first call also perturbs the activation state the second
+  call observes. Both calls became non-advancing probes, preserving the
+  asserted property (identical kinematic state → identical command under
+  corrupted privileged channels). Green after the fix.
+
+Fix commit: `cc37bc1 fix(reference): update stale rider test seams to
+current contracts (3.16)`.
+
+### Drops (3, Python-only seams)
+
+- `test_allocation_forecast_includes_current_assembled_support_forces`
+  drives a `__new__`/`SimpleNamespace` interception inside Python
+  `apply_forces`; no native analogue exists. The ordering it asserts —
+  the forecast sees support-assembled acceleration — is load-bearing in
+  `reference.native_rider_allocation::test_allocated_wrenches_close_the_
+  rider_dynamics`, whose dynamics residual (`|r| <= 1e-4`) only closes
+  when the committed forecast acceleration was produced with the support
+  wrenches already applied.
+- `test_warm_start_from_feasible_point_solves_once` counts
+  `scipy.optimize.minimize` calls — an implementation observation the
+  dense native solve cannot expose. Behavioral content (a feasible warm
+  start returns the cold answer) is covered by
+  `test_warm_start_does_not_change_the_answer`.
+- `test_planner_sources_do_not_read_solver_internals` is an AST scan of
+  Python planner sources; natively the boundary is compile-time
+  structural (ConstraintDynamics and the kinematic-state snapshot take
+  no solver fields), asserted behaviorally by
+  `test_state_is_blind_to_solver_truth` and the corrupted-channel command
+  test.
+
+### Shared-node coverage
+
+`test_same_kinematic_state_same_command` ports to
+`reference.native_rider_allocation::test_command_does_not_read_solved_reactions`,
+which was strengthened to corrupt all three privileged channels the
+oracle perturbs: `efc_force`, `qfrc_constraint`, and the committed
+rider-contacts diagnostics (via the writer's state copy/`assign_state`
+round-trip). The command is required identical to 1e-9.
+
+### Verification
+
+- macOS arm64 (`build/native-release`, ctest):
+  `reference.native_rider_allocation` PASS (18.3 s);
+  `reference.native_rider_dynamics` PASS; `reference.native_rider_
+  information_boundary` PASS; `reference.project_constraint_mode_search`
+  PASS.
+- Linux aarch64 (`bike-dev-pfc-lane-c` container, `/build/root-clang`):
+  all four nodes PASS (`ctest -R` batch expression; allocation 11.59 s,
+  others <0.15 s).
+- Oracle pytest (both platforms, `uv run --frozen --group native`):
+  97 passed / 0 failed on darwin-arm64 (4.33 s) and linux-aarch64
+  (267.9 s, cold venv — see note).
+- Container venv was stale on first use: `uv run --frozen` inside
+  `container.sh exec` created `/opt/bike-venv` and downloaded 39
+  packages (5.68 s). Recorded per shared-procedure note; a later
+  `container.sh venv` resync is advisable for the lane.
+- `ctest -L reference -j8` (L1 sweep): 35/42 pass; 7 failures are all
+  golden-labelled tests (`native_static_brake`, `native_clock_contracts`,
+  `native_drive_policies`, `native_drivetrain`, `period_buffer`,
+  `pneumatic_tire_oracle`, `golden_episode_tool`) whose fixtures are
+  absent at this lane's HEAD (`1eece88` predates the lane/a 3.12a
+  merge-back that added `tests/fixtures/golden/` content — 54 files
+  tracked here vs 1384 in the integration worktree). Pre-existing lane
+  gap, not a batch regression; resolves at merge-back.
+
+### Native implementation notes
+
+- `welded_rig()` fixture (allocation file): compiles the welded model,
+  builds `SetupContext`, calls `initialize_pose`, measures
+  `init::acceleration_residual`, populates `EquilibriumResult`, calls
+  `init::finalize_initial_state`, and clears `context.initializing` —
+  bounded finalization replacing the ~80 s unbounded equilibrium settle.
+  Without it `PhysicalStep::initializing_` stays true and every interval
+  is a control tick, mis-ordering allocation diagnostics relative to the
+  oracle's held-control semantics.
+- `welded_attachments()` mirrors `LegacyController`'s attachment
+  construction (equality IDs, support geom/site IDs, rider/other body
+  IDs, weld state, local anchors, saddle→pelvis and foot fallbacks,
+  grip-skip rule) — `response_allocation.cpp` reads geom/site IDs for
+  non-equality support geometry.
+- `test_native_rider_dynamics.cpp` exercises model-response prediction,
+  unilateral-mode rejection, weld-wrench moments, activation reach and
+  Jacobian clamps against the live MuJoCo model.
+
+### Commits
+
+- `cc37bc1` fix(reference): stale test seams
+- `d167411` feat(native): rider allocation port
+- `c2d97f3` feat(native): rider dynamics port
+- `e2ed8a3` feat(native): rider information-boundary port
+- `408ab79` feat(native): constraint-mode-search port
+- `02f7b92` test(cpp): Phase3Ports registrations + ledgers

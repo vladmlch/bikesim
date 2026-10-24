@@ -1,0 +1,226 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.jac",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.jac.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.qfrc",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 24,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 32,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.jac",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 40,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.jac.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 48,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "input.qfrc",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 64,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 72,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "input.jac",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 80,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.jac.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 88,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.qfrc",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 104,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 112,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.jac",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 120,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.jac.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 128,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "input.qfrc",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 144,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+  "offset": 152,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ }
+]

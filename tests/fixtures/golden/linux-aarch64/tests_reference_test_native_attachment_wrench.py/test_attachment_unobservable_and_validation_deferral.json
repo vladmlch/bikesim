@@ -1,0 +1,3268 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 64,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 120,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 184,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 240,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 304,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 360,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 424,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 480,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 544,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 600,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 664,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 720,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 784,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 840,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 904,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 960,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1024,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1080,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1144,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1200,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1264,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1320,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1384,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1440,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1504,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1560,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1624,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1680,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1744,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1800,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1864,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1920,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 1984,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2040,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2104,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2160,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2224,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2280,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2344,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2400,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2464,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2520,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2584,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2640,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2704,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2760,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2824,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2880,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 2944,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3000,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3064,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3120,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3184,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3240,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3304,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3360,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3424,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3480,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3544,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3600,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3664,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3720,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3784,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3840,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3904,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 3960,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4024,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4080,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4144,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4200,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4264,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4320,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4384,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4440,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4504,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4560,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4624,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4680,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4744,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4800,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4864,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4920,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 4984,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5040,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5104,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5160,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5224,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5280,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5344,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5400,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5464,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5520,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5584,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5640,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5704,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5760,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5824,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5880,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 5944,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6000,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6064,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6120,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6184,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6240,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6304,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6360,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6424,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6480,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6544,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6600,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6664,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6720,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6784,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6840,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6904,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 6960,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7024,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7080,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7144,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7200,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7264,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7320,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7384,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7440,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7504,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7560,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7624,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7680,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7744,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7800,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7864,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7920,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 7984,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8040,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8104,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8160,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8224,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8280,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8344,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8400,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8464,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8520,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8584,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8640,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8704,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8760,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8824,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8880,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 8944,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9000,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9064,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9120,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9184,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9240,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9304,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9360,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9424,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9480,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9544,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9600,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9664,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9720,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9784,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9840,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9904,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 9960,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10024,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10080,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10144,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10200,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10264,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10320,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10384,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10440,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10504,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10560,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10624,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10680,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10744,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10800,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10864,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10920,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 10984,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11040,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11104,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11160,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11224,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11280,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11344,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11400,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11464,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11520,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11584,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11640,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11704,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11760,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11824,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11880,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 11944,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 200,
+  "kind": "bitwise",
+  "label": " eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12000,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": " rider_jac",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12008,
+  "rtol": null,
+  "shape": [
+   6,
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": " rider_columns",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12056,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 203,
+  "kind": "bitwise",
+  "label": " bike_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12064,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": " bike_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12352,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "bitwise",
+  "label": " observable",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12400,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 206,
+  "kind": "bitwise",
+  "label": " normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12408,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 207,
+  "kind": "bitwise",
+  "label": " kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12432,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 208,
+  "kind": "bitwise",
+  "label": " rotational",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12438,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 209,
+  "kind": "bitwise",
+  "label": " half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12446,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": " pull present",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12454,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": " rider_jac",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12462,
+  "rtol": null,
+  "shape": [
+   6,
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 212,
+  "kind": "bitwise",
+  "label": " rider_qfrc",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12510,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 213,
+  "kind": "bitwise",
+  "label": " bike_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12518,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 214,
+  "kind": "bitwise",
+  "label": " bike_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12806,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 215,
+  "kind": "bitwise",
+  "label": " observable",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12854,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 216,
+  "kind": "bitwise",
+  "label": " normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12862,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 217,
+  "kind": "bitwise",
+  "label": " kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12886,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "bitwise",
+  "label": " rotational",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12892,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 219,
+  "kind": "bitwise",
+  "label": " half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12900,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 220,
+  "kind": "bitwise",
+  "label": " gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12908,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 221,
+  "kind": "bitwise",
+  "label": " pull present",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12916,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 222,
+  "kind": "bitwise",
+  "label": " rider_jac",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12924,
+  "rtol": null,
+  "shape": [
+   6,
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 223,
+  "kind": "bitwise",
+  "label": " rider_qfrc",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12972,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 224,
+  "kind": "bitwise",
+  "label": " bike_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 12980,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 225,
+  "kind": "bitwise",
+  "label": " bike_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 13268,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 226,
+  "kind": "bitwise",
+  "label": " observable",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 13316,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 227,
+  "kind": "bitwise",
+  "label": " normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 13324,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 228,
+  "kind": "bitwise",
+  "label": " kind",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 13348,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 229,
+  "kind": "bitwise",
+  "label": " rotational",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 13354,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 230,
+  "kind": "bitwise",
+  "label": " half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 13362,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 231,
+  "kind": "bitwise",
+  "label": " gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 13370,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 232,
+  "kind": "bitwise",
+  "label": " pull present",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 13378,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 233,
+  "kind": "bitwise",
+  "label": "error",
+  "nbytes": 43,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 13386,
+  "rtol": null,
+  "shape": [
+   43
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "error",
+  "nbytes": 43,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral",
+  "offset": 13429,
+  "rtol": null,
+  "shape": [
+   43
+  ]
+ }
+]

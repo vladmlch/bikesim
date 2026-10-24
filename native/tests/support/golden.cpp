@@ -210,6 +210,14 @@ std::vector<double> Node::f64_input(std::string_view label) {
     ++cursor_;
     return result;
 }
+std::string_view Node::peek_label() const {
+    if (cursor_ >= entries_.size()) return {};
+    return entries_[cursor_].label;
+}
+std::span<const std::size_t> Node::peek_shape() const {
+    if (cursor_ >= entries_.size()) return {};
+    return entries_[cursor_].shape;
+}
 void Node::done() const {
     bt::require(cursor_ == entries_.size(), context() + ": unconsumed captured comparisons remain");
 }

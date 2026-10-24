@@ -1,0 +1,125 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_prior_fp_invalid_flag",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_prior_fp_invalid_flag",
+  "offset": 144,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_prior_fp_invalid_flag",
+  "offset": 160,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_prior_fp_invalid_flag",
+  "offset": 256,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_prior_fp_invalid_flag",
+  "offset": 272,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_prior_fp_invalid_flag",
+  "offset": 280,
+  "rtol": null,
+  "shape": [
+   3,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_prior_fp_invalid_flag",
+  "offset": 328,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_prior_fp_invalid_flag",
+  "offset": 344,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_prior_fp_invalid_flag",
+  "offset": 352,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

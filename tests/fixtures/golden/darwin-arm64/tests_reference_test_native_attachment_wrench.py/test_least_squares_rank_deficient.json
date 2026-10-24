@@ -1,0 +1,737 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 192,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 208,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 256,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 264,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 272,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 304,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 304,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 312,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 192,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 344,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 536,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 552,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 648,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 664,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 672,
+  "rtol": null,
+  "shape": [
+   4,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 736,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 736,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 744,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 128,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 776,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 904,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 920,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 952,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 960,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 968,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1000,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1000,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1008,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 128,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1040,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1168,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1184,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1248,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1264,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1272,
+  "rtol": null,
+  "shape": [
+   4,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1336,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1336,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1344,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1376,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1592,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1608,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1680,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1688,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1696,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1720,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1720,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1728,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1752,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1968,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 144,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 1984,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 2128,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 2144,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 2152,
+  "rtol": null,
+  "shape": [
+   3,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 2200,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 2200,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient",
+  "offset": 2208,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

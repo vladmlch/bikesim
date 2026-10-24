@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.jac",
+  "nbytes": 168,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_owns_its_output",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   21
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.jac.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_owns_its_output",
+  "offset": 168,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.qfrc",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_owns_its_output",
+  "offset": 184,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_owns_its_output",
+  "offset": 240,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

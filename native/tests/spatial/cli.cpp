@@ -6,6 +6,7 @@
 #include "configuration/load.hpp"
 #include "platform/files.hpp"
 #include <array>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
@@ -51,11 +52,43 @@ void contracts() {
     const auto file=bike::cli::resolve_ride(ride({"--physics-config",config_name,"--duration","2","--headless"}));
     bt::require(file->effective_config_sha256==free->effective_config_sha256,"equivalent resolved TOML and CLI have one canonical SHA-256");
     bt::require(file->setup.model.spatial.has_value(),"absent mode flag preserves the authored spatial TOML");
+    const auto rejects_terrain_conflict=[](auto&& resolve) {
+        bool rejected=false;
+        try {resolve();}
+        catch(const bike::cli::ArgumentError& error) {
+            rejected=std::string_view(error.what()).starts_with("spatial terrain conflicts with");
+        }
+        bt::require(rejected,"loaded spatial configuration rejects explicit planar terrain options at the resolver boundary");
+    };
+    for (const auto option : {"--track", "--length"}) {
+        const auto value = std::string_view(option) == "--track" ? "road_worn" : "100";
+        const auto conflicting=ride({"--physics-config",config_name,option,value});
+        rejects_terrain_conflict([&]{(void)bike::cli::resolve_ride(conflicting);});
+    }
+    // A CLI asset replacement must discard generation-only settings inherited
+    // from the previous terrain, without loading the asset during resolution.
+    const auto generated = std::make_unique<bike::configuration::SimulationPhysicsConfig>(*free->setup.model.physics);
+    generated->spatial->terrain.dx_m = .2;
+    generated->spatial->terrain.dy_m = .1;
+    const auto generated_name = (output.path()/"generated.toml").string();
+    const auto generated_bytes = bike::configuration::write_physics_toml(*generated);
+    bike::platform::write_exclusive(generated_name,std::as_bytes(std::span(generated_bytes)));
+    const auto asset_name = (output.path()/"replacement.terrain3d").string();
+    const auto asset = bike::cli::resolve_ride(ride({"--physics-config",generated_name,"--terrain3d",asset_name}));
+    bt::require(asset->setup.model.spatial->terrain.kind==bike::spatial::TerrainRequestKind::grid_asset &&
+        !asset->setup.model.spatial->terrain.dx_m && !asset->setup.model.spatial->terrain.dy_m,
+        "immutable replacement asset has no inherited generator spacing");
     const auto planar=bike::cli::resolve_ride(ride({}));
     bt::require(!planar->setup.model.spatial&&planar->arguments.text("physics")=="legacy","empty CLI preserves the planar default");
     const std::array<std::string_view,8> research_args{"--spatial","3d","--terrain3d",terrain,"--duration","2","--rider","lumped"};
     const auto research=bike::cli::resolve_research(bike::cli::parse_arguments("bike-research",research_args));
     bt::require(research->setup.model.spatial&&research->sensors_v2.maximum_read_period_s==research->experiment.control_period_s,"research selects the V2 request with the actual control clock");
+    for (const auto option : {"--track-file", "--gen-spec", "--scenario"}) {
+        const auto value=std::string_view(option)=="--scenario"?"flat":"ignored.toml";
+        const std::array<std::string_view,4> conflicting{"--physics-config",config_name,option,value};
+        const auto parsed=bike::cli::parse_arguments("bike-research",conflicting);
+        rejects_terrain_conflict([&]{(void)bike::cli::resolve_research(parsed);});
+    }
 }
 }
 int main(){return bt::run(contracts);}

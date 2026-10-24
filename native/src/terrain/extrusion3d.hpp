@@ -26,10 +26,12 @@ public:
     double corridor_half_width_m() const noexcept;
     std::span<const double> knots_x_m() const noexcept;
     std::span<const double> knots_z_m() const noexcept;
+    std::span<const SurfaceSpec3d> surfaces() const noexcept;
     // Hash includes knots, surfaces, corridor and source bytes.
     const std::string& fingerprint_hex() const noexcept;
 
 private:
+    ProfileExtrusion3d() = default;
     std::vector<double> kx_, kz_;
     std::vector<std::uint32_t> seg_surface_;
     std::vector<SurfaceSpec3d> surfaces_;

@@ -14,6 +14,7 @@ struct SpatialEquilibriumReport {
     double weight_residual_fraction = 0.;
     double pitch_moment_residual_nm = 0.;
     double roll_moment_residual_nm = 0.;
+    // Counts supported wheels, not the tier-dependent number of fan slots.
     int contacts_valid = 0;
     int contacts_total = 0;
     int evaluations = 0;

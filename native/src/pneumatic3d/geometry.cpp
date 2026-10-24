@@ -94,7 +94,13 @@ CoreStatus detail::query_geometry_range(const TorusGrid3d& grid, const WheelKine
     for (std::size_t i=begin;i<end;++i) {
         const std::size_t it=i/grid.dims.n_phi, ip=i%grid.dims.n_phi;
         const double theta=grid.theta_fan[it];
-        const double material_theta=wrapped(theta+kin.wheel_phase_rad);
+        const double material_angle=theta+kin.wheel_phase_rad;
+        if (!std::isfinite(material_angle) || !std::isfinite(grid.phi[ip]) ||
+            !finite(grid.local_position_fan[i]) || !std::isfinite(grid.geometric_area_m2[i]) ||
+            !(grid.geometric_area_m2[i]>0.)) return CoreStatus::invalid_input;
+        // TorusGrid3d is public mutable data. In particular, do not convert
+        // a NaN material coordinate to an integer cell index (undefined).
+        const double material_theta=wrapped(material_angle);
         const auto material_row=std::min(grid.dims.n_theta_material-1,
             static_cast<std::uint32_t>(material_theta/two_pi*grid.dims.n_theta_material));
         const Vec3 previous_longitudinal=out[i].longitudinal_world;

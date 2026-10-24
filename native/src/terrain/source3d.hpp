@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <variant>
 
@@ -15,15 +16,20 @@ enum class Terrain3dKind : std::uint8_t { grid, profile_extrusion };
 // Borrowed warm-path view of a validated, immovable owner. The owner must
 // outlive every view; context and function pointers are non-null after binding.
 struct Terrain3dQueryView {
-    Terrain3dKind kind;
-    const void* context;
-    GridSample3d (*sample_fn)(const void*, double, double) noexcept;
+    Terrain3dKind kind = Terrain3dKind::grid;
+    const void* context = nullptr;
+    GridSample3d (*sample_fn)(const void*, double, double) noexcept = nullptr;
     RayHit3d (*ray_fn)(const void*, std::array<double, 3>,
-                      std::array<double, 3>, double) noexcept;
+                      std::array<double, 3>, double) noexcept = nullptr;
+    // Borrowed from the same immutable owner as context. Kept trailing so
+    // geometry-only aggregate views may omit materials; tyre owners require
+    // a table and reject every unresolved sample/ray surface ID.
+    std::span<const SurfaceSpec3d> surface_table{};
     GridSample3d sample(double x_m, double y_m) const noexcept;
     RayHit3d ray_cast(std::array<double, 3> origin_m,
                      std::array<double, 3> unit_direction,
                      double max_distance_m) const noexcept;
+    const SurfaceSpec3d* surface(std::uint32_t id) const noexcept;
 };
 
 class Terrain3dSource {

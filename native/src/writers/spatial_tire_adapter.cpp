@@ -121,7 +121,7 @@ void SpatialTireAdapter::publish_probe(const mjData& data) noexcept {
             slip+=p.slip_ratio*p.normal_load_n;gamma+=p.camber_rad*p.normal_load_n;
         }
         auto& d=diagnostics_[w];d.normal_load_n=normal;d.support_n=0.;
-        for(const auto& p:s.patches)d.support_n+=(*p.native_world_force_n)[2];
+        for(const auto& p:s.patches)d.support_n+=p.normal_load_n*p.normal[2];
         d.tangent_force_n=fx;d.slip_ratio=normal>0.?slip/normal:0.;
         d.patch_count=static_cast<int>(writer_->model().patches(w).size());
         d.active_station_count=static_cast<int>(s.patches.size());d.airborne=normal<=0.;

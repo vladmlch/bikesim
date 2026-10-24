@@ -1459,12 +1459,17 @@ PhysicalStep::apply_forces_body(
                 const double roll_rate=attitude.valid?omega[0]+std::tan(attitude.pitch_rad)*(
                     std::sin(attitude.roll_rad)*omega[1]+std::cos(attitude.roll_rad)*omega[2]):0.;
                 const auto& joint=topology_->steer.joint;
-                const auto period_steps=static_cast<std::int64_t>(std::llround(config_.control_period_s/config_.timestep_s));
+                const auto period_steps=control_clock_.steps_per_period;
                 (void)steer_balance_->tick({.control_tick=step_/period_steps,.roll_rad=attitude.roll_rad,
                     .roll_rate_rad_s=roll_rate,.heading_error_rad=attitude.yaw_rad,
                     .lateral_error_m=pose.position_world_m[1],.steer_angle_rad=buf(d->qpos,m->nq)[static_cast<std::size_t>(joint.qpos_adr)],
                     .steer_rate_rad_s=buf(d->qvel,m->nv)[static_cast<std::size_t>(joint.dof_adr)],.speed_signed_mps=longitudinal_speed_mps(),
                     .enabled=attitude.valid&&active&&control.rider_enabled});
+                // A repeated observation may already own this tick (the
+                // circle-reference fixture uses that seam). A rejected new
+                // input, however, must not silently keep an earlier torque.
+                if (steer_balance_->state().next_tick != step_/period_steps+1)
+                    throw std::runtime_error("spatial.steer: controller rejected the current tick");
                 copy_steer_history(steer_balance_->state(),spatial_state_->steer);
                 // The standalone controller's period estimate is replaced
                 // by solved actuator work on every accepted physics interval.
@@ -1970,9 +1975,21 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         if (rider_control_.has_value()) {
             auto passive = zeros(m);
             const auto qfrc_passive = buf(d->qfrc_passive, m->nv);
-            for (const auto &j: rider_control_->joints())
-                passive[static_cast<std::size_t>(j.dof_adr)] =
-                    qfrc_passive[static_cast<std::size_t>(j.dof_adr)];
+            const auto joint_for_dof = ibuf(m->dof_jntid, m->nv);
+            const auto stiffness = buf(m->jnt_stiffness, m->njnt);
+            const auto spring_qpos = buf(m->qpos_spring, m->nq);
+            for (const auto &j: rider_control_->joints()) {
+                const auto dof = static_cast<std::size_t>(j.dof_adr);
+                passive[dof] = qfrc_passive[dof];
+                if (topology_) {
+                    // Spatial shoulder swivel joints also carry a spring.
+                    // Leave its force in engine_passive: stored_terms owns
+                    // its energy and engine_passive_loss_power refunds it.
+                    const auto joint = static_cast<std::size_t>(joint_for_dof[dof]);
+                    const auto coordinate = static_cast<std::size_t>(j.qpos_adr);
+                    passive[dof] += stiffness[joint] * (q[coordinate] - spring_qpos[coordinate]);
+                }
+            }
             ordered_set(components, "rider_passive_damping",
                         std::move(passive));
         }

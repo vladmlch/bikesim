@@ -48,7 +48,20 @@ Kin kinematics(const pn::Pneumatic3dSpec& spec,const std::array<double,2>& heigh
 std::array<double,2> load_height(pn::Pneumatic3dModel& model,double load,double gamma) {
     const auto& spec=model.spec();std::array<double,2> low,high,height;
     for(std::size_t w=0;w<2;++w) {
-        high[w]=spec.outer_radius_m[w]+.02;low[w]=spec.outer_radius_m[w]-.04;height[w]=high[w];
+        const double casing_radius=.5*spec.casing_width_m[w];
+        const double vertical_extent=(spec.outer_radius_m[w]-casing_radius)*std::abs(std::cos(gamma))+casing_radius;
+        high[w]=vertical_extent+.02;low[w]=vertical_extent-.04;height[w]=high[w];
+    }
+    // A fixed upright-radius interval can lie wholly above the banked tyre's
+    // contact onset. Such a bisection silently qualifies an unloaded wheel.
+    for(bool compressed:{false,true}) {
+        const auto& boundary=compressed?low:high;
+        bt::require(model.evaluate(kinematics(spec,boundary,0.,0.,0.,gamma),{},0.,false)==CoreStatus::ok,
+            "load bracket endpoints are valid contact probes");
+        for(std::size_t w=0;w<2;++w) {
+            double actual=0.;for(const auto& p:model.wrenches(w))actual+=p.normal_load_n;
+            bt::require(compressed?actual>=load:actual<=load,"load setup brackets the requested nonzero normal load at this camber");
+        }
     }
     for(int n=0;n<40;++n) {
         for(std::size_t w=0;w<2;++w)height[w]=.5*(low[w]+high[w]);

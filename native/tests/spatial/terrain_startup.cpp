@@ -110,4 +110,5 @@ int main(){return bt::run([]{
     request.corridor_half_width_m=1.5;request.max_asset_bytes=1;bt::invalid([&]{(void)detail::load_terrain3d_source(request);});
     request.kind=TerrainRequestKind::none;bt::invalid([&]{(void)detail::load_terrain3d_source(request);});
     bt::invalid([&]{(void)make_render_grid(*generated,{0,10});});
+    bt::invalid([&]{(void)make_render_grid(flat,{65536,2048});});
 });}

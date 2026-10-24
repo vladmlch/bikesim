@@ -1130,6 +1130,10 @@ void NativeRideRuntime::reset() {
         physical_->capture_presentation(next_presentation_);
         auto boundary = capture_boundary();
         boundary.generation = next;
+        // apply_bootstrap restored the original physical generation. Stage
+        // the new lifetime on both published faces before the no-throw commit.
+        if (next_presentation_.spatial)
+            next_presentation_.spatial->generation = static_cast<std::uint64_t>(next);
         // No owning copy follows publication. A staging failure leaves snapshot
         // generation and all other committed caches at the outgoing boundary.
         physical_->set_generation(next);

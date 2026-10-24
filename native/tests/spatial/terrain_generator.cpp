@@ -3,6 +3,7 @@
 #include "terrain/spec_io.hpp"
 #include "terrain/generator3d.hpp"
 #include "terrain/asset3d.hpp"
+#include "terrain/trackfile.hpp"
 
 #include <bit>
 #include <cmath>
@@ -74,6 +75,21 @@ int main() { return bt::run([] {
     bad = rock_spec; bad.features[0].kind = "unknown"; bt::invalid([&] { (void)generate_grid3d(bad); });
     bad = rock_spec; bad.features[0].amplitude_m = .151; bt::invalid([&] { (void)generate_grid3d(bad); });
     bad = rock_spec; bad.dx_m = 1e-300; bt::invalid([&] { (void)generate_grid3d(bad); });
+    // Nodal differences alone miss the Catmull overshoot: 80 mm / 50 mm
+    // gives a nodal slope of 1.6, but the interior cubic gradient reaches 2.
+    auto edge_spec = rock_spec;
+    edge_spec.features.clear();
+    auto edge_track = flat(20.);
+    edge_track.obstacles.push_back({.shape = SquareEdge{8., .08, .25}});
+    edge_spec.base_track_spec = track_to_dict(edge_track);
+    bt::invalid([&] { (void)generate_grid3d(edge_spec); });
+    // This smaller edge has an actual maximum slope of 1.5. Its initial
+    // Bernstein bound is looser, so subdivision must accept the valid surface.
+    edge_track.obstacles.front().shape = SquareEdge{8., .06, .25};
+    edge_spec.base_track_spec = track_to_dict(edge_track);
+    const auto bounded_edge = generate_grid3d(edge_spec);
+    bt::require(bounded_edge.sample(7.975, 0.).status == QueryStatus3d::ok,
+        "bounded analytic slope validation retains a valid sharp surface");
     auto document = write_track3d_spec(rock_spec);
     auto& root = std::get<bike::io::Value::Object>(document.data);
     for (auto& [key,value] : root) if (key == "terrain3d")

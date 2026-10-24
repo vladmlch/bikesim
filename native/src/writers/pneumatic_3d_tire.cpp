@@ -124,6 +124,7 @@ CoreStatus Pneumatic3dTireWriter::try_compute_into(const mjData* d,double dt,boo
             Vec3 lever{};for(std::size_t a=0;a<3;++a)lever[a]=patch.point_world_m[a]-(*c.kin)[w].hub.position_world_m[a];
             auto moment=cross(lever,patch.force_world_n);for(std::size_t a=0;a<3;++a)moment[a]+=patch.couple_world_nm[a];
             (*c.moments)[w]+=dot((*c.kin)[w].axle_world,moment);
+            c.finite=c.finite&&std::isfinite((*c.moments)[w]);
         }
     },&force,error))return CoreStatus::engine_failure;
     if(!force.finite)return CoreStatus::invalid_geometry;

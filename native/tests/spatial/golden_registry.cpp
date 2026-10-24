@@ -1,5 +1,6 @@
 #include "support/migration_test.hpp"
 #include "spatial/support/spatial_fixture.hpp"
+#include "spatial/support/startup_cases.hpp"
 #include "fixture_paths.hpp"
 #include "golden/spatial_registry.hpp"
 #include "golden/spatial_compare.hpp"
@@ -7,6 +8,9 @@
 #include "support/temporary_directory.hpp"
 #include "platform/files.hpp"
 #include "pneumatic3d/state.hpp"
+#include "research/environment.hpp"
+#include "runtime/research_io.hpp"
+#include <algorithm>
 #include <limits>
 #include <functional>
 #include <filesystem>
@@ -18,7 +22,7 @@ void rejects_with(const std::function<void()>& operation,std::string_view messag
     bt::require(rejected,"negative reference reports its distinct failure class");
 }
 void write(const std::filesystem::path& path,std::string_view bytes) {bike::platform::write_exclusive(path,std::as_bytes(std::span(bytes)));}
-Value synthetic_bootstrap() {
+Value synthetic_bootstrap(double elastic_energy=0.) {
     // Pure comparator fixture, never a recorded/accepted physical golden.
     bike::pneumatic3d::TyreState3d state;auto& id=state.identity;
     id.tier=bike::spatial::TyreTier::fast;id.dims=bike::pneumatic3d::tier_dims(id.tier);
@@ -32,6 +36,7 @@ Value synthetic_bootstrap() {
         auto& b=state.brush[i];b.ux_m.resize(p.capacity);b.uy_m.resize(p.capacity);b.camber_state.resize(p.capacity);
         b.bristle_ux_m.resize(material);b.bristle_uy_m.resize(material);b.bristle_energy_j.resize(material);
     }
+    state.brush[0].elastic_energy_j=elastic_energy;
     return Value{Object{{"tire",Value{Object{{"pneumatic3d_state",integer(1)},
         {"identity",bike::pneumatic3d::tyre_identity_to_wire(id)},{"encoding",text("base64")},
         {"payload",text(bike::pneumatic3d::base64_canonical(bike::pneumatic3d::encode_tyre_state(state)))}}}}}};
@@ -69,6 +74,9 @@ void accepted_reference_checks(const Value& pending_entry) {
     bt::require(!golden::inspect_spatial_reference(entry,root.path(),"linux-aarch64").pending,"complete synthetic reference is structurally inspectable");
     auto expected=artifact(manifest);auto actual=expected;
     bt::require(golden::compare_spatial_artifacts(expected,actual,entry,"macos-arm64").empty(),"same-platform identical typed evidence is bitwise equal");
+    auto startup_changed=expected;set(startup_changed.manifest,"spatial_startup_candidate",synthetic_bootstrap(1e-6));
+    bt::require(!golden::compare_spatial_artifacts(expected,startup_changed,entry,"macos-arm64").empty(),
+        "reviewed comparison checks fresh startup material even when the replay checkpoint itself is unchanged");
     auto positive_zero=expected;auto negative_zero=expected;
     set(positive_zero.stored_rows[0],"x",real(0.));set(negative_zero.stored_rows[0],"x",real(-0.));
     bt::require(!golden::compare_spatial_artifacts(positive_zero,negative_zero,entry,"macos-arm64").empty(),"same-platform floating comparison preserves the zero sign bit");
@@ -88,6 +96,71 @@ void accepted_reference_checks(const Value& pending_entry) {
     write(root.path()/"episode.npz","changed-artifact");
     rejects_with([&]{(void)golden::inspect_spatial_reference(entry,root.path(),"linux-aarch64");},"regression: artifact hash");
 }
+void complete_spatial_replay() {
+    // Authored causal-state regression, never an accepted physical golden.
+    // One startup supplies two different material/controller initial states
+    // while preserving their configuration, geometry and identity.
+    auto request=std::make_unique<bike::research::ResearchRequest>();
+    request->setup=std::move(*spatial_tests::make_startup_request(
+        bike::spatial::RootKind::free6,bike::spatial::TyreTier::detailed,false,2.));
+    request->capture_mode=runtime::ResearchCaptureMode::full;
+    request->experiment.duration_s=.1;request->experiment.control_period_s=.01;
+    request->experiment.actuator_delay_s=.02;request->experiment.record_decimation=1;
+    request->sensors_v2.latency_s=.02;request->sensors_v2.sample_period_s=.005;
+    request->sensors_v2.maximum_read_period_s=.01;
+    auto prepared=bike::research::prepare_environment(std::move(request));
+    auto pristine=std::make_unique<runtime::ResearchBootstrap>(std::move(prepared->bootstrap));
+    auto seeded=std::make_unique<runtime::ResearchBootstrap>(*pristine);
+    for(auto& brush:seeded->ride.state.tire3d->brush) {
+        std::ranges::fill(brush.bristle_uy_m,1e-6);
+        std::ranges::fill(brush.bristle_energy_j,1e-12);
+        brush.elastic_energy_j=1e-12*static_cast<double>(brush.bristle_energy_j.size());
+    }
+    auto& steer=seeded->ride.state.spatial->steer;
+    std::ranges::fill(steer.delay_fifo_nm,.25);steer.fifo_count=steer.delay_fifo_nm.size();
+    steer.work_j=.125;
+    auto source=runtime::make_research(std::move(seeded));
+    const auto reference=golden::capture_episode(*source,4,runtime::RideControl{});
+    auto target=runtime::make_research(std::make_unique<runtime::ResearchBootstrap>(*pristine));
+    const auto before=bike::io::canonical_json(target->checkpoint());
+    for(const auto name:{"qpos","qacc_warmstart"}) {
+        auto bad=reference;
+        for(auto& [key,array]:bad.initial)if(key==name) {
+            auto values=array.doubles();bt::require(!values.empty(),"initial consistency fixture has a mutable engine lane");
+            values.front()+=.125;array=bike::io::double_array(values,{values.size()});
+        }
+        rejects_with([&]{(void)golden::replay_episode(*target,bad);},
+            "initial "+std::string(name)+" disagrees with spatial checkpoint");
+        bt::require(bike::io::canonical_json(target->checkpoint())==before,
+            "contradictory initial arrays are rejected before reset or any owner publication");
+    }
+    auto invalid_material=reference;
+    auto initial=field(invalid_material.manifest,"spatial_checkpoint_initial");
+    auto tire=field(initial,"tire");set(tire,"payload",text("!"));set(initial,"tire",std::move(tire));
+    set(invalid_material.manifest,"spatial_checkpoint_initial",std::move(initial));
+    bt::invalid([&]{(void)golden::replay_episode(*target,invalid_material);});
+    bt::require(bike::io::canonical_json(target->checkpoint())==before,
+        "invalid spatial material is staged without changing the live target");
+    const auto rows=golden::replay_episode(*target,reference);
+    bt::require(golden::compare_rows(reference.rows,rows,0.,0.).empty(),
+        "spatial replay restores reference material and controller history before the first force evaluation");
+    const auto expected=source->snapshot(),actual=target->snapshot();
+    bt::require(actual.generation==expected.generation && actual.step==expected.step &&
+        spatial_tests::physics_state_bytes(actual)==spatial_tests::physics_state_bytes(expected),
+        "the swapped runtime publishes the complete reference engine, tyre and causal continuation");
+    bt::require(actual.first_failure.has_value()==expected.first_failure.has_value(),
+        "post-replay observations read accounting from the new runtime owner");
+    bt::require(golden::compare_episode(reference,*source,0.,0.).empty(),
+        "matching seeded startup compares after capture on the same research host");
+    bt::require(golden::compare_episode(reference,*source,0.,0.).empty(),
+        "repeated comparison uses the reference epoch for fresh startup and replay");
+    auto comparison=runtime::make_research(std::make_unique<runtime::ResearchBootstrap>(*pristine));
+    const auto differences=golden::compare_episode(reference,*comparison,0.,0.);
+    bt::require(std::ranges::find(differences,"regression: spatial_checkpoint_initial")!=differences.end(),
+        "reference continuation cannot hide a changed freshly built material/controller startup");
+    bt::require(spatial_tests::physics_state_bytes(comparison->snapshot())==spatial_tests::physics_state_bytes(expected),
+        "startup diagnostics do not replace the consistent reference state used for the compared trajectory");
+}
 }
 int main(){return bt::run([]{
     using namespace runtime::setupvalue;
@@ -98,6 +171,7 @@ int main(){return bt::run([]{
     const auto& pending_entry=bike::io::as_array(field(manifest,"entries"),"entries").front();
     bt::require(bike::golden::inspect_spatial_reference(pending_entry,"unused-pending-reference","macos-arm64").pending,"pending reference never claims successful comparison or reads nonexistent artifacts");
     accepted_reference_checks(pending_entry);
+    complete_spatial_replay();
     auto bad=manifest;auto entries=std::get<Array>(field(bad,"entries").data);entries.push_back(entries.front());set(bad,"entries",Value{entries});
     bt::invalid([&]{bike::golden::validate_spatial_manifest(bad);});
     bad=manifest;entries=std::get<Array>(field(bad,"entries").data);set(entries.front(),"executable",text(""));set(bad,"entries",Value{entries});

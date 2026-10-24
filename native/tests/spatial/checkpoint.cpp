@@ -46,6 +46,63 @@ void cursor_rejection() {
         "an internally inconsistent in-range cursor cannot consume sensor state");
 }
 
+void accounting_power_order() {
+    runtime::AccountingConfig config;
+    config.timestep_s=.001;config.period_steps=2;config.retention=runtime::RetentionMode::full;
+    config.max_qpos=1;config.max_dofs=1;
+    auto initial=std::make_unique<runtime::AccountingState>();
+    initial->energy.initial_energy_j=100.;initial->energy.energy_scale_j=100.;
+    initial->energy.initial_battery_j=0.;initial->energy.mechanical_energy_j=100.;
+    auto continuous=std::make_unique<runtime::PeriodAccounting>(config,*initial,1,nullptr,nullptr);
+    auto restored=std::make_unique<runtime::PeriodAccounting>(config,*initial,1,nullptr,nullptr);
+    auto raw=std::make_unique<runtime::RawStep>();
+    raw->interval_id=0;raw->time_s=0.;raw->end_time_s=.001;
+    raw->qpos={0.};raw->qvel={1.};raw->qfrc_passive={0.};raw->electrical_power_w=0.;
+    raw->numerical_constraint_power_w={{"equality:0",1e16},{"equality:2",-1e16},{"equality:10",1.}};
+    rider::AttachmentRaw attachment;
+    attachment.rider_jac={.rows=6,.columns=1,.values=std::vector<double>(6,0.)};
+    attachment.bike_jac=attachment.rider_jac;attachment.rider_qfrc={0.};attachment.bike_qfrc={0.};
+    attachment.normal={0.,0.,1.};attachment.kind="foot";
+    raw->attachment_raw={{"saddle",attachment},{"foot_front",attachment}};
+    raw->constraint_snapshot={.interval_start_s=0.,.interval_end_s=.001,.qvel_start=raw->qvel,.components={}};
+    const runtime::WireObject tire{{"unloaded_radius_m",.35},{"normal_load_n",0.},
+        {"penetration_m",0.},{"patches",runtime::WireArray{}}};
+    raw->channels={{"tires",runtime::WireObject{{"front",tire},{"rear",tire}}},
+        {"suspension",runtime::WireObject{{"linkage_closure_max_m",0.}}},
+        {"mass",runtime::WireObject{{"mass_kg",120.},{"com_m",runtime::WireArray{0.,0.,1.}},
+            {"kinetic_energy_j",0.},{"gravitational_energy_j",0.}}},
+        {"energy",runtime::WireObject{{"mechanical_energy_j",100.},{"residual_j",0.}}}};
+    raw->diagnostics={{"rider",runtime::WireObject{}},{"rider_welds",runtime::WireObject{}},
+        {"endpoint_mass",runtime::Wire{}},{"rider_intent",runtime::Wire{}},{"inclination_rad",0.},
+        {"rider_allocation",runtime::WireObject{}},{"rider_ik_saturation",runtime::WireObject{}},
+        {"rider_support_targets",runtime::WireObject{}}};
+    continuous->push(std::move(*raw));
+    const auto saved=io::parse_json(io::canonical_json(continuous->checkpoint_state()));
+    restored->restore_checkpoint_state(saved);
+    continuous->flush();restored->flush();
+    bt::require(continuous->state().energy.solver_work_j==.001,
+        "manufactured first-appearance fold preserves the small constraint contribution");
+    bt::require(std::bit_cast<std::uint64_t>(restored->state().energy.solver_work_j)==
+        std::bit_cast<std::uint64_t>(continuous->state().energy.solver_work_j),
+        "canonical checkpoint roundtrip preserves nonassociative constraint-work reduction");
+    bt::require(restored->state().period_violations.at(0).violations==continuous->state().period_violations.at(0).violations &&
+        restored->state().period_violations.at(0).violations.at(0)=="saddle:unobservable_attachment_wrench",
+        "canonical checkpoint roundtrip preserves attachment failure order");
+
+    auto legacy=saved;auto buffered=std::get<Array>(field(legacy,"buffered").data);
+    for(const auto key:{"constraint_power","attachments"}) {
+        Object old_entries;
+        for(const auto& row:io::as_array(field(buffered.at(0),key),key))
+            old_entries.emplace_back(io::as_string(field(row,"name"),"name"),field(row,"value"));
+        set(buffered.at(0),key,Value{std::move(old_entries)});
+    }
+    set(legacy,"buffered",Value{std::move(buffered)});
+    auto legacy_owner=std::make_unique<runtime::PeriodAccounting>(config,*initial,1,nullptr,nullptr);
+    legacy_owner->restore_checkpoint_state(legacy);legacy_owner->flush();
+    bt::require(legacy_owner->state().energy.solver_work_j==.001,
+        "earlier checkpoint1 object shape remains readable in its stored order");
+}
+
 std::unique_ptr<runtime::ResearchBootstrap> continuation_fixture() {
     auto request=std::make_unique<bike::research::ResearchRequest>();
     request->setup=std::move(*spatial_tests::make_startup_request(
@@ -140,6 +197,21 @@ void continuation() {
         set(plant,"runtime",std::move(runtime));set(bad,"bootstrap2",std::move(plant));
     },"last continuation field");
     reject_without_change(*resumed,checkpoint,[](Value& bad) {
+        auto plant=field(bad,"bootstrap2");auto runtime=field(plant,"runtime");auto continuation=field(runtime,"continuation");
+        auto accounting=field(continuation,"accounting");auto buffered=std::get<Array>(field(accounting,"buffered").data);
+        auto constraints=field(buffered.at(0),"constraints");auto velocity=std::get<Array>(field(constraints,"qvel").data);
+        velocity.at(0)=real(io::as_double(velocity.at(0),"qvel")+1.);set(constraints,"qvel",Value{std::move(velocity)});
+        set(buffered.at(0),"constraints",constraints);set(accounting,"buffered",Value{std::move(buffered)});
+        set(continuation,"accounting",accounting);set(runtime,"continuation",continuation);set(plant,"runtime",runtime);set(bad,"bootstrap2",plant);
+    },"buffered constraint velocity");
+    reject_without_change(*resumed,checkpoint,[](Value& bad) {
+        auto plant=field(bad,"bootstrap2");auto runtime=field(plant,"runtime");auto continuation=field(runtime,"continuation");
+        auto accounting=field(continuation,"accounting");auto buffered=std::get<Array>(field(accounting,"buffered").data);
+        bt::require(io::as_bool(field(buffered.at(0),"full"),"full"),"continuation fixture buffers measured intervals");
+        set(buffered.at(0),"elastic",Value{});set(accounting,"buffered",Value{std::move(buffered)});
+        set(continuation,"accounting",accounting);set(runtime,"continuation",continuation);set(plant,"runtime",runtime);set(bad,"bootstrap2",plant);
+    },"missing buffered measurement owner");
+    reject_without_change(*resumed,checkpoint,[](Value& bad) {
         auto& values=std::get<Object>(bad.data);std::erase_if(values,[](const auto& entry){return entry.first=="policy";});
     },"missing owner");
     reject_without_change(*resumed,checkpoint,[](Value& bad) {
@@ -179,4 +251,4 @@ void continuation() {
     bt::require(reset->spatial&&!reset->spatial->hold.active,"reset never rearms scored bootstrap hold");
 }
 } // namespace
-int main() { return bt::run([]{cursor_rejection();continuation();}); }
+int main() { return bt::run([]{cursor_rejection();accounting_power_order();continuation();}); }

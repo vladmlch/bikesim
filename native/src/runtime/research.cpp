@@ -339,10 +339,15 @@ void NativeResearchRuntime::begin_control(const RideControl &control, double fro
 void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at_outcome) {
     auto &e = *episode_;
     const auto &s = *sample;
+    std::optional<ResearchQuality> spatial_quality;
     if(find(s.channels,"spatial")) {
+        spatial_quality=research_quality(section(s.channels,"energy"),config_.maximum_energy_residual_ratio);
         if(!e.spatial_metrics)e.spatial_metrics=SpatialEpisodeMetrics{
             .requested_duration_s=static_cast<double>(config_.max_steps)*config_.timestep_s,
             .start_position_m=config_.start_position_m};
+        // Reject this interval from the valid prefix before accumulating its
+        // duration/distance, including the final requested-completion interval.
+        if(!spatial_quality->acceptable)e.spatial_metrics->valid=false;
         const auto* recorded=find(s.channels,"spatial_outcome");
         if(!recorded)throw std::invalid_argument("research.spatial: sample lacks its accepted outcome record");
         const auto& record=object(*recorded);
@@ -425,9 +430,18 @@ void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at
     e.torque_delivered_nms += delivered * s.dt_s();
     if(e.truth)e.tracker.update(*e.truth, s.dt_s(), delivered, applied);
     if (config_.capture_mode == ResearchCaptureMode::legacy) e.recorder.append(sample);
-    if(e.spatial_metrics&&e.spatial_metrics->terminal_reason!=bike::spatial::SpatialReason::none)return;
-    const auto quality = research_quality(section(s.channels, "energy"), config_.maximum_energy_residual_ratio);
+    const auto quality = spatial_quality ? *spatial_quality :
+        research_quality(section(s.channels, "energy"), config_.maximum_energy_residual_ratio);
     e.max_energy_residual_ratio = std::max(e.max_energy_residual_ratio, quality.residual_ratio);
+    if(e.spatial_metrics&&e.spatial_metrics->terminal_reason!=bike::spatial::SpatialReason::none) {
+        // Preserve the physical terminal reason, but never let its priority
+        // hide failed energy quality on the same accepted interval.
+        if(!quality.acceptable) {
+            e.numerically_valid=false;
+            e.terminated=false;e.truncated=true;
+        }
+        return;
+    }
     if (!quality.acceptable) {
         e.numerically_valid = false;
         if(e.spatial_metrics)e.spatial_metrics->valid=false;

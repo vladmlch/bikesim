@@ -41,7 +41,10 @@ FastBrushResult compute(const BrushSpec3d& spec, const Patch3d& patch,
     w.point_world_m=add(patch.centroid_world_m,offset);
     const Vec3 velocity=add(point_velocity,cross(angular_velocity,offset));
     const double vx=dot(velocity,patch.longitudinal_world), vy=dot(velocity,patch.lateral_world);
-    const double b=ky>0. ? spec.r_eff_m*spec.camber_coefficient_per_rad*std::sin(camber)/
+    // C_gamma is normalized by normal load (per radian), so b has units
+    // of length and b*spin is a velocity. The load also makes this source
+    // invariant when a patch is divided into equal area/load elements.
+    const double b=ky>0. ? spec.r_eff_m*spec.camber_coefficient_per_rad*patch.normal_load_n*std::sin(camber)/
                           (ky*spec.relaxation_y_m) : 0.;
     const double sx=vx, sy=vy+b*spin;
     const double ax=material_resolved ? 0. : rolling/spec.relaxation_x_m;
@@ -103,7 +106,7 @@ FastBrushResult evaluate_bristle(const BrushSpec3d& spec,const ContactElement3d&
     const Vec3 velocity=add(kin.hub.linear_velocity_world_mps,cross(angular,sub(e.point_world_m,kin.hub.position_world_m)));
     const double gamma=std::asin(std::clamp(dot(kin.axle_world,e.normal_world),-1.,1.));
     return compute(spec,patch,velocity,kin.hub.linear_velocity_world_mps,kin.axle_world,
-                   kin.relative_spin_rad_s,gamma,mux,muy,oldx,oldy,dt,angular,true);
+                   dot(angular,kin.axle_world),gamma,mux,muy,oldx,oldy,dt,angular,true);
 }
 } // namespace detail
 
@@ -113,10 +116,14 @@ CoreStatus update_fast_brush(const BrushSpec3d& spec,std::span<const Patch3d> pa
     using namespace detail;
     const auto n=patches.size();
     if (out.size()!=n || velocity.size()!=n+1 || state.ux_m.size()<n ||
-        state.uy_m.size()!=state.ux_m.size() || state.camber_state.size()!=state.ux_m.size())
+        state.uy_m.size()!=state.ux_m.size() || state.camber_state.size()!=state.ux_m.size() ||
+        !std::isfinite(dt) || dt<0. || !std::isfinite(state.elastic_energy_j) || state.elastic_energy_j<0. ||
+        !std::isfinite(state.sliding_loss_j) || state.sliding_loss_j<0. ||
+        !std::isfinite(state.convective_release_j) || state.convective_release_j<0.)
         return CoreStatus::invalid_input;
     // Frozen standalone interface represents a unit-friction synthetic road.
     // Production calls the private per-patch seam with resolved road mu.
+    double stored=0.,sliding=0.,convective=0.;
     for (std::size_t i=0;i<n;++i) {
         const auto& p=patches[i];
         const double gamma=state.camber_state[i];
@@ -126,9 +133,20 @@ CoreStatus update_fast_brush(const BrushSpec3d& spec,std::span<const Patch3d> pa
             spec.mu_x_scale,spec.mu_y_scale,state.ux_m[i],state.uy_m[i],dt);
         if (result.status!=CoreStatus::ok) return result.status;
         out[i]=result.wrench;
+        stored+=result.stored_j; sliding+=result.sliding_j; convective+=result.convective_j;
+        if (!result.wrench.valid) {
+            // A cleared spring releases its old energy even when the
+            // normal load vanishes before the next accepted interval.
+            const double released=.5*p.area_m2*(spec.kx_n_per_m3*state.ux_m[i]*state.ux_m[i]+
+                                                spec.ky_n_per_m3*state.uy_m[i]*state.uy_m[i]);
+            convective+=released; out[i].loss_j+=released;
+        }
     }
+    // Validate the complete reduction before the first material-state write.
+    if (!std::isfinite(stored) || !std::isfinite(sliding) || !std::isfinite(convective) ||
+        !std::isfinite(state.sliding_loss_j+sliding) ||
+        !std::isfinite(state.convective_release_j+convective)) return CoreStatus::invalid_geometry;
     if (advance && dt>0.) {
-        double stored=0.,sliding=0.,convective=0.;
         for (std::size_t i=0;i<n;++i) {
             const auto& p=patches[i]; const double gamma=state.camber_state[i];
             const Vec3 axle=add(scale(p.lateral_world,std::cos(gamma)),scale(p.normal_world,std::sin(gamma)));
@@ -136,7 +154,6 @@ CoreStatus update_fast_brush(const BrushSpec3d& spec,std::span<const Patch3d> pa
             const auto result=evaluate_fast_patch(spec,p,velocity[i],velocity[n],axle,spin,gamma,
                 spec.mu_x_scale,spec.mu_y_scale,state.ux_m[i],state.uy_m[i],dt);
             state.ux_m[i]=result.ux_m; state.uy_m[i]=result.uy_m;
-            stored+=result.stored_j; sliding+=result.sliding_j; convective+=result.convective_j;
         }
         state.elastic_energy_j=stored; state.sliding_loss_j+=sliding;
         state.convective_release_j+=convective;

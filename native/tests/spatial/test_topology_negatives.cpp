@@ -478,6 +478,15 @@ void release_reporting() {
             bt::require(report.implemented && !report.supported && report.qualification_pending && report.rejections.empty(),
                 "source-connected constrained/free owners still require independent numerical qualification");
         }
+    auto extrusion=spatial_tests::model_request(sp::RootKind::free6);
+    extrusion->spatial->terrain.kind=sp::TerrainRequestKind::profile_extrusion;
+    extrusion->spatial->terrain.path="authored-profile.toml";
+    extrusion->physics->spatial=extrusion->spatial;
+    cfg::post_init(*extrusion->physics);
+    const auto extrusion_report=runtime::implemented_capabilities(*extrusion->physics,cfg::RiderSpecs{});
+    bt::require(extrusion_report.implemented && !extrusion_report.supported &&
+        extrusion_report.qualification_pending && extrusion_report.rejections.empty(),
+        "extrusion material dispatch is implemented while numerical qualification remains pending");
     auto unknown=spatial_tests::model_request(sp::RootKind::free6);
     unknown->physics->spatial=unknown->spatial;
     cfg::post_init(*unknown->physics);

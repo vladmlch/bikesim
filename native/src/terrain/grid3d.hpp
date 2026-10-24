@@ -88,6 +88,9 @@ public:
     const std::string& sha256_hex() const noexcept;
 
 private:
+    // Only create() may establish the descriptor/storage invariants consumed
+    // by allocation-free queries. A public empty grid has no query domain.
+    Grid3d() = default;
     Grid3dDescriptor desc_;
     std::vector<double> elevation_;
     std::vector<std::uint32_t> materials_;

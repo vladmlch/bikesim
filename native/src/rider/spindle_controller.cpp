@@ -1464,9 +1464,11 @@ EffortDiagnostics SpindleController::solved_effort(
     const auto qfrc_passive = model_access::readonly_buffer(
         data->qfrc_passive, model_->nv, "qfrc_passive");
     for (const auto &joint : joints_) {
-        // actuator_force is pure muscle torque now; passive tissue damping
-        // is the DOF damping row of qfrc_passive at the solved state.
-        const double damping =
+        // actuator_force is pure muscle torque. The solved passive row is
+        // signed total passive effort, including spatial shoulder springs;
+        // material-loss accounting separates their stored energy from
+        // damping. Incoming-request diagnostics only predict damping.
+        const double passive_force =
             qfrc_passive[static_cast<std::size_t>(joint.dof_adr)];
         const double delivered =
             actuator_force[static_cast<std::size_t>(joint.actuator_id)];
@@ -1476,12 +1478,12 @@ EffortDiagnostics SpindleController::solved_effort(
                               joint.dof_adr)],
             0.);
         passive_power +=
-            damping *
+            passive_force *
             incoming_velocity[static_cast<std::size_t>(joint.dof_adr)];
         auto &terms = named_at(last_terms_, joint.name);
         terms.solved_force_nm = delivered;
         terms.solved_active_nm = delivered;
-        terms.solved_passive_nm = damping;
+        terms.solved_passive_nm = passive_force;
     }
     const auto violations = strength_violations(active, incoming_qpos,
                                                 incoming_velocity);

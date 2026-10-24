@@ -8,12 +8,15 @@
 #include "runtime/setup_values.hpp"
 #include "io/json.hpp"
 
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <numbers>
 #include <string>
+#include <utility>
 
 namespace {
 using namespace bike::pneumatic3d;
@@ -41,6 +44,8 @@ std::array<WheelKinematics3d,2> input(const Pneumatic3dSpec& spec,std::size_t ti
 }
 void codecs(sp::TyreTier tier) {
     bike::terrain::Terrain3dSource terrain(spatial_tests::plane_grid(0.,0.,0.,21,17,.5,.2));
+    bt::require(terrain.query_view().surface(1)==&terrain.grid()->surfaces().front() &&
+        terrain.query_view().surface(42)==nullptr,"grid query binds its validated immutable material table");
     const auto spec=spatial_tests::synthetic_spec(tier);const auto id=identity(tier,terrain);
     Pneumatic3dModel a(spec,terrain.query_view(),id);
     const auto zero=encode_tyre_state(a.committed_state());
@@ -72,6 +77,15 @@ void codecs(sp::TyreTier tier) {
     bt::require(encode_tyre_state(a.committed_state())==zero,"failed restore is atomic");
     invalid=*decoded;invalid.brush[0].ux_m[0]=.1;
     bt::invalid([&]{(void)encode_tyre_state(invalid);});
+    invalid=*decoded;
+    invalid.carcass[0].dissipated_j=std::numeric_limits<double>::max();
+    invalid.carcass[1].dissipated_j=std::numeric_limits<double>::max();
+    bt::require(a.restore(invalid)==CoreStatus::invalid_input &&
+                encode_tyre_state(a.committed_state())==zero,
+                "finite individual wheel energies cannot restore an overflowing total");
+    bt::invalid([&]{(void)encode_tyre_state(invalid);});
+    auto bad_spec=spec;bad_spec.brush[0].pneumatic_trail_m=-.01;
+    bt::invalid([&]{Pneumatic3dModel bad(bad_spec,terrain.query_view(),id);});
     const std::array<double,7> render_pose{0.,0.,1.,1.,0.,0.,0.};
     bt::require(!decode_tyre_state(std::as_bytes(std::span(render_pose)),id),"render-only integration pose cannot seed complete tyre state");
     for(std::size_t t=0;t<37;++t)bt::require(a.evaluate(input(spec,t),{},.0005,true)==CoreStatus::ok,"prefix accepted");
@@ -87,5 +101,61 @@ void codecs(sp::TyreTier tier) {
             "1000 accepted steps retain complete same-binary material history");
     }
 }
+void extrusion_materials(sp::TyreTier tier) {
+    namespace terrain=bike::terrain;
+    // Deliberately sparse, unsorted IDs: lookup is by identity, never by
+    // vector offset or by assuming every road has unit friction.
+    auto source=terrain::ProfileExtrusion3d::create(
+        {-10.,5.,20.},{0.,0.,0.},{7,42},
+        {{.id=42,.name="high-grip",.mu_peak=.8,.mu_slide=.8,
+          .slip_stiffness_per_load=20.,.stribeck_speed_mps=.1,.description="analytic"},
+         {.id=7,.name="low-grip",.mu_peak=.2,.mu_slide=.2,
+          .slip_stiffness_per_load=20.,.stribeck_speed_mps=.1,.description="analytic"}},
+        1.5,bike::io::Value{bike::io::Value::Object{}});
+    bt::require(source.has_value(),"two-material extrusion is valid");
+    terrain::Terrain3dSource owner(std::move(*source));
+    auto spec=spatial_tests::synthetic_spec(tier);
+    for(auto& brush:spec.brush) {
+        brush.camber_coefficient_per_rad=0.;brush.pneumatic_trail_m=0.;
+    }
+    const auto id=identity(tier,owner);
+    const auto view=owner.query_view();
+    auto model=std::make_unique<Pneumatic3dModel>(spec,view,id);
+    std::array<WheelKinematics3d,2> kin;
+    for(std::size_t w=0;w<2;++w)
+        kin[w]=spatial_tests::wheel_at({w==0?2.:8.,0.,spec.outer_radius_m[w]-.004},0.,0.,100.,0.);
+    // Zero spin and large prescribed slip put both synthetic brushes on
+    // their analytical Coulomb cap within this single material interval.
+    bt::require(model->evaluate(kin,{},.001,true)==CoreStatus::ok,
+        "production fast/detailed tyre accepts a real profile extrusion");
+    for(std::size_t w=0;w<2;++w) {
+        const std::uint32_t material_id=w==0?7U:42U;
+        const double mu=w==0?.2:.8;
+        std::size_t contacts=0;
+        for(const auto& wrench:model->wrenches(w)) if(wrench.valid) {
+            ++contacts;
+            bt::require(wrench.surface_id==material_id && wrench.normal_load_n>0.,
+                "each loaded wheel retains its extrusion segment material");
+            bt::require(std::abs(wrench.fx_n+mu*wrench.normal_load_n)<=
+                1e-10*std::max(1.,wrench.normal_load_n) && std::abs(wrench.fy_n)<=1e-12,
+                "real extrusion material sets the saturated longitudinal friction force");
+        }
+        bt::require(contacts>0,"material force assertion exercises loaded contacts");
+    }
+    auto missing=view;missing.surface_table={};
+    bt::invalid([&]{Pneumatic3dModel rejected(spec,missing,id);});
+    const std::array<terrain::SurfaceSpec3d,1> unrelated{{
+        {.id=99,.name="unrelated",.mu_peak=1.,.mu_slide=1.,
+         .slip_stiffness_per_load=20.,.stribeck_speed_mps=.1,.description="analytic"}}};
+    missing.surface_table=unrelated;
+    auto unresolved=std::make_unique<Pneumatic3dModel>(spec,missing,id);
+    const auto before=encode_tyre_state(unresolved->committed_state());
+    bt::require(unresolved->evaluate(kin,{},.001,true)==CoreStatus::invalid_geometry &&
+        encode_tyre_state(unresolved->committed_state())==before,
+        "unresolved extrusion surface ID rejects before any material-state commit");
 }
-int main(){return bt::run([]{codecs(sp::TyreTier::fast);codecs(sp::TyreTier::detailed);});}
+}
+int main(){return bt::run([]{
+    extrusion_materials(sp::TyreTier::fast);extrusion_materials(sp::TyreTier::detailed);
+    codecs(sp::TyreTier::fast);codecs(sp::TyreTier::detailed);
+});}

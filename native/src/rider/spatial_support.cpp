@@ -95,6 +95,11 @@ SpatialSupportFrame support_frame(const spatial::BodyPose& pose,
         qnorm += x*x;
     }
     if (!std::isfinite(qnorm) || std::abs(qnorm-1.) > 1e-8) return out;
+    // The tolerance admits ordinary pose roundoff, but the resulting basis
+    // must still be orthonormal: attachment projection and its checkpoint
+    // codec consume unit axes. Normalize only this local rotation, leaving
+    // the caller's integration quaternion untouched.
+    const auto rotation = spatial::quat_normalized(q);
     // Project body +X into the support plane. Near its singular direction
     // body +Y is the deterministic fallback. Both rotate with the support.
     Vec3 tangent{1.-normal[0]*normal[0], -normal[0]*normal[1], -normal[0]*normal[2]};
@@ -104,9 +109,9 @@ SpatialSupportFrame support_frame(const spatial::BodyPose& pose,
     }
     Vec3 second = cross(normal, tangent);
     if (!normalize(second) || std::abs(dot(normal, tangent)) > 1e-12) return out;
-    out.normal_world = spatial::rotate_body_to_world(q, normal);
-    out.tangent_x_world = spatial::rotate_body_to_world(q, tangent);
-    out.tangent_y_world = spatial::rotate_body_to_world(q, second);
+    out.normal_world = spatial::rotate_body_to_world(rotation, normal);
+    out.tangent_x_world = spatial::rotate_body_to_world(rotation, tangent);
+    out.tangent_y_world = spatial::rotate_body_to_world(rotation, second);
     out.valid = true;
     return out;
 }

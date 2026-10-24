@@ -60,15 +60,11 @@ void size_state(TyreState3d& s,const TyreStateIdentity3d& id) {
     }
 }
 double surface_mu(const terrain::Terrain3dQueryView& view,std::uint32_t id,double speed) noexcept {
-    // The frozen view has no material callback. Grid owners expose their
-    // registry; extrusion owners do not. Never silently assume a unit road.
-    if(view.kind!=terrain::Terrain3dKind::grid || !view.context)return -1.;
-    for(const auto& s:static_cast<const terrain::Grid3d*>(view.context)->surfaces())if(s.id==id) {
-        if(s.stribeck_speed_mps<=0.)return speed==0.?s.mu_peak:s.mu_slide;
-        const double ratio=std::abs(speed)/s.stribeck_speed_mps;
-        return s.mu_slide+(s.mu_peak-s.mu_slide)*std::exp(-ratio*ratio);
-    }
-    return -1.;
+    const auto* material=view.surface(id);
+    if(!material)return -1.;
+    if(material->stribeck_speed_mps<=0.)return speed==0.?material->mu_peak:material->mu_slide;
+    const double ratio=std::abs(speed)/material->stribeck_speed_mps;
+    return material->mu_slide+(material->mu_peak-material->mu_slide)*std::exp(-ratio*ratio);
 }
 }
 
@@ -128,8 +124,8 @@ Pneumatic3dModel::Pneumatic3dModel(Pneumatic3dSpec spec,terrain::Terrain3dQueryV
     :spec_(std::move(spec)),view_(view) {
     if(!view.context || !view.sample_fn || !view.ray_fn)
         throw std::invalid_argument("pneumatic3d.terrain: bound immutable query view required");
-    if(view.kind!=terrain::Terrain3dKind::grid)
-        throw std::invalid_argument("pneumatic3d.terrain: extrusion material registry unavailable in frozen W00 view (C10)");
+    if(view.surface_table.empty())
+        throw std::invalid_argument("pneumatic3d.terrain: immutable surface registry required");
     const auto dims=tier_dims(spec_.tier);
     const auto n=static_cast<std::size_t>(dims.n_theta_fan)*dims.n_phi;
     // Material/normal discontinuities can disconnect every single element.
@@ -159,7 +155,7 @@ Pneumatic3dModel::Pneumatic3dModel(Pneumatic3dSpec spec,terrain::Terrain3dQueryV
         if(!(std::isfinite(b.kx_n_per_m3)&&b.kx_n_per_m3>0.&&std::isfinite(b.ky_n_per_m3)&&b.ky_n_per_m3>0.&&
              std::isfinite(b.relaxation_x_m)&&b.relaxation_x_m>0.&&std::isfinite(b.relaxation_y_m)&&b.relaxation_y_m>0.&&
              std::isfinite(b.mu_x_scale)&&b.mu_x_scale>=0.&&std::isfinite(b.mu_y_scale)&&b.mu_y_scale>=0.&&
-             std::isfinite(b.camber_coefficient_per_rad)&&std::isfinite(b.pneumatic_trail_m)&&
+             std::isfinite(b.camber_coefficient_per_rad)&&std::isfinite(b.pneumatic_trail_m)&&b.pneumatic_trail_m>=0.&&
              std::isfinite(b.r_eff_m)&&b.r_eff_m>0.))
             throw std::invalid_argument("pneumatic3d.brush: invalid coefficients");
     }
@@ -186,7 +182,8 @@ CoreStatus Pneumatic3dModel::evaluate(const std::array<WheelKinematics3d,2>& kin
                 result=workers_->run(work,ElementWorkers::geometry_work);
             } else result=query_geometry(grid_[w],kin[w],view_,elements_[w]);
         }
-        if(result!=CoreStatus::ok){reason_=ReasonCode3d::degenerate_down_projection;return result;}
+        if(result!=CoreStatus::ok){reason_=result==CoreStatus::invalid_geometry?
+            ReasonCode3d::degenerate_down_projection:ReasonCode3d::invalid_spec;return result;}
         for(const auto& e:elements_[w])if(e.reason!=ReasonCode3d::none) {
             reason_=e.reason;return CoreStatus::invalid_geometry;
         }
@@ -294,7 +291,7 @@ CoreStatus Pneumatic3dModel::evaluate(const std::array<WheelKinematics3d,2>& kin
                 auto angular=kin[w].hub.angular_velocity_world_rad_s;
                 for(std::size_t a=0;a<3;++a)angular[a]+=kin[w].axle_world[a]*kin[w].relative_spin_rad_s;
                 const auto output=detail::evaluate_fast_patch(spec_.brush[w],patch,v,vh,kin[w].axle_world,
-                    kin[w].relative_spin_rad_s,gamma,mu*spec_.brush[w].mu_x_scale,mu*spec_.brush[w].mu_y_scale,
+                    dot(angular,kin[w].axle_world),gamma,mu*spec_.brush[w].mu_x_scale,mu*spec_.brush[w].mu_y_scale,
                     brush.ux_m[slot],brush.uy_m[slot],dt,angular);
                 if(output.status!=CoreStatus::ok){reason_=ReasonCode3d::invalid_spec;return output.status;}
                 wrench_[w][p]=output.wrench;
@@ -316,6 +313,15 @@ CoreStatus Pneumatic3dModel::evaluate(const std::array<WheelKinematics3d,2>& kin
         if(advance && dt>0.)staging_.carcass[w].material_phase_rad=std::remainder(kin[w].wheel_phase_rad,2.*std::numbers::pi);
     }
     if(advance && dt>0.) {
+        double stored=0.,lost=0.;
+        for(std::size_t w=0;w<2;++w) {
+            stored+=staging_.carcass[w].stored_energy_j+staging_.brush[w].elastic_energy_j;
+            lost+=staging_.carcass[w].dissipated_j+staging_.brush[w].sliding_loss_j+
+                  staging_.brush[w].convective_release_j;
+        }
+        if(!std::isfinite(stored)||!std::isfinite(lost)) {
+            reason_=ReasonCode3d::invalid_spec;return CoreStatus::invalid_geometry;
+        }
         if(committed_.accepted_interval==std::numeric_limits<std::int64_t>::max()) {
             reason_=ReasonCode3d::duplicate_advance;return CoreStatus::invalid_input;
         }

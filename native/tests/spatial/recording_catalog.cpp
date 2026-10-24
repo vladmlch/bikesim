@@ -3,11 +3,16 @@
 #include "spatial/support/spatial_fixture.hpp"
 #include "fixture_paths.hpp"
 #include "recording/catalog.hpp"
+#include "recording/contracts.hpp"
 #include "recording/encoding.hpp"
 #include "recording/versioned.hpp"
 #include "recording/value_util.hpp"
+#include "runtime/spatial_truth.hpp"
+#include "runtime/value_readers.hpp"
+#include <algorithm>
 #include <array>
 #include <filesystem>
+#include <memory>
 #include <string_view>
 
 namespace {
@@ -56,4 +61,44 @@ int main(){return bt::run([]{
     bad=rows;std::erase_if(std::get<V::Object>(bad[0][1].second.data),[](const auto& p){return p.first=="roll_rad";});
     bt::invalid([&]{(void)rec::encode_rows(table,bad,0);});
     bt::require(encoded.columns.at("roll_rad_present").b==std::vector<char>{1} && encoded.columns.at("roll_rad").valid==std::vector<char>{0},"undefined attitude is explicit null, never absent or plausible zero");
+
+    // Exercise the production research source, whose transition truth is the
+    // spatial packet rather than the legacy scalar WheelieTruth structure.
+    auto episode=std::make_shared<runtime::OwnedResearchEpisode>();
+    episode->configuration.sensors_v2.emplace();
+    episode->observations.emplace_back(runtime::spatial::SensorObservationV2{});
+    episode->observations.emplace_back(runtime::spatial::SensorObservationV2{.time_s=.01,.source_time_s=.01});
+    runtime::ResearchTransition transition;
+    transition.observation=episode->observations.back();
+    runtime::spatial::SpatialTruth spatial_truth;
+    spatial_truth.root.position_world_m={1.,2.,3.};
+    transition.spatial_truth=runtime::sample_wire::object(vread::wire_from_value(
+        runtime::spatial::spatial_truth_to_wire(spatial_truth),"test.spatial_truth"));
+    transition.contact_state="flight";transition.physics_steps=1;
+    episode->transitions.push_back(transition);
+    std::size_t transition_rows=0;
+    rec::make_research_source(episode)->tables(1,[&](std::string_view name,runtime::EncodedTable&& batch){
+        if(name!="transitions")return;
+        transition_rows+=static_cast<std::size_t>(batch.rows);
+        const auto& packet=batch.columns.at("truth");
+        bt::require(packet.children.at("root_position_world_m").d==std::vector<double>{1.,2.,3.},"research spatial truth retains world coordinates");
+        bt::require(packet.children.at("roll_rad_present").b==std::vector<char>{1}&&packet.children.at("roll_rad").valid==std::vector<char>{0},"research undefined attitude preserves explicit null");
+        bt::require(!packet.children.contains("root_x")&&!packet.children.contains("relative_pitch_rad"),"research spatial truth has no planar scalar surrogate");
+    });
+    bt::require(transition_rows==1,"one production spatial transition is encoded");
+    const auto* legacy_truth=rec::table_spec("transitions").field("truth");
+    bt::require(legacy_truth&&std::ranges::any_of(legacy_truth->children,[](const auto& child){return child.key=="relative_pitch_rad";}),"schema1 retains its scalar truth packet");
+
+    bool nested_metadata=false;
+    for(const auto& row:rec::catalog_rows(rec::CatalogVersion::spatial2)) {
+        if(bike::io::as_string(row[0],"table")!="transitions"||bike::io::as_string(row[1],"field")!="truth")continue;
+        const auto definition=bike::io::parse_recording_json(bike::io::as_string(row[9],"definition"));
+        for(const auto& child:bike::io::as_array(rec::value::require(definition,"children"),"children")) {
+            bt::require(bike::io::as_string(rec::value::require(child,"classification"),"classification")=="truth","nested spatial truth metadata is classified as truth");
+            (void)rec::value::require(child,"name");(void)rec::value::require(child,"type");
+            (void)rec::value::require(child,"nullable");(void)rec::value::require(child,"presence");
+        }
+        nested_metadata=true;
+    }
+    bt::require(nested_metadata,"schema2 publishes nested field metadata");
 });}

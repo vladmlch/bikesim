@@ -47,6 +47,7 @@ inline const char* state_layout_error(const TyreState3d& s,const TyreStateIdenti
     const auto fan=std::size_t{expected.dims.n_theta_fan}*expected.dims.n_phi;
     const auto mat=std::size_t{expected.dims.n_theta_material}*expected.dims.n_phi;
     const auto cap=static_cast<std::size_t>(expected.patch_capacity);
+    double stored=0.,lost=0.;
     for(std::size_t wheel=0;wheel<2;++wheel) {
         const auto& c=s.carcass[wheel];const auto& p=s.patches[wheel];const auto& b=s.brush[wheel];
         if(c.deflection_m.size()!=mat||c.maxwell_q_n_per_m2.size()!=mat||
@@ -86,6 +87,9 @@ inline const char* state_layout_error(const TyreState3d& s,const TyreStateIdenti
         for(auto slot:p.element_to_patch_slot)
             if(slot!=std::numeric_limits<std::uint32_t>::max()&&(slot>=cap||!p.slot_used[slot]))
                 return "patches.element_to_patch_slot: inactive or out-of-range slot";
+        stored+=c.stored_energy_j+b.elastic_energy_j;
+        lost+=c.dissipated_j+b.sliding_loss_j+b.convective_release_j;
+        if(!std::isfinite(stored)||!std::isfinite(lost))return "energy: combined wheel totals overflow";
     }
     return nullptr;
 }

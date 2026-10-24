@@ -75,6 +75,13 @@ double require_state(std::span<const double> actual, std::span<const double> exp
     return maximum;
 }
 Value status(const runtime::NativeResearchRuntime& environment) { return research::wire_value(runtime::Wire{environment.status()}); }
+void set_generation(runtime::RenderFrame& frame, int generation) {
+    frame.state.generation = generation;
+    if (frame.presentation.spatial) {
+        frame.presentation.spatial->generation = static_cast<std::uint64_t>(generation);
+        frame.state.view = frame.presentation.as_wire();
+    }
+}
 } // namespace
 Comparison compare_evidence(const io::Value& actual, const io::Value& expected, const std::string& path) {
     Comparison result; compare_tree(actual, expected, path, result); return result;
@@ -100,20 +107,38 @@ struct ReplaySession::Impl {
     std::string replay_executable_sha256;
 
     Impl(std::filesystem::path path, std::optional<std::int64_t> selected, int next_generation = 0)
-        : directory(std::move(path)), episode(selected), input(load_replay_input(directory, episode)), verified(frame), generation(next_generation) {
+        : directory(std::move(path)), episode(selected), input(load_replay_input(directory, episode)), generation(next_generation) {
         check_execution(input);
         replay_executable_sha256 = platform::build_identity().executable_sha256;
         assets = std::make_unique<FixedAssets>(input);
         start();
         (void)require_state(environment->snapshot().integration_state, input.initial_state, "initial integration state");
         require_evidence(field(status(*environment), "observation"), input.observations.at(0), "initial observation", max_error);
-        frame = environment->render_frame(); frame.state.generation = generation; 
+        capture_verified();
     }
     // The request and prepared environment each exceed the strict stack bound;
     // both stay heap-owned so this frame only carries a pair of unique_ptrs.
     void start() {
         auto prepared = research::prepare_environment(request_from_input(input, *assets));
         verify_configuration(input, *prepared);
+        if (input.spatial_recipe) {
+            const auto& checkpoint = input.spatial_recipe->checkpoint_initial;
+            const auto& clock = field(field(checkpoint, "research"), "clock");
+            if (count(field(clock, "step")) != 0 || io::as_double(field(clock, "time_s"), "checkpoint_initial.time_s") != 0.)
+                throw recording::RecordingError("checkpoint_initial must describe the research boundary at time zero");
+            const auto& physical = field(field(field(field(checkpoint, "bootstrap2"), "runtime"), "continuation"), "physical");
+            auto& config = prepared->bootstrap.config;
+            // An imported initial state can differ from the fresh setup pose.
+            // Pin the metric origin to the same saved physical endpoint before
+            // the research continuation digest is checked during restore.
+            config.start_position_m = io::as_double(field(field(field(physical, "presentation"), "scalars"), "position_m"),
+                "checkpoint_initial.presentation.position_m");
+            // Verification above compared the reconstructed physics and its
+            // immutable inputs. Cache/path overrides only affect cold setup;
+            // checkpoint identity retains the validated recording provenance.
+            set(config.metadata, "resolved_config", field(input.summary, "resolved_config"));
+            set(config.metadata, "configuration_sha256", field(input.summary, "configuration_sha256"));
+        }
         model = prepared->bootstrap.ride.model.mjb;
         environment = runtime::make_research(std::move(prepared->bootstrap));
         if(input.spatial_recipe)environment->restore_checkpoint(input.spatial_recipe->checkpoint_initial);
@@ -128,7 +153,7 @@ struct ReplaySession::Impl {
             require_evidence(rows[i], input.applied.at(static_cast<std::size_t>(applied) + i), "applied commands[" + std::to_string(applied + static_cast<std::int64_t>(i)) + ']', max_error);
         environment->acknowledge_applied(cursor); applied = cursor;
     }
-    void capture_verified() { frame = environment->render_frame(); frame.state.generation = generation; verified = frame; }
+    void capture_verified() { frame = environment->render_frame(); set_generation(frame, generation); verified = frame; }
     void finish() {
         applied_prefix();
         if (std::cmp_not_equal(applied, input.applied.size())) throw recording::RecordingError("applied commands: replay omitted recorded events");
@@ -221,7 +246,7 @@ bool ReplaySession::advance(std::optional<double> wall_budget, std::optional<std
             require_evidence(research::wire_value(p.environment->last_requested()), command, "command request", p.max_error);
         }
         const auto transition = p.environment->advance_control(wall_budget, target);
-        if (!transition) { p.frame = p.environment->render_frame(); p.frame.state.generation = p.generation; return false; }
+        if (!transition) { p.frame = p.environment->render_frame(); set_generation(p.frame, p.generation); return false; }
         require_evidence(research::wire_value(runtime::Wire{transition->as_wire()}), p.input.transitions[p.command], "transition " + std::to_string(p.command), p.max_error);
         require_evidence(field(status(*p.environment), "observation"), p.input.observations[p.command + 1], "observation " + std::to_string(p.command + 1), p.max_error);
         p.applied_prefix();
@@ -238,7 +263,7 @@ bool ReplaySession::advance(std::optional<double> wall_budget, std::optional<std
         // budget yield. Mark a new presentation generation so render owners
         // never accept a same-generation temporal rewind.
         if (p.generation < std::numeric_limits<int>::max()) ++p.generation;
-        p.frame = p.verified; p.frame.state.generation = p.generation; throw;
+        p.frame = p.verified; set_generation(p.frame, p.generation); throw;
     }
 }
 void ReplaySession::restart() {

@@ -4,6 +4,8 @@
 #include "../engine_call.hpp"
 #include "../model_access.hpp"
 #include "../initialization/capture.hpp"
+#include "../spatial/frames.hpp"
+#include "../spatial/topology.hpp"
 #include "../terrain/profile.hpp"
 #include <algorithm>
 #include <cmath>
@@ -110,6 +112,28 @@ double velocity(const mjModel& model, const mjData& data, const char* name) {
     const auto address=model_access::readonly_buffer(model.jnt_dofadr,model.njnt)[static_cast<std::size_t>(id)];
     model_access::require_id(address,model.nv,"playback velocity joint");
     return model_access::readonly_buffer(data.qvel,model.nv)[static_cast<std::size_t>(address)];
+}
+bike::spatial::BodyPose presentation_pose(const mjModel& model, mjData& data) {
+    const int frame = mj_name2id(&model, mjOBJ_BODY, "frame");
+    model_access::require_id(frame, model.nbody, "playback spatial frame");
+    // Root body geometry and velocity come from the interpolated saved
+    // coordinates for both free6 and constrained4. This updates only the
+    // kinematic caches needed by XBODY velocity, never dynamics or sensors.
+    struct Refresh {
+        const mjModel* model;
+        mjData* data;
+        bike::spatial::RootBinding root;
+        bike::spatial::BodyPose pose;
+    } refresh{&model, &data, {.body_id=frame}, {}};
+    engine::ErrorBuffer error;
+    if (!engine::invoke([](void* opaque) noexcept {
+        auto& r = *static_cast<Refresh*>(opaque);
+        mj_kinematics(r.model, r.data);
+        mj_comPos(r.model, r.data);
+        mj_comVel(r.model, r.data);
+        r.pose = bike::spatial::body_pose(*r.model, *r.data, r.root);
+    }, &refresh, error)) engine::throw_failure(error);
+    return refresh.pose;
 }
 } // namespace
 
@@ -263,8 +287,22 @@ runtime::RenderFrame PlaybackSession::frame(double time_s, int generation) {
     if (root >= 0) view.root_x_dofadr = model_access::readonly_buffer(p.model->jnt_dofadr,p.model->njnt)[static_cast<std::size_t>(root)];
     if(!p.evidence.spatial.empty()) {
         view.spatial=p.evidence.spatial.at(index);
-        view.spatial->generation=static_cast<std::uint64_t>(generation);
-        view.position_m=view.spatial->position_world_m[0];view.z_m=view.spatial->position_world_m[2];
+        auto& spatial=*view.spatial;
+        const auto pose=presentation_pose(*p.model,*p.data);
+        const auto attitude=bike::spatial::euler_zyx(pose.quat_world_from_body_wxyz);
+        spatial.position_world_m=pose.position_world_m;
+        spatial.quat_wxyz=pose.quat_world_from_body_wxyz;
+        spatial.attitude_valid=attitude.valid;
+        spatial.heading_rad=attitude.valid?std::optional(attitude.yaw_rad):std::nullopt;
+        spatial.roll_rad=attitude.valid?std::optional(attitude.roll_rad):std::nullopt;
+        spatial.generation=static_cast<std::uint64_t>(generation);
+        view.position_m=pose.position_world_m[0];view.z_m=pose.position_world_m[2];
+        view.pitch_rad=attitude.pitch_rad;
+        const auto heading=bike::spatial::rotate_body_to_world(pose.quat_world_from_body_wxyz,{1.,0.,0.});
+        const double length=std::hypot(heading[0],heading[1]);
+        view.speed_mps=length>1e-12?(heading[0]*pose.linear_velocity_world_mps[0]+
+            heading[1]*pose.linear_velocity_world_mps[1])/length:0.;
+        view.root_x_dofadr=-1; // heading-relative speed is not a scalar qvel alias
     }
     const auto copy = [](const mjtNum* first, mjtSize count,std::size_t width=1) {
         if(count<0)throw recording::RecordingError("negative playback model array extent");

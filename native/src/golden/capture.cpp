@@ -6,6 +6,7 @@
 #include "../io/hash.hpp"
 #include "../rider/state_codec.hpp"
 #include "../runtime/research.hpp"
+#include "../runtime/setup_values.hpp"
 #include "../runtime/spatial_checkpoint_internal.hpp"
 #include "../runtime/provenance.hpp"
 #include "../platform/provenance.hpp"
@@ -98,6 +99,11 @@ std::vector<double> initial_vector(const EpisodeArtifact &episode, std::string_v
         throw std::invalid_argument("golden replay: initial " + std::string(name) + " shape differs from model");
     return array.doubles();
 }
+const Value& initial_comparison_checkpoint(const EpisodeArtifact& episode) {
+    const auto& manifest=io::as_object(episode.manifest,"golden manifest");
+    if(const auto* candidate=io::find_member(manifest,"spatial_startup_candidate"))return *candidate;
+    return runtime::setupvalue::field(episode.manifest,"spatial_checkpoint_initial");
+}
 runtime::RideControl decode_control(const io::Value &value) {
     // episode_compare._control ignores surplus fields and fills dataclass
     // defaults, including nested RiderPosture defaults.
@@ -178,30 +184,82 @@ class RuntimeAccess {
 public:
     static EpisodeArtifact run(runtime::NativeResearchRuntime &env,
         std::span<const runtime::RideControl> controls, const EpisodeArtifact *replay,
-        void *test_exit_context = nullptr, testing::ForceExitMutation test_exit_mutation = nullptr) {
+        void *test_exit_context = nullptr, testing::ForceExitMutation test_exit_mutation = nullptr,
+        bool restore_spatial_reference = true) {
         const Guard research_guard(env.busy_);
         env.require_open();
-        auto &runtime = *env.runtime_;
-        runtime.require_open();
-        if (replay == nullptr && (runtime.committed_step_ != 0 || runtime.committed_time_s_ != 0.))
+        auto &target = *env.runtime_;
+        target.require_open();
+        if (replay == nullptr && (target.committed_step_ != 0 || target.committed_time_s_ != 0.))
             throw std::invalid_argument("golden capture requires a fresh physical t=0 state");
         if (env.episode_->window || env.episode_->delivery_pending)
             throw std::invalid_argument("golden capture cannot interrupt a pending research control");
-        auto  const&stepper = *runtime.stepper_;
-        const auto &model = *stepper.model();
-        const auto minimum_width = static_cast<std::size_t>(model.nq + 3 * model.nv + model.na + model.nu + 1);
+        if(target.config_.spatial && (env.episode_->requested_count!=0 || !env.episode_->commands.empty()))
+            throw std::invalid_argument("spatial golden requires an inactive research host; reset the research episode first");
+        const auto& input_model=*target.stepper_->model();
+        const auto minimum_width = static_cast<std::size_t>(input_model.nq + 3 * input_model.nv + input_model.na + input_model.nu + 1);
         if (minimum_width && controls.size() > io::kMaxNumpyBytes / sizeof(double) / minimum_width)
             throw std::invalid_argument("golden capture state matrix exceeds resource bound");
         for (const auto &control : controls)
-            runtime::control_validate_for(control, runtime.physical_->rider_present(), runtime.physical_->drive_mode());
-        const auto initial = replay ? std::optional(prepare_initial(model, *replay)) : std::nullopt;
+            runtime::control_validate_for(control, target.physical_->rider_present(), target.physical_->drive_mode());
+        const auto initial = replay ? std::optional(prepare_initial(input_model, *replay)) : std::nullopt;
+        std::unique_ptr<runtime::NativeRideRuntime> staged_reference;
+        std::optional<int> reference_generation;
+        if(replay && target.config_.spatial) {
+            const auto checkpoint=spatial_reference(*replay,env.config_.metadata);
+            if(restore_spatial_reference) {
+                if(io::as_string(runtime::setupvalue::field(replay->manifest,"source_identity"),"source_identity")!=
+                   runtime::runtime_identity().native_source_sha256)
+                    throw std::invalid_argument("incompatibility: spatial golden source identity differs");
+                staged_reference=runtime::spatial::CheckpointAccess::prepare(checkpoint,target);
+                if(staged_reference->committed_step_!=0 || staged_reference->committed_time_s_!=0.)
+                    throw std::invalid_argument("golden replay: spatial checkpoint must describe t=0");
+                validate_initial(*initial,*staged_reference->stepper_->model(),*staged_reference->stepper_->data());
+                reference_generation=staged_reference->committed_generation_;
+            } else {
+                // Reviewed cross-platform comparison runs the target's own
+                // complete startup. Validate redundant reference arrays on a
+                // disposable data owner without importing foreign execution
+                // identities or mixing its engine state into the target.
+                // NOLINTNEXTLINE(modernize-make-unique) decode the complete bootstrap directly into cold heap storage
+                const std::unique_ptr<runtime::BootstrapState> decoded{new runtime::BootstrapState(runtime::decode_bootstrap_state(checkpoint.bootstrap2,input_model))};
+                const std::unique_ptr<mjData,decltype(&mj_deleteData)> data(engine::make_data(&input_model),&mj_deleteData);
+                if(!data)throw std::runtime_error("golden replay: cannot allocate initial-state validation arena");
+                engine::set_state(&input_model,data.get(),decoded->integration_state.data(),mjSTATE_INTEGRATION);
+                if(decoded->step!=0)throw std::invalid_argument("golden replay: spatial checkpoint must describe t=0");
+                validate_initial(*initial,input_model,*data);
+                reference_generation=decoded->generation;
+            }
+        }
         // The Python tool resets env.sim, then calls its physical step
         // directly; it does not submit delayed research control windows.
         // Validate all inputs before that reset changes any runtime state.
-        runtime.reset();
-        const auto spatial_initial=runtime.config_.spatial ? runtime::spatial::CheckpointAccess::capture_bootstrap(runtime) : Value{};
+        target.reset();
+        if(reference_generation && target.committed_generation_!=*reference_generation) {
+            // Compare the complete fresh startup in the reference epoch even
+            // when this host has already replayed it. Rebuild only the empty
+            // t=0 accounting/publication, preserving the target's own physics.
+            const Guard generation_guard(target.advancing_);
+            const int previous_generation=target.physical_->generation();
+            target.physical_->set_generation(*reference_generation);
+            try { target.initialize_accounting(); }
+            catch(...) {
+                // initialize_accounting stages before its no-throw commit.
+                target.physical_->set_generation(previous_generation);
+                throw;
+            }
+        }
+        const auto startup_candidate=target.config_.spatial ? runtime::spatial::CheckpointAccess::capture_bootstrap(target) : Value{};
+        if(staged_reference)env.runtime_.swap(staged_reference);
+        // A full restore can replace all owners. Bind the simulation faces
+        // only after publication, and keep their guard on the new runtime.
+        auto& runtime=*env.runtime_;
+        const auto& stepper=*runtime.stepper_;
+        const auto& model=*stepper.model();
+        const auto spatial_initial=runtime.config_.spatial ?
+            (replay && restore_spatial_reference ? runtime::setupvalue::field(replay->manifest,"spatial_checkpoint_initial") : startup_candidate) : Value{};
         std::optional<Guard> physical_guard;physical_guard.emplace(runtime.advancing_);
-        if (initial) restore_initial(runtime, *initial);
+        if (initial && !runtime.config_.spatial) restore_initial(runtime, *initial);
         auto result = std::make_unique<EpisodeArtifact>();
         capture_initial(*result, model, *stepper.data());
         std::vector<runtime::GoldenForceObservation> records;
@@ -237,6 +295,8 @@ public:
         if(runtime.config_.spatial) {
             auto& manifest=std::get<Value::Object>(result->manifest.data);
             manifest.emplace_back("spatial_checkpoint_initial",spatial_initial);
+            if(replay && restore_spatial_reference)
+                manifest.emplace_back("spatial_startup_candidate",startup_candidate);
             manifest.emplace_back("spatial_checkpoint_final",runtime::spatial::CheckpointAccess::capture_bootstrap(runtime));
 #if defined(__APPLE__) && defined(__aarch64__)
             manifest.emplace_back("spatial_platform",Value{std::string("macos-arm64")});
@@ -271,6 +331,38 @@ private:
         out.time = initial_vector(episode, "time", 1);
         if (out.time.front() != 0.) throw std::invalid_argument("golden replay initial time must be zero");
         return out;
+    }
+    static runtime::spatial::SpatialCheckpoint spatial_reference(const EpisodeArtifact& episode,const Value& metadata) {
+        namespace sv=runtime::setupvalue;
+        if(episode.initial.size()!=6)
+            throw std::invalid_argument("golden replay: spatial initial engine field set differs");
+        if(io::canonical_json(sv::field(episode.manifest,"config_sha256"))!=
+           io::canonical_json(sv::field(metadata,"configuration_sha256")))
+            throw std::invalid_argument("incompatibility: spatial golden configuration identity differs");
+        const auto& bootstrap=sv::field(episode.manifest,"spatial_checkpoint_initial");
+        runtime::spatial::SpatialCheckpoint checkpoint{
+            .bootstrap2=bootstrap,.research=runtime::spatial::inactive_research_checkpoint(),
+            .sensor_v2=runtime::spatial::inactive_sensor_checkpoint(),
+            .policy=Value{Value::Object{{"resumable",Value{false}},{"state",Value{}}}},
+            .identity=Value{Value::Object{{"model_digest",sv::field(bootstrap,"model_digest")},
+                {"config_sha256",sv::field(episode.manifest,"config_sha256")},
+                {"terrain_sha256",sv::field(episode.manifest,"terrain_sha256")},
+                {"calibration_sha256",sv::field(episode.manifest,"calibration_sha256")},
+                {"solver",sv::field(episode.manifest,"execution_identity")},
+                {"provider",sv::field(episode.manifest,"provider")},{"hold_removed",Value{true}}}}};
+        (void)runtime::spatial::encode_checkpoint(checkpoint);
+        return checkpoint;
+    }
+    static void validate_initial(const InitialState& initial,const mjModel& model,const mjData& data) {
+        const auto equal=[&](const std::vector<double>& expected,const double* values,mjtSize count,std::string_view name) {
+            const auto actual=std::span<const double>(values,static_cast<std::size_t>(count));
+            if(!std::ranges::equal(std::as_bytes(std::span{expected}),std::as_bytes(actual)))
+                throw std::invalid_argument("golden replay: initial "+std::string(name)+" disagrees with spatial checkpoint");
+        };
+        equal(initial.qpos,data.qpos,model.nq,"qpos");equal(initial.qvel,data.qvel,model.nv,"qvel");
+        equal(initial.act,data.act,model.na,"act");equal(initial.ctrl,data.ctrl,model.nu,"ctrl");
+        equal(initial.warmstart,data.qacc_warmstart,model.nv,"qacc_warmstart");
+        equal(initial.time,&data.time,1,"time");
     }
     static void capture_initial(EpisodeArtifact &episode, const mjModel &model, const mjData &data) {
         const auto add = [&](std::string name, auto values) {
@@ -372,6 +464,7 @@ std::vector<std::string> compare_episode(const EpisodeArtifact &golden,
         for(auto key:{"spatial_checkpoint_initial","spatial_checkpoint_final","calibration_sha256","terrain_sha256"}) {
             const auto* expected=io::find_member(io::as_object(golden.manifest,"manifest"),key);
             const auto* actual=io::find_member(io::as_object(candidate.manifest,"manifest"),key);
+            if(std::string_view(key)=="spatial_checkpoint_initial")actual=&initial_comparison_checkpoint(candidate);
             if(!expected||!actual||io::canonical_json(*expected)!=io::canonical_json(*actual))differences.push_back(std::string("regression: ")+key);
         }
     }
@@ -476,7 +569,8 @@ std::vector<std::string> compare_spatial_artifacts(const EpisodeArtifact& expect
     compare.value(Value{expected.controls},Value{actual.controls},"controls","controls");
     compare.value(expected.first_failure,actual.first_failure,"first_failure","first_failure");
     for(auto key:{"initial","final"})compare.value(runtime::spatial::bootstrap_comparison_value(required(expected.manifest,std::string("spatial_checkpoint_")+key)),
-        runtime::spatial::bootstrap_comparison_value(required(actual.manifest,std::string("spatial_checkpoint_")+key)),std::string("checkpoints.")+key,std::string("checkpoints.")+key);
+        runtime::spatial::bootstrap_comparison_value(std::string_view(key)=="initial"?initial_comparison_checkpoint(actual):
+            required(actual.manifest,"spatial_checkpoint_final")),std::string("checkpoints.")+key,std::string("checkpoints.")+key);
     if(expected.initial.size()!=actual.initial.size())return {"regression: initial engine state fields differ"};
     for(const auto& [name,value]:expected.initial) {
         const auto found=std::ranges::find_if(actual.initial,[&](const auto& p){return p.first==name;});
@@ -497,8 +591,23 @@ std::vector<std::string> compare_spatial_episode(const EpisodeArtifact& expected
     if(string(current,"source_identity")!=runtime::runtime_identity().native_source_sha256 ||
        string(current,"execution_identity")!=platform::execution_identity() || string(current,"provider")!=engine::identity().numeric_provider)
         throw std::invalid_argument("incompatibility: current execution/source/provider identity differs from reviewed platform");
+    const auto reference_platform=string(expected.manifest,"spatial_platform");
+    const auto& reference=required(required(entry,"platforms"),reference_platform);
+    for(auto key:{"source_identity","execution_identity","provider"})
+        if(string(expected.manifest,key)!=string(reference,key))
+            throw std::invalid_argument("incompatibility: reference "+std::string(key)+" differs from reviewed platform");
+    if(string(expected.manifest,"source_identity")!=string(current,"source_identity"))
+        throw std::invalid_argument("incompatibility: stale source identity");
+    for(auto key:{"config_sha256","terrain_sha256","calibration_sha256"})
+        if(string(expected.manifest,key)!=string(entry,key))
+            throw std::invalid_argument("incompatibility: reference "+std::string(key)+" differs");
+    const auto state=env.snapshot();
+    if(!state.spatial || state.spatial->terrain_sha256!=string(entry,"terrain_sha256") ||
+       state.spatial->calibration_sha256!=string(entry,"calibration_sha256"))
+        throw std::invalid_argument("incompatibility: candidate spatial terrain/calibration differs");
     std::vector<runtime::RideControl> controls;controls.reserve(expected.controls.size());
     for(const auto& control:expected.controls)controls.push_back(decode_control(control));
-    return compare_spatial_artifacts(expected,RuntimeAccess::run(env,controls,&expected),entry,current_platform);
+    const bool same_platform=reference_platform==current_platform;
+    return compare_spatial_artifacts(expected,RuntimeAccess::run(env,controls,&expected,nullptr,nullptr,same_platform),entry,current_platform);
 }
 } // namespace bike::golden

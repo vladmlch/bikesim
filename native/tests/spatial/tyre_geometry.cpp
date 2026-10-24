@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cmath>
+#include <limits>
 #include <numbers>
 #include <numeric>
 #include <vector>
@@ -55,6 +56,10 @@ int main() { return bt::run([] {
         bt::require(query_geometry(g,buried,flat.query_view(),a)==CoreStatus::ok,"element-level bad origins are reported");
         bool found=false; for(const auto& e:a) if(e.reason==ReasonCode3d::origin_below_surface) { found=true; bt::require(!e.valid,"buried ray not a valid contact"); }
         bt::require(found,"below-surface condition survives geometry boundary");
+        auto malformed=g;
+        malformed.theta_fan.front()=std::numeric_limits<double>::quiet_NaN();
+        bt::require(query_geometry(malformed,k0,flat.query_view(),a)==CoreStatus::invalid_input,
+                    "nonfinite material coordinate rejects before float-to-integer conversion");
     }
     const auto plus=spatial_tests::wheel_at({},0.,.2,0.,0.);
     const auto minus=spatial_tests::wheel_at({},0.,-.2,0.,0.);

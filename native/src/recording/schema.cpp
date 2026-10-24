@@ -9,6 +9,24 @@
 #include <format>
 
 namespace bike::recording {
+namespace {
+// Preserve the schema2 metadata on every nested struct member, not only the
+// outer database column. describe_field remains the schema1 serialization.
+// NOLINTNEXTLINE(misc-no-recursion) follows the finite catalog field tree
+io::Value describe_spatial_field(const FieldSpec& field) {
+    auto definition = describe_field(field);
+    auto& object = std::get<io::Value::Object>(definition.data);
+    value::set(object, "name", value::text(field.key));
+    value::set(object, "type", value::text(field.dtype));
+    value::set(object, "classification", value::text(field.measurement == "measured" ? "measurement" : "truth"));
+    value::set(object, "nullable", io::Value{field.optional});
+    value::set(object, "presence", value::text("explicit"));
+    io::Value::Array children;
+    for (const auto& child : field.children) children.push_back(describe_spatial_field(child));
+    value::set(object, "children", io::Value{std::move(children)});
+    return definition;
+}
+} // namespace
 std::string quote(std::string_view name) {
     if (name.empty() || name.find('\0') != std::string_view::npos) throw std::invalid_argument("invalid SQL identifier");
     std::string out = "\"";
@@ -40,13 +58,7 @@ std::vector<io::Value::Array> catalog_rows(CatalogVersion version) {
     std::vector<io::Value::Array> rows;
     for (const auto& spec : all_tables(version)) {
         auto const add = [&](const FieldSpec& f) {
-            auto definition=describe_field(f);
-            if(version==CatalogVersion::spatial2) {
-                auto& object=std::get<io::Value::Object>(definition.data);
-                value::set(object,"name",value::text(f.key));value::set(object,"type",value::text(f.dtype));
-                value::set(object,"classification",value::text(f.measurement=="measured"?"measurement":"truth"));
-                value::set(object,"nullable",io::Value{f.optional});value::set(object,"presence",value::text("explicit"));
-            }
+            auto definition = version == CatalogVersion::spatial2 ? describe_spatial_field(f) : describe_field(f);
             rows.push_back({value::text(spec.name), value::text(f.key), value::text(f.duckdb_type()), value::text(f.unit), value::text(f.phase), io::Value{f.optional}, value::text(f.measurement), value::text(f.source), value::text(f.frame), value::text(io::recording_json(definition))});
             if (f.optional) rows.push_back({value::text(spec.name), value::text(f.key + "_present"), value::text("BOOLEAN"), value::text("1"), value::text(f.phase), io::Value{false}, value::text("declared"), value::text(f.source), value::text("n/a"), value::text(io::recording_json(io::Value{io::Value::Object{{"presence_of", value::text(f.key)}, {"description", value::text("field existed in source payload")}}}))});
         };

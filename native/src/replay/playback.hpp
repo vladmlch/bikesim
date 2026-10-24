@@ -16,8 +16,9 @@ struct PlaybackData {
     std::int64_t episode_id = 0;
     double duration_s = 0.;
     bool intervals_hash_verified = true;
-    // The accepted saved truth supplies inspection camera/HUD values. These
-    // samples are never reconstructed by a controller or a dynamics step.
+    // Accepted saved truth supplies contact/control HUD values. Root pose,
+    // attitude and speed use the interpolated saved coordinates so the camera
+    // follows the displayed skeleton. No controller or dynamics step runs.
     std::vector<runtime::SpatialPresentation> spatial;
 };
 void validate_playback(const PlaybackData&, std::size_t nq, std::size_t nv);

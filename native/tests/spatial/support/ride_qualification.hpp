@@ -229,13 +229,16 @@ public:
         if(!p.steer_balance_ || !p.control_clock_.is_tick(p.step_))return;
         const auto pose=spatial::body_pose(*r.stepper_->model(),*r.stepper_->data(),p.topology_->root);
         const auto angles=spatial::euler_zyx(pose.quat_world_from_body_wxyz);
+        const auto omega=spatial::rotate_world_to_body(pose.quat_world_from_body_wxyz,pose.angular_velocity_world_rad_s);
+        const double roll_rate=angles.valid?omega[0]+std::tan(angles.pitch_rad)*(
+            std::sin(angles.roll_rad)*omega[1]+std::cos(angles.roll_rad)*omega[2]):0.;
         const auto& j=p.topology_->steer.joint;const auto* d=r.stepper_->data();
         const auto qpos=model_access::readonly_buffer(d->qpos,r.stepper_->model()->nq);
         const auto qvel=model_access::readonly_buffer(d->qvel,r.stepper_->model()->nv);
-        const auto tick=p.step_/static_cast<std::int64_t>(std::llround(p.config_.control_period_s/p.config_.timestep_s));
+        const auto tick=p.step_/p.control_clock_.steps_per_period;
         const double old_work=p.steer_balance_->state().work_j;
         (void)p.steer_balance_->tick({.control_tick=tick,.roll_rad=angles.roll_rad-roll_reference,
-            .roll_rate_rad_s=pose.angular_velocity_world_rad_s[0],
+            .roll_rate_rad_s=roll_rate,
             .heading_error_rad=std::remainder(angles.yaw_rad-heading_reference,2.*std::numbers::pi),
             .lateral_error_m=lateral_error,.steer_angle_rad=qpos[static_cast<std::size_t>(j.qpos_adr)]-steer_reference,
             .steer_rate_rad_s=qvel[static_cast<std::size_t>(j.dof_adr)],.speed_signed_mps=p.longitudinal_speed_mps(),.enabled=angles.valid});
@@ -516,7 +519,7 @@ inline Point observe(runtime::NativeRideRuntime& rt) {
             const auto& material=SpatialRideAccess::surface(rt,w.surface_id);
             const double mu=material.stribeck_speed_mps>0.?material.mu_slide+(material.mu_peak-material.mu_slide)*
                 std::exp(-std::pow(slip/material.stribeck_speed_mps,2)):
-                (slip==0.&&tire.model().spec().tier==bike::spatial::TyreTier::fast?material.mu_peak:material.mu_slide);
+                (slip==0.?material.mu_peak:material.mu_slide);
             const double cx=mu*spec.mu_x_scale*w.normal_load_n,cy=mu*spec.mu_y_scale*w.normal_load_n;
             if(cx>0.&&cy>0.)p.ellipse=std::max(p.ellipse,(w.fx_n/cx)*(w.fx_n/cx)+(w.fy_n/cy)*(w.fy_n/cy));
             else if(w.fx_n!=0. || w.fy_n!=0.)p.ellipse=std::numeric_limits<double>::infinity();

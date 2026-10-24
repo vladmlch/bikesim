@@ -161,6 +161,16 @@ CoreStatus assign_patches(std::span<const ContactElement3d> elements,
         for (std::size_t i=0;i<n;++i) if (label[i]==c)
             patch.couple_world_nm=add(patch.couple_world_nm,
                 cross(sub(elements[i].point_world_m,patch.centroid_world_m),scale(elements[i].normal_world,normals[i].normal_load_n)));
+        // Each element can be finite while the reduction or its normalized
+        // basis is not. Reject before publishing a valid patch or IDs.
+        if (!std::isfinite(patch.normal_load_n) || !std::isfinite(patch.area_m2) ||
+            !(patch.area_m2>0.) || !finite(patch.centroid_world_m) ||
+            !finite(patch.force_world_n) || !finite(patch.couple_world_nm) ||
+            !finite(patch.normal_world) || !finite(patch.longitudinal_world) ||
+            !finite(patch.lateral_world) || std::abs(norm(patch.normal_world)-1.)>1e-8 ||
+            std::abs(norm(patch.longitudinal_world)-1.)>1e-8 ||
+            std::abs(norm(patch.lateral_world)-1.)>1e-8)
+            return CoreStatus::invalid_geometry;
         patch.elements=std::span<const std::uint32_t>(indices+begin,offset-begin);
         patch.valid=true; out[c]=patch;
     }

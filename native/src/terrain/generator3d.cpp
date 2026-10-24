@@ -1,5 +1,6 @@
 #include "terrain/generator3d.hpp"
 #include "terrain/detail.hpp"
+#include "terrain/interpolation3d.hpp"
 #include "terrain/profile.hpp"
 #include "terrain/trackfile.hpp"
 #include "platform/provenance.hpp"
@@ -8,7 +9,9 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <initializer_list>
 #include <limits>
+#include <memory>
 #include <numbers>
 #include <span>
 #include <string_view>
@@ -74,6 +77,120 @@ double feature_height(const Feature3dSpec& feature, double x, double y) noexcept
     const double edge = 1. - radius2;
     const double magnitude = feature.amplitude_m * std::exp(-radius2) * edge * edge;
     return feature.kind == "rut" ? -magnitude : magnitude;
+}
+
+using Gradient = std::array<double, 2>;
+using GradientNet = std::array<Gradient, 16>;
+
+Gradient middle(const Gradient& a, const Gradient& b) noexcept {
+    return {.5 * a[0] + .5 * b[0], .5 * a[1] + .5 * b[1]};
+}
+
+// Express BOTH world-gradient components in the same bicubic Bernstein basis.
+// They are the derivatives of the exact coefficients used by Grid3d::sample,
+// not independently estimated slopes. The common weights are nonnegative and
+// sum to one, so every gradient lies in the convex hull of this control net.
+GradientNet gradient_net(const BicubicPatch& patch, double dx, double dy) noexcept {
+    constexpr std::array<std::array<double, 4>, 4> power_to_bernstein{{
+        {1., 0., 0., 0.}, {1., 1. / 3., 0., 0.},
+        {1., 2. / 3., 1. / 3., 0.}, {1., 1., 1., 1.}}};
+    GradientNet out{};
+    for (std::size_t j = 0; j < 4; ++j) for (std::size_t i = 0; i < 4; ++i) {
+        auto& gradient = out[j * 4 + i];
+        for (std::size_t b = 0; b <= j; ++b) for (std::size_t a = 0; a <= i; ++a) {
+            const double weight = power_to_bernstein[i][a] * power_to_bernstein[j][b];
+            if (a < 3) gradient[0] += weight * static_cast<double>(a + 1) * patch.c[b * 4 + a + 1] / dx;
+            if (b < 3) gradient[1] += weight * static_cast<double>(b + 1) * patch.c[(b + 1) * 4 + a] / dy;
+        }
+    }
+    return out;
+}
+
+void split_gradient(const GradientNet& input, bool along_x, GradientNet& left, GradientNet& right) noexcept {
+    for (std::size_t line = 0; line < 4; ++line) {
+        const auto index = [&](std::size_t i) { return along_x ? line * 4 + i : i * 4 + line; };
+        std::array<Gradient, 4> work;
+        for (std::size_t i = 0; i < 4; ++i) work[i] = input[index(i)];
+        left[index(0)] = work[0]; right[index(3)] = work[3];
+        for (std::size_t level = 1; level < 4; ++level) {
+            for (std::size_t i = 0; i < 4 - level; ++i) work[i] = middle(work[i], work[i + 1]);
+            left[index(level)] = work[0]; right[index(3 - level)] = work[3 - level];
+        }
+    }
+}
+
+Gradient centre_gradient(const GradientNet& net) noexcept {
+    std::array<Gradient, 4> rows;
+    for (std::size_t j = 0; j < 4; ++j) {
+        std::array<Gradient, 4> work;
+        for (std::size_t i = 0; i < 4; ++i) work[i] = net[j * 4 + i];
+        for (std::size_t n = 3; n != 0; --n)
+            for (std::size_t i = 0; i < n; ++i) work[i] = middle(work[i], work[i + 1]);
+        rows[j] = work[0];
+    }
+    for (std::size_t n = 3; n != 0; --n)
+        for (std::size_t i = 0; i < n; ++i) rows[i] = middle(rows[i], rows[i + 1]);
+    return rows[0];
+}
+
+enum class SlopeBound { valid, exceeds, exhausted };
+
+constexpr unsigned kSlopeMaxDepth = 8;
+struct SlopeInterval { GradientNet net; unsigned depth; };
+// A depth-first four-way split has at most 1+3*depth pending cells.
+using SlopeStack = std::array<SlopeInterval, 1 + 3 * kSlopeMaxDepth>;
+
+SlopeBound bound_slope(const BicubicPatch& patch, double dx, double dy, double limit,
+                      SlopeStack& pending) noexcept {
+    constexpr unsigned max_subdivisions = 256;
+    std::size_t count = 1;
+    pending[0] = {gradient_net(patch, dx, dy), 0};
+    unsigned subdivisions = 0;
+    // Conversion/subdivision roundoff only; this is not a physical slope margin.
+    const double bounded_limit = limit + 128. * std::numeric_limits<double>::epsilon() * std::max(1., limit);
+    const auto magnitude = [](const Gradient& value) { return std::hypot(value[0], value[1]); };
+    while (count != 0) {
+        const auto current = pending[--count];
+        double maximum = 0.;
+        for (const auto& value : current.net) {
+            const double size = magnitude(value);
+            if (!std::isfinite(size)) return SlopeBound::exceeds;
+            maximum = std::max(maximum, size);
+        }
+        if (maximum <= bounded_limit) continue;
+        for (const auto corner : {0U, 3U, 12U, 15U})
+            if (magnitude(current.net[corner]) > bounded_limit) return SlopeBound::exceeds;
+        if (magnitude(centre_gradient(current.net)) > bounded_limit) return SlopeBound::exceeds;
+        if (current.depth == kSlopeMaxDepth || subdivisions == max_subdivisions || count + 4 > pending.size())
+            return SlopeBound::exhausted;
+        ++subdivisions;
+        GradientNet left, right, low_left, high_left, low_right, high_right;
+        split_gradient(current.net, true, left, right);
+        split_gradient(left, false, low_left, high_left);
+        split_gradient(right, false, low_right, high_right);
+        const unsigned next_depth = current.depth + 1;
+        pending[count++] = {high_right, next_depth};
+        pending[count++] = {high_left, next_depth};
+        pending[count++] = {low_right, next_depth};
+        pending[count++] = {low_left, next_depth};
+    }
+    return SlopeBound::valid;
+}
+
+void validate_bicubic_slopes(const Grid3d& grid, double limit) {
+    const auto& d = grid.descriptor();
+    // Cold validation owns one bounded scratch allocation for the entire grid;
+    // the interval stack alone exceeds 6 KiB. Together with subdivision
+    // temporaries it would exceed the per-function stack budget.
+    const auto pending = std::make_unique<SlopeStack>();
+    for (std::uint64_t iy = 0; iy + 1 < grid.ny(); ++iy) for (std::uint64_t ix = 0; ix + 1 < grid.nx(); ++ix) {
+        const auto status = bound_slope(bicubic_patch(grid, ix, iy), d.dx_m, d.dy_m, limit, *pending);
+        if (status == SlopeBound::valid) continue;
+        const std::string path = "terrain3d.surface.cell[" + std::to_string(iy) + "][" + std::to_string(ix) + "]";
+        throw std::invalid_argument(path + (status == SlopeBound::exceeds
+            ? ": bicubic gradient is non-finite or exceeds slope limit"
+            : ": bicubic slope bound exceeds validation budget"));
+    }
 }
 }
 
@@ -194,6 +311,7 @@ Grid3d generate_grid3d(const Track3dSpec& spec) {
     auto grid = Grid3d::create({static_cast<std::uint64_t>(nx), static_cast<std::uint64_t>(ny),
         0., -spec.half_width_m, spec.dx_m, spec.dy_m, 0}, std::move(elevation), std::move(materials), spec.surfaces, std::move(metadata));
     if (!grid) throw std::invalid_argument(grid.error());
+    validate_bicubic_slopes(*grid, slope_limit);
     return std::move(*grid);
 }
 } // namespace bike::terrain

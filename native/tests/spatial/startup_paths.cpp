@@ -5,6 +5,10 @@
 #include "initialization/spatial_equilibrium.hpp"
 #include "io/hash.hpp"
 #include "model_access.hpp"
+#include "model/mapping.hpp"
+#include "research/environment.hpp"
+#include "runtime/research_io.hpp"
+#include "runtime/setup_values.hpp"
 #include "spatial/frames.hpp"
 #include "writers/pneumatic_3d_tire.hpp"
 #include "writers/spatial_tire_adapter.hpp"
@@ -135,13 +139,130 @@ void failure_keeps_committed_prefix() {
     catch(const std::logic_error& error) {needs_reset=std::string_view(error.what()).find("reset")!=std::string_view::npos;}
     bt::require(needs_reset,"an invalid unaccepted boundary cannot be advanced before reset");
     ride.reset();
+    const auto reset_frame=ride.render_frame();
+    bt::require(reset_frame.presentation.spatial &&
+        reset_frame.presentation.spatial->generation==static_cast<std::uint64_t>(reset_frame.state.generation),
+        "reset publishes the current spatial presentation generation before the first advance");
     bt::require(!ride.snapshot().outcome && ride.advance(1,runtime::RideControl{},0.,0.,std::nullopt).step==1,
         "reset restores the captured physical bootstrap after rejected geometry");
+}
+void rider_spring_is_not_material_loss() {
+    using namespace bike;
+    const auto request=spatial_tests::make_startup_request(
+        spatial::RootKind::free6,spatial::TyreTier::fast,true,0.);
+    spatial_tests::OwnedStartup setup(*request);
+    auto& stepper=validation::SpatialRideAccess::stepper(*setup.runtime);
+    auto& physical=validation::SpatialRideAccess::physical(*setup.runtime);
+    const auto* model=stepper.model();
+    auto* data=stepper.data();
+    const auto joint=static_cast<std::size_t>(
+        bike::model::required_id(*model,mjOBJ_JOINT,"shoulder_swivel_l"));
+    const auto address=bike::model::joint_address(*model,"shoulder_swivel_l");
+    const auto qa=static_cast<std::size_t>(address.first);
+    const auto va=static_cast<std::size_t>(address.second);
+    const auto spring=model_access::readonly_buffer(model->qpos_spring,model->nq);
+    const double stiffness=model_access::readonly_buffer(model->jnt_stiffness,model->njnt)[joint];
+    const double damping=model_access::readonly_buffer(model->dof_damping,model->nv)[va];
+    bt::require(stiffness>0. && damping>0.,"spatial shoulder has spring and damping");
+    stepper.mutate([&] {
+        model_access::mutable_buffer(data->qpos,model->nq)[qa]=spring[qa]+.01;
+        model_access::mutable_buffer(data->qvel,model->nv)[va]=.02;
+        stepper.note_posvel_stale();stepper.forward();
+    });
+    const std::unique_ptr<runtime::RawStep> raw{
+        new runtime::RawStep(physical.advance_physics(0.,0.,std::nullopt,{}))};
+    const auto component=[&](std::string_view name) -> const std::vector<double>& {
+        const auto found=std::ranges::find_if(raw->components,
+            [&](const auto& row){return row.first==name;});
+        bt::require(found!=raw->components.end(),"solved interval contains "+std::string(name));
+        return found->second;
+    };
+    const double rider=component("rider_passive_damping")[va];
+    const double engine=component("engine_passive")[va];
+    const double expected_spring=-stiffness*(raw->qpos[qa]-spring[qa]);
+    bt::require(std::abs(rider+damping*raw->qvel[va])<=1e-10,
+        "rider material-loss row contains damping, not conservative shoulder force");
+    bt::require(std::abs(engine-expected_spring)<=1e-10,
+        "engine passive row retains the shoulder spring for its stored-energy refund");
+    bt::require(std::abs(rider+engine-raw->qfrc_passive[va])<=1e-12,
+        "passive component partition preserves the solved generalized force");
+}
+void research_quality_excludes_invalid_interval(bool completes) {
+    using namespace bike;
+    namespace values=runtime::setupvalue;
+    namespace wire=runtime::sample_wire;
+    auto request=std::make_unique<research::ResearchRequest>();
+    request->setup=std::move(*spatial_tests::make_startup_request(
+        spatial::RootKind::free6,spatial::TyreTier::fast,false,2.));
+    const double dt=request->setup.model.physics.value().timestep_s;
+    request->capture_mode=runtime::ResearchCaptureMode::full;
+    request->experiment.duration_s=completes?dt:2.*dt;
+    request->experiment.control_period_s=dt;
+    request->experiment.actuator_delay_s=0.;
+    request->experiment.record_decimation=1;
+    request->experiment.stop_on_model_violation=false;
+    request->experiment.async_telemetry=false;
+    request->sensors_v2.sample_period_s=dt;
+    request->sensors_v2.latency_s=0.;
+    auto prepared=research::prepare_environment(std::move(request));
+    const double threshold=prepared->bootstrap.config.maximum_energy_residual_ratio;
+    const double start_position=prepared->bootstrap.config.start_position_m;
+    // Deliberately manufacture a bad accounting baseline without changing
+    // the valid plant. The consumer must reject its first accepted sample
+    // even when that same interval completes the requested physical ride.
+    auto energy=values::field(prepared->bootstrap.ride.state.runtime,"energy");
+    values::set(energy,"initial_energy_j",values::real(
+        io::as_double(values::field(energy,"initial_energy_j"),"initial_energy_j")+1e6));
+    values::set(energy,"energy_scale_j",values::real(1.));
+    values::set(prepared->bootstrap.ride.state.runtime,"energy",std::move(energy));
+    auto environment=runtime::make_research(
+        std::make_unique<runtime::ResearchBootstrap>(std::move(prepared->bootstrap)));
+    runtime::RideControl control;control.motor_torque_nm=0.;control.human_torque_nm=0.;
+    environment->begin_control(control,0.,0.);
+    const auto transition=environment->advance_control(std::nullopt);
+    bt::require(transition.has_value(),"one-interval research quality fixture completes its control window");
+    const auto& result=transition.value();
+    const auto accepted=environment->snapshot();
+    bt::require(accepted.step==1 && accepted.latest_sample &&
+        accepted.latest_sample->interval_id==0 && accepted.position_m>start_position,
+        "quality rejection consumes a real accepted interval with positive distance");
+    const auto& source=*accepted.latest_sample;
+    const auto& outcome=wire::object(wire::required(source.channels,"spatial_outcome"));
+    bt::require(wire::boolean(wire::required(outcome,"valid")) &&
+        wire::boolean(wire::required(outcome,"terminal"))==completes,
+        "physical validity and completion are independent of the manufactured quality failure");
+    const auto quality=runtime::research_quality(
+        wire::object(wire::required(source.channels,"energy")),threshold);
+    bt::require(!quality.acceptable && quality.residual_ratio>threshold,
+        "manufactured baseline produces an observed energy-quality rejection");
+    bt::require(!result.numerically_valid && !result.terminated && result.truncated &&
+        result.reason==(completes?"completed":"numerical_quality"),
+        "quality failure invalidates both terminal and nonterminal research transitions");
+    const auto status=environment->status();
+    const auto& metrics=wire::object(wire::required(status,"spatial"));
+    bt::require(!wire::boolean(wire::required(metrics,"valid")) &&
+        wire::number(wire::required(metrics,"valid_duration_s"))==0. &&
+        wire::number(wire::required(metrics,"completed_distance_m"))==0.,
+        "the bad interval contributes neither valid duration nor completed distance");
+    bt::require(wire::number(wire::required(status,"max_energy_residual_ratio"))==quality.residual_ratio,
+        "terminal priority does not hide the accepted sample's energy residual");
+    bt::require(wire::string(wire::required(metrics,"terminal_reason"))==
+        spatial::to_string(completes?spatial::SpatialReason::requested_completion:spatial::SpatialReason::none) &&
+        wire::integer(wire::required(metrics,"terminal_tick"))==(completes?0:-1),
+        "research quality preserves the physical terminal reason and tick");
 }
 } // namespace
 
 int main(){return bt::run([] {
     using namespace bike;
+    auto shifted=spatial_tests::make_startup_request(spatial::RootKind::free6,spatial::TyreTier::fast,false,0.,
+        std::make_shared<const terrain::Terrain3dSource>(spatial_tests::asymmetric_4x4()));
+    bool shifted_rejected=false;
+    try {(void)initialization::make_setup(std::move(*shifted));}
+    catch(const std::invalid_argument& error) {
+        shifted_rejected=std::string_view(error.what()).starts_with("setup.spatial.corridor_half_width_m:");
+    }
+    bt::require(shifted_rejected,"a sufficiently wide shifted grid must cover both sides of the scored corridor");
     Directory temporary;unsigned case_id=0;
     for(auto tier:{spatial::TyreTier::fast,spatial::TyreTier::detailed})
         for(auto root:{spatial::RootKind::constrained4,spatial::RootKind::free6})
@@ -208,6 +329,46 @@ int main(){return bt::run([] {
                 bt::require(!recovered.equilibrium.cache_hit && reason && !io::is_null(*reason) &&
                     !io::as_string(*reason,"cache_rejection_reason").empty(),"corrupt optional cache records a reason and takes the fresh path");
                 bt::require(state==spatial_tests::complete_physics_state_bytes(*recovered.runtime),"corrupt-cache fallback is the same deterministic fresh setup");
+                if(tier==spatial::TyreTier::fast && root==spatial::RootKind::free6 && !articulated) {
+                    // A structurally valid cache can still contain an unusable
+                    // physical pose. Preserve agreement of its two coordinate
+                    // records so rejection requires the real terrain probe.
+                    auto semantic=initialization::read_state_file(cache_file);
+                    validation::RuntimeRigAccess::inspect(*recovered.runtime,[&](const Stepper& stepper,const runtime::PhysicalStep& physical) {
+                        auto integration=initialization::state_array(semantic,"integration_state").doubles();
+                        auto coordinates=initialization::state_array(semantic,"qpos").doubles();
+                        auto friction=initialization::state_array(semantic,"model_dof_frictionloss").doubles();
+                        const auto& binding=physical.topology()->root;
+                        const auto station=static_cast<std::size_t>(binding.free_qpos_adr);
+                        const auto lateral=static_cast<std::size_t>(binding.free_dof_adr+1);
+                        const std::unique_ptr<mjData,decltype(&mj_deleteData)> probe(engine::make_data(stepper.model()),&mj_deleteData);
+                        bt::require(bool(probe),"semantic-cache mutation has an independent data owner");
+                        engine::set_state(stepper.model(),probe.get(),integration.data(),mjSTATE_INTEGRATION);
+                        coordinates[station]=request->model.terrain3d->x_max_m()+10.;
+                        model_access::mutable_buffer(probe->qpos,stepper.model()->nq)[station]=coordinates[station];
+                        engine::get_state(stepper.model(),probe.get(),integration.data(),mjSTATE_INTEGRATION);
+                        friction[lateral]+=7.;
+                        for(auto& [name,array]:semantic.arrays) {
+                            if(name=="qpos")array=io::double_array(coordinates,{coordinates.size()});
+                            else if(name=="integration_state")array=io::double_array(integration,{integration.size()});
+                            else if(name=="model_dof_frictionloss")array=io::double_array(friction,{friction.size()});
+                        }
+                    });
+                    initialization::write_state_file(cache_file,semantic);
+                    spatial_tests::OwnedStartup semantic_recovered(*request);
+                    const auto semantic_metadata=semantic_recovered.owner->metadata();
+                    const auto* semantic_reason=io::find_member(io::as_object(semantic_metadata,"setup"),"cache_rejection_reason");
+                    bt::require(!semantic_recovered.equilibrium.cache_hit && semantic_reason && !io::is_null(*semantic_reason),
+                        "an unusable decoded cache records its failed physical check and falls back");
+                    bt::require(state==spatial_tests::complete_physics_state_bytes(*semantic_recovered.runtime),
+                        "semantic-cache fallback restores fresh causal owners and mutable model rows exactly");
+                    initialization::write_state_file(explicit_file,semantic);
+                    auto semantic_explicit=*request;semantic_explicit.model.physics->equilibrium_state_file=explicit_file.string();
+                    bt::invalid([&]{spatial_tests::OwnedStartup rejected(std::move(semantic_explicit));});
+                }
             }
     failure_keeps_committed_prefix();
+    rider_spring_is_not_material_loss();
+    research_quality_excludes_invalid_interval(false);
+    research_quality_excludes_invalid_interval(true);
 });}

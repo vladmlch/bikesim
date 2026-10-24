@@ -12,6 +12,7 @@
 #include <cmath>
 #include <format>
 #include <limits>
+#include <memory>
 #include <numeric>
 #include <ranges>
 #include <stdexcept>
@@ -60,17 +61,46 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
     const auto explicit_file=context.physics.equilibrium_state_file;
     if(explicit_file)cached=load_equilibrium_state(context,*explicit_file);
     else if(context.physics.equilibrium_cache_enabled)cached=load_equilibrium_cache(context);
-    context.completed=false;context.equilibrium.reset();initialize_pose(context);
+    context.completed=false;context.equilibrium.reset();context.spatial_report.reset();initialize_pose(context);
     std::int64_t steps=0;double residual=std::numeric_limits<double>::infinity();bool cache_hit=false;
     if(cached){
+        // A decoded cache still needs a physical probe. Preserve the fresh
+        // material, model rows and causal owners so a rejected probe can take
+        // exactly the fresh path. The private snapshot's scalar metadata is
+        // unused: it is a rollback inventory, not an equilibrium result.
+        std::optional<StateFile> fresh_material;
+        std::unique_ptr<runtime::StepState> fresh_step;
+        if(context.topology && !explicit_file) {
+            fresh_material=capture_state(context,1,0.);
+            // NOLINTNEXTLINE(modernize-make-unique) elide the large causal snapshot into heap storage
+            fresh_step.reset(new runtime::StepState(context.physical.state()));
+        }
         try{
             restore_equilibrium_state(context,*cached);
             steps=state_array(*cached,"steps").integers().front();
             if(explicit_file){apply_initial_forces(context,false);context.stepper.forward();residual=acceleration_residual(context);if(residual>options.tolerance)throw std::invalid_argument(std::format("restored residual {:.6g} exceeds tolerance {}",residual,options.tolerance));}
+            else if(context.topology) {
+                residual=spatial_refine(context,1,options.tolerance);
+                if(residual>options.tolerance || !context.spatial_report->errors.empty())
+                    throw std::invalid_argument("cached spatial equilibrium failed its physical residual/contact check");
+                if(context.bootstrap_hold && !context.bootstrap_hold->release_check(*context.spatial_report,
+                    context.physics.spatial->bootstrap.release_force_limit_n,
+                    context.physics.spatial->bootstrap.release_moment_limit_nm))
+                    throw std::invalid_argument("cached spatial equilibrium requires bootstrap support");
+            }
             else{context.stepper.forward();residual=state_array(*cached,"residual_qacc").doubles().front();}
             cache_hit=true;
         }catch(const engine::EngineFailure&){throw;}catch(const std::bad_alloc&){throw;}
-        catch(const std::exception& error){if(explicit_file)throw std::invalid_argument("equilibrium state file "+*explicit_file+": "+error.what());context.cache_rejection_reason=error.what();initialize_pose(context);steps=0;}
+        catch(const std::exception& error){
+            if(explicit_file)throw std::invalid_argument("equilibrium state file "+*explicit_file+": "+error.what());
+            context.cache_rejection_reason=error.what();
+            if(fresh_material) {
+                restore_equilibrium_state(context,*fresh_material);
+                context.physical.restore(*fresh_step);
+            }
+            context.spatial_report.reset();initialize_pose(context);
+            steps=0;residual=std::numeric_limits<double>::infinity();
+        }
     }
     // The free-root candidate is evaluated on its tangent space before the
     // dissipative fallback. Its material probes never become accepted steps.
@@ -99,7 +129,7 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
             for(int attempt=0;attempt<8;++attempt){const double previous=residual;residual=refine_equilibrium(context,80,options.tolerance);if(residual<=options.tolerance||residual>=previous*(1.-1e-3))break;}
         if(residual<=options.tolerance)break;
     }
-    if(context.topology) {
+    if(context.topology && (!cache_hit || !context.spatial_report)) {
         // Refresh separate physical-unit residuals for either root family and
         // for cache hits. A one-evaluation pass still probes the actual pose.
         residual=spatial_refine(context,cache_hit?1:80,options.tolerance);

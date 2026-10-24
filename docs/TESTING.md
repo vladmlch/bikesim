@@ -1405,29 +1405,6 @@ not a skip or a hash obtained from the implementation under comparison.
 successes. Terrain source limitations and numerical acceptance are recorded in
 `docs/superpowers/audits/2026-10-22-spatial-3d-native-terrain.md`.
 
-## Spatial terrain source suite (W06–W12)
-
-The `spatial.terrain_codec`, `terrain_sampling`, `terrain_raycast`,
-`terrain_generator`, `terrain_extrusion`, `terrain_startup` and
-`terrain_acceptance` CTest targets are native C++ authoring deliverables.
-Their status is **source written, pending V02/V05 verification**. They have not
-been compiled or executed as part of the W delivery. `terrain_startup` belongs
-to V05; the remaining terrain targets belong to V02.
-
-`spatial.terrain_budget_300m` carries the additional `slow` label. It constructs
-60001×301 physical nodes at 5×10 mm, repeats seeds 0–4, checks the declared
-144482408 elevation bytes and reports process peak RSS plus visible owner
-payload bytes. Run it separately in a fresh process on macOS arm64 and Linux
-aarch64 when V execution is authorized. It is not a configure-time generator.
-Full owner allocator accounting remains a separate V02 measurement.
-
-`tests/fixtures/spatial3d/terrain/genspec/manifest.json` contains independent
-per-platform hash placeholders. A null hash is an intentional failing gate,
-not a skip or a hash obtained from the implementation under comparison.
-`examples/research/terrain3d_manifest.json` likewise contains no measured
-successes. Terrain source limitations and numerical acceptance are recorded in
-`docs/superpowers/audits/2026-10-22-spatial-3d-native-terrain.md`.
-
 ## Spatial W37–W49 source gates (2026-10-24)
 
 This section records authored tests, not execution. No configure, build,

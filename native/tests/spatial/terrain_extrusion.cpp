@@ -11,9 +11,12 @@
 #include <filesystem>
 #include <limits>
 #include <numbers>
+#include <type_traits>
 
 namespace {
 using namespace bike::terrain;
+static_assert(!std::is_default_constructible_v<ProfileExtrusion3d>,
+              "profile queries require factory-validated knots and surfaces");
 bool exact(double a,double b) { return std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b); }
 ProfileExtrusion3d from_track(const TrackSpec& track) {
     const auto points = profile(track,.005);
@@ -41,6 +44,11 @@ void heights(const TrackSpec& track) {
 }
 
 int main() { return bt::run([] {
+    const Terrain3dQueryView unbound;
+    bt::require(unbound.sample(0.,0.).status==QueryStatus3d::invalid_input &&
+        unbound.ray_cast({0.,0.,1.},{0.,0.,-1.},2.).status==QueryStatus3d::invalid_input &&
+        unbound.surface(1)==nullptr,
+        "default query view is safely unbound");
     heights(flat(20.));
     const auto root = std::filesystem::path(BIKE_SPATIAL_SOURCE_ROOT) / "examples/research";
     heights(load_track(root / "rough_uphill_savage.toml"));
@@ -50,6 +58,9 @@ int main() { return bt::run([] {
     const std::array<double,3> direction{std::cos(pitch)*std::cos(yaw),std::cos(pitch)*std::sin(yaw),std::sin(pitch)};
     const auto oblique = surface.ray_cast({2.,0.,.2},direction,2.);
     bt::require(oblique.status == QueryStatus3d::ok && std::abs(oblique.distance_m - .2/-direction[2]) <= 1e-9,"oblique world-distance law");
+    const auto shallow = surface.ray_cast({2.,-.5,1e-13},{.6,.8,-1e-13},2.);
+    bt::require(shallow.status == QueryStatus3d::ok && std::abs(shallow.distance_m-1.) <= 1e-9,
+        "general spatial extrusion ray retains a shallow crossing on short segments");
     bt::require(surface.ray_cast({2.,0.,0.},{0.,1.,0.},1.).distance_m == 0.,"pure lateral on-surface ray hits origin");
     bt::require(surface.ray_cast({2.,0.,1.},{0.,1.,0.},1.).status == QueryStatus3d::miss,"pure lateral ray above flat profile misses");
     bt::require(surface.ray_cast({2.,0.,-.01},{0.,1.,0.},1.).status == QueryStatus3d::origin_below_surface,"below origin distinct from miss");
@@ -72,6 +83,10 @@ int main() { return bt::run([] {
     const auto query=owner.query_view();
     bt::require(owner.kind()==Terrain3dKind::profile_extrusion && query.context && query.sample_fn && query.ray_fn,"query view binds real immutable owner");
     bt::require(query.sample(1.,.2).status==QueryStatus3d::ok,"bound query dispatch");
+    const auto* material=query.surface(query.sample(1.,.2).surface_id);
+    bt::require(material==&owner.extrusion()->surfaces().front() && material->mu_peak==.8 && material->mu_slide==.6,
+        "query material lookup borrows the exact immutable extrusion registry");
+    bt::require(query.surface(7)==nullptr,"missing material IDs are rejected instead of substituted");
     bt::require(!ProfileExtrusion3d::create({0.,0.},{0.,0.},{1},table,1.5,{}),"duplicate knots rejected");
     bt::require(!ProfileExtrusion3d::create({0.,1.},{0.,0.},{7},table,1.5,{}),"unresolved surface rejected");
 }); }

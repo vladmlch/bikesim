@@ -11,6 +11,22 @@
 
 int main(){return bt::run([] {
     using namespace bike;
+    for(auto tier:{spatial::TyreTier::fast,spatial::TyreTier::detailed}) {
+        spatial_tests::EquilibriumArena arena(spatial::RootKind::free6,tier,false);
+        initialization::apply_initial_forces(*arena.context,false);arena.stepper->forward();
+        bool has_inactive_slot=false;
+        for(std::size_t side=0;side<2;++side) {
+            const auto wrenches=arena.stepper->spatial_tire_writer().wrenches(side);
+            bt::require(std::ranges::any_of(wrenches,[](const auto& p){return p.valid && p.normal_load_n>0.;}),
+                "the geometric seed supports each wheel");
+            has_inactive_slot=has_inactive_slot || std::ranges::any_of(wrenches,[](const auto& p){return !p.valid;});
+        }
+        if(tier==spatial::TyreTier::detailed)
+            bt::require(has_inactive_slot,"a loaded detailed fan retains ordinary airborne slots");
+        (void)initialization::spatial_refine(*arena.context,1,.05);
+        bt::require(arena.context->spatial_report->contacts_valid==2 && arena.context->spatial_report->contacts_total==2,
+            "equilibrium requires two supported wheels without counting inactive fan slots as invalid contacts");
+    }
     for(auto root:{spatial::RootKind::constrained4,spatial::RootKind::free6})
         for(bool rider:{false,true}) {
             spatial_tests::EquilibriumArena arena(root,spatial::TyreTier::fast,rider);
@@ -24,6 +40,8 @@ int main(){return bt::run([] {
             engine::get_state(arena.stepper->model(),arena.stepper->data(),before.data(),mjSTATE_INTEGRATION);
             (void)initialization::spatial_refine(*arena.context,1,.05);
             bt::require(arena.context->spatial_report!=nullptr,"one-evaluation probe emits a physical-unit report");
+            bt::require(arena.context->spatial_report->contacts_valid<arena.context->spatial_report->contacts_total,
+                "lifting the whole rig leaves required wheel support missing");
             bt::require((arena.context->spatial_report->max_linear_accel_mps2>.05 || arena.context->spatial_report->max_angular_accel_radps2>.05) &&
                 !arena.context->spatial_report->errors.empty() && !arena.context->spatial_report->worst_dofs.empty(),
                 "one evaluation of a lifted rig cannot claim convergence and identifies its worst DOFs");

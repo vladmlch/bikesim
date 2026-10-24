@@ -13,6 +13,8 @@ struct FastBrushResult {
 };
 FastBrushResult evaluate_fast_patch(const BrushSpec3d&, const Patch3d&,
     const bike::spatial::Vec3& point_velocity, const bike::spatial::Vec3& hub_velocity,
+    // Spin is the absolute wheel angular velocity projected onto its axle,
+    // conjugate to the wheel-body couple applied by the writer.
     const bike::spatial::Vec3& axle_world, double spin_rad_s, double camber_rad,
     double mu_x, double mu_y, double old_ux, double old_uy, double dt_s,
     const bike::spatial::Vec3& angular_velocity_world = {}) noexcept;

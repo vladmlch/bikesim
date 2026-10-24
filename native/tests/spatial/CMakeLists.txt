@@ -149,11 +149,11 @@ bike_add_spatial_test(recording_assets SOURCES recording_assets.cpp
 bike_add_spatial_test(checked_replay SOURCES checked_replay.cpp
   LIBRARIES bike_replay bike_recording bike_app bike_initialization LABELS replay slow)
 bike_add_spatial_test(golden_registry SOURCES golden_registry.cpp
-  LIBRARIES bike_golden bike_io LABELS recording unit)
+  LIBRARIES bike_golden bike_io LABELS recording slow)
 bike_add_spatial_test(cli SOURCES cli.cpp
   LIBRARIES bike_cli bike_configuration bike_spatial LABELS application unit)
 bike_add_spatial_test(viewer_pose SOURCES viewer_pose.cpp
-  LIBRARIES bike_viewer bike_startup_runtime bike_spatial LABELS application unit)
+  LIBRARIES bike_viewer bike_replay bike_startup_runtime bike_spatial LABELS application unit)
 bike_add_spatial_test(reports_batch SOURCES reports_batch.cpp
   LIBRARIES bike_viz bike_recording bike_recording_reader bike_batch bike_cli LABELS application batch)
 bike_add_spatial_test(documented_examples SOURCES documented_examples.cpp

@@ -36,6 +36,19 @@ int main() { return bt::run([] {
     axes[3*static_cast<std::size_t>(joint)]=1.;
     bt::invalid([&]{(void)bind_topology(*plain.model,cfg);});
     axes[3*static_cast<std::size_t>(joint)]=0.;
+    auto parents=model_access::mutable_buffer(plain.model->body_parentid,plain.model->nbody);
+    const auto front=static_cast<std::size_t>(plain.topology.wheels[0].wheel_body_id);
+    const int front_parent=parents[front];
+    parents[front]=plain.topology.root.body_id;
+    bt::invalid([&]{(void)bind_topology(*plain.model,cfg);});
+    parents[front]=front_parent;
+    const auto rear=static_cast<std::size_t>(plain.topology.wheels[1].wheel_body_id);
+    const int rear_parent=parents[rear];
+    parents[rear]=front_parent;
+    bt::invalid([&]{(void)bind_topology(*plain.model,cfg);});
+    parents[rear]=rear_parent;
+    const auto valid=bind_topology(*plain.model,cfg);
+    bt::require(valid.fingerprint_hex==plain.topology.fingerprint_hex,"restored valid steering hierarchy preserves identity");
     model_access::mutable_buffer(plain.model->actuator_trnid,2*plain.model->nu)[2*static_cast<std::size_t>(plain.topology.steer.actuator_id)]=joint;
     bt::invalid([&]{(void)bind_topology(*plain.model,cfg);});
 }); }

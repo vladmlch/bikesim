@@ -18,14 +18,20 @@ GridSample3d Terrain3dQueryView::sample(double x, double y) const noexcept {
 RayHit3d Terrain3dQueryView::ray_cast(std::array<double, 3> origin, std::array<double, 3> direction, double maximum) const noexcept {
     return context && ray_fn ? ray_fn(context, origin, direction, maximum) : RayHit3d{};
 }
+const SurfaceSpec3d* Terrain3dQueryView::surface(std::uint32_t id) const noexcept {
+    for (const auto& material : surface_table)
+        if (material.id == id) return &material;
+    return nullptr;
+}
 Terrain3dSource::Terrain3dSource(Grid3d source) : source_(std::move(source)) {}
 Terrain3dSource::Terrain3dSource(ProfileExtrusion3d source) : source_(std::move(source)) {}
 Terrain3dKind Terrain3dSource::kind() const noexcept {
     return grid() ? Terrain3dKind::grid : Terrain3dKind::profile_extrusion;
 }
 Terrain3dQueryView Terrain3dSource::query_view() const noexcept {
-    if (const auto* owner = grid()) return {Terrain3dKind::grid, owner, sample_thunk<Grid3d>, ray_thunk<Grid3d>};
-    return {Terrain3dKind::profile_extrusion, extrusion(), sample_thunk<ProfileExtrusion3d>, ray_thunk<ProfileExtrusion3d>};
+    if (const auto* owner = grid()) return {Terrain3dKind::grid, owner, sample_thunk<Grid3d>, ray_thunk<Grid3d>, owner->surfaces()};
+    const auto* owner = extrusion();
+    return {Terrain3dKind::profile_extrusion, owner, sample_thunk<ProfileExtrusion3d>, ray_thunk<ProfileExtrusion3d>, owner->surfaces()};
 }
 const Grid3d* Terrain3dSource::grid() const noexcept { return std::get_if<Grid3d>(&source_); }
 const ProfileExtrusion3d* Terrain3dSource::extrusion() const noexcept { return std::get_if<ProfileExtrusion3d>(&source_); }

@@ -4,7 +4,9 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
+#include <utility>
 
 namespace bike::viz {
 namespace {
@@ -28,6 +30,19 @@ const std::vector<double>& time_axis(const Channels& channels, std::string_view 
 void mask_domain(const std::vector<double>& mask) {
     for (const double value : mask) if (value != 0. && value != 1.)
         throw std::invalid_argument("spatial plot: validity must be boolean");
+}
+void retain_time_extent(Plot& plot, const std::vector<double>& time) {
+    // Invalid samples do not enter a Series. Keep their clock extent on the
+    // axis, otherwise a trailing gap and its N/A marker are clipped away by
+    // the renderer's bounds over valid points alone.
+    double first=time.front(),last=time.back();
+    if(first==last) {
+        const double margin=std::max(1.,first*.05);
+        first=std::max(0.,first-margin);
+        last=last>std::numeric_limits<double>::max()-margin?
+            std::numeric_limits<double>::max():last+margin;
+    }
+    plot.x_range=std::pair{first,last};
 }
 // Each contiguous valid range is its own series. Renderers cannot join two
 // sides of an unavailable interval, even when they ignore a NaN convention.
@@ -67,6 +82,7 @@ Report spatial_attitude_plot(const Channels& channels) {
     const auto& roll = required(channels, "spatial.roll_rad", time.size());
     const auto& steer = required(channels, "spatial.steer_angle_rad", time.size());
     Plot plot{.title="Spatial roll and steering", .x_label="interval start time (s)", .y_label="angle (rad)", .series={}};
+    retain_time_extent(plot,time);
     segments(plot, time, roll, &valid, "roll", "#38bdf8");
     segments(plot, time, steer, nullptr, "steer", "#fbbf24");
     return one("Spatial attitude", std::move(plot));
@@ -77,6 +93,7 @@ Report spatial_contact_plot(const Channels& channels) {
     Report report{.title="Spatial contact", .panels={
         {.title="Lateral slip", .x_label="interval start time (s)", .y_label="m/s", .series={}},
         {.title="Normal load", .x_label="interval start time (s)", .y_label="N", .series={}}}};
+    for(auto& panel:report.panels)retain_time_extent(panel,time);
     for (const auto side : {"front", "rear"}) {
         const std::string prefix = std::string("spatial.") + side;
         const auto& valid = required(channels, prefix + "_contact_valid", time.size()); mask_domain(valid);
@@ -110,6 +127,7 @@ Report spatial_imu_plot(const Channels& channels) {
     Report report{.title="Spatial IMU", .panels={
         {.title="Specific force — sensor frame", .x_label="delivery time (s)", .y_label="m/s²", .series={}},
         {.title="Angular rate — sensor frame", .x_label="delivery time (s)", .y_label="rad/s", .series={}}}};
+    for(auto& panel:report.panels)retain_time_extent(panel,time);
     constexpr std::array names{"X", "Y", "Z"};
     constexpr std::array colors{"#38bdf8", "#f97316", "#34d399"};
     for (std::size_t axis = 0; axis < 6; ++axis) {
@@ -125,6 +143,7 @@ Report spatial_imu_plot(const Channels& channels) {
 Report spatial_energy_plot(const Channels& channels) {
     const auto& time = time_axis(channels,numeric(channels,"spatial.energy_time_s")?"spatial.energy_time_s":"time_s");
     Plot plot{.title="Spatial work and losses", .x_label="interval end time (s)", .y_label="J", .series={}};
+    retain_time_extent(plot,time);
     segments(plot,time,required(channels,"spatial.steer_work_j",time.size()),nullptr,"steering work","#38bdf8");
     for (const auto& [field, name] : {std::pair{"spatial.tyre_loss_j","tyre loss"}, {"spatial.hold_work_j","bootstrap hold work"}}) {
         if (const auto* values = numeric(channels,field)) {

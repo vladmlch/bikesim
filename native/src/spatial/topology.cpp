@@ -162,6 +162,8 @@ Topology bind_topology(const mjModel& m,const Config& cfg) {
         if(ancestor!=out.root.body_id) invalid("wheel.hub","wheel must belong to the bicycle root");
         wheel.spin=scalar(m,i==0?"front_wheel_spin":"rear_wheel_spin",mjJNT_HINGE,{0.,1.,0.});
         if (jbody[static_cast<std::size_t>(wheel.spin.joint_id)]!=wheel.wheel_body_id) invalid("wheel.spin","joint belongs to another body");
+        if (counts[static_cast<std::size_t>(wheel.wheel_body_id)]!=1)
+            invalid("wheel.spin","wheel body must have exactly its spin joint");
         const auto quaternions=model_access::readonly_buffer(m.body_quat,4*m.nbody);
         const auto q=quaternions.subspan(4*static_cast<std::size_t>(wheel.wheel_body_id),4);
         const Quat rotation{q[0],q[1],q[2],q[3]};
@@ -184,6 +186,17 @@ Topology bind_topology(const mjModel& m,const Config& cfg) {
         const int steer_body=jbody[sj];
         if (steer_body<=0 || steer_body>=m.nbody || parents[static_cast<std::size_t>(steer_body)]!=out.root.body_id)
             invalid("steer_joint","must attach front assembly to frame");
+        if (counts[static_cast<std::size_t>(steer_body)]!=1)
+            invalid("steer_joint","front assembly must have exactly its steering joint");
+        for (std::size_t i=0;i<out.wheels.size();++i) {
+            int ancestor=out.wheels[i].hub_body_id;
+            for (mjtSize steps=0;ancestor!=steer_body && ancestor>0 && steps<m.nbody;++steps) {
+                model_access::require_id(ancestor,m.nbody,"topology.steer_joint.ancestor");
+                ancestor=parents[static_cast<std::size_t>(ancestor)];
+            }
+            if ((ancestor==steer_body)!=(i==0))
+                invalid("steer_joint", "must steer the front wheel assembly only");
+        }
         if (actuator<0) invalid("steer_torque","missing actuator");
         const auto actuator_types=model_access::readonly_buffer(m.actuator_trntype,m.nu);
         const auto targets=model_access::readonly_buffer(m.actuator_trnid,2*m.nu);

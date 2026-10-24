@@ -151,13 +151,15 @@ void resolve_job_identity(Job& job, const cli::Arguments& args) {
         tokens.push_back(Value{Object{{"name",text(key)},{"value",text(value)}}});
     }
     // Serialize sorted parser values so spelling order and worker completion
-    // order cannot enter the key. Physical threads stay one until W52.
+    // order cannot enter the key. Process workers and tyre workers have
+    // separate owners; only the resolved per-job tyre count belongs here.
     std::ranges::sort(tokens,{},[](const Value& value){return io::as_string(field(value,"name"),"name");});
     job.identity = Value{Object{{"job_identity_schema",integer(1)},
         {"config",configuration::to_value(physics)}, {"arguments",Value{std::move(tokens)}},
         {"terrain_sha256",text(terrain_owner->fingerprint_hex())},
         {"tyre_calibration_sha256",text(physics.spatial->tyre.lateral_coefficients_sha256)},
-        {"sensor_schema",integer(2)},{"seed",text(request->experiment.seed_decimal)},{"threads",integer(1)}}};
+        {"sensor_schema",integer(2)},{"seed",text(request->experiment.seed_decimal)},
+        {"threads",integer(request->setup.runtime.tyre_threads)}}};
     const auto encoded = io::canonical_json(job.identity);
     job.key = io::sha256(std::as_bytes(std::span(encoded)));
 }

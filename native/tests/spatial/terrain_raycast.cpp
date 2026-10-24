@@ -27,6 +27,14 @@ int main() {
         bt::require(flat.ray_cast({0., 0., 1.}, {0., 0., 1.}, 2.).status == QueryStatus3d::miss, "upward vertical ray misses");
         bt::require(flat.ray_cast({0., 0., -.01}, {0., 0., 1.}, 2.).status == QueryStatus3d::origin_below_surface, "below surface is distinct from miss");
         hit(flat.ray_cast({0., 0., 0.}, {0., 0., -1.}, 0.), 0.);
+        hit(flat.ray_cast({0., 0., 0.}, {0., 0., 1.}, 0.), 0.);
+        hit(flat.ray_cast({0., 0., 0.}, {0., 0., 1.}, 2.), 0.);
+        // Despite a tiny horizontal component, this ray leaves the grid long
+        // before reaching z=0. Treating it as vertical fabricated an edge hit.
+        bt::require(flat.ray_cast({0., 0., 1e17}, {5e-16, 0., -1.}, 1e17).status == QueryStatus3d::miss,
+                    "near-vertical rays retain their finite XY query domain");
+        bt::require(flat.ray_cast({-1., 0., 1e17}, {5e-16, 0., -1.}, 1e17).status == QueryStatus3d::miss,
+                    "near-vertical rays can enter and leave the XY domain");
         const double yaw = 37. * std::numbers::pi / 180.;
         const double pitch = -30. * std::numbers::pi / 180.;
         const std::array<double, 3> oblique{std::cos(pitch) * std::cos(yaw), std::cos(pitch) * std::sin(yaw), std::sin(pitch)};
@@ -65,6 +73,18 @@ int main() {
         const auto tangent_root = earliest_root_bernstein(tangent, {});
         bt::require(tangent_root.status == QueryStatus3d::ok && std::abs(tangent_root.s - .371) <= 1e-6,
                     "non-dyadic stationary tangency is isolated");
+        // p=(s-1/4)(s-3/4)(s+3/16): both endpoint values are positive,
+        // p'(0)=0, and the open interval has a second stationary point below
+        // zero. The boundary stationary point must not prove a false miss.
+        Poly6 endpoint_stationary;
+        endpoint_stationary.a[0] = 9. / 256.;
+        endpoint_stationary.a[2] = -13. / 16.;
+        endpoint_stationary.a[3] = 1.;
+        auto coarse_budget = RayBudget{};
+        coarse_budget.root_interval_m = 1.;
+        const auto endpoint_roots = earliest_root_bernstein(endpoint_stationary, coarse_budget);
+        bt::require(endpoint_roots.status == QueryStatus3d::ok && std::abs(endpoint_roots.s - .25) <= 1e-6,
+                    "stationary boundary preserves the earliest interior crossing");
         auto budget = flat.budget(); budget.max_cells = 1;
         auto bounded = Grid3d::create(flat.descriptor(), {flat.elevation().begin(), flat.elevation().end()},
             {flat.materials().begin(), flat.materials().end()}, {flat.surfaces().begin(), flat.surfaces().end()}, flat.metadata(), budget);

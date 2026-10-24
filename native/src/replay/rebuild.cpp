@@ -116,8 +116,13 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
         if(bundled)set(articulated,"shoulder_profile",text((assets.path()/"spatial/shoulder_profile.json").string()));
     }
     set(physics, "articulated", std::move(articulated));
-    if (const auto* initial_file = find(physics, "equilibrium_state_file"); initial_file && !io::is_null(*initial_file))
-        throw IncompatibleExecution("recording startup depends on an unbundled initial-state file; recorded paths are never followed");
+    if (const auto* initial_file = find(physics, "equilibrium_state_file"); initial_file && !io::is_null(*initial_file)) {
+        if (!input.spatial_recipe)
+            throw IncompatibleExecution("recording startup depends on an unbundled initial-state file; recorded paths are never followed");
+        // Contract 4 owns the complete initial checkpoint. The recorded path
+        // is provenance only and must never be opened during reconstruction.
+        set(physics, "equilibrium_state_file", Value{});
+    }
     // Fresh deterministic setup: neither a recorded external cache pathname
     // nor a user's current equilibrium cache may replace the replay recipe.
     set(physics, "equilibrium_cache_enabled", Value{false});
@@ -203,6 +208,8 @@ void verify_configuration(const ReplayInput& input, const research::PreparedEnvi
     auto reconstructed = field(prepared.metadata, "resolved_config");
     auto physics = field(reconstructed, "physics");
     set(physics, "equilibrium_cache_enabled", field(field(expected, "physics"), "equilibrium_cache_enabled"));
+    if (input.spatial_recipe)
+        set(physics, "equilibrium_state_file", field(field(expected, "physics"), "equilibrium_state_file"));
     set(reconstructed, "physics", std::move(physics));
     const auto actual_hashable = configuration_hashable(reconstructed), expected_hashable = configuration_hashable(expected);
     const auto actual_json = io::canonical_json(actual_hashable);

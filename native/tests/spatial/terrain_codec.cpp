@@ -12,12 +12,16 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 namespace {
 using namespace bike::terrain;
 using bike::io::Value;
+
+static_assert(!std::is_default_constructible_v<Grid3d>,
+              "an immutable grid must pass create() validation before queries");
 
 const Value& member(const Value& value, std::string_view key) {
     const auto* result = bike::io::find_member(bike::io::as_object(value, "fixture"), key);

@@ -15,7 +15,10 @@
 #include <chrono>
 #include <csignal>
 #include <iostream>
+#include <optional>
+#include <string>
 #include <thread>
+#include <utility>
 
 namespace {
 void reports() {
@@ -48,6 +51,28 @@ void reports() {
     const bike::recording::Recording historical(historical_path);
     bt::require(bike::recording::render_summary(historical)==bt::text(historical_path/"summary.md"),"existing schema1 summary remains byte-identical");
 }
+void unavailable_time_extent() {
+    namespace viz=bike::viz;
+    viz::Channels channels{{"observations.time_s",std::vector<double>{0.,1.,2.,3.}},
+        {"observations.valid",std::vector<double>{1.,1.,0.,0.}},
+        {"observations.valid_mask",std::vector<double>{2047.,2047.,0.,0.}}};
+    for(const auto field:{"observations.specific_force_sensor_mps2.","observations.angular_rate_sensor_rad_s."})
+        for(int axis=0;axis<3;++axis)channels.emplace_back(std::string(field)+std::to_string(axis),std::vector<double>(4,0.));
+    const auto trailing=viz::spatial_imu_plot(channels);
+    for(const auto& panel:trailing.panels) {
+        bt::require(panel.x_range==std::optional(std::pair{0.,3.}),"trailing invalid observations remain in the displayed time extent");
+        bt::require(panel.series.at(0).x==std::vector<double>{0.,1.}&&panel.markers.at(0).first==2.,
+            "the valid segment ends before the labelled dropout gap");
+    }
+    bt::require(viz::to_svg(trailing).find("N/A: X")!=std::string::npos,
+        "native report actually draws the trailing-gap label inside its time axis");
+    std::get<std::vector<double>>(channels[1].second).assign(4,0.);
+    std::get<std::vector<double>>(channels[2].second).assign(4,0.);
+    const auto unavailable=viz::spatial_imu_plot(channels);
+    for(const auto& panel:unavailable.panels)
+        bt::require(panel.series.empty()&&panel.x_range==std::optional(std::pair{0.,3.})&&!panel.markers.empty(),
+            "all-invalid IMU evidence retains its actual clock and N/A marker without invented samples");
+}
 void processes() {
     namespace batch=bike::batch;namespace io=bike::io;using namespace bike::recording::value;
     const bt::TemporaryDirectory tmp("spatial-batch");
@@ -61,6 +86,13 @@ void processes() {
         const std::array<std::string_view,10> args{"--spatial","3d","--terrain3d",terrain,"--duration","2","--seed",seed,"--rider","lumped"};
         batch::resolve_job_identity(job,bike::cli::parse_arguments("bike-research",args));
         bt::require(job.key&&job.key->size()==64,"job identity includes resolved spatial inputs");
+        bt::require(io::as_int64(require(job.identity,"threads"),"threads")==1,"default job identity records one resolved tyre worker");
+        auto threaded_args=bike::cli::parse_arguments("bike-research",args);
+        threaded_args.set("threads","2");
+        batch::Job threaded;
+        batch::resolve_job_identity(threaded,threaded_args);
+        bt::require(io::as_int64(require(threaded.identity,"threads"),"threads")==2&&threaded.key!=job.key,
+            "job identity records the requested tyre count independently of process-pool workers");
         job.argv={child,"--child",names[i]};job.params=io::Value{io::Value::Object{{"duration",real(2.)}}};
     }
     batch::ExecuteOptions options;options.cwd=tmp.path();
@@ -82,5 +114,5 @@ int main(int argc,char** argv) {
         if(std::string_view(argv[2])=="slow")std::this_thread::sleep_for(std::chrono::milliseconds(30));
         std::cout<<"{\"outcome\":\"requested_completion\"}\n";return 0;
     }
-    return bt::run([]{reports();processes();});
+    return bt::run([]{reports();unavailable_time_extent();processes();});
 }

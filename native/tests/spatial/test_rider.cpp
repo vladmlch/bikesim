@@ -120,6 +120,22 @@ void attachment_frame_codec() {
     const auto decoded=::rider::decode_attachment_entry(encoded,"state.attachment");
     bt::require(io::canonical_json(::rider::encode_attachment_entry(decoded))==io::canonical_json(encoded),
         "spatial support basis and full six-row Jacobians survive attachment checkpoint");
+    // A quaternion inside the producer's normalization tolerance must
+    // produce the unit basis required by its own checkpoint reader.
+    sp::BodyPose rounded_pose;
+    const double component=std::sqrt((1.+5e-9)/2.);
+    rounded_pose.quat_world_from_body_wxyz={component,component,0.,0.};
+    const auto quaternion_before=rounded_pose.quat_world_from_body_wxyz;
+    raw.spatial_frame=bike::rider::support_frame(rounded_pose,{0.,0.,1.});
+    bt::require(raw.spatial_frame->valid,"accepted pose roundoff produces a valid support frame");
+    near3(raw.spatial_frame->normal_world,{0.,-1.,0.},1e-14,
+        "accepted quaternion roundoff does not scale the normal");
+    bt::require(rounded_pose.quat_world_from_body_wxyz==quaternion_before,
+        "support projection preserves the raw integration quaternion");
+    const auto rounded=::rider::encode_attachment_entry(writers::RiderAttachmentEntry{raw});
+    bt::require(io::canonical_json(::rider::encode_attachment_entry(
+        ::rider::decode_attachment_entry(rounded,"state.attachment")))==io::canonical_json(rounded),
+        "every accepted rounded support frame survives its checkpoint codec");
     auto invalid=encoded;
     auto& basis=member(invalid,"spatial_frame");
     member(basis,"tangent_y_world")=member(basis,"tangent_x_world");

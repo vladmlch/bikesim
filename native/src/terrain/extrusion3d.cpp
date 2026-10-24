@@ -140,7 +140,10 @@ RayHit3d ProfileExtrusion3d::ray_cast(std::array<double, 3> origin,
     for (std::size_t i = first; i <= last; ++i) {
         const double dx = kx_[i + 1] - kx_[i], dz = kz_[i + 1] - kz_[i];
         const double denominator = cross2(ux, uz, dx, dz);
-        if (std::abs(denominator) <= 1e-15) continue;
+        // Preserve the existing planar primitive's cutoff only on its exact
+        // dy==0 bridge. In general spatial queries the determinant also scales
+        // with segment length; a fixed cutoff discards real shallow crossings.
+        if (direction[1] == 0. ? std::abs(denominator) <= 1e-15 : denominator == 0.) continue;
         const double wx = kx_[i] - start[0], wz = kz_[i] - start[2];
         const double distance = cross2(wx, wz, dx, dz) / denominator;
         const double along = cross2(wx, wz, ux, uz) / denominator;
@@ -153,5 +156,6 @@ RayHit3d ProfileExtrusion3d::ray_cast(std::array<double, 3> origin,
 double ProfileExtrusion3d::corridor_half_width_m() const noexcept { return half_width_; }
 std::span<const double> ProfileExtrusion3d::knots_x_m() const noexcept { return kx_; }
 std::span<const double> ProfileExtrusion3d::knots_z_m() const noexcept { return kz_; }
+std::span<const SurfaceSpec3d> ProfileExtrusion3d::surfaces() const noexcept { return surfaces_; }
 const std::string& ProfileExtrusion3d::fingerprint_hex() const noexcept { return fingerprint_hex_; }
 } // namespace bike::terrain

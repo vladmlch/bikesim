@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <dlfcn.h>
 #include <filesystem>
 #include <iterator>
@@ -54,8 +55,9 @@ struct Library {
         const char* error=dlerror();
         if(error||!symbol)throw std::invalid_argument("plugin: unsupported sensor schema 2 (bike_policy_v2 missing)");
         using Entry=const BikePolicyV2*(*)();Entry entry{};static_assert(sizeof(entry)==sizeof(symbol));
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,bugprone-bitwise-pointer-cast) same POSIX-prescribed dlsym transfer as ABI1, without a forbidden function-pointer cast
-        *reinterpret_cast<void**>(&entry)=symbol;
+        // POSIX supplies the callable symbol representation. Copying it avoids
+        // writing a function-pointer object through an unrelated void** alias.
+        std::memcpy(&entry,&symbol,sizeof(entry));
         try{return entry();}catch(const std::exception& e){throw PolicyFailure("policy ABI2 entrypoint threw: "+std::string(e.what()));}
         catch(...){throw PolicyFailure("policy ABI2 entrypoint threw a non-standard exception");}
     }

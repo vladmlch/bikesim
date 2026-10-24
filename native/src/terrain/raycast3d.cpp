@@ -195,33 +195,48 @@ RootSearchResult earliest_root_bernstein(const Poly6& polynomial, const RayBudge
                 Real lo = interval.lo, hi = interval.hi;
                 Real da = derivative(polynomial, lo), db = derivative(polynomial, hi);
                 const unsigned variations = derivative_variations(interval.b);
-                if (da == 0. || db == 0. || (variations == 1 && opposite(da, db))) {
-                    Real stationary = da == 0. ? lo : hi;
-                    if (da != 0. && db != 0.) {
-                        while (hi - lo > tolerance / 8.) {
-                            if (divisions == budget.max_subdivisions) return exhausted();
-                            const Real mid = (lo + hi) / 2.;
-                            if (mid == lo || mid == hi) break;
-                            ++divisions;
-                            const Real dm = derivative(polynomial, mid);
-                            if (dm == 0.) { lo = hi = mid; break; }
-                            if (opposite(da, dm)) { hi = mid; db = dm; }
-                            else { lo = mid; da = dm; }
-                        }
-                        stationary = (lo + hi) / 2.;
-                        for (unsigned iteration = 0; iteration < 3; ++iteration) {
-                            const Real second = second_derivative(polynomial, stationary);
-                            if (second == 0.) break;
-                            const Real next = stationary - derivative(polynomial, stationary) / second;
-                            if (next < lo || next > hi) break;
-                            stationary = next;
-                        }
+                // A stationary endpoint does not rule out another stationary
+                // point in the open interval. Its derivative is zero, so use
+                // the first/last nonzero Bernstein difference for the sign
+                // immediately inside the interval before bracketing that root.
+                if (da == 0. && std::abs(fa) <= budget.residual_m) return root(lo);
+                if (db == 0. && std::abs(fb) <= budget.residual_m) return root(hi);
+                if (da == 0.) {
+                    for (std::size_t i = 0; i < 6; ++i) {
+                        da = 6. * (interval.b[i + 1] - interval.b[i]);
+                        if (da != 0.) break;
+                    }
+                }
+                if (db == 0.) {
+                    for (std::size_t i = 6; i != 0; --i) {
+                        db = 6. * (interval.b[i] - interval.b[i - 1]);
+                        if (db != 0.) break;
+                    }
+                }
+                if (variations == 1 && opposite(da, db)) {
+                    while (hi - lo > tolerance / 8.) {
+                        if (divisions == budget.max_subdivisions) return exhausted();
+                        const Real mid = (lo + hi) / 2.;
+                        if (mid == lo || mid == hi) break;
+                        ++divisions;
+                        const Real dm = derivative(polynomial, mid);
+                        if (dm == 0.) { lo = hi = mid; break; }
+                        if (opposite(da, dm)) { hi = mid; db = dm; }
+                        else { lo = mid; da = dm; }
+                    }
+                    Real stationary = (lo + hi) / 2.;
+                    for (unsigned iteration = 0; iteration < 3; ++iteration) {
+                        const Real second = second_derivative(polynomial, stationary);
+                        if (second == 0.) break;
+                        const Real next = stationary - derivative(polynomial, stationary) / second;
+                        if (next < lo || next > hi) break;
+                        stationary = next;
                     }
                     if (std::abs(value(polynomial, stationary)) <= budget.residual_m) return root(stationary);
                     // One stationary point, same-sign endpoints and a same-sign
                     // extremum prove a miss on this interval.
                     const Real fs = value(polynomial, stationary);
-                    if (variations <= 1 && !opposite(fa, fs) && !opposite(fb, fs)) continue;
+                    if (!opposite(fa, fs) && !opposite(fb, fs)) continue;
                 } else if (variations == 0) {
                     continue; // Monotone and same-sign endpoints.
                 }
@@ -251,8 +266,11 @@ RayHit3d ray_cast_grid(const Grid3d& grid, std::array<double, 3> origin,
         const auto sample = grid.sample(origin[0], origin[1]);
         if (sample.status != QueryStatus3d::ok) return {};
         if (origin[2] < sample.height_m) return {.status = QueryStatus3d::origin_below_surface};
+        if (origin[2] == sample.height_m) return hit_at(grid, origin, direction, 0.);
     }
-    if (std::abs(direction[0]) < 1e-15 && std::abs(direction[1]) < 1e-15) {
+    // Only an exactly vertical ray has constant XY over an arbitrary finite
+    // query distance. Tiny nonzero components still require slab clipping.
+    if (direction[0] == 0. && direction[1] == 0.) {
         if (!inside(grid, origin)) return {.status = QueryStatus3d::outside};
         const auto sample = grid.sample(origin[0], origin[1]);
         if (sample.status != QueryStatus3d::ok) return {};

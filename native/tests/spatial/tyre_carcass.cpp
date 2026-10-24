@@ -54,4 +54,13 @@ int main() { return bt::run([] {
     bt::require(std::abs(ramp(.001)-ramp(.0005))<=1e-9,"dt-halving constant-rate Maxwell agrees");
     elements[0].valid=false;
     bt::require(update_carcass(spec,elements,.001,true,s,out)==CoreStatus::ok && !out[0].active && out[0].normal_load_n==0.,"invalid geometry cannot create a maximal force");
+
+    auto overflowing=carcass_state(1);
+    overflowing.maxwell_q_n_per_m2[0]=1e154;
+    overflowing.dissipated_j=std::numeric_limits<double>::max();
+    elements[0]=element(0,.001,1.);
+    spec.maxwell_k_n_per_m3=1.;spec.k_area_n_per_m3=0.;
+    const auto overflow_before=bytes(overflowing);
+    bt::require(update_carcass(spec,elements,.001,true,overflowing,out)==CoreStatus::invalid_geometry &&
+                bytes(overflowing)==overflow_before,"finite branch losses cannot overflow the cumulative ledger during commit");
 }); }

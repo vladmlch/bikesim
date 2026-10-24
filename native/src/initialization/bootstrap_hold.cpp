@@ -92,10 +92,16 @@ CoreStatus BootstrapHold::try_compute_into(const mjModel& model,const mjData& da
                 jacr_[axis*qfrc.size()+j]*stage.last_couple_world_nm[axis];
         if(!std::isfinite(qfrc[j]+force))return CoreStatus::invalid_geometry;
     }
-    for(std::size_t j=0;j<qfrc.size();++j)
+    for(std::size_t j=0;j<qfrc.size();++j) {
+        double force=0.;
         for(std::size_t axis=0;axis<3;++axis)
-            qfrc[j]+=jacp_[axis*qfrc.size()+j]*stage.last_force_world_n[axis]+
+            force+=jacp_[axis*qfrc.size()+j]*stage.last_force_world_n[axis]+
                 jacr_[axis*qfrc.size()+j]*stage.last_couple_world_nm[axis];
+        // Commit the same expression validated above. Adding the three axes
+        // separately can overflow an intermediate even when their sum and
+        // the checked final value are finite.
+        qfrc[j]+=force;
+    }
     state_=stage;
     return CoreStatus::ok;
 }

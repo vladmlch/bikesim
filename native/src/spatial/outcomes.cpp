@@ -5,7 +5,7 @@
 #include <limits>
 
 namespace bike::spatial {
-Outcome evaluate_outcome(const SpatialOutcomeInput& in, OutcomeState& state) noexcept {
+const Outcome& evaluate_outcome(const SpatialOutcomeInput& in, OutcomeState& state) noexcept {
     if (state.latched.terminal) return state.latched;
     SpatialReason reason=SpatialReason::none;
     bool valid=true;

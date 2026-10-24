@@ -241,7 +241,7 @@ bike::io::Value build_spatial_report(const bike::io::Value::Array& warmups,
     const auto context = get(reference_execution, "build_context");
     const bool release = !io::is_null(context) && equal(get(context, "build_type"), text("Release"));
     const bool native = equal(field(first, "backend"), text("native"));
-    const bool eligible = fast && protocol && valid_warmups && all_valid &&
+    const bool eligible = fast && protocol && valid_warmups && all_valid && repeated_comparable &&
         accepted == runs.size() && instrumentation_available && release && native;
     const Value target = eligible ? Value{spatial::rtf_threshold_met(io::as_double(median_factor, "median_rtf"), 1., 2.)} : Value{};
     return Value{Object{{"schema_version", integer(1)}, {"spatial_performance_schema", integer(1)},

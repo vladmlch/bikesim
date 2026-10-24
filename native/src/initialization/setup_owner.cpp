@@ -214,7 +214,10 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
         if(!std::isfinite(request.start_x_m) || request.start_x_m<request.model.terrain3d->x_min_m() ||
            request.start_x_m>request.model.terrain3d->x_max_m())
             throw std::invalid_argument("setup.start_x_m: outside physical terrain domain");
-        if(request.model.terrain3d->half_width_m()<spatial_config.corridor_half_width_m)
+        const auto* grid=request.model.terrain3d->grid();
+        const double corridor=spatial_config.corridor_half_width_m;
+        if(grid ? (grid->descriptor().y0_m>-corridor || grid->y_max_m()<corridor) :
+                  request.model.terrain3d->half_width_m()<corridor)
             throw std::invalid_argument("setup.spatial.corridor_half_width_m: outside physical terrain domain");
     }
     runtime::validate_native_supported(*request.model.physics, resolved_rider);

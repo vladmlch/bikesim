@@ -43,7 +43,12 @@ RenderGrid3d make_render_grid(const Terrain3dSource& source, RenderResolution re
     if (resolution.nrow < 2 || resolution.ncol < 2)
         throw std::invalid_argument("terrain3d.render.resolution: require nrow,ncol >= 2");
     const auto rows = static_cast<std::size_t>(resolution.nrow), columns = static_cast<std::size_t>(resolution.ncol);
-    if (rows > std::numeric_limits<std::size_t>::max() / columns || rows * columns > (512ull << 20) / sizeof(float))
+    // Both the published float raster and the double reduction buffer coexist.
+    // Bound their combined bytes before either allocation (including on 32-bit).
+    constexpr auto bytes_per_sample = sizeof(float) + sizeof(double);
+    if (rows > std::numeric_limits<std::size_t>::max() / columns ||
+        rows * columns > std::numeric_limits<std::size_t>::max() / bytes_per_sample ||
+        rows * columns > (512ull << 20) / bytes_per_sample)
         throw std::invalid_argument("terrain3d.render.resolution: raster exceeds resource limit");
     RenderGrid3d out;
     out.nrow = resolution.nrow; out.ncol = resolution.ncol; out.resolution = resolution;

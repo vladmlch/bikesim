@@ -144,6 +144,13 @@ void diagnostic_exclusion() {
     auto missing = run; set(missing, "instrumentation_available", Value{false});
     bt::require(io::is_null(field(measure::build_report({missing}, {missing, missing, missing}), "target_met")),
         "missing region instrumentation cannot close the profile protocol");
+    auto different_terminal = run;
+    auto prefix = field(different_terminal, "prefix");
+    set(prefix, "reason", text("duration_reached"));
+    set(different_terminal, "prefix", std::move(prefix));
+    const auto incompatible = measure::build_report({run}, {run, different_terminal, run});
+    bt::require(!yes(incompatible, "repeated_runs_comparable") && io::is_null(field(incompatible, "target_met")),
+        "individually valid runs with different terminal classifications cannot qualify a common throughput target");
 }
 void malformed_or_incompatible_report() {
     const auto run = sample();

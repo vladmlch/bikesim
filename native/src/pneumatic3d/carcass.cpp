@@ -30,6 +30,8 @@ CoreStatus detail::prepare_carcass(const CarcassSpec3d& spec,
     const auto cells=state.deflection_m.size();
     if (out.size()!=elements.size() || state.maxwell_q_n_per_m2.size()!=cells ||
         state.previous_penetration_m.size()!=cells || state.active.size()!=cells ||
+        !std::isfinite(state.material_phase_rad) || !nonnegative(state.stored_energy_j) ||
+        !nonnegative(state.dissipated_j) ||
         !nonnegative(dt) || !nonnegative(spec.pressure_pa) ||
         !nonnegative(spec.k_area_n_per_m3) || !nonnegative(spec.maxwell_k_n_per_m3) ||
         !nonnegative(spec.rim_clearance_m) || !nonnegative(spec.rim_stiffness_n_per_m3) ||
@@ -51,6 +53,7 @@ CoreStatus detail::prepare_carcass(const CarcassSpec3d& spec,
         return CoreStatus::invalid_geometry;
     pressure=spec.constant_pressure ? spec.pressure_pa :
         spec.pressure_pa*spec.initial_volume_m3/(spec.initial_volume_m3-displaced_volume);
+    if (!std::isfinite(pressure)) return CoreStatus::invalid_geometry;
     return CoreStatus::ok;
 }
 
@@ -67,6 +70,8 @@ CoreStatus detail::evaluate_carcass_range(const CarcassSpec3d& spec,
         const double rate=dt>0. ? (d-state.previous_penetration_m[j])/dt : 0.;
         const auto branch=maxwell(state.maxwell_q_n_per_m2[j],rate,
             spec.maxwell_k_n_per_m3,spec.maxwell_tau_s,dt);
+        if (!std::isfinite(branch.q) || !std::isfinite(branch.loss_density))
+            return CoreStatus::invalid_geometry;
         n.pressure_force_n=pressure*area;
         n.elastic_force_n=spec.k_area_n_per_m3*d*area;
         n.rate_force_n=branch.q*area;
@@ -79,7 +84,10 @@ CoreStatus detail::evaluate_carcass_range(const CarcassSpec3d& spec,
             n.stored_energy_j+=.5*branch.q*branch.q/spec.maxwell_k_n_per_m3*area;
         n.dissipated_work_j=branch.loss_density*area;
         n.active=true;
-        if (!std::isfinite(n.normal_load_n)) return CoreStatus::invalid_geometry;
+        if (!std::isfinite(n.pressure_force_n) || !std::isfinite(n.elastic_force_n) ||
+            !std::isfinite(n.rate_force_n) || !std::isfinite(n.rim_force_n) ||
+            !std::isfinite(n.normal_load_n) || !std::isfinite(n.stored_energy_j) ||
+            !std::isfinite(n.dissipated_work_j)) return CoreStatus::invalid_geometry;
     }
     return CoreStatus::ok;
 }
@@ -93,6 +101,7 @@ CoreStatus detail::finish_carcass(const CarcassSpec3d& spec,
         stored+=out[i].stored_energy_j; lost+=out[i].dissipated_work_j;
         if (!std::isfinite(stored) || !std::isfinite(lost))return CoreStatus::invalid_geometry;
     }
+    if (!std::isfinite(state.dissipated_j+lost)) return CoreStatus::invalid_geometry;
     if (advance && dt>0.) {
         // Inputs carry absolute material-cell identities. Do not rotate this
         // array again: doing so would advect the same material twice. The

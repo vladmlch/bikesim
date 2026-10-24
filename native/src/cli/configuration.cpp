@@ -51,13 +51,20 @@ void spatial_arguments(configuration::SimulationPhysicsConfig& physics, const Ar
         }
     }
     const bool enabled = physics.spatial && physics.spatial->mode == spatial::Mode::spatial3d;
+    if (enabled && (args.present("track") || args.present("track_file") || args.present("gen_spec") ||
+                    args.present("scenario") || args.present("length")))
+        throw ArgumentError("spatial terrain conflicts with --track/--track-file/--gen-spec/--scenario/--length; use --terrain3d or [spatial_3d.terrain]");
     if (args.has("terrain3d")) {
         if (!enabled) throw ArgumentError("--terrain3d requires --spatial 3d");
-        if (args.present("track") || args.present("track_file") || args.present("gen_spec"))
-            throw ArgumentError("--terrain3d conflicts with --track/--track-file/--gen-spec");
         auto& terrain = physics.spatial->terrain;
         terrain.path = std::filesystem::absolute(args.text("terrain3d")).lexically_normal();
-        if (terrain.path.extension() == ".terrain3d") terrain.kind = spatial::TerrainRequestKind::grid_asset;
+        if (terrain.path.extension() == ".terrain3d") {
+            terrain.kind = spatial::TerrainRequestKind::grid_asset;
+            // A replacement immutable asset cannot inherit generation-only
+            // grid spacing from the previous TOML terrain request.
+            terrain.dx_m.reset();
+            terrain.dy_m.reset();
+        }
         else if (terrain.path.extension() == ".toml") terrain.kind = spatial::TerrainRequestKind::genspec;
         else throw ArgumentError("--terrain3d requires a .terrain3d asset or .toml genspec");
     }

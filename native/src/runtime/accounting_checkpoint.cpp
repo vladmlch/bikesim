@@ -44,15 +44,38 @@ AccountingDiagnostics diagnostics(const Value& value) {
     out.terms=state->last_terms; out.effort=state->effort_diagnostics;
     return out;
 }
+template<class Consumer> void ordered_entries(const Value& value,std::string_view path,Consumer consume) {
+    std::set<std::string> names;
+    const auto entry=[&](const std::string& name,const Value& item) {
+        if(!names.insert(name).second)vread::invalid(path,"duplicate component");
+        consume(name,item);
+    };
+    if(const auto* rows=std::get_if<Array>(&value.data)) {
+        for(const auto& row:*rows) {
+            exact(row,{"name","value"},path);
+            entry(string(field(row,"name")),field(row,"value"));
+        }
+    } else {
+        // Earlier checkpoint1 writers used objects. Retain their stored order
+        // when reading; a pre-serialization order already lost by that format
+        // cannot be reconstructed. New checkpoints always use ordered rows.
+        for(const auto& [name,item]:bike::io::as_object(value,path))entry(name,item);
+    }
+}
 Value raw(const RawStep& r) {
-    Object attachments;
+    // Attachment validation also emits failures in the original input order.
+    Array attachments;
     for (const auto& [name,item] : r.attachment_raw)
-        attachments.emplace_back(name,rider::encode_attachment_entry(writers::RiderAttachmentEntry{item}));
+        attachments.push_back(Value{Object{{"name",text(name)},
+            {"value",rider::encode_attachment_entry(writers::RiderAttachmentEntry{item})}}});
     auto rider_state=std::make_unique<rider::SpindleController::State>();
     if(r.rider_control_terms)rider_state->last_terms=*r.rider_control_terms;
     if(r.effort_state)rider_state->effort_diagnostics=*r.effort_state;
-    Object powers;
-    for(const auto& [name,value]:r.numerical_constraint_power_w)powers.emplace_back(name,real(value));
+    // raw_work reduces these values in first-appearance order. A JSON object
+    // loses that causal order when the checkpoint is written canonically.
+    Array powers;
+    for(const auto& [name,value]:r.numerical_constraint_power_w)
+        powers.push_back(Value{Object{{"name",text(name)},{"value",real(value)}}});
     return Value{Object{{"interval",integer(r.interval_id)}, {"time",real(r.time_s)}, {"end",real(r.end_time_s)},
         {"qpos",reals(r.qpos)}, {"qvel",reals(r.qvel)}, {"components",components(r.components)},
         {"attachments",Value{std::move(attachments)}}, {"actuator_force",reals(r.actuator_force)},
@@ -77,12 +100,12 @@ RawStep raw(const Value& value,const AccountingConfig& config) {
     out.interval_id=count(field(value,"interval"));out.time_s=number(field(value,"time"));out.end_time_s=number(field(value,"end"));
     out.qpos=numbers(field(value,"qpos"),config.max_qpos);out.qvel=numbers(field(value,"qvel"),config.max_dofs);
     out.components=components(field(value,"components"),config.max_dofs);
-    for(const auto& [name,item]:bike::io::as_object(field(value,"attachments"),"checkpoint.attachments")) {
+    ordered_entries(field(value,"attachments"),"checkpoint.attachments",[&](const auto& name,const auto& item) {
         auto decoded=rider::decode_attachment_entry(item,"checkpoint.attachment."+name);
         if(!std::holds_alternative<rider::AttachmentRaw>(decoded))
             vread::invalid("checkpoint.attachment","raw input required");
         out.attachment_raw.emplace_back(name,std::move(std::get<rider::AttachmentRaw>(decoded)));
-    }
+    });
     out.actuator_force=numbers(field(value,"actuator_force"),config.max_actuators);
     out.qfrc_passive=numbers(field(value,"qfrc_passive"),config.max_dofs);
     out.contact_truth=object(field(value,"contact_truth"));out.channels=object(field(value,"channels"));
@@ -91,8 +114,9 @@ RawStep raw(const Value& value,const AccountingConfig& config) {
         new rider::SpindleController::State(rider::decode_spindle_state(field(value,"rider"),"checkpoint.raw.rider"))};
     if(boolean(field(value,"has_terms")))out.rider_control_terms=rider_state->last_terms;
     if(boolean(field(value,"has_effort")))out.effort_state=rider_state->effort_diagnostics;
-    for(const auto& [name,item]:bike::io::as_object(field(value,"constraint_power"),"checkpoint.constraint_power"))
+    ordered_entries(field(value,"constraint_power"),"checkpoint.constraint_power",[&](const auto& name,const auto& item) {
         out.numerical_constraint_power_w.emplace_back(name,number(item));
+    });
     out.loss_step_j=number(field(value,"loss"));out.mechanical_energy_j=optional(field(value,"mechanical"));
     if(!bike::io::is_null(field(value,"elastic")))out.elastic_energy_j=object(field(value,"elastic"));
     out.battery_energy_j=number(field(value,"battery"));out.electrical_power_w=vread::wire_from_value(field(value,"electrical"),"checkpoint.electrical");
@@ -102,6 +126,10 @@ RawStep raw(const Value& value,const AccountingConfig& config) {
        std::abs((out.end_time_s-out.time_s)-config.timestep_s)>1e-10 ||
        out.constraint_snapshot.interval_start_s!=out.time_s || out.constraint_snapshot.interval_end_s!=out.end_time_s)
         vread::invalid("checkpoint.raw","invalid interval identity");
+    if(out.constraint_snapshot.qvel_start!=out.qvel)
+        vread::invalid("checkpoint.raw.constraints.qvel","does not match the incoming interval velocity");
+    if(out.full!=out.mechanical_energy_j.has_value() || out.full!=out.elastic_energy_j.has_value())
+        vread::invalid("checkpoint.raw.mechanical","measurement flag and energy owners differ");
     return out;
 }
 Value sample(const SamplePtr& p) {
@@ -123,6 +151,9 @@ SamplePtr sample(const Value& value,const AccountingConfig& config) {
     if(out->interval_id<0 || out->time_s<0. || out->end_time_s<=out->time_s ||
        std::abs(out->dt_s()-config.timestep_s)>1e-10)
         vread::invalid("checkpoint.sample","invalid interval identity");
+    if(out->constraints && (out->constraints->interval_start_s!=out->time_s ||
+        out->constraints->interval_end_s!=out->end_time_s || out->constraints->qvel_start!=out->qvel))
+        vread::invalid("checkpoint.sample.constraints","does not match its physical interval");
     return out;
 }
 using SampleOwners=std::map<std::int64_t,SamplePtr>;

@@ -71,7 +71,11 @@ SpatialEquilibriumReport report(SetupContext& context,int evaluations,double tol
         if(!std::isfinite(a)) {out.errors.emplace_back("nonfinite acceleration");maximum=std::numeric_limits<double>::infinity();continue;}
         maximum=std::max(maximum,a);
     }
-    std::stable_sort(order.begin(),order.end(),[&](int a,int b){return std::abs(accelerations[static_cast<std::size_t>(a)])>std::abs(accelerations[static_cast<std::size_t>(b)]);});
+    const auto severity=[&](int dof) {
+        const double value=std::abs(accelerations[static_cast<std::size_t>(dof)]);
+        return std::isfinite(value)?value:std::numeric_limits<double>::infinity();
+    };
+    std::stable_sort(order.begin(),order.end(),[&](int a,int b){return severity(a)>severity(b);});
     for(std::size_t i=0;i<std::min<std::size_t>(3,order.size());++i)out.worst_dofs.push_back(order[i]);
     const auto masses=model_access::readonly_buffer(m.body_mass,m.nbody);
     double mass=0.;for(std::size_t b=1;b<masses.size();++b)mass+=masses[b];
@@ -81,26 +85,41 @@ SpatialEquilibriumReport report(SetupContext& context,int evaluations,double tol
     if(context.stepper.has_spatial_tire()) {
         const auto& writer=context.stepper.spatial_tire_writer();
         for(std::size_t side=0;side<2;++side) {
+            // Both wheels need support. Detailed wrenches include every fan
+            // slot, including the ordinary airborne elements of a loaded
+            // wheel; those slots are not failed contacts.
+            ++out.contacts_total;
+            bool supported=false,valid=true;
             for(const auto& p:writer.wrenches(side)) {
-                ++out.contacts_total;
                 if(!p.valid)continue;
-                ++out.contacts_valid;
+                const auto finite=[](const auto& values) {
+                    return std::ranges::all_of(values,[](double value){return std::isfinite(value);});
+                };
+                if(!finite(p.point_world_m) || !finite(p.force_world_n) || !finite(p.couple_world_nm) ||
+                   !std::isfinite(p.normal_load_n) || p.normal_load_n<=0.) {
+                    valid=false;continue;
+                }
+                supported=true;
                 vertical+=p.force_world_n[2];
                 const auto arm=difference(p.point_world_m,com);
                 moment[0]+=arm[1]*p.force_world_n[2]-arm[2]*p.force_world_n[1]+p.couple_world_nm[0];
                 moment[1]+=arm[2]*p.force_world_n[0]-arm[0]*p.force_world_n[2]+p.couple_world_nm[1];
                 moment[2]+=arm[0]*p.force_world_n[1]-arm[1]*p.force_world_n[0]+p.couple_world_nm[2];
             }
+            if(supported && valid)++out.contacts_valid;
         }
     }
     const double weight=mass*std::abs(m.opt.gravity[2]);
-    out.weight_residual_fraction=weight>0.?std::abs(vertical-weight)/weight:0.;
+    out.weight_residual_fraction=std::isfinite(weight) && weight>0.?
+        std::abs(vertical-weight)/weight:std::numeric_limits<double>::infinity();
     out.roll_moment_residual_nm=moment[0];out.pitch_moment_residual_nm=moment[1];
     if(out.contacts_total==0 || out.contacts_valid!=out.contacts_total)out.errors.emplace_back("missing or invalid wheel contacts");
     if(out.max_linear_accel_mps2>tolerance || out.max_angular_accel_radps2>tolerance)
         out.errors.emplace_back("acceleration tolerance not reached");
-    if(out.weight_residual_fraction>.005)out.errors.emplace_back("vertical load differs from weight by more than 0.5 percent");
-    if(std::abs(moment[0])>1. || std::abs(moment[1])>1.)out.errors.emplace_back("roll/pitch external moment exceeds 1 N m");
+    if(!std::isfinite(out.weight_residual_fraction) || out.weight_residual_fraction>.005)
+        out.errors.emplace_back("vertical load differs from weight by more than 0.5 percent");
+    if(!std::isfinite(moment[0]) || !std::isfinite(moment[1]) || std::abs(moment[0])>1. || std::abs(moment[1])>1.)
+        out.errors.emplace_back("invalid roll/pitch external moment or magnitude exceeds 1 N m");
     return out;
 }
 } // namespace

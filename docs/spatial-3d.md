@@ -225,7 +225,8 @@ bike-research-sweep --out "${OUT}/sweep" --seeds 0-3 --jobs 2 -- --spatial 3d --
 Each child owns a separate simulation context and output destination. Job
 identity covers canonical resolved configuration, actual terrain digest,
 tyre calibration digest, sensor schema, seed and the internal thread count
-(`1` for this wave). The public `--threads` option is not present before W52.
+(`1` by default). W52 adds `--threads N` for spatial tyre workers, with
+`N` in `[1,64]`; the resolved value is retained in each job identity.
 Process worker count is scheduling, so workers 1/2/4 must preserve job keys and
 canonical ordered outcomes. Wall times and throughput remain measured,
 scheduling-dependent fields. Crashed or model-invalid jobs are excluded from

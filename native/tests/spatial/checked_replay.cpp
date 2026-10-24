@@ -8,10 +8,59 @@
 #include "runtime/setup_values.hpp"
 #include "pneumatic3d/state.hpp"
 #include "terrain/asset3d.hpp"
+#include <array>
+#include <cstdint>
+#include <filesystem>
+#include <span>
+#include <string>
 
 namespace {
 namespace replay=bike::replay;
 using namespace runtime::setupvalue;
+void matching_generation(const replay::ReplaySession& session) {
+    const auto& frame=session.render_frame();
+    bt::require(frame.presentation.spatial.has_value(),"spatial replay publishes a spatial pose");
+    bt::require(frame.presentation.spatial->generation==static_cast<std::uint64_t>(frame.state.generation),
+        "snapshot and spatial pose share the replay generation");
+    const auto view=bike::research::wire_value(runtime::Wire{frame.state.view});
+    bt::require(bike::io::as_int64(field(field(field(view,"endpoint"),"spatial"),"generation"),"generation")==frame.state.generation,
+        "wire presentation shares the replay generation");
+}
+void startup_provenance_cases(const std::filesystem::path& accepted,const std::filesystem::path& root) {
+    using spatial_tests::saved_document;using spatial_tests::replace_document;
+    const auto absent=root/"absent-initial-state.bin";
+    bt::require(!std::filesystem::exists(absent),"replay startup fixture has no external state file");
+    for(const bool imported:{false,true}) {
+        const auto path=spatial_tests::mutate_recording(accepted,root/(imported?"imported-startup":"cached-startup"),[&](const auto& c){
+            auto resolved=saved_document(c,"resolved_config.json");auto physics=field(resolved,"physics");
+            set(physics,"equilibrium_cache_enabled",Value{true});
+            if(imported)set(physics,"equilibrium_state_file",text(absent.string()));
+            set(resolved,"physics",physics);
+            // This fixture has no external profiles, so its canonical resolved
+            // document already equals the content-normalized hash input.
+            const auto& articulated=field(physics,"articulated");
+            for(const auto key:{"joint_envelope_path","joint_strength_path","shoulder_profile"})
+                if(const auto* value=find(articulated,key))bt::require(bike::io::is_null(*value),"startup fixture has no external profiles");
+            const auto canonical=bike::io::canonical_json(resolved);
+            const auto digest=bike::io::sha256(std::as_bytes(std::span{canonical}));
+            const auto rows=c.query("SELECT summary_json FROM episodes WHERE episode_id=0");
+            auto summary=bike::io::parse_recording_json(bike::io::as_string(field(Value{rows.at(0)},"summary_json"),"summary"));
+            set(summary,"resolved_config",resolved);set(summary,"configuration_sha256",text(digest));
+            const std::array params{text(bike::io::recording_json(summary))};
+            c.execute("UPDATE episodes SET summary_json=? WHERE episode_id=0",params);
+            auto recipe=saved_document(c,"recipe.json");set(recipe,"config_spatial",resolved);
+            for(const auto key:{"checkpoint_initial","checkpoint_final"}) {
+                auto checkpoint=field(recipe,key);auto identity=field(checkpoint,"identity");
+                set(identity,"config_sha256",text(digest));set(checkpoint,"identity",identity);set(recipe,key,checkpoint);
+                replace_document(c,std::string("spatial/")+key+".json",checkpoint);
+            }
+            replace_document(c,"recipe.json",recipe);replace_document(c,"resolved_config.json",resolved);
+            replace_document(c,"spatial/config.json",resolved);
+        });
+        const auto result=replay::check(path,0);
+        bt::require(result.matched,"embedded checkpoint replays with the original cache/import provenance and no external state file");
+    }
+}
 void mismatch(const std::filesystem::path& path,std::string_view leaf) {
     const auto result=replay::check(path,0);
     bt::require(!result.matched && bike::io::as_string(field(result.details,"status"),"status")=="mismatch","changed evidence fails as a numerical/evidence mismatch");
@@ -31,6 +80,17 @@ void corruption_cases(const std::filesystem::path& accepted,const std::filesyste
         c.execute("UPDATE observations SET angular_rate_sensor_rad_s=[angular_rate_sensor_rad_s[1],angular_rate_sensor_rad_s[2]+1.0,angular_rate_sensor_rad_s[3]] WHERE episode_id=0 AND observation_id=1");
     });
     mismatch(gyro,"angular_rate_sensor_rad_s[1]");
+    {
+        replay::ReplaySession session(gyro);const auto initial=session.render_frame();bool failed=false;
+        try { (void)session.advance(); } catch(const std::exception&) { failed=true; }
+        bt::require(failed && session.error().has_value(),"first control window exposes its evidence mismatch");
+        bt::require(session.snapshot().step==initial.state.step &&
+            session.snapshot().integration_state==initial.state.integration_state &&
+            session.render_frame().model_sha256==initial.model_sha256,
+            "first-window mismatch rolls back to the complete verified startup frame");
+        bt::require(session.snapshot().generation>initial.state.generation,"rollback publishes a new generation");
+        matching_generation(session);
+    }
     const auto bristle=mutate_recording(accepted,root/"bristle",[&](const auto& c){
         auto recipe=saved_document(c,"recipe.json");auto checkpoint=field(recipe,"checkpoint_final");
         auto bootstrap=field(checkpoint,"bootstrap2");auto tire=field(bootstrap,"tire");
@@ -90,7 +150,10 @@ int main(){return bt::run([]{
         replay::ReplaySession session(publication.directory);while(!session.advance()){}
         bt::require(bike::io::as_bool(field(session.report(),"passed"),"passed"),"complete spatial episode checks under its own execution identity");
         bt::require(bike::io::as_int64(field(session.report(),"replay_contract_version"),"contract")==4,"spatial replay has its own version");
+        matching_generation(session);
         const auto generation=session.snapshot().generation;session.restart();bt::require(session.snapshot().generation>generation,"restart publishes a new render generation");
+        matching_generation(session);(void)session.advance(0.);matching_generation(session);
     }
+    startup_provenance_cases(publication.directory,root.path());
     corruption_cases(publication.directory,root.path());
 });}

@@ -57,4 +57,11 @@ int main() { return bt::run([] {
     for(auto& x:n) { x.active=false;x.normal_load_n=0.; }
     prepare();bt::require(assign_patches(e,n,true,s,out,count)==CoreStatus::ok && count==0,"airborne patch inventory empty");
     bt::require(std::all_of(s.ids.begin(),s.ids.end(),[](auto id){return id==0;}),"inactive IDs canonical zero");
+    for(std::size_t i=0;i<e.size();++i) {
+        e[i].surface_id=0;
+        n[i].active=true;n[i].normal_load_n=std::numeric_limits<double>::max()/4.;
+    }
+    const auto overflow_before=bytes(s);prepare();
+    bt::require(assign_patches(e,n,true,s,out,count)==CoreStatus::invalid_geometry &&
+                bytes(s)==overflow_before,"finite element loads cannot commit an overflowing aggregate patch");
 }); }

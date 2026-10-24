@@ -26,6 +26,8 @@ struct SpatialOutcomeInput {
     double balance_speed_floor_mps = .5;
     std::int64_t balance_dwell_limit_ticks = 200;
 };
-Outcome evaluate_outcome(const SpatialOutcomeInput&, OutcomeState&) noexcept;
+// The state owns diagnostic text. Observing a latch must not copy/allocate its
+// string inside this noexcept physics boundary.
+const Outcome& evaluate_outcome(const SpatialOutcomeInput&, OutcomeState&) noexcept;
 
 } // namespace bike::spatial

@@ -1232,8 +1232,14 @@ PhysicalStep::apply_forces_body(
         // The latched elastic bite at standstill; an advancing pass may
         // latch or release, a probe reads the committed latch
         // (static_braking.py hold_qfrc — physical_runtime.py:296).
+        // The relaxation field (active=false) re-seats a saturated bite:
+        // its latch captures the initial angle, and a wheel that creeps
+        // past the clip wind-up would otherwise hold a permanently
+        // saturated torque the friction bound cannot cancel — a residual
+        // floor the equilibrium probe never decays below (the savage
+        // settle defect).
         std::vector<double> brake_hold =
-            brake_.hold_qfrc(m, d, front, rear, advance);
+            brake_.hold_qfrc(m, d, front, rear, advance, !active);
         // prepare_pedaling reads the LAST committed rear contact — the
         // durable contacts_ (previous step's final refresh or bootstrap).
         const drivetrain::RideControl drive_control{

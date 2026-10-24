@@ -47,13 +47,24 @@ class StaticBrakeApplier:
         model.dof_frictionloss[self.front]=self.ceiling*float(np.clip(front,0.,1.))
         model.dof_frictionloss[self.rear]=self.ceiling*float(np.clip(rear,0.,1.))
 
-    def hold_qfrc(self,model,data,front_demand,rear_demand,*,advance):
+    def hold_qfrc(self,model,data,front_demand,rear_demand,*,advance,reseat=False):
         """Bounded spring-damper about the latched wheel angle, per wheel.
 
         ``advance`` carries the same contract as ``apply_forces``: only an
         advancing evaluation may latch or release a bite -- a probe reads the
         committed latch without moving it, so a non-advancing pass reports
         exactly the torque the step would apply at this state.
+
+        ``reseat`` lets an advancing evaluation re-anchor a bite whose
+        clipped spring is saturated: while the wheel sits inside the engage
+        band, a spring demand past ``hold_torque_nm*demand`` means the pad is
+        slipping, so the latch re-seats at the current angle rather than
+        pulling a stale offset at the clip forever. The held relaxation sets
+        it -- its latch captures the initial angle, and a wheel that then
+        creeps past the clip wind-up would keep a permanently saturated
+        torque the friction bound cannot quite cancel (a residual floor the
+        probe never decays below). The live field leaves it off: the
+        clip-limited pull-back is the designed episode contract.
         """
         front=scalar(front_demand,'front brake demand')
         rear=scalar(rear_demand,'rear brake demand')
@@ -72,6 +83,11 @@ class StaticBrakeApplier:
                 elif u<=0. or abs(omega)>self.hold_release_radps:
                     latched=None
                     self._latch[side]=None
+                elif reseat and abs(omega)<=self.hold_engage_radps and abs(
+                        -self.hold_stiffness_nm_rad*(theta-latched)
+                        -self.hold_damping_nms_rad*omega)>self.hold_torque_nm*u:
+                    latched=theta
+                    self._latch[side]=latched
             if latched is None:
                 continue
             cap=self.hold_torque_nm*u

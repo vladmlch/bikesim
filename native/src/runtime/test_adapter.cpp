@@ -464,7 +464,7 @@ public:
 
     [[nodiscard]] nb::ndarray<nb::numpy, double, nb::shape<-1>>
     static_brake_hold_qfrc(nb::handle front, nb::handle rear,
-                           bool advance) {
+                           bool advance, bool reseat) {
         if (!brake_)
             throw std::logic_error(
                 "adapter was built without a static_brake section");
@@ -474,7 +474,7 @@ public:
                               "static_brake_hold_qfrc.front_demand"),
             wire::finite_real(rear,
                               "static_brake_hold_qfrc.rear_demand"),
-            advance));
+            advance, reseat));
     }
 
     void static_brake_reset() {
@@ -541,7 +541,7 @@ void bind_test_adapter(const nb::module_ &module) {
         .def("static_brake_hold_qfrc",
              &NativeTestAdapter::static_brake_hold_qfrc,
              nb::arg("front_demand").none(), nb::arg("rear_demand").none(),
-             nb::arg("advance"))
+             nb::arg("advance"), nb::arg("reseat") = false)
         .def("static_brake_reset", &NativeTestAdapter::static_brake_reset)
         .def("set_wheel_state", &NativeTestAdapter::set_wheel_state,
              nb::arg("qpos").none(), nb::arg("qvel").none())

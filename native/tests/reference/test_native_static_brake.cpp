@@ -87,8 +87,10 @@ struct HoldProbe : bt::ModelFixture {
             qposadr[static_cast<std::size_t>(joint)])] = theta;
         qv[static_cast<std::size_t>(brake.front_dof())] = omega;
     }
-    double front_hold(double front, double rear, bool advance) {
-        return brake.hold_qfrc(model.get(), data.get(), front, rear, advance)
+    double front_hold(double front, double rear, bool advance,
+                      bool reseat = false) {
+        return brake.hold_qfrc(model.get(), data.get(), front, rear, advance,
+                               reseat)
             .at(static_cast<std::size_t>(brake.front_dof()));
     }
 };
@@ -128,6 +130,43 @@ void test_hold_bite_engagement_clip_release() {
     probe.wheel(.9, 0.);
     bt::require(probe.front_hold(.5, .8, true) == 0., "reset re-bites without memory");
 }
+void test_hold_reseat_saturated_bite() {
+    // Mirrors test_hold_reseat_parity_sequence: the relaxation field's
+    // re-anchor drops a saturated stale offset while the live field keeps
+    // the stale latch pinned at the clip (the savage settle defect fix).
+    HoldProbe probe;
+    probe.wheel(.02, 0.);
+    bt::require(probe.front_hold(.8, .8, true) == 0.,
+                "fresh latch carries no spring torque");
+    // crept past the clip wind-up: live field (reseat off) stays pinned
+    probe.wheel(.5, 0.);
+    bt::require(probe.front_hold(.8, .8, true) == -40.,
+                "live field keeps the stale latch at the clip");
+    // relaxation field re-anchors the slipped pad at the current angle
+    probe.wheel(.5, 0.);
+    bt::require(probe.front_hold(.8, .8, true, true) == 0.,
+                "reseat drops the saturated stale offset");
+    // below the clip nothing re-seats — the fresh anchor holds
+    probe.wheel(.51, 0.);
+    bt::require(probe.front_hold(.8, .8, true, true) == -10.,
+                "unsaturated spring keeps the anchor");
+    // a probe pass never moves the latch even with reseat set
+    probe.wheel(.6, 0.);
+    bt::require(probe.front_hold(.8, .8, false, true) == -40.,
+                "probe reads the committed latch");
+    probe.wheel(.6, 0.);
+    bt::require(probe.front_hold(.8, .8, true, true) == 0.,
+                "advancing re-seat follows the creep");
+    // inside the hysteresis band (above engage, below release) a rolling
+    // wheel is not a standstill slip — the bite stays pinned at the clip
+    probe.wheel(.62, .4);
+    bt::require(probe.front_hold(.8, .8, true, true) == -22.,
+                "hysteresis band is not a re-seat slip");
+    // above the release speed the latch forgets as before
+    probe.wheel(.62, 1.);
+    bt::require(probe.front_hold(.8, .8, true, true) == 0.,
+                "release speed still forgets the latch");
+}
 void test_hold_validation_matches_python() {
     HoldProbe probe;
     bt::invalid([&] {
@@ -150,5 +189,6 @@ int main() { return bt::run([] {
     test_brake_validation_matches_python(); test_apply_rejects_nonfinite_demands();
     test_demands_clamp_and_sides_are_independent();
     test_frictionloss_writes_match_python(); test_solved_components_match_python();
-    test_hold_bite_engagement_clip_release(); test_hold_validation_matches_python();
+    test_hold_bite_engagement_clip_release(); test_hold_reseat_saturated_bite();
+    test_hold_validation_matches_python();
 }); }

@@ -299,7 +299,13 @@ class PhysicalRuntime:
         self.brake.apply(m,d,front,rear)
         # The latched elastic bite at standstill; an advancing pass may latch
         # or release, a probe reads the committed latch (static_braking.py).
-        brake_hold=self.brake.hold_qfrc(m,d,front,rear,advance=advance)
+        # The relaxation field (active=False) re-seats a saturated bite: its
+        # latch captures the initial angle, and a wheel that creeps past the
+        # clip wind-up would otherwise hold a permanently saturated torque the
+        # friction bound cannot cancel -- a residual floor the equilibrium
+        # probe never decays below (the savage settle defect).
+        brake_hold=self.brake.hold_qfrc(m,d,front,rear,advance=advance,
+                                        reseat=not active)
         rear_snapshot = sim.contacts.rear_snapshot
         pedaling = self.drive.prepare_pedaling(d, dt, control, active=active,
             advance=advance, braking=braking, model=m,

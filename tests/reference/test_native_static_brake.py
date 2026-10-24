@@ -207,17 +207,21 @@ def _wheel_state(model, front_qpos, front_qvel, rear_qpos=0., rear_qvel=0.):
     return q, v
 
 
-def _python_hold(model, data, brake, front_qpos, front_qvel, front, rear, advance):
+def _python_hold(model, data, brake, front_qpos, front_qvel, front, rear,
+                 advance, reseat=False):
     q, v = _wheel_state(model, front_qpos, front_qvel)
     data.qpos[:] = q
     data.qvel[:] = v
-    return brake.hold_qfrc(model, data, front, rear, advance=advance)
+    return brake.hold_qfrc(model, data, front, rear, advance=advance,
+                           reseat=reseat)
 
 
-def _native_hold(model, probe, front_qpos, front_qvel, front, rear, advance):
+def _native_hold(model, probe, front_qpos, front_qvel, front, rear, advance,
+                 reseat=False):
     q, v = _wheel_state(model, front_qpos, front_qvel)
     probe.set_wheel_state(q, v)
-    return np.asarray(probe.static_brake_hold_qfrc(front, rear, advance))
+    return np.asarray(probe.static_brake_hold_qfrc(front, rear, advance,
+                                                   reseat))
 
 
 def test_hold_bite_parity_sequence(model, hold_probe):
@@ -268,6 +272,66 @@ def test_hold_bite_parity_sequence(model, hold_probe):
     got = _native_hold(model, hold_probe, 0.9, 0.0, 0.5, 0.8, True)
     np.testing.assert_array_equal(got, expected)
     assert expected[front_dof] == pytest.approx(0.0)
+
+
+def test_hold_reseat_parity_sequence(model, hold_probe):
+    """The relaxation-field re-anchor drops a saturated stale offset; the live
+    field keeps the stale latch pinned at the clip.
+
+    Regression for the savage settle defect: a bite latched early in the held
+    relaxation saturates once the wheel creeps past the clip wind-up, and the
+    committed latch then applies a permanently saturated torque the probe
+    cannot decay below the .05 equilibrium tolerance. ``reseat`` re-anchors a
+    saturated bite inside the engage band — the pad slip a real brake shows
+    when its elastic wind-up exceeds the bite — so the relaxation field's
+    hold decays to ~0 once the wheel rests against the friction bound alone.
+    """
+    model, _ = model
+    front_dof = _dof(model, "front_wheel_spin")
+    data = mujoco.MjData(model)
+    py = _hold_applier(model)
+    cap = HOLD["hold_torque_nm"] * .8  # 40 Nm at demand .8
+    sequence = [
+        # standstill inside the engage band: latch the angle
+        (0.02, 0.0, 0.8, 0.8, True, False),
+        # wheel crept past the clip wind-up (1000*.48 = 480 >> 40):
+        # the live field (reseat off) keeps the stale latch at the clip
+        (0.5, 0.0, 0.8, 0.8, True, False),
+        # the relaxation field (reseat on) sees the slipped pad and
+        # re-anchors at the current angle — torque collapses to zero
+        (0.5, 0.0, 0.8, 0.8, True, True),
+        # below the clip again there is nothing to re-seat: a small
+        # disturbance leaves the fresh anchor untouched
+        (0.51, 0.0, 0.8, 0.8, True, True),
+        # saturated again, but a probe pass never moves the latch even
+        # with reseat set — advance=False reads the committed angle
+        (0.6, 0.0, 0.8, 0.8, False, True),
+        (0.6, 0.0, 0.8, 0.8, True, True),
+        # saturated while rolling inside the hysteresis band (above
+        # engage, below release): not a standstill slip — the bite stays
+        # pinned at the clip rather than ratcheting a rolling wheel
+        (0.62, 0.4, 0.8, 0.8, True, True),
+        # released above the release speed forgets the angle as before
+        (0.62, 1.0, 0.8, 0.8, True, True),
+    ]
+    for front_qpos, front_qvel, front, rear, advance, reseat in sequence:
+        expected = _python_hold(model, data, py, front_qpos, front_qvel,
+                                front, rear, advance, reseat)
+        got = _native_hold(model, hold_probe, front_qpos, front_qvel,
+                           front, rear, advance, reseat)
+        np.testing.assert_array_equal(got, expected)
+    # The claimed-reason assertions: before the reseat the saturated bite
+    # pinned -cap; after it the same committed state applies ~0 torque.
+    py.reset()
+    hold_probe.static_brake_reset()
+    _python_hold(model, data, py, 0.02, 0.0, 0.8, 0.8, True)
+    _native_hold(model, hold_probe, 0.02, 0.0, 0.8, 0.8, True)
+    live = _python_hold(model, data, py, 0.5, 0.0, 0.8, 0.8, True)
+    assert live[front_dof] == pytest.approx(-cap)
+    _native_hold(model, hold_probe, 0.5, 0.0, 0.8, 0.8, True)
+    settled = _python_hold(model, data, py, 0.5, 0.0, 0.8, 0.8, True,
+                           reseat=True)
+    assert settled[front_dof] == pytest.approx(0.0)
 
 
 def test_hold_bite_disabled_by_default(model):

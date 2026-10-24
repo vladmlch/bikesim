@@ -71,7 +71,7 @@ bool StaticBrake::apply(mjModel *model, double front_demand,
 
 std::vector<double> StaticBrake::hold_qfrc(
     const mjModel *model, const mjData *data, double front_demand,
-    double rear_demand, bool advance) {
+    double rear_demand, bool advance, bool reseat) {
     const double front =
         validation::finite(front_demand, "front brake demand");
     const double rear =
@@ -105,6 +105,15 @@ std::vector<double> StaticBrake::hold_qfrc(
             } else if (u <= 0. || std::abs(omega) > hold_.release_radps) {
                 latched = std::nullopt;
                 *latch = std::nullopt;
+            } else if (reseat && std::abs(omega) <= hold_.engage_radps &&
+                       std::abs(-hold_.stiffness_nm_rad * (theta - *latched) -
+                                hold_.damping_nms_rad * omega) >
+                           hold_.torque_nm * u) {
+                // A saturated bite inside the engage band is a slipped pad:
+                // re-seat the anchor at the current angle (the oracle's
+                // `reseat` branch — static_braking.py).
+                latched = theta;
+                *latch = latched;
             }
         }
         if (!latched.has_value()) continue;

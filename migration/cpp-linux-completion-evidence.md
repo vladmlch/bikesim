@@ -2757,6 +2757,213 @@ round-trip). The command is required identical to 1e-9.
 - `408ab79` feat(native): constraint-mode-search port
 - `02f7b92` test(cpp): Phase3Ports registrations + ledgers
 
+## 2026-10-23 — F2 brake-hold/settle defect fix (user ruling)
+
+User ruling (physics-decision brief, F2 family): commit `b21c63e`'s
+settle-bootstrap brake "bite" is the defect — the intent-resolved
+settle change is exonerated. Approved direction: do not let the latch
+pin during held relaxation (settle does not need parking stiction),
+zero the latched offset at the settle probe, bound the hold's
+residual `qacc` contribution below the .05 equilibrium tolerance.
+
+Root cause `[reproduced]`: `hold_qfrc` latches a wheel angle early in
+the held relaxation; the regularized friction bound then lets the
+wheel creep past the clip wind-up (`stiffness*(theta-latched)` past
+`hold_torque*demand`). The committed latch then applies a permanently
+saturated torque — a ~0.05-0.09 rad/s^2 floor the probe never decays
+below. Savage: `RuntimeError: physical equilibrium did not converge
+after 64000 steps: residual=0.094603` dominated by
+`front_wheel_spin` (baseline-refresh node 6/7 signature). Stubbing
+the hold converges in 3,296 steps at residual 0.009922.
+
+Fix `[source-supported]`: `StaticBrakeApplier.hold_qfrc`/
+`runtime::StaticBrake::hold_qfrc` gain a `reseat` flag: on an
+advancing evaluation, a latched bite still inside the engage band
+whose unclipped spring demand exceeds `torque*demand` re-anchors at
+the current angle — the pad-slip a real brake shows when its elastic
+wind-up exceeds the bite. `PhysicalRuntime.apply_forces` passes
+`reseat=not active`; `PhysicalStep::apply_forces_body` passes
+`!active`. The only `active=false, advance=true` call site is the
+held-relaxation cycle (`physical_equilibrium.py:111`,
+`settle_contacts.cpp apply_initial_forces`); probes (`advance=false`)
+still read the committed latch untouched and live episodes
+(`active=true`) keep the clip-limited pull-back the 45% hold needs.
+Expression order and `-ffp-contract=off` arithmetic unchanged — the
+reseat predicate duplicates the spring expression without fusing.
+
+Commands + outputs `[reproduced]` (macOS arm64, lane/b @ 5be9ec5+patch):
+
+    BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/f2-repro/cache-fix \
+      uv run --frozen python /tmp/f2-repro/repro_settle.py
+    # SETTLE OK in 14.7s: steps=4720, residual_qacc=0.009105692229970314
+    #   (fork 60.583 mm, shock 14.465 mm, rear 45.860 mm,
+    #    root_z -0.0532126, pitch 0.005645, crank -0.034893,
+    #    static loads 430.98/593.10 N) — oracle savage settle converged.
+
+    ./build/native-release/native/tests/reference/reference.golden_episode_regressions
+    # PASS 1095 checks — two native envs built on the savage request:
+    # the native settle_context converges under the same policy.
+
+    uv run --frozen pytest \
+      "tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]" -x -q
+    # 16000 steps / 20.0 s sim completed (settle + full ride);
+    # fails only on factor 0.6899 >= 1.0 — the documented plateau/RTF
+    # baseline gap, out of F2 scope.
+
+    uv run --frozen pytest \
+      "tests/reference/test_realistic_pedelec_acceptance.py::test_savage_is_ridden_to_the_end" -x -q
+    # settle + the full 110 s ride completed and reached
+    # env.save()/export_recording; the export died on host ENOSPC
+    # (disk at 100%, 2.1 Gi free — environmental, space since freed).
+    # Rerun scheduled for the record.
+
+    uv run --frozen pytest tests/reference/test_native_static_brake.py -x -q
+    # 9 passed (incl. new test_hold_reseat_parity_sequence parity:
+    # saturated stale latch pinned under reseat=false, re-anchored to
+    # ~0 torque under reseat=true, probe/hysteresis controls).
+
+    BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/f2-repro/cache-flat \
+      uv run --frozen python /tmp/f2-repro/repro_flat_reseat.py
+    # SETTLE OK 13.8s: steps=3008, residual=0.009780560330420712 —
+    # bitwise-identical to welded_flat.json/probe_welded_0005 metadata;
+    # reseat events: 0. Flat settle path unchanged → the flat
+    # initial-state/bootstrap fixtures need no recapture.
+
+    BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/f2-repro/cache-45 \
+      uv run --frozen python /tmp/f2-repro/repro_45.py
+    # 45% grade: reseat events: 0 → weld-test settle trajectory
+    # bitwise-identical (held equilibrium + released-relaxation
+    # failure path unchanged; episode field untouched).
+
+    BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/f2-repro/cache-rocky \
+      uv run --frozen python /tmp/f2-repro/repro_rocky.py
+    # alpine_rocky distributed settle: converged steps=2400,
+    # residual=0.013185; reseat events: 1 → trajectory changed
+    # bitwise (settle-dependent capture differs).
+
+Regression matrix:
+
+- `tests/test_rider_welds.py` (flat nodes): 3 passed —
+  `test_held_rider_weight_is_carried_by_the_connects`,
+  `test_contact_diagnostics_carry_the_solved_weight`,
+  `test_torque_sensor_reads_the_previous_solved_crank_torque`.
+- `test_steep_grade_saddle_shear_exceeds_friction`: FAIL —
+  **pre-existing at HEAD** (stash-verified: identical
+  `all(would_slip)` failure + `saddle.friction` monitor warning with
+  the two physics files reverted; the 45% settle has 0 reseat events,
+  so the trajectory is bitwise-identical to HEAD).
+- `tests/reference/test_monitor_strictness.py` +
+  `tests/reference/test_equilibrium_state_file.py`: 28 passed.
+  Harness fix: the `__new__` reset double gained
+  `brake=SimpleNamespace(reset=lambda:None)` — `b21c63e` added
+  `brake.reset()` to `PhysicalRuntime.reset()` without updating the
+  double (pre-existing F2-family breakage, verified failing at HEAD).
+- Baseline greens re-checked: `test_flat_launch_delivers_crank_torque`,
+  `test_stepped_effort_respects_strength_and_the_power_budget`,
+  `test_suspension_components_bitwise` — all pass.
+
+Golden/fixture impact:
+
+- `tests/fixtures/golden/{darwin-arm64,linux-aarch64}` holds captures
+  only for `test_native_numeric_completion.py` and
+  `test_period_buffer.py`. The period_buffer captures consume the
+  flat `probe_welded_0005`/`welded_flat` initial-state documents —
+  flat settle is bitwise-unchanged (0 reseats) → **no recapture**.
+- `test_tire_channel_parity_across_backends` bitwise-records the
+  oracle's savage (`compliant`) and alpine_rocky (`distributed`)
+  bootstrap states — both changed by the fix. The node now progresses
+  past settle but fails downstream on a native-vs-oracle
+  `root.front.penetration_m` drift (~1.7e-6 vs 1e-9 tolerance) — a
+  port-maturity gap unblocked by this fix, not a settle regression
+  (`reseat` is off in the live field; both sides share the same t=0
+  bootstrap). Capture contract forbids committing a capture for a
+  failing node → **no recapture; stays planned/red downstream**.
+
+Remaining known red (unchanged/downstream, not this fix's scope):
+realtime RTF 0.69 on savage (and the documented ~0.62 extreme),
+plateau-climb baseline gap, `steep_grade_saddle_shear` (pre-existing
+at HEAD, verified), the settled-pose-dependent 3.28 port-map records
+awaiting their `resolved` fixtures — savage/3.28 rows remain
+`planned` per ruling.
+
+## 2026-10-24 — F2 gate results + migration_T25 root cause
+
+Final `bash tools/run_tests.sh native` on `051497c`: build green, all
+nine static-analysis sweeps green (`frontends`/`tidy`/`cppcheck`/`odr`/
+`headers`/`context`/`diagnostic-controls` findings `none`, `analyzer`
+`report-only`, `contracts` all 12 controls passed), CTest **59/62**
+— `migration_T09`, `migration_T25`, `migration_T29`; the profile then
+exited at the ctest failure before its contracts+pytest tail, which was
+run manually (contracts: all 12 controls passed; the 3,080-item
+native/golden pytest selection — see task-F2-report for its outcome).
+
+`migration_T25` root cause `[reproduced]` — **not this fix, not a new
+regression**: the initial-state `contract_sha256` (initial_state.cpp:43
+mirroring initial_state.py `_contract`) serializes the resolved
+**absolute** `articulated.joint_envelope_path`/`joint_strength_path`
+strings, binding the hash to the capturing worktree. Evidence:
+payloads computed by the live oracle on identical trees differ only in
+those two path strings (`…/pfc-lane-b/…` vs `…/python-free-cpp/…`);
+the oracle on `python-free-cpp` reproduces the fixture's pinned
+`04cab701…` exactly while `pfc-lane-b` computes `bb4ceb98…`; T25
+rebuilt+rerun at `5be9ec5` with this commit's native files reverted
+fails identically; and the concurrent `pfc-lane-a` `native` gate
+(without F2) exits at the identical T09/T25/T29 trio. **T25 cannot pass
+outside the capturing worktree** — a portability defect in the
+contract-hash inputs, pre-existing at the sync base.
+
+Savage nodes post-fix `[reproduced]`: `test_savage_is_ridden_to_the_end`
+now completes settle + the full 110 s/88,000-step ride + recording
+export (earlier attempt died on host ENOSPC; rerun green-through-export
+at 65 Gi free) and fails only the downstream distance assertion
+(`max x = 58.32 m < 120 m`, `env.reason='duration'` — plateau mean
+≈0.98 m/s vs the 6 km/h requirement, balance/attachment/power
+violations from ~0.5 s — the documented baseline gap). The realtime
+node completes 20 s/16,000 steps and fails only `factor 0.6899 >= 1.0`.
+`test-port-map.json` unchanged at `5be9ec5`; savage + the 17 stopped
+3.28 records remain `planned`.
+
+## 2026-10-24 — F2 quick-profile failure triage
+
+The `quick` run (1,916 passed / 22 failed / 13 skipped, ~98 min, shared
+host with lane-a's `native` gate) carried four failure classes; each was
+reproduced and classified:
+
+- `test_replay_session.py` + `test_replay_recording_v3.py` (12) —
+  **stale shared equilibrium cache, not this fix.** `ReplaySession`
+  rebuilds the env and bitwise-compares `initial_integration_state`
+  (atol 1e-9) against `states.npz`. The record env loaded
+  `$TMPDIR/bike_sim_equilibrium/<fingerprint>.npz` (auto-cache,
+  `equilibrium_cache_enabled=true`) while the rebuilt env — its
+  fingerprint differs because the recorded physics payload carries the
+  bundled tmp-path `articulated.*_path` strings — ran a full fresh
+  settle (8,453 `hold_qfrc` calls, zero reseats) and converged to the
+  same pose a base settle produces (qpos[1]=2.00995963,
+  qpos[4]=-0.04035243). The cached pose (2.00997026) differs — written
+  by an earlier same-fingerprint settle whose *unhashed* inputs
+  (`ExperimentConfig`/`demand`/`rider_program` are outside
+  `fingerprint()`, and `PhysicalRuntime.reset()` re-solves equilibrium
+  from dirty post-episode state then `save()`s under the same key)
+  shifted its output. Proof post-fix: `BIKE_SIM_EQUILIBRIUM_CACHE_DIR`
+  pointed at a fresh dir → record and rebuild settles bitwise-identical
+  (max diff 0.0) and all 16 nodes in both files pass (297 s). The
+  failure is order/environment-dependent infrastructure flake — the
+  documented "cache-mediated greens are not proof" hazard surfacing as a
+  spurious red — not a semantic regression: the F2 settle on this recipe
+  is bitwise-identical to `5be9ec5`.
+- `test_rider_allocation.py::test_allocation_forecast_*` (2) —
+  pre-existing `b21c63e`-family double gap: `PhysicalRuntime.__new__`
+  stub `brake=SimpleNamespace(apply=...)` lacks `hold_qfrc`, which
+  `apply_forces` already calls at `5be9ec5:302`. Repaired the stub
+  (`hold_qfrc=lambda *a,**k: np.zeros(model.nv)`); file now 42/42.
+- `test_cadence_shifter.py` (3) — pure cassette/shift-logic assertions;
+  no file in the diff touches it; fails identically at committed state;
+  pre-existing baseline.
+- `tests/portability/*` (4) — checkout-baseline/dependency/docs policy
+  checks; unrelated to ride physics; pre-existing baseline.
+
+No fixture changes; `test-port-map.json` remains at `5be9ec5`.
+
 ## 2026-10-24 — Task 3.12a (lane/a): pneumatic tyre batch
 
 Batch files: `tests/reference/test_native_pneumatic_geometry.py` (14),

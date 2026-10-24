@@ -50,14 +50,20 @@ public:
     [[nodiscard]] bool apply(mjModel *model, double front_demand,
                              double rear_demand) const;
 
-    // hold_qfrc(model, data, front_demand, rear_demand, advance):
+    // hold_qfrc(model, data, front_demand, rear_demand, advance, reseat):
     // the bite's generalized force (nv zeros when unlatched). An
     // advancing evaluation may latch or release; a probe reads the
     // committed latch without moving it — the Python ``advance``
-    // contract verbatim.
+    // contract verbatim. ``reseat`` (the oracle's keyword) lets an
+    // advancing evaluation re-anchor a saturated bite: inside the engage
+    // band a spring demand past torque_nm*demand means the pad is
+    // slipping, so the latch re-seats at the current angle. The held
+    // relaxation passes it — a latch captured before the pose settled
+    // would otherwise hold a saturated stale offset the friction bound
+    // cannot cancel; the live field leaves it off.
     [[nodiscard]] std::vector<double> hold_qfrc(
         const mjModel *model, const mjData *data, double front_demand,
-        double rear_demand, bool advance);
+        double rear_demand, bool advance, bool reseat = false);
 
     // reset(): forget both captured bite angles; the next standstill
     // re-bites. The oracle's PhysicalRuntime.reset clears them for a

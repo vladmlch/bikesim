@@ -1,0 +1,56 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 504,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_ring_bitwise[63]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   63
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 504,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_ring_bitwise[63]",
+  "offset": 504,
+  "rtol": null,
+  "shape": [
+   63
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 504,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_ring_bitwise[63]",
+  "offset": 1008,
+  "rtol": null,
+  "shape": [
+   63
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_ring_bitwise[63]",
+  "offset": 1512,
+  "rtol": null,
+  "shape": []
+ }
+]

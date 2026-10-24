@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_material_rate_bitwise[17-1e-09]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ }
+]

@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 64520,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_math_probes_bitwise",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   8065
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 64520,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_math_probes_bitwise",
+  "offset": 64520,
+  "rtol": null,
+  "shape": [
+   8065
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 64520,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_math_probes_bitwise",
+  "offset": 129040,
+  "rtol": null,
+  "shape": [
+   8065
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 64520,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_math_probes_bitwise",
+  "offset": 193560,
+  "rtol": null,
+  "shape": [
+   8065
+  ]
+ }
+]

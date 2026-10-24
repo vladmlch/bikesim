@@ -40,6 +40,7 @@ from bike_sim.terrain.surface import SURFACES, SurfaceSpec
 from native_loader import load_native
 bike_native = load_native()
 from _bits import assert_bitwise_equal
+import _golden
 
 _SURFACE_KEYS = ('name', 'mu_peak', 'mu_slide', 'slip_stiffness_per_load',
                  'stribeck_speed_mps')
@@ -67,6 +68,8 @@ def _oracle_state_dict(brush_state):
 def _assert_result_bitwise(got, want, msg=''):
     assert_bitwise_equal(float(got['force_n']), float(want.force_n),
                          f'{msg} result.force_n')
+    _golden.record(np.asarray(bool(want.fully_sliding)),
+                   f'{msg} result.fully_sliding')
     assert bool(got['fully_sliding']) == bool(want.fully_sliding), \
         f'{msg} result.fully_sliding'
     assert_bitwise_equal(float(got['friction_coefficient']),
@@ -462,6 +465,10 @@ def test_discretised_step_sweep_bitwise(n, surface):
         v_s = float(rng.uniform(-3.0, 3.0))
         sigma = float(rng.uniform(0.0, 0.8))
         dt = float(rng.uniform(0.0002, 0.004))
+        # The nonzero-low uniform transforms are wheel-contraction
+        # divergent — replay the frozen scalars.
+        _golden.record(np.array([half, v_x, v_s, dt]),
+                       f'input.step {step_idx} scalars')
         want = oracle.step(loads, half_length_m=half, v_x_mps=v_x,
                            v_s_mps=v_s, sigma_m=sigma, surface=surface,
                            dt_s=dt)
@@ -516,6 +523,8 @@ def test_discretised_advection_extremes_bitwise():
     rng = np.random.default_rng(77)
     bristles = rng.uniform(-0.02, 0.02, n)
     bristles[0] = -0.0           # signed-zero payload survives the copy
+    # Wheel-contraction divergent — replay the frozen row.
+    _golden.record(bristles, 'input.bristles')
     kappa0 = 0.11
     loads = np.linspace(50.0, 300.0, n)
     half = 0.035                  # dx = 0.07/7 = 0.01

@@ -1,0 +1,142 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "shape rejection atomicity state.bristle_deflection_m",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "shape rejection atomicity state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 64,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "loads rejection atomicity state.bristle_deflection_m",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 72,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "loads rejection atomicity state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 136,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "domain rejection atomicity state.bristle_deflection_m",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 144,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "domain rejection atomicity state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 208,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "post-failure result.force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 216,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "post-failure result.fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 224,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "post-failure result.friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 225,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "post-failure state.bristle_deflection_m",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 233,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "post-failure state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_validation_order_and_atomicity",
+  "offset": 297,
+  "rtol": null,
+  "shape": []
+ }
+]

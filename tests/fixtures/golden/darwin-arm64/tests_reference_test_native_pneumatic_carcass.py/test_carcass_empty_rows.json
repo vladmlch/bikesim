@@ -1,0 +1,72 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_empty_rows",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_empty_rows",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_empty_rows",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_empty_rows",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_empty_rows",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ }
+]

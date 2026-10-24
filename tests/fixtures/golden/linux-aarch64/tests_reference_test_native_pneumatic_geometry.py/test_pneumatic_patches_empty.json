@@ -1,0 +1,47 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_patches_empty",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_patches_empty",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_patches_empty",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ }
+]

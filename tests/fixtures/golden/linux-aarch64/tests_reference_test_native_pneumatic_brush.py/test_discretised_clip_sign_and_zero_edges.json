@@ -1,0 +1,78 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "clip signs result.force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_clip_sign_and_zero_edges",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "clip signs result.fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_clip_sign_and_zero_edges",
+  "offset": 8,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "clip signs result.friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_clip_sign_and_zero_edges",
+  "offset": 9,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "clip signs state.bristle_deflection_m",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_clip_sign_and_zero_edges",
+  "offset": 17,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "clip signs state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_clip_sign_and_zero_edges",
+  "offset": 41,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "write-back",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_clip_sign_and_zero_edges",
+  "offset": 49,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

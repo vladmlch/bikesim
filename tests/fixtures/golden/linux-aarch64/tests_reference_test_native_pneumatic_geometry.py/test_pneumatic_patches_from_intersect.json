@@ -1,0 +1,32 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "patches",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_patches_from_intersect",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   2,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "patches",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_patches_from_intersect",
+  "offset": 16,
+  "rtol": null,
+  "shape": [
+   2,
+   2
+  ]
+ }
+]

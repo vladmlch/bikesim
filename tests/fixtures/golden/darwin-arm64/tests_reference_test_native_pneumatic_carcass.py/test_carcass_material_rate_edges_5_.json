@@ -1,0 +1,30 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_material_rate_edges[5]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_material_rate_edges[5]",
+  "offset": 40,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ }
+]

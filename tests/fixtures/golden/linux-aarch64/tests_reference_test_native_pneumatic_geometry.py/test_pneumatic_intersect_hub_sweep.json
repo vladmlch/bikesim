@@ -1,0 +1,4802 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 512,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 1024,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 1536,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 2048,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 2049,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 2050,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 4098,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 6146,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 8194,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 10242,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 10243,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 10244,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 10756,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 11268,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 11780,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 12292,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 12293,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 12294,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 14342,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 16390,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 18438,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 20486,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 20487,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 20488,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 21000,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 21512,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 22024,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 22536,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 22537,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 22538,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 24586,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 26634,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 28682,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 30730,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 30731,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 30732,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 31244,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 31756,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 32268,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 32780,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 32781,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 32782,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 34830,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 36878,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 38926,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 40974,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 40975,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 40976,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 41488,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 42000,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 42512,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 43024,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 43025,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 43026,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 45074,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 47122,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 49170,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 51218,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 51219,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 51220,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 51732,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 52244,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 52756,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 53268,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 53269,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 53270,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 55318,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 57366,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 59414,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 61462,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 61463,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 61464,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 61976,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 62488,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 63000,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 63512,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 63513,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 63514,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 65562,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 67610,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 69658,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 71706,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 71707,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 71708,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 72220,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 72732,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 73244,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 73756,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 73757,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 73758,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 75806,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 77854,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 79902,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 81950,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 81951,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 81952,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 82464,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 82976,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 83488,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 84000,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 84001,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 84002,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 86050,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 88098,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 90146,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 92194,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 92195,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 92196,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 92708,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 93220,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 93732,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 94244,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 94245,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 94246,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 96294,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 98342,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 100390,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 102438,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 102439,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 102440,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 102952,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 103464,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 103976,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 104488,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 104489,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 104490,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 106538,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 108586,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 110634,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 112682,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 112683,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 112684,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 113196,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 113708,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 114220,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 114732,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 114733,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 114734,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 116782,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 118830,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 120878,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 122926,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 122927,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 122928,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 123440,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 123952,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 124464,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 124976,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 124977,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 124978,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 127026,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 129074,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 131122,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 133170,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 133171,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 133172,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 133684,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 134196,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 134708,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 135220,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 135221,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 135222,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 137270,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 139318,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 141366,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 143414,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 143415,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 143416,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 143928,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 144440,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 144952,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 145464,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 145465,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 145466,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 147514,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 149562,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 151610,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 153658,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 153659,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 153660,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 154172,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 154684,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 155196,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 155708,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 155709,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 155710,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 157758,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 159806,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 161854,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 163902,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 163903,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 163904,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 164416,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 164928,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 165440,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 165952,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 165953,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 165954,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 168002,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 170050,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 172098,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 174146,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 174147,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 174148,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 174660,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 175172,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 175684,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 176196,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 176197,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 176198,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 178246,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 180294,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 182342,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 184390,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 184391,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 184392,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 184904,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 185416,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 185928,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 186440,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 221,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 186441,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 222,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 186442,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 223,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 188490,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 224,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 190538,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 225,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 192586,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 226,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 194634,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 227,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 194635,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 228,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 194636,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 195148,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 230,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 195660,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 231,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 196172,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 232,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 196684,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 233,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 196685,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 196686,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 235,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 198734,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 236,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 200782,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 237,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 202830,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 238,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 204878,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 239,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 204879,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 204880,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 205392,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 242,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 205904,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 243,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 206416,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 244,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 206928,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 245,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 206929,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 246,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 206930,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 247,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 208978,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 248,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 211026,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 249,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 213074,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 250,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 215122,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 251,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 215123,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 252,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 215124,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 253,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 215636,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 254,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 216148,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 255,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 216660,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 256,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 217172,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 257,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 217173,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 258,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 217174,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 259,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 219222,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 260,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 221270,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 261,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 223318,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 262,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 225366,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 263,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 225367,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 264,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 225368,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 265,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 225880,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 266,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 226392,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 267,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 226904,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 268,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 227416,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 269,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 227417,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 270,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 227418,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 271,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 229466,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 272,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 231514,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 273,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 233562,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 274,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 235610,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 275,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 235611,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 276,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 235612,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 277,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 236124,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 278,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 236636,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 279,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 237148,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 280,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 237660,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 281,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 237661,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 282,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 237662,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 283,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 239710,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 284,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 241758,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 285,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 243806,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 286,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 245854,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 287,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 245855,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 288,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 245856,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 289,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 246368,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 290,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 246880,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 291,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 247392,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 292,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 247904,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 293,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 247905,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 294,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 247906,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 295,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 249954,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 296,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 252002,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 297,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 254050,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 298,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 256098,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 299,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 256099,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 300,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 256100,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 301,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 256612,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 302,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 257124,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 303,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 257636,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 304,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 258148,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 305,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 258149,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 306,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 258150,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 307,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 260198,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 308,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 262246,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 309,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 264294,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 310,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 266342,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 311,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 266343,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 312,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 266344,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 313,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 266856,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 314,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 267368,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 315,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 267880,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 316,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 268392,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 317,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 268393,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 318,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 268394,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 319,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 270442,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 320,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 272490,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 321,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 274538,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 322,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 276586,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 323,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 276587,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 324,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 276588,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 325,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 277100,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 326,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 277612,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 327,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 278124,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 328,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 278636,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 329,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 278637,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 330,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 278638,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 331,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 280686,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 332,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 282734,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 333,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 284782,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 334,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 286830,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 335,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 286831,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 336,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 286832,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 337,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 287344,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 338,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 287856,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 339,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 288368,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 340,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 288880,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 341,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 288881,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 342,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 288882,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 343,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 290930,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 344,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 292978,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 345,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 295026,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 346,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 297074,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 347,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 297075,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 348,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 297076,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 349,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 297588,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 350,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 298100,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 351,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 298612,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 352,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 299124,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 353,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 299125,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 354,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 299126,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 355,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 301174,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 356,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 303222,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 357,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 305270,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 358,
+  "kind": "bitwise",
+  "label": "coverage_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 307318,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 359,
+  "kind": "bitwise",
+  "label": "airborne",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_geometry.py::test_pneumatic_intersect_hub_sweep",
+  "offset": 307319,
+  "rtol": null,
+  "shape": []
+ }
+]

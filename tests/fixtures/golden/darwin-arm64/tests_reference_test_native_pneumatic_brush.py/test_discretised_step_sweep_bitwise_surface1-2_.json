@@ -1,0 +1,458 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.step 0 scalars",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "step 0 result.force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 32,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "step 0 result.fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 40,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "step 0 result.friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 41,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "step 0 state.bristle_deflection_m",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 49,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "step 0 state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 65,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "input.step 1 scalars",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 73,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "step 1 result.force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 105,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "step 1 result.fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 113,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "step 1 result.friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 114,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "step 1 state.bristle_deflection_m",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 122,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "step 1 state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 138,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.step 2 scalars",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 146,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "step 2 result.force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 178,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "step 2 result.fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 186,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "step 2 result.friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 187,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "step 2 state.bristle_deflection_m",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 195,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "step 2 state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 211,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.step 3 scalars",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 219,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "step 3 result.force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 251,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "step 3 result.fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 259,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "step 3 result.friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 260,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "step 3 state.bristle_deflection_m",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 268,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "step 3 state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 284,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "input.step 4 scalars",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 292,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "step 4 result.force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 324,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "step 4 result.fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 332,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "step 4 result.friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 333,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "step 4 state.bristle_deflection_m",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 341,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "step 4 state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 357,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "input.step 5 scalars",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 365,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "step 5 result.force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 397,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "step 5 result.fully_sliding",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 405,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "step 5 result.friction_coefficient",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 406,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "step 5 state.bristle_deflection_m",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 414,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "step 5 state.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_discretised_step_sweep_bitwise[surface1-2]",
+  "offset": 430,
+  "rtol": null,
+  "shape": []
+ }
+]

@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "sigma_x(inf)",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_brush.py::test_sigma_x_bitwise[inf]",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

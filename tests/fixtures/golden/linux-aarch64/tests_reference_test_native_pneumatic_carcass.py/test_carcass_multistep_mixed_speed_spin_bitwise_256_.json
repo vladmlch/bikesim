@@ -1,0 +1,7212 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 2048,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 4096,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 6144,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 8192,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 10240,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 12288,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.contact_patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 14336,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.contact_lengths_m",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 14336,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 14336,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 14344,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 14352,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 14360,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 14368,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 14369,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 14370,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 16418,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 18466,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 20514,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 20515,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 20516,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 20524,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 20532,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 20540,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "step 0 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 20548,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 20556,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 22604,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 24652,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 26700,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 28748,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 30796,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 32844,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.contact_patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 34892,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.contact_lengths_m",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 34892,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 34892,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 34900,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 34908,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 34916,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 34924,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 34925,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 34926,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 36974,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 39022,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 41070,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 41071,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 41072,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 41080,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 41088,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 41096,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "step 1 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 41104,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 41112,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 43160,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 45208,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 47256,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 49304,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 51352,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 53400,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.contact_patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 55448,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.contact_lengths_m",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 55448,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 55448,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 55456,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 55464,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 55472,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 55480,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 55481,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 55482,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 57530,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 59578,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 61626,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 61627,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 61628,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 61636,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 61644,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 61652,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "step 2 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 61660,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 61668,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 63716,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 65764,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 67812,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 69860,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 71908,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 73956,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.contact_patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 76004,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.contact_lengths_m",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 76004,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 76004,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 76012,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 76020,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 76028,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 76036,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 76037,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 76038,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 78086,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 80134,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 82182,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 82183,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 82184,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 82192,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 82200,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 82208,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "step 3 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 82216,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 82224,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 84272,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 86320,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 88368,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 90416,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 92464,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 94512,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.contact_patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 96560,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.contact_lengths_m",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 96560,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 96560,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 96568,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 96576,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 96584,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 96592,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 96593,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 96594,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 98642,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 100690,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 102738,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 102739,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 102740,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 102748,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 102756,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 102764,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "step 4 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 102772,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 102780,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 104828,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 106876,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 108924,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 110972,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 113020,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 115068,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.contact_patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 117116,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.contact_lengths_m",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 117116,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 117116,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 117124,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 117132,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 117140,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 117148,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 117149,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 117150,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 119198,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 121246,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 123294,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 123295,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 123296,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 123304,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 123312,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 123320,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "step 5 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 123328,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 123336,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 125384,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 127432,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 129480,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 131528,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 133576,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 135624,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.contact_patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 137672,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.contact_lengths_m",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 137672,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 137672,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 137680,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 137688,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 137696,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 137704,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 137705,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 137706,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 139754,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 141802,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 143850,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 143851,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 143852,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 143860,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 143868,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 143876,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "step 6 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 143884,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 143892,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 145940,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 147988,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 150036,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 152084,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 154132,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 156180,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.contact_patches",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 158228,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.contact_lengths_m",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 158228,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 158228,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 158236,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 158244,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 158252,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 158260,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 158261,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 158262,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 160310,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 162358,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 164406,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 164407,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 164408,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 164416,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 164424,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 164432,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "step 7 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 164440,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 164448,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 166496,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 168544,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 170592,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 172640,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 174688,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 176736,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 178784,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 178792,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 178800,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 178808,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 178816,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 178824,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 178832,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 178833,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 178834,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 180882,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 182930,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 218,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 184978,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 184979,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 184980,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 221,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 184988,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 222,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 184996,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 223,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 185004,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 224,
+  "kind": "bitwise",
+  "label": "step 8 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 185012,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 225,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 185020,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 226,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 187068,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 227,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 189116,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 228,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 191164,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 193212,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 230,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 195260,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 231,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 197308,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 232,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 199356,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 233,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 199364,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 199372,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 235,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 199380,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 236,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 199388,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 237,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 199396,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 238,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 199404,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 239,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 199405,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 199406,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 201454,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 242,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 203502,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 243,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 205550,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 244,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 205551,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 245,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 205552,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 246,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 205560,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 247,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 205568,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 248,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 205576,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 249,
+  "kind": "bitwise",
+  "label": "step 9 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 205584,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 250,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 205592,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 251,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 207640,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 252,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 209688,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 253,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 211736,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 254,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 213784,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 255,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 215832,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 256,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 217880,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 257,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 219928,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 258,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 219936,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 259,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 219944,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 260,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 219952,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 261,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 219960,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 262,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 219968,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 263,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 219976,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 264,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 219977,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 265,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 219978,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 266,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 222026,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 267,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 224074,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 268,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 226122,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 269,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 226123,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 270,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 226124,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 271,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 226132,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 272,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 226140,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 273,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 226148,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 274,
+  "kind": "bitwise",
+  "label": "step 10 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 226156,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 275,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 226164,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 276,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 228212,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 277,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 230260,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 278,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 232308,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 279,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 234356,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 280,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 236404,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 281,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 238452,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 282,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 240500,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 283,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 240508,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 284,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 240516,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 285,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 240524,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 286,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 240532,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 287,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 240540,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 288,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 240548,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 289,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 240549,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 290,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 240550,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 291,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 242598,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 292,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 244646,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 293,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 246694,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 294,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 246695,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 295,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 246696,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 296,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 246704,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 297,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 246712,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 298,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 246720,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 299,
+  "kind": "bitwise",
+  "label": "step 11 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 246728,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 300,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 246736,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 301,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 248784,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 302,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 250832,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 303,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 252880,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 304,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 254928,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 305,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 256976,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 306,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 259024,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 307,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 261072,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 308,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 261080,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 309,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 261088,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 310,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 261096,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 311,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 261104,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 312,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 261112,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 313,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 261120,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 314,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 261121,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 315,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 261122,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 316,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 263170,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 317,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 265218,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 318,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 267266,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 319,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 267267,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 320,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 267268,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 321,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 267276,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 322,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 267284,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 323,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 267292,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 324,
+  "kind": "bitwise",
+  "label": "step 12 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 267300,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 325,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 267308,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 326,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 269356,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 327,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 271404,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 328,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 273452,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 329,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 275500,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 330,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 277548,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 331,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 279596,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 332,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 281644,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 333,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 281652,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 334,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 281660,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 335,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 281668,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 336,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 281676,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 337,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 281684,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 338,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 281692,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 339,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 281693,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 340,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 281694,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 341,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 283742,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 342,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 285790,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 343,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 287838,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 344,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 287839,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 345,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 287840,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 346,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 287848,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 347,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 287856,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 348,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 287864,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 349,
+  "kind": "bitwise",
+  "label": "step 13 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 287872,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 350,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 287880,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 351,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 289928,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 352,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 291976,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 353,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 294024,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 354,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 296072,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 355,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 298120,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 356,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 300168,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 357,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 302216,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 358,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 302224,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 359,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 302232,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 360,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 302240,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 361,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 302248,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 362,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 302256,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 363,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 302264,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 364,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 302265,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 365,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 302266,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 366,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 304314,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 367,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 306362,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 368,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 308410,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 369,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 308411,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 370,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 308412,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 371,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 308420,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 372,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 308428,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 373,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 308436,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 374,
+  "kind": "bitwise",
+  "label": "step 14 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 308444,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 375,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 308452,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 376,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 310500,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 377,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 312548,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 378,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 314596,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 379,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 316644,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 380,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 318692,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 381,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 320740,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 382,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 322788,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 383,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 322796,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 384,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 322804,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 385,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 322812,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 386,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 322820,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 387,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 322828,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 388,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 322836,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 389,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 322837,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 390,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 322838,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 391,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 324886,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 392,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 326934,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 393,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 328982,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 394,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 328983,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 395,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 328984,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 396,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 328992,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 397,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 329000,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 398,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 329008,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 399,
+  "kind": "bitwise",
+  "label": "step 15 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 329016,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 400,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 329024,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 401,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 331072,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 402,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 333120,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 403,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 335168,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 404,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 337216,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 405,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 339264,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 406,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 341312,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 407,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 343360,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 408,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 343368,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 409,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 343376,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 410,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 343384,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 411,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 343392,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 412,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 343400,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 413,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 343408,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 414,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 343409,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 415,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 343410,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 416,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 345458,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 417,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 347506,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 418,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 349554,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 419,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 349555,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 420,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 349556,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 421,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 349564,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 422,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 349572,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 423,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 349580,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 424,
+  "kind": "bitwise",
+  "label": "step 16 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 349588,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 425,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 349596,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 426,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 351644,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 427,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 353692,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 428,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 355740,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 429,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 357788,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 430,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 359836,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 431,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 361884,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 432,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 363932,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 433,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 363940,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 434,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 363948,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 435,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 363956,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 436,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 363964,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 437,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 363972,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 438,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 363980,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 439,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 363981,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 440,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 363982,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 441,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 366030,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 442,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 368078,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 443,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 370126,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 444,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 370127,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 445,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 370128,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 446,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 370136,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 447,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 370144,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 448,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 370152,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 449,
+  "kind": "bitwise",
+  "label": "step 17 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 370160,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 450,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 370168,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 451,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 372216,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 452,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 374264,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 453,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 376312,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 454,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 378360,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 455,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 380408,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 456,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 382456,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 457,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 384504,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 458,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 384512,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 459,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 384520,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 460,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 384528,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 461,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 384536,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 462,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 384544,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 463,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 384552,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 464,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 384553,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 465,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 384554,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 466,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 386602,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 467,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 388650,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 468,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 390698,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 469,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 390699,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 470,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 390700,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 471,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 390708,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 472,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 390716,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 473,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 390724,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 474,
+  "kind": "bitwise",
+  "label": "step 18 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 390732,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 475,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 390740,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 476,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 392788,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 477,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 394836,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 478,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 396884,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 479,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 398932,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 480,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 400980,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 481,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 403028,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 482,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405076,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 483,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405084,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 484,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405092,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 485,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405100,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 486,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405108,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 487,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405116,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 488,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405124,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 489,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405125,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 490,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.rim_event.x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405126,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 491,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.rim_event.speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405134,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 492,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.rim_event.peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405142,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 493,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.rim_event.peak_rim_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405150,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 494,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) result.rim_event.absorbed_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405158,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 495,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 405166,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 496,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 407214,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 497,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 409262,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 498,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 411310,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 499,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 411311,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 500,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 411312,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 501,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 411320,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 502,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 411328,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 503,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 411336,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 504,
+  "kind": "bitwise",
+  "label": "step 19 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 411344,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 505,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 411352,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 506,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 413400,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 507,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 415448,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 508,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 417496,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 509,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 419544,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 510,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 421592,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 511,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 423640,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 512,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 425688,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 513,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 425696,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 514,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 425704,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 515,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 425712,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 516,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 425720,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 517,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 425728,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 518,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 425736,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 519,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 425737,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 520,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 425738,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 521,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 427786,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 522,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 429834,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 523,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 431882,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 524,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 431883,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 525,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 431884,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 526,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 431892,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 527,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 431900,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 528,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 431908,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 529,
+  "kind": "bitwise",
+  "label": "step 20 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 431916,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 530,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.pressure_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 431924,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 531,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.elastic_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 433972,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 532,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 436020,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 533,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.hysteresis_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 438068,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 534,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.rim_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 440116,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 535,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.total_element_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 442164,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 536,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.material_rate_mps",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 444212,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i4",
+  "index": 537,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.contact_patches",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 446260,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 538,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.contact_lengths_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 446268,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 539,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.force_x_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 446276,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 540,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.force_z_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 446284,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 541,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.normal_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 446292,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 542,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.rim_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 446300,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 543,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 446308,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 544,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) result.rim_event",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 446309,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 545,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) state.delta_prev_m",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 446310,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 546,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) state.elastic_prev_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 448358,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 547,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) state.maxwell_force_n",
+  "nbytes": 2048,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 450406,
+  "rtol": null,
+  "shape": [
+   256
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 548,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) state.initialized",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 452454,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 549,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) state.rim_strike_active",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 452455,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 550,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) state.rim_event_x_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 452456,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 551,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) state.rim_event_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 452464,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 552,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) state.rim_event_peak_load_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 452472,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 553,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) state.rim_event_peak_force_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 452480,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 554,
+  "kind": "bitwise",
+  "label": "step 21 (evaluate) state.rim_event_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_carcass.py::test_carcass_multistep_mixed_speed_spin_bitwise[256]",
+  "offset": 452488,
+  "rtol": null,
+  "shape": []
+ }
+]

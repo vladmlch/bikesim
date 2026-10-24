@@ -68,13 +68,17 @@ function(bike_add_native_startup native_dir)
   add_library(bike_spatial STATIC
     "${native_dir}/src/spatial/topology.cpp"
     "${native_dir}/src/spatial/frames.cpp"
-    "${native_dir}/src/spatial/bootstrap_state.cpp")
+    "${native_dir}/src/spatial/bootstrap_state.cpp"
+    "${native_dir}/src/spatial/brake_state.cpp"
+    "${native_dir}/src/spatial/outcomes.cpp")
   bike_startup_target_policy(bike_spatial "${native_dir}")
   target_link_libraries(bike_spatial PUBLIC bike_configuration ${_startup_engine} bike_io)
 
   # Model construction consumes the profile/support math but must not acquire
   # the controllers and runtime objects through a model -> core cycle.
-  add_library(bike_rider_spatial STATIC "${native_dir}/src/rider/spatial_support.cpp")
+  add_library(bike_rider_spatial STATIC
+    "${native_dir}/src/rider/spatial_support.cpp"
+    "${native_dir}/src/rider/steer_balance.cpp")
   bike_startup_target_policy(bike_rider_spatial "${native_dir}")
   target_link_libraries(bike_rider_spatial PUBLIC bike_spatial bike_io)
 
@@ -103,13 +107,27 @@ function(bike_add_native_startup native_dir)
   bike_startup_target_policy(bike_terrain "${native_dir}")
   target_link_libraries(bike_terrain PUBLIC
     bike_configuration bike_geometry bike_random bike_io bike_platform bike_tyre_profile)
-  # The frozen W20/W25/W27 producer has no implementation in W06-W19.
-  # Its target is deliberately a forward dependency, never an empty shim.
+  # W20-W28: one engine-independent material owner, shared by both graphs.
+  add_library(bike_pneumatic3d STATIC
+    "${native_dir}/src/pneumatic3d/geometry.cpp"
+    "${native_dir}/src/pneumatic3d/carcass.cpp"
+    "${native_dir}/src/pneumatic3d/patches.cpp"
+    "${native_dir}/src/pneumatic3d/brush.cpp"
+    "${native_dir}/src/pneumatic3d/bristles.cpp"
+    "${native_dir}/src/pneumatic3d/model.cpp"
+    "${native_dir}/src/pneumatic3d/state.cpp")
+  bike_startup_target_policy(bike_pneumatic3d "${native_dir}")
+  target_link_libraries(bike_pneumatic3d PUBLIC bike_spatial bike_terrain bike_io)
+  target_sources(${_startup_core} PRIVATE
+    "${native_dir}/src/writers/pneumatic_3d_tire.cpp"
+    "${native_dir}/src/writers/spatial_tire_adapter.cpp"
+    "${native_dir}/src/runtime/spatial_tire_factory.cpp")
   target_link_libraries(${_startup_core} PUBLIC
-    bike_tyre_profile bike_spatial bike_rider_spatial bike_terrain bike_pneumatic3d)
+    bike_tyre_profile bike_spatial bike_rider_spatial bike_terrain bike_pneumatic3d bike_model)
 
   target_sources(bike_model PRIVATE
     "${native_dir}/src/model/builder.cpp"
+    "${native_dir}/src/model/benchmark_whipple.cpp"
     "${native_dir}/src/model/xml_writer.cpp"
     "${native_dir}/src/model/physical_topology.cpp"
     "${native_dir}/src/model/spatial_topology.cpp"
@@ -141,6 +159,8 @@ function(bike_add_native_startup native_dir)
     "${native_dir}/src/initialization/capture.cpp"
     "${native_dir}/src/initialization/initial_pose.cpp"
     "${native_dir}/src/initialization/equilibrium.cpp"
+    "${native_dir}/src/initialization/spatial_equilibrium.cpp"
+    "${native_dir}/src/initialization/bootstrap_hold.cpp"
     "${native_dir}/src/initialization/legacy_equilibrium.cpp"
     "${native_dir}/src/initialization/settle_contacts.cpp"
     "${native_dir}/src/initialization/refine.cpp"

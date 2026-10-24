@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -9,12 +10,17 @@
 
 namespace bike::initialization {
 
+struct SpatialEquilibriumReport;
+
 struct EquilibriumOptions {
     std::optional<std::int64_t> max_steps;
     double tolerance = .05;
 };
 
 struct EquilibriumResult {
+    // Nullable owned report. shared_ptr supports the W00 frozen header's
+    // context.hpp dependency without an incomplete std::optional cycle.
+    std::shared_ptr<SpatialEquilibriumReport> spatial;
     std::int64_t steps = 0;
     double residual_qacc = 0.;
     bool cache_hit = false;

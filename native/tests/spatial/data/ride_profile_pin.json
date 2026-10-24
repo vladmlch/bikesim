@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "status": "authored_source_pin_pending_V06",
+  "measured_qualification_digest": null,
+  "maxwell_rate_stiffening": [0.2484, 0.2498],
+  "derived_fields": {
+    "maxwell_k_n_per_m3": "1000000 * maxwell_rate_stiffening[wheel]",
+    "initial_volume_m3": "2*pi*pi*(outer_radius_m-casing_width_m/2)*(casing_width_m/2)^2",
+    "tier": "scenario tier; fast or detailed"
+  },
+  "pneumatic_3d": {
+    "tier": "fast",
+    "outer_radius_m": [0.372, 0.352],
+    "casing_width_m": [0.060, 0.060],
+    "carcass": [
+      {
+        "pressure_pa": 150000.0, "k_area_n_per_m3": 1000000.0,
+        "maxwell_k_n_per_m3": null, "maxwell_tau_s": 0.2,
+        "rim_clearance_m": 0.046, "rim_stiffness_n_per_m3": 100000000.0,
+        "initial_volume_m3": null, "constant_pressure": true,
+        "provenance_status": "provisional"
+      },
+      {
+        "pressure_pa": 170000.0, "k_area_n_per_m3": 1000000.0,
+        "maxwell_k_n_per_m3": null, "maxwell_tau_s": 0.2,
+        "rim_clearance_m": 0.046, "rim_stiffness_n_per_m3": 100000000.0,
+        "initial_volume_m3": null, "constant_pressure": true,
+        "provenance_status": "provisional"
+      }
+    ],
+    "brush": [
+      {
+        "kx_n_per_m3": 5000000.0, "ky_n_per_m3": 5000000.0,
+        "relaxation_x_m": 0.3, "relaxation_y_m": 0.3,
+        "mu_x_scale": 1.0, "mu_y_scale": 1.0,
+        "camber_coefficient_per_rad": 0.8, "pneumatic_trail_m": 0.02,
+        "r_eff_m": 0.372, "provenance_status": "provisional"
+      },
+      {
+        "kx_n_per_m3": 5000000.0, "ky_n_per_m3": 5000000.0,
+        "relaxation_x_m": 0.3, "relaxation_y_m": 0.3,
+        "mu_x_scale": 1.0, "mu_y_scale": 1.0,
+        "camber_coefficient_per_rad": 0.8, "pneumatic_trail_m": 0.02,
+        "r_eff_m": 0.352, "provenance_status": "provisional"
+      }
+    ],
+    "patch_capacity": 0,
+    "coefficient_profile": "mtb-provisional-v1",
+    "provenance_status": "provisional"
+  }
+}

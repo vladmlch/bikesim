@@ -12,6 +12,9 @@
 #include "samples.hpp"
 #include "status.hpp"
 
+namespace bike::validation { class SpatialRideAccess; }
+#include "../spatial/bootstrap_state.hpp"
+
 namespace runtime {
 struct StepWork {
     double muscle_signed_j = 0., muscle_positive_j = 0.;
@@ -25,6 +28,29 @@ struct StepWork {
                                  double dt_s);
 [[nodiscard]] bool constraint_work_ok(double absolute_j, double source_positive_j,
                                       double roundoff_j = 1e-8);
+
+// Spatial hinge braking is separate from tyre material loss. The caller
+// supplies the solved friction power and the accepted interval's bite ledger.
+struct SpatialBrakeEnergy {
+    double stored_energy_j = 0.;
+    double damping_heat_j = 0.;
+    double friction_heat_j = 0.;
+    double release_heat_j = 0.;
+    double release_work_j = 0.;
+    double loss_j = 0.;
+    [[nodiscard]] WireObject as_wire() const;
+};
+[[nodiscard]] SpatialBrakeEnergy spatial_brake_energy(
+    double stored_j, double damping_j, double release_j,
+    double solved_friction_power_w, double dt_s);
+
+// Causal spatial-only lanes. Hold work is integrated only after an accepted
+// settling interval; the scored path is an exact no-op. Steering work comes
+// from the controller's applied-torque ledger, never the requested command.
+[[nodiscard]] bool account_bootstrap_hold(bike::spatial::HoldState&,
+    const bike::spatial::BodyPose&, bike::spatial::BootstrapPhase, double dt_s) noexcept;
+[[nodiscard]] WireObject spatial_control_energy(const bike::spatial::HoldState&,
+    const bike::spatial::SteerState&);
 
 struct AccountingConfig {
     double timestep_s = 0.;
@@ -157,6 +183,7 @@ public:
     [[nodiscard]] std::optional<std::string> take_warning() { return state_.monitor.take_warning(); }
 private:
     friend class AsyncCloseRunner;
+    friend class bike::validation::SpatialRideAccess;
     PeriodAccounting(AccountingConfig, AccountingState, int, std::optional<EffortContext>);
     void flush_local();
     void submit_period();

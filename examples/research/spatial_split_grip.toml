@@ -1,0 +1,33 @@
+qualification_schema = 1
+suite = "G+C"
+[scenario]
+duration_s = 12.0
+speed_mps = 3.0
+turn_radius_m = 20.0
+slope_deg = 5.0
+split_y_m = 0.0
+mu_peak_dry = 0.8
+mu_peak_wet = 0.3
+outside_mu_peak = 0.02
+brake_command = "shared front/rear demand; no tyre extra braking torque"
+checkpoint = "native private full-owner capture while steering, braking and both material patches are present"
+verification = "pending V06"
+[demand_trace]
+points = [[0.0, 0.03, 0.0], [2.0, 0.0, 0.3], [3.0, 0.0, 0.7], [4.0, 0.0, 1.0], [7.0, 0.0, 0.8], [7.5, 0.0, 0.4], [8.0, 0.0, 0.1], [8.5, 0.35, 0.0], [10.0, 0.50, 0.0]]
+[profile]
+tyre_id = "mtb-provisional-v1"
+steer_id = "roll-heading-v1"
+kx_n_per_m3 = 5000000.0
+ky_n_per_m3 = 5000000.0
+relaxation_x_m = 0.3
+relaxation_y_m = 0.3
+camber_coefficient_per_rad = 0.8
+pneumatic_trail_m = 0.02
+profile_digest_recipe = "sha256(canonical_json(project_spatial_tire_config(pinned_resolved_physics)))"
+steer_digest_recipe = "read_steer_profile canonical content digest; cap=40 Nm delay=0.1 s"
+provenance_status = "provisional"
+measurement_digest = "pending V06"
+
+[stop_policy]
+balance_dwell_s = 20.0
+reason = "intentional 12 s stop/hold/restart manoeuvre; capsize, corridor and invalidity guards stay active"

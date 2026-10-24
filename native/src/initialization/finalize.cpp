@@ -1,6 +1,8 @@
 #include "context.hpp"
+#include "bootstrap_hold.hpp"
 #include "state_file.hpp"
 #include "../model/mapping.hpp"
+#include "../model_access.hpp"
 #include "../numeric_sum.hpp"
 #include "../runtime/config.hpp"
 #include "../runtime/step.hpp"
@@ -11,6 +13,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <format>
 #include <numbers>
 #include <ranges>
 #include <stdexcept>
@@ -20,6 +23,11 @@ namespace {
 void spatial_initial_velocity(SetupContext& context,const runtime::WheelSnapshots& snapshots) {
     const auto& topology=*context.topology;
     const auto* m=context.stepper.model();auto* d=context.stepper.data();
+    const auto velocity=model_access::mutable_buffer(d->qvel,m->nv);
+    const auto types=model_access::readonly_buffer(m->jnt_type,m->njnt);
+    const auto rotations=model_access::readonly_buffer(d->xquat,4*m->nbody);
+    const auto positions=model_access::readonly_buffer(d->xpos,3*m->nbody);
+    const auto sizes=model_access::readonly_buffer(m->geom_size,3*m->ngeom);
     const auto pose=spatial::body_pose(*m,*d,topology.root);
     const auto sample=context.terrain3d->query_view().sample(pose.position_world_m[0],pose.position_world_m[1]);
     if(sample.status!=terrain::QueryStatus3d::ok)
@@ -31,12 +39,12 @@ void spatial_initial_velocity(SetupContext& context,const runtime::WheelSnapshot
     if(!(length2>1e-24))throw std::invalid_argument("initial_speed.spatial.heading: singular terrain projection");
     for(double& component:direction)component/=std::sqrt(length2);
     const auto place=[&](const spatial::RootBinding& root) {
-        if(root.kind==spatial::RootKind::free6 && root.free_joint_id>=0 && m->jnt_type[root.free_joint_id]==mjJNT_FREE) {
+        if(root.kind==spatial::RootKind::free6 && root.free_joint_id>=0 && types[static_cast<std::size_t>(root.free_joint_id)]==mjJNT_FREE) {
             // Free translational velocities are world coordinates; angular
             // velocities remain untouched and are observed through accessors.
-            for(int i=0;i<3;++i)d->qvel[root.free_dof_adr+i]=context.physics.initial_speed_mps*direction[static_cast<std::size_t>(i)];
+            for(std::size_t i=0;i<3;++i)velocity[static_cast<std::size_t>(root.free_dof_adr)+i]=context.physics.initial_speed_mps*direction[i];
         } else for(std::size_t i=0;i<3;++i)if(root.scalar[i].dof_adr>=0)
-            d->qvel[root.scalar[i].dof_adr]=context.physics.initial_speed_mps*direction[i];
+            velocity[static_cast<std::size_t>(root.scalar[i].dof_adr)]=context.physics.initial_speed_mps*direction[i];
     };
     place(topology.root);for(const auto& root:topology.rider_roots)place(root);
     context.stepper.note_posvel_stale();context.stepper.forward();
@@ -44,35 +52,35 @@ void spatial_initial_velocity(SetupContext& context,const runtime::WheelSnapshot
         if(!snapshots[side])throw std::invalid_argument("initial_speed.spatial.tire: snapshot missing");
         const auto& wheel=topology.wheels[side];
         const auto q=static_cast<std::size_t>(wheel.hub_body_id)*4;
-        const auto axle=spatial::rotate_body_to_world({d->xquat[q],d->xquat[q+1],d->xquat[q+2],d->xquat[q+3]},wheel.axle_axis_hub);
+        const auto axle=spatial::rotate_body_to_world({rotations[q],rotations[q+1],rotations[q+2],rotations[q+3]},wheel.axle_axis_hub);
         spatial::Vec3 tangent{axle[1]*normal[2]-axle[2]*normal[1],
             axle[2]*normal[0]-axle[0]*normal[2],axle[0]*normal[1]-axle[1]*normal[0]};
         const double norm=std::sqrt(tangent[0]*tangent[0]+tangent[1]*tangent[1]+tangent[2]*tangent[2]);
         if(!(norm>1e-12))throw std::invalid_argument("initial_speed.spatial.tire: axle parallel to surface normal");
         for(double& component:tangent)component/=norm;
         const auto center=static_cast<std::size_t>(wheel.wheel_body_id)*3;
-        const auto v=model::point_velocity(*m,*d,wheel.wheel_body_id,{d->xpos[center],d->xpos[center+1],d->xpos[center+2]});
+        const auto v=model::point_velocity(*m,*d,wheel.wheel_body_id,{positions[center],positions[center+1],positions[center+2]});
         const auto hub_omega=model::body_angular_velocity(*m,*d,wheel.hub_body_id);
         const int geom=side==0?context.front_geom_id:context.rear_geom_id;
-        const double radius=snapshots[side]->effective_radius_m>0.?snapshots[side]->effective_radius_m:m->geom_size[3*geom];
+        const double radius=snapshots[side]->effective_radius_m>0.?snapshots[side]->effective_radius_m:sizes[3*static_cast<std::size_t>(geom)];
         double roll=0.,hub_rate=0.;for(std::size_t i=0;i<3;++i){roll+=v[i]*tangent[i];hub_rate+=hub_omega[i]*axle[i];}
-        d->qvel[wheel.spin.dof_adr]=roll/radius-hub_rate;
+        velocity[static_cast<std::size_t>(wheel.spin.dof_adr)]=roll/radius-hub_rate;
     }
     const auto& drive=context.physics.drive;
     const double ratio=static_cast<double>(drive.gearing.front_teeth)/static_cast<double>(drive.gearing.rear_teeth);
-    const double rate=d->qvel[topology.wheels[1].spin.dof_adr]/ratio;
+    const double rate=velocity[static_cast<std::size_t>(topology.wheels[1].spin.dof_adr)]/ratio;
     bool pedaling=(context.physics.drive_mode=="crank_effort" || context.physics.drive_mode=="articulated_effort")&&drive.human_torque_nm>0.;
     if(drive.pedaling.enabled && std::abs(rate)*60./(2.*std::numbers::pi)>=drive.pedaling.coast_above_rpm)pedaling=false;
     if(pedaling) {
-        d->qvel[joint_address(context,"crank_spin").dof]=rate;
+        velocity[static_cast<std::size_t>(joint_address(context,"crank_spin").dof)]=rate;
         for(std::string_view name:{"drive_shaft_spin","rotor_spin","cassette_spin"})
             if(mj_name2id(m,mjOBJ_JOINT,std::string(name).c_str())>=0)
-                d->qvel[joint_address(context,name).dof]=name=="cassette_spin"?d->qvel[topology.wheels[1].spin.dof_adr]:rate;
+                velocity[static_cast<std::size_t>(joint_address(context,name).dof)]=name=="cassette_spin"?velocity[static_cast<std::size_t>(topology.wheels[1].spin.dof_adr)]:rate;
         const auto axle=spatial::rotate_body_to_world(pose.quat_world_from_body_wxyz,{0.,1.,0.});
         const auto omega=model::body_angular_velocity(*m,*d,topology.root.body_id);
         const double frame_rate=omega[0]*axle[0]+omega[1]*axle[1]+omega[2]*axle[2];
-        d->qvel[joint_address(context,"pedal_front_spin").dof]=-rate-frame_rate;
-        d->qvel[joint_address(context,"pedal_rear_spin").dof]=-rate-frame_rate;
+        velocity[static_cast<std::size_t>(joint_address(context,"pedal_front_spin").dof)]=-rate-frame_rate;
+        velocity[static_cast<std::size_t>(joint_address(context,"pedal_rear_spin").dof)]=-rate-frame_rate;
         if(context.physical.rider_present())context.stepper.mutate([&]{context.physical.rider_control().initialize_velocity(d);});
     }
     context.stepper.note_posvel_stale();context.stepper.forward();
@@ -128,6 +136,46 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
         throw std::invalid_argument("bootstrap.spatial.tire: producer state missing");
     if(!context.equilibrium)throw std::invalid_argument("cannot finalize an incomplete equilibrium");
     auto& physical=context.physical;auto& stepper=context.stepper;mjData* d=stepper.data();mjModel* m=stepper.model();
+    if(context.topology) {
+        auto causal=*physical.spatial_state();
+        if(causal.bootstrap_phase<spatial::BootstrapPhase::armed) {
+            // Equilibrium accepted intervals live on their own clock. Retain
+            // the physical brake latch but start scored interval numbering at
+            // zero; the delay queue starts before its first control tick.
+            causal.brake.interval_index=-1;
+            auto& steer=causal.steer;
+            steer.next_tick=0;steer.fifo_head=0;steer.fifo_count=0;
+            std::ranges::fill(steer.delay_fifo_nm,0.);
+            steer.last_command_nm=steer.last_applied_nm=steer.work_j=0.;
+            steer.saturated_ticks=0;steer.valid_mask=0;
+            causal.outcome=spatial::canonical_unlatched_outcome();
+        }
+        if(causal.bootstrap_phase<spatial::BootstrapPhase::armed && context.bootstrap_hold) {
+            causal.bootstrap_phase=spatial::BootstrapPhase::release_check;
+            causal.hold.phase=spatial::BootstrapPhase::release_check;
+            physical.commit_spatial_state(physical.prepare_spatial_state(causal));
+            apply_initial_forces(context,false);stepper.forward();
+            if(!context.spatial_report) {
+                (void)spatial_refine(context,1,.05);
+                context.equilibrium->spatial=context.spatial_report;
+            }
+            const auto& cfg=context.physics.spatial->bootstrap;
+            if(!context.bootstrap_hold->release_check(*context.spatial_report,
+                    cfg.release_force_limit_n,cfg.release_moment_limit_nm)) {
+                const auto& h=context.bootstrap_hold->state();
+                throw std::invalid_argument(std::format("bootstrap: hold not releasable: residual force {} N, moment {} N m",
+                    std::hypot(h.last_force_world_n[0],h.last_force_world_n[1],h.last_force_world_n[2]),
+                    std::hypot(h.last_couple_world_nm[0],h.last_couple_world_nm[1],h.last_couple_world_nm[2])));
+            }
+            causal=*physical.spatial_state();causal.hold=context.bootstrap_hold->state();
+        }
+        causal.bootstrap_phase=spatial::BootstrapPhase::armed;
+        causal.hold.active=false;causal.hold.phase=spatial::BootstrapPhase::armed;
+        causal.hold.last_force_world_n={};causal.hold.last_couple_world_nm={};causal.hold.stored_energy_j=0.;
+        if(context.bootstrap_hold && context.bootstrap_hold->restore(causal.hold)!=CoreStatus::ok)
+            throw std::invalid_argument("bootstrap.hold: armed state rejected");
+        physical.commit_spatial_state(physical.prepare_spatial_state(causal));
+    }
     d->time=0.;physical.step_=0;physical.generation_=1;physical.initializing_=false;
     physical.control_clock_.reset();physical.contact_query_.restore({});physical.probe_query_.restore({});
     for(auto& filter:physical.filters_)filter.restore({});
@@ -192,6 +240,15 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
         physical.update_compiled_com_marker();
         if(context.physics.seated_climb.enabled){auto sensors=physical.sensor_channels(stepper.qvel(),stepper.drive().diagnostics(true).to_map());auto tires=physical.tire_channels(physical.snapshots_,stepper.qvel());sensors.emplace_back("tires",runtime::Wire{std::move(tires)});physical.update_intent_signals(sensors);}
     });
+    if(context.topology) {
+        auto causal=*physical.spatial_state();
+        causal.bootstrap_phase=spatial::BootstrapPhase::scored;
+        causal.hold.phase=spatial::BootstrapPhase::scored;causal.hold.active=false;
+        causal.hold.last_force_world_n={};causal.hold.last_couple_world_nm={};causal.hold.stored_energy_j=0.;
+        if(context.bootstrap_hold && context.bootstrap_hold->restore(causal.hold)!=CoreStatus::ok)
+            throw std::invalid_argument("bootstrap.hold: scored state rejected");
+        physical.commit_spatial_state(physical.prepare_spatial_state(causal));
+    }
     physical.research_accounting_valid_=true;context.completed=true;
 }
 } // namespace bike::initialization

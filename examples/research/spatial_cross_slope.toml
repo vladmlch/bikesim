@@ -1,0 +1,31 @@
+qualification_schema = 1
+suite = "B"
+[scenario]
+duration_s = 20.0
+speed_mps = 5.0
+bank_degrees = [-10.0, -5.0, 5.0, 10.0]
+bank_start_x_m = 12.0
+bank_ramp_m = 8.0
+flat_return_x_m = 60.0
+flat_return_ramp_m = 8.0
+lateral_limit_m = 0.75
+tiers = ["fast", "detailed"]
+seed = 73421
+outside_mu_peak = 0.02
+outside_mu_result = "physical terminal, valid=true"
+verification = "pending V06"
+[demand_trace]
+points = [[0.0, 0.05, 0.0], [12.0, 0.03, 0.0]]
+[profile]
+tyre_id = "mtb-provisional-v1"
+steer_id = "roll-heading-v1"
+kx_n_per_m3 = 5000000.0
+ky_n_per_m3 = 5000000.0
+relaxation_x_m = 0.3
+relaxation_y_m = 0.3
+camber_coefficient_per_rad = 0.8
+pneumatic_trail_m = 0.02
+profile_digest_recipe = "sha256(canonical_json(project_spatial_tire_config(pinned_resolved_physics)))"
+steer_digest_recipe = "read_steer_profile canonical content digest; cap=40 Nm delay=0.1 s"
+provenance_status = "provisional"
+measurement_digest = "pending V06"

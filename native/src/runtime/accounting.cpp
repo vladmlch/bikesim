@@ -13,6 +13,21 @@
 #include <utility>
 
 namespace runtime {
+bool account_bootstrap_hold(bike::spatial::HoldState& hold,const bike::spatial::BodyPose& pose,
+        bike::spatial::BootstrapPhase phase,double dt) noexcept {
+    if(!std::isfinite(dt) || dt<0.)return false;
+    if(phase>=bike::spatial::BootstrapPhase::armed || !hold.active)return true;
+    double power=0.;
+    for(std::size_t axis=0;axis<3;++axis)power+=hold.last_force_world_n[axis]*pose.linear_velocity_world_mps[axis]+
+        hold.last_couple_world_nm[axis]*pose.angular_velocity_world_rad_s[axis];
+    const double next=hold.work_j+power*dt;
+    if(!std::isfinite(next))return false;
+    hold.work_j=next;return true;
+}
+WireObject spatial_control_energy(const bike::spatial::HoldState& hold,const bike::spatial::SteerState& steer) {
+    return {{"hold_work_j",Wire(hold.work_j)},{"hold_active",Wire(hold.active)},
+        {"steer_work_j",Wire(steer.work_j)},{"steer_applied_nm",Wire(steer.last_applied_nm)}};
+}
 namespace {
 using namespace sample_wire;
 
@@ -78,7 +93,7 @@ StepWork raw_work(const RawStep &raw, double dt_s) {
     constraint.reserve(raw.numerical_constraint_power_w.size());
     double motor = 0.;
     for (const auto &[name, force] : raw.components) {
-        if (name == "human_crank" || name.starts_with("act_rider_"))
+        if (name == "human_crank" || name.starts_with("act_rider_") || name.starts_with("act_shoulder_swivel_"))
             muscle.push_back(dot(force, raw.qvel));
         if (name == "mid_drive") motor = dot(force, raw.qvel);
     }
@@ -128,7 +143,7 @@ std::vector<std::string> interval_violations(const RawStep &raw,
 // fixed set; its iteration order has no physical meaning, unlike force folds.
 double external_work(const RawStep &raw, double dt_s) {
     double sum = 0., correction = 0.;
-    for (const auto name : {"external", "rear_drive", "road_rolling", "aerodynamic", "native_contact"}) {
+    for (const auto name : {"external", "rear_drive", "road_rolling", "aerodynamic", "native_contact", "steer_torque"}) {
         const auto found = std::ranges::find_if(raw.components, [&](const auto &entry) {
             return entry.first == name;
         });
@@ -235,6 +250,30 @@ void add_detail(WireObject &channels, const RawStep &raw, Wire endpoint_mass,
 }
 
 } // namespace
+
+WireObject SpatialBrakeEnergy::as_wire() const {
+    return {{"stored_energy_j", Wire(stored_energy_j)},
+        {"damping_heat_j", Wire(damping_heat_j)},
+        {"friction_heat_j", Wire(friction_heat_j)},
+        {"release_heat_j", Wire(release_heat_j)},
+        {"release_work_j", Wire(release_work_j)}, {"loss_j", Wire(loss_j)}};
+}
+SpatialBrakeEnergy spatial_brake_energy(double stored_j, double damping_j,
+    double release_j, double solved_friction_power_w, double dt_s) {
+    finite(stored_j,"spatial.brake.stored_energy_j",true);
+    finite(damping_j,"spatial.brake.damping_heat_j",true);
+    finite(release_j,"spatial.brake.release_heat_j",true);
+    finite(solved_friction_power_w,"spatial.brake.friction_power_w");
+    finite(dt_s,"spatial.brake.dt_s",true);
+    SpatialBrakeEnergy out;
+    out.stored_energy_j=stored_j;out.damping_heat_j=damping_j;
+    out.friction_heat_j=std::max(0.,-solved_friction_power_w)*dt_s;
+    // A released elastic pad unloads internally: loss of stored energy is
+    // reported as release heat, not fictitious work on the bicycle root.
+    out.release_heat_j=release_j;out.release_work_j=-release_j;
+    out.loss_j=out.damping_heat_j+out.friction_heat_j+out.release_heat_j;
+    return out;
+}
 
 WireObject StepWork::as_wire() const {
     return {{"muscle_signed_j", Wire(muscle_signed_j)}, {"muscle_positive_j", Wire(muscle_positive_j)},

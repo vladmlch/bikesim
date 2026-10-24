@@ -22,6 +22,11 @@
 #include "../engine_call.hpp"
 #include "../numeric_sum.hpp"
 #include "../spatial/frames.hpp"
+#include "../spatial/outcomes.hpp"
+#include "../writers/pneumatic_3d_tire.hpp"
+#include "../writers/spatial_tire_adapter.hpp"
+#include "spatial_tire_factory.hpp"
+#include "accounting.hpp"
 #include "../rider/rider_posture.hpp"
 #include "../rider/response_codec.hpp"
 #include "value_readers.hpp"
@@ -71,6 +76,17 @@ std::span<double> wbuf(double *p, mjtSize n) {
 }
 std::span<const int> ibuf(const int *p, mjtSize n) {
     return std::views::counted(p, n);
+}
+
+// Both records belong to one resolved controller. Profile identity and FIFO
+// width are fixed at construction/validated restore, so history copies never
+// allocate or alter immutable strings on an accepted interval or its rollback.
+void copy_steer_history(const bike::spatial::SteerState& from,
+                        bike::spatial::SteerState& to) noexcept {
+    std::ranges::copy(from.delay_fifo_nm,to.delay_fifo_nm.begin());
+    to.next_tick=from.next_tick;to.fifo_head=from.fifo_head;to.fifo_count=from.fifo_count;
+    to.last_command_nm=from.last_command_nm;to.last_applied_nm=from.last_applied_nm;
+    to.saturated_ticks=from.saturated_ticks;to.work_j=from.work_j;to.valid_mask=from.valid_mask;
 }
 
 // np.sum — shared with the mirrored sites outside this TU;
@@ -480,6 +496,18 @@ WireObject wire_tire_diagnostics(const TireDiagnostics &d) {
     out.emplace_back("outside_material_load_range",
                      Wire(d.outside_material_load_range));
     return out;
+}
+
+WireObject wire_spatial_tire_diagnostics(const TireDiagnostics& d) {
+    return {{"spatial_schema",Wire(std::int64_t{1})},
+        {"normal_load_n",Wire(d.normal_load_n)},{"support_n",Wire(d.support_n)},
+        {"fx_n",Wire(d.tangent_force_n)},{"fy_n",Wire(d.spatial_lateral_force_n)},
+        {"mz_nm",Wire(d.spatial_aligning_moment_nm)},{"slip_ratio",Wire(d.slip_ratio)},
+        {"camber_rad",Wire(d.spatial_camber_rad)},{"accepted_interval",Wire(d.spatial_generation)},
+        {"patch_count",Wire(d.patch_count)},{"active_station_count",Wire(d.active_station_count)},
+        {"airborne",Wire(d.airborne)},{"pressure_bar",Wire(d.pressure_bar)},
+        {"radial_energy_j",Wire(d.radial_energy_j)},{"shear_energy_j",Wire(d.shear_energy_j)},
+        {"calibration_status",Wire(d.calibration_status)},{"capability_status",Wire(d.capability_status)}};
 }
 
 // distributed_tire_forces.py:204-213 — the distributed per-side dict,
@@ -1035,6 +1063,13 @@ PhysicalStep::PhysicalStep(
         spatial_state_->topology_fingerprint=topology_->fingerprint_hex;
         spatial_state_->terrain_sha256=config_.terrain3d->fingerprint_hex();
         spatial_state_->calibration_sha256=config_.spatial->tyre.lateral_coefficients_sha256;
+        if(config_.spatial->steer.controller!=bike::spatial::SteerController::off) {
+            steer_balance_=std::make_unique<bike::rider::SteerBalance>(
+                resolved_steer_profile(config_.spatial->steer),config_.control_period_s);
+            spatial_state_->steer=steer_balance_->state();
+            spatial_steer_rollback_=steer_balance_->state();
+        }
+        spatial_state_->brake=brake_.capture_spatial_brake();
         // FREE qpos and velocity spans have different widths. Legacy scalar
         // addresses are invalid sentinels and never used on this branch.
         root_x_qposadr_=root_x_dofadr_=root_pitch_qposadr_=-1;
@@ -1104,6 +1139,7 @@ PhysicalStep::PhysicalStep(
     }
     const std::size_t nv = static_cast<std::size_t>(m->nv);
     component_out_.assign(nv, 0.);
+    if(topology_)spatial_brake_force_.assign(nv,0.);
     mul_scratch_.assign(nv, 0.);
     measurement_decimation_ = config_.measurement_decimation;
 }
@@ -1290,13 +1326,24 @@ PhysicalStep::apply_forces_body(
         std::ranges::fill(wbuf(d->ctrl, m->nu), 0.);
         // dof_frictionloss is a position-stage model input — a bound that
         // actually changed invalidates the cached makeConstraint rows.
-        if (brake_.apply(m, front, rear))
+        if (!topology_ && brake_.apply(m, front, rear))
             stepper_->note_posvel_stale();
         // The latched elastic bite at standstill; an advancing pass may
         // latch or release, a probe reads the committed latch
         // (static_braking.py hold_qfrc — physical_runtime.py:296).
-        std::vector<double> brake_hold =
-            brake_.hold_qfrc(m, d, front, rear, advance);
+        std::vector<double> brake_hold;
+        if(topology_) {
+            std::array<double,2> rates{};
+            const auto velocity=buf(d->qvel,m->nv);
+            for(std::size_t w=0;w<2;++w)rates[w]=velocity[static_cast<std::size_t>(topology_->wheels[w].spin.dof_adr)];
+            // The bound hinge coordinate is wheel-minus-hub, invariant under
+            // world yaw/roll. No root/world translation is latched.
+            std::fill(spatial_brake_force_.begin(),spatial_brake_force_.end(),0.);
+            const auto interval=initializing_?static_cast<std::int64_t>(std::llround(d->time/dt)):step_;
+            const auto result=brake_.apply_spatial(m,rates,front,rear,dt,interval,advance,spatial_brake_force_);
+            if(result.frictionloss_changed)stepper_->note_posvel_stale();
+            if(advance){spatial_brake_last_=result;spatial_state_->brake=brake_.capture_spatial_brake();}
+        } else brake_hold=brake_.hold_qfrc(m,d,front,rear,advance);
         // prepare_pedaling reads the LAST committed rear contact — the
         // durable contacts_ (previous step's final refresh or bootstrap).
         const drivetrain::RideControl drive_control{
@@ -1325,8 +1372,34 @@ PhysicalStep::apply_forces_body(
             ensure_posvel_fresh(m, d);
 
         accumulator_.clear();
+        if(topology_ && std::ranges::any_of(spatial_brake_force_,[](double x){return x!=0.;}))
+            accumulator_.add("brake_hold",spatial_brake_force_);
         if (std::ranges::any_of(brake_hold, [](double x) { return x != 0.; }))
             accumulator_.add("brake_hold", brake_hold);
+        if(steer_balance_) {
+            if(advance && !initializing_ && control_clock_.is_tick(step_)) {
+                const double previous_work=spatial_state_->steer.work_j;
+                const auto pose=bike::spatial::body_pose(*m,*d,topology_->root);
+                const auto attitude=bike::spatial::euler_zyx(pose.quat_world_from_body_wxyz);
+                const auto omega=bike::spatial::rotate_world_to_body(pose.quat_world_from_body_wxyz,pose.angular_velocity_world_rad_s);
+                const double roll_rate=attitude.valid?omega[0]+std::tan(attitude.pitch_rad)*(
+                    std::sin(attitude.roll_rad)*omega[1]+std::cos(attitude.roll_rad)*omega[2]):0.;
+                const auto& joint=topology_->steer.joint;
+                const auto period_steps=static_cast<std::int64_t>(std::llround(config_.control_period_s/config_.timestep_s));
+                (void)steer_balance_->tick({.control_tick=step_/period_steps,.roll_rad=attitude.roll_rad,
+                    .roll_rate_rad_s=roll_rate,.heading_error_rad=attitude.yaw_rad,
+                    .lateral_error_m=pose.position_world_m[1],.steer_angle_rad=buf(d->qpos,m->nq)[static_cast<std::size_t>(joint.qpos_adr)],
+                    .steer_rate_rad_s=buf(d->qvel,m->nv)[static_cast<std::size_t>(joint.dof_adr)],.speed_signed_mps=longitudinal_speed_mps(),
+                    .enabled=attitude.valid&&active&&control.rider_enabled});
+                copy_steer_history(steer_balance_->state(),spatial_state_->steer);
+                // The standalone controller's period estimate is replaced
+                // by solved actuator work on every accepted physics interval.
+                spatial_state_->steer.work_j=previous_work;
+                if(steer_balance_->restore(spatial_state_->steer)!=CoreStatus::ok)
+                    throw std::logic_error("spatial.steer: accepted controller state rejected");
+            }
+            wbuf(d->ctrl,m->nu)[static_cast<std::size_t>(topology_->steer.actuator_id)]=initializing_?0.:steer_balance_->state().last_applied_nm;
+        }
         const std::span<const std::string_view> susp_names =
             stepper_->suspension().component_names();
         stepper_->suspension().components_into(
@@ -1561,9 +1634,43 @@ RawStep PhysicalStep::advance_physics(
     double front, double rear,
     const std::optional<std::vector<double>> &external,
     const RideControl &control, GoldenForceObservation *golden) {
+    if(!research_accounting_valid_)
+        throw std::runtime_error("reset is required before physical accounting");
+    const auto start_tick=step_;
+    const auto start_time=stepper_->data()->time;
+    const auto before=topology_?bike::spatial::body_pose(*stepper_->model(),*stepper_->data(),topology_->root):bike::spatial::BodyPose{};
+    const auto brake_before=brake_.capture_spatial_brake();
+    const auto brake_result_before=spatial_brake_last_;
+    std::array<double,2> friction_before{};
+    if(topology_) {
+        const auto friction=buf(stepper_->model()->dof_frictionloss,stepper_->model()->nv);
+        for(std::size_t w=0;w<2;++w)
+            friction_before[w]=friction[static_cast<std::size_t>(topology_->wheels[w].spin.dof_adr)];
+    }
+    if(steer_balance_)copy_steer_history(steer_balance_->state(),spatial_steer_rollback_);
+    const auto rollback_controls=[&]() noexcept {
+        if(!spatial_state_)return;
+        brake_.commit_spatial_brake(brake_before);
+        spatial_state_->brake=brake_before;spatial_brake_last_=brake_result_before;
+        if(steer_balance_) {
+            (void)steer_balance_->restore(spatial_steer_rollback_);
+            copy_steer_history(spatial_steer_rollback_,spatial_state_->steer);
+        }
+        auto friction=wbuf(stepper_->model()->dof_frictionloss,stepper_->model()->nv);
+        for(std::size_t w=0;w<2;++w)
+            friction[static_cast<std::size_t>(topology_->wheels[w].spin.dof_adr)]=friction_before[w];
+        stepper_->note_posvel_stale();
+    };
+    const auto latch_failure=[&](bool numerical) {
+        if(!spatial_state_)return;
+        research_accounting_valid_=false;
+        (void)bike::spatial::evaluate_outcome({.tick=start_tick,.time_s=start_time,.root=before,
+            .attitude=bike::spatial::euler_zyx(before.quat_world_from_body_wxyz),
+            .engine_finite=!numerical,.contact_query_valid=numerical},spatial_state_->outcome);
+    };
     // The step body sits in its own frame so the mutate lambda stays a
     // thin call; the debug/asan frame-budget sweep bounds each function.
-    return stepper_->mutate([&]() -> RawStep {
+    try { return stepper_->mutate([&]() -> RawStep {
         auto result = advance_body(front, rear, external, control, golden);
         if (golden != nullptr && stepper_->has_tire()) {
             const auto tire = stepper_->tire_writer();
@@ -1574,6 +1681,7 @@ RawStep PhysicalStep::advance_physics(
             for (std::size_t side = 0; side < diagnostics.size(); ++side) {
                 if (!diagnostics[side]) continue;
                 golden->tire_diagnostics.emplace_back(std::string(names[side]),
+                    tire.is_spatial() ? wire_spatial_tire_diagnostics(*diagnostics[side]) :
                     tire.is_distributed() ? wire_distributed_tire_diagnostics(*diagnostics[side]) :
                     tire.is_pneumatic() ? wire_pneumatic_tire_diagnostics(*diagnostics[side]) :
                     wire_tire_diagnostics(*diagnostics[side]));
@@ -1581,6 +1689,20 @@ RawStep PhysicalStep::advance_physics(
         }
         return result;
     });
+    } catch(const bike::pneumatic3d::SpatialTireEvaluationError& error) {
+        using Reason=bike::pneumatic3d::ReasonCode3d;
+        const bool query=error.reason==Reason::terrain_query_failed || error.reason==Reason::terrain_budget_exhausted ||
+            error.reason==Reason::origin_below_surface || (error.reason==Reason::none && error.status==CoreStatus::invalid_geometry);
+        rollback_controls();latch_failure(!query);throw;
+    } catch(const engine::EngineFailure&) {
+        rollback_controls();latch_failure(true);throw;
+    } catch(const std::runtime_error&) {
+        rollback_controls();latch_failure(true);throw;
+    } catch(const std::invalid_argument&) {
+        rollback_controls();throw;
+    } catch(...) {
+        rollback_controls();latch_failure(true);throw;
+    }
 }
 
 RawStep PhysicalStep::advance_body(
@@ -1624,8 +1746,14 @@ RawStep PhysicalStep::advance_body(
             golden->warmstart = buffer_copy(d->qacc_warmstart, m->nv);
             golden->time_s = d->time;
             if (stepper_->has_tire()) {
-                golden->tire_state_names = stepper_->tire_state_names();
-                golden->tire_state = stepper_->tire_state();
+                if(stepper_->has_spatial_tire()) {
+                    golden->spatial_tire_state_bytes=stepper_->spatial_tire_writer().state_bytes();
+                    golden->tire_state_names.clear();golden->tire_state.clear();
+                } else {
+                    golden->tire_state_names = stepper_->tire_state_names();
+                    golden->tire_state = stepper_->tire_state();
+                    golden->spatial_tire_state_bytes.clear();
+                }
             }
         }
         (void)apply_forces(true, true, front, rear, ext, control, braking);
@@ -1750,6 +1878,12 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         in.sensors = sensor_channels(v, drive_last);
         for (auto &[name, f]: actuator_components(m, d))
             ordered_set(components, name, std::move(f));
+        if(steer_balance_) {
+            const auto& force=require_component(components,"steer_torque");
+            spatial_state_->steer.work_j+=dot(force,v)*config_.timestep_s;
+            if(steer_balance_->restore(spatial_state_->steer)!=CoreStatus::ok)
+                throw std::runtime_error("spatial.steer: nonfinite applied actuator work");
+        }
         if (rider_control_.has_value()) {
             auto passive = zeros(m);
             const auto qfrc_passive = buf(d->qfrc_passive, m->nv);
@@ -1933,7 +2067,7 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         NeumaierSum human_active;
         const std::vector<double> *rider_passive = nullptr;
         for (const auto &[name, f]: components) {
-            if (name.starts_with("act_rider_"))
+            if (name.starts_with("act_rider_") || (topology_ && name.starts_with("act_shoulder_swivel_")))
                 human_active.add(dot(f, v));
             if (name == "rider_passive_damping")
                 rider_passive = &f;
@@ -1989,7 +2123,11 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         channels.emplace_back("suspension", Wire(std::move(suspension)));
         channels.emplace_back("sensors", Wire(sensors));
         channels.emplace_back("mass", Wire(mass0));
-        if(topology_)channels.emplace_back("spatial",Wire(std::move(in.spatial)));
+        if(topology_) {
+            for(auto& lane:spatial_control_energy(spatial_state_->hold,spatial_state_->steer))
+                in.spatial.emplace_back(std::move(lane));
+            channels.emplace_back("spatial",Wire(std::move(in.spatial)));
+        }
         if (contact_crash.has_value())
             channels.emplace_back("contact_crash_cause",
                                   Wire(*contact_crash));
@@ -2090,6 +2228,29 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         raw.constraint_snapshot = last_constraint_snapshot_;
         raw.full = in.full;
         step_ += 1;
+        if(topology_ && spatial_state_) {
+            const auto pose=bike::spatial::body_pose(*m,*d,topology_->root);
+            bool inside=true;
+            const auto view=config_.terrain3d->query_view();
+            const auto root_sample=view.sample(pose.position_world_m[0],pose.position_world_m[1]);
+            inside=root_sample.status==bike::terrain::QueryStatus3d::ok;
+            const auto positions=buf(d->xpos,3*m->nbody);
+            for(const auto& wheel:topology_->wheels) {
+                const auto body=3*static_cast<std::size_t>(wheel.wheel_body_id);
+                const auto sample=view.sample(positions[body],positions[body+1]);
+                inside=inside&&sample.status==bike::terrain::QueryStatus3d::ok;
+            }
+            (void)bike::spatial::evaluate_outcome({.tick=step_-1,.time_s=d->time,.root=pose,
+                .attitude=bike::spatial::euler_zyx(pose.quat_world_from_body_wxyz),
+                .engine_finite=true,.contact_query_valid=stepper_->spatial_tire_writer().last_reason()==bike::pneumatic3d::ReasonCode3d::none,
+                .body_ground_contact=contact_crash.has_value(),.capsize_roll_rad=config_.spatial->capsize_roll_rad,
+                .corridor_half_width_m=config_.spatial->corridor_half_width_m,.bike_half_width_m=.4,
+                .lateral_position_m=pose.position_world_m[1],.inside_terrain_domain=inside,
+                .requested_completion=false,.speed_mps=std::abs(longitudinal_speed_mps()),
+                .balance_speed_floor_mps=config_.monitors.balance_floor_mps,
+                .balance_dwell_limit_ticks=static_cast<std::int64_t>(std::ceil(config_.monitors.balance_dwell_s/config_.timestep_s))},
+                spatial_state_->outcome);
+        }
         if (contact_crash.has_value() && !crash_detector_.event().has_value())
             crash_detector_.set_event(CrashEvent{
                 .cause = *contact_crash,
@@ -2260,13 +2421,14 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
     const std::size_t nv = static_cast<std::size_t>(m->nv);
     std::array<std::optional<TireDiagnostics>, 2> diags;
     std::array<double, 2> radii{};
-    bool distributed = false, pneumatic = false;
+    bool distributed = false, pneumatic = false, spatial = false;
     if (stepper_->has_tire()) {
         const TireWriterView view = stepper_->tire_writer();
         diags = view.diagnostics();
         radii = view.radii();
         distributed = view.is_distributed();
         pneumatic = view.is_pneumatic();
+        spatial = view.is_spatial();
     } else {
         const auto sizes = buf(m->geom_size, m->ngeom * 3);
         radii = {sizes[static_cast<std::size_t>(contact_query_.front_id) * 3],
@@ -2300,8 +2462,9 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
         if(topology_) {
             const auto& wheel=topology_->wheels[i];
             const auto qa=static_cast<std::size_t>(wheel.hub_body_id)*4;
+            const auto quaternion=buf(d->xquat,4*m->nbody);
             axle=bike::spatial::rotate_body_to_world(
-                {d->xquat[qa],d->xquat[qa+1],d->xquat[qa+2],d->xquat[qa+3]},wheel.axle_axis_hub);
+                {quaternion[qa],quaternion[qa+1],quaternion[qa+2],quaternion[qa+3]},wheel.axle_axis_hub);
             const auto hub_jac=point_jacobian(m,d,wheel.hub_body_id,s.wheel_axis_m);
             bike::spatial::Vec3 child{},parent{};
             for(std::size_t a=0;a<3;++a) {
@@ -2355,7 +2518,7 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
         // oracle's keyword order.
         WireObject side =
             diags[i].has_value()
-                ? (distributed
+                ? (spatial ? wire_spatial_tire_diagnostics(*diags[i]) : distributed
                        ? wire_distributed_tire_diagnostics(*diags[i])
                        : pneumatic ? wire_pneumatic_tire_diagnostics(
                                  *diags[i])
@@ -2396,7 +2559,7 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
                  Wire(relative_omega));
         wire_set(side, "slip_mps", Wire(slip));
         wire_set(side, "slip_ratio",
-                 Wire(-slip / std::max(std::abs(roll_speed), .1)));
+                 Wire(spatial && diags[i]?diags[i]->slip_ratio:-slip / std::max(std::abs(roll_speed), .1)));
         wire_set(side, "tangent_center_speed_mps", Wire(roll_speed));
         wire_set(side, "controller_grounded",
                  Wire(grounded[i].value_or(false)));
@@ -2426,6 +2589,10 @@ WireObject PhysicalStep::stored_terms() const {
     if (stepper_->has_tire())
         wire_set(out, "tires",
                  Wire(stepper_->tire_writer().stored_energy(d)));
+    if(topology_) {
+        const auto brake=brake_.capture_spatial_brake();
+        wire_set(out,"spatial_brake_hinge",Wire(brake.wheel[0].stored_energy_j+brake.wheel[1].stored_energy_j));
+    }
     if (rider_control_.has_value())
         wire_set(out, "rider_joint_envelope",
                  Wire(rider_control_->envelope_forces(d).second));
@@ -2563,10 +2730,11 @@ double PhysicalStep::loss_increment(
     // The elastic bite dissipates at its clip (slip) like the friction
     // bound does; the stored spring energy never accumulates unbounded
     // (physical_runtime.py:589-591).
-    {
+    if(!topology_) {
         const auto *f = ordered_at(components, "brake_hold");
         loss += std::max(0., -(f != nullptr ? dot(*f, velocity) : 0.)) * dt;
     }
+    else loss+=spatial_brake_last_.damping_heat_j+spatial_brake_last_.release_heat_j;
     loss += diag_number(last, "chain_dissipation_power_w") * dt;
     loss += diag_number(last, "freehub_dissipation_power_w") * dt;
     loss += diag_number(last, "crank_clutch_dissipation_power_w") * dt;
@@ -2807,6 +2975,8 @@ StepState PhysicalStep::state() const {
         s.rider_controller = rider_control_->state(topology_?stepper_->data():nullptr);
     s.rider_intent = rider_intent_.state();
     s.spatial=spatial_state_;
+    if(s.spatial){s.spatial->brake=brake_.capture_spatial_brake();
+        if(steer_balance_)s.spatial->steer=steer_balance_->state();}
     return s;
 }
 
@@ -2819,10 +2989,19 @@ SpatialBootstrapState PhysicalStep::prepare_spatial_state(const SpatialBootstrap
        staged.terrain_sha256!=config_.terrain3d->fingerprint_hex() ||
        staged.calibration_sha256!=config_.spatial->tyre.lateral_coefficients_sha256)
         throw std::invalid_argument("state.spatial.identity: differs from live owners");
+    auto brake=brake_;brake.restore_spatial_brake(staged.brake);
+    if(steer_balance_) {
+        auto probe=*steer_balance_;
+        if(probe.restore(staged.steer)!=CoreStatus::ok)
+            throw std::invalid_argument("state.spatial.steer: differs from controller profile/queue");
+    } else if(staged.steer.controller!=bike::spatial::SteerController::off)
+        throw std::invalid_argument("state.spatial.steer: no active steering owner");
     return staged;
 }
 
 void PhysicalStep::commit_spatial_state(SpatialBootstrapState&& state) noexcept {
+    brake_.commit_spatial_brake(state.brake);
+    if(steer_balance_)(void)steer_balance_->restore(state.steer);
     spatial_state_=std::move(state);
 }
 
@@ -2850,7 +3029,7 @@ void PhysicalStep::restore(const StepState &s) {
     initializing_ = s.initializing;
     // Fresh episode, fresh bite: a stale latch would pin the wheel to an
     // angle from a previous settle (physical_runtime.py:426-428).
-    brake_.reset();
+    if(!topology_)brake_.reset();
     filters_[0].restore(s.filters[0]);
     filters_[1].restore(s.filters[1]);
     balance_monitor_.restore(s.balance);
@@ -2863,7 +3042,8 @@ void PhysicalStep::restore(const StepState &s) {
     if (s.rider_controller.has_value() && rider_control_.has_value())
         rider_control_->restore(*s.rider_controller);
     rider_intent_.restore(s.rider_intent);
-    spatial_state_=std::move(staged_spatial);
+    if(staged_spatial)commit_spatial_state(std::move(*staged_spatial));
+    else spatial_state_.reset();
     // The interval-local captures are not wire-serialized (setup.py's
     // state inventory omits them): they repopulate on the first step
     // exactly like the oracle's first interval does.

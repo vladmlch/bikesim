@@ -1,4 +1,5 @@
 #include "context.hpp"
+#include "bootstrap_hold.hpp"
 #include "../diag.hpp"
 #include "state_file.hpp"
 #include "source_json.hpp"
@@ -6,6 +7,7 @@
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
 #include "../io/json.hpp"
+#include "../model_access.hpp"
 #include "../rider/state_codec.hpp"
 #include "../runtime/step.hpp"
 #include "../stepper.hpp"
@@ -200,7 +202,11 @@ void install_material(SetupContext& context,Material& state){
     else if(context.stepper.has_tire())context.stepper.tire_writer().commit_prepared_state();
     if(state.controller)context.physical.rider_control().commit_state(std::move(*state.controller));
     if(state.rider)context.stepper.rider_contacts().assign_state(std::move(state.rider.value().first),std::move(state.rider.value().second));
-    if(state.spatial)context.physical.commit_spatial_state(std::move(*state.spatial));
+    if(state.spatial) {
+        if(context.bootstrap_hold && context.bootstrap_hold->restore(state.spatial->hold)!=CoreStatus::ok)
+            throw std::invalid_argument("state.spatial.hold: bootstrap owner rejected restored state");
+        context.physical.commit_spatial_state(std::move(*state.spatial));
+    }
     context.stepper.drive().restart_clock();
     if(context.stepper.has_rider_contacts())context.stepper.rider_contacts_restart_clock();
     context.stepper.note_posvel_stale();
@@ -214,6 +220,17 @@ std::string context_fingerprint(const SetupContext& context,bool legacy){
     io::Value::Object payload{{"version",io::Value{io::Number{"4"}}},{"source",io::Value{legacy?*context.legacy_source_identity:context.source_identity}},{"mujoco",io::Value{std::string(mj_versionString())}},{"physics",std::move(physics)},
         {"specs",plain(field(identity,"specs"))},{"mass_specs",plain(field(identity,"mass_specs"))},{"rider",plain(field(identity,"rider"))},{"track",plain(legacy?*context.legacy_track_identity:field(identity,"track"))},{"start_x_m",number(context.start_x_m)}};
     if(!legacy){payload.emplace_back("native_equilibrium_schema",io::Value{io::Number{"1"}});payload.emplace_back("provider_identity",io::Value{context.provider_identity});payload.emplace_back("model_sha256",io::Value{context.model_sha256});}
+    if(!legacy && context.topology) {
+        if(!context.physics.spatial || !context.terrain3d)
+            throw std::invalid_argument("equilibrium spatial fingerprint: configuration/source missing");
+        payload.emplace_back("spatial_config_sha256",io::Value{spatial::spatial_config_fingerprint_hex(*context.physics.spatial)});
+        payload.emplace_back("topology_sha256",io::Value{context.topology->fingerprint_hex});
+        payload.emplace_back("terrain_sha256",io::Value{context.terrain3d->fingerprint_hex()});
+        payload.emplace_back("tyre_profile_sha256",io::Value{context.physics.spatial->tyre.lateral_coefficients_sha256});
+        payload.emplace_back("steer_profile_sha256",io::Value{context.physics.spatial->steer.profile_sha256});
+        payload.emplace_back("integrator",io::Value{io::Number{std::to_string(context.stepper.model()->opt.integrator)}});
+        payload.emplace_back("solver",io::Value{io::Number{std::to_string(context.stepper.model()->opt.solver)}});
+    }
     const io::Value identity_payload{std::move(payload)};
     const auto json=legacy?detail::source_json(identity_payload):io::canonical_json(identity_payload);io::Sha256 digest;digest.update(std::as_bytes(std::span{json}));
     const mjModel* m=context.stepper.model();
@@ -272,9 +289,22 @@ std::filesystem::path equilibrium_cache_path(const SetupContext& context){
     std::filesystem::path directory;if(context.cache_directory)directory=*context.cache_directory;else if(const char* value=std::getenv("BIKE_SIM_EQUILIBRIUM_CACHE_DIR");value&&*value)directory=value;else directory=std::filesystem::temp_directory_path()/"bike_sim_equilibrium";
     return directory/(fingerprint(context)+".npz");
 }
-std::optional<StateFile> load_equilibrium_cache(const SetupContext& context){try{auto state=read_state_file(equilibrium_cache_path(context));settle_metadata(context,state);return state;}catch(const std::bad_alloc&){throw;}catch(const std::exception&){return std::nullopt;}}
+std::optional<StateFile> load_equilibrium_cache(const SetupContext& context){
+    context.cache_rejection_reason.reset();
+    try {
+        const auto path=equilibrium_cache_path(context);
+        if(!std::filesystem::exists(path))return std::nullopt;
+        auto state=read_state_file(path);
+        if(fingerprint(state)!=fingerprint(context))throw std::invalid_argument("cache fingerprint differs from resolved request");
+        settle_metadata(context,state);return state;
+    }catch(const std::bad_alloc&){throw;}
+    catch(const std::exception& error){context.cache_rejection_reason=error.what();return std::nullopt;}
+}
 StateFile load_equilibrium_state(const SetupContext& context,const std::filesystem::path& file){
-    try{auto state=read_state_file(file);const auto expected=state.schema_version==0?legacy_equilibrium_fingerprint(context):fingerprint(context);if(!find(state,"fingerprint_sha256")||fingerprint(state)!=expected)throw std::invalid_argument("fingerprint mismatch: pose belongs to another configuration");settle_metadata(context,state);return state;}
+    try{auto state=read_state_file(file);
+        if(context.topology && !find(state,"state_native_spatial"))
+            throw std::invalid_argument("state import: planar bootstrap1 cannot seed spatial runtime");
+        const auto expected=state.schema_version==0?legacy_equilibrium_fingerprint(context):fingerprint(context);if(!find(state,"fingerprint_sha256")||fingerprint(state)!=expected)throw std::invalid_argument("fingerprint mismatch: pose belongs to another configuration");settle_metadata(context,state);return state;}
     catch(const std::bad_alloc&){throw;}
     catch(const std::exception& error){throw std::invalid_argument("equilibrium state file "+file.string()+": "+error.what());}
 }
@@ -283,14 +313,19 @@ void save_equilibrium_cache(const SetupContext& context,const StateFile& state){
 
 void restore_equilibrium_state(SetupContext& context,const StateFile& state){
     require_initializing(context);
+    if(context.topology && !find(state,"state_native_spatial"))
+        throw std::invalid_argument("state import: planar bootstrap1 cannot seed spatial runtime");
     if(context.stepper.time()!=0.)throw std::invalid_argument("equilibrium state restore requires a fresh t=0 setup");
     if(state.schema_version==1)settle_metadata(context,state);
     const auto q=doubles(state,"qpos",{context.stepper.qpos().size()});
     const auto* coordinates_model=context.stepper.model();
+    const auto types=model_access::readonly_buffer(coordinates_model->jnt_type,coordinates_model->njnt);
+    const auto addresses=model_access::readonly_buffer(coordinates_model->jnt_qposadr,coordinates_model->njnt);
     for(int joint=0;joint<coordinates_model->njnt;++joint) {
-        const int type=coordinates_model->jnt_type[joint];
+        const auto index=static_cast<std::size_t>(joint);
+        const int type=types[index];
         if(type!=mjJNT_FREE && type!=mjJNT_BALL)continue;
-        const auto start=static_cast<std::size_t>(coordinates_model->jnt_qposadr[joint])+(type==mjJNT_FREE?3U:0U);
+        const auto start=static_cast<std::size_t>(addresses[index])+(type==mjJNT_FREE?3U:0U);
         if(start>q.size() || q.size()-start<4)throw std::invalid_argument("state.qpos.quaternion: invalid model span");
         const double norm=std::hypot(std::hypot(q[start],q[start+1]),std::hypot(q[start+2],q[start+3]));
         if(std::abs(norm-1.)>1e-9)throw std::invalid_argument("state.qpos.quaternion: expected unit quaternion");

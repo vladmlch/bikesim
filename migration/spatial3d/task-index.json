@@ -1021,9 +1021,13 @@
           "native/tests/spatial/CMakeLists.txt"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V04",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W21",
@@ -1047,9 +1051,13 @@
           "native/tests/spatial/support/tyre_fixture.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V04",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W22",
@@ -1072,9 +1080,13 @@
           "native/tests/spatial/tyre_patches.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V04",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W23",
@@ -1098,9 +1110,13 @@
           "native/tests/spatial/tyre_brush_fast.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V04",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W24",
@@ -1127,9 +1143,13 @@
           "native/tests/spatial/tyre_brush_detailed.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V04",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W25",
@@ -1168,9 +1188,13 @@
           "native/tests/spatial/tyre_writer.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V04",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W26",
@@ -1198,9 +1222,13 @@
           "native/tests/spatial/brake_static_3d.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V04",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W27",
@@ -1233,9 +1261,13 @@
           "native/tests/spatial/tyre_state.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V04",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W28",
@@ -1267,9 +1299,13 @@
           "native/tests/spatial/data/tyre_profiles.json"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V06",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W29",
@@ -1301,9 +1337,13 @@
           "native/tests/spatial/support/startup_fixture.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V06",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W30",
@@ -1330,9 +1370,13 @@
           "native/tests/spatial/bootstrap_hold.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V06",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W31",
@@ -1359,9 +1403,13 @@
           "native/tests/spatial/startup_paths.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V06",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W32",
@@ -1396,9 +1444,13 @@
           "native/tests/spatial/data/steer_profiles.json"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V06",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W33",
@@ -1428,9 +1480,13 @@
           "native/tests/spatial/outcomes.cpp"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V06",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W34",
@@ -1463,9 +1519,13 @@
           "native/tests/spatial/support/{meijaard_constraints.cpp,meijaard_reference.cpp,benchmark_linalg.cpp}"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V06",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W35",
@@ -1498,9 +1558,13 @@
           "native/tests/spatial/CMakeLists.txt"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V06",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W36",
@@ -1556,9 +1620,13 @@
           "native/tests/spatial/CMakeLists.txt"
         ]
       },
-      "status": "planned",
+      "status": "source_written",
       "verification_task": "V06",
-      "upstream_gates": []
+      "upstream_gates": [],
+      "verification_status": "pending_verification",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "project_execution_performed": false,
+      "contract_review": "migration/spatial3d/contract-deviations.md"
     },
     {
       "id": "W37",
@@ -2357,10 +2425,10 @@
         "G2-startup"
       ],
       "project_execution_performed": false,
-      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w06-w19-source.md",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
       "verification_blockers": [
-        "Required predecessor V gates and upstream producer evidence are unverified; no execution authorized in this delivery.",
-        "Full runtime/negative/bridge linkage consumes real W20/W21/W25/W27/W29 producers; these future W tasks are not implemented by W06-W19."
+        "Required predecessor V gates and upstream producer evidence remain unverified; no execution authorized in this delivery.",
+        "W20-W36 source producers are now present; native build/link and topology/rider/state regression evidence remain unexecuted. The pre-change native MJCF oracle is still not supplied."
       ]
     },
     {
@@ -2388,7 +2456,7 @@
         "modify": [],
         "test": []
       },
-      "status": "blocked_on_W",
+      "status": "pending_verification",
       "requires_w": [
         "W20",
         "W21",
@@ -2411,6 +2479,12 @@
       ],
       "upstream_gates": [
         "G1-core"
+      ],
+      "project_execution_performed": false,
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "verification_blockers": [
+        "Required predecessor V gates and upstream producer evidence remain unverified; no execution authorized in this delivery.",
+        "C10 must review finite-volume/ray/brush conventions, material overlap and subcell/basis transport, fixed-dt interval ownership and BKS3 integrity limits. All authored kernel, force/work, state and allocation tests are unexecuted."
       ]
     },
     {
@@ -2449,10 +2523,10 @@
         "G2-startup"
       ],
       "project_execution_performed": false,
-      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w06-w19-source.md",
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
       "verification_blockers": [
-        "Required predecessor V gates and upstream producer evidence are unverified; no execution authorized in this delivery.",
-        "Full runtime/negative/bridge linkage consumes real W20/W21/W25/W27/W29 producers; these future W tasks are not implemented by W06-W19."
+        "Required predecessor V gates and upstream producer evidence remain unverified; no execution authorized in this delivery.",
+        "Production spatial tyre rejects profile_extrusion until frozen material-resolver ownership is settled by C10. Paired identical-initial-state bridge construction and numerical parity remain unqualified."
       ]
     },
     {
@@ -2479,7 +2553,7 @@
         "modify": [],
         "test": []
       },
-      "status": "blocked_on_W",
+      "status": "pending_verification",
       "requires_w": [
         "W28",
         "W29",
@@ -2504,6 +2578,13 @@
       ],
       "upstream_gates": [
         "G2-startup"
+      ],
+      "project_execution_performed": false,
+      "source_delivery_report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+      "verification_blockers": [
+        "Required predecessor V gates and upstream producer evidence remain unverified; no execution authorized in this delivery.",
+        "Tyre and steer coefficients are provisional; measured lateral data, native benchmark comparison, full startup/ride matrices and timestep qualification have not been executed.",
+        "The unchanged Savage genspec violates the existing W12 slope limit; scenario R preserves that fail-closed input pending a C10 requirement decision."
       ]
     },
     {
@@ -2702,33 +2783,37 @@
   ],
   "latest_source_delivery": {
     "tasks": [
-      "W06",
-      "W07",
-      "W08",
-      "W09",
-      "W10",
-      "W11",
-      "W12",
-      "W13",
-      "W14",
-      "W15",
-      "W16",
-      "W17",
-      "W18",
-      "W19"
+      "W20",
+      "W21",
+      "W22",
+      "W23",
+      "W24",
+      "W25",
+      "W26",
+      "W27",
+      "W28",
+      "W29",
+      "W30",
+      "W31",
+      "W32",
+      "W33",
+      "W34",
+      "W35",
+      "W36"
     ],
     "date": "2026-10-23",
-    "report": "docs/superpowers/audits/2026-10-23-spatial-w06-w19-source.md",
-    "archive_name": "repomix-output.xml(20261023-192428).zip",
-    "archive_sha256": "a25e71a5b41a0ca03b4211e08087c4efa41be3a31676238e58f09b9adb24c902",
-    "repomix_xml_sha256": "1bc12a263395b7d00c93f671dcf896de2e2fe0d191dd7dc91a9ee7b4be6dcc54",
-    "extracted_file_count": 2382,
+    "report": "docs/superpowers/audits/2026-10-23-spatial-w20-w36-source.md",
+    "archive_name": "repomix-output.xml(20261023-195843).zip",
+    "archive_sha256": "5f9eb94e53c830aca25d07d81e0bcce056040997d9a7c2a09e8232e3ccd48631",
+    "repomix_xml_sha256": "98ac06d6c3e724e1a804c5a7ab47cf7abb2b90914dc8927aa890990a71754dc5",
+    "extracted_file_count": 2439,
     "original_git_history_available": false,
     "synthetic_local_baseline_for_diff_only": true,
     "project_execution_performed": false,
-    "verification_status": "pending_V02_V03_V05",
+    "verification_status": "pending_V04_V06_and_predecessors",
     "delivery_format": "git unified patch against normalized repomix input",
-    "frozen_W00_declarations_modified": false
+    "frozen_W00_declarations_modified": false,
+    "qualification_claimed": false
   },
   "source_delivery_history": [
     {
@@ -2750,6 +2835,36 @@
       "git_commit_created": false,
       "project_execution_performed": false,
       "verification_status": "pending_V00_V01"
+    },
+    {
+      "tasks": [
+        "W06",
+        "W07",
+        "W08",
+        "W09",
+        "W10",
+        "W11",
+        "W12",
+        "W13",
+        "W14",
+        "W15",
+        "W16",
+        "W17",
+        "W18",
+        "W19"
+      ],
+      "date": "2026-10-23",
+      "report": "docs/superpowers/audits/2026-10-23-spatial-w06-w19-source.md",
+      "archive_name": "repomix-output.xml(20261023-192428).zip",
+      "archive_sha256": "a25e71a5b41a0ca03b4211e08087c4efa41be3a31676238e58f09b9adb24c902",
+      "repomix_xml_sha256": "1bc12a263395b7d00c93f671dcf896de2e2fe0d191dd7dc91a9ee7b4be6dcc54",
+      "extracted_file_count": 2382,
+      "original_git_history_available": false,
+      "synthetic_local_baseline_for_diff_only": true,
+      "project_execution_performed": false,
+      "verification_status": "pending_V02_V03_V05",
+      "delivery_format": "git unified patch against normalized repomix input",
+      "frozen_W00_declarations_modified": false
     }
   ]
 }

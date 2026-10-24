@@ -84,6 +84,7 @@ struct ResearchEpisode {
     std::vector<ResearchTransition> transitions;
     SensorObservation observation;
     std::optional<WheelieTruth> truth;
+    std::optional<SpatialEpisodeMetrics> spatial_metrics;
     bool terminated = false, truncated = false, numerically_valid = true;
     std::optional<std::string> reason, error;
     std::vector<std::string> cleanup_notes;

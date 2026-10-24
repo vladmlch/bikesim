@@ -17,7 +17,7 @@ io::Value episode_metrics(const runtime::OwnedResearchEpisode& episode) {
     if (const auto* metadata = std::get_if<Object>(&episode.run_metadata.data))
         if (const auto* value = io::find_member(*metadata, "operator_intervention"))
             intervention = io::as_bool(*value, "operator_intervention");
-    return Value{Object{{"outcome", wire_value(reason)}, {"duration_s", real(duration)}, {"progress_m", real(progress)},
+    auto result=Value{Object{{"outcome", wire_value(reason)}, {"duration_s", real(duration)}, {"progress_m", real(progress)},
         {"mean_speed_mps", real(duration > 0. ? progress / duration : 0.)},
         {"finish_time_s", outcome == "finish" ? real(duration) : Value{}},
         {"torque_delivered_nms", real(delivered)}, {"torque_requested_nms", real(requested)},
@@ -32,5 +32,7 @@ io::Value episode_metrics(const runtime::OwnedResearchEpisode& episode) {
         {"max_energy_residual_ratio", wire_value(required(s, "max_energy_residual_ratio"))},
         {"model_status", wire_value(runtime::Wire{episode.final_snapshot.model_status})},
         {"wheelie", wire_value(required(s, "metrics"))}}};
+    if(const auto* spatial=find(s,"spatial"))set(result,"spatial",wire_value(*spatial));
+    return result;
 }
 } // namespace bike::research

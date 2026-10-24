@@ -103,6 +103,12 @@ void resolve_config_paths(bike::io::Value& values,
     auto* spatial_object = spatial == nullptr
         ? nullptr : std::get_if<Value::Object>(&spatial->data);
     if (spatial_object == nullptr) return;
+    if(Value* steer=find_mut(*spatial_object,"steer"))if(auto* section=std::get_if<Value::Object>(&steer->data)) {
+        if(Value* profile=find_mut(*section,"profile_id"))if(auto* id=std::get_if<std::string>(&profile->data)) {
+            if(!id->empty() && *id!="roll-heading-v1" && *id!="steer-provisional-v1")
+                resolve_member_in_place(*section,"profile_id",directory);
+        }
+    }
     Value* terrain = find_mut(*spatial_object, "terrain");
     auto* terrain_object = terrain == nullptr
         ? nullptr : std::get_if<Value::Object>(&terrain->data);

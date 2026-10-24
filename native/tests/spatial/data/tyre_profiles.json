@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "status": "source_written_pending_V06",
+  "profiles": [
+    {
+      "id": "mtb-magic-mary-29x2.4-front",
+      "name": "Schwalbe Magic Mary 29x2.4",
+      "configuration_identity": "kFrontTyre",
+      "outer_radius_m": 0.372,
+      "casing_width_m": 0.060,
+      "reference_pressure_pa": 150000,
+      "status": "provisional",
+      "source_measurements": 0,
+      "digest": null,
+      "dataset": {
+        "load": null, "pressure": null, "casing": null, "surface": null,
+        "speed": null, "temperature": null, "camber_domain": null, "slip_domain": null
+      },
+      "coefficient_families": {
+        "normal": {"status": "provisional", "source_measurements": 0, "digest": null},
+        "longitudinal": {"status": "provisional", "source_measurements": 0, "digest": null},
+        "lateral": {"status": "provisional", "source_measurements": 0, "digest": null},
+        "camber": {"status": "provisional", "source_measurements": 0, "digest": null},
+        "aligning": {"status": "provisional", "source_measurements": 0, "digest": null},
+        "relaxation": {"status": "provisional", "source_measurements": 0, "digest": null}
+      }
+    },
+    {
+      "id": "mtb-hans-dampf-27.5x2.4-rear",
+      "name": "Schwalbe Hans Dampf 27.5x2.4",
+      "configuration_identity": "kRearTyre",
+      "outer_radius_m": 0.352,
+      "casing_width_m": 0.060,
+      "reference_pressure_pa": 170000,
+      "status": "provisional",
+      "source_measurements": 0,
+      "digest": null,
+      "dataset": {
+        "load": null, "pressure": null, "casing": null, "surface": null,
+        "speed": null, "temperature": null, "camber_domain": null, "slip_domain": null
+      },
+      "coefficient_families": {
+        "normal": {"status": "provisional", "source_measurements": 0, "digest": null},
+        "longitudinal": {"status": "provisional", "source_measurements": 0, "digest": null},
+        "lateral": {"status": "provisional", "source_measurements": 0, "digest": null},
+        "camber": {"status": "provisional", "source_measurements": 0, "digest": null},
+        "aligning": {"status": "provisional", "source_measurements": 0, "digest": null},
+        "relaxation": {"status": "provisional", "source_measurements": 0, "digest": null}
+      }
+    }
+  ]
+}

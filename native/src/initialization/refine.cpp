@@ -20,6 +20,9 @@ double refine_equilibrium(SetupContext& context,int max_evaluations,double accel
     require_initializing(context);
     if(max_evaluations<=0||!std::isfinite(acceleration_tolerance)||acceleration_tolerance<=0.)
         throw std::invalid_argument("invalid equilibrium refinement budget or tolerance");
+    // A constrained spatial root still owns a BKS3 material writer. Its
+    // state must never enter the planar column-array refinement path.
+    if(context.topology)return spatial_refine(context,max_evaluations,acceleration_tolerance);
     auto& stepper=context.stepper;
     mjModel* m=stepper.model();mjData* d=stepper.data();
     for(int joint=0;joint<m->njnt;++joint)

@@ -1,10 +1,14 @@
 #include "startup_fixture.hpp"
+#include "model_request.hpp"
+#include "terrain_fixture.hpp"
+#include "fixture_paths.hpp"
 
 #include "../../support/migration_test.hpp"
 #include "../../../src/engine_call.hpp"
 #include "../../../src/model/builder.hpp"
 
 #include <cstring>
+#include <filesystem>
 #include <span>
 #include <string>
 #include <utility>
@@ -38,6 +42,30 @@ RigModel make(bike::spatial::Config cfg,bool mixed,bool rider) {
     result.topology=bike::spatial::bind_topology(*result.model,cfg);
     return result;
 }
+RigModel production_rig(bike::spatial::Config cfg,bool rider) {
+    auto request=model_request(cfg.root);
+    cfg.mode=bike::spatial::Mode::spatial3d;
+    request->spatial=cfg;request->physics->spatial=cfg;
+    request->terrain3d=std::make_shared<const bike::terrain::Terrain3dSource>(plane_grid(0.,0.,0.,65,33,.25,.25));
+    request->rider.emplace();request->rider->variant=rider?"articulated_planar":"none";
+    if(rider) {
+        request->physics->drive_mode="articulated_effort";
+        request->physics->articulated.pedal_attachment="spindle";
+        request->physics->articulated.saddle_attachment="pin";
+        request->physics->articulated.grip_attachment="connect";
+        request->physics->articulated.shoulder_profile=(std::filesystem::path(BIKE_SPATIAL_SOURCE_ROOT)/
+            "examples/research/profiles/spatial-shoulder.json").string();
+    }
+    RigModel result;
+    result.model=bike::model::compile_mjcf(bike::model::generate_mjcf(*request)).release();
+    result.data=engine::make_data(result.model);
+    bt::require(result.data!=nullptr,"production fixture owns engine state");
+    bike::model::populate_render_heightfield(*result.model,bike::terrain::make_render_grid(*request->terrain3d,
+        {static_cast<std::uint32_t>(request->field.nrow),static_cast<std::uint32_t>(request->field.ncol)}));
+    engine::forward(result.model,result.data);
+    result.topology=bike::spatial::bind_topology(*result.model,cfg);
+    return result;
+}
 } // namespace
 RigModel::~RigModel() { if(data) mj_deleteData(data);if(model) mj_deleteModel(model); }
 RigModel::RigModel(RigModel&& other) noexcept
@@ -53,10 +81,12 @@ RigModel constrained_rig(const bike::spatial::Config& config) {
     auto cfg=config;
     if(cfg.root!=bike::spatial::RootKind::planar3) cfg.root=bike::spatial::RootKind::constrained4;
     cfg.steer.controller=bike::spatial::SteerController::off;
-    return make(cfg,false,false);
+    // The explicit planar legacy fixture remains independent of the new
+    // production spatial builder; all spatial roots use the real model.
+    return cfg.root==bike::spatial::RootKind::planar3?make(cfg,false,false):production_rig(cfg,false);
 }
 RigModel free_rig(const bike::spatial::Config& config,bool articulated_rider) {
-    auto cfg=config;cfg.root=bike::spatial::RootKind::free6;return make(cfg,false,articulated_rider);
+    auto cfg=config;cfg.root=bike::spatial::RootKind::free6;return production_rig(cfg,articulated_rider);
 }
 RigModel mixed_joint_rig() {
     bike::spatial::Config cfg;cfg.mode=bike::spatial::Mode::spatial3d;cfg.root=bike::spatial::RootKind::free6;

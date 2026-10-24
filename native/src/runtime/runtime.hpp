@@ -33,7 +33,7 @@
 
 class Stepper;
 namespace bike::golden { class RuntimeAccess; }
-namespace bike::validation { class RuntimeRigAccess; }
+namespace bike::validation { class RuntimeRigAccess; class SpatialRideAccess; }
 
 namespace runtime {
 
@@ -180,6 +180,8 @@ private:
     friend class NativeResearchRuntime;
     friend class bike::golden::RuntimeAccess;
     friend class bike::validation::RuntimeRigAccess;
+    // W35/W36 cold qualification fixtures; no application checkpoint API.
+    friend class bike::validation::SpatialRideAccess;
     void advance_interval(const RideControl &command, double front, double rear,
                           GoldenForceObservation *golden = nullptr);
     // All owning copies are captured before accounting/publication. Together

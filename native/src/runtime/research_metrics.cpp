@@ -1,6 +1,7 @@
 #include "research_metrics.hpp"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -10,6 +11,39 @@
 #include "../tyre/profile.hpp"
 
 namespace runtime {
+WireObject SpatialEpisodeMetrics::as_wire() const {
+    return {{"spatial_schema",Wire(std::int64_t{1})},{"requested_duration_s",Wire(requested_duration_s)},
+        {"valid_duration_s",Wire(valid_duration_s)},{"completed_distance_m",Wire(completed_distance_m)},
+        {"terminal_reason",Wire(std::string(bike::spatial::to_string(terminal_reason)))},{"valid",Wire(valid)}};
+}
+void update_spatial_metrics(SpatialEpisodeMetrics& metrics,std::int64_t interval,
+        double end,double dt,double position,const bike::spatial::Outcome& outcome) {
+    if(interval<0 || !std::isfinite(end) || !std::isfinite(dt) || dt<=0. || end<dt ||
+       !std::isfinite(position) || !std::isfinite(metrics.requested_duration_s) || metrics.requested_duration_s<0.)
+        throw std::invalid_argument("spatial.metrics: invalid accepted interval");
+    if(interval<=metrics.last_interval)return;
+    if(metrics.terminal_reason!=bike::spatial::SpatialReason::none)return;
+    if(metrics.last_interval>=0 && interval!=metrics.last_interval+1)
+        throw std::invalid_argument("spatial.metrics: accepted interval gap");
+    const double time_tolerance=32.*std::numeric_limits<double>::epsilon()*std::max({1.,std::abs(end),dt});
+    if(metrics.last_interval<0)metrics.accepted_origin_time_s=end-dt;
+    else if(std::abs(end-metrics.last_end_time_s-dt)>time_tolerance)
+        throw std::invalid_argument("spatial.metrics: noncontiguous accepted times");
+    const bool terminal=outcome.terminal && outcome.time_s<=end;
+    const bool valid_interval=!terminal || outcome.valid;
+    if(valid_interval && metrics.valid) {
+        const double accepted_duration=end-metrics.accepted_origin_time_s;
+        metrics.valid_duration_s=accepted_duration>=metrics.requested_duration_s-time_tolerance?
+            metrics.requested_duration_s:accepted_duration;
+        metrics.completed_distance_m=std::max(metrics.completed_distance_m,position-metrics.start_position_m);
+    }
+    if(terminal) {
+        metrics.valid=metrics.valid && outcome.valid;
+        if(metrics.terminal_reason==bike::spatial::SpatialReason::none)metrics.terminal_reason=outcome.reason;
+    }
+    metrics.last_interval=interval;
+    metrics.last_end_time_s=end;
+}
 namespace {
 using namespace sample_wire;
 double n(const WireObject &o, std::string_view key) { return number(required(o, key)); }

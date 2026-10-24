@@ -56,35 +56,29 @@ CapabilityReport implemented_capabilities(
        tires.surface_mode!="track")
         reject("tires.surface_mode","compliant_2d/distributed_2d_reference resolve the track surface map");
     if(spatial_requested) {
+        if(rider.variant=="articulated_planar" &&
+           (attachments.pedal_attachment!="spindle" || attachments.saddle_attachment!="pin" ||
+            attachments.grip_attachment!="connect" || attachments.coupled_task_control))
+            reject("rider.spatial","requires spindle pedals, pin saddle, connect grips and uncoupled controller");
         out.spatial=bike::spatial::check_spatial_capability(*config.spatial,config);
         for(const auto& reason:out.spatial->rejections)
             reject("spatial",reason);
-        // W25/W31/W36 own connection of real runtime rows. A valid input
-        // declaration cannot advertise an executable spatial simulation.
-        if(out.spatial->rejections.empty())
-            reject("spatial","spatial runtime not connected: W25/W31/W36");
-        // W19 records separate release rows. A constrained or rigid-rider
-        // witness cannot accidentally enable free-root or articulated rows.
-        reject("spatial.root:"+std::string(bike::spatial::to_string(config.spatial->root)),
-            "topology source written; runtime connection and V03/V05 pending");
-        reject("spatial.tyre:pneumatic_3d/"+std::string(bike::spatial::to_string(config.spatial->tyre.tier)),
-            "real W25/W27 material producer and qualification required");
-        reject("drive:"+config.drive.transmission_model,
-            "spatial force mapping source written; V03/V05 pending");
-        reject(config.spatial->root==bike::spatial::RootKind::constrained4?
-            "spatial.steering:constrained":"spatial.steering:free",
-            "separate steering dispatch/qualification pending W31/V05");
-        reject("spatial.identity:model/topology/terrain",
-            "cold identity checks written; saved-runtime continuation pending W27/V05");
-        if(rider.variant=="articulated_planar")
-            reject("spatial.identity:shoulder",
-                "profile/layout and grip feasibility require V03; rigid-rider results do not qualify this row");
+        // W25/W31/W36 connect these source dispatches. No W authoring task
+        // clears qualification_pending or claims V03/V04/V06 acceptance.
+        out.qualification_pending=true;
     }
     if(out.rejections.empty()) {
         out.paths={"runtime/step.cpp", "writers/drivetrain.cpp", "runtime/native_contacts.cpp"};
         if(tires.backend=="compliant_2d")out.paths.emplace_back("writers/tire.cpp");
         if(tires.backend=="distributed_2d_reference")out.paths.emplace_back("writers/distributed_tire.cpp");
         if(tires.backend=="pneumatic")out.paths.emplace_back("writers/pneumatic_tire.cpp");
+        if(tires.backend=="pneumatic_3d") {
+            out.paths.emplace_back("writers/pneumatic_3d_tire.cpp");
+            out.paths.emplace_back("tyre:pneumatic_3d");
+            if(config.spatial->root==bike::spatial::RootKind::free6) {
+                out.paths.emplace_back("startup:spatial_free");out.paths.emplace_back("ride:spatial_free");
+            }
+        }
         if(rider.variant=="articulated_planar") {
             out.paths.emplace_back("rider/spindle_controller.cpp");
             out.paths.emplace_back("writers/rider_contacts.cpp");

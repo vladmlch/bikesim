@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include "capture.hpp"
 #include "context.hpp"
+#include "spatial_equilibrium.hpp"
 #include "../configuration/load.hpp"
 #include "../engine_identity.hpp"
 #include "../io/hash.hpp"
@@ -20,6 +21,7 @@
 #include "../rider/state_codec.hpp"
 #include "../runtime/provenance.hpp"
 #include "../runtime/setup_values.hpp"
+#include "../runtime/spatial_tire_factory.hpp"
 #include "../stepper.hpp"
 #include "../terrain/trackfile.hpp"
 #include "../terrain/spec_io.hpp"
@@ -61,7 +63,7 @@ void populate_heightfield(mjModel& compiled, const SetupRequest& request) {
 }
 
 Value equilibrium_value(const EquilibriumResult& result) {
-    return Value{Object{{"steps", integer(result.steps)},
+    auto value=Value{Object{{"steps", integer(result.steps)},
         {"residual_qacc", real(result.residual_qacc)}, {"cache_hit", Value{result.cache_hit}},
         {"fork_travel_mm", real(result.fork_travel_mm)},
         {"shock_stroke_mm", real(result.shock_stroke_mm)},
@@ -82,6 +84,20 @@ Value equilibrium_value(const EquilibriumResult& result) {
             ? real(*result.initial_state_source_timestep_s) : Value{}},
         {"source_equilibrium_residual_qacc", result.source_equilibrium_residual_qacc
             ? real(*result.source_equilibrium_residual_qacc) : Value{}}}};
+    if(result.spatial) {
+        const auto& s=*result.spatial;Array errors,dofs;
+        for(const auto& error:s.errors)errors.push_back(text(error));
+        for(int dof:s.worst_dofs)dofs.push_back(integer(dof));
+        set(value,"spatial",Value{Object{{"max_linear_accel_mps2",real(s.max_linear_accel_mps2)},
+            {"max_angular_accel_radps2",real(s.max_angular_accel_radps2)},
+            {"weight_residual_fraction",real(s.weight_residual_fraction)},
+            {"pitch_moment_residual_nm",real(s.pitch_moment_residual_nm)},
+            {"roll_moment_residual_nm",real(s.roll_moment_residual_nm)},
+            {"contacts_valid",integer(s.contacts_valid)},{"contacts_total",integer(s.contacts_total)},
+            {"evaluations",integer(s.evaluations)},{"errors",Value{std::move(errors)}},
+            {"worst_dofs",Value{std::move(dofs)}}});
+    }
+    return value;
 }
 
 void length(io::Sha256& digest, std::uint64_t size) {
@@ -163,6 +179,18 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     if (!request.model.physics)
         throw std::invalid_argument("native setup requires an explicit physical configuration");
     configuration::post_init(*request.model.physics);
+    if(request.model.physics->spatial && request.model.physics->spatial->mode==spatial::Mode::spatial3d) {
+        runtime::resolve_spatial_runtime_profiles(*request.model.physics);
+        if(request.model.spatial) {
+            auto independently_resolved=*request.model.physics;
+            independently_resolved.spatial=request.model.spatial;
+            runtime::resolve_spatial_runtime_profiles(independently_resolved);
+            if(spatial::spatial_config_fingerprint_hex(*independently_resolved.spatial)!=
+               spatial::spatial_config_fingerprint_hex(*request.model.physics->spatial))
+                throw std::invalid_argument("setup.spatial: model and physics configurations differ");
+        }
+        request.model.spatial=request.model.physics->spatial;
+    }
     const bool spatial_requested=request.model.physics->spatial &&
         request.model.physics->spatial->mode==spatial::Mode::spatial3d;
     if(!spatial_requested && (request.model.terrain3d ||
@@ -245,6 +273,12 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
         auto& inputs=std::get<Object>(context.identity.data);
         inputs.emplace_back("spatial",spatial::spatial_config_to_wire(*impl->request.model.spatial));
         inputs.emplace_back("physical_terrain_sha256",text(context.terrain3d->fingerprint_hex()));
+        inputs.emplace_back("topology_sha256",text(context.topology->fingerprint_hex));
+        inputs.emplace_back("tyre_profile_sha256",text(context.physics.spatial->tyre.lateral_coefficients_sha256));
+        inputs.emplace_back("steer_profile_sha256",text(context.physics.spatial->steer.profile_sha256));
+        // The runtime seed is provenance. A generated terrain already binds
+        // its seed and generation inputs through the physical terrain digest.
+        inputs.emplace_back("runtime_seed_decimal",text(impl->request.seed_decimal));
     }
     context.cache_directory = impl->request.cache_directory;
     context.initial_state = impl->request.initial_state ? &*impl->request.initial_state : nullptr;
@@ -319,6 +353,14 @@ io::Value SetupOwner::metadata() const {
             {"physical_asset_sha256",text(context.terrain3d->fingerprint_hex())},
             {"render_nrow",integer(context.render3d->nrow)}, {"render_ncol",integer(context.render3d->ncol)},
             {"render_role",text("visual_and_crash_only")}}});
+        fields.emplace_back("cache_rejection_reason",context.cache_rejection_reason?text(*context.cache_rejection_reason):Value{});
+        fields.emplace_back("qualification",text("pending V06"));
+        if(const auto& causal=context.physical.spatial_state();causal &&
+            causal->steer.controller!=spatial::SteerController::off) {
+            const auto ticks=causal->steer.delay_fifo_nm.size()-1;
+            fields.emplace_back("steer_delay_ticks",integer(static_cast<std::int64_t>(ticks)));
+            fields.emplace_back("steer_resolved_delay_s",real(static_cast<double>(ticks)*context.physics.control_period_s));
+        }
     }
     if (context.physics.physics_mode == "physical" &&
         impl_->request.model.rider &&

@@ -93,7 +93,7 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
         auto& contact=required(owner,"geom","geom_"+prefix+"_contact");
         contact.set("priority","1");
         contact.set("friction",g(prefix=="front"?cfg.tires.front.mu:cfg.tires.rear.mu)+" 0.005 0.0001");
-        if(cfg.tires.backend=="compliant_2d" || cfg.tires.backend=="distributed_2d_reference" || cfg.tires.backend=="pneumatic")
+        if(cfg.tires.backend=="compliant_2d" || cfg.tires.backend=="distributed_2d_reference" || cfg.tires.backend=="pneumatic" || cfg.tires.backend=="pneumatic_3d")
             for(auto* value:owner.descendants("geom")) { value->set("contype","0");value->set("conaffinity","0"); }
     }
     for(const char* name:{"frame","steer","fork_lower","chainstay","seatstay","rocker","shock_yoke","shock_shaft","shock_body"})

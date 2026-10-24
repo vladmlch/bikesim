@@ -18,6 +18,8 @@ namespace runtime { class PhysicalStep; }
 
 namespace bike::initialization {
 
+class BootstrapHold;
+
 // Borrowed exclusively by SetupOwner before seal; never constructed from a
 // live NativeRideRuntime. Numeric fields are resolved from the same model
 // and source configuration used to construct these two owners.
@@ -55,6 +57,9 @@ struct SetupContext {
     std::shared_ptr<const terrain::Terrain3dSource> terrain3d;
     std::optional<terrain::RenderGrid3d> render3d;
     std::optional<spatial::Topology> topology;
+    std::shared_ptr<BootstrapHold> bootstrap_hold;
+    std::shared_ptr<SpatialEquilibriumReport> spatial_report;
+    mutable std::optional<std::string> cache_rejection_reason;
 };
 
 // Resolves a scalar joint once, rejecting missing/free/ball joints instead

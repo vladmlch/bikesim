@@ -91,6 +91,9 @@ struct TireDiagnostics {
             rim_event_peak_load_n{}, rim_event_peak_force_n{},
             rim_event_energy_j{};
     double pressure_bar{}, dissipated_power_w{};
+    // Spatial-only append-only projection; planar wire emitters ignore these.
+    double spatial_lateral_force_n{}, spatial_aligning_moment_nm{}, spatial_camber_rad{};
+    std::int64_t spatial_generation{-1};
 };
 
 namespace tirecommon {

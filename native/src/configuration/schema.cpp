@@ -40,6 +40,24 @@
 #include <vector>
 
 namespace bike::configuration {
+SpatialTyreCoefficientProfile spatial_tyre_coefficient_profile(std::string_view id) {
+    if(id.empty())id="mtb-provisional-v1";
+    if(id!="mtb-provisional-v1" && id!="mtb-magic-mary-29x2.4-front" &&
+       id!="mtb-hans-dampf-27.5x2.4-rear")
+        throw std::invalid_argument("tires.pneumatic_3d.lateral_coefficients: unknown profile '"+std::string(id)+"'");
+    SpatialTyreCoefficientProfile out;out.id=id;return out;
+}
+bike::io::Value spatial_tyre_profile_registry() {
+    using V=bike::io::Value;
+    V::Array profiles;
+    for(const auto id:{"mtb-magic-mary-29x2.4-front","mtb-hans-dampf-27.5x2.4-rear"}) {
+        const auto p=spatial_tyre_coefficient_profile(id);
+        profiles.push_back(V{V::Object{{"id",V{p.id}},{"status",V{p.status}},
+            {"source_measurements",V{bike::io::Number{"0"}}},{"digest",V{}},
+            {"measurement_domain",V{}},{"verification",V{std::string("pending V06")}}}});
+    }
+    return V{V::Object{{"schema",V{bike::io::Number{"1"}}},{"profiles",V{std::move(profiles)}}}};
+}
 namespace detail {
 
 // ===========================================================================

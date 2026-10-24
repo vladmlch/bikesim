@@ -87,17 +87,7 @@ Value outcome_value(const OutcomeState& s) {
         {"balance_dwell_ticks", integer(s.balance_dwell_ticks)},
         {"valid_mask", integer(s.valid_mask)}}};
 }
-Value brake_value(const BrakeState& s) {
-    Array wheels;
-    for (const auto& w : s.wheel)
-        wheels.emplace_back(Object{{"engaged", Value{w.engaged}},
-            {"latch_angle_rad", real(w.latch_angle_rad)},
-            {"unwrapped_angle_rad", real(w.unwrapped_angle_rad)},
-            {"stored_energy_j", real(w.stored_energy_j)},
-            {"previous_demand", real(w.previous_demand)}});
-    return Value{Object{{"schema", integer(s.schema)}, {"wheel", Value{std::move(wheels)}},
-        {"interval_index", integer(s.interval_index)}, {"valid_mask", integer(s.valid_mask)}}};
-}
+
 } // namespace
 
 std::string_view to_string(BootstrapPhase phase) noexcept {
@@ -118,20 +108,19 @@ std::optional<BootstrapPhase> parse_phase(std::string_view name) noexcept {
 std::string_view to_string(SpatialReason reason) noexcept {
     switch (reason) {
     case SpatialReason::none: return "none";
-    case SpatialReason::capsize: return "capsize";
-    case SpatialReason::off_corridor: return "off_corridor";
+    case SpatialReason::capsize: return "crash:capsize";
+    case SpatialReason::off_corridor: return "crash:off_corridor";
     case SpatialReason::balance_lost: return "balance_lost";
-    case SpatialReason::terrain_invalid: return "terrain_invalid";
-    case SpatialReason::terrain_outside: return "terrain_outside";
-    case SpatialReason::numerical_failure: return "numerical_failure";
-    case SpatialReason::requested_completion: return "requested_completion";
+    case SpatialReason::terrain_invalid: return "invalid:terrain";
+    case SpatialReason::terrain_outside: return "invalid:outside";
+    case SpatialReason::numerical_failure: return "invalid:numerical";
+    case SpatialReason::requested_completion: return "completed";
     }
     return "invalid";
 }
 HoldState canonical_inactive_hold() noexcept { return {}; }
 SteerState canonical_inactive_steer() { return {}; }
 OutcomeState canonical_unlatched_outcome() noexcept { return {}; }
-BrakeState canonical_released_brake() noexcept { return {}; }
 
 HoldState decode_hold(const Value& value) {
     const auto d = object(value, "hold");
@@ -152,8 +141,12 @@ HoldState decode_hold(const Value& value) {
     const auto phase = parse_phase(vread::string(vread::field(d, "phase"), d.child("phase")));
     if (!phase) vread::invalid(d.child("phase"), "unknown bootstrap phase");
     s.phase = *phase;
-    if (s.phase == BootstrapPhase::scored && s.active)
-        vread::invalid(d.child("active"), "hold cannot be active in scored phase");
+    if (s.phase >= BootstrapPhase::armed && s.active)
+        vread::invalid(d.child("active"), "hold is active only during settling or release_check");
+    if (s.phase >= BootstrapPhase::armed && (s.stored_energy_j != 0. ||
+        std::ranges::any_of(s.last_force_world_n,[](double x){return x!=0.;}) ||
+        std::ranges::any_of(s.last_couple_world_nm,[](double x){return x!=0.;})))
+        vread::invalid(d.child("last_force_world_n"), "released hold requires exactly zero wrench and stored energy");
     s.valid_mask = mask(d);
     return s;
 }
@@ -180,6 +173,8 @@ SteerState decode_steer(const Value& value) {
     s.fifo_count = static_cast<std::size_t>(size);
     s.profile_sha256 = vread::string(vread::field(d, "profile_sha256"), d.child("profile_sha256"));
     digest_or_empty(s.profile_sha256, d.child("profile_sha256"));
+    if(s.controller!=SteerController::off && (s.profile_sha256.empty() || s.delay_fifo_nm.empty()))
+        vread::invalid(d.child("profile_sha256"), "active controller requires profile identity and a sized FIFO");
     s.last_command_nm = number(d, "last_command_nm");
     s.last_applied_nm = number(d, "last_applied_nm");
     s.saturated_ticks = count(d, "saturated_ticks");
@@ -217,39 +212,20 @@ OutcomeState decode_outcome(const Value& value) {
         vread::invalid(l.child("tick"), "unlatched outcome requires tick=-1 and terminal=false");
     if (s.latched.reason != SpatialReason::none && s.latched.tick < 0)
         vread::invalid(l.child("tick"), "latched outcome requires nonnegative tick");
+    if (s.latched.reason != SpatialReason::none && !s.latched.terminal)
+        vread::invalid(l.child("terminal"), "a reason is present only in a terminal latch");
+    if (s.latched.terminal && s.latched.valid &&
+        (s.latched.reason==SpatialReason::terrain_invalid || s.latched.reason==SpatialReason::terrain_outside ||
+         s.latched.reason==SpatialReason::numerical_failure))
+        vread::invalid(l.child("valid"), "numerical and terrain failures are invalid episodes");
     s.capsize_dwell_ticks = count(d, "capsize_dwell_ticks");
     s.corridor_dwell_ticks = count(d, "corridor_dwell_ticks");
     s.balance_dwell_ticks = count(d, "balance_dwell_ticks");
     s.valid_mask = mask(d);
     return s;
 }
-BrakeState decode_brake(const Value& value) {
-    const auto d = object(value, "brake");
-    vread::exact(d, vread::keys("schema", "wheel", "interval_index", "valid_mask"));
-    schema(d);
-    BrakeState s;
-    const auto& wheels = vread::sequence(vread::field(d, "wheel"), d.child("wheel"));
-    if (wheels.size() != 2) vread::invalid(d.child("wheel"), "expected front/rear pair");
-    for (std::size_t i = 0; i < wheels.size(); ++i) {
-        const auto w = object(wheels[i], d.child("wheel") + "[" + std::to_string(i) + "]");
-        vread::exact(w, vread::keys("engaged", "latch_angle_rad", "unwrapped_angle_rad",
-            "stored_energy_j", "previous_demand"));
-        auto& target = s.wheel[i];
-        target.engaged = vread::boolean(vread::field(w, "engaged"), w.child("engaged"));
-        target.latch_angle_rad = number(w, "latch_angle_rad");
-        target.unwrapped_angle_rad = number(w, "unwrapped_angle_rad");
-        target.stored_energy_j = number(w, "stored_energy_j");
-        nonnegative(target.stored_energy_j, w.child("stored_energy_j"));
-        target.previous_demand = number(w, "previous_demand");
-        if (target.previous_demand < 0. || target.previous_demand > 1.)
-            vread::invalid(w.child("previous_demand"), "expected demand in [0,1]");
-    }
-    s.interval_index = count(d, "interval_index", -1);
-    s.valid_mask = mask(d);
-    return s;
-}
+
 Value encode_hold(const HoldState& s) { auto v = hold_value(s); (void)decode_hold(v); return v; }
 Value encode_steer(const SteerState& s) { auto v = steer_value(s); (void)decode_steer(v); return v; }
 Value encode_outcome(const OutcomeState& s) { auto v = outcome_value(s); (void)decode_outcome(v); return v; }
-Value encode_brake(const BrakeState& s) { auto v = brake_value(s); (void)decode_brake(v); return v; }
 } // namespace bike::spatial

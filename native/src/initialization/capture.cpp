@@ -159,6 +159,9 @@ runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
         throw std::invalid_argument("bootstrap capture requires t=0");
     if (state.initializing || !state.research_accounting_valid || !state.energy.initial_energy_j)
         throw std::invalid_argument("bootstrap capture requires a completed physical reset");
+    if(state.spatial && (state.spatial->bootstrap_phase!=spatial::BootstrapPhase::scored ||
+        state.spatial->hold.active || state.spatial->hold.phase!=spatial::BootstrapPhase::scored))
+        throw std::invalid_argument("bootstrap.spatial.hold: capture requires released scored state");
     const auto& m = *stepper.model();
     const auto& d = *stepper.data();
     runtime::ModelImage image;

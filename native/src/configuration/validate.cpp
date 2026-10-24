@@ -42,6 +42,17 @@
 #include <vector>
 
 namespace bike::configuration {
+void validate_spatial_tyre_profile(const SpatialTyreCoefficientProfile& p) {
+    if(p.id.empty())throw std::invalid_argument("lateral_coefficients.id: required");
+    if(p.status!="measured" && p.status!="calibrated" && p.status!="inferred" && p.status!="provisional")
+        throw std::invalid_argument("lateral_coefficients.status: expected measured/calibrated/inferred/provisional");
+    if((p.status=="measured" || p.status=="calibrated") && p.source_measurements==0)
+        throw std::invalid_argument("lateral_coefficients.source_measurements: evidence required for measured/calibrated status");
+    for(double x:{p.kx_n_per_m3,p.ky_n_per_m3,p.relaxation_x_m,p.relaxation_y_m})
+        if(!std::isfinite(x)||x<=0.)throw std::invalid_argument("lateral_coefficients: stiffness/relaxation must be finite and positive");
+    if(!std::isfinite(p.camber_coefficient_per_rad)||!std::isfinite(p.pneumatic_trail_m)||p.pneumatic_trail_m<0.)
+        throw std::invalid_argument("lateral_coefficients: invalid camber coefficient/pneumatic trail");
+}
 namespace {
 
 // ---- error idioms ----------------------------------------------------------

@@ -137,6 +137,20 @@ inline constexpr std::array<TierSpec, 2> kTireTiers{{
 }};
 [[nodiscard]] const TierSpec* find_tire_tier(std::string_view name);
 
+// W28 coefficient provenance is independent from execution qualification.
+// A digest identifies the authored coefficient content, not measured accuracy.
+struct SpatialTyreCoefficientProfile {
+    std::string id;
+    std::string status = "provisional";
+    std::uint64_t source_measurements = 0;
+    double kx_n_per_m3 = 5e6, ky_n_per_m3 = 5e6;
+    double relaxation_x_m = .3, relaxation_y_m = .3;
+    double camber_coefficient_per_rad = .8, pneumatic_trail_m = .02;
+};
+[[nodiscard]] SpatialTyreCoefficientProfile spatial_tyre_coefficient_profile(std::string_view id);
+void validate_spatial_tyre_profile(const SpatialTyreCoefficientProfile&);
+[[nodiscard]] bike::io::Value spatial_tyre_profile_registry();
+
 // ---- chain.py DrivetrainSpecs (the mid-drive gearing record) -----------------
 struct DrivetrainSpecs {
     int front_teeth = 34;

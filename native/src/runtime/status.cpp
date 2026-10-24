@@ -150,6 +150,11 @@ std::vector<std::string> channel_violations(const WireObject &channels,
         const auto extra = string_list(*violations);
         reasons.insert(reasons.end(), extra.begin(), extra.end());
     }
+    if(const Wire* spatial=find(channels,"spatial_outcome")) {
+        const auto& outcome=object(*spatial);
+        if(boolean(required(outcome,"terminal")) && !boolean(required(outcome,"valid")))
+            reasons.push_back(string(required(outcome,"reason")));
+    }
     return reasons;
 }
 
@@ -199,6 +204,8 @@ void ModelStatus::observe(std::int64_t interval_id, double time_s,
                                !boolean(numerically_valid);
         next_numerical = Wire(energy_quality_ok(object(*energy)) && !was_false);
     }
+    if(const Wire* spatial=find(channels,"spatial_outcome");spatial &&
+       !boolean(required(object(*spatial),"valid")))next_numerical=Wire(false);
     counts = std::move(next_counts);
     first = std::move(next_first);
     numerically_valid = std::move(next_numerical);

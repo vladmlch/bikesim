@@ -1,0 +1,43 @@
+# Source-authored W35 qualification input; numerical evidence is pending V06.
+qualification_schema = 1
+suite = "cornering"
+[arena]
+length_m = 120.0
+half_width_m = 60.0
+dx_m = 0.5
+dy_m = 0.5
+height_m = 0.0
+features = []
+mu_peak = 0.8
+mu_slide = 0.6
+[scenario]
+radii_m = [10.0, 20.0, 40.0]
+speeds_mps = [3.0, 5.0, 8.0]
+maximum_lateral_mu_fraction = 0.8
+steady_window_s = 2.0
+steady_variation_fraction = 0.01
+scored_duration_s = 5.0
+acquisition_budget_s = 30.0
+reference = "native Whipple rigid rider; ideal rolling; workless steer-position constraint"
+mtb_reference_input = "private circular-reference tick; same SteerBalance FIFO, gains and actual work"
+[acceptance]
+ideal_lean_error_deg = 1.0
+ideal_lateral_force_relative_error = 0.02
+mtb_force_error_mg = 0.001
+mtb_angular_momentum_relative_error = 0.01
+radius_relative_error = 0.05
+speed_relative_error = 0.02
+verification = "pending V06"
+[profile]
+tyre_id = "mtb-provisional-v1"
+steer_id = "roll-heading-v1"
+kx_n_per_m3 = 5000000.0
+ky_n_per_m3 = 5000000.0
+relaxation_x_m = 0.3
+relaxation_y_m = 0.3
+camber_coefficient_per_rad = 0.8
+pneumatic_trail_m = 0.02
+profile_digest_recipe = "sha256(canonical_json(project_spatial_tire_config(pinned_resolved_physics)))"
+steer_digest_recipe = "read_steer_profile canonical content digest; cap=40 Nm delay=0.1 s"
+provenance_status = "provisional"
+measurement_digest = "pending V06"

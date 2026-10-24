@@ -1,6 +1,7 @@
 // W19 source authoring. V03/V05 execute this matrix only after the W20/W21/
 // W27 producers are linked. Missing captures/producers never become a skip.
 #include "support/migration_test.hpp"
+#include "support/equilibrium_cases.hpp"
 #include "support/model_request.hpp"
 #include "support/rider_fixture.hpp"
 #include "support/spatial_fixture.hpp"
@@ -21,9 +22,11 @@
 #include "runtime/capabilities.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/setup_values.hpp"
+#include "runtime/spatial_tire_factory.hpp"
 #include "spatial/frames.hpp"
 #include "spatial/topology.hpp"
 #include "validation/runtime_access.hpp"
+#include "writers/pneumatic_3d_tire.hpp"
 
 #include <algorithm>
 #include <array>
@@ -267,23 +270,69 @@ void identity_and_entrypoints() {
     });
 }
 
-tyre::TyreState3d zero_material(const runtime::SpatialBootstrapState& spatial) {
-    tyre::TyreState3d state;state.identity.tier=sp::TyreTier::fast;
-    state.identity.dims={64,7,256};state.identity.patch_capacity=224;
-    state.identity.topology_fingerprint_hex=spatial.topology_fingerprint;
-    state.identity.terrain_sha256_hex=spatial.terrain_sha256;
-    state.identity.calibration_sha256_hex=spatial.calibration_sha256;
-    state.identity.config_fingerprint_hex=sp::spatial_config_fingerprint_hex(free_config());
-    constexpr std::size_t nfan=64*7,nmaterial=256*7,capacity=224;
-    for(std::size_t wheel=0;wheel<2;++wheel) {
-        auto& carcass=state.carcass[wheel];carcass.deflection_m.resize(nmaterial);
-        carcass.maxwell_q_n_per_m2.resize(nmaterial);carcass.previous_penetration_m.resize(nmaterial);carcass.active.resize(nmaterial);
-        auto& patches=state.patches[wheel];patches.capacity=capacity;patches.ids.resize(capacity);
-        patches.element_to_patch_slot.resize(nfan);patches.slot_used.resize(capacity);
-        auto& brush=state.brush[wheel];brush.ux_m.resize(capacity);brush.uy_m.resize(capacity);brush.camber_state.resize(capacity);
-        brush.bristle_ux_m.resize(nmaterial);brush.bristle_uy_m.resize(nmaterial);brush.bristle_energy_j.resize(nmaterial);
+void producer_declaration_mismatch() {
+    for(const auto tier:{sp::TyreTier::fast,sp::TyreTier::detailed}) {
+        auto arena=std::make_unique<spatial_tests::EquilibriumArena>(sp::RootKind::constrained4,tier,false);
+        bt::require(arena->config.spatial.has_value() && arena->stepper->has_spatial_tire(),
+            "production arena installs the declared spatial tyre owner");
+        const auto image=bike::initialization::capture_model_image(*arena->stepper->model());
+        auto cold=std::make_unique<Stepper>(image.mjb);
+        const auto reject_declarations=[&](Stepper& target) {
+            const bool installed=target.has_spatial_tire();
+            const auto engine_before=model_state(*target.model(),*target.data());
+            const auto material_before=installed?target.spatial_tire_writer().state_bytes():std::vector<std::byte>{};
+            const auto rejected=[&](const runtime::RuntimeConfig& wrong,std::string_view path) {
+                // Only the runtime declaration changes: the validated writer
+                // payload, terrain and coefficient digest remain exact.
+                invalid_path([&]{runtime::install_spatial_tire(target,wrong);},path);
+                bt::require(target.has_spatial_tire()==installed,
+                    "declaration mismatch does not install or replace a contact producer");
+                bt::require(engine_before==model_state(*target.model(),*target.data()),
+                    "declaration rejection preserves the complete engine model and state");
+                if(installed)bt::require(material_before==target.spatial_tire_writer().state_bytes(),
+                    "declaration rejection preserves the installed producer identity and history");
+            };
+            auto wrong=std::make_unique<runtime::RuntimeConfig>(arena->config);
+            wrong->spatial->tyre.tier=tier==sp::TyreTier::fast?sp::TyreTier::detailed:sp::TyreTier::fast;
+            rejected(*wrong,"config.tire.pneumatic_3d.tier");
+            *wrong=arena->config;
+            wrong->spatial->tyre.lateral_coefficients_id="mtb-magic-mary-29x2.4-front";
+            bt::require(wrong->spatial->tyre.lateral_coefficients_id!=arena->config.spatial->tyre.lateral_coefficients_id,
+                "profile negative selects a different registered declaration");
+            (void)cfg::spatial_tyre_coefficient_profile(wrong->spatial->tyre.lateral_coefficients_id);
+            rejected(*wrong,"config.tire.pneumatic_3d.coefficient_profile");
+            runtime::install_spatial_tire(target,arena->config);
+            bt::require(target.has_spatial_tire() && target.spatial_tire_writer().state().identity.tier==tier,
+                "matching declaration succeeds after rejected candidates");
+            if(installed)bt::require(material_before==target.spatial_tire_writer().state_bytes(),
+                "reinstalling the exact existing producer is observational");
+        };
+        reject_declarations(*cold);
+        // The same real cold owner now exercises the existing-producer gate;
+        // no initialization pass mutates its model between these calls.
+        reject_declarations(*cold);
     }
-    return state;
+}
+
+tyre::TyreState3d zero_material(const spatial_tests::RigModel& rig,
+                              const bike::terrain::Terrain3dSource& terrain) {
+    auto request=spatial_tests::model_request(rig.topology.root.kind);
+    request->physics->spatial=request->spatial;
+    cfg::post_init(*request->physics);
+    runtime::resolve_spatial_runtime_profiles(*request->physics);
+    const auto wire=runtime::project_spatial_tire_config(*request->physics);
+    auto spec=runtime::decode_spatial_tire_config(wire);
+    tyre::TyreStateIdentity3d identity;
+    identity.tier=spec.tier;identity.dims=tyre::tier_dims(spec.tier);
+    identity.patch_capacity=identity.dims.n_theta_fan*identity.dims.n_phi;
+    identity.topology_fingerprint_hex=rig.topology.fingerprint_hex;
+    identity.terrain_sha256_hex=terrain.fingerprint_hex();
+    identity.config_fingerprint_hex=sp::spatial_config_fingerprint_hex(*request->physics->spatial);
+    identity.calibration_sha256_hex=request->physics->spatial->tyre.lateral_coefficients_sha256;
+    // The production owner supplies every dimension, unused-slot sentinel and
+    // canonical zero; its digest identifies resolved provisional coefficients.
+    auto model=std::make_unique<tyre::Pneumatic3dModel>(std::move(spec),terrain.query_view(),std::move(identity));
+    return model->committed_state();
 }
 Value dimensions(const mjModel& model) {
     return Value{Object{{"nq",integer(model.nq)},{"nv",integer(model.nv)},{"nu",integer(model.nu)},
@@ -293,8 +342,10 @@ Value dimensions(const mjModel& model) {
         {"nsensordata",integer(model.nsensordata)}}};
 }
 void bootstrap_quaternion() {
-    Witness witness;auto rig=spatial_tests::mixed_joint_rig();auto terrain=spatial_tests::flat_model_ground();
-    auto spatial=causal_state(rig,*terrain);const auto material=zero_material(spatial);
+    Witness witness;auto rig=spatial_tests::mixed_joint_rig();
+    auto terrain=std::make_shared<const bike::terrain::Terrain3dSource>(spatial_tests::plane_grid(0.,0.,0.,33,17,.25,.25));
+    auto spatial=causal_state(rig,*terrain);const auto material=zero_material(rig,*terrain);
+    spatial.calibration_sha256=material.identity.calibration_sha256_hex;
     const auto bytes=tyre::encode_tyre_state(material);
     const auto restored=tyre::decode_tyre_state(bytes,material.identity);
     bt::require(restored.has_value(),"real typed empty material state is a valid W27 codec control");
@@ -379,7 +430,11 @@ void covariance() {
         bt::require(tyre::query_geometry(grid,a,ground->query_view(),ea)==CoreStatus::ok &&
             tyre::query_geometry(grid,b,rotated->query_view(),eb)==CoreStatus::ok,"rotated contact geometry is valid");
         std::vector<tyre::NormalElement3d> na(ea.size()),nb(eb.size());
-        auto material=zero_material(runtime::SpatialBootstrapState{});auto ca=material.carcass[0],cb=ca;
+        tyre::CarcassState3d ca;
+        const auto material_count=static_cast<std::size_t>(grid.dims.n_theta_material)*grid.dims.n_phi;
+        ca.deflection_m.assign(material_count,0.);ca.maxwell_q_n_per_m2.assign(material_count,0.);
+        ca.previous_penetration_m.assign(material_count,0.);ca.active.assign(material_count,0);
+        auto cb=ca;
         bt::require(tyre::update_carcass(law,ea,.001,false,ca,na)==CoreStatus::ok &&
             tyre::update_carcass(law,eb,.001,false,cb,nb)==CoreStatus::ok,"real normal kernels accept rotated contact");
         double load_a=0.,load_b=0.,power_a=0.,power_b=0.;
@@ -413,10 +468,15 @@ void release_reporting() {
     for(const auto root:{sp::RootKind::constrained4,sp::RootKind::free6})
         for(const auto variant:{"lumped","articulated_planar"}) {
             auto request=spatial_tests::model_request(root);request->physics->spatial=request->spatial;
+            if(std::string_view(variant)=="articulated_planar") {
+                request->physics->articulated.pedal_attachment="spindle";
+                request->physics->articulated.saddle_attachment="pin";
+                request->physics->articulated.grip_attachment="connect";
+            }
             cfg::post_init(*request->physics);cfg::RiderSpecs rider;rider.variant=variant;
             const auto report=runtime::implemented_capabilities(*request->physics,rider);
-            bt::require(!report.implemented && !report.supported && report.qualification_pending && !report.rejections.empty(),
-                "constrained/rigid structural success never qualifies free/articulated execution");
+            bt::require(report.implemented && !report.supported && report.qualification_pending && report.rejections.empty(),
+                "source-connected constrained/free owners still require independent numerical qualification");
         }
     auto unknown=spatial_tests::model_request(sp::RootKind::free6);
     unknown->physics->spatial=unknown->spatial;
@@ -436,6 +496,7 @@ void release_reporting() {
 int main() {
     int failures=0;
     failures+=bt::run(topology_matrix);failures+=bt::run(identity_and_entrypoints);
+    failures+=bt::run(producer_declaration_mismatch);
     failures+=bt::run(bootstrap_quaternion);failures+=bt::run(shoulder_layout);
     failures+=bt::run(covariance);failures+=bt::run(release_reporting);
     return failures?1:0;

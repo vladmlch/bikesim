@@ -1,4 +1,5 @@
 #include "builder_internal.hpp"
+#include "benchmark_whipple_detail.hpp"
 #include "../engine_call.hpp"
 #include <array>
 #include <limits>
@@ -7,6 +8,7 @@
 namespace bike::model {
 std::string generate_mjcf(const BuildRequest& request) {
     using namespace detail;
+    if (request.benchmark_whipple) return generate_whipple_mjcf(*request.benchmark_whipple);
     auto physics=request.physics?
         std::make_unique<configuration::SimulationPhysicsConfig>(*request.physics):nullptr;
     if(request.spatial && request.spatial->mode==bike::spatial::Mode::spatial3d) {

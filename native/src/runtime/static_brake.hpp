@@ -16,6 +16,11 @@
 // wheel on the friction bound alone).
 #pragma once
 #include <mujoco/mujoco.h>
+#include "../spatial/brake_state.hpp"
+
+#include <array>
+#include <cstdint>
+#include <span>
 
 #include <optional>
 #include <utility>
@@ -31,6 +36,14 @@ struct BrakeHoldSpec {
     double damping_nms_rad = 0.;
     double engage_radps = .5;
     double release_radps = 1.;
+};
+
+struct SpatialBrakeResult {
+    bool frictionloss_changed = false;
+    std::array<double, 2> hold_torque_nm{}, friction_budget_nm{};
+    // damping_heat includes pad yielding and nonnegative endpoint-integration
+    // loss; release_heat records complete lever/hysteresis unlatching.
+    double stored_energy_j = 0., damping_heat_j = 0., release_heat_j = 0.;
 };
 
 class StaticBrake {
@@ -59,6 +72,22 @@ public:
         const mjModel *model, const mjData *data, double front_demand,
         double rear_demand, bool advance);
 
+    // Spatial-only, allocation-free hinge bite. relative_rate is front/rear
+    // wheel-minus-hub angular velocity about the axle, never world rotation.
+    // qfrc is an additive nv-vector; the remainder of each total torque budget
+    // is installed as frictionloss. A probe changes no committed latch/history.
+    // advance accepts exactly interval_index == previous+1 and integrates angle
+    // by relative_rate*dt. The outer accepted-interval transaction owns rollback.
+    [[nodiscard]] SpatialBrakeResult apply_spatial(
+        mjModel*, std::span<const double, 2> relative_rate_radps,
+        double front_demand, double rear_demand, double dt_s,
+        std::int64_t interval_index, bool advance, std::span<double> qfrc);
+    [[nodiscard]] bike::spatial::BrakeState capture_spatial_brake() const noexcept;
+    void restore_spatial_brake(const bike::spatial::BrakeState&);
+    // Publish only a state already validated at the cold prepare boundary.
+    // This final transaction operation cannot allocate or throw.
+    void commit_spatial_brake(const bike::spatial::BrakeState&) noexcept;
+
     // reset(): forget both captured bite angles; the next standstill
     // re-bites. The oracle's PhysicalRuntime.reset clears them for a
     // fresh episode; here the bootstrap restore does.
@@ -81,6 +110,7 @@ private:
     double ceiling_nm_;
     BrakeHoldSpec hold_;
     std::optional<double> latch_front_, latch_rear_;
+    bike::spatial::BrakeState spatial_;
 };
 
 } // namespace runtime

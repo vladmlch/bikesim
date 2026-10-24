@@ -21,6 +21,7 @@
 // rejection or bad_alloc returns without installing anything.
 #include "writer_config.hpp"
 #include "spatial/types.hpp"
+#include "runtime/spatial_tire_factory.hpp"
 
 #include <charconv>
 #include <cmath>
@@ -260,8 +261,16 @@ namespace nativecfg {
             const auto version = bike::io::as_int64(*schema, "config.schema");
             if (version == bike::spatial::kSpatialWriterSchema) {
                 validate_spatial_writer_envelope(value);
-                detail::invalid("config.spatial",
-                    "spatial runtime not connected: schema3 writers require W25");
+                const auto& tire=bike::io::as_object(spatial_member(*root,"tire","config"),"config.tire");
+                (void)runtime::decode_spatial_tire_config(spatial_member(tire,"pneumatic_3d","config.tire"));
+                // Shared producers retain their exact schema2 contracts.
+                // Spatial tyre construction also needs an owned terrain and
+                // bound model, and is performed by the runtime cold factory.
+                bike::io::Value shared=value;
+                auto& members=std::get<bike::io::Value::Object>(shared.data);
+                std::erase_if(members,[](const auto& entry){return entry.first=="spatial" || entry.first=="tire";});
+                for(auto& entry:members)if(entry.first=="schema")entry.second=bike::io::Value{bike::io::Number{"2"}};
+                return detail::decode_root(detail::Dict<detail::VNode>{.value=detail::VNode{&shared},.path="config"});
             }
             // Planar1/2 continue through their unchanged closed-key decoder;
             // their historical rejection of a spatial member is preserved.

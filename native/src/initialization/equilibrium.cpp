@@ -1,6 +1,9 @@
 #include "context.hpp"
+#include "bootstrap_hold.hpp"
+#include "spatial_equilibrium.hpp"
 #include "state_file.hpp"
 #include "../runtime/step.hpp"
+#include "../runtime/accounting.hpp"
 #include "../stepper.hpp"
 #include "../writers/suspension.hpp"
 #include "../spatial/frames.hpp"
@@ -48,7 +51,10 @@ std::int64_t equilibrium_cycle_steps(double dt){if(!std::isfinite(dt)||dt<=0.)th
 EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions& options){
     require_initializing(context);
     const double dt=context.stepper.model()->opt.timestep;
-    const auto budget=equilibrium_step_budget(dt,options),cycle=equilibrium_cycle_steps(dt);
+    auto budget=equilibrium_step_budget(dt,options);
+    const auto cycle=equilibrium_cycle_steps(dt);
+    if(context.physics.spatial && context.topology && context.topology->root.kind==spatial::RootKind::free6)
+        budget=std::min(budget,std::max<std::int64_t>(1,round_even(context.physics.spatial->bootstrap.settle_time_s/dt)));
     const auto first_refine=timing_steps(context.physics.equilibrium_refine_after_s,dt,cycle),refine_period=timing_steps(context.physics.equilibrium_refine_period_s,dt,cycle);
     std::optional<StateFile> cached;
     const auto explicit_file=context.physics.equilibrium_state_file;
@@ -64,14 +70,27 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
             else{context.stepper.forward();residual=state_array(*cached,"residual_qacc").doubles().front();}
             cache_hit=true;
         }catch(const engine::EngineFailure&){throw;}catch(const std::bad_alloc&){throw;}
-        catch(const std::exception& error){if(explicit_file)throw std::invalid_argument("equilibrium state file "+*explicit_file+": "+error.what());initialize_pose(context);steps=0;}
+        catch(const std::exception& error){if(explicit_file)throw std::invalid_argument("equilibrium state file "+*explicit_file+": "+error.what());context.cache_rejection_reason=error.what();initialize_pose(context);steps=0;}
     }
-    while(!cache_hit&&steps<budget){
+    // The free-root candidate is evaluated on its tangent space before the
+    // dissipative fallback. Its material probes never become accepted steps.
+    if(!cache_hit && context.topology && context.topology->root.kind==spatial::RootKind::free6) {
+        residual=spatial_refine(context,80,options.tolerance);
+        if(residual<=options.tolerance)steps=1;
+    }
+    while(!cache_hit&&residual>options.tolerance&&steps<budget){
         const auto count=std::min(cycle,budget-steps);
         for(std::int64_t i=0;i<count;++i){
             apply_initial_forces(context,true);
             const std::vector<double> q(context.stepper.qpos().begin(),context.stepper.qpos().end()),v(context.stepper.qvel().begin(),context.stepper.qvel().end());
+            const auto hold_pose=context.bootstrap_hold?std::optional{spatial::body_pose(*context.stepper.model(),*context.stepper.data(),context.topology->root)}:std::nullopt;
             context.stepper.step();settle_contacts(context,q,v);++steps;
+            if(hold_pose) {
+                auto hold=context.bootstrap_hold->state();
+                if(!runtime::account_bootstrap_hold(hold,*hold_pose,hold.phase,dt))
+                    throw std::invalid_argument("bootstrap.hold.work_j: invalid accepted power");
+                if(context.bootstrap_hold->restore(hold)!=CoreStatus::ok)throw std::invalid_argument("bootstrap.hold.work_j: nonfinite accepted work");
+            }
             for(auto const state:{context.stepper.qpos(),context.stepper.qvel()})if(!std::ranges::all_of(state,[](double value){return std::isfinite(value);}))throw std::runtime_error("non-finite physical equilibrium state");
         }
         auto const* d=context.stepper.data();std::ranges::fill(std::views::counted(d->qvel,context.stepper.model()->nv),0.);context.stepper.note_posvel_stale();
@@ -80,8 +99,24 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
             for(int attempt=0;attempt<8;++attempt){const double previous=residual;residual=refine_equilibrium(context,80,options.tolerance);if(residual<=options.tolerance||residual>=previous*(1.-1e-3))break;}
         if(residual<=options.tolerance)break;
     }
-    if(!cache_hit&&residual>options.tolerance)throw EquilibriumFailure(steps,residual,worst(context));
+    if(context.topology) {
+        // Refresh separate physical-unit residuals for either root family and
+        // for cache hits. A one-evaluation pass still probes the actual pose.
+        residual=spatial_refine(context,cache_hit?1:80,options.tolerance);
+    }
+    if(residual>options.tolerance) {
+        if(context.bootstrap_hold && steps>=budget) {
+            const auto& h=context.bootstrap_hold->state();
+            throw std::invalid_argument(std::format("bootstrap: hold not releasable: residual force {} N, moment {} N m, acceleration {} after {} steps",
+                std::hypot(h.last_force_world_n[0],h.last_force_world_n[1],h.last_force_world_n[2]),
+                std::hypot(h.last_couple_world_nm[0],h.last_couple_world_nm[1],h.last_couple_world_nm[2]),residual,steps));
+        }
+        throw EquilibriumFailure(steps,residual,worst(context));
+    }
+    if(context.topology && context.spatial_report && !context.spatial_report->errors.empty() && !context.bootstrap_hold)
+        throw std::invalid_argument("spatial equilibrium: "+context.spatial_report->errors.front());
     EquilibriumResult result;result.steps=steps;result.residual_qacc=residual;result.cache_hit=cache_hit;
+    result.spatial=context.spatial_report;
     const auto q=context.stepper.qpos();result.fork_travel_mm=1000.*q[static_cast<std::size_t>(context.stepper.suspension().fork_qposadr())];result.shock_stroke_mm=1000.*q[static_cast<std::size_t>(context.stepper.suspension().shock_qposadr())];
     if(!context.rear_travel_from_shock_mm)throw std::invalid_argument("equilibrium rear travel requires the source linkage solver");
     result.rear_travel_mm=context.rear_travel_from_shock_mm(result.shock_stroke_mm);
@@ -94,7 +129,12 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
         result.pitch_rad=q[static_cast<std::size_t>(joint_address(context,"root_pitch").qpos)];
     }
     result.initial_crank_phase_rad=context.physics.drive.crank_phase_rad;result.settled_crank_phase_rad=q[static_cast<std::size_t>(joint_address(context,"crank_spin").qpos)];result.state_file=explicit_file;
-    if(context.physics.equilibrium_cache_enabled&&!cache_hit)save_equilibrium_cache(context,capture_state(context,steps,residual));
+    const bool releasable=!context.bootstrap_hold || (context.spatial_report &&
+        context.bootstrap_hold->release_check(*context.spatial_report,
+            context.physics.spatial->bootstrap.release_force_limit_n,
+            context.physics.spatial->bootstrap.release_moment_limit_nm));
+    if(context.physics.equilibrium_cache_enabled&&!cache_hit&&releasable)
+        save_equilibrium_cache(context,capture_state(context,steps,residual));
     context.equilibrium=result;context.completed=true;return result;
 }
 } // namespace bike::initialization

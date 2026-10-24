@@ -98,6 +98,7 @@ SetupRequest read_setup_request(const std::filesystem::path& file, bool skip_ini
             } else physics.equilibrium_state_file = state_file.string();
         }
         configuration::post_init(physics);
+        if(physics.spatial)out.model.spatial=physics.spatial;
         out.model.physics = std::move(physics);
         out.model.crank_joint = true;
         return out;

@@ -43,6 +43,7 @@ io::Value physical_summary(const runtime::OwnedResearchEpisode& episode) {
         {"balance_lost", Value{!wire::is_none(balance)}},
         {"balance_lost_at_m", wire::is_none(balance) ? Value{} : wire_value(wire::required(wire::object(balance), "position_m"))}}};
     set(out, "outcome", std::move(outcome));
+    if(const auto* spatial=wire::find(s,"spatial"))set(out,"spatial",wire_value(*spatial));
     set(out, "first_failure", episode.final_snapshot.first_failure ? wire_value(episode.final_snapshot.first_failure->as_wire()) : Value{});
     set(out, "energy", wire_value(wire::required(accounting, "energy")));
     set(out, "model_status", wire_value(runtime::Wire{episode.final_snapshot.model_status}));
@@ -85,6 +86,10 @@ io::Value summarize(const runtime::OwnedResearchEpisode& episode) {
         {"parameters_validated_against_measurements", Value{false}}, {"capture_mode", text(capture_name(config.capture_mode))},
         {"measurement_decimation", integer(config.record_decimation)}, {"physical_downsampling", Value{false}},
         {"valid_for_learning", Value{status_flag(s, "numerically_valid") && status_flag(s, "model_valid") && !error && !launch_failure}}}};
+    if(const auto* spatial=wire::find(s,"spatial")) {
+        set(research,"spatial",wire_value(*spatial));
+        if(!wire::boolean(wire::required(wire::object(*spatial),"valid")))set(research,"valid_for_learning",Value{false});
+    }
     bool identities_unchanged = true;
     const auto* receipt = member(episode.run_metadata, "identity_checks");
     for (const auto key : {"source_changed_during_run", "configuration_changed_during_run", "execution_changed_during_run"}) {

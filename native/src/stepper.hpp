@@ -33,6 +33,7 @@ class ResistanceWriter;
 class TireWriter;
 class DistributedTireWriter;
 class PneumaticTireWriter;
+class SpatialTireAdapter;
 class RiderForcesWriter;
 
 namespace drivetrain {
@@ -112,11 +113,12 @@ public:
     // True when the engaged backend is the pneumatic radial-carcass
     // tyre — its diagnostics dict is the pneumatic schema.
     [[nodiscard]] bool is_pneumatic() const noexcept;
+    [[nodiscard]] bool is_spatial() const noexcept;
 
 private:
     friend class Stepper;
     using Variant = std::variant<TireWriter *, DistributedTireWriter *,
-                                 PneumaticTireWriter *>;
+                                 PneumaticTireWriter *, SpatialTireAdapter *>;
     explicit TireWriterView(Variant writer) noexcept : writer_(writer) {}
     Variant writer_;
 };
@@ -334,7 +336,7 @@ public:
     // the dispatched writer is one of the three configured backends.
     [[nodiscard]] bool has_tire() const noexcept {
         return tire_ != nullptr || distributed_tire_ != nullptr ||
-               pneumatic_tire_ != nullptr;
+               pneumatic_tire_ != nullptr || spatial_tire_ != nullptr;
     }
     // W17 cold ownership/state seam. W25 connects this producer to the common
     // TireWriterView dispatch; schema3 may never install a planar substitute.
@@ -516,6 +518,7 @@ private:
     // destruction. The initial state is the producer's real typed state.
     std::shared_ptr<const bike::terrain::Terrain3dSource> spatial_terrain_;
     std::unique_ptr<bike::pneumatic3d::Pneumatic3dTireWriter> spatial_tire_;
+    std::unique_ptr<SpatialTireAdapter> spatial_tire_view_;
     std::optional<bike::pneumatic3d::TyreState3d> initial_spatial_tire_;
     std::unique_ptr<RiderForcesWriter> rider_forces_;
     std::unique_ptr<drivetrain::DrivetrainWriter> drive_;

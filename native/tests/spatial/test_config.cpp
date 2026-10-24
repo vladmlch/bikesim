@@ -10,6 +10,7 @@
 #include "io/json.hpp"
 #include "runtime/capabilities.hpp"
 #include "runtime/project_config.hpp"
+#include "runtime/spatial_tire_factory.hpp"
 #include "spatial/config.hpp"
 #include "spatial/types.hpp"
 #include "writer_config.hpp"
@@ -128,12 +129,11 @@ void positive_and_roundtrip() {
         const auto config = load(name);
         bt::require(config->spatial.has_value(), "3D owns its extension");
         const auto report = sp::check_spatial_capability(*config->spatial, *config);
-        bt::require(!report.implemented && report.qualification_pending && !report.rejections.empty(),
-                    "schema-valid spatial input is still unavailable for execution");
-        bt::require(report.rejections.front().starts_with("spatial runtime not connected:"), "pending row explains missing connection");
+        bt::require(report.implemented && report.qualification_pending && report.rejections.empty(),
+                    "W25/W31 source dispatch is connected while numerical qualification remains pending");
         const auto runtime_report = runtime::implemented_capabilities(*config, cfg::RiderSpecs{});
-        bt::require(!runtime_report.implemented && !runtime_report.supported && runtime_report.qualification_pending,
-                    "live runtime cannot bypass the spatial gate");
+        bt::require(runtime_report.implemented && !runtime_report.supported && runtime_report.qualification_pending,
+                    "connected runtime does not promote implementation into qualified support");
         const auto wire = sp::spatial_config_to_wire(*config->spatial);
         const auto restored = sp::spatial_config_from_wire(wire);
         same_config(*config->spatial, restored);
@@ -395,7 +395,10 @@ void envelope_dispatch() {
     bt::require(io::as_int64(field(field(projected, "writer_config"), "schema"), "schema") == 3, "3D envelope is writer3");
     same_config(*config->spatial, sp::spatial_config_from_wire(field(projected, "spatial")));
     bt::require(original == io::canonical_json(fields), "projection does not mutate caller-owned input");
-    invalid_path([&] { (void)nativecfg::decode(field(projected, "writer_config")); }, "config.spatial");
+    invalid_path([&] { (void)nativecfg::decode(field(projected, "writer_config")); }, "config.tire.pneumatic_3d");
+    auto connected=field(projected,"writer_config");
+    field(field(connected,"tire"),"pneumatic_3d")=runtime::project_spatial_tire_config(*config);
+    (void)nativecfg::decode(connected);
 
     auto bad = fields;
     std::get<Object>(bad.data).emplace_back("runtime_schema", integer(1));

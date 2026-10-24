@@ -176,6 +176,34 @@ void NativeResearchRuntime::begin_control(const RideControl &control, double fro
 void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at_outcome) {
     auto &e = *episode_;
     const auto &s = *sample;
+    if(find(s.channels,"spatial")) {
+        if(!e.spatial_metrics)e.spatial_metrics=SpatialEpisodeMetrics{
+            .requested_duration_s=static_cast<double>(config_.max_steps)*config_.timestep_s,
+            .start_position_m=config_.start_position_m};
+        const auto* recorded=find(s.channels,"spatial_outcome");
+        if(!recorded)throw std::invalid_argument("research.spatial: sample lacks its accepted outcome record");
+        const auto& record=object(*recorded);
+        bike::spatial::Outcome outcome;
+        outcome.terminal=boolean(required(record,"terminal"));outcome.valid=boolean(required(record,"valid"));
+        outcome.tick=integer(required(record,"tick"));outcome.time_s=number(required(record,"time_s"));
+        const auto label=string(required(record,"reason"));bool recognized=false;
+        for(auto reason:{bike::spatial::SpatialReason::none,bike::spatial::SpatialReason::capsize,
+            bike::spatial::SpatialReason::off_corridor,bike::spatial::SpatialReason::balance_lost,
+            bike::spatial::SpatialReason::terrain_invalid,bike::spatial::SpatialReason::terrain_outside,
+            bike::spatial::SpatialReason::numerical_failure,bike::spatial::SpatialReason::requested_completion})
+            if(label==bike::spatial::to_string(reason)){outcome.reason=reason;recognized=true;break;}
+        if(!recognized)throw std::invalid_argument("research.spatial: unknown accepted outcome reason");
+        update_spatial_metrics(*e.spatial_metrics,s.interval_id,s.end_time_s,s.dt_s(),
+            number(required(record,"accepted_position_m")),outcome);
+        if(outcome.terminal && outcome.time_s<=s.end_time_s) {
+            e.numerically_valid=e.numerically_valid && outcome.valid;
+            e.terminated=outcome.valid;e.truncated=!outcome.valid;
+            e.reason=label;
+            // Even cleanup consumption cannot replace a spatial latch with a
+            // later planar monitor, model-quality label or finish poll.
+            return;
+        }
+    }
     const double ratio = s.time_s / config_.timestep_s;
     if (!std::isfinite(ratio) || ratio < 0. || ratio > static_cast<double>(config_.max_steps))
         throw std::runtime_error("invalid sensor acquisition time");
@@ -209,6 +237,7 @@ void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at
     e.max_energy_residual_ratio = std::max(e.max_energy_residual_ratio, quality.residual_ratio);
     if (!quality.acceptable) {
         e.numerically_valid = false;
+        if(e.spatial_metrics)e.spatial_metrics->valid=false;
         e.truncated = true;
         e.reason = "numerical_quality";
         if (stop_at_outcome) return;
@@ -281,7 +310,20 @@ void NativeResearchRuntime::handle_failure(const std::exception &failure) {
     auto &e = *episode_;
     e.terminated = true;
     const bool reference = dynamic_cast<const InvalidReferenceRun *>(&failure) != nullptr;
-    const std::string reason = reference ? "invalid_controller" : "simulation_error";
+    std::string reason = reference ? "invalid_controller" : "simulation_error";
+    std::optional<bike::spatial::SpatialReason> spatial_failure;
+    if(runtime_->config_.spatial) {
+        if(!e.spatial_metrics)e.spatial_metrics=SpatialEpisodeMetrics{
+            .requested_duration_s=static_cast<double>(config_.max_steps)*config_.timestep_s,
+            .start_position_m=config_.start_position_m};
+        e.numerically_valid=false;e.terminated=false;e.truncated=true;
+        const auto& state=runtime_->physical_->spatial_state();
+        spatial_failure=state && state->outcome.latched.terminal?state->outcome.latched.reason:
+            bike::spatial::SpatialReason::numerical_failure;
+        // Keep the failure local until all already accepted pending samples
+        // have extended the valid prefix. A premature terminal latch would
+        // make their metrics updates observational no-ops.
+    }
     e.reason = reason;
     e.error = std::string(reference ? "InvalidReferenceRun: " : "RuntimeError: ") + failure.what();
     // Cleanup may fail independently; retain the original exception and all
@@ -290,6 +332,12 @@ void NativeResearchRuntime::handle_failure(const std::exception &failure) {
     catch (const std::exception &tail) { e.cleanup_notes.push_back(std::string("trailing interval check: ") + tail.what()); }
     try { consume_samples(false); }
     catch (const std::exception &tail) { e.cleanup_notes.push_back(std::string("trailing sample consumption: ") + tail.what()); }
+    if(e.spatial_metrics) {
+        if(e.spatial_metrics->terminal_reason==bike::spatial::SpatialReason::none && spatial_failure)
+            e.spatial_metrics->terminal_reason=*spatial_failure;
+        reason=std::string(bike::spatial::to_string(e.spatial_metrics->terminal_reason));
+        e.spatial_metrics->valid=false;e.numerically_valid=false;e.terminated=false;e.truncated=true;
+    }
     e.reason = reason;
     e.window.reset();
     e.delivery_pending = false;
@@ -409,6 +457,7 @@ WireObject NativeResearchRuntime::status_unlocked() const {
         {"position_m", balance->position_m}, {"speed_mps", balance->speed_mps}}) : Wire(nullptr));
     result.emplace_back("crash", crash ? Wire(WireObject{{"time_s", crash->time_s}, {"position_m", crash->position_m},
         {"pitch_rad", crash->pitch_rad}, {"cause", crash->cause}}) : Wire(nullptr));
+    if(e.spatial_metrics)result.emplace_back("spatial",Wire(e.spatial_metrics->as_wire()));
     return result;
 }
 ResearchConfig NativeResearchRuntime::configuration() const {

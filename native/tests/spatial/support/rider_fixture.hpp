@@ -54,7 +54,7 @@ inline bike::io::Value rider_pose_document(const bike::model::BuildRequest& requ
         return io::Value{std::move(out)};
     };
     return io::Value{io::Value::Object{
-        {"saddle",point(pose.saddle)}, {"hip",point(pose.hip)},
+        {"saddle",point(pose.saddle.top_center)}, {"hip",point(pose.hip)},
         {"shoulder",point(pose.shoulder)}, {"elbow",point(pose.elbow)},
         {"grip",point(pose.grip)}, {"head_center",point(pose.head_center)},
         {"knee_front",point(pose.knee_front)}, {"knee_rear",point(pose.knee_rear)},

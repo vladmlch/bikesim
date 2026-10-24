@@ -3,7 +3,21 @@
 #include <map>
 #include <string_view>
 #include "samples.hpp"
+#include "../spatial/bootstrap_state.hpp"
 namespace runtime {
+struct SpatialEpisodeMetrics {
+    double requested_duration_s=0., valid_duration_s=0., completed_distance_m=0.;
+    double start_position_m=0.;
+    double accepted_origin_time_s=0.,last_end_time_s=0.;
+    std::int64_t last_interval=-1;
+    bool valid=true;
+    bike::spatial::SpatialReason terminal_reason=bike::spatial::SpatialReason::none;
+    [[nodiscard]] WireObject as_wire() const;
+};
+// Accepted physical intervals only. Repeated accounting publication does not
+// increase duration or distance, and invalid endpoints never count as success.
+void update_spatial_metrics(SpatialEpisodeMetrics&, std::int64_t interval,
+    double end_time_s, double dt_s, double position_m, const bike::spatial::Outcome&);
 struct TruthGeometry {
     std::vector<double> x, z;
     double front_radius = 0., rear_radius = 0.;

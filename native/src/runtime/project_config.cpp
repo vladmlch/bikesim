@@ -28,6 +28,7 @@
 #include "../terrain/profile.hpp"
 #include "../writer_config.hpp"
 #include "bootstrap.hpp"
+#include "spatial_tire_factory.hpp"
 
 namespace runtime {
 namespace {
@@ -40,6 +41,7 @@ using namespace setupvalue;
 cfg::SimulationPhysicsConfig physics(const mdl::BuildRequest& request) {
     auto out = request.physics.value_or(cfg::default_physics());
     cfg::post_init(out);
+    resolve_spatial_runtime_profiles(out);
     return out;
 }
 cfg::RiderSpecs rider(const mdl::BuildRequest& request) {
@@ -396,6 +398,12 @@ bio::Value project_rider_controller(const cfg::SimulationPhysicsConfig& config,
 
 namespace {
 bio::Value finalize_writer_config(const Value& out) {
+    if(bio::as_int64(field(out,"schema"),"config.schema")==bike::spatial::kSpatialWriterSchema) {
+        nativecfg::validate_spatial_writer_envelope(out);
+        (void)decode_spatial_tire_config(field(field(out,"tire"),"pneumatic_3d"));
+        (void)nativecfg::decode(out);
+        return out;
+    }
     cfg::wire::validate_config(out);
     (void)nativecfg::decode(out);
     return cfg::wire::plain(out);
@@ -567,9 +575,11 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
         {"resistance", std::move(res)}, {"suspension", suspension(request, config, model)}}};
     const auto& backend = config.tires.backend;
     if (backend != "native_reference") {
-        if (backend != "compliant_2d" && backend != "distributed_2d_reference" && backend != "pneumatic")
+        if (backend != "compliant_2d" && backend != "distributed_2d_reference" && backend != "pneumatic" && backend!="pneumatic_3d")
             throw std::invalid_argument("native tire backend '" + backend + "' is not ported");
-        set(out, "tire", tire(request, config, track, document));
+        if(backend=="pneumatic_3d")
+            set(out,"tire",Value{Object{{"backend",text(backend)},{"pneumatic_3d",project_spatial_tire_config(config)}}});
+        else set(out, "tire", tire(request, config, track, document));
     }
     const auto resolved_rider = rider(request);
     if (resolved_rider.variant == "seated") {
@@ -611,6 +621,10 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
     set(out, "cruise", Value{Object{{"target_speed_kmh", real(options.speed_kph)},
         {"kp_nm_per_mps", real(180.)}, {"ki_nm_per_mps_s", real(150.)},
         {"torque_ceiling_nm", real(150.)}}});
+    if(config.spatial) {
+        set(out,"schema",integer(bike::spatial::kSpatialWriterSchema));
+        set(out,"spatial",project_spatial_writer_identity(request,model));
+    }
     return finalize_writer_config(out);
 }
 
@@ -641,12 +655,14 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
             throw std::invalid_argument("brake wheel joint must be a hinge: " + joint);
         set(wheels, side, Value{Object{{"joint", text(joint)}, {"dof_index", integer(0)}}});
     }
-    const Value pose = articulated
+    Value pose = articulated
         ? project_articulated_pose(mdl::geometry_pose(resolved_rider, request.bike))
         : Value{};
+    if(articulated && config.spatial)
+        set(pose,"saddle",reals(mdl::geometry_pose(resolved_rider,request.bike).saddle.top_center));
     const int com = mj_name2id(&model, mjOBJ_SITE, "site_CG");
     const auto physics_document = cfg::detail::plain_document(cfg::to_value(config));
-    Value const envelope{Object{
+    Value envelope{Object{
         {"runtime_schema", integer(kRuntimeSchema)}, {"timestep_s", real(model.opt.timestep)},
         {"control_period_s", real(config.control_period_s)}, {"control_period_steps", integer(period_steps)},
         {"physics_mode", text(config.physics_mode)}, { // NOLINTNEXTLINE(bugprone-unchecked-optional-access) physics schema requires drive_mode
@@ -666,6 +682,12 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
                 {"front", text("front_wheel")}, {"rear", text("rear_wheel")}}}},
             {"com_marker_site", com < 0 ? Value{} : text("site_CG")},
             {"pose", pose}}}}}};
+    if(config.spatial) {
+        std::erase_if(std::get<Object>(envelope.data),[](const auto& entry){return entry.first=="runtime_schema";});
+        auto resolved=decode_runtime_config(project_spatial_runtime_envelope(config,envelope));
+        resolved.terrain3d=request.terrain3d;
+        return resolved;
+    }
     return decode_runtime_config(envelope);
 }
 NATIVE_DIAG_POP

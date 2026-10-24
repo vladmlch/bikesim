@@ -12,6 +12,7 @@
 #include <mujoco/mujoco.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -34,9 +35,10 @@
 #include "bootstrap.hpp"
 #include "control.hpp"
 #include "static_brake.hpp"
+#include "../rider/steer_balance.hpp"
 
 class Stepper;
-namespace bike::validation { class RuntimeRigAccess; }
+namespace bike::validation { class RuntimeRigAccess; class SpatialRideAccess; }
 namespace bike::golden { class RuntimeAccess; }
 
 namespace runtime {
@@ -123,6 +125,7 @@ struct GoldenForceObservation {
     std::vector<double> qpos, qvel, act, warmstart;
     double time_s = 0.;
     std::vector<double> ctrl, qfrc_applied, tire_state;
+    std::vector<std::byte> spatial_tire_state_bytes;
     std::vector<std::string> tire_state_names;
     std::vector<std::pair<std::string, std::vector<double>>> components;
     std::array<std::optional<TireSnapshot>, 2> tire_snapshots;
@@ -177,6 +180,7 @@ struct MassObservations {
 
 class PhysicalStep {
     friend class bike::validation::RuntimeRigAccess;
+    friend class bike::validation::SpatialRideAccess;
     friend class bike::initialization::PhysicalInitialState;
     friend void bike::initialization::finalize_initial_state(
         bike::initialization::SetupContext&, const runtime::RuntimeConfig&);
@@ -459,6 +463,11 @@ private:
     // Causal state is copied through all cold boundaries. W26/W30–W33 bind
     // their active owners to this inventory; probes never mutate it.
     std::optional<SpatialBootstrapState> spatial_state_;
+    std::unique_ptr<bike::rider::SteerBalance> steer_balance_;
+    // Construction-sized scratch, never a separately serialized owner.
+    bike::spatial::SteerState spatial_steer_rollback_;
+    SpatialBrakeResult spatial_brake_last_{};
+    std::vector<double> spatial_brake_force_;
     std::vector<std::array<double, 2>> vertices_;
     RoadProfile road_profile_;  // validated/split once from vertices_
 

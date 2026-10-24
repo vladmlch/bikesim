@@ -17,6 +17,7 @@
 #include "writers/distributed_tire.hpp"
 #include "writers/pneumatic_tire.hpp"
 #include "writers/pneumatic_3d_tire.hpp"
+#include "writers/spatial_tire_adapter.hpp"
 #include "writers/drivetrain.hpp"
 
 // The stepper.hpp view scratch is literal-sized (the writer constants live
@@ -196,10 +197,13 @@ void Stepper::install_spatial_tire(const bike::spatial::Config& config,
     auto producer=std::make_unique<bike::pneumatic3d::Pneumatic3dTireWriter>(
         *m_,topology,std::move(spec),*terrain,std::move(identity));
     auto initial=producer->state();
+    auto projection=std::make_unique<SpatialTireAdapter>(*m_,topology,*producer,terrain->query_view());
+    tire_out_.resize(static_cast<std::size_t>(m_->nv));
     // All validation/allocation is complete before the ownership commit.
     initial_spatial_tire_.emplace(std::move(initial));
     spatial_terrain_=std::move(terrain);
     spatial_tire_=std::move(producer);
+    spatial_tire_view_=std::move(projection);
 }
 
 bike::pneumatic3d::Pneumatic3dTireWriter& Stepper::spatial_tire_writer() const {
@@ -213,9 +217,11 @@ void Stepper::restore_spatial_tire(const bike::pneumatic3d::TyreState3d& state) 
     auto& producer=spatial_tire_writer();
     if(producer.restore(state)!=CoreStatus::ok)
         throw std::invalid_argument("bootstrap.spatial.tire: producer state rejected");
+    spatial_tire_view_->invalidate_projection();
 }
 
 Stepper::~Stepper() {
+    spatial_tire_view_.reset();
     spatial_tire_.reset();
     rider_contacts_.reset();
     drive_.reset();
@@ -338,8 +344,7 @@ void Stepper::reset() {
         if (tire_) tire_->reset();
         if (distributed_tire_) distributed_tire_->reset();
         if (pneumatic_tire_) pneumatic_tire_->reset();
-        if (spatial_tire_ && spatial_tire_->restore(*initial_spatial_tire_) != CoreStatus::ok)
-            throw std::invalid_argument("stepper.spatial.tire: initial producer state rejected");
+        if (spatial_tire_view_) spatial_tire_view_->reset();
         if (cruise_) cruise_->reset();
         // reset(model, data) on the post-forward pose — re-anchors grips and
         // revalidates the planar support topology like the oracle applier.
@@ -402,6 +407,7 @@ TireWriterView Stepper::tire_writer() const {
     if (tire_) return TireWriterView(tire_.get());
     if (distributed_tire_) return TireWriterView(distributed_tire_.get());
     if (pneumatic_tire_) return TireWriterView(pneumatic_tire_.get());
+    if (spatial_tire_view_) return TireWriterView(spatial_tire_view_.get());
     throw std::logic_error(kNoTire);
 }
 
@@ -556,6 +562,9 @@ bool TireWriterView::is_distributed() const noexcept {
 bool TireWriterView::is_pneumatic() const noexcept {
     return std::holds_alternative<PneumaticTireWriter *>(writer_);
 }
+bool TireWriterView::is_spatial() const noexcept {
+    return std::holds_alternative<SpatialTireAdapter *>(writer_);
+}
 
 void Stepper::set_inputs(std::span<const double> ctrl,
                          std::span<const double> force) {
@@ -664,8 +673,7 @@ void Stepper::set_state(std::span<const double> qpos,
             if (tire_) tire_->reset();
             if (distributed_tire_) distributed_tire_->reset();
             if (pneumatic_tire_) pneumatic_tire_->reset();
-            if (spatial_tire_ && spatial_tire_->restore(*initial_spatial_tire_) != CoreStatus::ok)
-                throw std::invalid_argument("stepper.spatial.tire: initial producer state rejected");
+            if (spatial_tire_view_) spatial_tire_view_->reset();
             if (cruise_) cruise_->reset();
             if (rider_contacts_) rider_contacts_->reset(d_);
         } catch (...) {

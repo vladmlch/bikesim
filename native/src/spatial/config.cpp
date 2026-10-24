@@ -437,9 +437,10 @@ CapabilityReport check_spatial_capability(const Config& config, const bike::conf
         report.implemented = true; // no extension; the existing runtime checks the planar row
         return report;
     }
-    report.rejections.emplace_back("spatial runtime not connected: mode=3d, root=" + std::string(to_string(config.root)) +
-        ", tyre=pneumatic_3d/" + std::string(to_string(config.tyre.tier)) + ", drive=" + physics.drive_mode.value_or("unresolved") +
-        ", sensor_schema=2; pending W25/W31/W36 and V qualification");
+    if(config.terrain.kind==TerrainRequestKind::profile_extrusion)
+        report.rejections.emplace_back("terrain profile_extrusion: frozen query view cannot expose its material registry; C10/V04 required");
+    report.implemented=report.rejections.empty();
+    report.qualification_pending=true;
     return report;
 }
 

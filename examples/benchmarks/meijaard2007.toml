@@ -1,0 +1,44 @@
+# Ideal four-body benchmark, independent of the compliant MTB configuration.
+# Declarative benchmark parameters mirrored by the native qualification source.
+[benchmark]
+name = "meijaard2007"
+source_doi = "10.1098/rspa.2007.1857"
+contact = "test_only_ideal_knife_edge"
+verification = "pending V06"
+
+[parameters]
+w_m = 1.02
+c_m = 0.08
+lambda_rad = 0.3141592653589793
+g_mps2 = 9.81
+v_mps = 6.0
+rR_m = 0.3
+mR_kg = 2.0
+IRxx = 0.0603
+IRyy = 0.12
+xB_m = 0.3
+zB_m = -0.9
+mB_kg = 85.0
+IBxx = 9.2
+IBxz = 2.4
+IByy = 11.0
+IBzz = 2.8
+xH_m = 0.9
+zH_m = -0.7
+mH_kg = 4.0
+IHxx = 0.05892
+IHxz = -0.00756
+IHyy = 0.06
+IHzz = 0.00708
+rF_m = 0.35
+mF_kg = 3.0
+IFxx = 0.1405
+IFyy = 0.28
+
+[qualification]
+speeds_mps = [2.0, 4.0, 6.0, 8.0, 10.0]
+linearization_steps_rad = [0.00001, 0.000005, 0.0000025]
+relative_eigenvalue_tolerance = 0.03
+absolute_eigenvalue_tolerance_per_s = 0.05
+near_zero_eigenvalue_tolerance_per_s = 0.0005
+boundary_tolerance_mps = 0.2

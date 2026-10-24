@@ -18,6 +18,8 @@
 
 namespace bike::model {
 
+struct WhippleParameters;
+
 // Cold, owning model input. The optional solver preserves custom linkage
 // reference points; the optional rider preserves include_rider precedence.
 // No IDs, live state, Python objects, or borrowed configuration are stored here.
@@ -38,6 +40,9 @@ struct BuildRequest {
     // The canonical physical source is shared by startup and the tyre writer.
     // Heightfield resolution controls only the visual/crash representation.
     std::shared_ptr<const terrain::Terrain3dSource> terrain3d;
+    // Optional immutable benchmark payload. A shared_ptr permits the frozen
+    // benchmark_whipple.hpp to include this header without a type cycle.
+    std::shared_ptr<const WhippleParameters> benchmark_whipple;
 };
 
 [[nodiscard]] std::string generate_mjcf(const BuildRequest& request);

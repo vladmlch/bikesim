@@ -22,6 +22,7 @@
 // fresh (the running loop's entry forward is conditional on
 // `initializing` and never runs post-bootstrap).
 #include "runtime.hpp"
+#include "spatial_tire_factory.hpp"
 
 #include <algorithm>
 #include <array>
@@ -46,6 +47,7 @@
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
 #include "../rider/state_codec.hpp"
+#include "../spatial/frames.hpp"
 #include "../stepper.hpp"
 #include "../tyre/profile.hpp"
 #include "../writer_config.hpp"
@@ -443,6 +445,7 @@ build_physical_step(Stepper &stepper, const RuntimeConfig &config) {
 
 std::unique_ptr<PhysicalStep>
 make_physical_step(Stepper& stepper, const RuntimeConfig& config) {
+    install_spatial_tire(stepper,config);
     return build_physical_step(stepper, config);
 }
 
@@ -477,6 +480,7 @@ void NativeRideRuntime::init() {
     const nativecfg::WriterConfig writer_config =
         nativecfg::decode(config_.writer_config);
     stepper_ = std::make_unique<Stepper>(model_image_.mjb, writer_config);
+    install_spatial_tire(*stepper_,config_);
     // Same guarantee the decode gave at compose time — repeated against
     // the live model so a fabricated bootstrap record cannot pass.
     verify_model_dims(bootstrap_.model_dims, *stepper_->model());
@@ -724,8 +728,11 @@ NativeRideRuntime::BoundaryState NativeRideRuntime::capture_boundary() const {
     next.battery_energy_j = stepper_->drive().battery_energy_j();
     next.crash = physical_->crash();
     next.balance = physical_->balance_event();
-    next.outcome = crash_outcome(next.crash);
     next.spatial = physical_->spatial_state();
+    if(next.spatial) {
+        if(next.spatial->outcome.latched.terminal)
+            next.outcome=std::string(bike::spatial::to_string(next.spatial->outcome.latched.reason));
+    } else next.outcome = crash_outcome(next.crash);
     next.tire_state_bytes = tire_state_bytes(*stepper_);
     return next;
 }
@@ -759,15 +766,57 @@ void NativeRideRuntime::advance_interval(const RideControl &command, double fron
     }
     physical_->capture_accounted_presentation(committed_presentation_);
     test_failure_boundary();
-    RawStep raw = physical_->advance_physics(front, rear, std::nullopt, command, golden);
+    RawStep raw = [&] {
+        try { return physical_->advance_physics(front, rear, std::nullopt, command, golden); }
+        catch (...) {
+            const auto failure=std::current_exception();
+            // A failed candidate cannot publish an engine state. Its typed
+            // invalid outcome remains readable beside the last valid prefix.
+            try {
+                const auto& causal=physical_->spatial_state();
+                if(causal && causal->outcome.latched.terminal && committed_spatial_ &&
+                   !committed_spatial_->outcome.latched.terminal) {
+                    // All other causal owners belong to the last accepted
+                    // engine/tyre generation. A failed candidate contributes
+                    // only its terminal record, never an advanced FIFO/latch.
+                    boundary_recovery_required_=true;
+                    auto staged=*committed_spatial_;
+                    staged.outcome=causal->outcome;
+                    auto label=std::optional<std::string>(bike::spatial::to_string(staged.outcome.latched.reason));
+                    committed_spatial_=std::move(staged);committed_outcome_.swap(label);
+                }
+            } catch (...) { /* Preserve the original force/engine failure. */ }
+            std::rethrow_exception(failure);
+        }
+    }();
     try {
         engine::get_state(stepper_->model(), stepper_->data(),
             next_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));
         physical_->capture_presentation(next_presentation_);
         auto boundary = capture_boundary();
-        if (!boundary.outcome && finish_position_m_ &&
-            boundary.position_m >= *finish_position_m_)
-            boundary.outcome = "end_of_track";
+        if (!boundary.outcome && finish_position_m_ && boundary.position_m >= *finish_position_m_) {
+            if(boundary.spatial) {
+                // The step has already evaluated every higher-priority cause.
+                // Latch completion directly, without a second dwell tick.
+                auto& state=boundary.spatial->outcome;
+                const auto pose=bike::spatial::body_pose(*stepper_->model(),*stepper_->data(),physical_->topology()->root);
+                state.latched={.reason=bike::spatial::SpatialReason::requested_completion,
+                    .terminal=true,.valid=true,.tick=boundary.step-1,.time_s=boundary.time_s,
+                    .position_world_m=pose.position_world_m,.diagnostic={}};
+                state.valid_mask=1;
+                physical_->commit_spatial_state(physical_->prepare_spatial_state(*boundary.spatial));
+                boundary.outcome=std::string(bike::spatial::to_string(state.latched.reason));
+            } else boundary.outcome = "end_of_track";
+        }
+        if(boundary.spatial) {
+            const auto& outcome=boundary.spatial->outcome.latched;
+            raw.channels.emplace_back("spatial_outcome",Wire(WireObject{
+                {"spatial_schema",Wire(1)},{"reason",Wire(bike::spatial::to_string(outcome.reason))},
+                {"terminal",Wire(outcome.terminal)},{"valid",Wire(outcome.valid)},
+                {"tick",Wire(outcome.tick)},{"time_s",Wire(outcome.time_s)},
+                {"position_world_m",wire_array(outcome.position_world_m)},
+                {"accepted_position_m",Wire(boundary.position_m)}}));
+        }
         accounting_->push(std::move(raw));
         commit_boundary(std::move(boundary));
     } catch (...) {

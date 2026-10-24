@@ -113,3 +113,19 @@ bike_add_reference_test(native_rider_information_boundary ENGINE
 bike_add_reference_test(project_constraint_mode_search ENGINE
   SOURCES project_test_constraint_mode_search.cpp LIBRARIES bike_app
   LABELS t52 rider)
+# 3.14b contact-safety, attachment budget/wrench and rider-forces ports.
+bike_add_reference_test(contact_safety ENGINE
+  SOURCES test_contact_safety.cpp LIBRARIES bike_app
+  LABELS t52 terrain golden)
+bike_add_reference_test(attachment_budget ENGINE
+  SOURCES test_attachment_budget.cpp LIBRARIES bike_app
+  LABELS t52 rider)
+bike_add_reference_test(attachment_wrench ENGINE
+  SOURCES test_attachment_wrench.cpp LIBRARIES bike_app
+  LABELS t52 rider golden)
+bike_add_reference_test(native_attachment_wrench ENGINE
+  SOURCES test_native_attachment_wrench.cpp LIBRARIES bike_app
+  LABELS t52 rider golden)
+bike_add_reference_test(native_rider_forces ENGINE
+  SOURCES test_native_rider_forces.cpp LIBRARIES bike_app bike_golden
+  LABELS t52 rider golden slow)

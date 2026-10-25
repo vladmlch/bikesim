@@ -4714,3 +4714,118 @@ documented, owned by whoever next recaptures the canonical episode.
 
 L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
 checkpoint profile owns it.
+
+## 2026-10-25 — Task F3 (lane/a): realtime gate re-aimed at the native Release artifact
+
+**Ruling (progress.md USER RULINGS 2026-10-23).** F3 → native backend
+gate: the savage track folds into the F2 settle fix, and the >=1x RTF
+contract is re-aimed at the produced Release `bike-measure-realtime`
+artifact — the Python-oracle accounted path the two
+`test_realtime_gate.py` nodes measure is T63-deleted
+("Python-backend — oracle, not a product"). The contract bar is
+unchanged: 20 s at dt=1.25 ms = 16,000 steps, record decimation 80,
+median RTF >= 1 on both `rough_uphill_savage.toml` and
+`rough_uphill_extreme.toml` under `viewer_physics_welded.toml`.
+
+### Port
+
+- `native/tests/reference/test_realtime_gate.cpp` — new executable (not
+  a `bike_add_reference_test` row; each CTest node supplies the artifact
+  plus track/physics inputs as argv). Spawns `$<TARGET_FILE:
+  bike-measure-realtime>` through the bounded `platform::run` seam
+  (`timeout_s=900`, matching the CTest TIMEOUT) with `--benchmark` —
+  the Python gate's `reference_monitor.strict=False` equivalent: the
+  non-strict monitor retains the documented `energy.constraint_work`
+  baseline violation as `prefix.first_failure` instead of stopping
+  physics at step 4, so the measured prefix reaches
+  `duration_reached`. Asserts the schema-1 report fields the Python
+  gate asserted — exit 0, `duration_reached`, 16,000/16,000 steps,
+  `simulated_time_s >= 20 - dt`, `median_real_time_factor >= 1` — plus
+  the artifact's own `build_type=Release` provenance (a Debug build
+  fails the gate loudly) and the dt/steps/decimation comparability key.
+- `native/tests/reference/Phase3Ports.cmake` —
+  `reference.realtime_gate` executable, `add_dependencies` on
+  `bike-measure-realtime`, one `add_test` per track named
+  `reference.realtime_gate.rough_uphill_savage` /
+  `.rough_uphill_extreme` mirroring the parametrized Python node IDs;
+  labels `reference;t53;runtime;slow`, `WORKING_DIRECTORY` the target
+  dir. Runs in the root graph only (`build/native-release`,
+  container `root-clang`) — `native/tests/reference` is added solely
+  from the root `CMakeLists.txt`, after `bike-measure-realtime` exists.
+- `migration/test-port-map.json` — the T53 record moves
+  `planned` → `port`: `native_test_id`
+  `reference.realtime_gate::test_realtime_factor_for_full_twenty_seconds`,
+  both collected Python node IDs recorded, `comparison_class` contract,
+  evidence cites the ruling and both-platform results below.
+- `docs/TESTING.md` — the two Python node IDs in the baseline-red list
+  annotated superseded-in-place (still red on the oracle path until
+  T63; superseded, not fixed), plus a "Realtime gate (re-aimed at the
+  native backend, F3 2026-10-25)" section recording the successor
+  nodes, the `--benchmark` equivalence and the unchanged >=1x bar.
+
+### Verification
+
+- `cmake --build build/native-release --target reference.realtime_gate`
+  (darwin-arm64, AppleClang, Release): green — cmake re-generated for
+  the Phase3Ports edit, the test TU compiled under the project warning
+  policy, `bike-measure-realtime` up to date.
+- `ctest --test-dir build/native-release -R '^reference\.realtime_gate'
+  --output-on-failure` (darwin-arm64): **2/2** — savage 9.26 s wall,
+  extreme 8.53 s wall. Artifact output captured in LastTest.log:
+  savage runs RTF 11.298/11.529/11.519 (median **11.5188**), extreme
+  11.609/11.694/11.619 (median **11.6194**); all runs
+  `duration_reached`, 16,000/16,000 steps, `measured_ok`,
+  `first_failure=[0.005,["energy.constraint_work"]]` retained;
+  provenance `machine=Darwin-27.0.0-arm64 build_type=Release
+  compiler=AppleClang`.
+- `tools/linux/container.sh build root-clang reference.realtime_gate` +
+  `tools/linux/container.sh ctest root-clang -R
+  '^reference\.realtime_gate' --output-on-failure` (linux-aarch64,
+  `bike-dev-pfc-lane-a`, clang++-18, Release): **2/2** — savage
+  10.37 s, extreme 10.39 s wall; medians **9.1041** / **9.0918**;
+  provenance `machine=Linux-7.0.14-linuxkit-aarch64 build_type=Release
+  compiler=Clang` (`git_sha`/`working_tree_dirty` null in the synced
+  non-git container tree — the test prints but does not require them).
+- Margin: the shipped backend clears the >=1x bar by ~9-12x on both
+  platforms, so the gate still fails loudly on a real step-loop
+  regression while no longer pricing interpreter overhead.
+- `bash tools/run_tests.sh native`: see tail below.
+
+### Baseline note
+
+`tests/reference/test_realtime_gate.py::...[rough_uphill_savage.toml]`
+and `...[rough_uphill_extreme.toml]` stay in the documented baseline-red
+list verbatim — they still measure the Python accounted path (~0.62-0.69
+on these tracks; F2 measured savage 0.6899 post-fix) and are superseded,
+not fixed. T63 removes them with the oracle.
+
+### Final gate — `bash tools/run_tests.sh native` (lane/a, `d8f90ab`)
+
+Run on this worktree 2026-10-25 (darwin-arm64, `native/build` selected,
+host shared with three sibling lane gates — ~2h55m wall under
+contention): **exit 8** at the binding-graph CTest — the same shape the
+F2 gate on `051497c` and the 3.28 lane/a record captured: the profile's
+`run_with_native_runtime ctest` step ends the script before the
+contracts+pytest tail.
+
+- Build green; produced orchestrator
+  `build/native-release/bin/bike-native-checks` rebuilt incrementally.
+- All nine static-analysis sweeps green: `frontends`/`tidy`/`cppcheck`/
+  `odr` findings `none`, `scripts` shellcheck clean, `analyzer`
+  `report-only` (333 sources / 334 TUs; alpha findings print, never
+  block), produced `headers` findings `none` (259 headers / 8,950
+  header-TUs), `diagnostic-controls` 6 controls 0 failed, `context`
+  all SDK controls passed.
+- CTest `native/build` **60/62** (Total Test time 958.82 s) — the
+  documented baseline pair verbatim, nothing authored by this task:
+  - `migration_T09` — `FAIL integration vector resolves bitwise`
+    (21.34 s).
+  - `migration_T29` — `FAIL config.rider_controller.weld_servo_gain:
+    unknown key` (1.34 s).
+  - `migration_T25` **passed** (70.50 s) — green on this worktree
+    (unlike the older-base lane records above, which red'ed it on the
+    `contract_sha256` path binding).
+  - No `migration_T56` node in this graph; no flake observed.
+- The `reference.realtime_gate.rough_uphill_*` CTest nodes live in the
+  root graph (`build/native-release`), not this `native/build` run —
+  their 2/2 results on both platforms are recorded above.

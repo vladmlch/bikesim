@@ -15375,12 +15375,10 @@
       "native/tests/reference/test_native_distributed_stands.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_distributed_stands"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "7ce2ccbe72f0aa6a49e1818951db04aeda875f67bf8d1d0a709f401b97caa6be",
     "snapshot_line_count": 159,
     "tracked": true,

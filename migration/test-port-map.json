@@ -6923,13 +6923,15 @@
       "line": 112,
       "end_line": 131,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_stands::test_distributed_flat_stand_native",
+      "native_test_id": "reference.native_distributed_stands::test_distributed_flat_stand_native",
       "native_source": "native/tests/reference/test_native_distributed_stands.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_distributed_stands green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_stands.py",
@@ -6937,13 +6939,15 @@
       "line": 134,
       "end_line": 159,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_stands::test_distributed_step_stand_native",
+      "native_test_id": "reference.native_distributed_stands::test_distributed_step_stand_native",
       "native_source": "native/tests/reference/test_native_distributed_stands.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_distributed_stands green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_tire.py",

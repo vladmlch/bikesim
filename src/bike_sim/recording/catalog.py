@@ -375,7 +375,8 @@ def _energy_table() -> TableSpec:
            path=('energy', 'loss_step_j')),
         _f('solver_constraint_work_j', 'double', 'J', 'episode', False,
            'derived', e,
-           'cumulative signed work of equality/limit constraint rows',
+           'cumulative signed work of joint/tendon limit constraint rows '
+           '(equality closures are charged to closure_signed_j)',
            path=('energy', 'solver_constraint_work_j')),
         _f('energy_scale_j', 'double', 'J', 'episode', False, 'derived',
            _SRC_RUNTIME + '.reset',
@@ -395,12 +396,23 @@ def _energy_table() -> TableSpec:
            'muscle_positive_j + motor_positive_j reference for the '
            'constraint-work ratio', path=('energy', 'source_positive_work_j')),
         _f('constraint_signed_j', 'double', 'J', 'episode', False, 'derived',
-           e, 'cumulative signed numerical constraint work',
+           e, 'cumulative signed numerical constraint work (joint/tendon '
+           'limit rows; equality closures are charged to closure_signed_j)',
            path=('energy', 'constraint_signed_j')),
         _f('constraint_absolute_j', 'double', 'J', 'episode', False,
            'derived', e,
-           'cumulative absolute numerical constraint work',
+           'cumulative absolute numerical constraint work (joint/tendon '
+           'limit rows only)',
            path=('energy', 'constraint_absolute_j')),
+        _f('closure_signed_j', 'double', 'J', 'episode', False, 'derived',
+           e, 'cumulative signed weld/closure spring work charged to the '
+           'elastic channel (equality constraint rows)',
+           path=('energy', 'closure_signed_j')),
+        _f('closure_absolute_j', 'double', 'J', 'episode', False,
+           'derived', e,
+           'cumulative absolute weld/closure spring work charged to the '
+           'elastic channel (equality constraint rows)',
+           path=('energy', 'closure_absolute_j')),
         _f('constraint_work_ratio', 'double', '1', 'episode', True,
            'derived', e,
            'constraint_absolute_j / source_positive_work_j; NULL when no '

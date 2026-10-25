@@ -31,6 +31,7 @@ from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_j
 from bike_sim.sim.ride.physical_observations import (
     tire_channels, preview_tire_channels, energy_state, actuator_components,
     constraint_components, sensor_channels, numerical_constraint_powers,
+    split_constraint_powers,
 )
 from bike_sim.sim.ride.physical_energy import mass_observations
 from bike_sim.physics.seated_climb import SeatedClimbSignals
@@ -133,14 +134,18 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
     muscle_power=np.array([float(components[n]@v) for n in components
                            if n=='human_crank' or n.startswith('act_rider_')])
     motor_power=float(components.get('mid_drive',np.zeros(m.nv))@v)
-    constraint_power=np.array(list(constraint_powers.values()))
-    work=step_work(muscle_power,motor_power,constraint_power,dt)
+    constraint_power,closure_power=split_constraint_powers(constraint_powers)
+    work=step_work(muscle_power,motor_power,constraint_power,closure_power,dt)
     self.muscle_signed_j+=work.muscle_signed_j
     self.muscle_positive_j+=work.muscle_positive_j
     self.motor_signed_j+=work.motor_signed_j
     self.motor_positive_j+=work.motor_positive_j
     self.constraint_absolute_j+=work.constraint_absolute_j
     self.solver_work_j+=work.constraint_signed_j
+    # Same F1 split as the runtime ledger: equality closures are weld-spring
+    # elastic exchange, never numerical constraint work.
+    self.closure_signed_j+=work.closure_signed_j
+    self.closure_absolute_j+=work.closure_absolute_j
     self.active_work_j+=work.muscle_signed_j+work.motor_signed_j
     self.external_work_j+=sum(float(components[n]@v)*dt for n in external_names if n in components)
     self.electrical_work_j+=self.drive.last.get('electrical_power_w',0.)*dt
@@ -164,6 +169,7 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
         'motor_signed_j':self.motor_signed_j,'motor_positive_j':self.motor_positive_j,
         'source_positive_work_j':self.muscle_positive_j+self.motor_positive_j,
         'constraint_signed_j':self.solver_work_j,'constraint_absolute_j':self.constraint_absolute_j,
+        'closure_signed_j':self.closure_signed_j,'closure_absolute_j':self.closure_absolute_j,
         'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j,
         'electrical_work_j':self.electrical_work_j,
         'electrical_residual_j':(self.initial_battery_j-self.drive.battery.energy_j-self.electrical_work_j

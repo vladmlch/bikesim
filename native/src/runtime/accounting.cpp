@@ -73,7 +73,7 @@ WireObject terms_wire(const rider::NamedEntries<rider::JointTerms> &terms) {
 }
 
 StepWork raw_work(const RawStep &raw, double dt_s) {
-    std::vector<double> muscle, constraint;
+    std::vector<double> muscle, constraint, closure;
     muscle.reserve(raw.components.size());
     constraint.reserve(raw.numerical_constraint_power_w.size());
     double motor = 0.;
@@ -82,11 +82,14 @@ StepWork raw_work(const RawStep &raw, double dt_s) {
             muscle.push_back(dot(force, raw.qvel));
         if (name == "mid_drive") motor = dot(force, raw.qvel);
     }
+    // split_constraint_powers mirror: 'equality:' rows are weld/closure
+    // springs charged to the elastic channel; limit rows stay numerical
+    // constraint work. First-appearance order is preserved per class.
     for (const auto &[name, power] : raw.numerical_constraint_power_w) {
-        (void)name;
-        constraint.push_back(power);
+        if (name.starts_with("equality:")) closure.push_back(power);
+        else constraint.push_back(power);
     }
-    return step_work(muscle, motor, constraint, dt_s);
+    return step_work(muscle, motor, constraint, closure, dt_s);
 }
 
 std::vector<std::string> attachment_errors(const RawStep &raw,
@@ -165,6 +168,8 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
     e.motor_positive_j += work.motor_positive_j;
     e.constraint_absolute_j += work.constraint_absolute_j;
     e.solver_work_j += work.constraint_signed_j;
+    e.closure_signed_j += work.closure_signed_j;
+    e.closure_absolute_j += work.closure_absolute_j;
     e.active_work_j += work.muscle_signed_j + work.motor_signed_j;
     e.external_work_j += external_work(raw, config.timestep_s);
     e.electrical_work_j += number(raw.electrical_power_w) * config.timestep_s;
@@ -184,6 +189,8 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
         {"motor_signed_j", Wire(e.motor_signed_j)}, {"motor_positive_j", Wire(e.motor_positive_j)},
         {"source_positive_work_j", Wire(source_positive)}, {"constraint_signed_j", Wire(e.solver_work_j)},
         {"constraint_absolute_j", Wire(e.constraint_absolute_j)},
+        {"closure_signed_j", Wire(e.closure_signed_j)},
+        {"closure_absolute_j", Wire(e.closure_absolute_j)},
         {"constraint_work_ratio", source_positive > 0. ? Wire(e.constraint_absolute_j / source_positive) : Wire(nullptr)},
         {"constraint_work_ok", Wire(work_ok)}, {"residual_j", Wire(e.residual_j)},
         {"electrical_work_j", Wire(e.electrical_work_j)},
@@ -240,17 +247,21 @@ WireObject StepWork::as_wire() const {
     return {{"muscle_signed_j", Wire(muscle_signed_j)}, {"muscle_positive_j", Wire(muscle_positive_j)},
             {"motor_signed_j", Wire(motor_signed_j)}, {"motor_positive_j", Wire(motor_positive_j)},
             {"constraint_signed_j", Wire(constraint_signed_j)},
-            {"constraint_absolute_j", Wire(constraint_absolute_j)}};
+            {"constraint_absolute_j", Wire(constraint_absolute_j)},
+            {"closure_signed_j", Wire(closure_signed_j)},
+            {"closure_absolute_j", Wire(closure_absolute_j)}};
 }
 
 StepWork step_work(std::span<const double> muscle_power_w, double motor_power_w,
-                    std::span<const double> constraint_power_w, double dt_s) {
+                    std::span<const double> constraint_power_w,
+                    std::span<const double> closure_power_w, double dt_s) {
     finite(motor_power_w, "motor power");
     finite(dt_s, "timestep");
     if (dt_s <= 0.) throw std::invalid_argument("invalid work timestep");
-    std::vector<double> positive, absolute;
+    std::vector<double> positive, absolute, closure_absolute;
     positive.reserve(muscle_power_w.size());
     absolute.reserve(constraint_power_w.size());
+    closure_absolute.reserve(closure_power_w.size());
     for (const double value : muscle_power_w) {
         finite(value, "muscle power");
         positive.push_back(std::max(value, 0.));
@@ -259,12 +270,18 @@ StepWork step_work(std::span<const double> muscle_power_w, double motor_power_w,
         finite(value, "constraint power");
         absolute.push_back(std::abs(value));
     }
+    for (const double value : closure_power_w) {
+        finite(value, "closure power");
+        closure_absolute.push_back(std::abs(value));
+    }
     return {.muscle_signed_j = numpy_sum(muscle_power_w) * dt_s,
             .muscle_positive_j = numpy_sum(positive) * dt_s,
             .motor_signed_j = motor_power_w * dt_s,
             .motor_positive_j = std::max(0., motor_power_w) * dt_s,
             .constraint_signed_j = numpy_sum(constraint_power_w) * dt_s,
-            .constraint_absolute_j = numpy_sum(absolute) * dt_s};
+            .constraint_absolute_j = numpy_sum(absolute) * dt_s,
+            .closure_signed_j = numpy_sum(closure_power_w) * dt_s,
+            .closure_absolute_j = numpy_sum(closure_absolute) * dt_s};
 }
 
 bool constraint_work_ok(double absolute_j, double source_positive_j, double roundoff_j) {
@@ -306,7 +323,7 @@ EffortObservation observe_effort_impl(const RawStep &raw,
         joint_positive.emplace_back(joint.name, power);
         positive.push_back(power);
         passive.push_back(damping * speed);
-        if (power > config.joint_power_limit_w + 1e-9) power_errors.push_back(joint.name);
+        if (power > config.delivered_joint_budget_w() + 1e-9) power_errors.push_back(joint.name);
         if (std::abs(speed) > config.joint_speed_limit_rad_s + 1e-9) speed_errors.push_back(joint.name);
         const auto terms = std::ranges::find_if(result.terms, [&](const auto &entry) {
             return entry.first == joint.name;
@@ -326,8 +343,10 @@ EffortObservation observe_effort_impl(const RawStep &raw,
     d.positive_work_step_j = d.positive_power_w * dt_s;
     d.passive_work_step_j = d.passive_power_w * dt_s;
     d.strength_violations = strength_errors;
-    d.budget_exceeded = config.active_positive_power_limit_w.has_value() &&
-                       d.positive_power_w > *config.active_positive_power_limit_w + 1e-9;
+    // F1: the delivery verdict reads the re-banded monitor budget, falling
+    // back to the capability cap when no re-band is declared.
+    d.budget_exceeded = config.delivered_positive_budget_w().has_value() &&
+                       d.positive_power_w > *config.delivered_positive_budget_w() + 1e-9;
     d.observation = "solved_actuator_force_at_incoming_interval";
     d.budget_present = true;
     d.observation_present = true;

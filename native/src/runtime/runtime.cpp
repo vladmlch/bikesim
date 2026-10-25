@@ -212,7 +212,8 @@ parse_energy(const vread::Dict &d) {
                         "active_work_j", "external_work_j", "solver_work_j",
                         "muscle_signed_j", "muscle_positive_j",
                         "motor_signed_j", "motor_positive_j",
-                        "constraint_absolute_j", "initial_battery_j",
+                        "constraint_absolute_j", "closure_signed_j",
+                        "closure_absolute_j", "initial_battery_j",
                         "electrical_work_j", "mechanical_energy_j",
                         "elastic_energy_j", "residual_j"));
     runtime::EnergyState out;
@@ -227,6 +228,8 @@ parse_energy(const vread::Dict &d) {
     out.motor_signed_j = real_field(d, "motor_signed_j");
     out.motor_positive_j = real_field(d, "motor_positive_j");
     out.constraint_absolute_j = real_field(d, "constraint_absolute_j");
+    out.closure_signed_j = real_field(d, "closure_signed_j");
+    out.closure_absolute_j = real_field(d, "closure_absolute_j");
     out.initial_battery_j = optional_field(d, "initial_battery_j");
     out.electrical_work_j = real_field(d, "electrical_work_j");
     out.mechanical_energy_j = real_field(d, "mechanical_energy_j");
@@ -572,10 +575,42 @@ void NativeRideRuntime::initialize_accounting() {
             throw std::invalid_argument(std::string("config.rider_controller.") + name + ": must be nonnegative");
         return value;
     };
+    // Weld envelope fields are optional on the wire (physical_config.py
+    // weld_* defaults None/0); wire projection always sends the keys.
+    const auto optional_real = [&](const char *name) -> std::optional<double> {
+        const Wire &v = sample_wire::required(articulated, name);
+        if (sample_wire::is_none(v)) return std::nullopt;
+        const double value = sample_wire::number(v);
+        if (!std::isfinite(value))
+            throw std::invalid_argument(std::string("config.rider_controller.") + name +
+                                        ": must be finite");
+        return value;
+    };
+    // The weld load envelope applies only where the interface is a real
+    // connect-equality weld (physical_config.py attachment_budget()).
+    const auto attachment_mode = [&](const char *name) {
+        return sample_wire::string(sample_wire::required(articulated, name));
+    };
+    const bool foot_welded =
+        attachment_mode("pedal_attachment") == "weld" ||
+        attachment_mode("pedal_attachment") == "spindle";
+    const bool saddle_welded =
+        attachment_mode("saddle_attachment") == "weld" ||
+        attachment_mode("saddle_attachment") == "pin";
+    const auto weld_min = optional_real("weld_foot_min_normal_n");
     accounting_config_.attachment_budget = {
-        .foot_min_normal_n = nonnegative("pedal_min_normal_n"),
+        .foot_min_normal_n = (foot_welded && weld_min.has_value())
+                                 ? *weld_min : nonnegative("pedal_min_normal_n"),
         .foot_mu = nonnegative("foot_mu"), .saddle_mu = nonnegative("saddle_mu"),
-        .grip_pull_n = nonnegative("grip_pull_per_hand_n"), .max_gap_m = nonnegative("link_max_gap_m")};
+        .grip_pull_n = nonnegative("grip_pull_per_hand_n"), .max_gap_m = nonnegative("link_max_gap_m"),
+        .saddle_min_normal_n = saddle_welded
+            ? optional_real("weld_saddle_min_normal_n").value_or(0.) : 0.,
+        .foot_max_normal_n = foot_welded
+            ? optional_real("weld_foot_max_normal_n") : std::nullopt,
+        .saddle_max_normal_n = saddle_welded
+            ? optional_real("weld_saddle_max_normal_n") : std::nullopt,
+        .foot_shear_n = foot_welded ? nonnegative("weld_foot_shear_n") : 0.,
+        .saddle_shear_n = saddle_welded ? nonnegative("weld_saddle_shear_n") : 0.};
     accounting_config_.timestep_s = config_.timestep_s;
     accounting_config_.period_steps = static_cast<std::size_t>(config_.control_period_steps);
     accounting_config_.measurement_decimation = config_.measurement_decimation;

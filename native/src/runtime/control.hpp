@@ -476,6 +476,9 @@ struct EnergyState {
     double muscle_signed_j = 0., muscle_positive_j = 0.;
     double motor_signed_j = 0., motor_positive_j = 0.;
     double constraint_absolute_j = 0.;
+    // F1: weld/closure spring work charged to the elastic channel
+    // (energy_ledger.py StepWork closure_*; physical_runtime.py counters).
+    double closure_signed_j = 0., closure_absolute_j = 0.;
     std::optional<double> initial_battery_j;
     double electrical_work_j = 0.;
     double mechanical_energy_j = 0.;

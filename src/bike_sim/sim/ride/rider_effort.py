@@ -72,7 +72,9 @@ def finalize_effort(controller, data, torques, *, advance, dt_s, steady_state):
         'rider_activation_saturated':bool(not np.allclose(active,excitation,rtol=1e-10,atol=1e-10)),
         'rider_strength_limited':strength_limited,
         'rider_effort_budget_exceeded':False,
-        'rider_active_positive_power_limit_w':cfg.active_positive_power_limit_w,
+        # F1: the published bound is the effective delivered-power budget so
+        # the (limit, budget_exceeded) diagnostic pair stays coherent.
+        'rider_active_positive_power_limit_w':cfg.delivered_positive_budget_w,
         'rider_effort_observation':'incoming_request',
     }
     for i,name in enumerate(names):
@@ -86,7 +88,7 @@ def joint_effort_limits(active, speeds, config):
     positive = {name:max(float(torque)*float(speeds[name]),0.) for name,torque in active.items()}
     return dict(rider_joint_positive_power_w=positive,
         rider_joint_power_violations=tuple(name for name,power in positive.items()
-            if power > config.joint_power_limit_w+1e-9),
+            if power > config.delivered_joint_budget_w+1e-9),
         rider_joint_speed_violations=tuple(name for name in active
             if abs(float(speeds[name])) > config.joint_speed_limit_rad_s+1e-9))
 
@@ -110,7 +112,8 @@ def solved_effort(controller, data, incoming_state, dt_s):
         c.last_terms[name].update(solved_force_nm=delivered,
                                   solved_active_nm=delivered,solved_passive_nm=damping)
     strength_violations=c.strength_violations(active,incoming_qpos,incoming_velocity)
-    limit=c.config.active_positive_power_limit_w
+    # F1: the solved-delivery verdict reads the re-banded monitor budget.
+    limit=c.config.delivered_positive_budget_w
     c.effort_diagnostics.update(joint_effort_limits(active,
         {name:incoming_velocity[dof] for name,(_,dof,_) in c.joints.items()},c.config))
     c.effort_diagnostics.update(rider_active_delivered_nm=active,rider_positive_power_w=positive,

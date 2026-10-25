@@ -299,12 +299,15 @@ void bind_work_probes(nb::module_ &module) {
         return wire_object_to_python(history.as_wire());
     }, nb::arg("intervals"));
     module.def("runtime_step_work", [](nb::handle muscle, double motor,
-                                        nb::handle constraints, double dt_s) {
+                                        nb::handle constraints, nb::handle closures,
+                                        double dt_s) {
         const auto muscle_values = wire::vector(muscle, "muscle_power_w");
         const auto constraint_values = wire::vector(constraints, "constraint_power_w");
-        return wire_object_to_python(step_work(muscle_values, motor, constraint_values, dt_s).as_wire());
+        const auto closure_values = wire::vector(closures, "closure_power_w");
+        return wire_object_to_python(step_work(muscle_values, motor, constraint_values,
+                                               closure_values, dt_s).as_wire());
     }, nb::arg("muscle_power_w"), nb::arg("motor_power_w"),
-       nb::arg("constraint_power_w"), nb::arg("dt_s"));
+       nb::arg("constraint_power_w"), nb::arg("closure_power_w"), nb::arg("dt_s"));
     module.def("runtime_constraint_work_ok", &constraint_work_ok,
                nb::arg("absolute_j"), nb::arg("source_positive_j"), nb::arg("roundoff_j") = 1e-8);
     module.def("runtime_validate_intervals", [](nb::handle intervals, int capacity) {

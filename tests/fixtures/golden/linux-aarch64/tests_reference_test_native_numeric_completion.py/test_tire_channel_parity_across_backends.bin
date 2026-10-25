@@ -2004,6 +2004,8 @@
     },
     "energy": {
       "active_work_j": 0.0,
+      "closure_absolute_j": 0.0,
+      "closure_signed_j": 0.0,
       "constraint_absolute_j": 0.0,
       "elastic_energy_j": {
         "fork_air": 12.068281032026361,
@@ -4241,6 +4243,8 @@ Z¦sâA? 5vÊ)Æz@c¯ŠK(»¥?¾É´ý¸z¦?false1["couple_world_nm","normal","normal_load_n"
     },
     "energy": {
       "active_work_j": 0.0,
+      "closure_absolute_j": 0.0,
+      "closure_signed_j": 0.0,
       "constraint_absolute_j": 0.0,
       "elastic_energy_j": {
         "fork_air": 10.688853565142658,

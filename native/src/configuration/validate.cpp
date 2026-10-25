@@ -746,6 +746,8 @@ void post_init(ArticulatedConfig &config) {
           {"grip_pull_per_hand_n",
            &ArticulatedConfig::grip_pull_per_hand_n},
           {"link_max_gap_m", &ArticulatedConfig::link_max_gap_m},
+          {"weld_foot_shear_n", &ArticulatedConfig::weld_foot_shear_n},
+          {"weld_saddle_shear_n", &ArticulatedConfig::weld_saddle_shear_n},
           {"balance_floor_kmh", &ArticulatedConfig::balance_floor_kmh},
           {"balance_dwell_s", &ArticulatedConfig::balance_dwell_s}})
         scalar(config.*member, name, std::nullopt, true);
@@ -754,6 +756,14 @@ void post_init(ArticulatedConfig &config) {
     if (config.joint_passive_damping_nms_rad)
         scalar(*config.joint_passive_damping_nms_rad,
                "joint_passive_damping_nms_rad", 0.);
+    // Weld normal bounds may be negative (tension retention), matching the
+    // Python post-init skip; the delivered budgets are nonnegative when set.
+    if (config.delivered_positive_power_budget_w)
+        scalar(*config.delivered_positive_power_budget_w,
+               "delivered_positive_power_budget_w", 0.);
+    if (config.delivered_joint_power_budget_w)
+        scalar(*config.delivered_joint_power_budget_w,
+               "delivered_joint_power_budget_w", 0.);
     if (config.pedal_torque_ripple >= 1.)
         fail("pedal torque ripple must be below one");
     if (config.pedal_scrape_fraction > 1.)

@@ -746,7 +746,9 @@ namespace {
         "arm_reach_fraction", "balance_dwell_s", "balance_floor_kmh",
         "balance_grace_s", "bar_support_fraction",
         "coasting_brake_d_nm_s_rad", "coasting_brake_limit_nm",
-        "coupled_task_control", "foot_mu", "grip_attachment",
+        "coupled_task_control",
+        "delivered_joint_power_budget_w", "delivered_positive_power_budget_w",
+        "foot_mu", "grip_attachment",
         "grip_c_ns_m", "grip_capture_distance_m", "grip_capture_speed_mps",
         "grip_k_n_m", "grip_pair_force_limit_n", "grip_pull_per_hand_n",
         "grip_release_distance_m", "joint_envelope_path",
@@ -766,7 +768,11 @@ namespace {
         "saddle_reserve_weight_fraction", "stance_blend_load_n",
         "support_c_ns_m", "support_k_n_m", "support_length_m",
         "support_mu", "support_pad_radius_m", "support_tangent_k_n_m",
-        "swing_clearance_m", "strength", "strength_coordinates",
+        "swing_clearance_m",
+        "weld_foot_max_normal_n", "weld_foot_min_normal_n", "weld_foot_shear_n",
+        "weld_saddle_max_normal_n", "weld_saddle_min_normal_n",
+        "weld_saddle_shear_n",
+        "strength", "strength_coordinates",
         "envelopes");
 
     constexpr std::array kUnmodeledScalarKeys{
@@ -784,7 +790,8 @@ namespace {
         "pedal_min_normal_n", "saddle_reserve_weight_fraction",
         "pedal_ankle_amplitude_rad", "pedal_scrape_fraction",
         "link_max_gap_m", "road_lookahead_m", "balance_floor_kmh",
-        "balance_dwell_s", "balance_grace_s"};
+        "balance_dwell_s", "balance_grace_s",
+        "weld_foot_shear_n", "weld_saddle_shear_n"};
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) key/path mirror the binding's (member, path) order
     void decode_optional_path(const Dict &d, std::string_view key,
@@ -799,6 +806,11 @@ namespace {
         for (const char *key: kUnmodeledScalarKeys)
             (void)d[key].finite_real(path);
         (void)d["grip_pair_force_limit_n"].optional_real(path);
+        // F1 weld load envelope: normal bounds may be negative (tension
+        // retention) so only the optional-real type is enforced at the wire.
+        for (const char *key : {"weld_foot_min_normal_n", "weld_foot_max_normal_n",
+                                "weld_saddle_min_normal_n", "weld_saddle_max_normal_n"})
+            (void)d[key].optional_real(path);
         (void)d["coupled_task_control"].boolean(path);
     }
 
@@ -830,6 +842,10 @@ namespace {
             d["joint_power_limit_w"].finite_real(path);
         config.active_positive_power_limit_w =
             d["active_positive_power_limit_w"].optional_real(path);
+        config.delivered_positive_power_budget_w =
+            d["delivered_positive_power_budget_w"].optional_real(path);
+        config.delivered_joint_power_budget_w =
+            d["delivered_joint_power_budget_w"].optional_real(path);
         config.joint_passive_damping_nms_rad =
             d["joint_passive_damping_nms_rad"].optional_real(path);
         config.activation_tau_s = d["activation_tau_s"].finite_real(path);

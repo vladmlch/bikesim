@@ -175,6 +175,20 @@ def numerical_constraint_powers(model, data, incoming_velocity):
     return powers
 
 
+def split_constraint_powers(powers):
+    """Partition ``numerical_constraint_powers`` rows by physical class.
+
+    ``equality:*`` rows are the solver's soft spring-damper closures — rider
+    welds and the suspension linkage — whose work is elastic exchange charged
+    to the closure channel. Joint/tendon limit rows are one-sided hard stops
+    and stay numerical constraint work. First-appearance order is preserved
+    within each class so both halves match the native partition bitwise.
+    """
+    constraint=[power for key,power in powers.items() if not key.startswith('equality:')]
+    closure=[power for key,power in powers.items() if key.startswith('equality:')]
+    return np.asarray(constraint,dtype=float),np.asarray(closure,dtype=float)
+
+
 def sensor_channels(runtime, *, qvel=None, drive_channels=None):
     """Raw input-state proper acceleration, gyro, encoders and shaft sensors.
 

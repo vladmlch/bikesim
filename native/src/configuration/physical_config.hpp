@@ -341,6 +341,14 @@ struct AttachmentBudget {
     double saddle_mu;
     double grip_pull_n;
     double max_gap_m;
+    // F1 weld load envelope (attachment_budget.py): connect-equality welds
+    // carry tension and shear a friction cone cannot express. nullopt/0
+    // disables each bound and keeps the unilateral checks bitwise-identical.
+    double saddle_min_normal_n = 0.;
+    std::optional<double> foot_max_normal_n;
+    std::optional<double> saddle_max_normal_n;
+    double foot_shear_n = 0.;
+    double saddle_shear_n = 0.;
 };
 
 struct ArticulatedConfig {
@@ -415,6 +423,21 @@ struct ArticulatedConfig {
     double weld_servo_limit_nm = 25.;
     double leg_track_damping_nms_rad = 0.;
     double link_max_gap_m = .005;
+    // F1 weld load envelope for the pinned plant (physical_config.py):
+    // connect equalities are bidirectional soft springs carrying tension and
+    // shear a unilateral cone cannot express. Monitor-side capacities only;
+    // nullopt preserves the unilateral-contact checks bitwise.
+    std::optional<double> weld_foot_min_normal_n;
+    std::optional<double> weld_foot_max_normal_n;
+    double weld_foot_shear_n = 0.;
+    std::optional<double> weld_saddle_min_normal_n;
+    std::optional<double> weld_saddle_max_normal_n;
+    double weld_saddle_shear_n = 0.;
+    // F1 delivered-power budgets, monitor-side; the capability clips bound
+    // the command at tick speeds while the delivered envelope also covers
+    // intra-period drift and weld drag — the tracked model-delivery gap.
+    std::optional<double> delivered_positive_power_budget_w;
+    std::optional<double> delivered_joint_power_budget_w;
     // Bounded road preview the rider planner may see ahead of the front wheel.
     double road_lookahead_m = 0.;
     std::optional<std::string> joint_strength_path;
@@ -428,8 +451,29 @@ struct ArticulatedConfig {
     double balance_grace_s = 3.;
 
     [[nodiscard]] AttachmentBudget attachment_budget() const {
-        return {.foot_min_normal_n=pedal_min_normal_n, .foot_mu=foot_mu, .saddle_mu=saddle_mu,
-                .grip_pull_n=grip_pull_per_hand_n, .max_gap_m=link_max_gap_m};
+        // The weld load envelope applies only where the interface is a real
+        // connect-equality weld; flat pads keep the unilateral floor.
+        const bool foot_welded = pedal_attachment == "weld" || pedal_attachment == "spindle";
+        const bool saddle_welded = saddle_attachment == "weld" || saddle_attachment == "pin";
+        return {.foot_min_normal_n=(foot_welded ? weld_foot_min_normal_n.value_or(pedal_min_normal_n)
+                                               : pedal_min_normal_n),
+                .foot_mu=foot_mu, .saddle_mu=saddle_mu,
+                .grip_pull_n=grip_pull_per_hand_n, .max_gap_m=link_max_gap_m,
+                .saddle_min_normal_n=(saddle_welded ? weld_saddle_min_normal_n.value_or(0.) : 0.),
+                .foot_max_normal_n=(foot_welded ? weld_foot_max_normal_n : std::nullopt),
+                .saddle_max_normal_n=(saddle_welded ? weld_saddle_max_normal_n : std::nullopt),
+                .foot_shear_n=(foot_welded ? weld_foot_shear_n : 0.),
+                .saddle_shear_n=(saddle_welded ? weld_saddle_shear_n : 0.)};
+    }
+    // physical_config.py delivered_*_budget_w properties: the effective
+    // monitor bound falls back to the declared capability cap.
+    [[nodiscard]] std::optional<double> delivered_positive_budget_w() const {
+        return delivered_positive_power_budget_w.has_value()
+                   ? delivered_positive_power_budget_w
+                   : active_positive_power_limit_w;
+    }
+    [[nodiscard]] double delivered_joint_budget_w() const {
+        return delivered_joint_power_budget_w.value_or(joint_power_limit_w);
     }
     // ArticulatedConfig.passive_damping_nms_rad (resolved hinge damping).
     [[nodiscard]] double passive_damping_nms_rad() const {
@@ -865,6 +909,32 @@ inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
     REAL(ArticulatedConfig, weld_servo_limit_nm),
     REAL(ArticulatedConfig, leg_track_damping_nms_rad),
     REAL(ArticulatedConfig, link_max_gap_m),
+    {.name="weld_foot_min_normal_n", .type="float | None",
+     .kind=FieldKind::OptionalReal,
+     .offset=offsetof(ArticulatedConfig, weld_foot_min_normal_n), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="weld_foot_max_normal_n", .type="float | None",
+     .kind=FieldKind::OptionalReal,
+     .offset=offsetof(ArticulatedConfig, weld_foot_max_normal_n), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    REAL(ArticulatedConfig, weld_foot_shear_n),
+    {.name="weld_saddle_min_normal_n", .type="float | None",
+     .kind=FieldKind::OptionalReal,
+     .offset=offsetof(ArticulatedConfig, weld_saddle_min_normal_n), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="weld_saddle_max_normal_n", .type="float | None",
+     .kind=FieldKind::OptionalReal,
+     .offset=offsetof(ArticulatedConfig, weld_saddle_max_normal_n), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    REAL(ArticulatedConfig, weld_saddle_shear_n),
+    {.name="delivered_positive_power_budget_w", .type="float | None",
+     .kind=FieldKind::OptionalReal,
+     .offset=offsetof(ArticulatedConfig, delivered_positive_power_budget_w), .required=false,
+     .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="delivered_joint_power_budget_w", .type="float | None",
+     .kind=FieldKind::OptionalReal,
+     .offset=offsetof(ArticulatedConfig, delivered_joint_power_budget_w), .required=false,
+     .factory="", .nested=nullptr, .nested2=nullptr},
     REAL(ArticulatedConfig, road_lookahead_m),
     {.name="joint_strength_path", .type="str | None", .kind=FieldKind::OptionalText,
      .offset=offsetof(ArticulatedConfig, joint_strength_path), .required=false, .factory="", .nested=nullptr,

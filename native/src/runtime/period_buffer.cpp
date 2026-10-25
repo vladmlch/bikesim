@@ -109,10 +109,20 @@ std::vector<std::string> attachment_violations(
         if (sample.pull_n > budget.grip_pull_n) errors.emplace_back("pull");
         return errors;
     }
-    if ((sample.kind == "foot" && sample.normal_n < budget.foot_min_normal_n) ||
-        (sample.kind == "saddle" && sample.normal_n <= 0.)) errors.emplace_back("normal");
+    if ((sample.kind == "foot" &&
+         (sample.normal_n < budget.foot_min_normal_n ||
+          (budget.foot_max_normal_n.has_value() &&
+           sample.normal_n > *budget.foot_max_normal_n))) ||
+        (sample.kind == "saddle" &&
+         (sample.normal_n <= budget.saddle_min_normal_n ||
+          (budget.saddle_max_normal_n.has_value() &&
+           sample.normal_n > *budget.saddle_max_normal_n))))
+        errors.emplace_back("normal");
     const double mu = sample.kind == "foot" ? budget.foot_mu : budget.saddle_mu;
-    if (std::abs(sample.tangent_n) > mu * std::max(0., sample.normal_n))
+    const double shear = sample.kind == "foot" ? budget.foot_shear_n : budget.saddle_shear_n;
+    // Weld shear capacity plus whatever the friction cone admits while the
+    // interface is compressive; a flat pad (shear 0) reduces to the cone.
+    if (std::abs(sample.tangent_n) > shear + mu * std::max(0., sample.normal_n))
         errors.emplace_back("friction");
     if (std::abs(sample.moment_nm) > sample.half_patch_m * std::max(0., sample.normal_n))
         errors.emplace_back("cop");

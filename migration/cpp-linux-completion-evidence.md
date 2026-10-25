@@ -4350,4 +4350,17 @@ Pre-existing parity gap owned by the ADR-0003 golden gate, not F1.
 
 ### ctest / gate / Linux
 
-(pending — see task-F1-report.md for final numbers)
+- `ctest -L reference`: no labels exist in `native/build`; plain `ctest`
+  coverage comes from the native profile below.
+- Linux aarch64 (`bike-dev-pfc-lane-b`, `bike-dev-linux:24.04`, CPython
+  3.13.16, uv-locked venv, F1 sources synced): five-node run **4/5 PASS
+  in 269.50 s**. Flat ×3 + free-coast green;
+  `test_pulse_redistributes_load_through_inertia_only` FAILS
+  `energy.constraint_work` at t=0.005 — aarch64 onset transient
+  accumulates non-equality constraint work ~3× faster than darwin
+  (0.0070 J vs 0.0025 J at interval ~9-10; ratio 2.26 % vs 0.68 % of
+  source positive). Deterministic-bookkeeping changes cannot move a
+  solver residual: platform numerical gap, expected-Linux-red; baseline
+  was worse (chronic attachment violations at 0.0005 precluded reaching
+  the constraint bound).
+- `bash tools/run_tests.sh native`: (see task-F1-report.md).

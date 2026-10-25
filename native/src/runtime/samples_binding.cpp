@@ -299,7 +299,7 @@ void bind_work_probes(nb::module_ &module) {
         return wire_object_to_python(history.as_wire());
     }, nb::arg("intervals"));
     module.def("runtime_step_work", [](nb::handle muscle, double motor,
-                                        nb::handle constraints, nb::handle closures,
+                                        nb::handle constraints, nb::handle closures, // NOLINT(bugprone-easily-swappable-parameters) raw handles keep the Python argument types for the wire:: readers' path-labeled domain errors
                                         double dt_s) {
         const auto muscle_values = wire::vector(muscle, "muscle_power_w");
         const auto constraint_values = wire::vector(constraints, "constraint_power_w");

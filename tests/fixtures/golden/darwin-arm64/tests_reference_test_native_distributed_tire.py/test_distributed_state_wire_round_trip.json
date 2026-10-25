@@ -1,0 +1,30 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "state round trip",
+  "nbytes": 8192,
+  "node": "tests/reference/test_native_distributed_tire.py::test_distributed_state_wire_round_trip",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   1024
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "state re-round trip",
+  "nbytes": 8192,
+  "node": "tests/reference/test_native_distributed_tire.py::test_distributed_state_wire_round_trip",
+  "offset": 8192,
+  "rtol": null,
+  "shape": [
+   1024
+  ]
+ }
+]

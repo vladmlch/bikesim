@@ -1,0 +1,2876 @@
+{
+  "source_fingerprint": "b783a213fd96a1dc9d3b690d6040d09c400843143f372f617f55436a58ca3af7",
+  "steps": 3,
+  "physics_steps": 3,
+  "dt_s": 0.00125,
+  "tire_snapshots": [
+    {
+      "front": {
+        "time_s": 0.0,
+        "interval_id": 0,
+        "backend": "distributed_2d_reference",
+        "geometric_contact": true,
+        "effective_radius_m": 0.37082376557842883,
+        "patches": [
+          {
+            "normal_load_n": 41.52475440501466,
+            "tangent_force_n": -0.09856285794394373,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 70.0365982400539,
+            "tangent_force_n": -0.09839077456424554,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 85.39510902332152,
+            "tangent_force_n": -0.09829810613153098,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 87.56328675709328,
+            "tangent_force_n": -0.09828502868092967,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 76.53590811129865,
+            "tangent_force_n": 5.877775229838593,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 52.33953900697835,
+            "tangent_force_n": 1.8160831272252764,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 15.032470616658287,
+            "tangent_force_n": 2.0061450253145976,
+            "slip_mps": 0.0,
+            "working_surface": true
+          }
+        ]
+      },
+      "rear": {
+        "time_s": 0.0,
+        "interval_id": 0,
+        "backend": "distributed_2d_reference",
+        "geometric_contact": true,
+        "effective_radius_m": 0.3505403574098739,
+        "patches": [
+          {
+            "normal_load_n": 41.612629136915054,
+            "tangent_force_n": 0.45869133617854335,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 75.88914476348205,
+            "tangent_force_n": 0.8414669072900226,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 97.75413096525243,
+            "tangent_force_n": 0.9310693716410373,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 107.15491307532069,
+            "tangent_force_n": 0.9171128548057319,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 104.06884378617103,
+            "tangent_force_n": 0.2276329307613563,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 88.50335770902923,
+            "tangent_force_n": -4.243224661652532,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 60.49595346323176,
+            "tangent_force_n": -7.1440280782250944,
+            "slip_mps": 0.0,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 20.1141033387644,
+            "tangent_force_n": 0.07775351939420226,
+            "slip_mps": 0.0,
+            "working_surface": true
+          }
+        ]
+      }
+    },
+    {
+      "front": {
+        "time_s": 0.00125,
+        "interval_id": 1,
+        "backend": "distributed_2d_reference",
+        "geometric_contact": true,
+        "effective_radius_m": 0.3708247471519369,
+        "patches": [
+          {
+            "normal_load_n": 41.65564957054291,
+            "tangent_force_n": -0.10834346078876478,
+            "slip_mps": 0.007970012667494255,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 70.12112541210865,
+            "tangent_force_n": -0.1082234133106724,
+            "slip_mps": 0.008012415267804347,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 85.43308148798297,
+            "tangent_force_n": -0.10815876890295908,
+            "slip_mps": 0.008035251261699954,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 87.55462995480755,
+            "tangent_force_n": -0.108149636088456,
+            "slip_mps": 0.008038465635271582,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 76.48065981650223,
+            "tangent_force_n": 5.867926673659389,
+            "slip_mps": 0.00802205064481175,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 52.23784923709362,
+            "tangent_force_n": 1.8062815374025623,
+            "slip_mps": 0.007986045835470261,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 14.884601270687877,
+            "tangent_force_n": 1.996411423701364,
+            "slip_mps": 0.007930537945986464,
+            "working_surface": true
+          }
+        ]
+      },
+      "rear": {
+        "time_s": 0.00125,
+        "interval_id": 1,
+        "backend": "distributed_2d_reference",
+        "geometric_contact": true,
+        "effective_radius_m": 0.35053862534374713,
+        "patches": [
+          {
+            "normal_load_n": 41.643566681357306,
+            "tangent_force_n": 0.4644824903410286,
+            "slip_mps": -0.0047191138512825805,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 75.94732256423696,
+            "tangent_force_n": 0.8472969942389859,
+            "slip_mps": -0.004750886033769892,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 97.8396979591141,
+            "tangent_force_n": 0.9369243188452098,
+            "slip_mps": -0.004771154971340646,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 107.26795221611745,
+            "tangent_force_n": 0.9229785013066523,
+            "slip_mps": -0.004779871834348887,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 104.20937184492416,
+            "tangent_force_n": 0.2334951758120356,
+            "slip_mps": -0.004777015623108118,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 88.67132523354884,
+            "tangent_force_n": -4.237379443459805,
+            "slip_mps": -0.004762593218481397,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 60.69124489725104,
+            "tangent_force_n": -7.138214274126876,
+            "slip_mps": -0.004736639365304722,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 20.33653730032415,
+            "tangent_force_n": 0.08352031321092702,
+            "slip_mps": -0.0046992165886836825,
+            "working_surface": true
+          }
+        ]
+      }
+    },
+    {
+      "front": {
+        "time_s": 0.0025,
+        "interval_id": 2,
+        "backend": "distributed_2d_reference",
+        "geometric_contact": true,
+        "effective_radius_m": 0.3708223160494272,
+        "patches": [
+          {
+            "normal_load_n": 0.3025148936431534,
+            "tangent_force_n": -0.018686106694387816,
+            "slip_mps": 0.015226825291888343,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 41.803289300446586,
+            "tangent_force_n": -0.12717515528017245,
+            "slip_mps": 0.015345552079456138,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 70.21879840584712,
+            "tangent_force_n": -0.12715495213437664,
+            "slip_mps": 0.015426912543883274,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 85.4805867595077,
+            "tangent_force_n": -0.12714405613821986,
+            "slip_mps": 0.015470710680684622,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 87.55188737650808,
+            "tangent_force_n": -0.1271424463299507,
+            "slip_mps": 0.015476840976312361,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 76.42771031223918,
+            "tangent_force_n": 5.848966420378624,
+            "slip_mps": 0.015445288662347376,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 52.13485468360943,
+            "tangent_force_n": 1.7874103438245958,
+            "slip_mps": 0.015376129751077657,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 14.731844107632053,
+            "tangent_force_n": 1.9776708504253186,
+            "slip_mps": 0.015269530852378067,
+            "working_surface": true
+          }
+        ]
+      },
+      "rear": {
+        "time_s": 0.0025,
+        "interval_id": 2,
+        "backend": "distributed_2d_reference",
+        "geometric_contact": true,
+        "effective_radius_m": 0.350537308282054,
+        "patches": [
+          {
+            "normal_load_n": 41.62907582324677,
+            "tangent_force_n": 0.47544950187763885,
+            "slip_mps": -0.008936883354105913,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 75.96159322584865,
+            "tangent_force_n": 0.8583378689444208,
+            "slip_mps": -0.008997200023215303,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 97.88288747378223,
+            "tangent_force_n": 0.9480123839358836,
+            "slip_mps": -0.009035684080141687,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 107.34014824912752,
+            "tangent_force_n": 0.9340868927128884,
+            "slip_mps": -0.009052242813421128,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 104.31059218231688,
+            "tangent_force_n": 0.24459721432251993,
+            "slip_mps": -0.009046836331614778,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 88.80151773927315,
+            "tangent_force_n": -4.226309151435121,
+            "slip_mps": -0.00901947765941086,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 60.85028763876592,
+            "tangent_force_n": -7.127203228898966,
+            "slip_mps": -0.008970232706247054,
+            "working_surface": true
+          },
+          {
+            "normal_load_n": 20.524238842343316,
+            "tangent_force_n": 0.09444126074209382,
+            "slip_mps": -0.008899220107528878,
+            "working_surface": true
+          }
+        ]
+      }
+    }
+  ],
+  "tire_diagnostics": [
+    {
+      "front": {
+        "penetration_m": 0.005946082099526184,
+        "normal_load_n": 428.42766616041865,
+        "multi_support": false,
+        "supports_multiple_contacts": true,
+        "capability_status": "experimental_reference_not_release_qualified",
+        "calibration_status": "experimental_unvalidated",
+        "station_count": 128,
+        "active_station_count": 7,
+        "nonsmooth_station_count": 0,
+        "max_patch_count": 7,
+        "outside_material_load_range": false,
+        "outside_material_deflection_range": false,
+        "radial_energy_j": 1.0325881679992424,
+        "shear_energy_j": 0.02134445291026226,
+        "brush_loss_j": 0.0
+      },
+      "rear": {
+        "penetration_m": 0.0072764732128083875,
+        "normal_load_n": 595.5930762381666,
+        "multi_support": false,
+        "supports_multiple_contacts": true,
+        "capability_status": "experimental_reference_not_release_qualified",
+        "calibration_status": "experimental_unvalidated",
+        "station_count": 128,
+        "active_station_count": 8,
+        "nonsmooth_station_count": 0,
+        "max_patch_count": 8,
+        "outside_material_load_range": false,
+        "outside_material_deflection_range": false,
+        "radial_energy_j": 1.740308791595452,
+        "shear_energy_j": 0.0365299583709775,
+        "brush_loss_j": 0.0
+      }
+    },
+    {
+      "front": {
+        "penetration_m": 0.005945989398644436,
+        "normal_load_n": 428.3675967497258,
+        "multi_support": false,
+        "supports_multiple_contacts": true,
+        "capability_status": "experimental_reference_not_release_qualified",
+        "calibration_status": "experimental_unvalidated",
+        "station_count": 128,
+        "active_station_count": 7,
+        "nonsmooth_station_count": 0,
+        "max_patch_count": 7,
+        "outside_material_load_range": false,
+        "outside_material_deflection_range": false,
+        "radial_energy_j": 1.0326104249236787,
+        "shear_energy_j": 0.021251753433059562,
+        "brush_loss_j": 3.727285082832543e-07
+      },
+      "rear": {
+        "penetration_m": 0.0072776852635969,
+        "normal_load_n": 596.607018696874,
+        "multi_support": false,
+        "supports_multiple_contacts": true,
+        "capability_status": "experimental_reference_not_release_qualified",
+        "calibration_status": "experimental_unvalidated",
+        "station_count": 128,
+        "active_station_count": 8,
+        "nonsmooth_station_count": 0,
+        "max_patch_count": 8,
+        "outside_material_load_range": false,
+        "outside_material_deflection_range": false,
+        "radial_energy_j": 1.7410804915053562,
+        "shear_energy_j": 0.03648307786948469,
+        "brush_loss_j": 1.4939660245253607e-07
+      }
+    },
+    {
+      "front": {
+        "penetration_m": 0.0059458822442574055,
+        "normal_load_n": 428.65148583943335,
+        "multi_support": false,
+        "supports_multiple_contacts": true,
+        "capability_status": "experimental_reference_not_release_qualified",
+        "calibration_status": "experimental_unvalidated",
+        "station_count": 128,
+        "active_station_count": 8,
+        "nonsmooth_station_count": 0,
+        "max_patch_count": 8,
+        "outside_material_load_range": false,
+        "outside_material_deflection_range": false,
+        "radial_energy_j": 1.0326837792038515,
+        "shear_energy_j": 0.02107539830384616,
+        "brush_loss_j": 1.495066134090011e-06
+      },
+      "rear": {
+        "penetration_m": 0.007279480137353134,
+        "normal_load_n": 597.3003411747045,
+        "multi_support": false,
+        "supports_multiple_contacts": true,
+        "capability_status": "experimental_reference_not_release_qualified",
+        "calibration_status": "experimental_unvalidated",
+        "station_count": 128,
+        "active_station_count": 8,
+        "nonsmooth_station_count": 0,
+        "max_patch_count": 8,
+        "outside_material_load_range": false,
+        "outside_material_deflection_range": false,
+        "radial_energy_j": 1.742244571086835,
+        "shear_energy_j": 0.03639504501957318,
+        "brush_loss_j": 5.262349753384496e-07
+      }
+    }
+  ],
+  "first_failure": [
+    0.005,
+    [
+      "energy.constraint_work"
+    ]
+  ],
+  "non_numeric": [
+    {
+      "attachment_samples.foot_front.kind": "foot",
+      "attachment_samples.foot_rear.kind": "foot",
+      "attachment_samples.grip_left.kind": "grip",
+      "attachment_samples.grip_right.kind": "grip",
+      "attachment_samples.saddle.kind": "saddle",
+      "attachment_violations": [],
+      "contact_crash_cause": null,
+      "control.crank_target_rate_rad_s": null,
+      "control.motor_limit_nm": null,
+      "control.motor_torque_nm": null,
+      "control.posture.pelvis_offset_m": null,
+      "drive.assist_mode": "turbo",
+      "drive.coasting_reason": "",
+      "drive.crank_target_phase_rad": null,
+      "drive.motor_control_source": "assist",
+      "drive.motor_limit_nm": null,
+      "drive.motor_setpoint_nm": null,
+      "drive.rider_mode": "pedaling",
+      "drive.shift_direction": "none",
+      "drive.shift_time_s": null,
+      "drive.transmission_model": "ideal_mid_drive",
+      "endpoint_mass.angular_momentum_kg_m2_s": [
+        0.0006084402705627098,
+        0.00018850571513428743,
+        -0.00021405763628732898
+      ],
+      "endpoint_mass.com_m": [
+        2.0826303378917568,
+        9.195402298852594e-06,
+        0.6096130235627651
+      ],
+      "endpoint_mass.com_velocity_mps": [
+        1.643844005490904e-05,
+        0.0,
+        -1.7154838189209837e-06
+      ],
+      "endpoint_mass.linear_momentum_kg_mps": [
+        0.0017161731417325036,
+        0.0,
+        -0.00017909651069535068
+      ],
+      "energy.constraint_work_ratio": null,
+      "mass.angular_momentum_kg_m2_s": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass.com_m": [
+        2.08263031734369,
+        9.195402298852594e-06,
+        0.609613025706973
+      ],
+      "mass.com_velocity_mps": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mass.linear_momentum_kg_mps": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "model_status.calibration_status": "parameterized_unvalidated",
+      "model_status.first_model_violation": null,
+      "qpos": [
+        2.0049173337859343,
+        -0.055765243234400394,
+        0.004304319715388705,
+        -0.030722129775180455,
+        0.014462827705133047,
+        0.01454917879650987,
+        0.05923867254021199,
+        -0.21713376337422927,
+        0.1264239745446878,
+        -0.0684580343493297,
+        -0.0007690538844142207,
+        0.22247752216999692,
+        -0.1879613256794595,
+        0.014602962149302947,
+        2.02310741471989,
+        -0.05696013408447377,
+        0.253911249351808,
+        -0.24775058718645976,
+        0.12416361664013258,
+        -0.20062637820109938,
+        0.12416361664013188,
+        -0.20062637820109946,
+        -0.26430345987425186,
+        0.04697185603215236,
+        -0.22449754274586753,
+        -0.010916640492790305
+      ],
+      "qvel": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rider.front_pedal.force_on_bike_n": [
+        8.147124383544446,
+        2.1271287263545958e-11,
+        -39.84367222522908
+      ],
+      "rider.front_pedal.force_on_rider_n": [
+        -8.147124383544446,
+        -2.1271287263545958e-11,
+        39.84367222522908
+      ],
+      "rider.front_pedal.moment_about_rider_origin_nm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rider.front_pedal.patches": [],
+      "rider.front_pedal.tangent_force_n": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rider.grip.force_on_bike_n": [
+        170.03190511002882,
+        -1.6543612251060553e-24,
+        -250.007175129341
+      ],
+      "rider.grip.force_on_rider_n": [
+        -170.03190511002882,
+        1.6543612251060553e-24,
+        250.007175129341
+      ],
+      "rider.grip.pair_force_limit_n": null,
+      "rider.grip_left.force_on_bike_n": [
+        85.01595255489933,
+        1.54578534205436e-10,
+        -125.00358756458981
+      ],
+      "rider.grip_left.force_on_rider_n": [
+        -85.01595255489933,
+        -1.54578534205436e-10,
+        125.00358756458981
+      ],
+      "rider.grip_left.pair_force_limit_n": null,
+      "rider.grip_left.point_m": [
+        2.5277791848081925,
+        -0.1,
+        0.6079903478874958
+      ],
+      "rider.grip_right.force_on_bike_n": [
+        85.01595255512949,
+        -1.5457853420543766e-10,
+        -125.00358756475119
+      ],
+      "rider.grip_right.force_on_rider_n": [
+        -85.01595255512949,
+        1.5457853420543766e-10,
+        125.00358756475119
+      ],
+      "rider.grip_right.pair_force_limit_n": null,
+      "rider.grip_right.point_m": [
+        2.5277791848081925,
+        0.1,
+        0.6079903478874958
+      ],
+      "rider.rear_pedal.force_on_bike_n": [
+        -10.519032395063913,
+        -2.1290429214519356e-11,
+        -40.33685862028101
+      ],
+      "rider.rear_pedal.force_on_rider_n": [
+        10.519032395063913,
+        2.1290429214519356e-11,
+        40.33685862028101
+      ],
+      "rider.rear_pedal.moment_about_rider_origin_nm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rider.rear_pedal.patches": [],
+      "rider.rear_pedal.tangent_force_n": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rider.saddle.force_on_bike_n": [
+        -168.85195929469515,
+        0.0,
+        -454.50747094477174
+      ],
+      "rider.saddle.force_on_rider_n": [
+        168.85195929469515,
+        -0.0,
+        454.50747094477174
+      ],
+      "rider.saddle.moment_about_rider_origin_nm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rider.saddle.patches": [],
+      "rider.saddle.tangent_force_n": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rider_balance.balance_lost_at_m": null,
+      "rider_balance.balance_lost_time_s": null,
+      "rider_effort_observation": "solved_actuator_force_at_incoming_interval",
+      "rider_intent.posture.pelvis_offset_m": null,
+      "rider_joint_power_violations": [],
+      "rider_joint_speed_violations": [],
+      "rider_strength_limited": [],
+      "rider_strength_violations": [],
+      "rider_welds.front_pedal.force_on_rider_n": [
+        -9.107000114062576,
+        -2.1271287263545958e-11,
+        40.80942602915565
+      ],
+      "rider_welds.grip_left.force_on_rider_n": [
+        -83.72415803407475,
+        -1.54578534205436e-10,
+        123.85274178264426
+      ],
+      "rider_welds.grip_right.force_on_rider_n": [
+        -83.724158034305,
+        1.5457853420543766e-10,
+        123.85274178280571
+      ],
+      "rider_welds.rear_pedal.force_on_rider_n": [
+        10.725465448148745,
+        2.1290429214519356e-11,
+        41.229170165484376
+      ],
+      "rider_welds.saddle.force_on_rider_n": [
+        166.12857221970782,
+        -0.0,
+        459.0283953551986
+      ],
+      "sensors.frame_gyro_body_rad_s": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "sensors.frame_specific_force_body_mps2": [
+        -0.05072033725662883,
+        0.0,
+        9.843353174219914
+      ],
+      "tires.front.backend": "distributed_2d_reference",
+      "tires.front.calibration_status": "experimental_unvalidated",
+      "tires.front.capability_status": "experimental_reference_not_release_qualified",
+      "tires.front.patches": [
+        {
+          "point_m": [
+            2.7638109322232074,
+            0.0,
+            -0.3523197159556659
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 41.52475440501466,
+          "tangent_force_n": -0.09856285794394373,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            -0.09856285794394373,
+            0.0,
+            41.52475440501466
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.7819666636575393,
+            0.0,
+            -0.35425584433241714
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 70.0365982400539,
+          "tangent_force_n": -0.09839077456424554,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            -0.09839077456424554,
+            0.0,
+            70.0365982400539
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.800195527034878,
+            0.0,
+            -0.35529878104055035
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 85.39510902332152,
+          "tangent_force_n": -0.09829810613153098,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            -0.09829810613153098,
+            0.0,
+            85.39510902332152
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.818453607426687,
+            0.0,
+            -0.35544601355418515
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 87.56328675709328,
+          "tangent_force_n": -0.09828502868092967,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            -0.09828502868092967,
+            0.0,
+            87.56328675709328
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.8366969195180847,
+            0.0,
+            -0.35469718717730014
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 76.53590811129865,
+          "tangent_force_n": 5.877775229838593,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            5.877775229838593,
+            0.0,
+            76.53590811129865
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.854881513572317,
+            0.0,
+            -0.3530541058982266
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 52.33953900697835,
+          "tangent_force_n": 1.8160831272252764,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            1.8160831272252764,
+            0.0,
+            52.33953900697835
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.872963581309524,
+            0.0,
+            -0.3505207280436829
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 15.032470616658287,
+          "tangent_force_n": 2.0061450253145976,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            2.0061450253145976,
+            0.0,
+            15.032470616658287
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        }
+      ],
+      "tires.front.wheel_axis_m": [
+        2.8123233610730907,
+        0.0,
+        0.016503472370508976
+      ],
+      "tires.front.world_force_n": [
+        9.306466615057818,
+        0.0,
+        428.42766616041865
+      ],
+      "tires.rear.backend": "distributed_2d_reference",
+      "tires.rear.calibration_status": "experimental_unvalidated",
+      "tires.rear.capability_status": "experimental_reference_not_release_qualified",
+      "tires.rear.patches": [
+        {
+          "point_m": [
+            1.4981731847023567,
+            0.0,
+            -0.3523256831867933
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 41.612629136915054,
+          "tangent_force_n": 0.45869133617854335,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            0.45869133617854335,
+            0.0,
+            41.612629136915054
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5152927039032524,
+            0.0,
+            -0.3546532679948721
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 75.88914476348205,
+          "tangent_force_n": 0.8414669072900226,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            0.8414669072900226,
+            0.0,
+            75.88914476348205
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5325058110668566,
+            0.0,
+            -0.35613803413232187
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 97.75413096525243,
+          "tangent_force_n": 0.9310693716410373,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            0.9310693716410373,
+            0.0,
+            97.75413096525243
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5497710383103218,
+            0.0,
+            -0.35677640466746735
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 107.15491307532069,
+          "tangent_force_n": 0.9171128548057319,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            0.9171128548057319,
+            0.0,
+            107.15491307532069
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5670467921889635,
+            0.0,
+            -0.35656684170977465
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 104.06884378617103,
+          "tangent_force_n": 0.2276329307613563,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            0.2276329307613563,
+            0.0,
+            104.06884378617103
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5842914538985107,
+            0.0,
+            -0.35550985011476444
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 88.50335770902923,
+          "tangent_force_n": -4.243224661652532,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            -4.243224661652532,
+            0.0,
+            88.50335770902923
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.6014634795384508,
+            0.0,
+            -0.3536079762677707
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 60.49595346323176,
+          "tangent_force_n": -7.1440280782250944,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            -7.1440280782250944,
+            0.0,
+            60.49595346323176
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.6185215001949254,
+            0.0,
+            -0.3508658019494752
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 20.1141033387644,
+          "tangent_force_n": 0.07775351939420226,
+          "slip_mps": 0.0,
+          "world_force_n": [
+            0.07775351939420226,
+            0.0,
+            20.1141033387644
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        }
+      ],
+      "tires.rear.wheel_axis_m": [
+        1.5541405910080046,
+        0.0,
+        -0.004803526437876793
+      ],
+      "tires.rear.world_force_n": [
+        -7.933525819806734,
+        0.0,
+        595.5930762381666
+      ]
+    },
+    {
+      "attachment_violations": [],
+      "contact_crash_cause": null,
+      "control.crank_target_rate_rad_s": null,
+      "control.motor_limit_nm": null,
+      "control.motor_torque_nm": null,
+      "control.posture.pelvis_offset_m": null,
+      "drive.assist_mode": "turbo",
+      "drive.coasting_reason": "",
+      "drive.crank_target_phase_rad": null,
+      "drive.motor_control_source": "assist",
+      "drive.motor_limit_nm": null,
+      "drive.motor_setpoint_nm": null,
+      "drive.rider_mode": "pedaling",
+      "drive.shift_direction": "none",
+      "drive.shift_time_s": null,
+      "drive.transmission_model": "ideal_mid_drive",
+      "mass.com_m": [
+        2.0826303378917568,
+        9.195402298852594e-06,
+        0.6096130235627651
+      ],
+      "model_status.calibration_status": "parameterized_unvalidated",
+      "model_status.first_model_violation": null,
+      "qpos": [
+        2.004917321567626,
+        -0.05576519571850341,
+        0.004304899758600687,
+        -0.030720671091870745,
+        0.014460788978611352,
+        0.014547140069988179,
+        0.05923905615543721,
+        -0.2171617263454851,
+        0.12641970064911645,
+        -0.06845596388459378,
+        -0.000750369788610834,
+        0.22247107856587955,
+        -0.18795577833496363,
+        0.014602506134940015,
+        2.0231073842717264,
+        -0.05695990689164822,
+        0.2539029018839652,
+        -0.2477415521349925,
+        0.12416134220043644,
+        -0.20062331705553205,
+        0.1241613422004361,
+        -0.2006233170555325,
+        -0.26429348543298575,
+        0.04696924903978546,
+        -0.22448920552523288,
+        -0.010916580084744028
+      ],
+      "qvel": [
+        -9.774646599633884e-06,
+        3.8012717583327456e-05,
+        0.00046403456958517676,
+        0.0011669466477679752,
+        -0.0016309812173552645,
+        -0.0016309812173531568,
+        0.00030689218017379896,
+        -0.02237037700466866,
+        -0.0034191164570617763,
+        0.001656371788738546,
+        0.0149472766427093,
+        -0.005154883293900007,
+        0.004437875596686413,
+        -0.0003648114903461239,
+        -2.435853098921643e-05,
+        0.0001817542604417235,
+        -0.006677974274211201,
+        0.00722804117380406,
+        -0.001819551756904535,
+        0.0024489164538568477,
+        -0.001819551756618755,
+        0.0024489164535772758,
+        0.007979553012899581,
+        -0.0020855938935268087,
+        0.006669776507710842,
+        4.83264370210873e-05
+      ],
+      "rider_balance.balance_lost_at_m": null,
+      "rider_balance.balance_lost_time_s": null,
+      "rider_effort_observation": "solved_actuator_force_at_incoming_interval",
+      "rider_joint_power_violations": [],
+      "rider_joint_speed_violations": [],
+      "rider_strength_limited": [],
+      "rider_strength_violations": [],
+      "sensors.frame_gyro_body_rad_s": [
+        0.0,
+        0.0004640345695851767,
+        0.0
+      ],
+      "sensors.frame_specific_force_body_mps2": [
+        -0.030985867411290204,
+        0.0,
+        9.80835714310377
+      ],
+      "tires.front.backend": "distributed_2d_reference",
+      "tires.front.calibration_status": "experimental_unvalidated",
+      "tires.front.capability_status": "experimental_reference_not_release_qualified",
+      "tires.front.patches": [
+        {
+          "point_m": [
+            2.7638208947207916,
+            0.0,
+            -0.35232111953239925
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 41.65564957054291,
+          "tangent_force_n": -0.10834346078876478,
+          "slip_mps": 0.007970012667494255,
+          "world_force_n": [
+            -0.10834346078876478,
+            0.0,
+            41.65564957054291
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.7819766791651803,
+            0.0,
+            -0.3542567507513372
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 70.12112541210865,
+          "tangent_force_n": -0.1082234133106724,
+          "slip_mps": 0.008012415267804347,
+          "world_force_n": [
+            -0.1082234133106724,
+            0.0,
+            70.12112541210865
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.8002055710943456,
+            0.0,
+            -0.35529918829942536
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 85.43308148798297,
+          "tangent_force_n": -0.10815876890295908,
+          "slip_mps": 0.008035251261699954,
+          "world_force_n": [
+            -0.10815876890295908,
+            0.0,
+            85.43308148798297
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.8184636555109672,
+            0.0,
+            -0.3554459208533034
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 87.55462995480755,
+          "tangent_force_n": -0.108149636088456,
+          "slip_mps": 0.008038465635271582,
+          "world_force_n": [
+            -0.108149636088456,
+            0.0,
+            87.55462995480755
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.836706947090466,
+            0.0,
+            -0.35469659492139693
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 76.48065981650223,
+          "tangent_force_n": 5.867926673659389,
+          "slip_mps": 0.00802205064481175,
+          "world_force_n": [
+            5.867926673659389,
+            0.0,
+            76.48065981650223
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.854891496145504,
+            0.0,
+            -0.353053015695509
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 52.23784923709362,
+          "tangent_force_n": 1.8062815374025623,
+          "slip_mps": 0.007986045835470261,
+          "world_force_n": [
+            1.8062815374025623,
+            0.0,
+            52.23784923709362
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.872973494504629,
+            0.0,
+            -0.3505191427019554
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 14.884601270687877,
+          "tangent_force_n": 1.996411423701364,
+          "slip_mps": 0.007930537945986464,
+          "world_force_n": [
+            1.996411423701364,
+            0.0,
+            14.884601270687877
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        }
+      ],
+      "tires.front.wheel_axis_m": [
+        2.812323224093661,
+        0.0,
+        0.016503397067847425
+      ],
+      "tires.front.world_force_n": [
+        9.237744355672463,
+        0.0,
+        428.3675967497258
+      ],
+      "tires.rear.backend": "distributed_2d_reference",
+      "tires.rear.calibration_status": "experimental_unvalidated",
+      "tires.rear.capability_status": "experimental_reference_not_release_qualified",
+      "tires.rear.patches": [
+        {
+          "point_m": [
+            1.498167285799491,
+            0.0,
+            -0.35232601494230653
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 41.643566681357306,
+          "tangent_force_n": 0.4644824903410286,
+          "slip_mps": -0.0047191138512825805,
+          "world_force_n": [
+            0.4644824903410286,
+            0.0,
+            41.643566681357306
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5152867652876503,
+            0.0,
+            -0.35465389182116785
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 75.94732256423696,
+          "tangent_force_n": 0.8472969942389859,
+          "slip_mps": -0.004750886033769892,
+          "world_force_n": [
+            0.8472969942389859,
+            0.0,
+            75.94732256423696
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5324998471175875,
+            0.0,
+            -0.3561389516261997
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 97.8396979591141,
+          "tangent_force_n": 0.9369243188452098,
+          "slip_mps": -0.004771154971340646,
+          "world_force_n": [
+            0.9369243188452098,
+            0.0,
+            97.8396979591141
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5497650634674867,
+            0.0,
+            -0.35677761671825586
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 107.26795221611745,
+          "tangent_force_n": 0.9229785013066523,
+          "slip_mps": -0.004779871834348887,
+          "world_force_n": [
+            0.9229785013066523,
+            0.0,
+            107.26795221611745
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5670408209189064,
+            0.0,
+            -0.35656834849718916
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 104.20937184492416,
+          "tangent_force_n": 0.2334951758120356,
+          "slip_mps": -0.004777015623108118,
+          "world_force_n": [
+            0.2334951758120356,
+            0.0,
+            104.20937184492416
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5842855006589693,
+            0.0,
+            -0.3555116511084739
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 88.67132523354884,
+          "tangent_force_n": -4.237379443459805,
+          "slip_mps": -0.004762593218481397,
+          "world_force_n": [
+            -4.237379443459805,
+            0.0,
+            88.67132523354884
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.601457558743725,
+            0.0,
+            -0.35361007022867524
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 60.69124489725104,
+          "tangent_force_n": -7.138214274126876,
+          "slip_mps": -0.004736639365304722,
+          "world_force_n": [
+            -7.138214274126876,
+            0.0,
+            60.69124489725104
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.6185156261811529,
+            0.0,
+            -0.35086818693269134
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 20.33653730032415,
+          "tangent_force_n": 0.08352031321092702,
+          "slip_mps": -0.0046992165886836825,
+          "world_force_n": [
+            0.08352031321092702,
+            0.0,
+            20.33653730032415
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        }
+      ],
+      "tires.rear.wheel_axis_m": [
+        1.554140621071096,
+        0.0,
+        -0.004804813087552854
+      ],
+      "tires.rear.world_force_n": [
+        -7.886895923831842,
+        0.0,
+        596.6070186968741
+      ]
+    },
+    {
+      "attachment_violations": [],
+      "contact_crash_cause": null,
+      "control.crank_target_rate_rad_s": null,
+      "control.motor_limit_nm": null,
+      "control.motor_torque_nm": null,
+      "control.posture.pelvis_offset_m": null,
+      "drive.assist_mode": "turbo",
+      "drive.coasting_reason": "",
+      "drive.crank_target_phase_rad": null,
+      "drive.motor_control_source": "assist",
+      "drive.motor_limit_nm": null,
+      "drive.motor_setpoint_nm": null,
+      "drive.rider_mode": "pedaling",
+      "drive.shift_direction": "none",
+      "drive.shift_time_s": null,
+      "drive.transmission_model": "ideal_mid_drive",
+      "mass.com_m": [
+        2.0826303786570586,
+        9.195402298852594e-06,
+        0.6096130335502482
+      ],
+      "model_status.calibration_status": "parameterized_unvalidated",
+      "model_status.first_model_violation": null,
+      "qpos": [
+        2.004917327409483,
+        -0.05576515396321621,
+        0.004305960579316934,
+        -0.03071765297539089,
+        0.014457221199725232,
+        0.014543572291102064,
+        0.059239720783437116,
+        -0.21721535438550735,
+        0.1264130944691243,
+        -0.06845262011596182,
+        -0.0007157876681551341,
+        0.2224599971034783,
+        -0.1879462221444207,
+        0.01460174453993004,
+        2.0231072859553136,
+        -0.05695947209771386,
+        0.25388719256114645,
+        -0.24772442474287032,
+        0.12415641053603664,
+        -0.2006166269280327,
+        0.12415641053603674,
+        -0.20061662692803361,
+        -0.2642747609708375,
+        0.046964588331190084,
+        -0.2244737939941313,
+        -0.010916141367981403
+      ],
+      "qvel": [
+        4.673485430171378e-06,
+        3.340422976069531e-05,
+        0.0008486565729978854,
+        0.002414493183882246,
+        -0.0028542231088958276,
+        -0.002854223108892115,
+        0.0005317023999268632,
+        -0.04290243201778119,
+        -0.005284943993719319,
+        0.002675014905571813,
+        0.02766569636455991,
+        -0.008865169921000882,
+        0.0076449524343522755,
+        -0.0006092760079808171,
+        -7.865313034788893e-05,
+        0.000347835147484854,
+        -0.012567458255013134,
+        0.013701913697749134,
+        -0.003945331519838528,
+        0.005352101999474078,
+        -0.003945331519500101,
+        0.005352101999093224,
+        0.014979569718575364,
+        -0.0037285668762991483,
+        0.012329224881254552,
+        0.00035097341009994253
+      ],
+      "rider_balance.balance_lost_at_m": null,
+      "rider_balance.balance_lost_time_s": null,
+      "rider_effort_observation": "solved_actuator_force_at_incoming_interval",
+      "rider_joint_power_violations": [],
+      "rider_joint_speed_violations": [],
+      "rider_strength_limited": [],
+      "rider_strength_violations": [],
+      "sensors.frame_gyro_body_rad_s": [
+        0.0,
+        0.0008486565729978854,
+        0.0
+      ],
+      "sensors.frame_specific_force_body_mps2": [
+        -0.027607593232057432,
+        0.0,
+        9.801765681249172
+      ],
+      "tires.front.backend": "distributed_2d_reference",
+      "tires.front.calibration_status": "experimental_unvalidated",
+      "tires.front.capability_status": "experimental_reference_not_release_qualified",
+      "tires.front.patches": [
+        {
+          "point_m": [
+            2.745800990075679,
+            0.0,
+            -0.3495006712763939
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 0.3025148936431534,
+          "tangent_force_n": -0.018686106694387816,
+          "slip_mps": 0.015226825291888343,
+          "world_force_n": [
+            -0.018686106694387816,
+            0.0,
+            0.3025148936431534
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.763840076593715,
+            0.0,
+            -0.3523238848003183
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 41.803289300446586,
+          "tangent_force_n": -0.12717515528017245,
+          "slip_mps": 0.015345552079456138,
+          "world_force_n": [
+            -0.12717515528017245,
+            0.0,
+            41.803289300446586
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.7819959627637694,
+            0.0,
+            -0.35425856161747976
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 70.21879840584712,
+          "tangent_force_n": -0.12715495213437664,
+          "slip_mps": 0.015426912543883274,
+          "world_force_n": [
+            -0.12715495213437664,
+            0.0,
+            70.21879840584712
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.8002249094657916,
+            0.0,
+            -0.35530004092196826
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 85.4805867595077,
+          "tangent_force_n": -0.12714405613821986,
+          "slip_mps": 0.015470710680684622,
+          "world_force_n": [
+            -0.12714405613821986,
+            0.0,
+            85.4805867595077
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.818483001570509,
+            0.0,
+            -0.35544581369891637
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 87.55188737650808,
+          "tangent_force_n": -0.1271424463299507,
+          "slip_mps": 0.015476840976312361,
+          "world_force_n": [
+            -0.1271424463299507,
+            0.0,
+            87.55188737650808
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.8367262537348217,
+            0.0,
+            -0.35469552876893634
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 76.42771031223918,
+          "tangent_force_n": 5.848966420378624,
+          "slip_mps": 0.015445288662347376,
+          "world_force_n": [
+            5.848966420378624,
+            0.0,
+            76.42771031223918
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.854910716366345,
+            0.0,
+            -0.35305099363414155
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 52.13485468360943,
+          "tangent_force_n": 1.7874103438245958,
+          "slip_mps": 0.015376129751077657,
+          "world_force_n": [
+            1.7874103438245958,
+            0.0,
+            52.13485468360943
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            2.8729925815018293,
+            0.0,
+            -0.35051617012371605
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 14.731844107632053,
+          "tangent_force_n": 1.9776708504253186,
+          "slip_mps": 0.015269530852378067,
+          "world_force_n": [
+            1.9776708504253186,
+            0.0,
+            14.731844107632053
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        }
+      ],
+      "tires.front.wheel_axis_m": [
+        2.8123230178203302,
+        0.0,
+        0.016503180922923577
+      ],
+      "tires.front.world_force_n": [
+        9.086744898051432,
+        0.0,
+        428.65148583943335
+      ],
+      "tires.rear.backend": "distributed_2d_reference",
+      "tires.rear.calibration_status": "experimental_unvalidated",
+      "tires.rear.capability_status": "experimental_reference_not_release_qualified",
+      "tires.rear.patches": [
+        {
+          "point_m": [
+            1.4981561146605569,
+            0.0,
+            -0.35232613905501875
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 41.62907582324677,
+          "tangent_force_n": 0.47544950187763885,
+          "slip_mps": -0.008936883354105913,
+          "world_force_n": [
+            0.47544950187763885,
+            0.0,
+            41.62907582324677
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5152755187618543,
+            0.0,
+            -0.35465457027047553
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 75.96159322584865,
+          "tangent_force_n": 0.8583378689444208,
+          "slip_mps": -0.008997200023215303,
+          "world_force_n": [
+            0.8583378689444208,
+            0.0,
+            75.96159322584865
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5324885524957443,
+            0.0,
+            -0.35614018744343806
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 97.88288747378223,
+          "tangent_force_n": 0.9480123839358836,
+          "slip_mps": -0.009035684080141687,
+          "world_force_n": [
+            0.9480123839358836,
+            0.0,
+            97.88288747378223
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5497537481562782,
+            0.0,
+            -0.3567794115920121
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 107.34014824912752,
+          "tangent_force_n": 0.9340868927128884,
+          "slip_mps": -0.009052242813421128,
+          "world_force_n": [
+            0.9340868927128884,
+            0.0,
+            107.34014824912752
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5670295123748572,
+            0.0,
+            -0.3565707027692342
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 104.31059218231688,
+          "tangent_force_n": 0.24459721432251993,
+          "slip_mps": -0.009046836331614778,
+          "world_force_n": [
+            0.24459721432251993,
+            0.0,
+            104.31059218231688
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.5842742263223006,
+            0.0,
+            -0.35551456377293916
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 88.80151773927315,
+          "tangent_force_n": -4.226309151435121,
+          "slip_mps": -0.00901947765941086,
+          "world_force_n": [
+            -4.226309151435121,
+            0.0,
+            88.80151773927315
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.6014463459722503,
+            0.0,
+            -0.35361353893447606
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 60.85028763876592,
+          "tangent_force_n": -7.127203228898966,
+          "slip_mps": -0.008970232706247054,
+          "world_force_n": [
+            -7.127203228898966,
+            0.0,
+            60.85028763876592
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        },
+        {
+          "point_m": [
+            1.6185045021843694,
+            0.0,
+            -0.35087220798919067
+          ],
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "normal_load_n": 20.524238842343316,
+          "tangent_force_n": 0.09444126074209382,
+          "slip_mps": -0.008899220107528878,
+          "world_force_n": [
+            0.09444126074209382,
+            0.0,
+            20.524238842343316
+          ],
+          "couple_world_nm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_geom": "terrain"
+        }
+      ],
+      "tires.rear.wheel_axis_m": [
+        1.5541407028234526,
+        0.0,
+        -0.004806749828703849
+      ],
+      "tires.rear.world_force_n": [
+        -7.798587257798642,
+        0.0,
+        597.3003411747044
+      ]
+    }
+  ],
+  "absent": [
+    [
+      "model_status.first_model_violation.interval_id",
+      "model_status.first_model_violation.reasons",
+      "model_status.first_model_violation.time_s",
+      "model_status.model_violation_counts.energy.constraint_work"
+    ],
+    [
+      "attachment_samples.foot_front.gap_m",
+      "attachment_samples.foot_front.half_patch_m",
+      "attachment_samples.foot_front.kind",
+      "attachment_samples.foot_front.moment_nm",
+      "attachment_samples.foot_front.normal_n",
+      "attachment_samples.foot_front.pull_n",
+      "attachment_samples.foot_front.tangent_n",
+      "attachment_samples.foot_rear.gap_m",
+      "attachment_samples.foot_rear.half_patch_m",
+      "attachment_samples.foot_rear.kind",
+      "attachment_samples.foot_rear.moment_nm",
+      "attachment_samples.foot_rear.normal_n",
+      "attachment_samples.foot_rear.pull_n",
+      "attachment_samples.foot_rear.tangent_n",
+      "attachment_samples.grip_left.gap_m",
+      "attachment_samples.grip_left.half_patch_m",
+      "attachment_samples.grip_left.kind",
+      "attachment_samples.grip_left.moment_nm",
+      "attachment_samples.grip_left.normal_n",
+      "attachment_samples.grip_left.pull_n",
+      "attachment_samples.grip_left.tangent_n",
+      "attachment_samples.grip_right.gap_m",
+      "attachment_samples.grip_right.half_patch_m",
+      "attachment_samples.grip_right.kind",
+      "attachment_samples.grip_right.moment_nm",
+      "attachment_samples.grip_right.normal_n",
+      "attachment_samples.grip_right.pull_n",
+      "attachment_samples.grip_right.tangent_n",
+      "attachment_samples.saddle.gap_m",
+      "attachment_samples.saddle.half_patch_m",
+      "attachment_samples.saddle.kind",
+      "attachment_samples.saddle.moment_nm",
+      "attachment_samples.saddle.normal_n",
+      "attachment_samples.saddle.pull_n",
+      "attachment_samples.saddle.tangent_n",
+      "component_work_j.act_rider_elbow_left",
+      "component_work_j.act_rider_elbow_right",
+      "component_work_j.act_rider_hip_front",
+      "component_work_j.act_rider_hip_rear",
+      "component_work_j.act_rider_knee_front",
+      "component_work_j.act_rider_knee_rear",
+      "component_work_j.act_rider_shoulder_left",
+      "component_work_j.act_rider_shoulder_right",
+      "component_work_j.act_rider_torso_hinge",
+      "component_work_j.aerodynamic",
+      "component_work_j.chain",
+      "component_work_j.closure",
+      "component_work_j.drive_bearings",
+      "component_work_j.engine_passive",
+      "component_work_j.fork_damper",
+      "component_work_j.fork_spring",
+      "component_work_j.freehub",
+      "component_work_j.front_brake",
+      "component_work_j.front_static_brake",
+      "component_work_j.ideal_transmission",
+      "component_work_j.joint_limits",
+      "component_work_j.mid_drive",
+      "component_work_j.native_contact",
+      "component_work_j.rear_brake",
+      "component_work_j.rear_static_brake",
+      "component_work_j.rider_interfaces",
+      "component_work_j.rider_joint_envelope",
+      "component_work_j.rider_passive_damping",
+      "component_work_j.road_rolling",
+      "component_work_j.shock_bumper",
+      "component_work_j.shock_coil",
+      "component_work_j.shock_damper",
+      "component_work_j.shock_hbo",
+      "component_work_j.shock_solver_limit",
+      "component_work_j.shock_top_out",
+      "component_work_j.shock_upper_stop",
+      "component_work_j.tires",
+      "endpoint_mass.angular_momentum_kg_m2_s",
+      "endpoint_mass.com_m",
+      "endpoint_mass.com_velocity_mps",
+      "endpoint_mass.gravitational_energy_j",
+      "endpoint_mass.kinetic_energy_j",
+      "endpoint_mass.linear_momentum_kg_mps",
+      "endpoint_mass.mass_kg",
+      "mass.angular_momentum_kg_m2_s",
+      "mass.com_velocity_mps",
+      "mass.gravitational_energy_j",
+      "mass.kinetic_energy_j",
+      "mass.linear_momentum_kg_mps",
+      "model_status.first_model_violation.interval_id",
+      "model_status.first_model_violation.reasons",
+      "model_status.first_model_violation.time_s",
+      "model_status.model_violation_counts.energy.constraint_work",
+      "rider.front_pedal.enabled",
+      "rider.front_pedal.force_on_bike_n",
+      "rider.front_pedal.force_on_rider_n",
+      "rider.front_pedal.gap_m",
+      "rider.front_pedal.in_platform",
+      "rider.front_pedal.moment_about_rider_origin_nm",
+      "rider.front_pedal.normal_load_n",
+      "rider.front_pedal.patches",
+      "rider.front_pedal.radial_energy_j",
+      "rider.front_pedal.relative_power_w",
+      "rider.front_pedal.shear_energy_j",
+      "rider.front_pedal.tangent_force_n",
+      "rider.front_pedal.tangent_n",
+      "rider.front_pedal.vertical_force_on_rider_n",
+      "rider.front_pedal.would_separate",
+      "rider.front_pedal.would_slip",
+      "rider.grip.arm_reach_m",
+      "rider.grip.elastic_energy_j",
+      "rider.grip.enabled",
+      "rider.grip.force_on_bike_n",
+      "rider.grip.force_on_rider_n",
+      "rider.grip.hand_gap_m",
+      "rider.grip.overloaded",
+      "rider.grip.pair_force_limit_n",
+      "rider.grip.reachable",
+      "rider.grip.release_loss_j",
+      "rider.grip.shoulder_distance_m",
+      "rider.grip.trial_pair_force_n",
+      "rider.grip_left.arm_reach_m",
+      "rider.grip_left.elastic_energy_j",
+      "rider.grip_left.enabled",
+      "rider.grip_left.force_on_bike_n",
+      "rider.grip_left.force_on_rider_n",
+      "rider.grip_left.hand_gap_m",
+      "rider.grip_left.overloaded",
+      "rider.grip_left.pair_force_limit_n",
+      "rider.grip_left.point_m",
+      "rider.grip_left.reachable",
+      "rider.grip_left.release_loss_j",
+      "rider.grip_left.shoulder_distance_m",
+      "rider.grip_left.trial_pair_force_n",
+      "rider.grip_right.arm_reach_m",
+      "rider.grip_right.elastic_energy_j",
+      "rider.grip_right.enabled",
+      "rider.grip_right.force_on_bike_n",
+      "rider.grip_right.force_on_rider_n",
+      "rider.grip_right.hand_gap_m",
+      "rider.grip_right.overloaded",
+      "rider.grip_right.pair_force_limit_n",
+      "rider.grip_right.point_m",
+      "rider.grip_right.reachable",
+      "rider.grip_right.release_loss_j",
+      "rider.grip_right.shoulder_distance_m",
+      "rider.grip_right.trial_pair_force_n",
+      "rider.rear_pedal.enabled",
+      "rider.rear_pedal.force_on_bike_n",
+      "rider.rear_pedal.force_on_rider_n",
+      "rider.rear_pedal.gap_m",
+      "rider.rear_pedal.in_platform",
+      "rider.rear_pedal.moment_about_rider_origin_nm",
+      "rider.rear_pedal.normal_load_n",
+      "rider.rear_pedal.patches",
+      "rider.rear_pedal.radial_energy_j",
+      "rider.rear_pedal.relative_power_w",
+      "rider.rear_pedal.shear_energy_j",
+      "rider.rear_pedal.tangent_force_n",
+      "rider.rear_pedal.tangent_n",
+      "rider.rear_pedal.vertical_force_on_rider_n",
+      "rider.rear_pedal.would_separate",
+      "rider.rear_pedal.would_slip",
+      "rider.saddle.enabled",
+      "rider.saddle.force_on_bike_n",
+      "rider.saddle.force_on_rider_n",
+      "rider.saddle.gap_m",
+      "rider.saddle.in_platform",
+      "rider.saddle.moment_about_rider_origin_nm",
+      "rider.saddle.normal_load_n",
+      "rider.saddle.patches",
+      "rider.saddle.radial_energy_j",
+      "rider.saddle.relative_power_w",
+      "rider.saddle.shear_energy_j",
+      "rider.saddle.tangent_force_n",
+      "rider.saddle.tangent_n",
+      "rider.saddle.vertical_force_on_rider_n",
+      "rider.saddle.would_separate",
+      "rider.saddle.would_slip",
+      "rider_allocation.crank_task_nm",
+      "rider_allocation.crank_task_shortfall_nm",
+      "rider_allocation.invalid_controller",
+      "rider_control.rider_elbow_left.active_delivered_nm",
+      "rider_control.rider_elbow_left.active_request_nm",
+      "rider_control.rider_elbow_left.command_nm",
+      "rider_control.rider_elbow_left.passive_damping_nm",
+      "rider_control.rider_elbow_left.pedaling_nm",
+      "rider_control.rider_elbow_left.posture_nm",
+      "rider_control.rider_elbow_left.requested_nm",
+      "rider_control.rider_elbow_left.saturated",
+      "rider_control.rider_elbow_left.solved_active_nm",
+      "rider_control.rider_elbow_left.solved_force_nm",
+      "rider_control.rider_elbow_left.solved_passive_nm",
+      "rider_control.rider_elbow_right.active_delivered_nm",
+      "rider_control.rider_elbow_right.active_request_nm",
+      "rider_control.rider_elbow_right.command_nm",
+      "rider_control.rider_elbow_right.passive_damping_nm",
+      "rider_control.rider_elbow_right.pedaling_nm",
+      "rider_control.rider_elbow_right.posture_nm",
+      "rider_control.rider_elbow_right.requested_nm",
+      "rider_control.rider_elbow_right.saturated",
+      "rider_control.rider_elbow_right.solved_active_nm",
+      "rider_control.rider_elbow_right.solved_force_nm",
+      "rider_control.rider_elbow_right.solved_passive_nm",
+      "rider_control.rider_hip_front.active_delivered_nm",
+      "rider_control.rider_hip_front.active_request_nm",
+      "rider_control.rider_hip_front.command_nm",
+      "rider_control.rider_hip_front.passive_damping_nm",
+      "rider_control.rider_hip_front.pedaling_nm",
+      "rider_control.rider_hip_front.posture_nm",
+      "rider_control.rider_hip_front.requested_nm",
+      "rider_control.rider_hip_front.saturated",
+      "rider_control.rider_hip_front.solved_active_nm",
+      "rider_control.rider_hip_front.solved_force_nm",
+      "rider_control.rider_hip_front.solved_passive_nm",
+      "rider_control.rider_hip_rear.active_delivered_nm",
+      "rider_control.rider_hip_rear.active_request_nm",
+      "rider_control.rider_hip_rear.command_nm",
+      "rider_control.rider_hip_rear.passive_damping_nm",
+      "rider_control.rider_hip_rear.pedaling_nm",
+      "rider_control.rider_hip_rear.posture_nm",
+      "rider_control.rider_hip_rear.requested_nm",
+      "rider_control.rider_hip_rear.saturated",
+      "rider_control.rider_hip_rear.solved_active_nm",
+      "rider_control.rider_hip_rear.solved_force_nm",
+      "rider_control.rider_hip_rear.solved_passive_nm",
+      "rider_control.rider_knee_front.active_delivered_nm",
+      "rider_control.rider_knee_front.active_request_nm",
+      "rider_control.rider_knee_front.command_nm",
+      "rider_control.rider_knee_front.passive_damping_nm",
+      "rider_control.rider_knee_front.pedaling_nm",
+      "rider_control.rider_knee_front.posture_nm",
+      "rider_control.rider_knee_front.requested_nm",
+      "rider_control.rider_knee_front.saturated",
+      "rider_control.rider_knee_front.solved_active_nm",
+      "rider_control.rider_knee_front.solved_force_nm",
+      "rider_control.rider_knee_front.solved_passive_nm",
+      "rider_control.rider_knee_rear.active_delivered_nm",
+      "rider_control.rider_knee_rear.active_request_nm",
+      "rider_control.rider_knee_rear.command_nm",
+      "rider_control.rider_knee_rear.passive_damping_nm",
+      "rider_control.rider_knee_rear.pedaling_nm",
+      "rider_control.rider_knee_rear.posture_nm",
+      "rider_control.rider_knee_rear.requested_nm",
+      "rider_control.rider_knee_rear.saturated",
+      "rider_control.rider_knee_rear.solved_active_nm",
+      "rider_control.rider_knee_rear.solved_force_nm",
+      "rider_control.rider_knee_rear.solved_passive_nm",
+      "rider_control.rider_shoulder_left.active_delivered_nm",
+      "rider_control.rider_shoulder_left.active_request_nm",
+      "rider_control.rider_shoulder_left.command_nm",
+      "rider_control.rider_shoulder_left.passive_damping_nm",
+      "rider_control.rider_shoulder_left.pedaling_nm",
+      "rider_control.rider_shoulder_left.posture_nm",
+      "rider_control.rider_shoulder_left.requested_nm",
+      "rider_control.rider_shoulder_left.saturated",
+      "rider_control.rider_shoulder_left.solved_active_nm",
+      "rider_control.rider_shoulder_left.solved_force_nm",
+      "rider_control.rider_shoulder_left.solved_passive_nm",
+      "rider_control.rider_shoulder_right.active_delivered_nm",
+      "rider_control.rider_shoulder_right.active_request_nm",
+      "rider_control.rider_shoulder_right.command_nm",
+      "rider_control.rider_shoulder_right.passive_damping_nm",
+      "rider_control.rider_shoulder_right.pedaling_nm",
+      "rider_control.rider_shoulder_right.posture_nm",
+      "rider_control.rider_shoulder_right.requested_nm",
+      "rider_control.rider_shoulder_right.saturated",
+      "rider_control.rider_shoulder_right.solved_active_nm",
+      "rider_control.rider_shoulder_right.solved_force_nm",
+      "rider_control.rider_shoulder_right.solved_passive_nm",
+      "rider_control.rider_torso_hinge.active_delivered_nm",
+      "rider_control.rider_torso_hinge.active_request_nm",
+      "rider_control.rider_torso_hinge.command_nm",
+      "rider_control.rider_torso_hinge.passive_damping_nm",
+      "rider_control.rider_torso_hinge.pedaling_nm",
+      "rider_control.rider_torso_hinge.posture_nm",
+      "rider_control.rider_torso_hinge.requested_nm",
+      "rider_control.rider_torso_hinge.saturated",
+      "rider_control.rider_torso_hinge.solved_active_nm",
+      "rider_control.rider_torso_hinge.solved_force_nm",
+      "rider_control.rider_torso_hinge.solved_passive_nm",
+      "rider_ik_saturation.arms",
+      "rider_ik_saturation.torso",
+      "rider_intent.effort_ceiling_nm",
+      "rider_intent.inclination_rad",
+      "rider_intent.posture.pelvis_offset_m",
+      "rider_intent.posture.pelvis_pitch_rad",
+      "rider_intent.posture.torso_lean_rad",
+      "rider_intent.posture.use_saddle",
+      "rider_support_targets.stance.front",
+      "rider_support_targets.stance.rear",
+      "rider_welds.crank_torque_nm",
+      "rider_welds.front_pedal.force_on_rider_n",
+      "rider_welds.front_pedal.normal_n",
+      "rider_welds.front_pedal.tangent_n",
+      "rider_welds.front_pedal.would_separate",
+      "rider_welds.front_pedal.would_slip",
+      "rider_welds.grip_left.force_on_rider_n",
+      "rider_welds.grip_right.force_on_rider_n",
+      "rider_welds.rear_pedal.force_on_rider_n",
+      "rider_welds.rear_pedal.normal_n",
+      "rider_welds.rear_pedal.tangent_n",
+      "rider_welds.rear_pedal.would_separate",
+      "rider_welds.rear_pedal.would_slip",
+      "rider_welds.saddle.force_on_rider_n",
+      "rider_welds.saddle.normal_n",
+      "rider_welds.saddle.tangent_n",
+      "rider_welds.saddle.would_separate",
+      "rider_welds.saddle.would_slip"
+    ],
+    [
+      "attachment_samples.foot_front.gap_m",
+      "attachment_samples.foot_front.half_patch_m",
+      "attachment_samples.foot_front.kind",
+      "attachment_samples.foot_front.moment_nm",
+      "attachment_samples.foot_front.normal_n",
+      "attachment_samples.foot_front.pull_n",
+      "attachment_samples.foot_front.tangent_n",
+      "attachment_samples.foot_rear.gap_m",
+      "attachment_samples.foot_rear.half_patch_m",
+      "attachment_samples.foot_rear.kind",
+      "attachment_samples.foot_rear.moment_nm",
+      "attachment_samples.foot_rear.normal_n",
+      "attachment_samples.foot_rear.pull_n",
+      "attachment_samples.foot_rear.tangent_n",
+      "attachment_samples.grip_left.gap_m",
+      "attachment_samples.grip_left.half_patch_m",
+      "attachment_samples.grip_left.kind",
+      "attachment_samples.grip_left.moment_nm",
+      "attachment_samples.grip_left.normal_n",
+      "attachment_samples.grip_left.pull_n",
+      "attachment_samples.grip_left.tangent_n",
+      "attachment_samples.grip_right.gap_m",
+      "attachment_samples.grip_right.half_patch_m",
+      "attachment_samples.grip_right.kind",
+      "attachment_samples.grip_right.moment_nm",
+      "attachment_samples.grip_right.normal_n",
+      "attachment_samples.grip_right.pull_n",
+      "attachment_samples.grip_right.tangent_n",
+      "attachment_samples.saddle.gap_m",
+      "attachment_samples.saddle.half_patch_m",
+      "attachment_samples.saddle.kind",
+      "attachment_samples.saddle.moment_nm",
+      "attachment_samples.saddle.normal_n",
+      "attachment_samples.saddle.pull_n",
+      "attachment_samples.saddle.tangent_n",
+      "component_work_j.act_rider_elbow_left",
+      "component_work_j.act_rider_elbow_right",
+      "component_work_j.act_rider_hip_front",
+      "component_work_j.act_rider_hip_rear",
+      "component_work_j.act_rider_knee_front",
+      "component_work_j.act_rider_knee_rear",
+      "component_work_j.act_rider_shoulder_left",
+      "component_work_j.act_rider_shoulder_right",
+      "component_work_j.act_rider_torso_hinge",
+      "component_work_j.aerodynamic",
+      "component_work_j.chain",
+      "component_work_j.closure",
+      "component_work_j.drive_bearings",
+      "component_work_j.engine_passive",
+      "component_work_j.fork_damper",
+      "component_work_j.fork_spring",
+      "component_work_j.freehub",
+      "component_work_j.front_brake",
+      "component_work_j.front_static_brake",
+      "component_work_j.ideal_transmission",
+      "component_work_j.joint_limits",
+      "component_work_j.mid_drive",
+      "component_work_j.native_contact",
+      "component_work_j.rear_brake",
+      "component_work_j.rear_static_brake",
+      "component_work_j.rider_interfaces",
+      "component_work_j.rider_joint_envelope",
+      "component_work_j.rider_passive_damping",
+      "component_work_j.road_rolling",
+      "component_work_j.shock_bumper",
+      "component_work_j.shock_coil",
+      "component_work_j.shock_damper",
+      "component_work_j.shock_hbo",
+      "component_work_j.shock_solver_limit",
+      "component_work_j.shock_top_out",
+      "component_work_j.shock_upper_stop",
+      "component_work_j.tires",
+      "endpoint_mass.angular_momentum_kg_m2_s",
+      "endpoint_mass.com_m",
+      "endpoint_mass.com_velocity_mps",
+      "endpoint_mass.gravitational_energy_j",
+      "endpoint_mass.kinetic_energy_j",
+      "endpoint_mass.linear_momentum_kg_mps",
+      "endpoint_mass.mass_kg",
+      "mass.angular_momentum_kg_m2_s",
+      "mass.com_velocity_mps",
+      "mass.gravitational_energy_j",
+      "mass.kinetic_energy_j",
+      "mass.linear_momentum_kg_mps",
+      "model_status.first_model_violation.interval_id",
+      "model_status.first_model_violation.reasons",
+      "model_status.first_model_violation.time_s",
+      "model_status.model_violation_counts.energy.constraint_work",
+      "rider.front_pedal.enabled",
+      "rider.front_pedal.force_on_bike_n",
+      "rider.front_pedal.force_on_rider_n",
+      "rider.front_pedal.gap_m",
+      "rider.front_pedal.in_platform",
+      "rider.front_pedal.moment_about_rider_origin_nm",
+      "rider.front_pedal.normal_load_n",
+      "rider.front_pedal.patches",
+      "rider.front_pedal.radial_energy_j",
+      "rider.front_pedal.relative_power_w",
+      "rider.front_pedal.shear_energy_j",
+      "rider.front_pedal.tangent_force_n",
+      "rider.front_pedal.tangent_n",
+      "rider.front_pedal.vertical_force_on_rider_n",
+      "rider.front_pedal.would_separate",
+      "rider.front_pedal.would_slip",
+      "rider.grip.arm_reach_m",
+      "rider.grip.elastic_energy_j",
+      "rider.grip.enabled",
+      "rider.grip.force_on_bike_n",
+      "rider.grip.force_on_rider_n",
+      "rider.grip.hand_gap_m",
+      "rider.grip.overloaded",
+      "rider.grip.pair_force_limit_n",
+      "rider.grip.reachable",
+      "rider.grip.release_loss_j",
+      "rider.grip.shoulder_distance_m",
+      "rider.grip.trial_pair_force_n",
+      "rider.grip_left.arm_reach_m",
+      "rider.grip_left.elastic_energy_j",
+      "rider.grip_left.enabled",
+      "rider.grip_left.force_on_bike_n",
+      "rider.grip_left.force_on_rider_n",
+      "rider.grip_left.hand_gap_m",
+      "rider.grip_left.overloaded",
+      "rider.grip_left.pair_force_limit_n",
+      "rider.grip_left.point_m",
+      "rider.grip_left.reachable",
+      "rider.grip_left.release_loss_j",
+      "rider.grip_left.shoulder_distance_m",
+      "rider.grip_left.trial_pair_force_n",
+      "rider.grip_right.arm_reach_m",
+      "rider.grip_right.elastic_energy_j",
+      "rider.grip_right.enabled",
+      "rider.grip_right.force_on_bike_n",
+      "rider.grip_right.force_on_rider_n",
+      "rider.grip_right.hand_gap_m",
+      "rider.grip_right.overloaded",
+      "rider.grip_right.pair_force_limit_n",
+      "rider.grip_right.point_m",
+      "rider.grip_right.reachable",
+      "rider.grip_right.release_loss_j",
+      "rider.grip_right.shoulder_distance_m",
+      "rider.grip_right.trial_pair_force_n",
+      "rider.rear_pedal.enabled",
+      "rider.rear_pedal.force_on_bike_n",
+      "rider.rear_pedal.force_on_rider_n",
+      "rider.rear_pedal.gap_m",
+      "rider.rear_pedal.in_platform",
+      "rider.rear_pedal.moment_about_rider_origin_nm",
+      "rider.rear_pedal.normal_load_n",
+      "rider.rear_pedal.patches",
+      "rider.rear_pedal.radial_energy_j",
+      "rider.rear_pedal.relative_power_w",
+      "rider.rear_pedal.shear_energy_j",
+      "rider.rear_pedal.tangent_force_n",
+      "rider.rear_pedal.tangent_n",
+      "rider.rear_pedal.vertical_force_on_rider_n",
+      "rider.rear_pedal.would_separate",
+      "rider.rear_pedal.would_slip",
+      "rider.saddle.enabled",
+      "rider.saddle.force_on_bike_n",
+      "rider.saddle.force_on_rider_n",
+      "rider.saddle.gap_m",
+      "rider.saddle.in_platform",
+      "rider.saddle.moment_about_rider_origin_nm",
+      "rider.saddle.normal_load_n",
+      "rider.saddle.patches",
+      "rider.saddle.radial_energy_j",
+      "rider.saddle.relative_power_w",
+      "rider.saddle.shear_energy_j",
+      "rider.saddle.tangent_force_n",
+      "rider.saddle.tangent_n",
+      "rider.saddle.vertical_force_on_rider_n",
+      "rider.saddle.would_separate",
+      "rider.saddle.would_slip",
+      "rider_allocation.crank_task_nm",
+      "rider_allocation.crank_task_shortfall_nm",
+      "rider_allocation.invalid_controller",
+      "rider_control.rider_elbow_left.active_delivered_nm",
+      "rider_control.rider_elbow_left.active_request_nm",
+      "rider_control.rider_elbow_left.command_nm",
+      "rider_control.rider_elbow_left.passive_damping_nm",
+      "rider_control.rider_elbow_left.pedaling_nm",
+      "rider_control.rider_elbow_left.posture_nm",
+      "rider_control.rider_elbow_left.requested_nm",
+      "rider_control.rider_elbow_left.saturated",
+      "rider_control.rider_elbow_left.solved_active_nm",
+      "rider_control.rider_elbow_left.solved_force_nm",
+      "rider_control.rider_elbow_left.solved_passive_nm",
+      "rider_control.rider_elbow_right.active_delivered_nm",
+      "rider_control.rider_elbow_right.active_request_nm",
+      "rider_control.rider_elbow_right.command_nm",
+      "rider_control.rider_elbow_right.passive_damping_nm",
+      "rider_control.rider_elbow_right.pedaling_nm",
+      "rider_control.rider_elbow_right.posture_nm",
+      "rider_control.rider_elbow_right.requested_nm",
+      "rider_control.rider_elbow_right.saturated",
+      "rider_control.rider_elbow_right.solved_active_nm",
+      "rider_control.rider_elbow_right.solved_force_nm",
+      "rider_control.rider_elbow_right.solved_passive_nm",
+      "rider_control.rider_hip_front.active_delivered_nm",
+      "rider_control.rider_hip_front.active_request_nm",
+      "rider_control.rider_hip_front.command_nm",
+      "rider_control.rider_hip_front.passive_damping_nm",
+      "rider_control.rider_hip_front.pedaling_nm",
+      "rider_control.rider_hip_front.posture_nm",
+      "rider_control.rider_hip_front.requested_nm",
+      "rider_control.rider_hip_front.saturated",
+      "rider_control.rider_hip_front.solved_active_nm",
+      "rider_control.rider_hip_front.solved_force_nm",
+      "rider_control.rider_hip_front.solved_passive_nm",
+      "rider_control.rider_hip_rear.active_delivered_nm",
+      "rider_control.rider_hip_rear.active_request_nm",
+      "rider_control.rider_hip_rear.command_nm",
+      "rider_control.rider_hip_rear.passive_damping_nm",
+      "rider_control.rider_hip_rear.pedaling_nm",
+      "rider_control.rider_hip_rear.posture_nm",
+      "rider_control.rider_hip_rear.requested_nm",
+      "rider_control.rider_hip_rear.saturated",
+      "rider_control.rider_hip_rear.solved_active_nm",
+      "rider_control.rider_hip_rear.solved_force_nm",
+      "rider_control.rider_hip_rear.solved_passive_nm",
+      "rider_control.rider_knee_front.active_delivered_nm",
+      "rider_control.rider_knee_front.active_request_nm",
+      "rider_control.rider_knee_front.command_nm",
+      "rider_control.rider_knee_front.passive_damping_nm",
+      "rider_control.rider_knee_front.pedaling_nm",
+      "rider_control.rider_knee_front.posture_nm",
+      "rider_control.rider_knee_front.requested_nm",
+      "rider_control.rider_knee_front.saturated",
+      "rider_control.rider_knee_front.solved_active_nm",
+      "rider_control.rider_knee_front.solved_force_nm",
+      "rider_control.rider_knee_front.solved_passive_nm",
+      "rider_control.rider_knee_rear.active_delivered_nm",
+      "rider_control.rider_knee_rear.active_request_nm",
+      "rider_control.rider_knee_rear.command_nm",
+      "rider_control.rider_knee_rear.passive_damping_nm",
+      "rider_control.rider_knee_rear.pedaling_nm",
+      "rider_control.rider_knee_rear.posture_nm",
+      "rider_control.rider_knee_rear.requested_nm",
+      "rider_control.rider_knee_rear.saturated",
+      "rider_control.rider_knee_rear.solved_active_nm",
+      "rider_control.rider_knee_rear.solved_force_nm",
+      "rider_control.rider_knee_rear.solved_passive_nm",
+      "rider_control.rider_shoulder_left.active_delivered_nm",
+      "rider_control.rider_shoulder_left.active_request_nm",
+      "rider_control.rider_shoulder_left.command_nm",
+      "rider_control.rider_shoulder_left.passive_damping_nm",
+      "rider_control.rider_shoulder_left.pedaling_nm",
+      "rider_control.rider_shoulder_left.posture_nm",
+      "rider_control.rider_shoulder_left.requested_nm",
+      "rider_control.rider_shoulder_left.saturated",
+      "rider_control.rider_shoulder_left.solved_active_nm",
+      "rider_control.rider_shoulder_left.solved_force_nm",
+      "rider_control.rider_shoulder_left.solved_passive_nm",
+      "rider_control.rider_shoulder_right.active_delivered_nm",
+      "rider_control.rider_shoulder_right.active_request_nm",
+      "rider_control.rider_shoulder_right.command_nm",
+      "rider_control.rider_shoulder_right.passive_damping_nm",
+      "rider_control.rider_shoulder_right.pedaling_nm",
+      "rider_control.rider_shoulder_right.posture_nm",
+      "rider_control.rider_shoulder_right.requested_nm",
+      "rider_control.rider_shoulder_right.saturated",
+      "rider_control.rider_shoulder_right.solved_active_nm",
+      "rider_control.rider_shoulder_right.solved_force_nm",
+      "rider_control.rider_shoulder_right.solved_passive_nm",
+      "rider_control.rider_torso_hinge.active_delivered_nm",
+      "rider_control.rider_torso_hinge.active_request_nm",
+      "rider_control.rider_torso_hinge.command_nm",
+      "rider_control.rider_torso_hinge.passive_damping_nm",
+      "rider_control.rider_torso_hinge.pedaling_nm",
+      "rider_control.rider_torso_hinge.posture_nm",
+      "rider_control.rider_torso_hinge.requested_nm",
+      "rider_control.rider_torso_hinge.saturated",
+      "rider_control.rider_torso_hinge.solved_active_nm",
+      "rider_control.rider_torso_hinge.solved_force_nm",
+      "rider_control.rider_torso_hinge.solved_passive_nm",
+      "rider_ik_saturation.arms",
+      "rider_ik_saturation.torso",
+      "rider_intent.effort_ceiling_nm",
+      "rider_intent.inclination_rad",
+      "rider_intent.posture.pelvis_offset_m",
+      "rider_intent.posture.pelvis_pitch_rad",
+      "rider_intent.posture.torso_lean_rad",
+      "rider_intent.posture.use_saddle",
+      "rider_support_targets.stance.front",
+      "rider_support_targets.stance.rear",
+      "rider_welds.crank_torque_nm",
+      "rider_welds.front_pedal.force_on_rider_n",
+      "rider_welds.front_pedal.normal_n",
+      "rider_welds.front_pedal.tangent_n",
+      "rider_welds.front_pedal.would_separate",
+      "rider_welds.front_pedal.would_slip",
+      "rider_welds.grip_left.force_on_rider_n",
+      "rider_welds.grip_right.force_on_rider_n",
+      "rider_welds.rear_pedal.force_on_rider_n",
+      "rider_welds.rear_pedal.normal_n",
+      "rider_welds.rear_pedal.tangent_n",
+      "rider_welds.rear_pedal.would_separate",
+      "rider_welds.rear_pedal.would_slip",
+      "rider_welds.saddle.force_on_rider_n",
+      "rider_welds.saddle.normal_n",
+      "rider_welds.saddle.tangent_n",
+      "rider_welds.saddle.would_separate",
+      "rider_welds.saddle.would_slip"
+    ]
+  ],
+  "controls": [
+    {
+      "motor_torque_nm": null,
+      "motor_limit_nm": null,
+      "human_torque_nm": 35.0,
+      "crank_target_rate_rad_s": null,
+      "posture": {
+        "torso_lean_rad": 0.0,
+        "pelvis_pitch_rad": 0.0,
+        "pelvis_offset_m": null,
+        "use_saddle": true
+      },
+      "rider_enabled": true
+    },
+    {
+      "motor_torque_nm": null,
+      "motor_limit_nm": null,
+      "human_torque_nm": 35.0,
+      "crank_target_rate_rad_s": null,
+      "posture": {
+        "torso_lean_rad": 0.0,
+        "pelvis_pitch_rad": 0.0,
+        "pelvis_offset_m": null,
+        "use_saddle": true
+      },
+      "rider_enabled": true
+    },
+    {
+      "motor_torque_nm": null,
+      "motor_limit_nm": null,
+      "human_torque_nm": 35.0,
+      "crank_target_rate_rad_s": null,
+      "posture": {
+        "torso_lean_rad": 0.0,
+        "pelvis_pitch_rad": 0.0,
+        "pelvis_offset_m": null,
+        "use_saddle": true
+      },
+      "rider_enabled": true
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 """Native distributed tyre writer: config, bitwise per-state parity, state wire, probe, stands."""
+import os
 import re
 from collections.abc import Mapping
 from dataclasses import asdict, is_dataclass
@@ -12,6 +13,7 @@ import pytest
 from native_loader import load_native
 bike_native = load_native()
 
+import _golden
 from _bits import assert_bitwise_equal
 from test_native_brake_resistance import _restore
 
@@ -40,12 +42,110 @@ def _env(tmp_path, duration='1', station_count=None):
     return research_cli.make_environment(args)
 
 
-def _golden(tmp_path, steps=40):
+def _platform_fixture_dir(name):
+    """tests/fixtures/golden/<platform>/native_distributed_tire/<name>/ —
+    per-platform runtime bundles the C++ port replays from."""
+    root = os.environ.get('BIKE_GOLDEN_CAPTURE')
+    return None if root is None else \
+        Path(root) / _golden.platform_key() / 'native_distributed_tire' / name
+
+
+def _fixture_save_episode(ep, model, name):
+    target = _platform_fixture_dir(f'episodes/{name}')
+    if target is None:
+        return
+    from tools.golden_episode import save
+    save(ep, target, model)
+
+
+def _fixture_save_wire(wire, name):
+    target = _platform_fixture_dir(name)
+    if target is None:
+        return
+    import json
+    target.mkdir(parents=True, exist_ok=True)
+    (target / 'wire.json').write_text(json.dumps(wire, sort_keys=True) + '\n')
+
+
+def _fixture_save_names(names, name):
+    target = _platform_fixture_dir(name)
+    if target is None:
+        return
+    import json
+    target.mkdir(parents=True, exist_ok=True)
+    (target / 'names.json').write_text(json.dumps(list(names)) + '\n')
+
+
+_ENV_REQUEST = '''\
+request_schema = 1
+physics_file = "physics.toml"
+track_file = "../../../../../../examples/research/alpine_rocky.toml"
+model_mode = "ride"
+rider_variant = "articulated_planar"
+seed_decimal = "0"
+use_equilibrium_cache = false
+duration_s = 0.05
+control_period_s = 0.01
+actuator_delay_s = 0.005
+sensor_delay_s = 0.01
+check_policy = "diagnostic"
+capture_mode = "legacy"
+initial_state_file = "initial_state.json"
+
+[overrides]
+timestep_s = 0.00125
+
+[experiment]
+record_decimation = 80
+'''
+
+
+def _fixture_save_env_request(env, physics_path):
+    """The research-request bundle the C++ port feeds
+    bike::research::make_environment: physics TOML (asset paths rewritten
+    relative to the bundle), request.toml and the settled t=0 state."""
+    target = _platform_fixture_dir('env_request')
+    if target is None:
+        return
+    target.mkdir(parents=True, exist_ok=True)
+    physics_text = Path(physics_path).read_text()
+    for key in ('joint_envelope_path', 'joint_strength_path'):
+        physics_text = re.sub(
+            rf'{key} = "([^"]+)"',
+            lambda m: (f'{key} = "'
+                       f'{os.path.relpath(Path(m.group(1)).resolve(), target)}"'),
+            physics_text)
+    (target / 'physics.toml').write_text(physics_text)
+    (target / 'request.toml').write_text(_ENV_REQUEST)
+    from bike_sim.sim.ride.initial_state import PhysicalInitialState
+    (target / 'initial_state.json').write_text(
+        PhysicalInitialState.capture(env.sim).payload_json)
+
+
+def _record_str(value, label):
+    _golden.record(np.frombuffer(str(value).encode(), np.uint8), label)
+
+
+def _record_int(value, label):
+    _golden.record(np.asarray(int(value), np.int64), label)
+
+
+def _record_bool(value, label):
+    _golden.record(np.asarray(bool(value)), label)
+
+
+def _drive_episode(tmp_path, steps=40):
     from tools.golden_episode import capture_episode, save
+    from tools.native_config import project
     from bike_sim.sim.ride.control import RideControl
     env = _env(tmp_path)
     ep = capture_episode(env, steps, RideControl(human_torque_nm=35.))
     save(ep, tmp_path / 'g', env.sim.model)
+    if _platform_fixture_dir('x') is not None:
+        name = {40: 'stand40', 5: 'probe5'}.get(steps, f'stand{steps}')
+        _fixture_save_episode(ep, env.sim.model, name)
+        _fixture_save_wire(project(env), 'env')
+        _fixture_save_names(ep.tire_state_names, 'env')
     return env, tmp_path / 'g'
 
 
@@ -57,10 +157,14 @@ def test_signed_distance_matches_python_bitwise():
     vertices = np.column_stack([x, z])
     pts = np.column_stack([rng.uniform(.1, 11.9, 400), rng.uniform(-.1, .5, 400)])
     want = SignedProfile(vertices).query(pts)
+    _golden.record(vertices, 'input.vertices')
+    _golden.record(pts, 'input.points')
     got = bike_native._debug_signed_distance(vertices, pts)
     assert_bitwise_equal(np.asarray(got[0]), want.distance, 'distance')
     assert_bitwise_equal(np.asarray(got[1]), want.normal, 'normal')
     assert_bitwise_equal(np.asarray(got[2]), want.point, 'point')
+    _golden.record(np.asarray(want.segment), 'segment')
+    _golden.record(np.asarray(want.nonsmooth), 'nonsmooth')
     assert np.array_equal(np.asarray(got[3]), want.segment)
     assert np.array_equal(np.asarray(got[4]), want.nonsmooth)
 
@@ -138,14 +242,21 @@ def _assert_snapshots_equal(native, row, k):
         assert snap['interval_id'] == want['interval_id']
         assert snap['backend'] == want['backend'] == 'distributed_2d_reference'
         assert snap['geometric_contact'] == bool(want['geometric_contact'])
+        _record_int(want['interval_id'], f'{side}.interval_id step {k}')
+        _record_str(want['backend'], f'{side}.backend step {k}')
+        _record_bool(want['geometric_contact'],
+                     f'{side}.geometric_contact step {k}')
         assert_bitwise_equal(snap['time_s'], float(want['time_s']),
                              f'{side}.time_s step {k}')
         assert_bitwise_equal(snap['effective_radius_m'],
                              float(want['effective_radius_m']),
                              f'{side}.effective_radius_m step {k}')
         assert len(snap['patches']) == len(want['patches'])
+        _record_int(len(want['patches']), f'{side}.patches step {k}')
         for i, (p, w) in enumerate(zip(snap['patches'], want['patches'])):
             assert bool(p['working_surface']) == bool(w['working_surface'])
+            _record_bool(w['working_surface'],
+                         f'{side}.patches[{i}].working_surface step {k}')
             for f in ('normal_load_n', 'tangent_force_n', 'slip_mps'):
                 assert_bitwise_equal(p[f], float(w[f]),
                                      f'{side}.patches[{i}].{f} step {k}')
@@ -160,11 +271,19 @@ def _assert_diagnostics_equal(native, oracle, k):
         got, want = native[side], oracle[side]
         assert set(got) == set(want)
         for key, w in want.items():
-            if isinstance(w, float):
-                assert_bitwise_equal(got[key], w,
-                                     f'{side}.{key} step {k}')
+            label = f'{side}.{key} step {k}'
+            if isinstance(w, bool):
+                _record_bool(w, label)
+            elif isinstance(w, float):
+                assert_bitwise_equal(got[key], w, label)
+            elif isinstance(w, Integral):
+                _record_int(w, label)
+            elif isinstance(w, str):
+                _record_str(w, label)
             else:
-                assert got[key] == w, f'{side}.{key} step {k}'
+                assert got[key] == w, label
+            if not isinstance(w, float):
+                assert got[key] == w, label
 
 
 @pytest.mark.slow
@@ -174,7 +293,7 @@ def test_distributed_qfrc_bitwise(tmp_path):
     — bitwise against the manifest and the live Python applier."""
     from tools.golden_episode import load_episode
     from tools.native_config import project
-    env, g = _golden(tmp_path)
+    env, g = _drive_episode(tmp_path)
     ep = load_episode(g)
     ref = mujoco.MjModel.from_binary_path(str(g / 'model.mjb'))
     dref = mujoco.MjData(ref)
@@ -238,7 +357,7 @@ def test_distributed_probe_and_clock(tmp_path, native_module):
     from tools.native_config import project
     from bike_sim.native.runtime import create_native_ride
     from bike_sim.sim.ride.control import RideControl
-    env, g = _golden(tmp_path, steps=5)
+    env, g = _drive_episode(tmp_path, steps=5)
     ep = load_episode(g)
     ref = mujoco.MjModel.from_binary_path(str(g / 'model.mjb'))
     st = bike_native.Stepper(str(g / 'model.mjb'), project(env))
@@ -323,6 +442,7 @@ def test_distributed_observations_declare_multi_contact(tmp_path, native_module)
     from bike_sim.native.research import create_native_research
     from bike_sim.sim.ride.control import RideControl
     env = _env(tmp_path, duration='.05')
+    _fixture_save_env_request(env, tmp_path / 'physics.toml')
     native = create_native_research(env)
     try:
         native.step(RideControl())

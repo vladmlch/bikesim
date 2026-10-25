@@ -4865,3 +4865,129 @@ platforms.
   asserted.
 - `bash tools/run_tests.sh native` not run — integration/merge-back
   gate, outside lane scope (D17).
+
+## 2026-10-25 — Task 3.13 (lane/d) merge-back
+
+Merge of `lane/d` tip `d456cd59` (base `411c92f3`; thirteen commits —
+eight ports, the Phase3Ports dedupe repair `9e0cabad`, the numerics
+fma-lowering fix `008415ad`, the terrain/validation test-seam exports
+`5df6c45e`, ledgers and batch evidence) into `impl/python-free-cpp` at
+`501bef6c` as merge commit `d4511d26`. The batch lands eight reference
+ports — 65 records, 12 golden / 49 port / 4 drop — across
+`test_savage_track_surface.py`, `test_terrain_placement_regression.py`,
+`test_tyre_road_profile.py`, `test_native_distributed_stands.py`,
+`test_distributed_tire_reference.py`, `test_alpine_track.py`,
+`test_native_tire.py` and `test_native_distributed_tire.py`; new CTest
+nodes `reference.{savage_track_surface,terrain_placement_regression,
+tyre_road_profile,native_distributed_stands,distributed_tire_reference,
+alpine_track,native_tire,native_distributed_tire}` (labels
+`t52 tyre|terrain golden slow`). ~44.5 MiB of per-platform goldens
+including `episode/` bundles under `native_tire/` and
+`native_distributed_tire/` (`probe5` + `stand40`; per-platform
+`model.mjb` images are deliberately not byte-identical — committed
+as-is per the 3.12b allowance).
+
+### Conflict resolution
+
+Two real conflicts, both resolved per precedent:
+
+- `migration/cpp-linux-completion-evidence.md` — EOF seam: HEAD's
+  `Task 3.14b (lane/c) merge-back` (authored `09:51`/`10:18 +0300`)
+  precedes the lane's `Task 3.13 (lane/d)` section (`d456cd59`,
+  `22:52:46 +0300`). Verified byte-exact programmatically: merged file
+  == HEAD blob + the lane's 7,043-byte appended section verbatim;
+  trailing LF single at EOF.
+- `native/tests/support/golden.hpp` — both sides added
+  `Node::peek_label()`: HEAD's is the 3.14b superset (declaration with
+  empty-at-end semantics, defined in `golden.cpp`, plus `has_next()`
+  and `peek_shape()`); the lane's is an inline throwing variant
+  (`entries_.at(cursor_)`). The lane's variant has **zero callers** in
+  the batch (grep-verified across all eight new test files +
+  `tyre_reference_support.hpp`), so HEAD's block is kept verbatim —
+  merged `golden.hpp` is byte-identical to the HEAD blob and
+  `peek_label` retains exactly one definition.
+
+Auto-merged, then verified semantically (programmatic per-record union
+check over `(source_path, source_symbol)` keys):
+
+- `test-port-map.json`: all 2,381 record keys identical across
+  base/HEAD/lane/merged; **79 changed only by HEAD, 65 only by the
+  lane, 0 contested**, 2,237 unchanged — merged field-equal to the
+  changing side on every record (bad=0). The lane's 65 rows land as
+  49 `port` / 4 `drop` / 12 `golden`; all 12 golden rows carry
+  `golden_platforms: [darwin-arm64, linux-aarch64]`.
+- `python-removal.json`: 535 rows; 5 HEAD-changed + 8 lane-changed +
+  0 contested; the eight batch files flipped `planned →
+  replacement_landed` with `verification_ids` retargeted to the new
+  `reference.*` nodes.
+- `Phase3Ports.cmake`: union — the lane's 3.13 eight-registration
+  block sits mid-file after `native_pneumatic_tire`, HEAD's 3.14b five
+  at EOF; 54 registrations, zero duplicate test names (the
+  intermediate-commit quad-append ghost is absent at the tip).
+- T25 schema-2 layout preserved — `welded_flat.json` only under
+  platform-keyed `initial_state/{darwin-arm64,linux-aarch64}/`; the
+  lane's only `manifest.json` adds are the three new per-platform
+  episode captures.
+- All 217 non-shared lane-touched files byte-identical to the lane
+  blobs (native sources, test files, Python sources, fixtures);
+  trailing LFs on all text files; fixture `.json`/`.bin` blobs keep
+  the no-trailing-LF convention byte-verbatim.
+
+### Merge-back L2
+
+- `cmake --build native/build -j10`: green. `cmake --build
+  build/native-release -j10`: green; all eight new executables link
+  (only pre-existing `ld` duplicate-library chatter).
+- `ctest --test-dir build/native-release -R 'reference\.(native_tire|
+  native_distributed|distributed_tire_reference|alpine_track|
+  savage_track|terrain_placement|tyre_road)'`: **8/8** (0.66–1.20 s).
+- `ctest -L reference -j8`: **57/63** — the eight new nodes green
+  inside the sweep; six reds = baseline-verbatim: the five
+  `FAIL fixture is not a regular file` fixture-missing members
+  (`native_static_brake`, `pneumatic_tire_oracle`,
+  `native_clock_contracts`, `native_drive_policies`,
+  `native_drivetrain`) plus `golden_episode_tool` keeping its
+  documented post-3.14b signature (`FAIL native recorder rows
+  reproduce Python oracle`, step-0 `attachment_samples` channel
+  divergence — the committed `episode/physics.toml` pinning gap, not a
+  merge regression).
+- Linux aarch64 `bike-dev-python-free-cpp` (`/build/root-clang`,
+  clang++-18): `container.sh sync` → scoped build of the eight targets
+  clean → `ctest -R 'reference\.(…)'` **8/8** — linux-aarch64 goldens
+  and the `episode/` bundles validated on-platform.
+- Parity pytest cold-cache (`NATIVE_TEST_BUILD_PATH=$PWD/native/build`
+  + `BIKE_NATIVE_BUILD_PATH` same, fresh
+  `BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/m10-coldcache`, `uv run --frozen
+  --group native`, all eight ported sources): **156 passed / 2
+  failed** — the two reds are exactly the documented batch drops'
+  underlying live-oracle baseline failures:
+  `test_distributed_probe_and_clock` (`probe_step_inputs →
+  apply_forces(advance=False)` staged-fold bitwise divergence,
+  binding-only probe surface) and
+  `test_distributed_trajectory_matches_python_channel_wise_bitwise`
+  (`root.truth.front_load_n` 444.30 vs 428.85 channel-wise mismatch).
+  The lane's four-golden-file subset figure (55+2) holds within this
+  count; warnings are the documented `energy.constraint_work`
+  RuntimeWarning noise.
+- `ctest -R 'migration_T' -j8`: **50/53** — **`migration_T25` PASSED
+  (5.80 s)** post-merge. Reds baseline-verbatim: `T09` (integration
+  vector bitwise), `T29` (`weld_servo_gain: unknown key`), `T56`
+  (documented shellcheck-0.11.0 stderr-format env drift).
+
+### Notes
+
+- **Intermediate-commits bisect caveat**: the lane's per-port commits
+  each appended the cumulative `Phase3Ports.cmake` registration block,
+  so commits between `039763a5` and `9e0cabad` (exclusive of the fix)
+  carry duplicated `bike_add_reference_test` calls — a bisect landing
+  on an intermediate lane commit configures a dirty registration file
+  and its build/test result is not representative. Only the lane tip
+  (post-`9e0cabad`) state is the reviewed, deduplicated one; evaluate
+  the batch at `d456cd59` or at this merge.
+- `migration_T56` reproduces standalone (shellcheck 0.11.0 env drift —
+  also seen at M5/M8/M9) — environment-dependent, unrelated to the
+  batch.
+- The replay-cache poisoning vector flagged in M5–M9 remains a live
+  infrastructure defect for the parent to surface.
+- L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
+  checkpoint profile owns it.

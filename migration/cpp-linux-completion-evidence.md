@@ -4370,3 +4370,118 @@ fail at their inputs regardless of the T25 change set. (`migration_T56`
 flagged a shellcheck-version string in the earlier standalone sweep but
 the gate's `check_scripts` sweep and the gate CTest selection did not
 reproduce it.)
+
+## 2026-10-25 — T25 (lane/d) merge-back
+
+Merged `lane/d` tip `5b0fc86b` (base `9c12ce6`, four commits:
+`59b3c4e4`/`46c74e41`/`fcaf7682`/`5b0fc86b`) into `impl/python-free-cpp`
+at `f8abe871` as merge commit `327820b1`.
+
+**Conflict resolution.** One conflict:
+`migration/cpp-linux-completion-evidence.md` — both sides appended at
+the same EOF seam after the 3.14a-merge-back section tail. Chronological
+resolution per precedent: HEAD's 3.28-resume sections (events ending
+`08:06 +0300`, commit `f8abe871`) precede the lane's T25 section (commit
+`5b0fc86b` at `08:12:38 +0300`). Verified byte-exact programmatically:
+merged file == HEAD blob + the lane's appended 6,304-byte section
+verbatim; zero HEAD lines absent. Every other lane-touched file
+auto-merged to the lane blob (hash-checked — zero diffs), including the
+deletion of the shared
+`tests/fixtures/migration/initial_state/welded_flat.json`, preserved as
+renames into `initial_state/darwin-arm64/` plus the new
+`linux-aarch64/` sibling. `git ls-files -u` empty; no markers; all
+merged text files keep trailing EOF LF.
+
+**Semantic verification.**
+- Platform schema-2 docs all present: `initial_state/{darwin-arm64,
+  linux-aarch64}/{welded_flat,probe_welded_0005}.json` — `schema_version
+  2`, `contract_sha256` `dc9ce816…` (darwin) / `639f49c5…` (linux),
+  document sha256s matching the lane evidence verbatim (23545/23384/
+  23571/23364 bytes); a scan finds zero absolute paths embedded in the
+  payloads — the contract now binds file content.
+- Shared `initial_state/welded_flat.json` and `probe_welded_0005.json`
+  absent from the tree and index (deletion preserved).
+- `bootstrap/native_start_welded/{darwin-arm64,linux-aarch64}/
+  integration.f64` present alongside the retained shared pin.
+- `migration/oracle-manifest.json` carries the platform-keyed entries
+  (both `initial_state` siblings, both keyed `integration.f64` pins,
+  both probe docs).
+- Ledgers untouched by this merge and still clean:
+  `test-port-map.json` 2,381 records, `python-removal.json` 535 rows —
+  byte-identical to HEAD.
+- Evidence ledger chronological: lane dev section precedes this
+  merge-back section.
+
+**Merge-back L2.**
+
+- `cmake --build native/build -j10` and `cmake --build
+  build/native-release -j10`: both green.
+- `ctest --test-dir build/native-release -R 'migration_T'
+  --output-on-failure`: **50/53** — `migration_T25` **PASSED (5.79 s)**
+  on the merged tree, resolving the documented baseline red
+  (`welded_flat.toml: initial-state physical model contract differs` —
+  the captured-worktree `contract_sha256` binding reproduced at the F2
+  gate). The remaining reds are the documented baseline verbatim:
+  `migration_T09` (`FAIL integration vector resolves bitwise`, 1.49 s —
+  the `state.json` `$array`-pin vs native-shaped pin input mismatch,
+  untouched) and `migration_T29` (`FAIL
+  config.rider_controller.weld_servo_gain: unknown key`, 0.85 s —
+  config-key contract predating T25). `migration_T56` failed standalone
+  (111.84 s) on the documented shellcheck-0.11.0 stderr-format
+  environment drift (`t56_scripts_depth2_bad: stderr missing
+  'linux/bad.sh'`; tool health `shellcheck: rc=1`) — the same
+  env-dependent flake the lane recorded non-reproducing under the gate
+  sweep; environment drift, not a T25 signature.
+- `ctest --test-dir build/native-release -R
+  'reference\.(period_buffer|native_pneumatic_tire)'`: **2/2** —
+  `reference.period_buffer` 2.60 s (the probe re-pin graft fix: was the
+  7th reference-sweep baseline red `initial-state physical model
+  contract differs`, now resolved), `reference.native_pneumatic_tire`
+  1.08 s.
+- `ctest --test-dir build/native-release -L reference -j8
+  --output-on-failure`: **44/50** — six reds, all documented baseline
+  verbatim: `native_static_brake`, `pneumatic_tire_oracle`,
+  `native_clock_contracts`, `native_drive_policies`, `native_drivetrain`
+  (`FAIL fixture is not a regular file` — goldens owned by unmerged
+  sibling lanes / uncaptured oracle `Node`), `golden_episode_tool`
+  (`FAIL task 3.03 oracle acquisition … episode.npz`).
+  `reference.period_buffer` leaves the baseline set; the fixture-missing
+  five plus `golden_episode_tool` remain.
+- **Path-portability proof spanning worktrees.** Temp worktree
+  `/private/tmp/m8-pathproof` at merge commit `327820b1`
+  (`git worktree add --detach`), configured Release with
+  `BIKE_DEPENDENCY_ROOT` pointing at this checkout's `.deps`; generated
+  `bike_migration_paths.hpp` bakes
+  `BIKE_FIXTURE_ROOT=/private/tmp/m8-pathproof/tests/fixtures/migration`
+  — a third absolute root distinct from both the capturing worktree
+  (`pfc-lane-d`, where the artifacts were produced) and this merge
+  worktree. Scoped build of `migration_T24`/`migration_T25` green;
+  `ctest -R 'migration_T2[45]'`: **2/2** — T24 1.39 s, T25 5.75 s. The
+  schema-2 documents captured under `pfc-lane-d` validate bitwise from
+  an unrelated root — the original defect (contract bound to the
+  resolved worktree-absolute asset paths) is dead on the merged tree.
+- Linux aarch64 container `bike-dev-python-free-cpp`
+  (`/build/root-clang`, clang++-18): `container.sh sync` → scoped Ninja
+  build clean (20 edges); `ctest root-clang -R
+  'migration_T2[45]|reference\.(period_buffer|native_pneumatic_tire)'`:
+  **4/4** — `migration_T24` 0.88 s, `migration_T25` 6.37 s (the
+  linux-aarch64 keyed siblings validate), `reference.period_buffer`
+  2.41 s, `reference.native_pneumatic_tire` 0.55 s.
+- Cold-cache probe (fresh `BIKE_SIM_EQUILIBRIUM_CACHE_DIR=
+  /tmp/m8-coldcache`): `reference.period_buffer` 2.04 s,
+  `reference.native_pneumatic_tire` 0.53 s — green without cache
+  mediation.
+
+**Baseline update.** `migration_T25` is RESOLVED and removed from the
+live baseline: the `native`/`migration` CTest baseline is now the pair
+`migration_T09` + `migration_T29` (with `migration_T56` a documented
+environment-dependent shellcheck flake), and the `-L reference` baseline
+drops `reference.period_buffer` to six reds. `docs/TESTING.md` carries
+no `migration_T25` baseline entry to amend — its baseline lists are
+pytest node IDs; the CTest baseline trio lives only in this ledger's
+earlier sections, which stand as the historical record of the pre-fix
+state. `migration/cards/T25.md` remains the task card; the lane's
+`migration/task-T25-report.md` records the fix internals.
+
+L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
+checkpoint profile owns it.

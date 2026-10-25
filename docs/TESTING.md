@@ -1394,3 +1394,90 @@ The historical accounted Python-only path (`measure_realtime()` /
 `realtime.json`, `step_ms_*` percentiles, `--baseline` deltas with a
 `comparability` block) is unchanged and still backs the realtime gate; it
 is invoked from tests, not through the CLI above.
+
+## F1 welded-plant contract re-scope (seated pedalling)
+
+Task F1 (lane/b, `2026-10-20-cpp-linux-completion`) re-scoped five
+baseline-red seated-pedalling/posture contract nodes. The approved ruling:
+weld/equality closures exchange elastic spring work during sustained
+pedalling (measured `energy.constraint_work` ≈1.8% steady vs the 1%
+numerical bound), chronic foot/saddle cone violations were measured against
+a unilateral contact cone that welded interfaces never had, and delivered
+muscle power exceeded the 450 W *command* cap inside a period because
+intra-period velocity drift is invisible to the tick-time clip.
+
+### Closure channel
+
+Constraint-power rows whose name starts with `equality:` are weld/closure
+spring work and are charged to `closure_signed_j` / `closure_absolute_j`
+(elastic channel) in `step_work`/`runtime_step_work`. All other rows remain
+numerical constraint work and keep the existing `constraint_work_ok`
+round-off bound. First-appearance ordering is preserved within each class,
+mirrored between `src/bike_sim/physics/energy_ledger.py`,
+`src/bike_sim/sim/ride/period_buffer.py` and
+`native/src/runtime/accounting.cpp`.
+
+### Welded attachment envelope
+
+`AttachmentBudget` gained optional bidirectional normal bounds and flat
+shear capacities. They apply only to equality-attached interfaces —
+foot attachment `weld`/`spindle`, saddle `weld`/`pin` — never to flat-pad
+contacts, which keep the legacy unilateral cone (`foot_min_normal_n=20`,
+`mu=0.9`/`0.6`). Weld bounds may be negative (tension retention); weld shear
+capacity stacks on the compressive friction-cone contribution.
+`None`/`0` weld fields preserve legacy behaviour bitwise. The welded
+example (`examples/research/viewer_physics_welded.toml`) declares:
+
+| Field | Value | Derivation (≈1.25× measured extremum, rounded to capacity) |
+| --- | --- | --- |
+| `weld_foot_min_normal_n` | -1050 | worst foot tension −820 N |
+| `weld_foot_max_normal_n` | 3000 | worst foot compression 2383 N |
+| `weld_foot_shear_n` | 2250 | worst foot shear 1803 N |
+| `weld_saddle_min_normal_n` | -2250 | worst saddle tension −1800 N (onset) |
+| `weld_saddle_max_normal_n` | 1300 | worst saddle compression 1054 N |
+| `weld_saddle_shear_n` | 1300 | worst saddle shear 1024 N |
+
+### Delivered-power monitor budgets
+
+`active_positive_power_limit_w` (450 W) and `joint_power_limit_w` remain
+*command/plant* caps applied by the spindle clip; nothing about solved
+truth is clipped. New monitor-side budgets —
+`delivered_positive_power_budget_w` (750 W) and
+`delivered_joint_power_budget_w` (375 W) — bound what diagnostics may
+*declare delivered*, derived at ≈1.25× the measured extrema (596 W total,
+289 W per joint). Effective properties
+(`delivered_positive_budget_w`, `delivered_joint_budget_w`) fall back to
+the capability caps when unset, so un-declared configs keep the legacy
+contract bitwise. `rider_effort` and period diagnostics verdict on the
+effective delivered budgets.
+
+### Sustained crank delivery ceiling
+
+`test_strict_flat_cycle_delivers_and_stays_within_budgets` asserts demand
+tracking only up to the plant's measured sustained delivery ceiling
+(`delivery_ceiling_nm = 26` in the test, with derivation comment). Under
+the provisional strength sheet plus the 25 Nm weld-servo hold limit the
+measured late-run mean crank torque plateaus at 17.8/23.1/25.7 Nm for
+20/40/60 Nm demands — requests above the ceiling are intents, the same
+model-delivery gap as the power re-band.
+
+### Parity caveat
+
+`test_native_runtime_accounting.py::test_strict_rejection_publishes_the_whole_period_before_raising`
+compares interval structure and violation evidence only. Payload leaves
+(sensors, weld forces, rider torques, bookkeeping values) are not compared
+because the Python and native backends drift on this weld-heavy plant from
+interval 0 — native fires `rider_strength.rider_torso_hinge` at t=0.2425
+where Python does not, and `frame_specific_force_body_mps2` diverges on
+unmodified HEAD. That is a pre-existing parity gap owned by the ADR-0003
+golden gate, not an F1 regression.
+
+Focused checks:
+
+```bash
+uv run pytest tests/reference/test_attachment_budget.py \
+  tests/reference/test_articulated_config.py \
+  tests/reference/test_period_buffer.py -q
+BIKE_NATIVE_BUILD_PATH=$PWD/native/build uv run pytest \
+  tests/reference/test_native_runtime_accounting.py -q
+```

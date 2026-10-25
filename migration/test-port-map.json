@@ -24970,13 +24970,19 @@
       "line": 17,
       "end_line": 33,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_tyre_road_profile::test_build_road_profile_matches_the_former_inline_construction_bitwise",
+      "native_test_id": "reference.tyre_road_profile::test_build_road_profile_matches_the_former_inline_construction_bitwise",
       "native_source": "native/tests/reference/test_tyre_road_profile.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.tyre_road_profile green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_tyre_road_profile.py",
@@ -24984,13 +24990,19 @@
       "line": 57,
       "end_line": 72,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_tyre_road_profile::test_patch_slip_speed_mps_is_the_signed_tread_slip",
+      "native_test_id": "reference.tyre_road_profile::test_patch_slip_speed_mps_is_the_signed_tread_slip",
       "native_source": "native/tests/reference/test_tyre_road_profile.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.tyre_road_profile green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_welded_profile_config.py",

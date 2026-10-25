@@ -17606,12 +17606,10 @@
       "native/tests/reference/test_tyre_road_profile.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.tyre_road_profile"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "76b3c95c3f233a12cd7515a547b0b585dfd941746900a8d90023ea75f72e48d4",
     "snapshot_line_count": 72,
     "tracked": true,

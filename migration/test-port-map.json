@@ -21611,13 +21611,18 @@
       "line": 11,
       "end_line": 17,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_realtime_gate::test_realtime_factor_for_full_twenty_seconds",
+      "native_test_id": "reference.realtime_gate::test_realtime_factor_for_full_twenty_seconds",
       "native_source": "native/tests/reference/test_realtime_gate.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]",
+        "tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_extreme.toml]"
+      ],
+      "assertions_capture": "2026-10-25: measured - pytest collects 2 parametrized node ids; assertions are reason/steps/sim_seconds/factor over the schema-1 measurement report",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 F3 lane/a: re-aimed at the native Release bike-measure-realtime artifact per the user ruling (Python-oracle subject is T63-dead); ported to native/tests/reference/test_realtime_gate.cpp spawning the artifact under --benchmark (the Python strict=False equivalent) 20 s at dt=1.25 ms; CTest nodes reference.realtime_gate.rough_uphill_savage/.rough_uphill_extreme green darwin-arm64 (median RTF 11.5188/11.6194) + linux-aarch64 root-clang container (9.1041/9.0918); Python oracle-path node ids remain documented-baseline red, superseded not fixed"
+      ]
     },
     {
       "source_path": "tests/reference/test_realtime_measurement.py",

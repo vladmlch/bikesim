@@ -5106,3 +5106,105 @@ contracts+pytest tail.
 - The `reference.realtime_gate.rough_uphill_*` CTest nodes live in the
   root graph (`build/native-release`), not this `native/build` run —
   their 2/2 results on both platforms are recorded above.
+
+## 2026-10-25 — F3 (lane/a) merge-back
+
+Merge `44a3eadb` — `git merge --no-ff lane/a` (tip `a1410061`, base
+`f197a058`; four commits: `test_realtime_gate.cpp` + Phase3Ports
+registration `33c801f8`, TESTING.md `7693407f`, T53 ledger flip
+`d8f90ab9`, lane evidence incl. final-gate tail `a1410061`).
+
+### Conflict resolution
+
+- `migration/cpp-linux-completion-evidence.md` — the only conflict, at
+  the EOF seam. Chronological per precedent: HEAD's `Task 3.13 (lane/d)
+  merge-back` block (`c4cf470f`, 2026-10-25 23:17 +0300) precedes the
+  lane's `Task F3 (lane/a)` section (`a1410061`, 2026-10-26 01:52
+  +0300); the lane's 6,459-byte suffix appended verbatim. Verified
+  byte-exact programmatically: merged == HEAD blob + lane suffix; single
+  trailing LF at EOF.
+- Auto-merged, verified semantically:
+  - `migration/test-port-map.json` — record union: 2,381 keys on all
+    sides, exactly one lane-changed record (the T53
+    `test_realtime_factor_for_full_twenty_seconds` row `planned →
+    port`, `native_test_id` re-aimed at `reference.realtime_gate::…`,
+    both collected node ids + contract class + both-platform evidence),
+    65 HEAD-changed 3.13 records intact, 0 contested, 0 bad merges, no
+    contested top-level fields.
+  - `native/tests/reference/Phase3Ports.cmake` — union: 55
+    registrations = the 54 existing + `reference.realtime_gate`
+    (executable + `add_dependencies` on `bike-measure-realtime` +
+    per-track `add_test`, labels `reference;t53;runtime;slow`), zero
+    duplicate names.
+  - `docs/TESTING.md` and `test_realtime_gate.cpp` byte-identical to
+    the lane blobs (HEAD never touched TESTING.md since the base);
+    `migration/python-removal.json` untouched.
+  - Trailing LFs preserved on every merged text file.
+
+### Merge-back L2
+
+- `cmake --build native/build -j10` (darwin-arm64): green, 105 targets.
+  `cmake --build build/native-release -j10`: green — cmake re-generated
+  for the Phase3Ports edit; `bike-measure-realtime` up to date,
+  `reference.realtime_gate` compiled + linked under the project warning
+  policy.
+- `ctest --test-dir build/native-release -R 'reference\.realtime_gate'
+  --output-on-failure`: **2/2** — savage 12.36 s wall (runs RTF
+  8.8897/8.9445/8.9594, median **8.9445**), extreme 11.57 s wall (runs
+  8.9276/8.9002/8.9105, median **8.9105**). All runs
+  `duration_reached`, 16,000/16,000 steps,
+  `first_failure=[0.005,["energy.constraint_work"]]` retained under
+  `--benchmark` — the documented non-strict-monitor equivalence.
+- `ctest -L reference -j8`: **59/65** — both realtime-gate nodes green
+  inside the sweep (18.78 s / 18.64 s under -j8 load). The six reds are
+  baseline-verbatim: five `FAIL fixture is not a regular file`
+  (`native_static_brake`, `pneumatic_tire_oracle`,
+  `native_clock_contracts`, `native_drive_policies`,
+  `native_drivetrain`) plus `golden_episode_tool` keeping its
+  documented `FAIL native recorder rows reproduce Python oracle`
+  signature — identical set to the M10 sweep.
+- Linux aarch64 `bike-dev-python-free-cpp` (`root-clang`, clang++-18,
+  Release): `container.sh sync` → `build root-clang
+  reference.realtime_gate` (11 steps incl. `bike-measure-realtime` via
+  `add_dependencies`) → `ctest -R '^reference\.realtime_gate'
+  --output-on-failure`: **2/2** — savage 13.89 s (median **7.1246**),
+  extreme 13.71 s (median **7.1403**).
+- `ctest -R 'migration_T' -j8`: **50/53** — `migration_T25` **green**
+  (12.78 s); reds baseline-verbatim: `T09` (`integration vector
+  resolves bitwise`), `T29` (`weld_servo_gain: unknown key`), `T56`
+  (shellcheck-0.11.0 stderr-format env drift).
+- RTF margin note: this merge-back measured ~8.9x darwin-arm64 /
+  ~7.1x linux-aarch64 medians vs the lane's recorded ~11.5x / ~9.1x —
+  ordinary dev-host load variance on a shared machine (four sibling
+  lane containers are up); the >=1x contract bar holds by ~7-9x on
+  both platforms either way, so the gate still fails loudly on a real
+  step-loop regression.
+
+### Supersession note
+
+The Python-path nodes
+`tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]`/`[rough_uphill_extreme.toml]`
+remain in the documented baseline-red list verbatim — they still measure
+the T63-deleted oracle accounted path (~0.62-0.69 on these tracks) and
+are superseded, not fixed. T63 removes them with the oracle.
+
+### Task 3.10 family status
+
+Task 3.10 (realtime gate) is closed on the native side: its >=1x RTF
+contract is carried by `reference.realtime_gate.rough_uphill_savage` /
+`.rough_uphill_extreme` in the root graph — green darwin-arm64 and
+linux-aarch64, both this merge-back and the lane's own runs. The T53
+ledger row is `port`; the sibling measurement rows
+(`test_realtime_measurement.py` 7/7, `test_measure_realtime_report.py`
+6/6) were already `port`. What remains against the family is only the
+T63 removal of the superseded Python nodes and the oracle path they
+measure.
+
+Lane L3 (`tools/run_tests.sh native`, `d8f90ab9`) is recorded in the
+merged lane section above — exit 8 at the binding-graph CTest on the
+documented T09/T29 baseline pair with T25 green on that worktree; not
+re-run here per bounded merge-back scope. Housekeeping: the lane-local
+`task-F3-report.md` is copied into
+`.superpowers/sdd/2026-10-20-cpp-linux-completion/` (untracked); the
+lane's stray `tests/reference/_probe_*.py` and `.superpowers/` dir stay
+unmerged untracked content on `lane/a` by construction.

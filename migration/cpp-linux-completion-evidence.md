@@ -4585,3 +4585,132 @@ state. `migration/cards/T25.md` remains the task card; the lane's
 
 L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
 checkpoint profile owns it.
+
+## 2026-10-25 — Task 3.14b (lane/c) merge-back
+
+Merge of `lane/c` tip `319e2c29` (base `2e59c282`; nine commits — five
+ports, registrations + ledgers, task evidence, indent-2 restore,
+ledger fix-round) into `impl/python-free-cpp` at `411c92f3` as merge
+commit `95ebd73c`. The batch lands five reference ports — 79 records,
+62 golden / 17 port / 0 drop — across `test_contact_safety.py`,
+`test_attachment_budget.py`, `test_attachment_wrench.py`,
+`test_native_attachment_wrench.py` (incl. the 3 `owner_task: T53` rows
+legitimately in-file) and `test_native_rider_forces.py`, plus
+production-adjacent seams: the raw-facet `concave_span_deg` overload
+(`native/src/terrain/profile.hpp` + `contact_safety.cpp`) and
+`golden::Node::has_next()` in test support. ~514 golden fixture files
+across both platforms incl. per-platform
+`episode/pinned_savage_40/{episode.npz,manifest.json,model.mjb}`
+artifacts.
+
+### Conflict resolution
+
+One real conflict: `migration/cpp-linux-completion-evidence.md` — the
+lane appended its `Task 3.14b` section at the same EOF seam HEAD had
+extended with eight sections. Chronological resolution per the M5
+mid-file-insertion precedent: the lane's section was authored at
+`2026-10-25 02:10:58 +0300` (commit `97264449`), so it is inserted
+between HEAD's `Task 3.14a (lane/d) merge-back` (authored `00:38`) and
+`Task 3.28 (lane/a) resume` (authored `07:42`) sections — real
+commit-time order with zero inversions of event order. Verified
+byte-exact programmatically: merged file == HEAD blob with the lane's
+4,960-byte suffix (seam blank + 99-line section) inserted verbatim at
+that seam; zero HEAD bytes absent, lane section verbatim, trailing LF
+at EOF.
+
+Auto-merged, then verified semantically (programmatic per-record union
+check over `(source_path, source_symbol)` keys):
+
+- `test-port-map.json`: all 2,381 record keys identical across
+  base/HEAD/lane/merged; 121 records changed only by HEAD, 79 only by
+  the lane, **0 contested**, 2,181 unchanged — merged field-equal to
+  the changing side on every record (`only_h=121 only_l=79 both=0
+  bad=0`). Lane's 62 golden rows all carry `golden_platforms`; the
+  indent-2 serialization restore (`8c88ce7f`) is preserved — the merge
+  diff vs HEAD is confined to the lane's 79 record bodies.
+- `python-removal.json`: 535 rows, 6 HEAD-changed + 5 lane-changed + 0
+  contested; the five batch files flipped `planned →
+  replacement_landed` with refreshed sha256/line_count and
+  `verification_ids` retargeted to the new `reference.*` CTest nodes.
+- `Phase3Ports.cmake`: all registrations union — HEAD's 3.12b
+  pneumatic trio intact plus the lane's five
+  `reference.{contact_safety,attachment_budget,attachment_wrench,
+  native_attachment_wrench,native_rider_forces}` registrations with
+  labels `t52 rider|terrain golden slow`.
+- Manifest/initial-state: T25 schema-2 layout kept — `welded_flat.json`
+  exists only under platform-keyed
+  `initial_state/{darwin-arm64,linux-aarch64}/`; no shared file
+  resurrected. The lane's only `manifest.json` additions are the new
+  per-platform `pinned_savage_40` episode captures.
+- Python sources: the four lane-touched `tests/reference/test_*.py`
+  files are lane-only changes — merged blobs byte-identical to the
+  lane's (no HEAD-side edits to lose).
+- Trailing LFs verified on all text files; golden `.json`/`.bin`
+  fixture artifacts correctly keep the repo's no-trailing-LF fixture
+  convention byte-verbatim.
+
+### Merge-back L2
+
+- `cmake --build native/build -j10`: green (auto-reconfigure picked up
+  the five new Phase3Ports registrations).
+- `cmake --build build/native-release -j10`: green; all five new
+  executables link (only the pre-existing `ld` duplicate-library
+  chatter).
+- `ctest --test-dir build/native-release -R
+  'reference\.(contact_safety|attachment_budget|attachment_wrench|
+  native_attachment_wrench|native_rider_forces)'`: **5/5**
+  (contact_safety 1.07 s, attachment_budget 0.82 s, attachment_wrench
+  0.87 s, native_attachment_wrench 1.08 s, native_rider_forces 1.08 s).
+- `ctest --test-dir build/native-release -L reference -j8`: **49/55**
+  — the five new nodes all pass inside the sweep. Six reds, same
+  baseline set: `native_static_brake`, `pneumatic_tire_oracle`,
+  `native_clock_contracts`, `native_drive_policies`, `native_drivetrain`
+  keep the verbatim `FAIL fixture is not a regular file` signature.
+  `golden_episode_tool` remains red but its signature **evolved**: the
+  lane's per-platform `episode/pinned_savage_40/` capture removed the
+  fixture-missing bail (`task 3.03 oracle acquisition required …
+  episode.npz`), so the test now runs the real recapture comparison
+  and fails at `FAIL native recorder rows reproduce Python oracle`
+  with step-0 channel divergence — expected per the lane's own
+  documented caveat: the committed `episode/physics.toml` does not
+  converge (`freeze.py` needs the `_pin_oracle_kernels` config
+  `activation_tau_s = 0.025`); the fixture was captured pinned for the
+  `native_rider_forces` state-replay oracle path, while
+  `golden_episode_tool` recaptures under the committed config. The
+  red is a documented pre-existing gap now surfaced, not a merge
+  regression — `native_rider_forces` (which replays recorded states
+  without recapturing) is green on the same artifact.
+- Linux aarch64 `bike-dev-python-free-cpp` (`/build/root-clang`,
+  clang++-18): `container.sh sync` → scoped build of the five targets
+  clean (0 warnings beyond baseline) → `ctest -R 'reference\.(…)'`
+  **5/5** — validates the linux-aarch64 goldens and the
+  `pinned_savage_40` episode artifact on-platform.
+- Parity pytest cold-cache (`NATIVE_TEST_BUILD_PATH=$PWD/native/build`
+  + `BIKE_NATIVE_BUILD_PATH` same, fresh
+  `BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/m9-coldcache`,
+  `uv run --frozen --group native`): all five sources — **159 passed,
+  1 warning** in 39.29 s, matching the lane's count verbatim; the
+  warning is the documented `invalid reference step at 0.005000000:
+  ('energy.constraint_work',)` RuntimeWarning in
+  `test_native_rider_forces::test_accumulator_order_golden`; LAPACK
+  `DLASCL` stderr noise present as ledger-noted.
+- `ctest --test-dir build/native-release -R 'migration_T' -j8`:
+  **50/53** — **`migration_T25` PASSED (27.12 s)**, the T25 fix from
+  the just-merged lane/d stays green on this tree. Remaining reds
+  baseline-verbatim: `migration_T09` (integration vector bitwise),
+  `migration_T29` (`weld_servo_gain: unknown key`), `migration_T56`
+  (documented shellcheck-0.11.0 stderr-format env drift:
+  `t56_scripts_depth2_bad: stderr missing 'linux/bad.sh'`).
+
+### Baseline note
+
+`-L reference` keeps the six-red set (was 44/50 at M8, now 49/55 with
+five new greens). `golden_episode_tool` stays in the set but its
+recorded signature should be read as `native recorder rows reproduce
+Python oracle` going forward — the `task 3.03 oracle acquisition`
+bail retired the moment the fixture landed. The remaining gap is the
+committed `episode/physics.toml` convergence/pinning issue the lane
+documented, owned by whoever next recaptures the canonical episode.
+
+L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
+checkpoint profile owns it.

@@ -3138,7 +3138,8 @@ Five source files, 79 records, 159 collected pytest nodes:
 
 - `test_contact_safety.py` — 10 records / 10 nodes / 9 golden nodes
 - `test_attachment_budget.py` — 9 records / 19 nodes / no goldens
-- `test_attachment_wrench.py` — 8 records / 11 nodes / 7 golden nodes
+- `test_attachment_wrench.py` — 8 records / 11 nodes / 7 golden records
+  mapping to 9 collected golden nodes
 - `test_native_attachment_wrench.py` — 42 records / 101 nodes / 95
   golden nodes (includes 3 `owner_task: T53` rows whose symbols live
   in this file — all 42 are ported in this batch)

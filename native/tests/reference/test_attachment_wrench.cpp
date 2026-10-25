@@ -2,11 +2,11 @@
 // The Python-oracle attachment-wrench algebra — recover_wrench solves,
 // weld/connect reactions, equality-row selection under interleaved
 // contacts, and the prepared-geometry/eager-raw equivalence — replayed
-// against the platform goldens. The two 'foot cop budget' source records
-// exercise RiderContactApplier's Python-internal _attachment_samples
-// plumbing and are dispositioned `drop` in the port map: the native
-// half-patch channel is pinned through the 3.14b attachment_sample
-// oracle nodes instead.
+// against the platform goldens. The 'foot cop budget' record (one record,
+// two collected nodes) ports the source's contract assertion natively:
+// RiderContactWriter::attachment_samples derives each foot support's
+// half_patch_m from the compiled platform geom size — the parametrize
+// sweeps the sampling-pad config only to prove it never feeds the budget.
 
 #include <algorithm>
 #include <array>
@@ -18,6 +18,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -27,8 +28,10 @@
 #include "support/migration_test.hpp"
 #include "support/model_fixture.hpp"
 #include "rider/attachment_wrench.hpp"
+#include "rider/contact_config.hpp"
 #include "rider/equality_reactions.hpp"
 #include "rider/least_squares.hpp"
+#include "writers/rider_contacts.hpp"
 
 namespace {
 namespace rw = rider;
@@ -428,6 +431,119 @@ void test_prepared_attachment_raw_matches_interval_state_recovery() {
                 "gap matches interval recovery");
     golden.done();
 }
+
+// The ctor-resolution surface RiderContactWriter needs on a hand-built
+// model: the named support bodies/sites/geoms, the arm/shoulder set,
+// the crank joint, and the weld_foot_* equalities a weld-pedals config
+// links (saddle and grip stay unlinked, matching the source's
+// linked_saddle=False / welded_grip=False). Soles sit flush on each
+// pedal box top so pad_eval's disc lands on the +z face — the role the
+// oracle's stubbed _pads lambda played.
+constexpr std::string_view kContactsXml = R"(
+<mujoco><option gravity="0 0 0" timestep="0.0005"/>
+<worldbody>
+  <body name="frame" pos="0 0 1"><freejoint name="crank_spin"/>
+    <inertial pos="0 0 0" mass="1e3" diaginertia="1e3 1e3 1e3"/>
+    <geom name="geom_saddle" type="box" size=".1 .05 .008" pos="-.7 0 0"
+          contype="0" conaffinity="0"/></body>
+  <body name="steer" pos="0 0 1"><freejoint/>
+    <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/>
+    <site name="site_rider_grip_left" pos="0 .1 0"/>
+    <site name="site_rider_grip_right" pos="0 -.1 0"/></body>
+  <body name="rider_pelvis" pos="0 0 1"><freejoint/>
+    <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/>
+    <site name="site_rider_saddle"/></body>
+  <body name="rider_forearm_left" pos="0 .1 1"><freejoint/>
+    <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/></body>
+  <body name="rider_forearm_right" pos="0 -.1 1"><freejoint/>
+    <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/></body>
+  <body name="rider_upper_arm_left" pos="0 .2 1"><freejoint/>
+    <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/></body>
+  <body name="rider_upper_arm_right" pos="0 -.2 1"><freejoint/>
+    <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/></body>
+  <body name="rider_foot_front" pos=".1 0 1.008"><freejoint/>
+    <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/>
+    <site name="site_rider_sole_front"/></body>
+  <body name="rider_foot_rear" pos="-.4 0 1.008"><freejoint/>
+    <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/>
+    <site name="site_rider_sole_rear"/></body>
+  <body name="pedal_front" pos=".1 0 1"><freejoint/>
+    <inertial pos="0 0 0" mass="1e3" diaginertia="1e3 1e3 1e3"/>
+    <geom name="geom_pedal_front" type="box" size=".05 .04 .008"
+          contype="0" conaffinity="0"/></body>
+  <body name="pedal_rear" pos="-.4 0 1"><freejoint/>
+    <inertial pos="0 0 0" mass="1e3" diaginertia="1e3 1e3 1e3"/>
+    <geom name="geom_pedal_rear" type="box" size=".05 .04 .008"
+          contype="0" conaffinity="0"/></body>
+</worldbody>
+<equality>
+  <weld name="weld_foot_front" body1="rider_foot_front"
+        body2="pedal_front"/>
+  <weld name="weld_foot_rear" body1="rider_foot_rear"
+        body2="pedal_rear"/>
+</equality></mujoco>)";
+
+// One parametrized pad_spacing node: ArticulatedConfig's production
+// defaults with pedal_patch_half_length_m = the swept value.
+rider::RiderContactsConfig contacts_config(double pad_spacing) {
+    rider::RiderContactsConfig config{};
+    config.arm_reach_m = .5;
+    config.saddle_patch_half_length_m = .045;
+    config.pedal_patch_half_length_m = pad_spacing;
+    config.support_pad_radius_m = .020;
+    config.support_k_n_m = 100000.;
+    config.support_c_ns_m = 500.;
+    config.pedal_c_ns_m = 100.;
+    config.support_tangent_k_n_m = 20000.;
+    config.support_mu = .8;
+    config.support_length_m = .1;
+    config.grip_k_n_m = 4000.;
+    config.grip_c_ns_m = 150.;
+    config.grip_release_distance_m = .12;
+    config.grip_capture_distance_m = .02;
+    config.grip_capture_speed_mps = .2;
+    config.pedal_attachment = rider::PedalAttachment::weld;
+    config.saddle_attachment = rider::SaddleAttachment::flat;
+    config.grip_attachment = rider::GripAttachment::spring;
+    return config;
+}
+
+void foot_cop_case(double pad_spacing) {
+    bt::ModelFixture fixture(kContactsXml);
+    mjModel *m = fixture.model.get();
+    mjData *d = fixture.data.get();
+    const std::span<const double> geom_size =
+        std::views::counted(m->geom_size, 3 * m->ngeom);
+    for (const char *foot : {"rider_foot_front", "rider_foot_rear"})
+        xfrc_row(m, d, body_id(m, foot))[2] = -100.;
+    engine::forward(m, d);
+    writers::RiderContactWriter writer(m, contacts_config(pad_spacing));
+    const writers::RiderAttachmentMeasurement measurement =
+        writer.attachment_samples(d, std::nullopt, /*raw=*/false);
+    bt::require(measurement.errors.empty(),
+                "attachment measurement collects no errors");
+    bt::require(measurement.samples.size() == 2,
+                "both linked pedals measured");
+    for (const auto &[out, sample] : measurement.samples) {
+        const char *geom_name =
+            out == "foot_front" ? "geom_pedal_front" : "geom_pedal_rear";
+        const int geom =
+            mj_name2id(m, mjOBJ_GEOM, geom_name);
+        bt::require(geom >= 0, "support geom resolves");
+        const double compiled = geom_size[3 * static_cast<std::size_t>(geom)];
+        // The COP budget follows the compiled platform half-length —
+        // pedal_patch_half_length_m (.01/.04) only sizes the sampling
+        // pads, never this field.
+        bt::require(sample.half_patch_m == .05 && compiled == .05,
+                    "foot cop budget comes from the compiled platform "
+                    "geom, not the sampling pads");
+    }
+}
+
+void test_foot_cop_budget_comes_from_compiled_platform_not_sampling_pads() {
+    foot_cop_case(.01);
+    foot_cop_case(.04);
+}
 } // namespace
 
 // bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
@@ -441,5 +557,6 @@ int main() {
         test_connect_recovers_force_only();
         test_contact_rows_do_not_corrupt_equality_selection();
         test_prepared_attachment_raw_matches_interval_state_recovery();
+        test_foot_cop_budget_comes_from_compiled_platform_not_sampling_pads();
     });
 }

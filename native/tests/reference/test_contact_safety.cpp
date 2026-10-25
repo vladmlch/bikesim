@@ -80,7 +80,7 @@ double garden_span(bt::oracle::Node &golden, const std::string &label) {
 void test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
     // The source's comprehensions record every input pair before a single
-    // span output lands: consume all 21 (s, z) pairs first.
+    // span output lands: consume all 20 (s, z) pairs first.
     const double dirty = garden_span(golden, "dirty");
     const double clean = garden_span(golden, "clean");
     const std::array<const char *, 3> names{"0.03", "0.05", "0.10"};

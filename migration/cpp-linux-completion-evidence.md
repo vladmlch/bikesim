@@ -4179,3 +4179,94 @@ Tail run manually with the profile's own flags:
   17, `test_native_drivetrain` 7, `test_native_runtime_*` ~14) — the
   C++↔oracle bitwise-drift gaps on sibling lanes' unported/planned
   records, none authored by this batch.
+
+## 2026-10-24 — Task 3.28 resume (lane/a) merge-back
+
+`git merge --no-ff lane/a` on `impl/python-free-cpp` (`9c12ce6`), lane tip
+`ead6c430` (single resume commit on stale base `a5ed745`). The merge
+completes batch 3.28: all 53 records across
+`test_native_atomicity.py` (21) and `test_native_input_contracts.py` (32)
+now carry landed dispositions — merged tally on the 3.28 evidence tag:
+40 `port` / 12 `drop` / 1 `golden`, zero `planned`.
+
+### Conflict resolution
+
+One real conflict: `migration/cpp-linux-completion-evidence.md` — both
+sides appended at the same EOF seam after the F2 merge-back section.
+Chronological resolution per precedent: HEAD's `2026-10-25` 3.14a batch +
+`2026-10-24` merge-back sections (events `00:14–00:38 +0300`) precede the
+lane's `2026-10-2x — Task 3.28 (lane/a) resume` section (commit `ead6c430`
+at `07:42 +0300`). Verified byte-exact: merged file equals the HEAD blob
+plus the lane's appended 7,367-byte section verbatim (`merged ==
+head + lane_appended`; zero HEAD lines absent).
+
+Auto-merged, then verified semantically (programmatic union check,
+`/tmp/m7_verify_union.py`):
+
+- `migration/test-port-map.json`: **2,381 records, 0 union violations**
+  (key set identical across base/HEAD/lane/merged; no record mangled; no
+  landed disposition regressed). HEAD changed 55 (the 3.14a rider-contact
+  batch), lane changed 17 — disjoint sets, `both=0`. The 17 lane-changed
+  records are exactly this batch on
+  `tests/reference/test_native_input_contracts.py`: **16 `port` +
+  1 `golden`** (`test_schema_migration_preserves_resolved_fork_force`,
+  `golden_platforms: [darwin-arm64, linux-aarch64]`). Merged totals:
+  planned 1,752 / port 370 / golden 193 / drop 66 (base 1,824/336/155/66;
+  HEAD's 104 changed rows incl. F2-untouched rows preserved verbatim).
+- `migration/python-removal.json`: 535 rows, **0 union violations** —
+  the lane's `tests/reference/test_native_input_contracts.py` row →
+  `replacement_landed` (replacement
+  `native/tests/reference/test_native_input_contracts.cpp`, verification
+  `reference.native_input_contracts`); HEAD's two `replacement_landed`
+  rows from 3.14a kept. Merged statuses: 515 planned /
+  20 replacement_landed.
+- `native/tests/reference/test_native_input_contracts.cpp`: lane-side
+  only, auto-merged — the TU grows from 17 to **25 dispatched functions**
+  (`main()` lines 739–764).
+- 24 golden sidecars added (12 per platform under
+  `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/
+  tests_reference_test_native_input_contracts.py/`).
+- All merged files keep trailing EOF LF; `git ls-files -u` empty; no
+  markers.
+
+### Merge-back L2
+
+- `cmake --build native/build -j10`: green.
+- `cmake --build build/native-release -j10`: green;
+  `reference.native_input_contracts` relinks clean (only pre-existing
+  `ld` duplicate-library chatter).
+- `ctest --test-dir build/native-release -R
+  'reference\.native_input_contracts' --output-on-failure`: **1/1** —
+  passed in 0.66 s; all 25 dispatched functions run inside the node.
+- `ctest --test-dir build/native-release -L reference -j8
+  --output-on-failure`: **43/50** — the same seven documented baseline
+  reds verbatim: `native_static_brake`, `pneumatic_tire_oracle`,
+  `native_clock_contracts`, `native_drive_policies`, `native_drivetrain`
+  (all `FAIL fixture is not a regular file` — goldens owned by unmerged
+  sibling lanes / uncaptured oracle `Node`), `period_buffer` (`FAIL
+  initial-state physical model contract differs`), and
+  `golden_episode_tool` (`FAIL task 3.03 oracle acquisition …
+  episode.npz`). `reference.native_input_contracts` passes inside the
+  sweep (0.08 s); `golden_episode_regressions` passes (7.81 s).
+- Linux aarch64 container `bike-dev-python-free-cpp`
+  (`/build/root-clang`, clang++-18): `container.sh sync` → target-scoped
+  build of the TU clean; `ctest root-clang -R
+  'reference\.native_input_contracts'`: **1/1** (0.07 s) — validates the
+  linux-aarch64 golden sidecar replay for the batch's one golden record.
+- Parity pytest cold-cache (`NATIVE_TEST_BUILD_PATH=$PWD/native/build`,
+  fresh `BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/m7-coldcache`, `uv`-only
+  env): `tests/reference/test_native_input_contracts.py` → **97 passed /
+  0 errors in 19.96 s** — confirms the F2-unblocked claim: the earlier
+  lane/c run recorded 59 fixture-setup errors on the same file; all 97
+  nodes now collect and pass.
+
+### Note on section dates
+
+This section is titled `2026-10-24` per the merge-back mandate; the
+merge-back itself ran `2026-10-25 ~08:06 +0300`, and the lane's batch
+section above carries `2026-10-2x` (true commit `2026-10-25 07:42
++0300`). The label ordering preserves event-time order (lane dev →
+merge-back).
+
+L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
+checkpoint profile owns it.

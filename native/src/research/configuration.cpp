@@ -3,14 +3,17 @@
 #include "../configuration/load.hpp"
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
+#include "../platform/provenance.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../terrain/trackfile.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <filesystem>
 #include <limits>
 #include <ranges>
 #include <stdexcept>
+#include <system_error>
 
 namespace bike::research {
 namespace {
@@ -270,7 +273,16 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
         if (find(document, "speed_kph")) physics.initial_speed_mps = number(document, "speed_kph", 0.) / 3.6;
         physics.equilibrium_cache_enabled = boolean(document, "use_equilibrium_cache", false);
         if (find(document, "initial_state_file")) {
-            const auto state_file = path(document, "initial_state_file", base);
+            auto state_file = path(document, "initial_state_file", base);
+            // Same platform-keyed sibling convention as
+            // initialization/request.cpp: platform-bound captures inside a
+            // sibling directory named by the running platform supersede the
+            // shared spelling.
+            std::error_code keyed_error;
+            if (const auto keyed = state_file.parent_path() / platform::key() /
+                    state_file.filename();
+                std::filesystem::is_regular_file(keyed, keyed_error))
+                state_file = keyed;
             const auto bytes = io::read_numpy_bytes(state_file);
             std::string source;
             source.reserve(bytes.size());

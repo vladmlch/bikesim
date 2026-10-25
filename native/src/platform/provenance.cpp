@@ -12,6 +12,7 @@
 
 #include <array>
 #include <cerrno>
+#include <cctype>
 #include <chrono>
 #include <cstdint>
 #include <ctime>
@@ -86,6 +87,17 @@ std::filesystem::path install_prefix() {
     // bin/.. convention: the prefix is the directory above the one holding
     // the image, so moved install trees keep executable-relative lookup.
     return std::filesystem::weakly_canonical(dir.parent_path());
+}
+
+std::string key() {
+    // Baked at build time from CMAKE_SYSTEM_NAME-CMAKE_SYSTEM_PROCESSOR —
+    // bitwise the same expression the test graphs lowercase into
+    // BIKE_GOLDEN_PLATFORM, so the reader-side sibling lookup and the
+    // captured fixture directories always agree.
+    std::string result = &identity::platform[0];
+    for (char &c : result)
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return result;
 }
 
 BuildIdentity build_identity() {

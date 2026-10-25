@@ -14,10 +14,18 @@ document through request.setup.initial_state — the same adopt-the-pose path
 initial_state_file exercises for requests/welded_flat.toml — and let
 prepare_research_startup replay the identical t=0 startup on top.
 
-The document is schema_version 1: qpos/qvel/qacc_warmstart, the road support
+The document is schema_version 2: qpos/qvel/qacc_warmstart, the road support
 row, the material state arrays, the rider active_state and the equilibrium
 metadata, keyed by contract_sha256 (which excludes timestep, so the same
 document serves every --dt the tests pin).
+
+INPUT-ARTIFACT WARNING: the committed documents carry the settled pose the
+tests/fixtures/golden/<platform>/period_buffer/ expected-wire family was
+frozen against. Re-running this script re-solves the pose under current
+physics, which drifts as physics lands and silently breaks the wire
+comparison — the T25 contract re-pin instead grafted schema_version,
+contract_sha256 and source_sha256 onto the frozen state values. Only
+recapture the pose together with a deliberate re-freeze of the wire family.
 """
 from __future__ import annotations
 

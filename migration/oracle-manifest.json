@@ -14827,6 +14827,26 @@
           ]
         },
         {
+          "bytes": 2336,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/native_start_welded/darwin-arm64/integration.f64",
+          "sha256": "b7e2d0ae18dfc688393aeca7a887469572fe648e4ce987031ac6af9d38dfd06d",
+          "shape": [
+            292
+          ]
+        },
+        {
+          "bytes": 2336,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/native_start_welded/linux-aarch64/integration.f64",
+          "sha256": "641bfea6b0d73352e12d2d76946209c6cfc09bf6b2c769e1ed7ff38f74908e3a",
+          "shape": [
+            292
+          ]
+        },
+        {
           "bytes": 351,
           "path": "bootstrap/native_start_welded/meta.json",
           "sha256": "9e7cc825c26acdb27ad5bca1a28c1afa448c98f755ac61ad50d5c9fad2a2dfb8"
@@ -14840,7 +14860,7 @@
         }
       ],
       "name": "bootstrap/native_start_welded",
-      "notes": "startup outputs for the matching frozen-flat request; integration.f64 pins the native startup vector bitwise \u2014 leg ctrl slots 87-90 are 0 because the weld-imposed leg feedforward is unported in the native spindle controller",
+      "notes": "startup outputs for the matching frozen-flat request; integration.f64 pins the native startup vector bitwise \u2014 leg ctrl slots 87-90 are 0 because the weld-imposed leg feedforward is unported in the native spindle controller. The restored t=0 vector is platform solver output: the live compare uses <platform-key>/integration.f64 (the shared spelling stays for the bootstrap read-path consumers)",
       "produced_by": "ride pipeline for requests/welded_flat.toml; integration.f64 is the native prepare->snapshot vector (bike::app::prepare + make_ride + snapshot) capturing the restored t=0, not the Python post-init capture: b21c63e's leg feedforward/preload are Python-only, so indices 87-90 (leg muscle ctrl) are zero here by design",
       "recipe": "RCP-01"
     },
@@ -14851,21 +14871,93 @@
       },
       "files": [
         {
-          "bytes": 23544,
-          "path": "initial_state/welded_flat.json",
-          "sha256": "d5685e8b07942a4e9b6357811d5d83b1dc012ff190ca934422da2dbbcd382638"
+          "bytes": 23545,
+          "path": "initial_state/darwin-arm64/welded_flat.json",
+          "sha256": "bd5972a260fff31406bd622e5a89e5d7402b915dc087883ffcb516e2796c5b99"
         }
       ],
       "group": "bootstrap",
       "inputs": [
         {
-          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/requests/welded_flat.toml",
+          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/tests/fixtures/migration/requests/welded_flat.toml",
           "sha256": "32143e14a69e96ee5d0c65f4398980deda2eb52e9c7aa9084270fdc330712c16"
         }
       ],
-      "name": "initial_state/welded_flat.json",
-      "notes": "t=0 state transferred by requests/welded_flat.toml",
-      "produced_by": "PhysicalInitialState.capture on a welded-flat cache-hit build",
+      "name": "initial_state/darwin-arm64/welded_flat.json",
+      "notes": "t=0 state transferred by requests/welded_flat.toml \u2014 schema_version 2 (contract binds envelope/strength file content, not worktree-absolute paths); platform-bound payload captured under the golden platform key and preferred by the request reader's platform-sibling convention",
+      "produced_by": "tools/migration/_t25_capture.py: PhysicalInitialState.capture on a welded-flat cache-hit build",
+      "recipe": "RCP-01"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 23571,
+          "path": "initial_state/linux-aarch64/welded_flat.json",
+          "sha256": "2abb325564cf8ac91a9359c3d7f75b9e3470803a110bffdccb12285d8ea2b2dd"
+        }
+      ],
+      "group": "bootstrap",
+      "inputs": [
+        {
+          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/tests/fixtures/migration/requests/welded_flat.toml",
+          "sha256": "32143e14a69e96ee5d0c65f4398980deda2eb52e9c7aa9084270fdc330712c16"
+        }
+      ],
+      "name": "initial_state/linux-aarch64/welded_flat.json",
+      "notes": "t=0 state transferred by requests/welded_flat.toml \u2014 schema_version 2 (contract binds envelope/strength file content, not worktree-absolute paths); platform-bound payload captured under the golden platform key and preferred by the request reader's platform-sibling convention; captured in the linux aarch64 container (clang++-18, /build/root-clang)",
+      "produced_by": "tools/migration/_t25_capture.py: PhysicalInitialState.capture on a welded-flat cache-hit build (linux-aarch64 container)",
+      "recipe": "RCP-01"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 23384,
+          "path": "initial_state/darwin-arm64/probe_welded_0005.json",
+          "sha256": "6b97511fb82870f15c3593006df5bad8956c2d7e3f2797e51cf60765184c909c"
+        }
+      ],
+      "group": "research",
+      "inputs": [
+        {
+          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/tests/fixtures/migration/config/viewer_physics_welded.toml",
+          "sha256": "6385864cc68277f074ac9c9b025bd5e4e7900f9a5d494a1906870f2d1dd86247"
+        }
+      ],
+      "name": "initial_state/darwin-arm64/probe_welded_0005.json",
+      "notes": "welded-probe t=0 document restored by reference.period_buffer via request.setup.initial_state \u2014 schema_version 2; INPUT artifact: state values stay pinned to the period_buffer expected-wire family (tests/fixtures/golden/<platform>/period_buffer/); only schema_version/contract_sha256/source_sha256 were re-pinned when the contract moved to content-bound asset digests \u2014 recapturing the pose requires re-freezing the wire family",
+      "produced_by": "tools/migration/_t52_capture.py: research environment (dt .0005, diagnostic-model-limits, inline 200 m hardpack probe track) + PhysicalInitialState.capture; contract/source re-pinned, state values frozen with the wire family",
+      "recipe": "RCP-01"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 23364,
+          "path": "initial_state/linux-aarch64/probe_welded_0005.json",
+          "sha256": "38d39ea01c1efbd0e637cb7f0c404002f8363c404afc6dab9cf2cd16f8bd0aa2"
+        }
+      ],
+      "group": "research",
+      "inputs": [
+        {
+          "path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/tests/fixtures/migration/config/viewer_physics_welded.toml",
+          "sha256": "6385864cc68277f074ac9c9b025bd5e4e7900f9a5d494a1906870f2d1dd86247"
+        }
+      ],
+      "name": "initial_state/linux-aarch64/probe_welded_0005.json",
+      "notes": "welded-probe t=0 document restored by reference.period_buffer via request.setup.initial_state \u2014 schema_version 2; INPUT artifact: state values stay pinned to the period_buffer expected-wire family (tests/fixtures/golden/<platform>/period_buffer/); only schema_version/contract_sha256/source_sha256 were re-pinned when the contract moved to content-bound asset digests \u2014 recapturing the pose requires re-freezing the wire family",
+      "produced_by": "tools/migration/_t52_capture.py: research environment (dt .0005, diagnostic-model-limits, inline 200 m hardpack probe track) + PhysicalInitialState.capture; contract/source re-pinned, state values frozen with the wire family",
       "recipe": "RCP-01"
     },
     {

@@ -140,7 +140,10 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const auto link=temporary.path/"symlink.npz";std::filesystem::create_symlink(path,link);
     bool rejected=false;try{init::write_state_file(link,state);}catch(const std::exception&){rejected=true;}
     bt::require(rejected && bt::text(path)==previous,"state publication never follows a leaf symlink");
-    bt::invalid([&]{(void)init::PhysicalInitialState("{\"schema_version\":2}");});
+    // Schema 2 is current: stale v1 documents (the pre-fix path-hash format)
+    // and unallocated versions both fail closed at the constructor.
+    bt::invalid([&]{(void)init::PhysicalInitialState("{\"schema_version\":1}");});
+    bt::invalid([&]{(void)init::PhysicalInitialState("{\"schema_version\":3}");});
 }
 
 [[gnu::noinline]] void recorded_identity() {

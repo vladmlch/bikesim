@@ -107,10 +107,10 @@ road_lookahead_m = 2.0
 pedal_attachment = "spindle"
 saddle_attachment = "pin"
 grip_attachment = "connect"
-joint_envelope_path = "/src/examples/research/rider_joint_envelope_anatomical.json"
+joint_envelope_path = "../../../../../../examples/research/rider_joint_envelope_anatomical.json"
 # Provisional directional strength sheet (verified=false curves). Engineering
 # bounds only; the verified-provenance gate is a separate release decision.
-joint_strength_path = "/src/examples/research/rider_strength_reference.json"
+joint_strength_path = "../../../../../../examples/research/rider_strength_reference.json"
 # Whole-body positive mechanical power cap: an engineering budget chosen in
 # the requested 400-500 W band, not a physiological claim.
 active_positive_power_limit_w = 450.0

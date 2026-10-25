@@ -797,7 +797,14 @@ def _support(oracle_root: Path):
 
 def _bootstrap_payload(ctx: Context, sim, stem: str, *, steps=None,
                        advance_args=None):
-    """capture_bootstrap + optional advance_python rows under ``stem``."""
+    """capture_bootstrap + optional advance_python rows under ``stem``.
+
+    The bitwise gate's ``<platform-key>/integration.f64`` pin is NOT emitted
+    here: it is the native prepare->snapshot vector (the request pipeline
+    zeroes the unported leg-ctrl slots), produced by
+    ``bike-native-ride --request <bundle> --steps 0 --dump-integration-state``
+    — see the RCP-01 native_start_welded notes and the T25 evidence.
+    """
     from bike_sim.native.setup import capture_bootstrap
     out, rec = ctx.out, ctx.rec
     work = ctx.tmp / stem.replace("/", "_")
@@ -1177,19 +1184,28 @@ def _rcp01_bootstrap(ctx: Context):
         # equilibrium-cache hit (the first build saved the entry), so the
         # captured qacc_warmstart is the canonical zeroed restore value and
         # the fixture bytes are deterministic on cold and warm caches.
+        # The contract hash covers compiled-model fields and the settled
+        # pose — both platform-sensitive — so each platform owns its document
+        # under the golden platform key and the request reader prefers that
+        # platform-keyed sibling over the shared spelling.
         from bike_sim.sim.ride.initial_state import PhysicalInitialState
         sim_is = ride_cli.build_physical_simulation_from_args(args)
         transferred = PhysicalInitialState.capture(sim_is)
-        record = out.text("initial_state/welded_flat.json",
-                          transferred.payload_json)
-        rec.add("initial_state/welded_flat.json", recipe="RCP-01",
+        import platform as _platform
+        _state_rel = ("initial_state/" +
+                      f"{_platform.system().lower()}-{_platform.machine()}" +
+                      "/welded_flat.json")
+        record = out.text(_state_rel, transferred.payload_json)
+        rec.add(_state_rel, recipe="RCP-01",
                 group="bootstrap", comparison="S",
                 expected={"kind": "accepted"},
                 produced_by="PhysicalInitialState.capture on a welded-flat "
                             "cache-hit build",
                 files=[record],
                 inputs=[out.root / "requests/welded_flat.toml"],
-                notes="t=0 state transferred by requests/welded_flat.toml")
+                notes="t=0 state transferred by requests/welded_flat.toml; "
+                      "per-platform capture superseded by the platform-keyed "
+                      "sibling convention")
     except Exception as exc:
         rec.blocker("bootstrap/native_start_welded", "RCP-01",
                     "".join(traceback.format_exception(exc))[-2000:])

@@ -4270,3 +4270,103 @@ merge-back).
 
 L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
 checkpoint profile owns it.
+
+## 2026-10-25 — T25 (lane/d): contract_sha256 worktree portability
+
+**Defect.** Stored initial-state documents hashed the *resolved
+worktree-absolute* `joint_envelope_path`/`joint_strength_path` spellings
+into `contract_sha256`, so a capture validated only inside the checkout
+that produced it — the same defect class the F2 welded-flat re-pin hit
+when lanes moved worktrees.
+
+**Fix (mirrored Python/C++).** `src/bike_sim/sim/ride/initial_state.py`
+and `native/src/initialization/initial_state.cpp` drop the two resolved
+asset-path fields from the hashed physics object and bind file *content*
+instead: symmetric `envelope_sha256`/`strength_sha256` over the file
+bytes (native `platform::file_sha256`). Documents emit
+`schema_version: 2`; `validated()`/native parse require exactly 2 (v1
+stale, v3 unknown — both pinned rejected in `test_t24.cpp`).
+
+**Platform-keyed siblings.** Compiled-model arrays and equilibrium
+values are platform-sensitive, so captures live under
+`initial_state/<system>-<machine>/`. `platform::key()` (baked
+`CMAKE_SYSTEM_NAME-CMAKE_SYSTEM_PROCESSOR`, lowercased — the same
+string the test graphs compute) lets
+`native/src/initialization/request.cpp` and
+`native/src/research/configuration.cpp` prefer
+`<parent>/<platform-key>/<filename>` when it is a regular file and fail
+closed otherwise. The obsolete shared
+`initial_state/welded_flat.json` is removed.
+
+**Bootstrap integration pins.** The native request pipeline's restored
+t=0 integration vector is platform output too (linux ≠ darwin). A new
+`bike-native-ride --dump-integration-state FILE` (exclusive create,
+little-endian `.f64`) produces pins from the actual native pipeline;
+they live at `bootstrap/native_start_welded/<platform-key>/` and
+`test_t25.cpp` resolves them through `platform::key()`. Producer output
+verified byte-for-byte against both keyed fixtures
+(darwin `b7e2d0ae…` = the pre-existing shared spelling, linux
+`641bfea6…`). The shared `integration.f64` stays for the T09/T18-era
+consumers.
+
+**Probe documents are input artifacts.** `period_buffer`'s expected-wire
+family was frozen against the captured probe pose, and the settle output
+drifted ~2.6e-3 at `qpos[0]` under intervening physics commits. Since
+the contract binds model/config — not stored values — the
+`probe_welded_0005.json` documents were re-pinned (schema 2, new
+`contract_sha256`, current `source_sha256`) onto the frozen state
+values, preserving the input↔wire coupling; `_t52_capture.py` now
+documents that recapturing the pose requires re-freezing the wire
+family.
+
+**Commits.** `59b3c4e4` code+docs+tools+darwin artifacts;
+`46c74e41` linux-aarch64 captures + keyed integration pins + producer;
+`fcaf7682` probe re-pin + manifest platform entries.
+
+**Artifacts.**
+- `initial_state/darwin-arm64/welded_flat.json` — 23545 B, `bd5972a2…`, contract `dc9ce816…`
+- `initial_state/linux-aarch64/welded_flat.json` — 23571 B, `2abb3255…`, contract `639f49c5…`
+- `initial_state/darwin-arm64/probe_welded_0005.json` — 23384 B, `6b97511f…`, contract `dc9ce816…`
+- `initial_state/linux-aarch64/probe_welded_0005.json` — 23364 B, `38d39ea0…`, contract `639f49c5…`
+- `bootstrap/native_start_welded/darwin-arm64/integration.f64` — 2336 B, `b7e2d0ae…`
+- `bootstrap/native_start_welded/linux-aarch64/integration.f64` — 2336 B, `641bfea6…`
+- `migration/oracle-manifest.json` — linux welded + both probe entries added; full-manifest drift check clean.
+
+**Darwin verification.**
+- `migration_T24` 1.86 s, `migration_T25` 10.16–10.77 s — pass (schema v1+v3 rejection pinned; keyed pin resolution + prepare/reset ownership).
+- `reference.period_buffer` 3.62 s, `reference.native_pneumatic_tire` 0.71 s — pass under `BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/t25-cold*` (cold equilibrium cache).
+- `migration_T22`/`migration_T23` — pass after rebuild (the earlier sweep red was a stale pre-commit-A binary, not a code failure).
+- `--dump-integration-state` output == `darwin-arm64/integration.f64` byte-for-byte.
+- Cross-path proof: temp worktree `/private/tmp/t25-pathproof` (from `59b3c4e4`, `.deps` linked) — release build + `migration_T25` pass; contract validates outside the producing worktree (the original defect).
+
+**Linux aarch64 (`bike-dev-pfc-lane-d`, `/build/root-clang`, clang++-18).**
+- `migration_T24` 3.22 s, `migration_T25` 27.63 s — pass.
+- `migration_T22` 9.66 s, `migration_T23` 1.41 s — pass.
+- `reference.period_buffer` 3.61 s, `reference.native_pneumatic_tire` 0.74 s — pass (cold cache dir `/tmp/t25-cold-linux`).
+- `--dump-integration-state` output == `linux-aarch64/integration.f64` byte-for-byte.
+- Earlier fail-closed evidence: before the linux recapture the reader correctly refused the absent platform artifact (`platform::open_regular: initial_state/welded_flat.json: No such file or directory`) — the sibling convention fails closed, never substitutes a foreign platform vector.
+
+**`bash tools/run_tests.sh native` (Darwin gate).** Build + all static
+sweeps green: frontends (g++-16, none), clang-tidy (333 TUs), alpha
+analyzer (report-only), cppcheck (none), `-flto -Wodr` (none),
+shellcheck (clean), headers (8950 header TUs, none),
+diagnostic-controls (6/6), context SDK controls (all passed). CTest
+60/62 — the only reds are **pre-existing, input-determined, and
+untouched by this task**:
+
+- `migration_T09` `integration vector resolves bitwise` —
+  `bootstrap/native_start_welded/state.json`'s `$array`-pinned
+  `state.arrays/a000.f64` carries the oracle's nonzero leg-control slots
+  (indices 87–90) while `integration.f64` is the native-shaped pin
+  (zeroed); 4-element mismatch deterministic from files unchanged since
+  `fe4feaa5`/`e3c541b9`. Identical signature on linux-aarch64.
+- `migration_T29` `config.rider_controller.weld_servo_gain: unknown
+  key` — test and `native/src/configuration/` untouched since
+  `fe4feaa5`/`ef66e96a`; a config-key contract red predating T25.
+
+Neither test, fixture, nor decode/config path was modified by
+`59b3c4e4`/`46c74e41`/`fcaf7682` (`git diff HEAD~3` inspection); both
+fail at their inputs regardless of the T25 change set. (`migration_T56`
+flagged a shellcheck-version string in the earlier standalone sweep but
+the gate's `check_scripts` sweep and the gate CTest selection did not
+reproduce it.)

@@ -808,8 +808,8 @@ The 13 failing node IDs, identical in the baseline and current full run, are:
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_motor_follows_the_rider_through_a_shift_without_an_extra_cut`
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_fifteen_percent_climb_holds_12_kmh`
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_savage_is_ridden_to_the_end`
-- `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]`
-- `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_extreme.toml]`
+- `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]` — superseded-in-place (F3, 2026-10-25): the >=1x RTF contract now measures the native Release `bike-measure-realtime` artifact via CTest nodes `reference.realtime_gate.rough_uphill_savage`/`.rough_uphill_extreme` in the root graph (`build/native-release`, container `root-clang`). This Python node still measures the T63-deleted oracle accounted path (~0.62-0.69 on these tracks) and stays baseline-red until T63 removes it; it is superseded, not fixed.
+- `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_extreme.toml]` — same F3 supersession as the savage row above; the contract successor is `reference.realtime_gate.rough_uphill_extreme`.
 - `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[20.0]`
 - `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[40.0]`
 - `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]`
@@ -1392,5 +1392,38 @@ prefix stays a flagged limitation rather than being hidden.
 
 The historical accounted Python-only path (`measure_realtime()` /
 `realtime.json`, `step_ms_*` percentiles, `--baseline` deltas with a
-`comparability` block) is unchanged and still backs the realtime gate; it
-is invoked from tests, not through the CLI above.
+`comparability` block) is unchanged; it is invoked from tests, not through
+the CLI above.
+
+### Realtime gate (re-aimed at the native backend, F3 2026-10-25)
+
+The >=1x RTF release contract (`realtime.json`, v2.05 plan: mean factor >=1
+on both tracks on the dev machine) is carried by the shipped backend, not
+the T63-deleted Python oracle. Two CTest nodes in the root graph —
+
+```
+ctest --test-dir build/native-release -R '^reference\.realtime_gate' --output-on-failure
+tools/linux/container.sh ctest root-clang -R '^reference\.realtime_gate'
+```
+
+— spawn the produced Release `bike-measure-realtime` artifact on
+`rough_uphill_savage.toml` and `rough_uphill_extreme.toml`
+(`viewer_physics_welded.toml`, 20 s at dt=1.25 ms = 16,000 steps,
+`--record-decimation 80`, `--warmup 1 --runs 3 --benchmark`). `--benchmark`
+is the Python gate's `reference_monitor.strict=False` equivalent: the
+monitor still records the documented `energy.constraint_work` baseline
+violation as `prefix.first_failure` instead of stopping physics at step 4,
+so the measured prefix reaches `duration_reached`. Each node asserts the
+schema-1 report: exit 0 (every run `measured_ok`), `duration_reached`,
+16,000/16,000 steps, `simulated_time_s >= 20 - dt`, `build_type=Release`
+provenance, and `median_real_time_factor >= 1` — the contract bar,
+unchanged. The threshold was not weakened: the shipped native backend
+clears it by roughly an order of magnitude (darwin-arm64 medians
+11.52/11.62 savage/extreme, linux-aarch64 9.10/9.09 in the pinned dev
+container, both measured under ordinary dev-machine load), so the
+gate still fails loudly on a real step-loop regression while no longer
+pricing interpreter overhead the roadmap deliberately declined to fund
+("Python-backend — oracle, not a product"). The Python pytest nodes
+measuring the oracle path remain baseline-red above until T63 removes
+them — superseded, not fixed. The labels are `reference;t53;runtime;slow`
+so `ctest -L slow` carries them and `-LE slow` sweeps skip the measurement.

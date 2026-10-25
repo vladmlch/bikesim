@@ -1,0 +1,1178 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 248,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 464,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 712,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 928,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 1176,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 1392,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 1640,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 1856,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 2104,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 2320,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 2568,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 2784,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 3032,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 3248,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 3496,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 3712,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 3960,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 4176,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 4424,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 4640,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 4888,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 5104,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 5352,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 5568,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 5816,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 6032,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 6280,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 6496,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 6744,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 6960,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 7208,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 7424,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 7672,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 7888,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 8136,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 8352,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 8600,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 8816,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 9064,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 9280,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 9528,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 9744,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 9992,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 10208,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 10456,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 10672,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 10920,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 11136,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 11384,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 11600,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 11848,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 12064,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 12312,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 12528,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 12776,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 12992,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 13240,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 13456,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 13704,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 13920,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 14168,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 14384,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 14632,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 14848,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 15096,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 15312,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 15560,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 15776,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 16024,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 16240,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 16488,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 16704,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 16952,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 17168,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 17416,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 17632,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 17880,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 18096,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 18344,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "equality ids",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 18560,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 18584,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 18632,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping",
+  "offset": 18640,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

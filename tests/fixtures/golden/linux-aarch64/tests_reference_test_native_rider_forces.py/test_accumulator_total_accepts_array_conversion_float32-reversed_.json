@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "total converts <class 'numpy.float32'> reversed",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_total_accepts_array_conversion[float32-reversed]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ }
+]

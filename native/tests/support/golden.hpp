@@ -41,6 +41,17 @@ public:
     // Consumes the next entry, requiring a bitwise little-endian f8
     // payload, and returns its decoded doubles in C order.
     [[nodiscard]] std::vector<double> f64_input(std::string_view label);
+    // The next unconsumed entry's label without advancing the cursor —
+    // for replay branches (output tuple vs error capture) that choose
+    // their consumer by the recorded kind. Empty at end of node.
+    [[nodiscard]] std::string_view peek_label() const;
+    // Cursor not yet at the end: distinguishes an end-of-node empty
+    // peek_label() from a legitimately ''-labeled recorded entry.
+    [[nodiscard]] bool has_next() const noexcept {
+        return cursor_ < entries_.size();
+    }
+    // The next unconsumed entry's declared shape (same lifetime rules).
+    [[nodiscard]] std::span<const std::size_t> peek_shape() const;
     void done() const;
 private:
     [[nodiscard]] const Entry &next(std::string_view label) const;

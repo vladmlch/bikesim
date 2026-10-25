@@ -14513,12 +14513,12 @@
       "native/tests/reference/test_attachment_budget.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
+      "reference.attachment_budget",
       "source_assertion_map",
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "3274716f283dbc6661bca5fad255abfc8efb153f1194100caa00dfe21b6d7b18",
     "snapshot_line_count": 79,
     "tracked": true,
@@ -14526,20 +14526,20 @@
   },
   {
     "path": "tests/reference/test_attachment_wrench.py",
-    "sha256": "a7a1c12adac633675ab40902cece643dd199aa76e3d97817da0606f717dbb848",
-    "line_count": 199,
+    "sha256": "696e1162790350c05354949dd39d172bac3a1b7aed9524f533641490c18b3318",
+    "line_count": 225,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_attachment_wrench.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
+      "reference.attachment_wrench",
       "source_assertion_map",
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "829d739b34c7f8b504a9ed287f81266d0655f2262ed1597818c87043885aaac7",
     "snapshot_line_count": 199,
     "tracked": true,
@@ -14622,20 +14622,20 @@
   },
   {
     "path": "tests/reference/test_contact_safety.py",
-    "sha256": "6a77b4016d37b33fd2baf0136c60064344adfa508a9a28334e26b36bb6cbe010",
-    "line_count": 119,
+    "sha256": "236baec79431181650d5180bda64f298aec2a381f87a0d82c0849a9d05155f70",
+    "line_count": 171,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_contact_safety.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
+      "reference.contact_safety",
       "source_assertion_map",
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "31082e5646682fec0e56e07887ec9eca09536be9025983e180e23156259bb9e9",
     "snapshot_line_count": 119,
     "tracked": true,
@@ -15206,20 +15206,20 @@
   },
   {
     "path": "tests/reference/test_native_attachment_wrench.py",
-    "sha256": "f76f8f324c850e8c6ef3b51253728228dde0289873e56116324f4ff658291b5c",
-    "line_count": 1183,
+    "sha256": "52f5e7bc0ac205d55e57b2e1ca895aca65c0cb09ad8d9075fb4dd48e56441366",
+    "line_count": 1439,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_native_attachment_wrench.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
+      "reference.native_attachment_wrench",
       "source_assertion_map",
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "7b848b53425d8594b24d87b0a15eca5b6bab92f0551d134fc29ce60bfb131f73",
     "snapshot_line_count": 1183,
     "tracked": true,
@@ -16052,20 +16052,20 @@
   },
   {
     "path": "tests/reference/test_native_rider_forces.py",
-    "sha256": "20bae01216ed26b1221de0f071e5aa50cfd7dde8702039187feb71b983427682",
-    "line_count": 345,
+    "sha256": "f0af394aeacfb30742628d1a69eeb087c1ef2916c0690e92a9ff46e1accd27db",
+    "line_count": 385,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_native_rider_forces.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
+      "reference.native_rider_forces",
       "source_assertion_map",
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "e1b4405398559ea046dbf3312d2202414f48b045e3b77d26b72b44f1e2393831",
     "snapshot_line_count": 345,
     "tracked": true,

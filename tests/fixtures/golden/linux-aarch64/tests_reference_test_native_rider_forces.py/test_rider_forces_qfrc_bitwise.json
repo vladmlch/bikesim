@@ -1,0 +1,5322 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.qpos0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.dims",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 136,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.path0.name",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 160,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.path0.joint",
+  "nbytes": 112,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 256,
+  "rtol": null,
+  "shape": [
+   14
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.path0.params",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 368,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.path1.name",
+  "nbytes": 88,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 424,
+  "rtol": null,
+  "shape": [
+   11
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "input.path1.joint",
+  "nbytes": 104,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 512,
+  "rtol": null,
+  "shape": [
+   13
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.path1.params",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 616,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "input.path2.name",
+  "nbytes": 80,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 672,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.path2.joint",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 752,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.path2.params",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 848,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "input.path3.name",
+  "nbytes": 120,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 904,
+  "rtol": null,
+  "shape": [
+   15
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.path3.joint",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 1024,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.path3.params",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 1160,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "input.path4.name",
+  "nbytes": 112,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 1216,
+  "rtol": null,
+  "shape": [
+   14
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.path4.joint",
+  "nbytes": 128,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 1328,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "input.path4.params",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 1456,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "input.rng0.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 1512,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.rng0.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 1648,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.rng1.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 1784,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "input.rng1.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 1920,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.rng2.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 2056,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "input.rng2.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 2192,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "input.rng3.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 2328,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "input.rng3.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 2464,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "input.rng4.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 2600,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "input.rng4.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 2736,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "input.rng5.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 2872,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "input.rng5.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 3008,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "input.rng6.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 3144,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "input.rng6.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 3280,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "input.rng7.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 3416,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "input.rng7.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 3552,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "input.rng8.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 3688,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "input.rng8.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 3824,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "input.rng9.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 3960,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "input.rng9.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 4096,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "input.rng10.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 4232,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "input.rng10.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 4368,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "input.rng11.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 4504,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "input.rng11.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 4640,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "input.rng12.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 4776,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "input.rng12.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 4912,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "input.rng13.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 5048,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "input.rng13.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 5184,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "input.rng14.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 5320,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "input.rng14.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 5456,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "input.rng15.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 5592,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "input.rng15.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 5728,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "input.rng16.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 5864,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "input.rng16.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 6000,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "input.rng17.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 6136,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "input.rng17.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 6272,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "input.rng18.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 6408,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "input.rng18.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 6544,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "input.rng19.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 6680,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "input.rng19.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 6816,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "input.rng20.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 6952,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "input.rng20.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 7088,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "input.rng21.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 7224,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "input.rng21.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 7360,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "input.rng22.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 7496,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "input.rng22.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 7632,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "input.rng23.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 7768,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "input.rng23.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 7904,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "input.rng24.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 8040,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "input.rng24.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 8176,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "input.rng25.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 8312,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "input.rng25.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 8448,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "input.rng26.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 8584,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "input.rng26.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 8720,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "input.rng27.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 8856,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "input.rng27.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 8992,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "input.rng28.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 9128,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "input.rng28.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 9264,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "input.rng29.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 9400,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "input.rng29.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 9536,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "input.rng30.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 9672,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "input.rng30.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 9808,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "input.rng31.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 9944,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "input.rng31.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 10080,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "input.rng32.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 10216,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "input.rng32.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 10352,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "input.rng33.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 10488,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "input.rng33.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 10624,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "input.rng34.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 10760,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "input.rng34.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 10896,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "input.rng35.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 11032,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "input.rng35.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 11168,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "input.rng36.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 11304,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "input.rng36.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 11440,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "input.rng37.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 11576,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "input.rng37.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 11712,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "input.rng38.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 11848,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "input.rng38.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 11984,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "input.rng39.qpos",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 12120,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "input.rng39.qvel",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 12256,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.0 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 12392,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.0 qd=-0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 12528,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.0 qd=0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 12664,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.0 qd=0.14065025343953658",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 12800,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.0 qd=0.15627805937726286",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 12936,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.0 qd=0.23441708906589429",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 13072,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.002136831683168317 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 13208,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.002136831683168317 qd=-0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 13344,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.002136831683168317 qd=0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 13480,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.002136831683168317 qd=0.14065025343953658",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 13616,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.002136831683168317 qd=0.15627805937726286",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 13752,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.002136831683168317 qd=0.23441708906589429",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 13888,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336633) qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 14024,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336633) qd=-0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 14160,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336633) qd=0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 14296,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336633) qd=0.14065025343953658",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 14432,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336633) qd=0.15627805937726286",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 14568,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336633) qd=0.23441708906589429",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 14704,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.004273663366336634 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 14840,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.004273663366336634 qd=-0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 14976,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.004273663366336634 qd=0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 15112,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.004273663366336634 qd=0.14065025343953658",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 15248,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.004273663366336634 qd=0.15627805937726286",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 15384,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.004273663366336634 qd=0.23441708906589429",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 15520,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336635) qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 15656,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336635) qd=-0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 15792,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336635) qd=0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 15928,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336635) qd=0.14065025343953658",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 16064,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336635) qd=0.15627805937726286",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 16200,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=np.float64(0.004273663366336635) qd=0.23441708906589429",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 16336,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.024273663366336636 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 16472,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.024273663366336636 qd=-0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 16608,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.024273663366336636 qd=0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 16744,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.024273663366336636 qd=0.14065025343953658",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 16880,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.024273663366336636 qd=0.15627805937726286",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 17016,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.024273663366336636 qd=0.23441708906589429",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 17152,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=-0.03 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 17288,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=-0.03 qd=-0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 17424,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=-0.03 qd=0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 17560,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=-0.03 qd=0.14065025343953658",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 17696,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=-0.03 qd=0.15627805937726286",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 17832,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=-0.03 qd=0.23441708906589429",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 17968,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.05 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 18104,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.05 qd=-0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 18240,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.05 qd=0.07813902968863143",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 18376,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.05 qd=0.14065025343953658",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 18512,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.05 qd=0.15627805937726286",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 18648,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "rider_forces rider_pelvis q=0.05 qd=0.23441708906589429",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 18784,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.0 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 18920,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.0 qd=-0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 19056,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.0 qd=0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 19192,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.0 qd=0.2509248200997043",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 19328,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.0 qd=0.2788053556663381",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 19464,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.0 qd=0.4182080334995071",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 19600,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.002535614315130953 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 19736,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.002535614315130953 qd=-0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 19872,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.002535614315130953 qd=0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 20008,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.002535614315130953 qd=0.2509248200997043",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 20144,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.002535614315130953 qd=0.2788053556663381",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 20280,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.002535614315130953 qd=0.4182080334995071",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 20416,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261905) qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 20552,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261905) qd=-0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 20688,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261905) qd=0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 20824,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261905) qd=0.2509248200997043",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 20960,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261905) qd=0.2788053556663381",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 21096,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261905) qd=0.4182080334995071",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 21232,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.005071228630261906 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 21368,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.005071228630261906 qd=-0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 21504,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.005071228630261906 qd=0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 21640,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.005071228630261906 qd=0.2509248200997043",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 21776,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.005071228630261906 qd=0.2788053556663381",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 21912,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.005071228630261906 qd=0.4182080334995071",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 22048,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261907) qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 22184,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261907) qd=-0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 22320,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261907) qd=0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 22456,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261907) qd=0.2509248200997043",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 22592,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261907) qd=0.2788053556663381",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 22728,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=np.float64(0.005071228630261907) qd=0.4182080334995071",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 22864,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.025071228630261906 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 23000,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.025071228630261906 qd=-0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 23136,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.025071228630261906 qd=0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 23272,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.025071228630261906 qd=0.2509248200997043",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 23408,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.025071228630261906 qd=0.2788053556663381",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 23544,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.025071228630261906 qd=0.4182080334995071",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 23680,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=-0.03 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 23816,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=-0.03 qd=-0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 23952,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=-0.03 qd=0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 24088,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=-0.03 qd=0.2509248200997043",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 24224,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=-0.03 qd=0.2788053556663381",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 24360,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=-0.03 qd=0.4182080334995071",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 24496,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.05 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 24632,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.05 qd=-0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 24768,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.05 qd=0.13940267783316904",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 24904,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.05 qd=0.2509248200997043",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 25040,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.05 qd=0.2788053556663381",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 25176,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "rider_forces rider_torso q=0.05 qd=0.4182080334995071",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 25312,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.0 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 25448,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.0 qd=-0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 25584,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.0 qd=0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 25720,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.0 qd=0.43911843517448246",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 25856,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.0 qd=0.4879093724160916",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 25992,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.0 qd=0.7318640586241374",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 26128,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.007765318840088544 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 26264,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.007765318840088544 qd=-0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 26400,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.007765318840088544 qd=0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 26536,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.007765318840088544 qd=0.43911843517448246",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 26672,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.007765318840088544 qd=0.4879093724160916",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 26808,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.007765318840088544 qd=0.7318640586241374",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 26944,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.015530637680177086) qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 27080,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.015530637680177086) qd=-0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 27216,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.015530637680177086) qd=0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 27352,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.015530637680177086) qd=0.43911843517448246",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 27488,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.015530637680177086) qd=0.4879093724160916",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 27624,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.015530637680177086) qd=0.7318640586241374",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 27760,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.015530637680177088 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 27896,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.015530637680177088 qd=-0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 28032,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.015530637680177088 qd=0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 28168,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.015530637680177088 qd=0.43911843517448246",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 28304,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.015530637680177088 qd=0.4879093724160916",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 28440,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.015530637680177088 qd=0.7318640586241374",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 28576,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.01553063768017709) qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 28712,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.01553063768017709) qd=-0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 28848,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.01553063768017709) qd=0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 28984,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.01553063768017709) qd=0.43911843517448246",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 29120,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 221,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.01553063768017709) qd=0.4879093724160916",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 29256,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 222,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=np.float64(0.01553063768017709) qd=0.7318640586241374",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 29392,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 223,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.035530637680177085 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 29528,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 224,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.035530637680177085 qd=-0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 29664,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 225,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.035530637680177085 qd=0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 29800,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 226,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.035530637680177085 qd=0.43911843517448246",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 29936,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 227,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.035530637680177085 qd=0.4879093724160916",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 30072,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 228,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.035530637680177085 qd=0.7318640586241374",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 30208,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=-0.03 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 30344,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 230,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=-0.03 qd=-0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 30480,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 231,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=-0.03 qd=0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 30616,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 232,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=-0.03 qd=0.43911843517448246",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 30752,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 233,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=-0.03 qd=0.4879093724160916",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 30888,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=-0.03 qd=0.7318640586241374",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 31024,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 235,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.05 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 31160,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 236,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.05 qd=-0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 31296,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 237,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.05 qd=0.2439546862080458",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 31432,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 238,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.05 qd=0.43911843517448246",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 31568,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 239,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.05 qd=0.4879093724160916",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 31704,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "rider_forces rider_arms q=0.05 qd=0.7318640586241374",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 31840,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.0 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 31976,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 242,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.0 qd=-0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 32112,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 243,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.0 qd=0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 32248,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 244,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.0 qd=1.1641818472559449",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 32384,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 245,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.0 qd=1.2935353858399388",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 32520,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 246,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.0 qd=1.940303078759908",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 32656,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 247,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.01646980405765667 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 32792,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 248,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.01646980405765667 qd=-0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 32928,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 249,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.01646980405765667 qd=0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 33064,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 250,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.01646980405765667 qd=1.1641818472559449",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 33200,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 251,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.01646980405765667 qd=1.2935353858399388",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 33336,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 252,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.01646980405765667 qd=1.940303078759908",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 33472,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 253,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.03293960811531333) qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 33608,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 254,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.03293960811531333) qd=-0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 33744,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 255,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.03293960811531333) qd=0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 33880,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 256,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.03293960811531333) qd=1.1641818472559449",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 34016,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 257,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.03293960811531333) qd=1.2935353858399388",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 34152,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 258,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.03293960811531333) qd=1.940303078759908",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 34288,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 259,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.03293960811531334 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 34424,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 260,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.03293960811531334 qd=-0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 34560,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 261,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.03293960811531334 qd=0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 34696,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 262,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.03293960811531334 qd=1.1641818472559449",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 34832,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 263,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.03293960811531334 qd=1.2935353858399388",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 34968,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 264,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.03293960811531334 qd=1.940303078759908",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 35104,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 265,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.032939608115313344) qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 35240,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 266,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.032939608115313344) qd=-0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 35376,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 267,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.032939608115313344) qd=0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 35512,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 268,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.032939608115313344) qd=1.1641818472559449",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 35648,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 269,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.032939608115313344) qd=1.2935353858399388",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 35784,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 270,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=np.float64(0.032939608115313344) qd=1.940303078759908",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 35920,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 271,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05293960811531334 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 36056,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 272,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05293960811531334 qd=-0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 36192,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 273,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05293960811531334 qd=0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 36328,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 274,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05293960811531334 qd=1.1641818472559449",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 36464,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 275,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05293960811531334 qd=1.2935353858399388",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 36600,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 276,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05293960811531334 qd=1.940303078759908",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 36736,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 277,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=-0.03 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 36872,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 278,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=-0.03 qd=-0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 37008,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 279,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=-0.03 qd=0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 37144,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 280,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=-0.03 qd=1.1641818472559449",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 37280,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 281,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=-0.03 qd=1.2935353858399388",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 37416,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 282,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=-0.03 qd=1.940303078759908",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 37552,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 283,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 37688,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 284,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05 qd=-0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 37824,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 285,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05 qd=0.6467676929199694",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 37960,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 286,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05 qd=1.1641818472559449",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 38096,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 287,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05 qd=1.2935353858399388",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 38232,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 288,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_front q=0.05 qd=1.940303078759908",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 38368,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 289,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.0 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 38504,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 290,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.0 qd=0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 38640,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 291,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.0 qd=-0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 38776,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 292,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.0 qd=-0.7443356897998543",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 38912,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 293,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.0 qd=-0.8270396553331715",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 39048,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 294,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.0 qd=-1.2405594829997573",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 39184,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 295,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.010530195942343331 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 39320,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 296,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.010530195942343331 qd=0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 39456,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 297,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.010530195942343331 qd=-0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 39592,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 298,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.010530195942343331 qd=-0.7443356897998543",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 39728,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 299,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.010530195942343331 qd=-0.8270396553331715",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 39864,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 300,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.010530195942343331 qd=-1.2405594829997573",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 40000,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 301,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.021060391884686665) qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 40136,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 302,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.021060391884686665) qd=0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 40272,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 303,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.021060391884686665) qd=-0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 40408,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 304,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.021060391884686665) qd=-0.7443356897998543",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 40544,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 305,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.021060391884686665) qd=-0.8270396553331715",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 40680,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 306,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.021060391884686665) qd=-1.2405594829997573",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 40816,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 307,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.021060391884686662 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 40952,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 308,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.021060391884686662 qd=0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 41088,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 309,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.021060391884686662 qd=-0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 41224,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 310,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.021060391884686662 qd=-0.7443356897998543",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 41360,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 311,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.021060391884686662 qd=-0.8270396553331715",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 41496,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 312,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.021060391884686662 qd=-1.2405594829997573",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 41632,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 313,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.02106039188468666) qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 41768,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 314,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.02106039188468666) qd=0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 41904,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 315,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.02106039188468666) qd=-0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 42040,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 316,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.02106039188468666) qd=-0.7443356897998543",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 42176,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 317,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.02106039188468666) qd=-0.8270396553331715",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 42312,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 318,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=np.float64(-0.02106039188468666) qd=-1.2405594829997573",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 42448,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 319,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.0010603918846866615 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 42584,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 320,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.0010603918846866615 qd=0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 42720,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 321,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.0010603918846866615 qd=-0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 42856,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 322,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.0010603918846866615 qd=-0.7443356897998543",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 42992,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 323,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.0010603918846866615 qd=-0.8270396553331715",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 43128,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 324,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.0010603918846866615 qd=-1.2405594829997573",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 43264,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 325,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.03 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 43400,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 326,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.03 qd=0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 43536,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 327,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.03 qd=-0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 43672,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 328,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.03 qd=-0.7443356897998543",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 43808,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 329,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.03 qd=-0.8270396553331715",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 43944,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 330,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=-0.03 qd=-1.2405594829997573",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 44080,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 331,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.05 qd=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 44216,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 332,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.05 qd=0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 44352,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 333,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.05 qd=-0.41351982766658574",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 44488,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 334,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.05 qd=-0.7443356897998543",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 44624,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 335,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.05 qd=-0.8270396553331715",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 44760,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 336,
+  "kind": "bitwise",
+  "label": "rider_forces rider_leg_rear q=0.05 qd=-1.2405594829997573",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 44896,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 337,
+  "kind": "bitwise",
+  "label": "rider_forces all-boundary",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 45032,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 338,
+  "kind": "bitwise",
+  "label": "rider_forces all-gap",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 45168,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 339,
+  "kind": "bitwise",
+  "label": "rider_forces all-compressed",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 45304,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 340,
+  "kind": "bitwise",
+  "label": "rider_forces rng0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 45440,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 341,
+  "kind": "bitwise",
+  "label": "rider_forces rng1",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 45576,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 342,
+  "kind": "bitwise",
+  "label": "rider_forces rng2",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 45712,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 343,
+  "kind": "bitwise",
+  "label": "rider_forces rng3",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 45848,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 344,
+  "kind": "bitwise",
+  "label": "rider_forces rng4",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 45984,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 345,
+  "kind": "bitwise",
+  "label": "rider_forces rng5",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 46120,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 346,
+  "kind": "bitwise",
+  "label": "rider_forces rng6",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 46256,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 347,
+  "kind": "bitwise",
+  "label": "rider_forces rng7",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 46392,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 348,
+  "kind": "bitwise",
+  "label": "rider_forces rng8",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 46528,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 349,
+  "kind": "bitwise",
+  "label": "rider_forces rng9",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 46664,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 350,
+  "kind": "bitwise",
+  "label": "rider_forces rng10",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 46800,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 351,
+  "kind": "bitwise",
+  "label": "rider_forces rng11",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 46936,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 352,
+  "kind": "bitwise",
+  "label": "rider_forces rng12",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 47072,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 353,
+  "kind": "bitwise",
+  "label": "rider_forces rng13",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 47208,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 354,
+  "kind": "bitwise",
+  "label": "rider_forces rng14",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 47344,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 355,
+  "kind": "bitwise",
+  "label": "rider_forces rng15",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 47480,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 356,
+  "kind": "bitwise",
+  "label": "rider_forces rng16",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 47616,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 357,
+  "kind": "bitwise",
+  "label": "rider_forces rng17",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 47752,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 358,
+  "kind": "bitwise",
+  "label": "rider_forces rng18",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 47888,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 359,
+  "kind": "bitwise",
+  "label": "rider_forces rng19",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 48024,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 360,
+  "kind": "bitwise",
+  "label": "rider_forces rng20",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 48160,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 361,
+  "kind": "bitwise",
+  "label": "rider_forces rng21",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 48296,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 362,
+  "kind": "bitwise",
+  "label": "rider_forces rng22",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 48432,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 363,
+  "kind": "bitwise",
+  "label": "rider_forces rng23",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 48568,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 364,
+  "kind": "bitwise",
+  "label": "rider_forces rng24",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 48704,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 365,
+  "kind": "bitwise",
+  "label": "rider_forces rng25",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 48840,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 366,
+  "kind": "bitwise",
+  "label": "rider_forces rng26",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 48976,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 367,
+  "kind": "bitwise",
+  "label": "rider_forces rng27",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 49112,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 368,
+  "kind": "bitwise",
+  "label": "rider_forces rng28",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 49248,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 369,
+  "kind": "bitwise",
+  "label": "rider_forces rng29",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 49384,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 370,
+  "kind": "bitwise",
+  "label": "rider_forces rng30",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 49520,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 371,
+  "kind": "bitwise",
+  "label": "rider_forces rng31",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 49656,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 372,
+  "kind": "bitwise",
+  "label": "rider_forces rng32",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 49792,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 373,
+  "kind": "bitwise",
+  "label": "rider_forces rng33",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 49928,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 374,
+  "kind": "bitwise",
+  "label": "rider_forces rng34",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 50064,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 375,
+  "kind": "bitwise",
+  "label": "rider_forces rng35",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 50200,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 376,
+  "kind": "bitwise",
+  "label": "rider_forces rng36",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 50336,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 377,
+  "kind": "bitwise",
+  "label": "rider_forces rng37",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 50472,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 378,
+  "kind": "bitwise",
+  "label": "rider_forces rng38",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 50608,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 379,
+  "kind": "bitwise",
+  "label": "rider_forces rng39",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise",
+  "offset": 50744,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ }
+]

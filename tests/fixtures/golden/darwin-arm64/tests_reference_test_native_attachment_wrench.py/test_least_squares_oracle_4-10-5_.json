@@ -1,0 +1,370 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 320,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   40
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 320,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 336,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 368,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 376,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 80,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 384,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 464,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 464,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 472,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 320,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 504,
+  "rtol": null,
+  "shape": [
+   40
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 824,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 840,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 936,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 952,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 240,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 960,
+  "rtol": null,
+  "shape": [
+   10,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1200,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1200,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1208,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 320,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1240,
+  "rtol": null,
+  "shape": [
+   40
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1560,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1576,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1608,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1624,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 80,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1632,
+  "rtol": null,
+  "shape": [
+   10,
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1712,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1712,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+  "offset": 1720,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ }
+]

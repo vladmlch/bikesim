@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "hand-built path force",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_forces.py::test_rider_forces_hand_built_smoke",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

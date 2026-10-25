@@ -1,0 +1,124 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_wide_minimum_norm",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_wide_minimum_norm",
+  "offset": 216,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_wide_minimum_norm",
+  "offset": 232,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_wide_minimum_norm",
+  "offset": 256,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_wide_minimum_norm",
+  "offset": 264,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_wide_minimum_norm",
+  "offset": 272,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_wide_minimum_norm",
+  "offset": 344,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_wide_minimum_norm",
+  "offset": 344,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_least_squares_wide_minimum_norm",
+  "offset": 352,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "error",
+  "nbytes": 34,
+  "node": "tests/reference/test_attachment_wrench.py::test_rank_deficiency_is_not_silently_reported_as_zero_force",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   34
+  ]
+ }
+]

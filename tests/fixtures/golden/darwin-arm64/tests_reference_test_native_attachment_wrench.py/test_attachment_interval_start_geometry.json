@@ -1,0 +1,380 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": " eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": " rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": " rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 296,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": " bike_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 344,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": " bike_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 632,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": " observable",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 680,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": " normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 688,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": " kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 712,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": " rotational",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 716,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": " half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 724,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": " pull present",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 732,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": " rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 740,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": " rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1028,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": " bike_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1076,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": " bike_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1364,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": " observable",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1412,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": " normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1420,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": " kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1444,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": " rotational",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1448,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": " half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1456,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": " gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1464,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": " pull present",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1472,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": " kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1480,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": " normal_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1484,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": " tangent_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1492,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": " moment_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1500,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": " gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1508,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": " pull_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1516,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": " half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry",
+  "offset": 1524,
+  "rtol": null,
+  "shape": []
+ }
+]

@@ -1,0 +1,26 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "span exit concave",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_counts_a_steep_exit_join_and_ignores_a_convex_one",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "span exit convex",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_counts_a_steep_exit_join_and_ignores_a_convex_one",
+  "offset": 8,
+  "rtol": null,
+  "shape": []
+ }
+]

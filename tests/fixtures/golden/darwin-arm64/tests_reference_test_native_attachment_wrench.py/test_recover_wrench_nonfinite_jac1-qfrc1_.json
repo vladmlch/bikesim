@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.jac",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_nonfinite[jac1-qfrc1]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.jac.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_nonfinite[jac1-qfrc1]",
+  "offset": 32,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.qfrc",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_nonfinite[jac1-qfrc1]",
+  "offset": 48,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "error",
+  "nbytes": 22,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_nonfinite[jac1-qfrc1]",
+  "offset": 64,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ }
+]

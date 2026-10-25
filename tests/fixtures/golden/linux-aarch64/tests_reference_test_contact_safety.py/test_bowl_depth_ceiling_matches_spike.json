@@ -1,0 +1,38 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "bowl depth 0.8",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_bowl_depth_ceiling_matches_spike",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "bowl depth 1.2",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_bowl_depth_ceiling_matches_spike",
+  "offset": 8,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "bowl depth 1.5",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_bowl_depth_ceiling_matches_spike",
+  "offset": 16,
+  "rtol": null,
+  "shape": []
+ }
+]

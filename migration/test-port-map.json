@@ -1073,13 +1073,17 @@
       "line": 8,
       "end_line": 12,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_budget::test_violations_use_the_supplied_budget",
+      "native_test_id": "reference.attachment_budget::test_violations_use_the_supplied_budget",
       "native_source": "native/tests/reference/test_attachment_budget.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_budget.py::test_violations_use_the_supplied_budget"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_budget.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_budget green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_budget.py",
@@ -1087,13 +1091,17 @@
       "line": 15,
       "end_line": 19,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_budget::test_platform_cannot_pull_or_scrape_without_normal",
+      "native_test_id": "reference.attachment_budget::test_platform_cannot_pull_or_scrape_without_normal",
       "native_source": "native/tests/reference/test_attachment_budget.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_budget.py::test_platform_cannot_pull_or_scrape_without_normal"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_budget.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_budget green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_budget.py",
@@ -1101,13 +1109,17 @@
       "line": 22,
       "end_line": 25,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_budget::test_a_weld_cannot_supply_a_free_unlimited_couple",
+      "native_test_id": "reference.attachment_budget::test_a_weld_cannot_supply_a_free_unlimited_couple",
       "native_source": "native/tests/reference/test_attachment_budget.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_budget.py::test_a_weld_cannot_supply_a_free_unlimited_couple"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_budget.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_budget green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_budget.py",
@@ -1115,13 +1127,17 @@
       "line": 28,
       "end_line": 34,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_budget::test_per_hand_pull_and_saddle_friction",
+      "native_test_id": "reference.attachment_budget::test_per_hand_pull_and_saddle_friction",
       "native_source": "native/tests/reference/test_attachment_budget.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_budget.py::test_per_hand_pull_and_saddle_friction"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_budget.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_budget green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_budget.py",
@@ -1129,13 +1145,19 @@
       "line": 38,
       "end_line": 41,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_budget::test_nonfinite_measurements_are_rejected",
+      "native_test_id": "reference.attachment_budget::test_nonfinite_measurements_are_rejected",
       "native_source": "native/tests/reference/test_attachment_budget.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_budget.py::test_nonfinite_measurements_are_rejected[nan]",
+        "tests/reference/test_attachment_budget.py::test_nonfinite_measurements_are_rejected[inf]",
+        "tests/reference/test_attachment_budget.py::test_nonfinite_measurements_are_rejected[-inf]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_budget.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_budget green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_budget.py",
@@ -1143,13 +1165,25 @@
       "line": 55,
       "end_line": 58,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_budget::test_foot_boundaries",
+      "native_test_id": "reference.attachment_budget::test_foot_boundaries",
       "native_source": "native/tests/reference/test_attachment_budget.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_budget.py::test_foot_boundaries[19.99-0.0-0.0-0.0-0.0-0.0-expected0]",
+        "tests/reference/test_attachment_budget.py::test_foot_boundaries[20.0-0.0-0.0-0.005001-0.0-0.0-expected1]",
+        "tests/reference/test_attachment_budget.py::test_foot_boundaries[100.0-90.01-0.0-0.0-0.0-0.0-expected2]",
+        "tests/reference/test_attachment_budget.py::test_foot_boundaries[100.0--90.01-0.0-0.0-0.0-0.0-expected3]",
+        "tests/reference/test_attachment_budget.py::test_foot_boundaries[100.0-89.99-0.0-0.0-0.0-0.0-expected4]",
+        "tests/reference/test_attachment_budget.py::test_foot_boundaries[100.0--89.99-0.0-0.0-0.0-0.0-expected5]",
+        "tests/reference/test_attachment_budget.py::test_foot_boundaries[100.0-0.0-2.501-0.0-0.0-0.025-expected6]",
+        "tests/reference/test_attachment_budget.py::test_foot_boundaries[100.0-0.0--2.501-0.0-0.0-0.025-expected7]",
+        "tests/reference/test_attachment_budget.py::test_foot_boundaries[100.0-0.0-2.499-0.0-0.0-0.025-expected8]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 9 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_budget.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_budget green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_budget.py",
@@ -1157,13 +1191,17 @@
       "line": 61,
       "end_line": 66,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_budget::test_saddle_pin_reports_no_couple_channel",
+      "native_test_id": "reference.attachment_budget::test_saddle_pin_reports_no_couple_channel",
       "native_source": "native/tests/reference/test_attachment_budget.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_budget.py::test_saddle_pin_reports_no_couple_channel"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_budget.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_budget green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_budget.py",
@@ -1171,13 +1209,17 @@
       "line": 69,
       "end_line": 71,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_budget::test_unknown_attachment_kind_is_an_error",
+      "native_test_id": "reference.attachment_budget::test_unknown_attachment_kind_is_an_error",
       "native_source": "native/tests/reference/test_attachment_budget.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_budget.py::test_unknown_attachment_kind_is_an_error"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_budget.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_budget green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_budget.py",
@@ -1185,13 +1227,17 @@
       "line": 74,
       "end_line": 79,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_budget::test_negative_measurement_fields_are_rejected",
+      "native_test_id": "reference.attachment_budget::test_negative_measurement_fields_are_rejected",
       "native_source": "native/tests/reference/test_attachment_budget.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_budget.py::test_negative_measurement_fields_are_rejected"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_budget.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_budget green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_wrench.py",
@@ -1199,13 +1245,21 @@
       "line": 9,
       "end_line": 17,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_wrench::test_wrench_preserves_virtual_work",
+      "native_test_id": "reference.attachment_wrench::test_wrench_preserves_virtual_work",
       "native_source": "native/tests/reference/test_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_wrench.py::test_wrench_preserves_virtual_work"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_wrench.py",
@@ -1213,13 +1267,21 @@
       "line": 20,
       "end_line": 22,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_wrench::test_rank_deficiency_is_not_silently_reported_as_zero_force",
+      "native_test_id": "reference.attachment_wrench::test_rank_deficiency_is_not_silently_reported_as_zero_force",
       "native_source": "native/tests/reference/test_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_wrench.py::test_rank_deficiency_is_not_silently_reported_as_zero_force"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_wrench.py",
@@ -1227,13 +1289,21 @@
       "line": 25,
       "end_line": 28,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_wrench::test_unexplainable_generalized_force_is_not_a_wrench",
+      "native_test_id": "reference.attachment_wrench::test_unexplainable_generalized_force_is_not_a_wrench",
       "native_source": "native/tests/reference/test_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_wrench.py::test_unexplainable_generalized_force_is_not_a_wrench"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_wrench.py",
@@ -1241,13 +1311,18 @@
       "line": 52,
       "end_line": 73,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_wrench::test_foot_cop_budget_comes_from_compiled_platform_not_sampling_pads",
+      "native_test_id": "reference.attachment_wrench::test_foot_cop_budget_comes_from_compiled_platform_not_sampling_pads",
       "native_source": "native/tests/reference/test_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_wrench.py::test_foot_cop_budget_comes_from_compiled_platform_not_sampling_pads[0.01]",
+        "tests/reference/test_attachment_wrench.py::test_foot_cop_budget_comes_from_compiled_platform_not_sampling_pads[0.04]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_wrench.cpp \u2014 contract port: RiderContactWriter::attachment_samples on a ctor-resolved weld-pedals model asserts each foot support's half_patch_m comes from the compiled platform geom_size (.05), not config.pedal_patch_half_length_m (swept .01/.04); oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_wrench green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_wrench.py",
@@ -1255,13 +1330,22 @@
       "line": 94,
       "end_line": 115,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_wrench::test_weld_recovers_solved_wrench_and_work",
+      "native_test_id": "reference.attachment_wrench::test_weld_recovers_solved_wrench_and_work",
       "native_source": "native/tests/reference/test_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_wrench.py::test_weld_recovers_solved_wrench_and_work[force0]",
+        "tests/reference/test_attachment_wrench.py::test_weld_recovers_solved_wrench_and_work[force1]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_wrench.py",
@@ -1269,13 +1353,22 @@
       "line": 119,
       "end_line": 134,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_wrench::test_connect_recovers_force_only",
+      "native_test_id": "reference.attachment_wrench::test_connect_recovers_force_only",
       "native_source": "native/tests/reference/test_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_wrench.py::test_connect_recovers_force_only[force0]",
+        "tests/reference/test_attachment_wrench.py::test_connect_recovers_force_only[force1]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_wrench.py",
@@ -1283,13 +1376,21 @@
       "line": 137,
       "end_line": 167,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_wrench::test_contact_rows_do_not_corrupt_equality_selection",
+      "native_test_id": "reference.attachment_wrench::test_contact_rows_do_not_corrupt_equality_selection",
       "native_source": "native/tests/reference/test_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_wrench.py::test_contact_rows_do_not_corrupt_equality_selection"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_attachment_wrench.py",
@@ -1297,13 +1398,21 @@
       "line": 170,
       "end_line": 199,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_attachment_wrench::test_prepared_attachment_raw_matches_interval_state_recovery",
+      "native_test_id": "reference.attachment_wrench::test_prepared_attachment_raw_matches_interval_state_recovery",
       "native_source": "native/tests/reference/test_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_balance_monitor.py",
@@ -1711,13 +1820,21 @@
       "line": 14,
       "end_line": 17,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_contact_safety::test_bump_length_floor_matches_spike",
+      "native_test_id": "reference.contact_safety::test_bump_length_floor_matches_spike",
       "native_source": "native/tests/reference/test_contact_safety.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_contact_safety.py::test_bump_length_floor_matches_spike"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_contact_safety.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.contact_safety green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_contact_safety.py",
@@ -1725,13 +1842,21 @@
       "line": 20,
       "end_line": 24,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_contact_safety::test_bowl_depth_ceiling_matches_spike",
+      "native_test_id": "reference.contact_safety::test_bowl_depth_ceiling_matches_spike",
       "native_source": "native/tests/reference/test_contact_safety.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_contact_safety.py::test_bowl_depth_ceiling_matches_spike"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_contact_safety.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.contact_safety green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_contact_safety.py",
@@ -1739,13 +1864,21 @@
       "line": 31,
       "end_line": 36,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_contact_safety::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
+      "native_test_id": "reference.contact_safety::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones",
       "native_source": "native/tests/reference/test_contact_safety.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_contact_safety.py::test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_contact_safety.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.contact_safety green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_contact_safety.py",
@@ -1753,13 +1886,21 @@
       "line": 39,
       "end_line": 42,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_contact_safety::test_concave_span_ignores_convex_crests",
+      "native_test_id": "reference.contact_safety::test_concave_span_ignores_convex_crests",
       "native_source": "native/tests/reference/test_contact_safety.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_contact_safety.py::test_concave_span_ignores_convex_crests"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_contact_safety.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.contact_safety green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_contact_safety.py",
@@ -1767,13 +1908,21 @@
       "line": 63,
       "end_line": 67,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_contact_safety::test_concave_span_counts_a_steep_entry_join",
+      "native_test_id": "reference.contact_safety::test_concave_span_counts_a_steep_entry_join",
       "native_source": "native/tests/reference/test_contact_safety.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_contact_safety.py::test_concave_span_counts_a_steep_entry_join"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_contact_safety.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.contact_safety green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_contact_safety.py",
@@ -1781,13 +1930,21 @@
       "line": 70,
       "end_line": 74,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_contact_safety::test_concave_span_ignores_a_convex_entry_join",
+      "native_test_id": "reference.contact_safety::test_concave_span_ignores_a_convex_entry_join",
       "native_source": "native/tests/reference/test_contact_safety.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_contact_safety.py::test_concave_span_ignores_a_convex_entry_join"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_contact_safety.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.contact_safety green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_contact_safety.py",
@@ -1795,13 +1952,21 @@
       "line": 77,
       "end_line": 80,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_contact_safety::test_concave_span_control_gentle_facets_stay_clean",
+      "native_test_id": "reference.contact_safety::test_concave_span_control_gentle_facets_stay_clean",
       "native_source": "native/tests/reference/test_contact_safety.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_contact_safety.py::test_concave_span_control_gentle_facets_stay_clean"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_contact_safety.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.contact_safety green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_contact_safety.py",
@@ -1809,13 +1974,21 @@
       "line": 89,
       "end_line": 97,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_contact_safety::test_concave_span_counts_a_steep_exit_join_and_ignores_a_convex_one",
+      "native_test_id": "reference.contact_safety::test_concave_span_counts_a_steep_exit_join_and_ignores_a_convex_one",
       "native_source": "native/tests/reference/test_contact_safety.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_contact_safety.py::test_concave_span_counts_a_steep_exit_join_and_ignores_a_convex_one"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_contact_safety.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.contact_safety green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_contact_safety.py",
@@ -1823,13 +1996,21 @@
       "line": 100,
       "end_line": 113,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_contact_safety::test_hazards_report_every_unsafe_obstacle_kind",
+      "native_test_id": "reference.contact_safety::test_hazards_report_every_unsafe_obstacle_kind",
       "native_source": "native/tests/reference/test_contact_safety.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_contact_safety.py::test_hazards_report_every_unsafe_obstacle_kind"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_contact_safety.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.contact_safety green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_contact_safety.py",
@@ -1837,13 +2018,17 @@
       "line": 116,
       "end_line": 119,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_contact_safety::test_clean_track_has_no_hazards",
+      "native_test_id": "reference.contact_safety::test_clean_track_has_no_hazards",
       "native_source": "native/tests/reference/test_contact_safety.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_contact_safety.py::test_clean_track_has_no_hazards"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_contact_safety.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.contact_safety green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_control_clock.py",
@@ -4139,13 +4324,22 @@
       "line": 143,
       "end_line": 171,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_rider_equality_qfrc_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_rider_equality_qfrc_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_rider_equality_qfrc_oracle[sparse]",
+        "tests/reference/test_native_attachment_wrench.py::test_rider_equality_qfrc_oracle[dense]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4153,13 +4347,21 @@
       "line": 174,
       "end_line": 187,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_rider_equality_rows_grouping",
+      "native_test_id": "reference.native_attachment_wrench::test_rider_equality_rows_grouping",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_rider_equality_rows_grouping"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4167,13 +4369,23 @@
       "line": 191,
       "end_line": 205,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_rider_equality_reaction_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_rider_equality_reaction_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_rider_equality_reaction_oracle[w]",
+        "tests/reference/test_native_attachment_wrench.py::test_rider_equality_reaction_oracle[j]",
+        "tests/reference/test_native_attachment_wrench.py::test_rider_equality_reaction_oracle[c]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4181,13 +4393,21 @@
       "line": 208,
       "end_line": 219,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_rider_equality_reaction_missing_rows_zero",
+      "native_test_id": "reference.native_attachment_wrench::test_rider_equality_reaction_missing_rows_zero",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_rider_equality_reaction_missing_rows_zero"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4195,13 +4415,21 @@
       "line": 222,
       "end_line": 237,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_rider_equality_qfrc_empty_arena",
+      "native_test_id": "reference.native_attachment_wrench::test_rider_equality_qfrc_empty_arena",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_rider_equality_qfrc_empty_arena"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4209,13 +4437,21 @@
       "line": 267,
       "end_line": 291,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_rider_pedal_torque_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_rider_pedal_torque_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_rider_pedal_torque_oracle"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4223,13 +4459,21 @@
       "line": 294,
       "end_line": 308,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_stepper_qfrc_returns_owning_array",
+      "native_test_id": "reference.native_attachment_wrench::test_stepper_qfrc_returns_owning_array",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_stepper_qfrc_returns_owning_array"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4237,13 +4481,29 @@
       "line": 335,
       "end_line": 340,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[8-3-1]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[3-8-2]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[5-5-3]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[10-4-4]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[4-10-5]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[1-1-6]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[7-7-7]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[2-9-8]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_oracle[9-2-9]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 9 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4251,13 +4511,24 @@
       "line": 344,
       "end_line": 347,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_rhs_count",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_rhs_count",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rhs_count[0]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rhs_count[1]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rhs_count[2]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rhs_count[5]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4265,13 +4536,24 @@
       "line": 351,
       "end_line": 357,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_degenerate_dims",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_degenerate_dims",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_degenerate_dims[degenerate0]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_degenerate_dims[degenerate1]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_degenerate_dims[degenerate2]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_degenerate_dims[degenerate3]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4279,13 +4561,21 @@
       "line": 360,
       "end_line": 366,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_rank_deficient",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_rank_deficient",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rank_deficient"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4293,13 +4583,25 @@
       "line": 370,
       "end_line": 374,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_rcond_boundary",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_rcond_boundary",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rcond_boundary[0.9]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rcond_boundary[0.99]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rcond_boundary[1.0]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rcond_boundary[1.01]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rcond_boundary[1.1]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4307,13 +4609,25 @@
       "line": 378,
       "end_line": 381,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_rcond_values",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_rcond_values",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rcond_values[1e-12]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rcond_values[-1.0]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rcond_values[0.0]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rcond_values[0.5]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_rcond_values[0.001]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4321,13 +4635,21 @@
       "line": 384,
       "end_line": 391,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_inconsistent_target",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_inconsistent_target",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_inconsistent_target"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4335,13 +4657,21 @@
       "line": 394,
       "end_line": 398,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_wide_minimum_norm",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_wide_minimum_norm",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_wide_minimum_norm"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4349,13 +4679,26 @@
       "line": 409,
       "end_line": 413,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_nonfinite",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_nonfinite",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_nonfinite[a0-b0]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_nonfinite[a1-b1]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_nonfinite[a2-b2]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_nonfinite[a3-b3]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_nonfinite[a4-b4]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_nonfinite[a5-b5]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4363,13 +4706,21 @@
       "line": 423,
       "end_line": 427,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_shape_errors",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_shape_errors",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_shape_errors[a0-b0]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_shape_errors[a1-b1]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_shape_errors[a2-b2]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_shape_errors[a3-b3]",
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_shape_errors[a4-b4]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4377,13 +4728,17 @@
       "line": 430,
       "end_line": 434,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_incompatible_dimensions_message",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_incompatible_dimensions_message",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_incompatible_dimensions_message"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4391,13 +4746,21 @@
       "line": 437,
       "end_line": 470,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_output_layout_and_ownership",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_output_layout_and_ownership",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_output_layout_and_ownership"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4405,13 +4768,21 @@
       "line": 665,
       "end_line": 672,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_native_recover_wrench",
+      "native_test_id": "reference.native_attachment_wrench::test_native_recover_wrench",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_native_recover_wrench"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4419,13 +4790,29 @@
       "line": 698,
       "end_line": 708,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_recover_wrench_random_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_recover_wrench_random_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape0-1]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape1-2]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape2-3]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape3-4]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape4-5]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape5-6]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape6-7]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape7-8]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_random_oracle[shape8-9]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 9 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4433,13 +4820,21 @@
       "line": 711,
       "end_line": 722,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_recover_wrench_rank_deficient_and_inconsistent",
+      "native_test_id": "reference.native_attachment_wrench::test_recover_wrench_rank_deficient_and_inconsistent",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_rank_deficient_and_inconsistent"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4447,13 +4842,25 @@
       "line": 726,
       "end_line": 730,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_recover_wrench_rcond_boundary",
+      "native_test_id": "reference.native_attachment_wrench::test_recover_wrench_rcond_boundary",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_rcond_boundary[0.9]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_rcond_boundary[0.99]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_rcond_boundary[1.0]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_rcond_boundary[1.01]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_rcond_boundary[1.1]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4461,13 +4868,24 @@
       "line": 739,
       "end_line": 742,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_recover_wrench_nonfinite",
+      "native_test_id": "reference.native_attachment_wrench::test_recover_wrench_nonfinite",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_nonfinite[jac0-qfrc0]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_nonfinite[jac1-qfrc1]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_nonfinite[jac2-qfrc2]",
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_nonfinite[jac3-qfrc3]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4475,13 +4893,21 @@
       "line": 745,
       "end_line": 751,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_recover_wrench_degenerate_and_shape_errors",
+      "native_test_id": "reference.native_attachment_wrench::test_recover_wrench_degenerate_and_shape_errors",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_degenerate_and_shape_errors"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4489,13 +4915,21 @@
       "line": 754,
       "end_line": 763,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_recover_wrench_owns_its_output",
+      "native_test_id": "reference.native_attachment_wrench::test_recover_wrench_owns_its_output",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_owns_its_output"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4503,13 +4937,22 @@
       "line": 767,
       "end_line": 813,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_relative_planar_jacobian_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_relative_planar_jacobian_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_relative_planar_jacobian_oracle[sparse]",
+        "tests/reference/test_native_attachment_wrench.py::test_relative_planar_jacobian_oracle[dense]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4517,13 +4960,26 @@
       "line": 826,
       "end_line": 860,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_prepare_attachment_geometry_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_prepare_attachment_geometry_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+        "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-dense]",
+        "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies1-point1-False-foot-None-sparse]",
+        "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies1-point1-False-foot-None-dense]",
+        "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[c-bodies2-point2-False-grip-pull2-sparse]",
+        "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[c-bodies2-point2-False-grip-pull2-dense]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4531,13 +4987,23 @@
       "line": 868,
       "end_line": 888,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_attachment_raw_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_attachment_raw_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_raw_oracle[w-bodies0-point0-True-foot]",
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_raw_oracle[w-bodies1-point1-False-foot]",
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_raw_oracle[c-bodies2-point2-False-grip]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4545,13 +5011,23 @@
       "line": 896,
       "end_line": 942,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_attachment_raw_from_geometry_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_attachment_raw_from_geometry_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_raw_from_geometry_oracle[w-bodies0-point0-True-foot]",
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_raw_from_geometry_oracle[w-bodies1-point1-False-foot]",
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_raw_from_geometry_oracle[c-bodies2-point2-False-grip]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4559,13 +5035,21 @@
       "line": 945,
       "end_line": 979,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_attachment_sample_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_attachment_sample_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_sample_oracle"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4573,13 +5057,21 @@
       "line": 982,
       "end_line": 1033,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_decompose_wrench_oracle",
+      "native_test_id": "reference.native_attachment_wrench::test_decompose_wrench_oracle",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_decompose_wrench_oracle"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4587,13 +5079,21 @@
       "line": 1036,
       "end_line": 1074,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_attachment_missing_equality_is_no_measurement",
+      "native_test_id": "reference.native_attachment_wrench::test_attachment_missing_equality_is_no_measurement",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_missing_equality_is_no_measurement"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4601,13 +5101,21 @@
       "line": 1077,
       "end_line": 1101,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_attachment_shared_support_error",
+      "native_test_id": "reference.native_attachment_wrench::test_attachment_shared_support_error",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_shared_support_error"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4615,13 +5123,21 @@
       "line": 1104,
       "end_line": 1137,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_attachment_out_of_plane_error",
+      "native_test_id": "reference.native_attachment_wrench::test_attachment_out_of_plane_error",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_out_of_plane_error"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4629,13 +5145,21 @@
       "line": 1158,
       "end_line": 1200,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_attachment_unobservable_and_validation_deferral",
+      "native_test_id": "reference.native_attachment_wrench::test_attachment_unobservable_and_validation_deferral",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_unobservable_and_validation_deferral"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4643,13 +5167,21 @@
       "line": 1203,
       "end_line": 1232,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_attachment_newton_third_law_error",
+      "native_test_id": "reference.native_attachment_wrench::test_attachment_newton_third_law_error",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_newton_third_law_error"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4657,13 +5189,21 @@
       "line": 1235,
       "end_line": 1272,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_attachment_measurement_dicts_own_storage",
+      "native_test_id": "reference.native_attachment_wrench::test_attachment_measurement_dicts_own_storage",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_measurement_dicts_own_storage"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -4671,13 +5211,21 @@
       "line": 1275,
       "end_line": 1311,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_attachment_interval_start_geometry",
+      "native_test_id": "reference.native_attachment_wrench::test_attachment_interval_start_geometry",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_attachment_interval_start_geometry"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -15877,13 +16425,21 @@
       "line": 127,
       "end_line": 146,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_forces::test_rider_forces_qfrc_bitwise",
+      "native_test_id": "reference.native_rider_forces::test_rider_forces_qfrc_bitwise",
       "native_source": "native/tests/reference/test_native_rider_forces.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_forces.py::test_rider_forces_qfrc_bitwise"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_rider_forces.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_rider_forces green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_forces.py",
@@ -15891,13 +16447,21 @@
       "line": 150,
       "end_line": 177,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_forces::test_project_emits_resolved_paths",
+      "native_test_id": "reference.native_rider_forces::test_project_emits_resolved_paths",
       "native_source": "native/tests/reference/test_native_rider_forces.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_rider_forces.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_rider_forces green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_forces.py",
@@ -15905,13 +16469,21 @@
       "line": 191,
       "end_line": 199,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_forces::test_rider_forces_hand_built_smoke",
+      "native_test_id": "reference.native_rider_forces::test_rider_forces_hand_built_smoke",
       "native_source": "native/tests/reference/test_native_rider_forces.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_forces.py::test_rider_forces_hand_built_smoke"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_rider_forces.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_rider_forces green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_forces.py",
@@ -15919,13 +16491,17 @@
       "line": 202,
       "end_line": 205,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_forces::test_rider_forces_requires_config",
+      "native_test_id": "reference.native_rider_forces::test_rider_forces_requires_config",
       "native_source": "native/tests/reference/test_native_rider_forces.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_forces.py::test_rider_forces_requires_config"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_rider_forces.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_rider_forces green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_forces.py",
@@ -15933,13 +16509,17 @@
       "line": 208,
       "end_line": 220,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_forces::test_rider_forces_missing_key_names_it",
+      "native_test_id": "reference.native_rider_forces::test_rider_forces_missing_key_names_it",
       "native_source": "native/tests/reference/test_native_rider_forces.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_forces.py::test_rider_forces_missing_key_names_it"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_rider_forces.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_rider_forces green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_forces.py",
@@ -15947,13 +16527,17 @@
       "line": 223,
       "end_line": 230,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_forces::test_rider_forces_joint_validation",
+      "native_test_id": "reference.native_rider_forces::test_rider_forces_joint_validation",
       "native_source": "native/tests/reference/test_native_rider_forces.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_forces.py::test_rider_forces_joint_validation"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_rider_forces.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_rider_forces green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_forces.py",
@@ -15961,13 +16545,21 @@
       "line": 243,
       "end_line": 274,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_forces::test_accumulator_order_bitwise",
+      "native_test_id": "reference.native_rider_forces::test_accumulator_order_bitwise",
       "native_source": "native/tests/reference/test_native_rider_forces.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_rider_forces.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_rider_forces green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_forces.py",
@@ -15975,13 +16567,17 @@
       "line": 277,
       "end_line": 295,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_forces::test_accumulator_total_validates",
+      "native_test_id": "reference.native_rider_forces::test_accumulator_total_validates",
       "native_source": "native/tests/reference/test_native_rider_forces.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_forces.py::test_accumulator_total_validates"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_rider_forces.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_rider_forces green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_forces.py",
@@ -15989,13 +16585,29 @@
       "line": 300,
       "end_line": 310,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_forces::test_accumulator_total_accepts_array_conversion",
+      "native_test_id": "reference.native_rider_forces::test_accumulator_total_accepts_array_conversion",
       "native_source": "native/tests/reference/test_native_rider_forces.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_forces.py::test_accumulator_total_accepts_array_conversion[float64-contiguous]",
+        "tests/reference/test_native_rider_forces.py::test_accumulator_total_accepts_array_conversion[float64-strided]",
+        "tests/reference/test_native_rider_forces.py::test_accumulator_total_accepts_array_conversion[float64-reversed]",
+        "tests/reference/test_native_rider_forces.py::test_accumulator_total_accepts_array_conversion[float32-contiguous]",
+        "tests/reference/test_native_rider_forces.py::test_accumulator_total_accepts_array_conversion[float32-strided]",
+        "tests/reference/test_native_rider_forces.py::test_accumulator_total_accepts_array_conversion[float32-reversed]",
+        "tests/reference/test_native_rider_forces.py::test_accumulator_total_accepts_array_conversion[int32-contiguous]",
+        "tests/reference/test_native_rider_forces.py::test_accumulator_total_accepts_array_conversion[int32-strided]",
+        "tests/reference/test_native_rider_forces.py::test_accumulator_total_accepts_array_conversion[int32-reversed]"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 9 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_rider_forces.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_rider_forces green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_forces.py",
@@ -16003,13 +16615,21 @@
       "line": 314,
       "end_line": 345,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_forces::test_accumulator_order_golden",
+      "native_test_id": "reference.native_rider_forces::test_accumulator_order_golden",
       "native_source": "native/tests/reference/test_native_rider_forces.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_forces.py::test_accumulator_order_golden"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_rider_forces.cpp; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_rider_forces green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -33418,13 +34038,21 @@
       "line": 576,
       "end_line": 596,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_fp_invalid_raised_on_failure",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_fp_invalid_raised_on_failure",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_fp_invalid_raised_on_failure"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp under the T52 batch; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -33432,13 +34060,21 @@
       "line": 541,
       "end_line": 573,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_least_squares_prior_fp_invalid_flag",
+      "native_test_id": "reference.native_attachment_wrench::test_least_squares_prior_fp_invalid_flag",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_least_squares_prior_fp_invalid_flag"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp under the T52 batch; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_attachment_wrench.py",
@@ -33446,13 +34082,21 @@
       "line": 473,
       "end_line": 500,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_attachment_wrench::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+      "native_test_id": "reference.native_attachment_wrench::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
       "native_source": "native/tests/reference/test_native_attachment_wrench.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract"
+      ],
+      "assertions_capture": "2026-10-25: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.14b lane/c: ported to native/tests/reference/test_native_attachment_wrench.cpp under the T52 batch; oracle green darwin-arm64 + linux-aarch64; CTest reference.native_attachment_wrench green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",

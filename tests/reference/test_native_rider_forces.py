@@ -26,6 +26,7 @@ from native_loader import load_native
 bike_native = load_native()
 
 from _bits import assert_bitwise_equal
+import _golden
 
 MJB = 'tools/proto_native_bench/artifacts/model.mjb'
 
@@ -121,6 +122,10 @@ def _sweep_states(model, rf, qpos0):
             qpos[p.qposadr] = bound + rng.uniform(-0.05, 0.05)
             qvel[p.dofadr] = rng.uniform(-3.0, 3.0)
         states.append((f'rng{j}', qpos, qvel))
+        # NumPy's uniform() FMA lowering is platform-dependent — replay
+        # the drawn states rather than regenerating them.
+        _golden.record(np.asarray(qpos), f'input.rng{j}.qpos')
+        _golden.record(np.asarray(qvel), f'input.rng{j}.qvel')
     return states
 
 
@@ -137,6 +142,24 @@ def test_rider_forces_qfrc_bitwise(tmp_path):
     warm = np.zeros(model.nv)
     mujoco.mj_resetData(model, d)
     qpos0 = d.qpos.copy()
+    # The C++ port rebuilds the seated model with generate_mjcf: freeze
+    # the dimensions and every resolved path descriptor so it can prove
+    # its model carries the same (qposadr, dofadr) contract.
+    from tools.native_config import _joint_name
+    _golden.record(np.asarray(qpos0), 'input.qpos0')
+    _golden.record(np.asarray([model.nq, model.nv, model.njnt],
+                              np.float64), 'input.dims')
+    for i, p in enumerate(rf._paths):
+        _golden.record(np.frombuffer(p.body.name.encode(), np.uint8)
+                       .astype(np.float64), f'input.path{i}.name')
+        _golden.record(np.frombuffer(
+            _joint_name(model, p.qposadr).encode(), np.uint8)
+            .astype(np.float64), f'input.path{i}.joint')
+        _golden.record(np.asarray(
+            [p.body.stiffness_n_m, p.body.damping_ns_m,
+             p.body.preload_deflection_m, p.offset_m,
+             float(p.body.unilateral), float(p.qposadr),
+             float(p.dofadr)]), f'input.path{i}.params')
     for label, qpos, qvel in _sweep_states(model, rf, qpos0):
         want = _py_qfrc(model, rf, qpos, qvel, d)
         st.set_state(qpos, qvel, act, warm, 0.0)
@@ -162,7 +185,9 @@ def test_project_emits_resolved_paths(tmp_path):
     rf.set_pedal_offsets(0.023, -0.031)
     sec = project(sim)['rider_forces']['paths']
     assert len(sec) == len(rf._paths)
-    for want, got in zip(rf._paths, sec):
+    _golden.record(np.asarray([sim.model.nq, sim.model.nv, sim.model.njnt],
+                              np.float64), 'input.dims')
+    for i, (want, got) in enumerate(zip(rf._paths, sec)):
         b = want.body
         assert got['stiffness_n_m'] == b.stiffness_n_m
         assert got['damping_ns_m'] == b.damping_ns_m
@@ -172,6 +197,16 @@ def test_project_emits_resolved_paths(tmp_path):
         jid = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_JOINT,
                                 got['joint'])
         assert int(sim.model.jnt_qposadr[jid]) == want.qposadr
+        _golden.record(np.frombuffer(got['name'].encode(), np.uint8)
+                       .astype(np.float64), f'expected.path{i}.name')
+        _golden.record(np.frombuffer(got['joint'].encode(), np.uint8)
+                       .astype(np.float64), f'expected.path{i}.joint')
+        _golden.record(np.asarray(
+            [got['stiffness_n_m'], got['damping_ns_m'],
+             got['preload_deflection_m'], got['offset_m'],
+             float(got['unilateral']), float(want.qposadr)]),
+            f'expected.path{i}')
+    _golden.record(np.float64(sim.model.nv), 'expected.nv')
     # The projected section must drive the native writer: feed it.
     assert bike_native.Stepper(str(mjb), {'schema': 1, 'rider_forces': {
         'paths': sec}}).rider_forces_qfrc().shape == (sim.model.nv,)
@@ -267,6 +302,11 @@ def test_accumulator_order_bitwise():
         for i in range(int(rng.integers(1, 8))):
             scale = 10.0 ** int(rng.integers(-6, 7))
             comps[f'c{i}'] = rng.normal(0.0, scale, nv)
+        # Replay the drawn components: 10.0 ** k is libm-pow sensitive
+        # across platforms.
+        _golden.record(np.float64(len(comps)), f'input.t{trial}.count')
+        for i in range(len(comps)):
+            _golden.record(comps[f'c{i}'], f'input.t{trial}.c{i}')
         for cand in (comps, dict(reversed(list(comps.items())))):
             assert_bitwise_equal(st.total(cand), _acc_total(cand, nv),
                                  f'fuzz trial {trial}')

@@ -1,0 +1,142 @@
+[
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "fast rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery",
+  "offset": 0,
+  "rtol": 0.0,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "close",
+  "label": "slow rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery",
+  "offset": 288,
+  "rtol": 0.0,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "close",
+  "label": "fast bike_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery",
+  "offset": 576,
+  "rtol": 0.0,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "close",
+  "label": "slow bike_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery",
+  "offset": 864,
+  "rtol": 0.0,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "close",
+  "label": "fast rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery",
+  "offset": 1152,
+  "rtol": 0.0,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "close",
+  "label": "slow rider_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery",
+  "offset": 1200,
+  "rtol": 0.0,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "close",
+  "label": "fast bike_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery",
+  "offset": 1248,
+  "rtol": 0.0,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "close",
+  "label": "slow bike_qfrc",
+  "nbytes": 48,
+  "node": "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery",
+  "offset": 1296,
+  "rtol": 0.0,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "close",
+  "label": "fast gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery",
+  "offset": 1344,
+  "rtol": 1e-06,
+  "shape": []
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "close",
+  "label": "slow gap_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_attachment_wrench.py::test_prepared_attachment_raw_matches_interval_state_recovery",
+  "offset": 1352,
+  "rtol": 1e-06,
+  "shape": []
+ }
+]

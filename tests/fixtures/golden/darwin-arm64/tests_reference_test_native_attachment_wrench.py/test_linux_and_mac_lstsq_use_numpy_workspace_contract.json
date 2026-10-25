@@ -1,0 +1,371 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   36
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 288,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 304,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 520,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 536,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 544,
+  "rtol": null,
+  "shape": [
+   4,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 640,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 664,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 672,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 704,
+  "rtol": null,
+  "shape": [
+   36
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 992,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1008,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1224,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1240,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1248,
+  "rtol": null,
+  "shape": [
+   4,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1344,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1368,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1376,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1408,
+  "rtol": null,
+  "shape": [
+   36
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.a.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1696,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1712,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.b.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1928,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "input.rcond",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1944,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "x",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 1952,
+  "rtol": null,
+  "shape": [
+   4,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "resids",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 2048,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "rank",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 2072,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "singular values",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_linux_and_mac_lstsq_use_numpy_workspace_contract",
+  "offset": 2080,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ }
+]

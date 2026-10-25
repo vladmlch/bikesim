@@ -1,0 +1,592 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "order a,b,c",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "order a,c,b",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 208,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "absorbed fold",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 416,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.t0.count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 624,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.t0.c0",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 632,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.t0.c1",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 840,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "fuzz trial 0",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 1048,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "fuzz trial 0",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 1256,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "input.t1.count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 1464,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.t1.c0",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 1472,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.t1.c1",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 1680,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "input.t1.c2",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 1888,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.t1.c3",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 2096,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "fuzz trial 1",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 2304,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "fuzz trial 1",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 2512,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.t2.count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 2720,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "input.t2.c0",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 2728,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "input.t2.c1",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 2936,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.t2.c2",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 3144,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "fuzz trial 2",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 3352,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "fuzz trial 2",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 3560,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.t3.count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 3768,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "input.t3.c0",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 3776,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "input.t3.c1",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 3984,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "input.t3.c2",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 4192,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "input.t3.c3",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 4400,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "input.t3.c4",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 4608,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "input.t3.c5",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 4816,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "fuzz trial 3",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 5024,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "fuzz trial 3",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 5232,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "input.t4.count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 5440,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "input.t4.c0",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 5448,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "fuzz trial 4",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 5656,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "fuzz trial 4",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 5864,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "input.t5.count",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 6072,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "input.t5.c0",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 6080,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "input.t5.c1",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 6288,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "input.t5.c2",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 6496,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "input.t5.c3",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 6704,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "input.t5.c4",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 6912,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "fuzz trial 5",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 7120,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "fuzz trial 5",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 7328,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "empty total",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_rider_forces.py::test_accumulator_order_bitwise",
+  "offset": 7536,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ }
+]

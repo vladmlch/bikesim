@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "span entry convex",
+  "nbytes": 8,
+  "node": "tests/reference/test_contact_safety.py::test_concave_span_ignores_a_convex_entry_join",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.jac",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_degenerate_and_shape_errors",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.jac.shape",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_degenerate_and_shape_errors",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.qfrc",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_degenerate_and_shape_errors",
+  "offset": 16,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "error",
+  "nbytes": 34,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_recover_wrench_degenerate_and_shape_errors",
+  "offset": 16,
+  "rtol": null,
+  "shape": [
+   34
+  ]
+ }
+]

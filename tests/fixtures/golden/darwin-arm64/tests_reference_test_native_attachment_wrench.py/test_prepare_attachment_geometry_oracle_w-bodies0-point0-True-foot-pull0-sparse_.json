@@ -1,0 +1,2976 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 248,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 464,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 712,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 928,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 1176,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 1392,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 1640,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 1856,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 2104,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 2320,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 2568,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 2784,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 3032,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 3248,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 3496,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 3712,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 3960,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 4176,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 4424,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 4640,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 4888,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 5104,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 5352,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 5568,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 5816,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 6032,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 6280,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 6496,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 6744,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 6960,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 7208,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 7424,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 7672,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 7888,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 8136,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 8352,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 8600,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 8816,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 9064,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 9280,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 9528,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 9744,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 9992,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 10208,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 10456,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 10672,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 10920,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 11136,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 11384,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 11600,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 11848,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 12064,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 12312,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 12528,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 12776,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 12992,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 13240,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 13456,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 13704,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 13920,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 14168,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 14384,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 14632,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 14848,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 15096,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 15312,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 15560,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 15776,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 16024,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 16240,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 16488,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 16704,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 16952,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 17168,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 17416,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 17632,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 17880,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 18096,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 18344,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 18560,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 18808,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 19024,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 19272,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 19488,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 19736,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 19952,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 20200,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 20416,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 20664,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 20880,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 21128,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 21344,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 21592,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 21808,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 22056,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 22272,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 22520,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 22736,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 22984,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 23200,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 23448,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 23664,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 23912,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 24128,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 24376,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 24592,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 24840,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 25056,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 25304,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 25520,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 25768,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 25984,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 26232,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 26448,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 26696,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 26912,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 27160,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 27376,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 27624,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 27840,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 28088,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 28304,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 28552,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 28768,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 29016,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 29232,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 29480,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 29696,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 29944,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 30160,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 30408,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 30624,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 30872,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 31088,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 31336,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 31552,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 31800,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 32016,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 32264,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 32480,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 32728,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 32944,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 33192,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 33408,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 33656,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 33872,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 34120,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 34336,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 34584,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 34800,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 35048,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 35264,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 35512,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 35728,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 35976,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 36192,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 36440,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 36656,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 36904,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 37120,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 37368,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 37584,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 37832,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 38048,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 38296,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 38512,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 38760,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 38976,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 39224,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 39440,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 39688,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 39904,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 40152,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 40368,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 40616,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 40832,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 41080,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 41296,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 41544,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 41760,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 42008,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 42224,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 42472,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 42688,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 42936,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 43152,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 43400,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 43616,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 43864,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 44080,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 44328,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 44544,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 44792,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 45008,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 45256,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 45472,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 45720,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "qpos trajectory diverged",
+  "nbytes": 248,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 45936,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "qvel trajectory diverged",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 46184,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 200,
+  "kind": "bitwise",
+  "label": " eq_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 46400,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": " rider_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 46408,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": " rider_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 46696,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 203,
+  "kind": "bitwise",
+  "label": " bike_jac",
+  "nbytes": 288,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 46744,
+  "rtol": null,
+  "shape": [
+   6,
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": " bike_columns",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 47032,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "bitwise",
+  "label": " observable",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 47080,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 206,
+  "kind": "bitwise",
+  "label": " normal",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 47088,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 207,
+  "kind": "bitwise",
+  "label": " kind",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 47112,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 208,
+  "kind": "bitwise",
+  "label": " rotational",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 47116,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 209,
+  "kind": "bitwise",
+  "label": " half_patch_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 47124,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": " pull present",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 47132,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": " pull_direction",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 47140,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "error",
+  "nbytes": 45,
+  "node": "tests/reference/test_native_attachment_wrench.py::test_prepare_attachment_geometry_oracle[w-bodies0-point0-True-foot-pull0-sparse]",
+  "offset": 47164,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ }
+]

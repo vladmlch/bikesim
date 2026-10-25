@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 
 from _bits import assert_bitwise_equal
+import _golden
 from native_loader import load_native
 
 from bike_sim.physics.attachment_budget import AttachmentSample
@@ -167,6 +168,7 @@ def test_rider_equality_qfrc_oracle(jacobian, tmp_path):
         types == int(mujoco.mjtConstraint.mjCNSTR_LIMIT_JOINT))
     assert limit_rows.size >= 1
     limit_id = int(data.efc_id[limit_rows[0]])
+    _golden.record(np.float64(limit_id), 'input.limit_id')
     bits(stepper.rider_equality_qfrc(limit_id),
          equality_qfrc(model, data, limit_id))
 
@@ -182,6 +184,8 @@ def test_rider_equality_rows_grouping(tmp_path):
     actual = bike_native._rider_equality_rows(stepper)
     assert actual.keys() == expected.keys() == {
         int(model.equality(n).id) for n in ('w', 'j', 'c')}
+    _golden.record(np.asarray(list(expected.keys()), np.int64),
+                   'equality ids')
     for eq_id, rows in expected.items():
         assert actual[eq_id].dtype == np.int64
         assert_bitwise_equal(actual[eq_id], rows)
@@ -215,6 +219,8 @@ def test_rider_equality_reaction_missing_rows_zero(tmp_path):
     actual = bike_native._rider_equality_reaction(stepper, 77)
     assert_bitwise_equal(actual['rows'], np.empty(0, dtype=np.int64))
     bits(actual['force_on_rider_n'], np.zeros(3))
+    _golden.record(np.float64(actual['translation_residual_m']),
+                   'translation_residual_m')
     assert actual['translation_residual_m'] == 0.
     bits(actual['qfrc'], np.zeros(model.nv))
 
@@ -234,6 +240,9 @@ def test_rider_equality_qfrc_empty_arena(tmp_path):
     bits(stepper.rider_equality_qfrc(0), np.zeros(model.nv))
     bits(equality_qfrc(model, data, 0), np.zeros(model.nv))
     # The multi-equality torque diagnostic reports 'no measurement' too.
+    _golden.record(np.float64(
+        bike_native._rider_equalities_qfrc_at(stepper, [0], 0)),
+        'equalities torque')
     assert bike_native._rider_equalities_qfrc_at(stepper, [0], 0) == 0.
 
 
@@ -313,9 +322,21 @@ def test_stepper_qfrc_returns_owning_array(tmp_path):
 def _lstsq_oracle(a, b, rcond=1e-12):
     """Run both solvers; every output must agree bitwise — or both must
     raise the same 'SVD did not converge' failure."""
+    # Replay the staged buffers rather than regenerating rng draws on the
+    # C++ side (the rank/error flag records keep the same entry order the
+    # success and failure branches consume).
+    _golden.record(np.ascontiguousarray(a, dtype=np.float64).reshape(-1),
+                   'input.a')
+    _golden.record(np.asarray(np.shape(a), np.float64), 'input.a.shape')
+    _golden.record(np.ascontiguousarray(b, dtype=np.float64).reshape(-1),
+                   'input.b')
+    _golden.record(np.asarray(np.shape(b), np.float64), 'input.b.shape')
+    _golden.record(np.float64(rcond), 'input.rcond')
     try:
         expected = np.linalg.lstsq(a, b, rcond=rcond)
     except np.linalg.LinAlgError as error:
+        _golden.record(np.frombuffer(str(error).encode(), np.uint8),
+                       'error')
         with pytest.raises(ValueError, match='SVD did not converge'):
             bike_native._rider_least_squares(a, b, rcond)
         return None
@@ -324,6 +345,7 @@ def _lstsq_oracle(a, b, rcond=1e-12):
     ex_x, ex_resids, ex_rank, ex_s = expected
     assert_bitwise_equal(x, ex_x, 'x')
     assert_bitwise_equal(resids, ex_resids, 'resids')
+    _golden.record(np.float64(int(ex_rank)), 'rank')
     assert int(ex_rank) == int(rank)
     assert_bitwise_equal(s, ex_s, 'singular values')
     return expected
@@ -444,6 +466,15 @@ def test_least_squares_output_layout_and_ownership():
     # on the f64 casts, and the port's own output dtype stays float64.
     ex_x, ex_r, ex_rank, ex_s = np.linalg.lstsq(
         a32.astype(np.float64), b32.astype(np.float64), rcond=1e-12)
+    _golden.record(np.ascontiguousarray(a32, dtype=np.float64)
+                   .reshape(-1), 'input.a')
+    _golden.record(np.asarray(np.shape(a32), np.float64),
+                   'input.a.shape')
+    _golden.record(np.ascontiguousarray(b32, dtype=np.float64)
+                   .reshape(-1), 'input.b')
+    _golden.record(np.asarray(np.shape(b32), np.float64),
+                   'input.b.shape')
+    _golden.record(np.float64(1e-12), 'input.rcond')
     ac_x, ac_r, ac_rank, ac_s = bike_native._rider_least_squares(
         a32, b32, 1e-12)
     assert ac_x.dtype == np.float64
@@ -458,6 +489,13 @@ def test_least_squares_output_layout_and_ownership():
     # disturb another, and outputs never alias the input arrays.
     a = rng.normal(size=(5, 3))
     b = rng.normal(size=5)
+    _golden.record(np.ascontiguousarray(a, dtype=np.float64).reshape(-1),
+                   'input.a')
+    _golden.record(np.asarray(np.shape(a), np.float64), 'input.a.shape')
+    _golden.record(np.ascontiguousarray(b, dtype=np.float64).reshape(-1),
+                   'input.b')
+    _golden.record(np.asarray(np.shape(b), np.float64), 'input.b.shape')
+    _golden.record(np.float64(1e-12), 'input.rcond')
     x1, r1, k1, s1 = bike_native._rider_least_squares(a, b, 1e-12)
     x2, r2, k2, s2 = bike_native._rider_least_squares(a, b, 1e-12)
     assert x1.dtype == np.float64 and x1.flags.writeable
@@ -477,6 +515,13 @@ def test_linux_and_mac_lstsq_use_numpy_workspace_contract():
     rng = np.random.default_rng(808)
     a = rng.normal(size=(9, 4))
     b = rng.normal(size=(9, 3))
+    _golden.record(np.ascontiguousarray(a, dtype=np.float64).reshape(-1),
+                   'input.a')
+    _golden.record(np.asarray(np.shape(a), np.float64), 'input.a.shape')
+    _golden.record(np.ascontiguousarray(b, dtype=np.float64).reshape(-1),
+                   'input.b')
+    _golden.record(np.asarray(np.shape(b), np.float64), 'input.b.shape')
+    _golden.record(np.float64(1e-12), 'input.rcond')
     expected = np.linalg.lstsq(a, b, rcond=1e-12)
     actual = bike_native._rider_least_squares(a, b, 1e-12)
     for got, want in zip(actual, expected):
@@ -484,6 +529,7 @@ def test_linux_and_mac_lstsq_use_numpy_workspace_contract():
         if got.ndim == 0:
             # numpy boxes rank as np.int32; the binding returns a Python
             # int — compare the value, not the boxing.
+            _golden.record(np.float64(int(want)), 'rank')
             assert int(got) == int(want)
         else:
             assert_bitwise_equal(got, want)
@@ -550,6 +596,13 @@ def test_least_squares_prior_fp_invalid_flag():
     rng = np.random.default_rng(3141)
     a = rng.normal(size=(6, 3))
     b = rng.normal(size=(6, 2))
+    _golden.record(np.ascontiguousarray(a, dtype=np.float64).reshape(-1),
+                   'input.a')
+    _golden.record(np.asarray(np.shape(a), np.float64), 'input.a.shape')
+    _golden.record(np.ascontiguousarray(b, dtype=np.float64).reshape(-1),
+                   'input.b')
+    _golden.record(np.asarray(np.shape(b), np.float64), 'input.b.shape')
+    _golden.record(np.float64(1e-12), 'input.rcond')
     clear(all_bits)
     raise_(fe_invalid)
     expected = np.linalg.lstsq(a, b, rcond=1e-12)
@@ -559,6 +612,7 @@ def test_least_squares_prior_fp_invalid_flag():
     for got, want in zip(actual, expected):
         got, want = np.asarray(got), np.asarray(want)
         if got.ndim == 0:
+            _golden.record(np.float64(int(want)), 'rank')
             assert int(got) == int(want)
         else:
             assert_bitwise_equal(got, want)
@@ -583,9 +637,18 @@ def test_least_squares_fp_invalid_raised_on_failure():
     test, raise_, clear, fe_invalid, all_bits = controls
     a = np.array([[1., np.nan], [0., 1.]])
     b = np.array([1., 2.])
+    _golden.record(np.ascontiguousarray(a, dtype=np.float64).reshape(-1),
+                   'input.a')
+    _golden.record(np.asarray(np.shape(a), np.float64), 'input.a.shape')
+    _golden.record(np.ascontiguousarray(b, dtype=np.float64).reshape(-1),
+                   'input.b')
+    _golden.record(np.asarray(np.shape(b), np.float64), 'input.b.shape')
+    _golden.record(np.float64(1e-12), 'input.rcond')
     clear(all_bits)
-    with pytest.raises(ValueError, match='SVD did not converge'):
+    with pytest.raises(ValueError, match='SVD did not converge') as err:
         np.linalg.lstsq(a, b, rcond=1e-12)
+    _golden.record(np.frombuffer(str(err.value).encode(), np.uint8),
+                   'error')
     oracle_flag = test(fe_invalid)
     clear(all_bits)
     raise_(fe_invalid)
@@ -611,6 +674,7 @@ def _attachment_ids(model):
 
 def _assert_geometry(actual, expected, msg=''):
     """attachment dict <-> AttachmentGeometry, field by field, bitwise."""
+    _golden.record(np.float64(expected.eq_id), f'{msg} eq_id')
     assert actual['eq_id'] == expected.eq_id, msg
     bits(actual['rider_jac'], expected.rider_jac, f'{msg} rider_jac')
     bits(actual['rider_columns'], expected.rider_columns,
@@ -618,12 +682,18 @@ def _assert_geometry(actual, expected, msg=''):
     bits(actual['bike_jac'], expected.bike_jac, f'{msg} bike_jac')
     bits(actual['bike_columns'], expected.bike_columns,
          f'{msg} bike_columns')
+    _golden.record(np.float64(expected.observable), f'{msg} observable')
     assert actual['observable'] == expected.observable, msg
     bits(actual['normal'], expected.normal, f'{msg} normal')
+    _golden.record(np.frombuffer(expected.kind.encode(), np.uint8),
+                   f'{msg} kind')
     assert actual['kind'] == expected.kind, msg
+    _golden.record(np.float64(expected.rotational), f'{msg} rotational')
     assert actual['rotational'] == expected.rotational, msg
     bits(actual['half_patch_m'], np.float64(expected.half_patch_m),
          f'{msg} half_patch_m')
+    _golden.record(np.float64(expected.pull_direction is not None),
+                   f'{msg} pull present')
     if expected.pull_direction is None:
         assert actual['pull_direction'] is None, msg
     else:
@@ -637,13 +707,19 @@ def _assert_raw(actual, expected, msg=''):
     bits(actual['rider_qfrc'], expected.rider_qfrc, f'{msg} rider_qfrc')
     bits(actual['bike_jac'], expected.bike_jac, f'{msg} bike_jac')
     bits(actual['bike_qfrc'], expected.bike_qfrc, f'{msg} bike_qfrc')
+    _golden.record(np.float64(expected.observable), f'{msg} observable')
     assert actual['observable'] == expected.observable, msg
     bits(actual['normal'], expected.normal, f'{msg} normal')
+    _golden.record(np.frombuffer(expected.kind.encode(), np.uint8),
+                   f'{msg} kind')
     assert actual['kind'] == expected.kind, msg
+    _golden.record(np.float64(expected.rotational), f'{msg} rotational')
     assert actual['rotational'] == expected.rotational, msg
     bits(actual['half_patch_m'], np.float64(expected.half_patch_m),
          f'{msg} half_patch_m')
     bits(actual['gap_m'], np.float64(expected.gap_m), f'{msg} gap_m')
+    _golden.record(np.float64(expected.pull_direction is not None),
+                   f'{msg} pull present')
     if expected.pull_direction is None:
         assert actual['pull_direction'] is None, msg
     else:
@@ -657,6 +733,8 @@ def _assert_sample(actual, expected, msg=''):
     assert set(actual.keys()) == set(expected_dict.keys()), msg
     for key, value in expected_dict.items():
         if isinstance(value, str):
+            _golden.record(np.frombuffer(value.encode(), np.uint8),
+                           f'{msg} {key}')
             assert actual[key] == value, f'{msg} {key}'
         else:
             bits(actual[key], np.float64(value), f'{msg} {key}')
@@ -677,9 +755,19 @@ def _recover_oracle(jac, qfrc):
     message ('nonfinite wrench input' / 'rank-deficient attachment
     Jacobian' / 'does not explain generalized force' / 'SVD did not
     converge in Linear Least Squares')."""
+    # Replay the staged buffers — the consistent targets are numpy
+    # matmul products whose BLAS lowering is platform-sensitive.
+    _golden.record(np.ascontiguousarray(jac, dtype=np.float64)
+                   .reshape(-1), 'input.jac')
+    _golden.record(np.asarray(np.shape(jac), np.float64),
+                   'input.jac.shape')
+    _golden.record(np.ascontiguousarray(qfrc, dtype=np.float64)
+                   .reshape(-1), 'input.qfrc')
     try:
         expected = recover_wrench(jac, qfrc)
     except ValueError as error:
+        _golden.record(np.frombuffer(str(error).encode(), np.uint8),
+                       'error')
         with pytest.raises(ValueError) as raised:
             bike_native.rider_recover_wrench(jac, qfrc)
         assert str(raised.value) == str(error)
@@ -755,6 +843,12 @@ def test_recover_wrench_owns_its_output():
     rng = np.random.default_rng(747)
     jac = rng.normal(size=(3, 7))
     qfrc = jac.T @ rng.normal(size=3)
+    _golden.record(np.ascontiguousarray(jac, dtype=np.float64)
+                   .reshape(-1), 'input.jac')
+    _golden.record(np.asarray(np.shape(jac), np.float64),
+                   'input.jac.shape')
+    _golden.record(np.ascontiguousarray(qfrc, dtype=np.float64)
+                   .reshape(-1), 'input.qfrc')
     first = bike_native.rider_recover_wrench(jac, qfrc)
     second = bike_native.rider_recover_wrench(jac, qfrc)
     assert not np.may_share_memory(first, second)
@@ -798,17 +892,22 @@ def test_relative_planar_jacobian_oracle(jacobian, tmp_path):
     # Validation: invalid world point / non-physical / equal bodies.
     for bad_point in (np.array([0., 0.]), np.array([0., 0., np.nan]),
                       np.array([0., 0., np.inf])):
-        with pytest.raises(ValueError, match='invalid world point'):
+        with pytest.raises(ValueError, match='invalid world point') as e:
             relative_planar_jacobian(model, data, rider, bike, bad_point,
                                      rotational=True)
+        _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                       'error')
         with pytest.raises(ValueError, match='invalid world point'):
             stepper.rider_relative_planar_jacobian(rider, bike, bad_point,
                                                    True)
     for bad_pair in [(0, bike), (rider, 0), (rider, rider),
                      (rider, model.nbody)]:
-        with pytest.raises(ValueError, match='distinct physical bodies'):
+        with pytest.raises(ValueError,
+                           match='distinct physical bodies') as e:
             relative_planar_jacobian(model, data, *bad_pair, point,
                                      rotational=True)
+        _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                       'error')
         with pytest.raises(ValueError, match='distinct physical bodies'):
             stepper.rider_relative_planar_jacobian(*bad_pair, point, True)
 
@@ -851,9 +950,11 @@ def test_prepare_attachment_geometry_oracle(jacobian, eq_name, bodies,
     _assert_geometry(actual, expected)
     # A body carrying no dofs is a hard failure on both sides.
     with pytest.raises(ValueError,
-                       match='no degrees of freedom'):
+                       match='no degrees of freedom') as e:
         prepare_attachment_geometry(model, data, eq_id, 0, body_b, point,
                                     normal, kind, rotational=rotational)
+    _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                   'error')
     with pytest.raises(ValueError,
                        match='no degrees of freedom'):
         stepper.rider_prepare_attachment(eq_id, 0, body_b, point, normal,
@@ -991,6 +1092,15 @@ def test_decompose_wrench_oracle():
         gap = abs(rng.normal())
         half = abs(rng.normal())
         pull = rng.normal(size=3) if i % 3 else None
+        # Replay the drawn case — 10. ** k is libm-pow sensitive.
+        _golden.record(wrench, f'input.{i}.wrench')
+        _golden.record(normal, f'input.{i}.normal')
+        _golden.record(np.frombuffer(kind.encode(), np.uint8)
+                       .astype(np.float64), f'input.{i}.kind')
+        _golden.record(np.float64(rotational), f'input.{i}.rot')
+        _golden.record(np.asarray([gap, half]), f'input.{i}.scalars')
+        _golden.record(np.asarray(pull if pull is not None else [],
+                                  np.float64), f'input.{i}.pull')
         expected = decompose_wrench(wrench, normal, kind,
                                     rotational=rotational, gap_m=gap,
                                     half_patch_m=half,
@@ -1017,6 +1127,8 @@ def test_decompose_wrench_oracle():
                        np.array([0., 0., 0.])):
         with pytest.raises(ValueError) as expected_error:
             decompose_wrench(good, bad_normal, 'foot', rotational=True)
+        _golden.record(np.frombuffer(str(expected_error.value).encode(),
+                                     np.uint8), 'error')
         with pytest.raises(ValueError) as raised:
             bike_native.rider_decompose_wrench(good, bad_normal, 'foot',
                                                True)
@@ -1026,6 +1138,8 @@ def test_decompose_wrench_oracle():
         with pytest.raises(ValueError) as expected_error:
             decompose_wrench(good, np.array([0., 0., 1.]), 'grip',
                              rotational=False, pull_direction=bad_pull)
+        _golden.record(np.frombuffer(str(expected_error.value).encode(),
+                                     np.uint8), 'error')
         with pytest.raises(ValueError) as raised:
             bike_native.rider_decompose_wrench(
                 good, np.array([0., 0., 1.]), 'grip', False, 0., 0.,
@@ -1093,9 +1207,11 @@ def test_attachment_shared_support_error(tmp_path):
             (attachment_sample,
              lambda *a: stepper.rider_attachment_sample(*a))):
         with pytest.raises(ValueError,
-                           match='share kinematic support'):
+                           match='share kinematic support') as e:
             py_fn(model, data, eq_id, rider, rider, point, normal, 'foot',
                   rotational=True)
+        _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                       'error')
         with pytest.raises(ValueError,
                            match='share kinematic support'):
             nt_fn(eq_id, rider, rider, point, normal, 'foot', True)
@@ -1116,9 +1232,11 @@ def test_attachment_out_of_plane_error(tmp_path):
     normal = np.array([0., 0., 1.])
     eq_id = int(model.equality('w').id)
     for rotational in (False, True):
-        with pytest.raises(ValueError, match='planar model'):
+        with pytest.raises(ValueError, match='planar model') as e:
             attachment_sample(model, data, eq_id, rider, bike, point,
                               normal, 'foot', rotational=rotational)
+        _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                       'error')
         with pytest.raises(ValueError, match='planar model'):
             stepper.rider_attachment_sample(eq_id, rider, bike, point,
                                             normal, 'foot', rotational)
@@ -1127,8 +1245,10 @@ def test_attachment_out_of_plane_error(tmp_path):
     py_geometry = prepare_attachment_geometry(
         model, data, eq_id, rider, bike, point, normal, 'foot',
         rotational=True)
-    with pytest.raises(ValueError, match='planar model'):
+    with pytest.raises(ValueError, match='planar model') as e:
         attachment_raw_from_geometry(model, data, py_geometry)
+    _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                   'error')
     with pytest.raises(ValueError, match='planar model'):
         stepper.rider_attachment_raw_from_geometry(geometry)
     deferred = stepper.rider_attachment_raw_from_geometry(
@@ -1187,14 +1307,18 @@ def test_attachment_unobservable_and_validation_deferral(tmp_path):
         nt_geometry, validate_wrench=False),
         attachment_raw_from_geometry(model, data, py_geometry,
                                      validate_wrench=False))
-    with pytest.raises(ValueError, match='not observable'):
+    with pytest.raises(ValueError, match='not observable') as e:
         attachment_raw_from_geometry(model, data, py_geometry)
+    _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                   'error')
     with pytest.raises(ValueError, match='not observable'):
         stepper.rider_attachment_raw_from_geometry(nt_geometry)
     # The sample path's body_wrench raises the same error.
-    with pytest.raises(ValueError, match='not observable'):
+    with pytest.raises(ValueError, match='not observable') as e:
         attachment_sample(model, data, eq_id, rider, bike, point, normal,
                           'saddle', rotational=True)
+    _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                   'error')
     with pytest.raises(ValueError, match='not observable'):
         stepper.rider_attachment_sample(eq_id, rider, bike, point, normal,
                                         'saddle', True)
@@ -1214,9 +1338,11 @@ def test_attachment_newton_third_law_error(tmp_path):
     eq_id = int(model.equality('j').id)
     point = np.array([0., 0., .8])
     normal = np.array([0., 0., 1.])
-    with pytest.raises(ValueError, match='Newton third law'):
+    with pytest.raises(ValueError, match='Newton third law') as e:
         attachment_sample(model, data, eq_id, ja, jb, point, normal,
                           'x', rotational=False)
+    _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                   'error')
     with pytest.raises(ValueError, match='Newton third law'):
         stepper.rider_attachment_sample(eq_id, ja, jb, point, normal,
                                         'x', False)
@@ -1226,8 +1352,10 @@ def test_attachment_newton_third_law_error(tmp_path):
     py_geometry = prepare_attachment_geometry(model, data, eq_id, ja, jb,
                                               point, normal, 'x',
                                               rotational=False)
-    with pytest.raises(ValueError, match='Newton third law'):
+    with pytest.raises(ValueError, match='Newton third law') as e:
         attachment_raw_from_geometry(model, data, py_geometry)
+    _golden.record(np.frombuffer(str(e.value).encode(), np.uint8),
+                   'error')
     with pytest.raises(ValueError, match='Newton third law'):
         stepper.rider_attachment_raw_from_geometry(geometry)
 

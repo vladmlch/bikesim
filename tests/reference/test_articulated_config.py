@@ -21,6 +21,31 @@ def test_budget_comes_from_config_fields():
     assert cfg.attachment_budget() == AttachmentBudget(25., .8, .5, 350., .004)
 
 
+def test_delivered_power_budgets_fall_back_to_capability_caps():
+    # Unset: the monitor verdict reads the capability bound bitwise.
+    cfg = ArticulatedConfig(active_positive_power_limit_w=450.)
+    assert cfg.delivered_positive_budget_w == 450.
+    assert cfg.delivered_joint_budget_w == cfg.joint_power_limit_w
+    assert ArticulatedConfig().delivered_positive_budget_w is None
+    # Set: the monitor re-bands the delivered envelope while the command
+    # cap — plant physics — is untouched.
+    cfg = ArticulatedConfig(active_positive_power_limit_w=450.,
+                            delivered_positive_power_budget_w=750.,
+                            delivered_joint_power_budget_w=375.)
+    assert cfg.delivered_positive_budget_w == 750.
+    assert cfg.delivered_joint_budget_w == 375.
+    assert cfg.active_positive_power_limit_w == 450.
+    assert cfg.joint_power_limit_w == 250.
+
+
+@pytest.mark.parametrize('field', ('delivered_positive_power_budget_w',
+                                   'delivered_joint_power_budget_w'))
+@pytest.mark.parametrize('value', (-1., float('nan'), float('inf')))
+def test_delivered_power_budgets_validate_like_other_budgets(field, value):
+    with pytest.raises(ValueError):
+        ArticulatedConfig(**{field: value})
+
+
 def test_balance_defaults():
     cfg = ArticulatedConfig()
     assert (cfg.balance_floor_kmh, cfg.balance_dwell_s, cfg.balance_grace_s) == (4., .5, 3.)

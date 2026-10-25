@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "rejected sentinel group",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_partial_sentinel_group_rejects_atomically[segment-front]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ }
+]

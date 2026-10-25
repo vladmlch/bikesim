@@ -12,6 +12,30 @@ bike_add_reference_test(performance_evidence ENGINE
 bike_add_reference_test(measure_realtime ENGINE
   SOURCES test_measure_realtime.cpp LIBRARIES bike_realtime_measurement
   LABELS t53 runtime slow)
+# 3.10/F3 realtime gate: the >=1x RTF contract re-aimed at the produced
+# Release bike-measure-realtime artifact (the Python-oracle subject is
+# T63-dead). Not a bike_add_reference_test: each CTest node supplies the
+# measured artifact plus its track/physics inputs as argv, one node per
+# track, mirroring the two parametrized Python node IDs.
+add_executable(reference.realtime_gate test_realtime_gate.cpp)
+set_target_properties(reference.realtime_gate PROPERTIES CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+target_link_libraries(reference.realtime_gate PRIVATE
+  bike_golden_test bike_platform)
+target_include_directories(reference.realtime_gate PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+bike_apply_native_policy(reference.realtime_gate)
+add_dependencies(reference.realtime_gate bike-measure-realtime)
+foreach(_realtime_gate_track IN ITEMS rough_uphill_savage rough_uphill_extreme)
+  add_test(NAME "reference.realtime_gate.${_realtime_gate_track}"
+    COMMAND reference.realtime_gate
+      "$<TARGET_FILE:bike-measure-realtime>"
+      "${CMAKE_SOURCE_DIR}/examples/research/${_realtime_gate_track}.toml"
+      "${CMAKE_SOURCE_DIR}/examples/research/viewer_physics_welded.toml")
+  set_tests_properties("reference.realtime_gate.${_realtime_gate_track}" PROPERTIES
+    LABELS "reference;t53;runtime;slow" TIMEOUT 900
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:reference.realtime_gate>")
+endforeach()
 bike_add_reference_test(playback_clock ENGINE
   SOURCES test_playback_clock.cpp LIBRARIES bike_app bike_viewer
   LABELS t52 runtime)

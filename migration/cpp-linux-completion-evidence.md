@@ -4144,6 +4144,26 @@ owner rows). LAPACK `DLASCL` stderr warnings appear under
 `reference.native_attachment_wrench` — expected numerical-library
 noise matching NumPy's least-squares path, not a regression.
 
+### Final gate note (2026-10-25, `bash tools/run_tests.sh native`)
+
+Gate at `9726444` exited non-zero inside ctest. Triage: `migration_T03`
+was environmental — a broken symlink in the untracked
+`.deps/mujoco-3.12.0` framework shim
+(`Versions/A/libmujoco.3.12.0.dylib` → `../../` for `../../../`) made
+`cmake -E copy_directory` fail ENOENT; repaired, T03 passes standalone
+(148.6 s) and the full ctest rerun is 59/62 with only the documented
+baseline trio `migration_T09` (`integration vector resolves bitwise`),
+`migration_T25` (`welded_flat` contract differs — task-F2: cannot pass
+outside its capturing worktree), `migration_T29` (`weld_servo_gain:
+unknown key`). Build and all 9 static-analysis sweeps green. Gate-tail
+pytest (profile flags): 81 failed / 3157 passed — **zero failures in
+the five batch files**; the set matches the task-F2 documented
+baseline (75 failed, same file concentration: spindle 22,
+research_environment 17, drivetrain 7, runtime_* 15 — C++↔oracle gaps
+on unported records + equilibrium non-convergence); +6 tail delta
+consistent with the F2-documented shared-`$TMPDIR` equilibrium-cache
+poisoning hazard (a concurrent `pfc-lane-d` pytest shared the cache).
+
 ## 2026-10-2x — Task 3.28 (lane/a) resume: input-contract `resolved` records after the F2 settle fix
 
 Resume of the 17 `planned` input-contract records left by the earlier 3.28

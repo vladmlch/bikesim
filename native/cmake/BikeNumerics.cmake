@@ -470,6 +470,66 @@ message(STATUS
   "${_native_numerics_mul_element_nan})")
 
 # --------------------------------------------------------------------------
+# Generator.uniform/normal tail transform — distributions.c evaluates
+# low + range*u and loc + scale*z as a multiply then an add per draw;
+# whether they contract into one fmadd is a wheel-build property
+# (AppleClang wheel: contracted; manylinux wheel: separate). The
+# dependency probe measured which (numerics.distributions.lowering); the
+# port selects the same spelling through
+# BIKE_NUMPY_DISTRIBUTIONS_CONTRACTED. Directory scope like the interp
+# define — an inconsistent define is an ODR violation.
+# --------------------------------------------------------------------------
+_numerics_record_field(_numerics_distributions_lowering
+  numerics distributions lowering)
+if(_numerics_distributions_lowering STREQUAL "contracted")
+  set(_native_numerics_distributions_contracted 1)
+elseif(_numerics_distributions_lowering STREQUAL "separate")
+  set(_native_numerics_distributions_contracted 0)
+else()
+  message(FATAL_ERROR
+    "numerics.distributions.lowering must be 'contracted' or 'separate', "
+    "found '${_numerics_distributions_lowering}' — re-run "
+    "tools/native_dependencies.py to re-measure the wheel's "
+    "Generator.uniform/normal lowering")
+endif()
+add_compile_definitions(
+  BIKE_NUMPY_DISTRIBUTIONS_CONTRACTED=${_native_numerics_distributions_contracted})
+message(STATUS
+  "Generator distributions lowering: ${_numerics_distributions_lowering} "
+  "(BIKE_NUMPY_DISTRIBUTIONS_CONTRACTED="
+  "${_native_numerics_distributions_contracted})")
+
+# --------------------------------------------------------------------------
+# scipy.ndimage symmetric correlate — NI_Correlate1D walks each
+# coefficient pair outermost-first as out += (left + right) * weight;
+# whether that multiply/accumulate contracts into one fmadd is a
+# wheel-build property (AppleClang wheel: contracted; manylinux wheel:
+# separate). The dependency probe measured which
+# (numerics.scipy_correlate.lowering); the port selects the same spelling
+# through BIKE_SCIPY_CORRELATE_CONTRACTED. Directory scope like the
+# interp define — an inconsistent define is an ODR violation.
+# --------------------------------------------------------------------------
+_numerics_record_field(_numerics_scipy_correlate_lowering
+  numerics scipy_correlate lowering)
+if(_numerics_scipy_correlate_lowering STREQUAL "contracted")
+  set(_native_numerics_scipy_correlate_contracted 1)
+elseif(_numerics_scipy_correlate_lowering STREQUAL "separate")
+  set(_native_numerics_scipy_correlate_contracted 0)
+else()
+  message(FATAL_ERROR
+    "numerics.scipy_correlate.lowering must be 'contracted' or "
+    "'separate', found '${_numerics_scipy_correlate_lowering}' — re-run "
+    "tools/native_dependencies.py to re-measure the wheel's scipy "
+    "correlate lowering")
+endif()
+add_compile_definitions(
+  BIKE_SCIPY_CORRELATE_CONTRACTED=${_native_numerics_scipy_correlate_contracted})
+message(STATUS
+  "scipy correlate lowering: ${_numerics_scipy_correlate_lowering} "
+  "(BIKE_SCIPY_CORRELATE_CONTRACTED="
+  "${_native_numerics_scipy_correlate_contracted})")
+
+# --------------------------------------------------------------------------
 # Provider identity — roles must cover blas+lapack; the Linux file provider
 # must exist inside the recorded site-packages and carry its SHA-256;
 # Accelerate entries carry the apple-system identity with a real build id

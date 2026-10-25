@@ -327,9 +327,10 @@ namespace detail {
     // scalar query with vector xp/fp (lenxp > lenx, so no slope
     // precompute): NaN x returns x; x outside [xp[0], xp[-1]] returns
     // the endpoint; exact knot hits return fp[j]; otherwise
-    // fma(slope, x - xp[j], fp[j]) — the oracle's mul+add lowers to one
-    // fused fmadd under its build, so std::fma is the bitwise form —
-    // with the NaN retry from the j+1 knot and the flat fp tie-break.
+    // slope*(x - xp[j]) + fp[j] under the wheel's measured lowering —
+    // contracted on the macOS build, separate on the Linux build —
+    // with the NaN retry from the j+1 knot and the flat fp tie-break,
+    // all inside numeric::np_interp_segment (numeric_numpy.hpp).
     [[nodiscard]] inline double np_interp(double x,
                                           std::span<const double> xp,
                                           std::span<const double> fp) {
@@ -354,12 +355,8 @@ namespace detail {
         if (j == n - 1) return fp[n - 1];
         if (xp[j] == x) return fp[j];
         const double slope = (fp[j + 1] - fp[j]) / (xp[j + 1] - xp[j]);
-        double out = std::fma(slope, x - xp[j], fp[j]);
-        if (std::isnan(out)) {
-            out = std::fma(slope, x - xp[j + 1], fp[j + 1]);
-            if (std::isnan(out) && fp[j] == fp[j + 1]) out = fp[j];
-        }
-        return out;
+        return numeric::np_interp_segment(slope, x, xp[j], fp[j],
+                                          xp[j + 1], fp[j + 1]);
     }
 
     // np.max(values) — pairwise np.maximum reduce via the shared

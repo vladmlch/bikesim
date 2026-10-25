@@ -1,0 +1,26 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_input_contracts.py::test_schema_migration_preserves_resolved_fork_force[1-180.0-False]",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_input_contracts.py::test_schema_migration_preserves_resolved_fork_force[1-180.0-False]",
+  "offset": 8,
+  "rtol": null,
+  "shape": []
+ }
+]

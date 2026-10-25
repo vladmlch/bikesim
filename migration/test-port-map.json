@@ -24922,13 +24922,15 @@
       "line": 28,
       "end_line": 29,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_terrain_placement_regression::test_default_terrain_spec_hash_is_pinned",
+      "native_test_id": "reference.terrain_placement_regression::test_default_terrain_spec_hash_is_pinned",
       "native_source": "native/tests/reference/test_terrain_placement_regression.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.terrain_placement_regression green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_terrain_placement_regression.py",
@@ -24936,13 +24938,15 @@
       "line": 33,
       "end_line": 34,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_terrain_placement_regression::test_generated_tracks_are_byte_identical",
+      "native_test_id": "reference.terrain_placement_regression::test_generated_tracks_are_byte_identical",
       "native_source": "native/tests/reference/test_terrain_placement_regression.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.terrain_placement_regression green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_terrain_placement_regression.py",
@@ -24950,13 +24954,15 @@
       "line": 38,
       "end_line": 39,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_terrain_placement_regression::test_road_presets_are_byte_identical",
+      "native_test_id": "reference.terrain_placement_regression::test_road_presets_are_byte_identical",
       "native_source": "native/tests/reference/test_terrain_placement_regression.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.terrain_placement_regression green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_tyre_road_profile.py",

@@ -17587,12 +17587,10 @@
       "native/tests/reference/test_terrain_placement_regression.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.terrain_placement_regression"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ec3dbad02cf69f04ae252053b624de79c279e3126d343a48e2324b3541926966",
     "snapshot_line_count": 39,
     "tracked": true,

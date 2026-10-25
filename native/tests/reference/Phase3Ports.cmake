@@ -65,6 +65,16 @@ bike_add_reference_test(native_pneumatic_tire ENGINE
 bike_add_reference_test(savage_track_surface ENGINE
   SOURCES test_savage_track_surface.cpp LIBRARIES bike_app
   LABELS t52 terrain)
+# 3.13 T52 terrain/tyre batch — the frozen-file surface asserts, the
+# placement-refactor hash pins, the wheel-stand rigs and the portable
+# distributed reference; the tyre road-profile + scalar-formula checks
+# replay recorded oracle entries.
+bike_add_reference_test(savage_track_surface ENGINE
+  SOURCES test_savage_track_surface.cpp LIBRARIES bike_app
+  LABELS t52 terrain)
+bike_add_reference_test(terrain_placement_regression ENGINE
+  SOURCES test_terrain_placement_regression.cpp LIBRARIES bike_app
+  LABELS t52 terrain)
 bike_add_reference_test(native_clock_contracts ENGINE
   SOURCES test_native_clock_contracts.cpp LIBRARIES bike_app bike_random LABELS t52 runtime golden)
 foreach(_drive_port IN ITEMS motor_profile cadence_shifter pedal_waveform pedaling_policy)

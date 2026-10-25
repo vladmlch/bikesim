@@ -80,6 +80,47 @@ def _flatten_states(states):
     return _flat_to_row(flat)
 
 
+def _record_str(value, label):
+    import _golden as _g
+    _g.record(np.frombuffer(str(value).encode(), np.uint8), label)
+
+
+def _record_int(value, label):
+    import _golden as _g
+    _g.record(np.asarray(int(value), np.int64), label)
+
+
+def _record_bool(value, label):
+    import _golden as _g
+    _g.record(np.asarray(bool(value)), label)
+
+
+def _platform_fixture_dir(name):
+    """tests/fixtures/golden/<platform>/native_tire/<name>/ — per-platform
+    runtime bundles (episodes, projected wires) the C++ port reads."""
+    import _golden as _g
+    root = os.environ.get('BIKE_GOLDEN_CAPTURE')
+    return None if root is None else \
+        Path(root) / _g.platform_key() / 'native_tire' / name
+
+
+def _fixture_save_episode(ep, model, name):
+    target = _platform_fixture_dir(f'episodes/{name}')
+    if target is None:
+        return
+    from tools.golden_episode import save
+    save(ep, target, model)
+
+
+def _fixture_save_wire(wire, name):
+    target = _platform_fixture_dir(name)
+    if target is None:
+        return
+    import json
+    target.mkdir(parents=True, exist_ok=True)
+    (target / 'wire.json').write_text(json.dumps(wire, sort_keys=True) + '\n')
+
+
 def _assert_snapshots_equal(native, row, k):
     """Native tire_snapshots() dict vs the manifest's per-step JSON row."""
     assert set(native) == set(row) == {'front', 'rear'}
@@ -88,14 +129,21 @@ def _assert_snapshots_equal(native, row, k):
         assert snap['interval_id'] == want['interval_id']
         assert snap['backend'] == want['backend'] == 'compliant_2d'
         assert snap['geometric_contact'] == bool(want['geometric_contact'])
+        _record_int(want['interval_id'], f'{side}.interval_id step {k}')
+        _record_str(want['backend'], f'{side}.backend step {k}')
+        _record_bool(want['geometric_contact'],
+                     f'{side}.geometric_contact step {k}')
         assert_bitwise_equal(snap['time_s'], float(want['time_s']),
                              f'{side}.time_s step {k}')
         assert_bitwise_equal(snap['effective_radius_m'],
                              float(want['effective_radius_m']),
                              f'{side}.effective_radius_m step {k}')
         assert len(snap['patches']) == len(want['patches'])
+        _record_int(len(want['patches']), f'{side}.patches step {k}')
         for i, (p, w) in enumerate(zip(snap['patches'], want['patches'])):
             assert bool(p['working_surface']) == bool(w['working_surface'])
+            _record_bool(w['working_surface'],
+                         f'{side}.patches[{i}].working_surface step {k}')
             for f in ('normal_load_n', 'tangent_force_n', 'slip_mps'):
                 assert_bitwise_equal(p[f], float(w[f]),
                                      f'{side}.patches[{i}].{f} step {k}')
@@ -108,11 +156,23 @@ def _live_applier(env, ref):
                             env.sim.track.surface_map)
 
 
+def _tire_episode(tmp_path):
+    """Shared capture seam: the compliant episode + projected wire ride the
+    per-platform bundle whichever test drives the env."""
+    env, g = _golden(tmp_path)
+    if _platform_fixture_dir('x') is not None:
+        from tools.golden_episode import load_episode
+        from tools.native_config import project
+        _fixture_save_episode(load_episode(g), env.sim.model, 'stand40')
+        _fixture_save_wire(project(env), 'env')
+    return env, g
+
+
 @pytest.mark.slow
 def test_tire_qfrc_bitwise(tmp_path):
     from tools.golden_episode import load_episode
     from tools.native_config import project
-    env, g = _golden(tmp_path)
+    env, g = _tire_episode(tmp_path)
     ep = load_episode(g)
     ref = mujoco.MjModel.from_binary_path(str(g/'model.mjb'))
     dref = mujoco.MjData(ref)
@@ -160,7 +220,7 @@ def test_tire_qfrc_bitwise(tmp_path):
 def test_tire_state_roundtrip_and_clock(tmp_path):
     from tools.golden_episode import load_episode
     from tools.native_config import project
-    env, g = _golden(tmp_path)
+    env, g = _tire_episode(tmp_path)
     ep = load_episode(g)
     ref = mujoco.MjModel.from_binary_path(str(g/'model.mjb'))
     st = bike_native.Stepper(str(g/'model.mjb'), project(env))

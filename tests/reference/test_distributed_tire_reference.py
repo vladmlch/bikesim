@@ -3,6 +3,8 @@
 import numpy as np
 import pytest
 
+import _golden
+
 from bike_sim.physics.distributed_tire import HingeDensity, density_response, normal_station_response
 from bike_sim.validation.contact_manifold_rigs import distributed_road_trace, wheel_stand
 
@@ -32,6 +34,10 @@ def test_scalar_station_formulas_equal_the_vectorised_ones_bitwise():
     weights = np.full(len(deltas), 2 * np.pi / 128)
     vec_force, vec_energy = normal_station_response(deltas, rates, weights, material)
     vec_density, vec_density_energy = density_response(deltas, material)
+    _golden.record(vec_force, 'vec_force')
+    _golden.record(vec_energy, 'vec_energy')
+    _golden.record(vec_density, 'vec_density')
+    _golden.record(vec_density_energy, 'vec_density_energy')
     from bike_sim.physics.distributed_tire import station_density, station_response
     for i in range(len(deltas)):
         f, e = station_response(float(deltas[i]), float(rates[i]), float(weights[i]), material)

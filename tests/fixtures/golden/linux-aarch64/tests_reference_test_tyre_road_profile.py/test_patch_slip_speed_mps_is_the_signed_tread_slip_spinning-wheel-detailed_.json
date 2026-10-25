@@ -1,0 +1,26 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "patch count",
+  "nbytes": 8,
+  "node": "tests/reference/test_tyre_road_profile.py::test_patch_slip_speed_mps_is_the_signed_tread_slip[spinning-wheel-detailed]",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "expected_v_s patch 0",
+  "nbytes": 8,
+  "node": "tests/reference/test_tyre_road_profile.py::test_patch_slip_speed_mps_is_the_signed_tread_slip[spinning-wheel-detailed]",
+  "offset": 8,
+  "rtol": null,
+  "shape": []
+ }
+]

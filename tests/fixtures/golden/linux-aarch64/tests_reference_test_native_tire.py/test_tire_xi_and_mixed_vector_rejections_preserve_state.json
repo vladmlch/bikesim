@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "rejected rows preserve state",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_xi_and_mixed_vector_rejections_preserve_state",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ }
+]

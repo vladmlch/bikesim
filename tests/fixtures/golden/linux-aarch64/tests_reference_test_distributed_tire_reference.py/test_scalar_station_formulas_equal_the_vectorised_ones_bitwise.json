@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "vec_force",
+  "nbytes": 72,
+  "node": "tests/reference/test_distributed_tire_reference.py::test_scalar_station_formulas_equal_the_vectorised_ones_bitwise",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "vec_energy",
+  "nbytes": 72,
+  "node": "tests/reference/test_distributed_tire_reference.py::test_scalar_station_formulas_equal_the_vectorised_ones_bitwise",
+  "offset": 72,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "vec_density",
+  "nbytes": 72,
+  "node": "tests/reference/test_distributed_tire_reference.py::test_scalar_station_formulas_equal_the_vectorised_ones_bitwise",
+  "offset": 144,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "vec_density_energy",
+  "nbytes": 72,
+  "node": "tests/reference/test_distributed_tire_reference.py::test_scalar_station_formulas_equal_the_vectorised_ones_bitwise",
+  "offset": 216,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ }
+]

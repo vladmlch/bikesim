@@ -12,6 +12,12 @@
 #include <format>
 #include <map>
 #include <tuple>
+#include "../diag.hpp"
+
+// The oracle's terse designated-initializer call sites intentionally rely
+// on the declared defaults for unlisted fields.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wmissing-field-initializers")
 
 namespace bike::validation {
 namespace {
@@ -275,3 +281,4 @@ Value contact_resolution(const Value& config,const std::filesystem::path& root) 
     set(report,"status",value::text(passed?"numerically_verified_synthetic_stands":"experimental_gate_failed"));write_report(out/"report.json",report);return report;
 }
 } // namespace bike::validation
+NATIVE_DIAG_POP

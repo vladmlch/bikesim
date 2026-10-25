@@ -159,13 +159,15 @@
       "line": 11,
       "end_line": 18,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_scree_surface_is_registered_below_loose",
+      "native_test_id": "reference.alpine_track::test_scree_surface_is_registered_below_loose",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -173,13 +175,15 @@
       "line": 21,
       "end_line": 29,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_default_spec_matches_the_design_numbers",
+      "native_test_id": "reference.alpine_track::test_default_spec_matches_the_design_numbers",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -187,13 +191,15 @@
       "line": 32,
       "end_line": 38,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_spec_round_trips_through_dict_and_toml_lists",
+      "native_test_id": "reference.alpine_track::test_spec_round_trips_through_dict_and_toml_lists",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -201,13 +207,15 @@
       "line": 41,
       "end_line": 51,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_spec_hash_is_stable_across_numeric_input_types",
+      "native_test_id": "reference.alpine_track::test_spec_hash_is_stable_across_numeric_input_types",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -215,13 +223,15 @@
       "line": 67,
       "end_line": 69,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_spec_rejects_invalid_values",
+      "native_test_id": "reference.alpine_track::test_spec_rejects_invalid_values",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -229,13 +239,15 @@
       "line": 72,
       "end_line": 74,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_sharp_edges_need_the_multi_contact_opt_in",
+      "native_test_id": "reference.alpine_track::test_sharp_edges_need_the_multi_contact_opt_in",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -243,13 +255,15 @@
       "line": 93,
       "end_line": 95,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_spec_rejects_lengths_below_the_grid",
+      "native_test_id": "reference.alpine_track::test_spec_rejects_lengths_below_the_grid",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -257,13 +271,15 @@
       "line": 98,
       "end_line": 101,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_spec_accepts_the_grid_boundary",
+      "native_test_id": "reference.alpine_track::test_spec_accepts_the_grid_boundary",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -271,13 +287,15 @@
       "line": 110,
       "end_line": 127,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_rhythm_fills_the_body_with_ramp_shelf_cycles",
+      "native_test_id": "reference.alpine_track::test_rhythm_fills_the_body_with_ramp_shelf_cycles",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -285,13 +303,15 @@
       "line": 131,
       "end_line": 141,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_rhythm_grade_profile_is_flat_outside_the_body",
+      "native_test_id": "reference.alpine_track::test_rhythm_grade_profile_is_flat_outside_the_body",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -299,13 +319,15 @@
       "line": 144,
       "end_line": 146,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_rhythm_without_walls_or_counter_slopes",
+      "native_test_id": "reference.alpine_track::test_rhythm_without_walls_or_counter_slopes",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "structural",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -313,13 +335,15 @@
       "line": 164,
       "end_line": 170,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_generate_rejects_bad_arguments",
+      "native_test_id": "reference.alpine_track::test_generate_rejects_bad_arguments",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -327,13 +351,15 @@
       "line": 174,
       "end_line": 179,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_same_seed_same_bytes_and_toml_round_trip",
+      "native_test_id": "reference.alpine_track::test_same_seed_same_bytes_and_toml_round_trip",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -341,13 +367,15 @@
       "line": 182,
       "end_line": 184,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_different_seeds_differ",
+      "native_test_id": "reference.alpine_track::test_different_seeds_differ",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -355,13 +383,15 @@
       "line": 192,
       "end_line": 220,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_default_track_structure",
+      "native_test_id": "reference.alpine_track::test_default_track_structure",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "structural",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -369,13 +399,15 @@
       "line": 224,
       "end_line": 225,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_default_track_has_no_single_contact_hazards",
+      "native_test_id": "reference.alpine_track::test_default_track_has_no_single_contact_hazards",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -383,13 +415,15 @@
       "line": 247,
       "end_line": 250,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_default_track_rolls_clean_for_both_wheels",
+      "native_test_id": "reference.alpine_track::test_default_track_rolls_clean_for_both_wheels",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -397,13 +431,15 @@
       "line": 253,
       "end_line": 258,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_opting_out_of_single_contact_produces_detectable_hazards",
+      "native_test_id": "reference.alpine_track::test_opting_out_of_single_contact_produces_detectable_hazards",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -411,13 +447,15 @@
       "line": 261,
       "end_line": 266,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_redraw_keeps_a_marginal_rock_garden_clean",
+      "native_test_id": "reference.alpine_track::test_redraw_keeps_a_marginal_rock_garden_clean",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -425,13 +463,15 @@
       "line": 269,
       "end_line": 274,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_faceted_redraw_is_capped_not_endless",
+      "native_test_id": "reference.alpine_track::test_faceted_redraw_is_capped_not_endless",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -439,13 +479,15 @@
       "line": 277,
       "end_line": 280,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_alpine_scree_preset_builder",
+      "native_test_id": "reference.alpine_track::test_alpine_scree_preset_builder",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -453,13 +495,15 @@
       "line": 291,
       "end_line": 295,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_preset_is_registered_and_seeded",
+      "native_test_id": "reference.alpine_track::test_preset_is_registered_and_seeded",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -467,13 +511,15 @@
       "line": 298,
       "end_line": 304,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_frozen_example_equals_the_preset_dump",
+      "native_test_id": "reference.alpine_track::test_frozen_example_equals_the_preset_dump",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -481,13 +527,15 @@
       "line": 307,
       "end_line": 312,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_rocky_genspec_is_the_multi_contact_opt_in",
+      "native_test_id": "reference.alpine_track::test_rocky_genspec_is_the_multi_contact_opt_in",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -495,13 +543,15 @@
       "line": 318,
       "end_line": 324,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_ride_resolves_the_seeded_preset",
+      "native_test_id": "reference.alpine_track::test_ride_resolves_the_seeded_preset",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -509,13 +559,15 @@
       "line": 327,
       "end_line": 330,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_ride_lists_the_preset_as_generated",
-      "native_source": "native/tests/reference/test_alpine_track.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: dropped \u2014 Python --list CLI row-text format pin; preset registration/seeding is covered by reference.alpine_track::test_preset_is_registered_and_seeded"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -523,13 +575,15 @@
       "line": 340,
       "end_line": 347,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_research_alpine_scenario_builds_the_generator_track",
+      "native_test_id": "reference.alpine_track::test_research_alpine_scenario_builds_the_generator_track",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -537,13 +591,15 @@
       "line": 350,
       "end_line": 358,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_research_gen_spec_rejects_unknown_keys_and_wrong_scenarios",
+      "native_test_id": "reference.alpine_track::test_research_gen_spec_rejects_unknown_keys_and_wrong_scenarios",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -551,13 +607,15 @@
       "line": 361,
       "end_line": 366,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_alpine_rocky_preset_is_frozen_and_hazardous_by_design",
+      "native_test_id": "reference.alpine_track::test_alpine_rocky_preset_is_frozen_and_hazardous_by_design",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_alpine_track.py",
@@ -565,13 +623,15 @@
       "line": 369,
       "end_line": 373,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_alpine_track::test_distributed_physics_profile_loads",
+      "native_test_id": "reference.alpine_track::test_distributed_physics_profile_loads",
       "native_source": "native/tests/reference/test_alpine_track.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.alpine_track green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_articulated_config.py",
@@ -2300,13 +2360,15 @@
       "line": 16,
       "end_line": 25,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_distributed_tire_reference::test_step_rig_matches_the_pinned_trace_to_reordering_tolerance",
+      "native_test_id": "reference.distributed_tire_reference::test_step_rig_matches_the_pinned_trace_to_reordering_tolerance",
       "native_source": "native/tests/reference/test_distributed_tire_reference.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "tolerance-oracle",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.distributed_tire_reference green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_distributed_tire_reference.py",
@@ -2314,13 +2376,19 @@
       "line": 28,
       "end_line": 40,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_distributed_tire_reference::test_scalar_station_formulas_equal_the_vectorised_ones_bitwise",
+      "native_test_id": "reference.distributed_tire_reference::test_scalar_station_formulas_equal_the_vectorised_ones_bitwise",
       "native_source": "native/tests/reference/test_distributed_tire_reference.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.distributed_tire_reference green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_distributed_tire_reference.py",
@@ -2328,13 +2396,15 @@
       "line": 43,
       "end_line": 49,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_distributed_tire_reference::test_station_count_ceiling",
+      "native_test_id": "reference.distributed_tire_reference::test_station_count_ceiling",
       "native_source": "native/tests/reference/test_distributed_tire_reference.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.distributed_tire_reference green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_distributed_tire_reference.py",
@@ -2342,13 +2412,15 @@
       "line": 57,
       "end_line": 78,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_distributed_tire_reference::test_state_wire_names_and_round_trip",
+      "native_test_id": "reference.distributed_tire_reference::test_state_wire_names_and_round_trip",
       "native_source": "native/tests/reference/test_distributed_tire_reference.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.distributed_tire_reference green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_distributed_tire_reference.py",
@@ -2356,13 +2428,15 @@
       "line": 81,
       "end_line": 94,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_distributed_tire_reference::test_distributed_state_arrays_round_trip_through_the_cache_codec",
-      "native_source": "native/tests/reference/test_distributed_tire_reference.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: dropped \u2014 Python-only SimpleNamespace shim over sim/ride/equilibrium_cache.py internals; the state wire round-trip is covered by reference.distributed_tire_reference::test_state_wire_names_and_round_trip"
+      ]
     },
     {
       "source_path": "tests/reference/test_distributed_tire_reference.py",
@@ -2370,13 +2444,15 @@
       "line": 97,
       "end_line": 108,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_distributed_tire_reference::test_diagnostics_are_scalar_only_and_multi_contact_is_informational",
+      "native_test_id": "reference.distributed_tire_reference::test_diagnostics_are_scalar_only_and_multi_contact_is_informational",
       "native_source": "native/tests/reference/test_distributed_tire_reference.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "structural",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.distributed_tire_reference green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_distributed_tire_reference.py",
@@ -2384,13 +2460,15 @@
       "line": 111,
       "end_line": 123,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_distributed_tire_reference::test_compute_is_deterministic_and_states_are_station_states",
+      "native_test_id": "reference.distributed_tire_reference::test_compute_is_deterministic_and_states_are_station_states",
       "native_source": "native/tests/reference/test_distributed_tire_reference.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.distributed_tire_reference green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_distributed_tire_reference.py",
@@ -2398,13 +2476,15 @@
       "line": 126,
       "end_line": 137,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_distributed_tire_reference::test_probe_leaves_state_and_clock_untouched",
+      "native_test_id": "reference.distributed_tire_reference::test_probe_leaves_state_and_clock_untouched",
       "native_source": "native/tests/reference/test_distributed_tire_reference.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.distributed_tire_reference green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_divergence_horizon.py",
@@ -7471,13 +7551,15 @@
       "line": 112,
       "end_line": 131,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_stands::test_distributed_flat_stand_native",
+      "native_test_id": "reference.native_distributed_stands::test_distributed_flat_stand_native",
       "native_source": "native/tests/reference/test_native_distributed_stands.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_distributed_stands green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_stands.py",
@@ -7485,13 +7567,15 @@
       "line": 134,
       "end_line": 159,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_stands::test_distributed_step_stand_native",
+      "native_test_id": "reference.native_distributed_stands::test_distributed_step_stand_native",
       "native_source": "native/tests/reference/test_native_distributed_stands.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_distributed_stands green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_tire.py",
@@ -7499,13 +7583,19 @@
       "line": 52,
       "end_line": 65,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_tire::test_signed_distance_matches_python_bitwise",
+      "native_test_id": "reference.native_distributed_tire::test_signed_distance_matches_python_bitwise",
       "native_source": "native/tests/reference/test_native_distributed_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_distributed_tire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_tire.py",
@@ -7513,13 +7603,15 @@
       "line": 68,
       "end_line": 79,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_tire::test_config_projection_carries_the_distributed_section",
+      "native_test_id": "reference.native_distributed_tire::test_config_projection_carries_the_distributed_section",
       "native_source": "native/tests/reference/test_native_distributed_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_distributed_tire green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_tire.py",
@@ -7527,13 +7619,15 @@
       "line": 88,
       "end_line": 102,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_tire::test_config_rejects_bad_distributed_sections",
+      "native_test_id": "reference.native_distributed_tire::test_config_rejects_bad_distributed_sections",
       "native_source": "native/tests/reference/test_native_distributed_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_distributed_tire green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_tire.py",
@@ -7541,13 +7635,19 @@
       "line": 105,
       "end_line": 125,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_tire::test_distributed_state_wire_round_trip",
+      "native_test_id": "reference.native_distributed_tire::test_distributed_state_wire_round_trip",
       "native_source": "native/tests/reference/test_native_distributed_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_distributed_tire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_tire.py",
@@ -7555,13 +7655,19 @@
       "line": 171,
       "end_line": 208,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_tire::test_distributed_qfrc_bitwise",
+      "native_test_id": "reference.native_distributed_tire::test_distributed_qfrc_bitwise",
       "native_source": "native/tests/reference/test_native_distributed_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_distributed_tire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_tire.py",
@@ -7569,13 +7675,15 @@
       "line": 220,
       "end_line": 314,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_tire::test_distributed_probe_and_clock",
-      "native_source": "native/tests/reference/test_native_distributed_tire.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: dropped \u2014 pre-existing baseline red on the live-oracle probe/integration-state half (interval 1 bitwise); the Stepper clock/restore-atomicity half is ported fixture-free as reference.native_distributed_tire::test_distributed_probe_and_clock and no golden sidecars exist for the node"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_tire.py",
@@ -7583,13 +7691,15 @@
       "line": 317,
       "end_line": 335,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_tire::test_distributed_observations_declare_multi_contact",
+      "native_test_id": "reference.native_distributed_tire::test_distributed_observations_declare_multi_contact",
       "native_source": "native/tests/reference/test_native_distributed_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_distributed_tire green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_distributed_tire.py",
@@ -7597,13 +7707,15 @@
       "line": 371,
       "end_line": 410,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_distributed_tire::test_distributed_trajectory_matches_python_channel_wise_bitwise",
-      "native_source": "native/tests/reference/test_native_distributed_tire.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: dropped \u2014 pre-existing baseline red (root.truth.front_load_n channel-wise); the 1 s env-pair comparison has no fixture form and Stepper-level parity is covered bitwise by reference.native_distributed_tire::test_distributed_qfrc_bitwise"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_drive_policies.py",
@@ -19507,13 +19619,19 @@
       "line": 112,
       "end_line": 156,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_qfrc_bitwise",
+      "native_test_id": "reference.native_tire::test_tire_qfrc_bitwise",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_tire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_tire.py",
@@ -19521,13 +19639,19 @@
       "line": 160,
       "end_line": 188,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_state_roundtrip_and_clock",
+      "native_test_id": "reference.native_tire::test_tire_state_roundtrip_and_clock",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_tire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_tire.py",
@@ -19535,13 +19659,15 @@
       "line": 208,
       "end_line": 218,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_requires_config",
+      "native_test_id": "reference.native_tire::test_tire_requires_config",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_tire green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_tire.py",
@@ -19549,13 +19675,15 @@
       "line": 221,
       "end_line": 235,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_config_missing_key_names_it",
+      "native_test_id": "reference.native_tire::test_tire_config_missing_key_names_it",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_tire green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_tire.py",
@@ -19563,13 +19691,15 @@
       "line": 238,
       "end_line": 247,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_set_state_validation",
+      "native_test_id": "reference.native_tire::test_tire_set_state_validation",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_tire green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_tire.py",
@@ -19577,13 +19707,19 @@
       "line": 254,
       "end_line": 274,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_segment_rejects_invalid_without_mutation",
+      "native_test_id": "reference.native_tire::test_tire_segment_rejects_invalid_without_mutation",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_tire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_tire.py",
@@ -19591,13 +19727,19 @@
       "line": 280,
       "end_line": 292,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_segment_int_boundaries_and_unset_roundtrip",
+      "native_test_id": "reference.native_tire::test_tire_segment_int_boundaries_and_unset_roundtrip",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_tire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_tire.py",
@@ -19605,13 +19747,15 @@
       "line": 294,
       "end_line": 322,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_qfrc_happy_path_and_clock",
+      "native_test_id": "reference.native_tire::test_tire_qfrc_happy_path_and_clock",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_tire green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_tire.py",
@@ -19619,13 +19763,19 @@
       "line": 327,
       "end_line": 352,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_partial_sentinel_group_rejects_atomically",
+      "native_test_id": "reference.native_tire::test_tire_partial_sentinel_group_rejects_atomically",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_tire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_tire.py",
@@ -19633,13 +19783,19 @@
       "line": 355,
       "end_line": 370,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_xi_and_mixed_vector_rejections_preserve_state",
+      "native_test_id": "reference.native_tire::test_tire_xi_and_mixed_vector_rejections_preserve_state",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_tire green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_tire.py",
@@ -19647,13 +19803,15 @@
       "line": 373,
       "end_line": 396,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_tire::test_tire_all_unset_state_accepted_and_first_advance_works",
+      "native_test_id": "reference.native_tire::test_tire_all_unset_state_accepted_and_first_advance_works",
       "native_source": "native/tests/reference/test_native_tire.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.native_tire green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_view_contracts.py",
@@ -24902,13 +25060,15 @@
       "line": 7,
       "end_line": 11,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_savage_track_surface::test_savage_is_asphalt_everywhere",
+      "native_test_id": "reference.savage_track_surface::test_savage_is_asphalt_everywhere",
       "native_source": "native/tests/reference/test_savage_track_surface.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.savage_track_surface green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_climb_surge.py",
@@ -25540,13 +25700,15 @@
       "line": 28,
       "end_line": 29,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_terrain_placement_regression::test_default_terrain_spec_hash_is_pinned",
+      "native_test_id": "reference.terrain_placement_regression::test_default_terrain_spec_hash_is_pinned",
       "native_source": "native/tests/reference/test_terrain_placement_regression.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.terrain_placement_regression green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_terrain_placement_regression.py",
@@ -25554,13 +25716,15 @@
       "line": 33,
       "end_line": 34,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_terrain_placement_regression::test_generated_tracks_are_byte_identical",
+      "native_test_id": "reference.terrain_placement_regression::test_generated_tracks_are_byte_identical",
       "native_source": "native/tests/reference/test_terrain_placement_regression.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.terrain_placement_regression green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_terrain_placement_regression.py",
@@ -25568,13 +25732,15 @@
       "line": 38,
       "end_line": 39,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_terrain_placement_regression::test_road_presets_are_byte_identical",
+      "native_test_id": "reference.terrain_placement_regression::test_road_presets_are_byte_identical",
       "native_source": "native/tests/reference/test_terrain_placement_regression.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.terrain_placement_regression green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_tyre_road_profile.py",
@@ -25582,13 +25748,19 @@
       "line": 17,
       "end_line": 33,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_tyre_road_profile::test_build_road_profile_matches_the_former_inline_construction_bitwise",
+      "native_test_id": "reference.tyre_road_profile::test_build_road_profile_matches_the_former_inline_construction_bitwise",
       "native_source": "native/tests/reference/test_tyre_road_profile.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.tyre_road_profile green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_tyre_road_profile.py",
@@ -25596,13 +25768,19 @@
       "line": 57,
       "end_line": 72,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_tyre_road_profile::test_patch_slip_speed_mps_is_the_signed_tread_slip",
+      "native_test_id": "reference.tyre_road_profile::test_patch_slip_speed_mps_is_the_signed_tread_slip",
       "native_source": "native/tests/reference/test_tyre_road_profile.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.tyre_road_profile green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_welded_profile_config.py",

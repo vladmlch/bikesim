@@ -5,6 +5,9 @@
       "numerics": {
         "backend": "ACCELERATE",
         "blas_integer_bits": 32,
+        "distributions": {
+          "lowering": "contracted"
+        },
         "interp": {
           "lowering": "contracted"
         },
@@ -27,6 +30,9 @@
           "nan_winner": "scalar"
         },
         "numpy_version": "2.5.2",
+        "scipy_correlate": {
+          "lowering": "contracted"
+        },
         "symbols": {
           "ddot": "cblas_ddot",
           "ddot_ilp64": "cblas_ddot$NEWLAPACK$ILP64",
@@ -48,6 +54,9 @@
       "numerics": {
         "backend": "NUMPY_OPENBLAS",
         "blas_integer_bits": 64,
+        "distributions": {
+          "lowering": "separate"
+        },
         "interp": {
           "lowering": "separate"
         },
@@ -64,6 +73,9 @@
           "nan_winner": "element"
         },
         "numpy_version": "2.5.2",
+        "scipy_correlate": {
+          "lowering": "separate"
+        },
         "symbols": {
           "ddot": "scipy_cblas_ddot64_",
           "ddot_ilp64": "scipy_cblas_ddot64_",

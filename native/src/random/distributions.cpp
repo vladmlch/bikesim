@@ -338,14 +338,26 @@ double detail::standard_normal(Bitgen &bitgen) {
 }
 
 // random_normal — loc + scale * standard_normal (always draws, scale=0
-// included).
+// included). Whether the multiply/add contracts to fmadd is a wheel-build
+// property — numerics.distributions.lowering is measured per wheel
+// (AppleClang: contracted; manylinux: separate); spell the recorded
+// lowering because the project build pins -ffp-contract=off.
 double detail::normal(Bitgen &bitgen, double loc, double scale) {
+#if BIKE_NUMPY_DISTRIBUTIONS_CONTRACTED
+    return std::fma(scale, standard_normal(bitgen), loc);
+#else
     return loc + scale * standard_normal(bitgen);
+#endif
 }
 
-// random_uniform — lower + range * next_double.
+// random_uniform — lower + range * next_double (same lowering contract
+// as normal(): distributions.c is one translation unit).
 double detail::uniform(Bitgen &bitgen, double low, double range) {
+#if BIKE_NUMPY_DISTRIBUTIONS_CONTRACTED
+    return std::fma(range, next_double(bitgen), low);
+#else
     return low + range * next_double(bitgen);
+#endif
 }
 
 // random_bounded_uint64 with use_masked=False: the inclusive-range lanes in

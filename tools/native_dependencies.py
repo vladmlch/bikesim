@@ -542,6 +542,43 @@ def validate_numerics(value: dict) -> dict:
             "lanes and cannot outnumber the lanes cast"
         )
 
+    for fact_name, fact_label in (
+        ("distributions", "Generator uniform/normal transform"),
+        ("scipy_correlate", "scipy symmetric correlate loop"),
+    ):
+        fact = _require_object(value, fact_name)
+        fact_lowering = _require_string(
+            fact, "lowering", f"numerics.{fact_name}.lowering"
+        )
+        if fact_lowering not in ("contracted", "separate"):
+            raise ValueError(
+                f"numerics.{fact_name}.lowering must be 'contracted' "
+                f"or 'separate', found {fact_lowering!r} — the probe "
+                f"classifies the {fact_label} multiply/add contraction "
+                "and nothing else is qualified"
+            )
+        fact_queries = fact.get("queries")
+        fact_distinguishing = fact.get("distinguishing")
+        for label, counter in (("queries", fact_queries),
+                               ("distinguishing", fact_distinguishing)):
+            if (
+                not isinstance(counter, int)
+                or isinstance(counter, bool)
+                or counter < 1
+            ):
+                raise ValueError(
+                    f"numerics.{fact_name}.{label} must be a positive "
+                    f"integer, found {counter!r}"
+                )
+        if fact_distinguishing > fact_queries or fact_distinguishing < 8:
+            raise ValueError(
+                f"numerics.{fact_name} evidence is inconsistent: "
+                f"distinguishing={fact_distinguishing} "
+                f"queries={fact_queries} — the lowering claim needs at "
+                "least 8 distinguishing votes and cannot outnumber the "
+                "queries cast"
+            )
+
     config = _require_object(value, "provider_config")
     if backend == "NUMPY_OPENBLAS":
         openblas = config.get("openblas")
@@ -1436,6 +1473,164 @@ def _measure_np_multiply_broadcast_nan(np) -> dict:
     }
 
 
+def _measure_np_distributions_lowering(np) -> dict:
+    """Classify how this wheel lowers ``Generator.uniform``'s
+    ``low + range*u`` and ``Generator.normal``'s ``loc + scale*z``.
+
+    ``distributions.c`` evaluates both transforms as a multiply then an
+    add per draw; whether the two round separately or contract into one
+    fmadd is a property of the wheel's compiler flags, not of this
+    machine — the only trustworthy value is a measurement of the
+    installed ``Generator`` itself. Deterministic seeds only: every draw
+    that distinguishes the two candidate lowerings must vote
+    unanimously, both distributions must agree on the verdict (they live
+    in the same translation unit), and too few distinguishing draws is a
+    probe failure, never a guess.
+    """
+    import math
+
+    seed = 0x1D15EA5E
+    count = 8192
+    rng = np.random.default_rng(seed)
+    low, high = -0.375, 11.625
+    want_uniform = rng.uniform(low, high, count)
+    rng = np.random.default_rng(seed)
+    units = rng.random(count)
+    rng = np.random.default_rng(seed)
+    loc, scale = 1.375, 0.625
+    want_normal = rng.normal(loc, scale, count)
+    rng = np.random.default_rng(seed)
+    normals = rng.standard_normal(count)
+
+    # Same seeds on the raw streams replay exactly the draws each
+    # transformed result consumed; per draw, compare the measured value
+    # against the two candidate lowerings bitwise.
+    span = high - low
+    fused = separate = distinguishing = 0
+    cases = [
+        (draw, want, span, low)
+        for draw, want in zip(units.tolist(), want_uniform.tolist())
+    ]
+    cases += [
+        (draw, want, scale, loc)
+        for draw, want in zip(normals.tolist(), want_normal.tolist())
+    ]
+    for draw, want, slope, offset in cases:
+        f = math.fma(slope, draw, offset)
+        s = slope * draw + offset
+        f_bits = np.float64(f).view(np.uint64).item()
+        s_bits = np.float64(s).view(np.uint64).item()
+        if f_bits == s_bits or want != want:
+            continue
+        distinguishing += 1
+        want_bits = np.float64(want).view(np.uint64).item()
+        if want_bits == f_bits:
+            fused += 1
+        elif want_bits == s_bits:
+            separate += 1
+        else:
+            raise ValueError(
+                "Generator draw produced a result matching neither the "
+                f"contracted nor the separate lowering: want={want!r} "
+                f"fma={f!r} separate={s!r} — this wheel's distributions "
+                "transform is not either candidate expression"
+            )
+    if distinguishing < 8:
+        raise ValueError(
+            f"distributions lowering probe produced only {distinguishing} "
+            "distinguishing draws — cannot classify the wheel's "
+            "contraction contract from this little evidence"
+        )
+    if fused == distinguishing:
+        lowering = "contracted"
+    elif separate == distinguishing:
+        lowering = "separate"
+    else:
+        raise ValueError(
+            f"distributions lowering is inconsistent: {fused} draws "
+            f"contracted vs {separate} separate over {distinguishing} "
+            "distinguishing cases — the wheel mixes both forms"
+        )
+    return {
+        "lowering": lowering,
+        "queries": 2 * count,
+        "distinguishing": distinguishing,
+    }
+
+
+def _measure_scipy_correlate_lowering(np) -> dict:
+    """Classify how this wheel lowers scipy.ndimage's symmetric
+    ``correlate1d`` inner loop ``out += (left + right) * weight``.
+
+    NI_Correlate1D walks each symmetric coefficient pair outermost-first
+    after the center tap; whether the pair multiply and the accumulate
+    round separately or contract into one fmadd is a property of the
+    wheel's compiler flags, not of this machine — the only trustworthy
+    value is a measurement of the installed ``gaussian_filter1d``
+    itself. Deterministic input only: every element that distinguishes
+    the two candidate lowerings must vote unanimously, and too few
+    distinguishing elements is a probe failure, never a guess.
+    """
+    import math
+    from scipy.ndimage import gaussian_filter1d
+
+    count = 512
+    raw = np.random.default_rng(0x5EEDED).standard_normal(count)
+    measured = gaussian_filter1d(raw, sigma=1.0, mode="nearest")
+    offsets = np.arange(-4.0, 5.0)
+    weights = np.exp(-0.5 * (offsets * offsets))
+    weights = weights / weights.sum()
+
+    fused = separate = distinguishing = 0
+    for i in range(count):
+        acc_f = raw[i] * weights[4]
+        acc_s = raw[i] * weights[4]
+        for j in range(4, 0, -1):
+            left = raw[i - j] if i >= j else raw[0]
+            right = raw[i + j] if i + j < count else raw[count - 1]
+            acc_f = math.fma(left + right, weights[4 - j], acc_f)
+            acc_s = acc_s + (left + right) * weights[4 - j]
+        f_bits = np.float64(acc_f).view(np.uint64).item()
+        s_bits = np.float64(acc_s).view(np.uint64).item()
+        if f_bits == s_bits:
+            continue
+        distinguishing += 1
+        want_bits = np.float64(measured[i]).view(np.uint64).item()
+        if want_bits == f_bits:
+            fused += 1
+        elif want_bits == s_bits:
+            separate += 1
+        else:
+            raise ValueError(
+                "gaussian_filter1d produced an element matching neither "
+                f"the contracted nor the separate lowering: i={i} "
+                f"want={measured[i]!r} fma={acc_f!r} separate={acc_s!r} "
+                "— this wheel's correlate loop is not either candidate "
+                "expression"
+            )
+    if distinguishing < 8:
+        raise ValueError(
+            f"scipy correlate lowering probe produced only "
+            f"{distinguishing} distinguishing elements — cannot classify "
+            "the wheel's contraction contract from this little evidence"
+        )
+    if fused == distinguishing:
+        lowering = "contracted"
+    elif separate == distinguishing:
+        lowering = "separate"
+    else:
+        raise ValueError(
+            f"scipy correlate lowering is inconsistent: {fused} elements "
+            f"contracted vs {separate} separate over {distinguishing} "
+            "distinguishing cases — the wheel mixes both forms"
+        )
+    return {
+        "lowering": lowering,
+        "queries": count,
+        "distinguishing": distinguishing,
+    }
+
+
 def _blas_pool(threadpoolctl) -> list[dict]:
     return [
         entry
@@ -2031,6 +2226,12 @@ def discover_numpy_provider() -> dict:
     record["multiply_broadcast"] = _measure_np_multiply_broadcast_nan(
         numpy
     )
+    # The Generator uniform/normal tail transform and scipy's symmetric
+    # correlate loop are the same kind of wheel-build fact: measure the
+    # installed distributions.c / NI_Correlate1D lowering rather than
+    # assuming a platform default.
+    record["distributions"] = _measure_np_distributions_lowering(numpy)
+    record["scipy_correlate"] = _measure_scipy_correlate_lowering(numpy)
     return validate_numerics(record)
 
 
@@ -2218,6 +2419,7 @@ NUMERICS_LOCK_PURPOSE = (
 _RECORD_NUMERICS_KEYS = frozenset({
     "backend", "blas_integer_bits", "lapack_integer_bits", "numpy_version",
     "symbols", "library_paths", "interp", "multiply_broadcast",
+    "distributions", "scipy_correlate",
 })
 _RECORD_LIBRARY_KEYS = frozenset({"path", "role", "identity_kind", "sha256"})
 # The libc family decides which NumPy wheel and provider a platform uses, so
@@ -2316,6 +2518,16 @@ def project_numerics_record(document: dict) -> dict:
             ],
             "interp": {"lowering": interp["lowering"]},
             "multiply_broadcast": {"nan_winner": broadcast["nan_winner"]},
+            "distributions": {
+                "lowering": _require_object(numerics, "distributions")[
+                    "lowering"
+                ]
+            },
+            "scipy_correlate": {
+                "lowering": _require_object(numerics, "scipy_correlate")[
+                    "lowering"
+                ]
+            },
         },
     }
 
@@ -2393,6 +2605,13 @@ def validate_numerics_record_entry(key: str, entry: dict) -> dict:
         raise ValueError(
             f"{label} numerics.multiply_broadcast must be exactly "
             "{nan_winner: scalar|element}")
+    for fact_name in ("distributions", "scipy_correlate"):
+        fact = _require_object(numerics, fact_name)
+        if set(fact) != {"lowering"} or \
+                fact["lowering"] not in ("contracted", "separate"):
+            raise ValueError(
+                f"{label} numerics.{fact_name} must be exactly "
+                "{lowering: contracted|separate}")
     return entry
 
 

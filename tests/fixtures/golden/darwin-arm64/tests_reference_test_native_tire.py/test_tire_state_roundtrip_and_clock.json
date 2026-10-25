@@ -1,0 +1,562 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "state roundtrip step 0",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "state roundtrip step 1",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 176,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "state roundtrip step 2",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 352,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "state roundtrip step 3",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 528,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "state roundtrip step 4",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 704,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "state roundtrip step 5",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 880,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "state roundtrip step 6",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 1056,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "state roundtrip step 7",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 1232,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "state roundtrip step 8",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 1408,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "state roundtrip step 9",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 1584,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "state roundtrip step 10",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 1760,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "state roundtrip step 11",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 1936,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "state roundtrip step 12",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 2112,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "state roundtrip step 13",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 2288,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "state roundtrip step 14",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 2464,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "state roundtrip step 15",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 2640,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "state roundtrip step 16",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 2816,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "state roundtrip step 17",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 2992,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "state roundtrip step 18",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 3168,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "state roundtrip step 19",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 3344,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "state roundtrip step 20",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 3520,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "state roundtrip step 21",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 3696,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "state roundtrip step 22",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 3872,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "state roundtrip step 23",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 4048,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "state roundtrip step 24",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 4224,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "state roundtrip step 25",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 4400,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "state roundtrip step 26",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 4576,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "state roundtrip step 27",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 4752,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "state roundtrip step 28",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 4928,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "state roundtrip step 29",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 5104,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "state roundtrip step 30",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 5280,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "state roundtrip step 31",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 5456,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "state roundtrip step 32",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 5632,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "state roundtrip step 33",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 5808,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "state roundtrip step 34",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 5984,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "state roundtrip step 35",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 6160,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "state roundtrip step 36",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 6336,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "state roundtrip step 37",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 6512,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "state roundtrip step 38",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 6688,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "state roundtrip step 39",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock",
+  "offset": 6864,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ }
+]

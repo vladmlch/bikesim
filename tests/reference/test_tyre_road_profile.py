@@ -3,6 +3,8 @@
 import numpy as np
 import pytest
 
+import _golden
+
 from bike_sim.geometry.hardpoints import compute_ground_z
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.tyre import FRONT_TYRE, TIERS
@@ -27,6 +29,9 @@ def test_build_road_profile_matches_the_former_inline_construction_bitwise():
         + build_profile(track, track_x)
     )
     expected = RoadProfile.from_samples(track_x, road_z)
+    _golden.record(np.asarray(expected.x0_m), 'expected x0_m')
+    _golden.record(np.asarray(expected.dx_m), 'expected dx_m')
+    _golden.record(np.asarray(expected.z_m), 'expected z_m')
 
     profile = build_road_profile(track, field, specs)
     assert profile.x0_m == expected.x0_m and profile.dx_m == expected.dx_m
@@ -59,14 +64,16 @@ def test_patch_slip_speed_mps_is_the_signed_tread_slip(tier, v_x_mps, omega_radp
     # (locked/slow wheel), negative spins the wheel faster than the travel speed.
     outputs = _loaded_outputs(PneumaticTyre(FRONT_TYRE, tier), v_x_mps, omega_radps)
     assert not outputs.airborne and outputs.patches
+    _golden.record(np.asarray(len(outputs.patches)), 'patch count')
     velocity = np.array([v_x_mps, 0.0, 0.0])
-    for patch in outputs.patches:
+    for i, patch in enumerate(outputs.patches):
         v_x = float(np.dot(velocity, patch.tangent_world))
         effective_radius_m = max(
             FRONT_TYRE.outer_radius_mm / 1000.0 - patch.mean_deflection_m / 3.0,
             1e-6,
         )
         expected_v_s = v_x - float(omega_radps) * effective_radius_m
+        _golden.record(np.asarray(expected_v_s), f'expected_v_s patch {i}')
         assert patch.slip_speed_mps == expected_v_s
         assert patch.slip_speed_mps * sign > 0.0
         assert patch.sliding_speed_mps == abs(patch.slip_speed_mps)

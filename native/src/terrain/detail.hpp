@@ -10,6 +10,7 @@
 #include <limits>
 #include <stdexcept>
 
+namespace bike::terrain { struct AlpineGenSpec; }
 namespace bike::terrain::detail {
 namespace gd = bike::geometry::detail;
 inline void finite(double value,std::string_view path) {
@@ -88,4 +89,10 @@ inline void range(CountRange r,std::string_view name) {
 inline std::int64_t count_draw(bike::random::NumpyRng& rng,CountRange value) {
     return rng.integers(value[0],value[1]+1);
 }
+// Alpine rhythm internals — the reference tests pin the same private
+// segment/grade-profile surface the Python oracle exports as
+// terrain.alpine._segments/_rhythm.
+struct Segment{std::string kind;double start,end,grade;};
+[[nodiscard]] std::vector<Segment> segments(const AlpineGenSpec& s,bike::random::NumpyRng& rng);
+[[nodiscard]] std::pair<GradeProfile,std::vector<Interval>> rhythm(const AlpineGenSpec& s,bike::random::NumpyRng& rng);
 } // namespace bike::terrain::detail

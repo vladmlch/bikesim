@@ -14438,12 +14438,10 @@
       "native/tests/reference/test_alpine_track.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.alpine_track"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "a72f16d60a527177496c7a26a1459b91ac5f3ccdf5b763f8f4b224c26e71002b",
     "snapshot_line_count": 373,
     "tracked": true,
@@ -14727,12 +14725,10 @@
       "native/tests/reference/test_distributed_tire_reference.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.distributed_tire_reference"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "7309bde6bcb5436b06fbde480264906feaa266fb6be03d90a8e59e1fa0e6fa06",
     "snapshot_line_count": 137,
     "tracked": true,
@@ -15375,12 +15371,10 @@
       "native/tests/reference/test_native_distributed_stands.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_distributed_stands"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "7ce2ccbe72f0aa6a49e1818951db04aeda875f67bf8d1d0a709f401b97caa6be",
     "snapshot_line_count": 159,
     "tracked": true,
@@ -15396,12 +15390,10 @@
       "native/tests/reference/test_native_distributed_tire.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_distributed_tire"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "afe87177ba69ba72d2c05b0110d04f33624e94754b2bcf9e881874a2206109d5",
     "snapshot_line_count": 410,
     "tracked": true,
@@ -16430,12 +16422,10 @@
       "native/tests/reference/test_native_tire.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_tire"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "f414047168f1972994deb1c2020727a6c6cb9c6e3a44f0de1f49ea98b786aedb",
     "snapshot_line_count": 396,
     "tracked": true,
@@ -17430,12 +17420,10 @@
       "native/tests/reference/test_savage_track_surface.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.savage_track_surface"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "efa3b5f7dc46ef3684a6fdcafcb46721489d2c7449bd3aaa6cba82046ecc975a",
     "snapshot_line_count": 11,
     "tracked": true,
@@ -17589,12 +17577,10 @@
       "native/tests/reference/test_terrain_placement_regression.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.terrain_placement_regression"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ec3dbad02cf69f04ae252053b624de79c279e3126d343a48e2324b3541926966",
     "snapshot_line_count": 39,
     "tracked": true,
@@ -17610,12 +17596,10 @@
       "native/tests/reference/test_tyre_road_profile.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.tyre_road_profile"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "76b3c95c3f233a12cd7515a547b0b585dfd941746900a8d90023ea75f72e48d4",
     "snapshot_line_count": 72,
     "tracked": true,

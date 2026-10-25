@@ -7,6 +7,7 @@
 #include "../model/suspension_setup.hpp"
 #include "../model_access.hpp"
 #include "../numeric_sincos.hpp"
+#include "../diag.hpp"
 #include <numbers>
 
 namespace bike::validation {
@@ -65,9 +66,12 @@ struct Fixture {
 [[gnu::noinline]] model::BuildRequest chain_model(){
     return mechanics::request(chain_config());
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[gnu::noinline]] std::unique_ptr<mechanics::BikeStand> chain_bike(){
     return std::make_unique<mechanics::BikeStand>(chain_model());
 }
+NATIVE_DIAG_POP
 }
 
 RigResult drive_suspension_rig(double dt,std::string_view mode,double torque,double stroke,double duration) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.

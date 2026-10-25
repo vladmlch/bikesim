@@ -33,12 +33,19 @@ template<class T> auto make_nodes(const T& o) {
         double smooth=raw[i]*weights[4];
         // NI_Correlate1D's symmetric loop walks negative offsets -radius
         // through -1: outermost pair first, after the center contribution.
-        // The scipy binary's `out += (l+r)*w` contracts to fmadd; spell the
-        // fma because the project build pins -ffp-contract=off.
+        // Whether `out += (l+r)*w` contracts to fmadd is a wheel-build
+        // property — numerics.scipy_correlate.lowering is measured per
+        // wheel (AppleClang: contracted; manylinux: separate); spell the
+        // recorded lowering because the project build pins
+        // -ffp-contract=off.
         for(std::size_t j=4;j>0;--j) {
             const std::size_t left=i<j?0:i-j;
             const std::size_t right=std::min(i+j,n-1);
+#if BIKE_SCIPY_CORRELATE_CONTRACTED
             smooth=std::fma(raw[left]+raw[right],weights[4-j],smooth);
+#else
+            smooth+=(raw[left]+raw[right])*weights[4-j];
+#endif
         }
         double taper=1.;
         if(x[i]<taper_len) taper=.5*(1.-numeric::np_cos(pi*x[i]/taper_len));

@@ -9225,14 +9225,15 @@
       "line": 57,
       "end_line": 81,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_recursive_config_key_contract",
+      "native_test_id": "reference.native_input_contracts::test_recursive_config_key_contract",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9241,14 +9242,15 @@
       "line": 85,
       "end_line": 91,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_present_empty_writer_requires_its_schema",
+      "native_test_id": "reference.native_input_contracts::test_present_empty_writer_requires_its_schema",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9257,14 +9259,15 @@
       "line": 95,
       "end_line": 98,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_schema_is_closed_integer",
+      "native_test_id": "reference.native_input_contracts::test_schema_is_closed_integer",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9273,14 +9276,15 @@
       "line": 102,
       "end_line": 110,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_boolean_flags_are_exact",
+      "native_test_id": "reference.native_input_contracts::test_boolean_flags_are_exact",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9289,14 +9293,15 @@
       "line": 114,
       "end_line": 121,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_numeric_types_precede_conversion",
+      "native_test_id": "reference.native_input_contracts::test_numeric_types_precede_conversion",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9305,14 +9310,15 @@
       "line": 124,
       "end_line": 131,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_numpy_numeric_scalars_and_ordered_vectors",
+      "native_test_id": "reference.native_input_contracts::test_numpy_numeric_scalars_and_ordered_vectors",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9321,14 +9327,15 @@
       "line": 135,
       "end_line": 140,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_vectors_reject_unordered_wrong_width_and_boolean",
+      "native_test_id": "reference.native_input_contracts::test_vectors_reject_unordered_wrong_width_and_boolean",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9385,14 +9392,19 @@
       "line": 179,
       "end_line": 202,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_schema_migration_preserves_resolved_fork_force",
+      "native_test_id": "reference.native_input_contracts::test_schema_migration_preserves_resolved_fork_force",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green. This record is a would-be golden (assert_bitwise_equal against the damper oracle)."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green. This record is a would-be golden (assert_bitwise_equal against the damper oracle).",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; bitwise fork_damper scalars (two compressions per node, six schema x travel x legacy nodes) captured on darwin-arm64 and linux-aarch64; the complete source file passed on each lane before its capture was kept (97 passed both); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s); a corrupted golden byte fails with the node id, comparison index and label (verified, then restored)."
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -9401,14 +9413,15 @@
       "line": 205,
       "end_line": 211,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_schema_two_requires_explicit_fork_flag",
+      "native_test_id": "reference.native_input_contracts::test_schema_two_requires_explicit_fork_flag",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9417,14 +9430,15 @@
       "line": 214,
       "end_line": 218,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_projection_emits_schema_two_and_persisted_flag",
+      "native_test_id": "reference.native_input_contracts::test_projection_emits_schema_two_and_persisted_flag",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "structural",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9545,14 +9559,15 @@
       "line": 295,
       "end_line": 302,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_closed_discriminators_have_full_field_paths",
+      "native_test_id": "reference.native_input_contracts::test_closed_discriminators_have_full_field_paths",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9561,14 +9576,15 @@
       "line": 305,
       "end_line": 312,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_schema_one_rejects_schema_two_fork_metadata",
+      "native_test_id": "reference.native_input_contracts::test_schema_one_rejects_schema_two_fork_metadata",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9577,14 +9593,15 @@
       "line": 316,
       "end_line": 329,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_resistance_snapshot_patch_schema_is_complete",
+      "native_test_id": "reference.native_input_contracts::test_resistance_snapshot_patch_schema_is_complete",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9609,14 +9626,15 @@
       "line": 351,
       "end_line": 358,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_zero_dimensional_arrays_are_not_wire_sequences",
+      "native_test_id": "reference.native_input_contracts::test_zero_dimensional_arrays_are_not_wire_sequences",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9641,14 +9659,15 @@
       "line": 382,
       "end_line": 388,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_ordered_dictionary_collections_match_python",
+      "native_test_id": "reference.native_input_contracts::test_ordered_dictionary_collections_match_python",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9657,14 +9676,15 @@
       "line": 391,
       "end_line": 400,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_mapping_is_not_a_numeric_sequence",
+      "native_test_id": "reference.native_input_contracts::test_mapping_is_not_a_numeric_sequence",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {
@@ -9673,14 +9693,15 @@
       "line": 403,
       "end_line": 413,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_input_contracts::test_scalar_conversion_memory_error_keeps_its_meaning",
+      "native_test_id": "reference.native_input_contracts::test_scalar_conversion_memory_error_keeps_its_meaning",
       "native_source": "native/tests/reference/test_native_input_contracts.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green."
+        "2026-10-2x 3.28 lane/c: STOPPED (disposition kept planned) \u2014 the pytest node takes the module-scoped `resolved` fixture, which fails during setup at the documented savage-plant equilibrium defect: RuntimeError: physical equilibrium did not converge after 64000 steps: residual=0.094603 (front_wheel_spin dominant) \u2014 the same physics-stop signature as the 2026-10-23 baseline refresh; observed as fixture-setup ERROR (59 total) in the required parity run, not a test failure. Port when the fixture is green.",
+        "2026-10-2x 3.28 lane/a: ported to native/tests/reference/test_native_input_contracts.cpp on top of the F2 settle fix a27a8d6; the complete source file passes the required parity run on both lanes (darwin-arm64: 97 passed; linux-aarch64 container: 97 passed, cold environment); CTest reference.native_input_contracts green on darwin-arm64 (build/native-release, 0.12s) and linux-aarch64 (/build/root-clang, 0.10s)."
       ]
     },
     {

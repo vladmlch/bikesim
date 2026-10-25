@@ -15533,7 +15533,7 @@
       "reference.native_input_contracts"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "6f0db3cef276e9f6c9703734b3b76097995485efecf7eda8dc81c69a85d3beee",
     "snapshot_line_count": 445,
     "tracked": true,

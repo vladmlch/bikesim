@@ -1,49 +1,34 @@
 // Completion 3.28. Source: tests/reference/test_native_input_contracts.py.
 // Strict wire readers and explicit contracts, with valid controls. Every
-// ported record is self-contained (contract/invariant/analytic) — no Python
-// oracle value is compared, so this file holds no golden nodes.
-//
-// Seventeen source records remain `planned` (not ported): their pytest
-// nodes take the module-scoped `resolved` fixture, whose `_golden`
-// environment build currently fails at the documented macOS/Linux
-// savage-plant equilibrium defect — `RuntimeError: physical equilibrium did
-// not converge after 64000 steps: residual=0.094603` (front_wheel_spin
-// dominant) — the same physics-stop signature as baseline nodes
-// `test_realistic_pedelec_acceptance.py::test_savage_is_ridden_to_the_end`
-// and `test_realtime_gate.py::...[rough_uphill_savage.toml]` measured at
-// fe4feaa (migration/baseline-refresh-2026-10-23.md). The pytest run for
-// this batch confirms 59 fixture-setup errors on these nodes and no test
-// failures elsewhere. Per the batch stop rule they are not ported until
-// the fixture is green again:
-//   test_recursive_config_key_contract
-//   test_present_empty_writer_requires_its_schema
-//   test_schema_is_closed_integer
-//   test_boolean_flags_are_exact
-//   test_numeric_types_precede_conversion
-//   test_numpy_numeric_scalars_and_ordered_vectors
-//   test_vectors_reject_unordered_wrong_width_and_boolean
-//   test_schema_migration_preserves_resolved_fork_force (would-be golden)
-//   test_schema_two_requires_explicit_fork_flag
-//   test_projection_emits_schema_two_and_persisted_flag
-//   test_closed_discriminators_have_full_field_paths
-//   test_schema_one_rejects_schema_two_fork_metadata
-//   test_resistance_snapshot_patch_schema_is_complete
-//   test_zero_dimensional_arrays_are_not_wire_sequences
-//   test_ordered_dictionary_collections_match_python
-//   test_mapping_is_not_a_numeric_sequence
-//   test_scalar_conversion_memory_error_keeps_its_meaning
-// Their native-side equivalents run against a valid resolved wire document
-// once the fixture heals.
+// resolved()-fixture record is ported: the module-scoped Python fixture is
+// project(env) over the welded_pinned bootstrap plus fixed overrides, so
+// the port replays the captured wire/state instead of re-running a live
+// environment. test_schema_migration_preserves_resolved_fork_force is the
+// file's one golden — bitwise oracle scalars captured on darwin-arm64 and
+// linux-aarch64.
+#include <algorithm>
+#include <array>
 #include <limits>
+#include <memory>
+#include <optional>
+#include <set>
+#include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "configuration/model_config.hpp"
 #include "diag.hpp"
 #include "drivetrain_reference_support.hpp"
+#include "engine_call.hpp"
 #include "io/json.hpp"
+#include "model/builder.hpp"
+#include "runtime/value_readers.hpp"
+#include "writer_config.hpp"
+#include "writers/resistance.hpp"
 
 namespace {
+namespace io = bike::io;
 using namespace drivetrain_reference;
 using policy_reference::field;
 using policy_reference::member;
@@ -79,6 +64,528 @@ Value& at(Value& value, const std::vector<std::string>& path) {
         }
     }
     return *cursor;
+}
+// Literal-path overload: brace lists bind to a span directly.
+Value& at(Value& value, std::initializer_list<std::string_view> path) {
+    Value* cursor = &value;
+    for (const auto key : path) {
+        if (std::holds_alternative<Value::Object>(cursor->data)) {
+            cursor = &member(*cursor, key);
+        } else {
+            cursor = &std::get<Value::Array>(cursor->data)
+                          .at(static_cast<std::size_t>(std::stoull(std::string(key))));
+        }
+    }
+    return *cursor;
+}
+std::string join(std::span<const std::string> parts) {
+    std::string out;
+    for (const auto& part : parts) { if (!out.empty()) out += '.'; out += part; }
+    return out;
+}
+// Python's `at(value, path[:-1])[path[-1]] = leaf`: object parents gain or
+// replace the named member; array parents assign the indexed element.
+void put(Value& root, const std::vector<std::string>& path,
+         const Value& leaf) {
+    Value& parent =
+        at(root, std::vector<std::string>(path.begin(), path.end() - 1));
+    if (std::holds_alternative<Value::Object>(parent.data))
+        set(parent, path.back(), leaf);
+    else
+        std::get<Value::Array>(parent.data)
+            .at(static_cast<std::size_t>(std::stoull(path.back()))) = leaf;
+}
+
+// ---- the resolved() fixture ------------------------------------------------
+// The Python module-scoped `resolved` builds _pinned_config physics (the
+// welded_pinned bootstrap plant), projects it, then applies the cruise,
+// assist profile/mode, rider-path and surface-section overrides below. The
+// static bootstrap captures exactly that projection plus the settled state,
+// so the port replays it rather than building a live environment (same seam
+// as test_native_numeric_completion.cpp's resolved_wire()).
+std::string pinned_path() {
+    return bt::fixture("bootstrap/welded_pinned/model.mjb").string();
+}
+const std::vector<double>& pinned_integration() {
+    static const std::vector<double> state =
+        bt::read_f64(bt::fixture("bootstrap/welded_pinned/integration.f64"));
+    return state;
+}
+// mjSTATE_INTEGRATION layout: [time, qpos(26), qvel(26), act(0),
+// qacc_warmstart(26), plugin] for the nq=nv=26, na=0 plant.
+std::vector<double> pinned_qpos() {
+    const auto& v = pinned_integration();
+    return {v.begin() + 1, v.begin() + 27};
+}
+int pinned_adr(const std::string& joint) {
+    static const bike::model::ModelOwner model(
+        engine::load_model(pinned_path().c_str()));
+    return bike::model::joint_address(*model, joint).first;
+}
+int pinned_dof(const std::string& joint) {
+    static const bike::model::ModelOwner model(
+        engine::load_model(pinned_path().c_str()));
+    return bike::model::joint_address(*model, joint).second;
+}
+Value resolved_wire() {
+    auto wire = field(io::parse_json(
+        bt::text(bt::fixture("bootstrap/welded_pinned/config.json"))), "writer_config");
+    set(wire, "cruise", io::parse_json(
+        R"({"target_speed_kmh":25.0,"kp_nm_per_mps":1.0,"ki_nm_per_mps_s":0.1,"torque_ceiling_nm":20.0})"));
+    auto& assist = member(member(wire, "drive"), "assist");
+    set(assist, "profile", io::parse_json(
+        R"({"mode_gains":{"eco":1.0,"tour":2.0,"emtb":[1.0,3.0],"turbo":3.0},"emtb_full_gain_at_nm":20.0})"));
+    set(assist, "mode", text("eco"));
+    set(wire, "rider_forces", io::parse_json(
+        R"({"paths":[{"name":"probe_path","joint":"root_x","stiffness_n_m":1.0,"damping_ns_m":0.0,"preload_deflection_m":0.0,"offset_m":0.0,"unilateral":false}]})"));
+    auto& surface_map = member(member(wire, "tire"), "surface_map");
+    auto& sections = member(surface_map, "sections");
+    if (io::as_array(sections, "tire.surface_map.sections").empty()) {
+        // surface=copy.deepcopy(config['tire']['surface_map']['surface'])
+        const Value surface = field(surface_map, "surface");
+        Value entry{Value::Object{{"start_m", real(1.)}, {"end_m", real(2.)},
+                                  {"surface", surface}}};
+        sections = Value{Value::Array{std::move(entry)}};
+    }
+    return wire;
+}
+std::unique_ptr<Stepper> resolved_stepper(const Value& wire) {
+    return std::make_unique<Stepper>(pinned_path(), nativecfg::decode(wire));
+}
+
+// ---- golden plumbing --------------------------------------------------------
+bt::oracle::Node node(std::string_view function, std::string_view id = {}) {
+    auto name = "tests/reference/test_native_input_contracts.py::" +
+                std::string(function);
+    if (!id.empty()) name += "[" + std::string(id) + "]";
+    return bt::oracle::Node(name);
+}
+void scalar(bt::oracle::Node& golden, double value) {
+    const std::array values{value};
+    golden.f64(values, std::span<const std::size_t>{}, "");
+}
+
+// Source: test_native_input_contracts.py::test_recursive_config_key_contract
+[[gnu::noinline]] void test_recursive_config_key_contract() {
+    // mutations unknown/nonstring/missing over every object-valued location.
+    // 'nonstring' (key=7) has no wire spelling — Value::Object keys are
+    // strings by construction; the nb-side "expected string" gate stays with
+    // the parity suite until T63.
+    const Value original = resolved_wire();
+    (void)resolved_stepper(original);  // Stepper(path, original): valid control
+    std::vector<std::vector<std::string>> locations;
+    { std::vector<std::string> path; dictionaries(original, path, locations); }
+    bt::require(!locations.empty(), "resolved wire exposes object locations");
+    static const std::set<std::string> root_sections{
+        "drive", "cruise", "suspension", "brake", "resistance", "tire",
+        "rider_forces", "rider_contacts"};
+    static const std::set<std::string> optional_nested{
+        "profile", "torque_curve", "surface_map", "grip_pair_force_limit_n"};
+    for (const std::string_view mutation : {"unknown", "missing"}) {
+        for (const auto& location : locations) {
+            Value candidate = original;
+            Value& section = at(candidate, location);
+            const std::string expected = "config" +
+                (location.empty() ? "" : "." + join(location));
+            if (mutation == "missing") {
+                const auto& excluded =
+                    location.empty() ? root_sections : optional_nested;
+                std::optional<std::string> victim;
+                for (const auto& [key, ignored] :
+                     std::get<Value::Object>(section.data)) {
+                    (void)ignored;
+                    if (!excluded.count(key) && (!victim || key < *victim))
+                        victim = key;
+                }
+                if (!victim) continue;  // every key is optional: Python skips
+                policy_reference::erase(section, *victim);
+            } else {
+                set(section, "misspelled", real(1.));
+            }
+            error<std::invalid_argument>(
+                [&] { bike::configuration::wire::validate_config(candidate); },
+                expected);
+            error<std::invalid_argument>(
+                [&] { (void)resolved_stepper(candidate); }, expected);
+        }
+    }
+}
+
+// Source: test_native_input_contracts.py::test_present_empty_writer_requires_its_schema
+[[gnu::noinline]] void test_present_empty_writer_requires_its_schema() {
+    for (const std::string_view section :
+         {"drive", "cruise", "suspension", "brake", "resistance", "tire",
+          "rider_forces", "rider_contacts"}) {
+        const Value config{Value::Object{
+            {"schema", integer(2)},
+            {std::string(section), Value{Value::Object{}}}}};
+        const std::string expected = "config." + std::string(section);
+        error<std::invalid_argument>(
+            [&] { bike::configuration::wire::validate_config(config); },
+            expected);
+        error<std::invalid_argument>(
+            [&] { (void)resolved_stepper(config); }, expected);
+    }
+}
+
+// Source: test_native_input_contracts.py::test_schema_is_closed_integer
+[[gnu::noinline]] void test_schema_is_closed_integer() {
+    // bad ∈ {True, np.bool_(False), '2', 2.5, 0, 3}: np.bool_ marshals as a
+    // wire bool, so the two Python bool spellings are one Value arm each of
+    // true/false; '2' is a text scalar; 2.5/0/3 stay real/integer lexemes.
+    for (const Value& bad : {Value{true}, Value{false}, text("2"),
+                             real(2.5), integer(0), integer(3)}) {
+        const Value config{Value::Object{{"schema", bad}}};
+        error<std::invalid_argument>(
+            [&] { (void)resolved_stepper(config); }, "config.schema");
+    }
+}
+
+// Source: test_native_input_contracts.py::test_boolean_flags_are_exact
+[[gnu::noinline]] void test_boolean_flags_are_exact() {
+    // bad ∈ {1, 0., 'no', np.bool_(True)}: np.bool_(True) fails the binding's
+    // exact-Py_True gate, but on the wire a bool IS the accepted spelling —
+    // the portable matrix is {1, 0., 'no'}.
+    const Value original = resolved_wire();
+    for (const std::vector<std::string>& location :
+         std::vector<std::vector<std::string>>{
+             {"suspension", "shock_damper", "lockout_firm"},
+             {"suspension", "coil", "legacy_behavior"},
+             {"drive", "pedaling", "enabled"}}) {
+        const std::string expected = join(location);
+        for (const Value& bad : {integer(1), real(0.), text("no")}) {
+            Value candidate = original;
+            put(candidate, location, bad);
+            error<std::invalid_argument>(
+                [&] { (void)resolved_stepper(candidate); }, expected);
+        }
+    }
+}
+
+// Source: test_native_input_contracts.py::test_numeric_types_precede_conversion
+[[gnu::noinline]] void test_numeric_types_precede_conversion() {
+    // bad ∈ {True, np.bool_(True), '1', nan, inf}: the bool covers both
+    // spellings; nonfinite Python floats arrive as repr() lexemes.
+    const Value original = resolved_wire();
+    for (const std::vector<std::string>& location :
+         std::vector<std::vector<std::string>>{
+             {"brake", "torque_ceiling_nm"}, {"drive", "assist", "gain"},
+             {"resistance", "wind_world_mps", "0"}}) {
+        const std::string expected =
+            join(std::span(location).first(location.size() - 1));
+        for (const Value& bad :
+             {Value{true}, text("1"),
+              Value{bike::io::Number{"nan"}},
+              Value{bike::io::Number{"inf"}}}) {
+            Value candidate = original;
+            put(candidate, location, bad);
+            error<std::invalid_argument>(
+                [&] { (void)resolved_stepper(candidate); }, expected);
+        }
+    }
+}
+
+// Source: test_native_input_contracts.py::test_numpy_numeric_scalars_and_ordered_vectors
+[[gnu::noinline]] void test_numpy_numeric_scalars_and_ordered_vectors() {
+    // np.int64/np.int32 arrive as integer lexemes, np.float32/np.float64 as
+    // real lexemes; a tuple of them is the same ordered wire array.
+    Value config = resolved_wire();
+    set(config, "schema", integer(2));
+    set(at(config, {"drive", "gearing"}), "front_teeth", integer(34));
+    set(at(config, {"drive", "assist"}), "gain", real(1.));
+    set(at(config, {"resistance"}), "wind_world_mps",
+        Value{Value::Array{integer(0), real(0.), real(0.)}});
+    (void)resolved_stepper(config);
+}
+
+// Source: test_native_input_contracts.py::test_vectors_reject_unordered_wrong_width_and_boolean
+[[gnu::noinline]] void test_vectors_reject_unordered_wrong_width_and_boolean() {
+    // bad ∈ {set{0,1,2}, iter([0,0,0]), [0,True,0], [0,0]}: a set's closest
+    // wire kin is an unordered mapping; a bare iterator has no wire spelling
+    // (a string is the same "not an ordered sequence" failure); the bool
+    // element and wrong-width arms are real wire values.
+    const Value original = resolved_wire();
+    for (const Value& bad : {
+             Value{Value::Object{{"0", real(0.)}, {"1", real(1.)},
+                                 {"2", real(2.)}}},
+             text("0.0,0.0,0.0"),
+             Value{Value::Array{real(0.), Value{true}, real(0.)}},
+             Value{Value::Array{real(0.), real(0.)}}}) {
+        Value candidate = original;
+        set(at(candidate, {"resistance"}), "wind_world_mps", bad);
+        error<std::invalid_argument>(
+            [&] { (void)resolved_stepper(candidate); },
+            "resistance.wind_world_mps");
+    }
+}
+
+// Source: test_native_input_contracts.py::test_schema_migration_preserves_resolved_fork_force
+// GOLDEN — schema ∈ {1,2} × (travel,legacy) ∈ {(150,T),(180,F),(150,F)}:
+// the C++ ids are the pytest parameter spellings; each node consumes the
+// two bitwise fork_damper scalars (compression travel-1 then travel+15 mm).
+[[gnu::noinline]] void test_schema_migration_preserves_resolved_fork_force() {
+    const int fork_adr = pinned_adr("fork_travel");
+    const int fork_dof = pinned_dof("fork_travel");
+    struct Case { const char* id; int schema; double travel; bool legacy; };
+    for (const Case item : std::array{
+             Case{"1-150.0-True", 1, 150., true},
+             Case{"1-180.0-False", 1, 180., false},
+             Case{"1-150.0-False", 1, 150., false},
+             Case{"2-150.0-True", 2, 150., true},
+             Case{"2-180.0-False", 2, 180., false},
+             Case{"2-150.0-False", 2, 150., false}}) {
+        auto golden =
+            node("test_schema_migration_preserves_resolved_fork_force", item.id);
+        // Charger3Damper(total_travel_mm=travel, legacy_behavior=legacy):
+        // _damper_core fields plus the fork extras; schema 2 also persists
+        // the resolved flag (schema 1 derives it from hbo_start_mm == 160).
+        Value::Object fork{
+            {"max_hsc", integer(4)}, {"max_lsc", integer(14)},
+            {"max_reb", integer(17)}, {"hsc_clicks", integer(2)},
+            {"lsc_clicks", integer(7)}, {"rebound_clicks", integer(9)},
+            {"c_lsc_min", real(260.)}, {"c_lsc_max", real(1150.)},
+            {"c_hsc_min", real(180.)}, {"c_hsc_max", real(520.)},
+            {"c_reb_min", real(350.)}, {"c_reb_max", real(1550.)},
+            {"v_knee_comp", real(.18)}, {"v_knee_reb", real(.22)},
+            {"total_travel_mm", real(item.travel)},
+            {"hbo_start_mm", real(item.legacy ? 160. : item.travel - 20.)},
+            {"c_hbo_base", real(3500.)}};
+        if (item.schema == 2)
+            fork.emplace_back("legacy_behavior", Value{item.legacy});
+        Value wire = resolved_wire();
+        set(wire, "schema", integer(item.schema));
+        set(member(wire, "suspension"), "fork_damper",
+            Value{std::move(fork)});
+        auto stepper = resolved_stepper(wire);
+        for (const double compression : {item.travel - 1., item.travel + 15.}) {
+            auto qpos = pinned_qpos();
+            std::vector<double> qvel(qpos.size(), 0.);
+            qpos[static_cast<std::size_t>(fork_adr)] = compression / 1000.;
+            qvel[static_cast<std::size_t>(fork_dof)] = .7;
+            stepper->set_state(qpos, qvel, {},
+                               std::vector<double>(qpos.size(), 0.), 0.);
+            const auto components = stepper->suspension_components();
+            const auto found = std::ranges::find_if(components,
+                [](const auto& row) { return row.first == "fork_damper"; });
+            bt::require(found != components.end(),
+                        "suspension components carry fork_damper");
+            scalar(golden,
+                   found->second[static_cast<std::size_t>(fork_dof)]);
+        }
+        golden.done();
+    }
+}
+
+// Source: test_native_input_contracts.py::test_schema_two_requires_explicit_fork_flag
+[[gnu::noinline]] void test_schema_two_requires_explicit_fork_flag() {
+    Value config = resolved_wire();
+    policy_reference::erase(
+        at(config, {"suspension", "fork_damper"}), "legacy_behavior");
+    error<std::invalid_argument>(
+        [&] { (void)resolved_stepper(config); }, "fork_damper.legacy_behavior");
+}
+
+// Source: test_native_input_contracts.py::test_projection_emits_schema_two_and_persisted_flag
+[[gnu::noinline]] void test_projection_emits_schema_two_and_persisted_flag() {
+    // The welded_pinned bootstrap's writer_config is the verbatim capture of
+    // project(env) for exactly this env (tools/migration/capture_reference.py).
+    const Value document = io::parse_json(
+        bt::text(bt::fixture("bootstrap/welded_pinned/config.json")));
+    const Value& wire = field(document, "writer_config");
+    const auto& lexeme =
+        std::get<bike::io::Number>(field(wire, "schema").data).lexeme;
+    bt::require(lexeme == "2" && bike::io::is_integer_lexeme(lexeme),
+                "project(env) emits schema as the integer 2");
+    const Value& flag = field(field(field(wire, "suspension"), "fork_damper"),
+                              "legacy_behavior");
+    bt::require(std::holds_alternative<bool>(flag.data) &&
+                !std::get<bool>(flag.data),
+                "projection persists fork_damper.legacy_behavior as false");
+}
+
+// Source: test_native_input_contracts.py::test_closed_discriminators_have_full_field_paths
+[[gnu::noinline]] void test_closed_discriminators_have_full_field_paths() {
+    const Value original = resolved_wire();
+    for (const std::vector<std::string>& location :
+         std::vector<std::vector<std::string>>{
+             {"suspension", "physics_mode"}, {"tire", "backend"},
+             {"tire", "surface_mode"}, {"drive", "drive_mode"},
+             {"drive", "transmission_model"},
+             {"drive", "shifting", "upshift_slip_mode"},
+             {"drive", "assist", "mode"}}) {
+        Value candidate = original;
+        put(candidate, location, text("unsupported"));
+        const std::string expected = "config." + join(location);
+        error<std::invalid_argument>(
+            [&] { bike::configuration::wire::validate_config(candidate); },
+            expected);
+        error<std::invalid_argument>(
+            [&] { (void)resolved_stepper(candidate); }, expected);
+    }
+}
+
+// Source: test_native_input_contracts.py::test_schema_one_rejects_schema_two_fork_metadata
+[[gnu::noinline]] void test_schema_one_rejects_schema_two_fork_metadata() {
+    Value candidate = resolved_wire();
+    set(candidate, "schema", integer(1));
+    error<std::invalid_argument>(
+        [&] { bike::configuration::wire::validate_config(candidate); },
+        "fork_damper.legacy_behavior");
+    error<std::invalid_argument>(
+        [&] { (void)resolved_stepper(candidate); },
+        "fork_damper.legacy_behavior");
+}
+
+// Value twin of the binding's side_input snapshot reader (binding.cpp
+// side_input): section+exact over the closed per-side schema, then each
+// patches[i] row exact against the four-member patch schema — vread:: is
+// wire::'s documented mechanical-substitution twin, so the same "path:
+// reason" lattice is re-asserted on the owned-Value document.
+void patch_side_schema(const Value& snaps, std::string_view side) {
+    const vread::Dict root{
+        .value = &vread::mapping(vread::Node{&snaps}, "resistance_components"),
+        .path = "resistance_components"};
+    const vread::Dict parsed = vread::section(root, side);
+    constexpr auto required =
+        vread::keys("patch_loads", "patch_working", "eff_radius");
+    constexpr auto optional =
+        vread::keys("time_s", "interval_id", "backend", "geometric_contact",
+                    "effective_radius_m", "patches");
+    vread::exact(parsed, required, optional);
+    if (parsed.contains("patches")) {
+        const auto& patches =
+            vread::sequence(parsed["patches"], parsed.child("patches"));
+        std::size_t index = 0;
+        for (const Value& row : patches) {
+            const std::string patch_path =
+                parsed.child("patches") + "." + std::to_string(index++);
+            const vread::Dict patch{
+                .value = &vread::mapping(vread::Node{&row}, patch_path),
+                .path = patch_path};
+            vread::exact(patch, vread::keys("normal_load_n", "tangent_force_n",
+                                            "slip_mps", "working_surface"));
+            for (const char* key : {"normal_load_n", "tangent_force_n", "slip_mps"})
+                (void)vread::finite_real(patch[key], patch.child(key));
+            (void)vread::boolean(patch["working_surface"],
+                                 patch.child("working_surface"));
+        }
+    }
+}
+
+// Source: test_native_input_contracts.py::test_resistance_snapshot_patch_schema_is_complete
+[[gnu::noinline]] void test_resistance_snapshot_patch_schema_is_complete() {
+    // Stepper(path, config) is the same-path valid control; the snapshots
+    // dict itself is the nb-boundary input side_input reads — see the mirror
+    // comment above. The 'nonstring' arm (patch[7]) has no wire spelling.
+    auto stepper = resolved_stepper(resolved_wire());
+    const auto side = [] {
+        return Value{Value::Object{
+            {"patch_loads", Value{Value::Array{real(100.)}}},
+            {"patch_working", Value{Value::Array{Value{true}}}},
+            {"eff_radius", real(.3)},
+            {"patches", Value{Value::Array{Value{Value::Object{
+                {"normal_load_n", real(100.)},
+                {"tangent_force_n", real(0.)}, {"slip_mps", real(0.)},
+                {"working_surface", Value{true}}}}}}}}};
+    };
+    const Value snapshots{Value::Object{{"front", side()}, {"rear", side()}}};
+    patch_side_schema(snapshots, "front");
+    patch_side_schema(snapshots, "rear");
+    {   // ...and the typed call the decoded snapshot feeds still answers
+        // 'road_rolling' + 'aerodynamic' — the valid control's last leg.
+        const std::array loads{100.};
+        const std::array working{true};
+        const TireSideInput input{loads, working, .3};
+        bt::require(stepper->resistance_components(input, input).size() == 2,
+                    "resistance components are road_rolling + aerodynamic");
+    }
+    for (const std::string_view mutation : {"unknown", "missing"}) {
+        Value candidate = snapshots;
+        Value& patch = at(candidate, {"front", "patches", "0"});
+        if (mutation == "missing") policy_reference::erase(patch, "working_surface");
+        else set(patch, "misspelled", real(1.));
+        error<std::invalid_argument>(
+            [&] { patch_side_schema(candidate, "front"); },
+            "resistance_components.front.patches.0");
+    }
+}
+
+// Source: test_native_input_contracts.py::test_zero_dimensional_arrays_are_not_wire_sequences
+[[gnu::noinline]] void test_zero_dimensional_arrays_are_not_wire_sequences() {
+    // np.array(1.) is a 0-d array — a scalar, not a sequence; its wire value
+    // is the scalar itself.
+    const Value original = resolved_wire();
+    for (const std::vector<std::string>& location :
+         std::vector<std::vector<std::string>>{
+             {"resistance", "wind_world_mps"},
+             {"drive", "shifting", "cassette"},
+             {"drive", "assist", "torque_curve"}}) {
+        Value candidate = original;
+        put(candidate, location, real(1.));
+        const std::string expected = "config." + join(location);
+        error<std::invalid_argument>(
+            [&] { bike::configuration::wire::validate_config(candidate); },
+            expected);
+        error<std::invalid_argument>(
+            [&] { (void)resolved_stepper(candidate); }, expected);
+    }
+}
+
+// Source: test_native_input_contracts.py::test_ordered_dictionary_collections_match_python
+[[gnu::noinline]] void test_ordered_dictionary_collections_match_python() {
+    // OrderedRows (Sequence of dicts) and np.array(rows, dtype=object) both
+    // marshal as an ordered array of mappings — the identical wire value,
+    // so each container arm reasserts the same rebuilt Array.
+    const Value original = resolved_wire();
+    for (const std::vector<std::string>& location :
+         std::vector<std::vector<std::string>>{
+             {"tire", "surface_map", "sections"},
+             {"rider_forces", "paths"}}) {
+        for (const std::string_view container : {"OrderedRows", "np-object-array"}) {
+            (void)container;
+            Value candidate = original;
+            const auto& rows =
+                std::get<Value::Array>(at(candidate, location).data);
+            at(candidate, location) = Value{Value::Array(rows.begin(), rows.end())};
+            bike::configuration::wire::validate_config(candidate);
+            (void)resolved_stepper(candidate);
+        }
+    }
+}
+
+// Source: test_native_input_contracts.py::test_mapping_is_not_a_numeric_sequence
+[[gnu::noinline]] void test_mapping_is_not_a_numeric_sequence() {
+    // UserDict({0: 0., 1: 100.}) — iterating it would give a valid
+    // width-2 load range, so accidental mapping-as-sequence would be
+    // observable; the wire kin is an ordered mapping with "0"/"1" keys.
+    Value candidate = resolved_wire();
+    put(candidate, {"tire", "front", "material", "valid_load_range_n"},
+        Value{Value::Object{{"0", real(0.)}, {"1", real(100.)}}});
+    error<std::invalid_argument>(
+        [&] { bike::configuration::wire::validate_config(candidate); },
+        "tire.front.material.valid_load_range_n");
+    error<std::invalid_argument>(
+        [&] { (void)resolved_stepper(candidate); },
+        "tire.front.material.valid_load_range_n");
+}
+
+// Source: test_native_input_contracts.py::test_scalar_conversion_memory_error_keeps_its_meaning
+[[gnu::noinline]] void test_scalar_conversion_memory_error_keeps_its_meaning() {
+    // The injected-__float__ MemoryError is the nb adapter's conversion_error
+    // passthrough (binding_readers.hpp) — a Python-side channel with no wire
+    // twin. The portable contract asserted here: a scalar whose conversion
+    // fails keeps its full field path instead of degrading to a generic
+    // error — a malformed lexeme at drive.assist.gain names it for both
+    // readers, and no decoder swallows a real bad_alloc (nothing catches it).
+    Value candidate = resolved_wire();
+    put(candidate, {"drive", "assist", "gain"},
+        Value{bike::io::Number{"2x"}});
+    error<std::invalid_argument>(
+        [&] { bike::configuration::wire::validate_config(candidate); },
+        "config.drive.assist.gain");
+    error<std::invalid_argument>(
+        [&] { (void)resolved_stepper(candidate); },
+        "config.drive.assist.gain");
 }
 
 // Source: test_native_input_contracts.py::test_control_and_recursive_state_keys_are_value_errors
@@ -229,12 +736,29 @@ Value& at(Value& value, const std::vector<std::string>& path) {
 // the callee frame — the dispatcher stays under the 8 KiB frame policy.
 int main() {
     return bt::run([] {
+        test_recursive_config_key_contract();
+        test_present_empty_writer_requires_its_schema();
+        test_schema_is_closed_integer();
+        test_boolean_flags_are_exact();
+        test_numeric_types_precede_conversion();
+        test_numpy_numeric_scalars_and_ordered_vectors();
+        test_vectors_reject_unordered_wrong_width_and_boolean();
+        test_projection_canonicalizes_valid_real_integer_after_validation();
+        test_standalone_projection_checks_closed_discriminators();
+        test_schema_migration_preserves_resolved_fork_force();
+        test_schema_two_requires_explicit_fork_flag();
+        test_projection_emits_schema_two_and_persisted_flag();
         test_control_and_recursive_state_keys_are_value_errors();
         test_state_numeric_arrays_reject_boolean_before_cast();
         test_public_config_requires_mapping_before_model_load();
-        test_projection_canonicalizes_valid_real_integer_after_validation();
-        test_standalone_projection_checks_closed_discriminators();
+        test_closed_discriminators_have_full_field_paths();
+        test_schema_one_rejects_schema_two_fork_metadata();
+        test_resistance_snapshot_patch_schema_is_complete();
+        test_zero_dimensional_arrays_are_not_wire_sequences();
         test_projection_does_not_turn_unordered_or_scalar_cassette_into_sequence();
+        test_ordered_dictionary_collections_match_python();
+        test_mapping_is_not_a_numeric_sequence();
+        test_scalar_conversion_memory_error_keeps_its_meaning();
         test_huge_integer_real_conversion_and_large_finite_control();
         test_wire_string_encoding_matches_native();
     });

@@ -4043,3 +4043,139 @@ correct event-time order (lane dev → merge-back).
 
 L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
 checkpoint profile owns it.
+
+## 2026-10-2x — Task 3.28 (lane/a) resume: input-contract `resolved` records after the F2 settle fix
+
+Resume of the 17 `planned` input-contract records left by the earlier 3.28
+batch on `lane/c` — the `resolved` fixture's savage-plant equilibrium defect
+was repaired by F2 (`a27a8d6`), so the complete Python file is green again
+and the remaining records port.
+
+### Re-verified source parity (fresh environment)
+
+    uv run --frozen --group native python -m pytest -q \
+      tests/reference/test_native_input_contracts.py
+    # darwin-arm64: 97 passed in 3.16 s (previously 97 passed in 22.07 s
+    #   cold after F2; warm rerun is in-memory-settled)
+    # linux-aarch64 (bike-dev container, NATIVE_TEST_BUILD_PATH=/build/
+    #   native-clang, cold environment): 97 passed in 34.81 s
+
+All 59 formerly-fixture-error nodes now collect and pass; zero failures on
+either lane. The module collects 97 nodes total (25 ported records × their
+parameter matrices + 7 drops' pytest nodes — the drops stay with the parity
+suite until T63).
+
+### Ports (17 → disposition port/golden)
+
+`native/tests/reference/test_native_input_contracts.cpp` now ports every
+remaining record on top of the F2 fix:
+
+- `test_recursive_config_key_contract` — unknown/missing mutations across
+  every object-valued wire location (the `dictionaries`/`at` Value twins);
+  non-string keys are inexpressible on the wire (commented).
+- `test_present_empty_writer_requires_its_schema`, `test_schema_is_closed_integer`,
+  `test_boolean_flags_are_exact`, `test_numeric_types_precede_conversion`,
+  `test_numpy_numeric_scalars_and_ordered_vectors`,
+  `test_vectors_reject_unordered_wrong_width_and_boolean`,
+  `test_schema_two_requires_explicit_fork_flag`,
+  `test_closed_discriminators_have_full_field_paths`,
+  `test_schema_one_rejects_schema_two_fork_metadata`,
+  `test_zero_dimensional_arrays_are_not_wire_sequences`,
+  `test_ordered_dictionary_collections_match_python`,
+  `test_mapping_is_not_a_numeric_sequence`,
+  `test_scalar_conversion_memory_error_keeps_its_meaning` — Value-level
+  contract ports driven through `wire::validate_config` and
+  `nativecfg::decode` via `resolved_stepper()`. NumPy-only spellings
+  (np.bool_, bare iterators, sets) map to their wire kins or are documented
+  as binding-boundary; `scalar_conversion`'s MemoryError channel is
+  nb-side, so the portable arm asserts the malformed-scalar field path.
+- `test_projection_emits_schema_two_and_persisted_flag` — structural check
+  against the captured `welded_pinned` `writer_config` (schema integer 2,
+  `fork_damper.legacy_behavior` literal false).
+- `test_resistance_snapshot_patch_schema_is_complete` — the snapshot dict is
+  the nb-boundary input of `binding.cpp`'s `side_input`; the port re-asserts
+  the same section/exact/sequence/patch lattice through the `vread::` twins
+  (`runtime/value_readers.hpp`) plus the typed `Stepper::
+  resistance_components` valid control.
+- `test_schema_migration_preserves_resolved_fork_force` — **golden**
+  (`comparison_class: bitwise-oracle`): six nodes
+  `[1-150.0-True]`, `[1-180.0-False]`, `[1-150.0-False]`, `[2-150.0-True]`,
+  `[2-180.0-False]`, `[2-150.0-False]`; each consumes two bitwise
+  `fork_damper` scalars (compression travel−1 mm then travel+15 mm).
+
+The `resolved` fixture is replayed, not re-run: `resolved_wire()` reads
+`bootstrap/welded_pinned/config.json`'s `writer_config` (the verbatim
+`project(env)` capture) and applies the fixture's cruise/assist/rider-path/
+surface-section overrides; `pinned_qpos()` slices the captured
+mjSTATE_INTEGRATION buffer — the same seam `test_native_numeric_completion.cpp`
+uses.
+
+### Verification
+
+- macOS arm64 (`build/native-release`, AppleClang):
+  `ctest -R '^reference\.native_input_contracts$'` → **1/1 PASS (0.12 s)**
+  after capture; before capture the golden node correctly failed the run.
+- Linux aarch64 (`bike-dev-pfc-lane-a` container, `/build/root-clang`,
+  clang++-18): `ctest -R '^reference\.native_input_contracts$'` →
+  **1/1 PASS (0.10 s)** against the pulled `linux-aarch64` sidecars.
+- Golden capture: `BIKE_GOLDEN_CAPTURE=tests/fixtures/golden` during the
+  full-file pytest runs above — 6 nodes × 2 bitwise `<f8` scalars under
+  `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/
+  tests_reference_test_native_input_contracts.py/`; the unconsumed
+  `test_huge_integer_...` sidecars the capture also wrote were removed
+  (that record is self-contained, not golden-designated).
+- Byte-flip proof: byte 3 of
+  `..._1-150.0-True_.bin` XOR 0x01 → FAIL names
+  `test_schema_migration_preserves_resolved_fork_force[1-150.0-True]
+  comparison 0 label '' element 0` with actual/expected hex; restored and
+  re-green.
+
+### Ledger
+
+- `migration/test-port-map.json`: the 17 stopped rows → **16 `port` +
+  1 `golden`** (schema-migration carries
+  `golden_platforms: [darwin-arm64, linux-aarch64]`); per-record evidence
+  appended alongside the prior STOPPED rows.
+- `migration/python-removal.json`: `test_native_input_contracts.py` →
+  `replacement_landed` (replacement
+  `native/tests/reference/test_native_input_contracts.cpp`, verification
+  `reference.native_input_contracts`).
+- `migration/oracle-manifest.json`: unchanged (golden captures are not
+  manifest entries).
+- `Phase3Ports.cmake`: unchanged — `reference.native_input_contracts` was
+  already registered (`bike_add_reference_test(native_input_contracts
+  ENGINE SOURCES test_native_input_contracts.cpp LIBRARIES bike_app)`).
+
+### Final gate — `bash tools/run_tests.sh native` (lane/a, `a5ed745` + this batch)
+
+Build green; all nine static-analysis sweeps green (`frontends`/`tidy`/
+`cppcheck`/`odr`/`scripts`/`headers`/`context`/`diagnostic-controls`
+findings `none`, `analyzer` `report-only`). CTest on `native/build`
+**59/62** — the documented baseline trio verbatim:
+`migration_T09` (`FAIL integration vector resolves bitwise`),
+`migration_T25` (`welded_flat.toml: initial-state physical model
+contract differs` — the captured-worktree `contract_sha256` binding,
+reproduced `[reproduced]` above; cannot pass outside the capturing
+worktree), `migration_T29`
+(`config.rider_controller.weld_servo_gain: unknown key`). The profile
+exited at the ctest failure before its contracts+pytest tail — the same
+shape the 2026-10-24 F2 gate recorded on `051497c`. None of the three
+are authored by this batch; the lane's file is a `reference.*` CTest in
+`build/native-release`, not part of the `native/build` migration set.
+
+Tail run manually with the profile's own flags:
+
+- `bike-native-checks --kind contracts --build native/build --repo-root .`
+  → **all 12 contract controls passed**.
+- `PYTHONPATH=tests/reference NATIVE_TEST_BUILD_PATH=native/build
+  tools/native_runtime.py run -- python -m pytest -q -p
+  native_test_reporter tests/reference/test_native_*.py
+  tests/reference/test_golden_episode*.py` → **75 failed / 3,164 passed /
+  1 skipped** (7,730 s, host shared with two sibling `native` gates).
+  **Zero failures in `test_native_input_contracts.py`** — all 97 nodes
+  passed. The 75 reds reproduce the documented F2 tail verbatim (F2
+  report: 75 failed / 3,164 passed; same concentration in
+  `test_native_spindle_controller` 22, `test_native_research_environment`
+  17, `test_native_drivetrain` 7, `test_native_runtime_*` ~14) — the
+  C++↔oracle bitwise-drift gaps on sibling lanes' unported/planned
+  records, none authored by this batch.

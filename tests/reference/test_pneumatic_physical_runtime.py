@@ -91,6 +91,12 @@ def test_pneumatic_tire_wire_round_trips_through_the_npz_cache_file(tmp_path, mo
     for _ in range(50):
         sim.step()
     tire = sim.physical.tire
+    # Codec coverage for the canonical round trip: generation 0 marks this
+    # save as the settle-time write load() serves. At a real post-episode
+    # generation the same call is quarantined to the episode namespace and
+    # load() correctly misses — that write policy is covered separately in
+    # test_equilibrium_state_file.
+    sim.physical.generation = 0
     equilibrium_cache.save(sim.physical, sim.data.qpos, sim.steps, 0.01)
     cached = equilibrium_cache.load(sim.physical)
     assert cached is not None

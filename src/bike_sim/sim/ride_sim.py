@@ -355,6 +355,11 @@ class RideSimulation:
         self.equilibrium: Dict[str, Any] = {}
         self.physical = None
         self.physical_initial_state = physical_initial_state
+        # Optional experiment identity an owning environment attaches (the
+        # research environment sets it before every reset). The canonical
+        # equilibrium fingerprint ignores it; it scopes only the quarantined
+        # episode key a post-episode re-settle publishes under.
+        self.equilibrium_context = None
         self.equilibrium_max_steps = equilibrium_max_steps
         self.equilibrium_tolerance = (
             .05 if equilibrium_tolerance is None else float(equilibrium_tolerance))

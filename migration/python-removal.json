@@ -17430,12 +17430,10 @@
       "native/tests/reference/test_savage_track_surface.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.savage_track_surface"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "efa3b5f7dc46ef3684a6fdcafcb46721489d2c7449bd3aaa6cba82046ecc975a",
     "snapshot_line_count": 11,
     "tracked": true,

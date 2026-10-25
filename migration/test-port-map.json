@@ -24282,13 +24282,15 @@
       "line": 7,
       "end_line": 11,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_savage_track_surface::test_savage_is_asphalt_everywhere",
+      "native_test_id": "reference.savage_track_surface::test_savage_is_asphalt_everywhere",
       "native_source": "native/tests/reference/test_savage_track_surface.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25 3.13 lane/d: ported to C++; CTest reference.savage_track_surface green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_climb_surge.py",

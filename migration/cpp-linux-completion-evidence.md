@@ -4485,3 +4485,134 @@ state. `migration/cards/T25.md` remains the task card; the lane's
 
 L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
 checkpoint profile owns it.
+
+## 2026-10-25 — Task 3.13 (lane/d): terrain/tyre batch
+
+Lane `pfc-lane-d` (`lane/d`). Ports of
+`tests/reference/test_savage_track_surface.py`,
+`test_terrain_placement_regression.py`, `test_tyre_road_profile.py`,
+`test_native_distributed_stands.py`,
+`test_distributed_tire_reference.py`, `test_alpine_track.py`,
+`test_native_tire.py` and `test_native_distributed_tire.py` —
+65 records across eight C++ files under `native/tests/reference/`,
+registered in `Phase3Ports.cmake` (`reference.savage_track_surface`,
+`reference.terrain_placement_regression`,
+`reference.tyre_road_profile`, `reference.native_distributed_stands`,
+`reference.distributed_tire_reference`, `reference.alpine_track`,
+`reference.native_tire`, `reference.native_distributed_tire`).
+
+### Numerics qualification (new lock facts)
+
+Darwin and Linux wheels lower mathematically equivalent expressions
+differently, producing one-ULP terrain/tyre divergences that a
+Darwin-only pass would mask. The dependency probe and
+`native/numerics.lock.json` gained two measured facts —
+`distributions` (NumPy `uniform`/`normal` contraction) and
+`scipy_correlate` (`gaussian_filter1d`/`correlate1d` contraction) —
+projected to `BIKE_NUMPY_DISTRIBUTIONS_CONTRACTED` and
+`BIKE_SCIPY_CORRELATE_CONTRACTED` via `native/cmake/BikeNumerics.cmake`.
+Measured: darwin-arm64 `contracted`, linux-aarch64 `separate` (as are
+`interp` and `multiply_broadcast.nan_winner` = `scalar`/`element`).
+`native/src/random/distributions.cpp` and the Gaussian-correlate /
+`gd::np_interp` mirror sites in `native/src/terrain/obstacles.cpp`
+(+ `geometry/specs.hpp`/`numeric_norm.hpp` mirrors) now select
+`std::fma` only under the measured contracted lowering; the native
+build keeps `-ffp-contract=off` and spells the wheel's behavior
+explicitly. Both lock records re-checked against their measured probe
+documents.
+
+### Capture + CTest
+
+- darwin-arm64 (`build/native-release`): the eight new nodes **8/8**.
+- linux-aarch64 (container `bike-dev-pfc-lane-d`, `/build/root-clang`):
+  first run showed a one-ULP `reference.tyre_road_profile` miss at
+  index 5885 — root-caused to the stale unconditional-FMA correlate
+  mirror; after the lowering branch fix, **8/8**. A post-trim re-run
+  (probe5 bundle trimmed) stayed **8/8**.
+- The four relevant pytest files (`test_tyre_road_profile.py`,
+  `test_native_tire.py`, `test_native_distributed_tire.py`,
+  `test_distributed_tire_reference.py`, with
+  `NATIVE_TEST_BUILD_PATH=native/build`): **55 passed + 2 failed**;
+  both failures are the documented baseline reds below.
+- Orphan-sidecar scan: 1466 `<file-key>/<test-key>.json/.bin` sidecar
+  pairs across `darwin-arm64` + `linux-aarch64`, every node key a live
+  collected node of its file — zero orphans, zero missing files.
+- Byte-flip proof: one byte inside the `distance` payload of
+  `test_signed_distance_matches_python_bitwise.bin` (element 12,
+  byte offset 44915 in the file) ->
+  `FAIL tests/reference/test_native_distributed_tire.py::test_signed_distance_matches_python_bitwise comparison 2 label 'distance' element 12: actual=0x3fd0e7a41d918b61 expected=0x3fd0e7a41c918b61`;
+  byte restored -> `reference.native_distributed_tire` PASS
+  (75056 checks). (A flip inside an `input.*` record is a documented
+  no-op: the port re-derives inputs and compares only output leaves.)
+
+### D14 drops (written reasons in `test-port-map.json`)
+
+- `test_distributed_probe_and_clock` — documented pre-existing baseline
+  red: the live-oracle integration-state parity its probe half gates
+  fails at 'interval 1' bitwise (signature:
+  `NativeRideDriver.probe_step_inputs -> apply_forces(advance=False)`,
+  binding-only). The portable Stepper clock/restore-atomicity half
+  stays ported fixture-free in
+  `reference.native_distributed_tire::test_distributed_probe_and_clock`;
+  no golden sidecars exist for the node.
+- `test_distributed_trajectory_matches_python_channel_wise_bitwise` —
+  documented pre-existing baseline red (`root.truth.front_load_n`
+  channel-wise mismatch in the 1 s env-pair gate); the env-pair
+  comparison has no fixture form and Stepper-level parity is covered
+  bitwise by `test_distributed_qfrc_bitwise`; no C++ node created.
+- `test_distributed_state_arrays_round_trip_through_the_cache_codec` —
+  Python-only `SimpleNamespace` shim (`sim/ride/equilibrium_cache.py`);
+  the wire round-trip is covered by `test_state_wire_names_and_round_trip`.
+- `test_ride_lists_the_preset_as_generated` — Python `--list` CLI
+  row-text format pin; registration half covered by
+  `test_preset_is_registered_and_seeded`.
+
+Disposition totals for the batch: 12 `golden` (all `bitwise-oracle`,
+`golden_platforms = [darwin-arm64, linux-aarch64]`), 49 `port`
+(`contract`/`analytic`/`invariant`/`structural`/`tolerance-oracle`),
+4 `drop` (`python-only`). All eight `python-removal.json` rows moved
+to `replacement_landed` with `verification_ids` = the CTest names.
+
+### Fixture sizing
+
+Batch golden payload **~44.5 MiB** across both platforms (170 files:
+22.3 MiB darwin-arm64 + 22.2 MiB linux-aarch64) — over the ~20 MiB
+rule; committed as-is under the same allowance the approved ~49 MiB
+3.12b payload received (largest entries below). Within a platform the
+three `model.mjb` images are 5,808,840 bytes (~5.5 MiB) each but are
+**not** byte-identical (`probe5`/`stand40` differ in 22 bytes —
+embedded per-episode fields plus the trailer digest;
+distributed-vs-brush images differ in 168,736 bytes and
+cross-platform images differ more), so no byte-identical
+deduplication was possible. `probe5` was trimmed to the 3-row consumed
+prefix the fixture-free port reads (npz row arrays +
+`steps`/`physics_steps` and the per-row manifest lists); the bundle
+shrunk ~83 KiB per platform and the node stays green on both
+platforms.
+
+- `<platform>/native_distributed_tire/` ~13.5 MiB (two episode
+  bundles' `model.mjb`, `episode.npz`, `manifest.json`, env request)
+- `<platform>/native_tire/` ~6.8 MiB (`stand40` bundle)
+- `<platform>/tests_reference_test_native_distributed_tire.py`
+  ~1.6 MiB of sidecars
+- the remaining sidecar files ~0.4 MiB per platform
+
+### Notes
+
+- The incremental per-port commits had each appended the cumulative
+  `Phase3Ports.cmake` block; commit `9e0cabad` collapsed the four
+  repeated blocks into one and added the remaining four registrations
+  (labels/positions recovered from the configured build tree's
+  `CTestTestfile.cmake` backtrace). Verified by re-running the 8
+  nodes on both platforms after the fix.
+- The full `linux root-clang` build still reports one pre-existing
+  `-Wmissing-field-initializers` at
+  `native/tests/reference/test_motor_freewheel_topology.cpp:184`
+  (outside this batch; untouched). The eight batch executables build
+  and pass.
+- The oracle goldens legitimately differ across platforms (95
+  elements on one terrain surface) — this is what the per-platform
+  lowering records exist for; cross-platform byte equality is not
+  asserted.
+- `bash tools/run_tests.sh native` not run — integration/merge-back
+  gate, outside lane scope (D17).

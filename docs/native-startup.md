@@ -262,7 +262,13 @@ Automatic cache storage is selected in this order:
 
 The cache path uses the equilibrium fingerprint and the historical `.npz`
 suffix; the reader identifies the actual supported content format. Cache and
-state-file pointers are excluded from the physical fingerprint. Native startup
+state-file pointers are excluded from the physical fingerprint. The
+fingerprint (schema 2) also binds the settle contract actually used —
+`EquilibriumOptions::max_steps` and `tolerance` — so a pose settled under a
+looser contract is never served to a stricter request under the same name.
+Every published entry still originates from the once-only setup settle, which
+runs from pristine t=0 state; runtime reset replays the sealed bootstrap and
+never re-settles into the cache. Native startup
 metadata also retains model, provider and source identities, resolved input
 identities, equilibrium evidence and the sealed-state flag.
 

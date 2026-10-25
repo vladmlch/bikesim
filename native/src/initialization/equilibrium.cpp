@@ -46,6 +46,10 @@ std::int64_t equilibrium_cycle_steps(double dt){if(!std::isfinite(dt)||dt<=0.)th
 
 EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions& options){
     require_initializing(context);
+    // Bind the options this solve actually runs with into the context before
+    // any cache read/write: the equilibrium fingerprint pins them, so a pose
+    // settled under a different contract can never be served under this key.
+    context.equilibrium_options=options;
     const double dt=context.stepper.model()->opt.timestep;
     const auto budget=equilibrium_step_budget(dt,options),cycle=equilibrium_cycle_steps(dt);
     const auto first_refine=timing_steps(context.physics.equilibrium_refine_after_s,dt,cycle),refine_period=timing_steps(context.physics.equilibrium_refine_period_s,dt,cycle);

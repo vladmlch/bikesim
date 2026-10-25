@@ -2,6 +2,7 @@
 #include "common.hpp"
 #include "../model/builder.hpp"
 #include "../engine_call.hpp"
+#include "../writers/distributed_tire.hpp"
 #include <array>
 #include <memory>
 
@@ -32,6 +33,15 @@ struct Stand {
 [[nodiscard]] RigResult shaft_ratio_rig(double dt,double ratio=34./51.,bool overrun=false);
 [[nodiscard]] RigResult distributed_flat_rig(double dt,int stations,double load);
 [[nodiscard]] RigResult distributed_step_rig(double dt,int stations,double dx);
+// The wheel-stand plant + its minimal tire-only config — the exported
+// halves of contact_manifold_rigs.wheel_stand so reference ports can
+// exercise the writer's own state/probe/diagnostics surfaces directly.
+[[nodiscard]] nativecfg::TireConfig distributed_config(int stations,double mu=.8);
+struct WheelStand {std::unique_ptr<Stand> stand;std::unique_ptr<DistributedTireWriter> tire;};
+[[nodiscard]] WheelStand wheel_stand(double dt,int stations,
+    const std::vector<std::array<double,2>>& vertices);
+// contact_manifold_rigs' brentq initial compression on the analytic flat_load.
+[[nodiscard]] double flat_depth(double load,int stations,double tolerance=2e-12);
 [[nodiscard]] RigResult distributed_incline_rig(double dt,int stations=128,double angle_deg=15.);
 [[nodiscard]] std::vector<std::array<double,2>> contact_case_vertices(std::string_view name,double dx);
 [[nodiscard]] std::pair<Value,Value> distributed_road_trace(double dt,int stations,double dx,

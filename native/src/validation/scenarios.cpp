@@ -13,6 +13,12 @@
 #include <functional>
 #include <numbers>
 #include <utility>
+#include "../diag.hpp"
+
+// The oracle's terse designated-initializer call sites intentionally rely
+// on the declared defaults for unlisted fields.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wmissing-field-initializers")
 
 namespace bike::validation {
 using mechanics::metrics;
@@ -106,6 +112,8 @@ void merge(Value& out,const Value& in){for(const auto& [key,x]:io::as_object(in,
 }
 double expected_mass(const Simulation& sim){return sim.request.model.masses.total_bike_mass()+sim.request.model.rider->total_rider_mass();} // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 Value run_replay(const Value& config,const std::filesystem::path& root) {
     const auto mode=text(config,"mode","human-only");const std::array<std::string_view,7> valid{"human-only","motor40","assist","shifting","rollback","open-loop","automatic"};if(std::ranges::find(valid,mode)==valid.end())throw std::invalid_argument("unknown isolated replay factor");
     const auto physics=root/text(config,"physics_profile","examples/research/rider_resume_physics.toml"),track=root/text(config,"track","examples/research/rider_resume_flat.toml");const double duration=real(config,"duration_s",8.);Value overrides=empty_object();
@@ -120,6 +128,7 @@ Value run_replay(const Value& config,const std::filesystem::path& root) {
     auto& out=std::get<Object>(report.data);value::set(out,"rows",Value{rows});try{value::set(out,"support_evidence",support_evidence(Value{rows},duration));}catch(const std::exception& e){value::set(out,"support_evidence",Value{Object{{"interval_count",value::integer(static_cast<std::int64_t>(rows.size()))},{"complete",Value{false}},{"valid_for_learning",Value{false}},{"evaluation_error",value::text(e.what())}}});value::set(out,"completed_requested_duration",Value{false});}
     if(sim){value::set(out,"end_time_s",value::real(sim->runtime->snapshot().time_s));value::set(out,"end_position_m",value::real(position(*sim)));value::set(out,"model_status",model_status(*sim));}if(const auto* file=find(config,"output"))write_report(root/io::as_string(*file,"output"),report);return report;
 }
+NATIVE_DIAG_POP
 Value rider_factor_matrix(const Value& config,const std::filesystem::path& root) {
     const auto out=root/text(config,"output","results/rider_factors");std::filesystem::create_directories(out);struct Variant{const char* name;const char* mode;const char* track;std::optional<double> tau;};
     const std::array<Variant,9> variants{{{.name="human_flat",.mode="human-only",.track="rider_resume_flat.toml",.tau={}},{.name="human_incline",.mode="human-only",.track="rider_resume_incline.toml",.tau={}},{.name="motor_40",.mode="motor40",.track="rider_resume_flat.toml",.tau={}},{.name="assist",.mode="assist",.track="rider_resume_flat.toml",.tau={}},{.name="shifting",.mode="shifting",.track="rider_resume_flat.toml",.tau={}},{.name="rollback",.mode="rollback",.track="rider_resume_incline.toml",.tau={}},{.name="active_tau0",.mode="human-only",.track="rider_resume_flat.toml",.tau=0.},{.name="active_tau005",.mode="human-only",.track="rider_resume_flat.toml",.tau=.05},{.name="motor_open_loop",.mode="open-loop",.track="rider_resume_flat.toml",.tau={}}}};
@@ -253,3 +262,4 @@ RigResult ride_case(std::string_view name,double dt) {
     throw std::invalid_argument("unknown compiled ride case");
 }
 } // namespace bike::validation
+NATIVE_DIAG_POP

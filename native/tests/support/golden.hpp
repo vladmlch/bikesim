@@ -41,6 +41,13 @@ public:
     // Consumes the next entry, requiring a bitwise little-endian f8
     // payload, and returns its decoded doubles in C order.
     [[nodiscard]] std::vector<double> f64_input(std::string_view label);
+    // Partial ports that replay a capture-prefix and deliberately leave
+    // binding-only leaves behind: the label of the next unconsumed entry
+    // (fails when the node is fully consumed), so a port can drain the
+    // recorded tail it cannot assert on without inventing labels.
+    [[nodiscard]] std::string_view peek_label() const {
+        return entries_.at(cursor_).label;
+    }
     void done() const;
 private:
     [[nodiscard]] const Entry &next(std::string_view label) const;

@@ -166,15 +166,13 @@ RigResult shaft_ratio_rig(double dt,double ratio,bool overrun){
         {"shaft_power_identity_error_w",power_error},{"max_transmission_reaction_norm",reaction_peak},{"overrun",overrun?1.:0.}}),.bounds=std::move(b)};
 }
 
-namespace {
-nativecfg::TireConfig distributed_config(int n,double mu=.8){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
+nativecfg::TireConfig distributed_config(int n,double mu){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     nativecfg::TireConfig c;c.backend="distributed_2d_reference";c.surface_mode="configured";c.front={.material=std::nullopt,.tangent_k_n_m=20000.,.mu=mu,.relaxation_length_m=.2};c.rear=c.front;
     c.significant_delta_m=.0001;c.significance_fraction=.05;c.distinct_normal_deg=20.;
     nativecfg::HingeDensity const density{.knots_m={0.,.004,.012},.stiffness_n_m={300000.,0.,0.},.damping_ns_m=2000.,.provenance="synthetic density; not fitted or measured"};
     nativecfg::DistributedMaterial const material{.density=density,.fitting_dataset_id="none-synthetic",.valid_load_range_n={0.,2000.},.valid_deflection_range_m={0.,.04},.calibration_status="experimental_unvalidated"};
     c.distributed=nativecfg::DistributedConfig{.station_count=n,.density=density,.front=material,.rear=material};return c;
 }
-struct WheelStand {std::unique_ptr<Stand> stand;std::unique_ptr<DistributedTireWriter> tire;};
 WheelStand wheel_stand(double dt,int n,const std::vector<std::array<double,2>>& vertices){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     positive(dt,"stand step");if(n<16||n>512||vertices.size()<2)throw std::invalid_argument("invalid stand resolution");
     const double dx=vertices[1][0]-vertices[0][0];positive(dx,"heightfield spacing");double low=vertices.front()[1],high=low;
@@ -185,6 +183,7 @@ WheelStand wheel_stand(double dt,int n,const std::vector<std::array<double,2>>& 
     for(std::size_t row=0;row<2;++row)for(std::size_t i=0;i<vertices.size();++i)hfield[row*vertices.size()+i]=static_cast<float>((vertices[i][1]-low)/scale);
     engine::forward(s->model.get(),s->data.get());auto tire=std::make_unique<DistributedTireWriter>(s->model.get(),s->data.get(),distributed_config(n));return {.stand=std::move(s),.tire=std::move(tire)};
 }
+namespace {
 double kinetic(const mjModel* m,const mjData* d){std::vector<double> momentum(static_cast<std::size_t>(m->nv));mj_mulM(m,d,momentum.data(),d->qvel);return .5*vector_dot(model_access::readonly_buffer(d->qvel,m->nv,"qvel"),momentum);}
 std::pair<Value,Value> run_stand(WheelStand& s,double load,double duration){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     auto const* m=s.stand->model.get();auto* d=s.stand->data.get();auto& tire=*s.tire;const double dt=m->opt.timestep;const auto count=steps(duration,dt);
@@ -204,9 +203,9 @@ std::pair<Value,Value> run_stand(WheelStand& s,double load,double duration){ // 
     return {Value{std::move(rows)},metrics({{"energy_residual_j",residual},{"energy_residual_ratio",std::abs(residual)/(scale+loss)},
         {"max_energy_residual_j",maximum},{"dissipation_j",loss},{"native_wheel_contact_count",static_cast<double>(native)},{"final_speed_mps",qvel[0]}})};
 }
-double flat_depth(double load,int n,double tolerance=2e-12){const configuration::HingeDensity density; // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
-    return numerics::brentq([&](double x){const std::array depths{x};return numerics::flat_load(depths,.37,density,n).force[0]-load;},1e-9,.1,tolerance).root;
 }
+double flat_depth(double load,int n,double tolerance){const configuration::HingeDensity density; // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
+    return numerics::brentq([&](double x){const std::array depths{x};return numerics::flat_load(depths,.37,density,n).force[0]-load;},1e-9,.1,tolerance).root;
 }
 RigResult distributed_flat_rig(double dt,int n,double load){
     positive(load,"axle load");std::vector<std::array<double,2>> vertices;for(double const x:geometry::detail::np_linspace(-2.,2.,801))vertices.push_back({x,0.});

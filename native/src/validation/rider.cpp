@@ -24,18 +24,24 @@ std::array<double,3> cross(const std::array<double,3>& a,const std::array<double
 [[gnu::noinline]] model::BuildRequest momentum_model(double dt,std::string_view transmission){
     return mechanics::request(momentum_config(dt,transmission),true);
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[gnu::noinline]] std::unique_ptr<mechanics::BikeStand> momentum_bike(double dt,std::string_view transmission){
     return std::make_unique<mechanics::BikeStand>(momentum_model(dt,transmission));
 }
+NATIVE_DIAG_POP
 [[gnu::noinline]] configuration::SimulationPhysicsConfig airborne_config(double dt){
     configuration::SimulationPhysicsConfig c;c.physics_mode="physical";c.drive_mode="articulated_effort";c.timestep_s=dt;return c;
 }
 [[gnu::noinline]] model::BuildRequest airborne_model(double dt){
     return mechanics::request(airborne_config(dt),true);
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[gnu::noinline]] std::unique_ptr<mechanics::BikeStand> airborne_bike(double dt){
     return std::make_unique<mechanics::BikeStand>(airborne_model(dt));
 }
+NATIVE_DIAG_POP
 }
 
 Momentum system_momentum(const mjModel* m,const mjData* d) {
@@ -62,6 +68,9 @@ Momentum system_momentum(const mjModel* m,const mjData* d) {
 
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+// The oracle's terse designated-initializer call sites intentionally rely
+// on the declared defaults for unlisted fields.
+NATIVE_DIAG_IGNORE("-Wmissing-field-initializers")
 RigResult momentum_rig(double dt,bool active,std::string_view transmission,std::optional<bool> rider_active) {
     const bool enabled=rider_active.value_or(active);const auto bike=momentum_bike(dt,transmission);
     auto* m=bike->model();auto* d=bike->data();auto rider=controller(*bike);rider->initialize(d);
@@ -98,6 +107,8 @@ RigResult momentum_rig(double dt,bool active,std::string_view transmission,std::
 }
 NATIVE_DIAG_POP
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wmissing-field-initializers")
 RigResult airborne_internal_actuation(double dt) {
     const auto bike=airborne_bike(dt);auto const* m=bike->model();auto* d=bike->data();auto rider=controller(*bike);rider->initialize(d);
     const std::span<mjtNum> qpos=model_access::mutable_buffer(d->qpos,m->nq,"qpos"),qvel=model_access::mutable_buffer(d->qvel,m->nv,"qvel");
@@ -110,4 +121,5 @@ RigResult airborne_internal_actuation(double dt) {
     return {.metrics=metrics({{"relative_Ly_drift",maximum/scale},{"joint_motion_rad",motion},{"actual_joint_work_j",work},{"absolute_joint_work_j",absolute_work},{"peak_joint_torque_nm",peak}}),
         .bounds=bounds({{"relative_Ly_drift",0.,.001},{"joint_motion_rad",.01,inf},{"absolute_joint_work_j",.01,inf},{"peak_joint_torque_nm",0.,bike->request.physics->articulated.joint_limit_nm+1e-9}})}; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
+NATIVE_DIAG_POP
 } // namespace bike::validation

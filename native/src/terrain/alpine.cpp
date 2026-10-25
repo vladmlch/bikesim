@@ -49,8 +49,7 @@ bike::io::Value AlpineGenSpec::to_dict()const{
     return {std::move(out)};
 }
 std::string AlpineGenSpec::sha256()const{validate();return detail::source_spec_hash(to_dict());}
-namespace {
-struct Segment{std::string kind;double start,end,grade;};
+namespace detail {
 std::vector<Segment> segments(const AlpineGenSpec& s,bike::random::NumpyRng& rng){
     const double body_end=rounded(s.length_m-s.lead_out_m,2),limit=rounded(body_end-s.transition_m,2);
     double cursor=rounded(s.lead_in_m+s.transition_m,2);std::vector<Segment> out;
@@ -94,14 +93,14 @@ template<class T> Obstacle faceted(const AlpineGenSpec& s,bike::random::NumpyRng
 }
 TrackSpec generate_alpine_track(const AlpineGenSpec& s,std::string_view seed,std::optional<std::string> name){
     s.validate();const auto seed_text=detail::seed_plus(std::string(seed),0);bike::random::NumpyRng rng(seed_text,{});
-    const double lo=s.lead_in_m,hi=rounded(s.length_m-s.lead_out_m,2);auto [grade,ramps]=rhythm(s,rng);
+    const double lo=s.lead_in_m,hi=rounded(s.length_m-s.lead_out_m,2);auto [grade,ramps]=detail::rhythm(s,rng);
     std::vector<Interval> taken,used;std::vector<Obstacle> obstacles;std::vector<SurfaceSection> sections;
     const auto rock_count=detail::count_draw(rng,s.n_rock_gardens);
     for(std::int64_t i=0;i<rock_count;++i){
         const double wanted=rounded(rng.uniform(s.rock_len_m[0],s.rock_len_m[1]),2);
         const double amp=rounded(rng.uniform(s.rock_amp_m[0],s.rock_amp_m[1]));
         const double corr=rounded(rng.uniform(s.rock_corr_m[0],s.rock_corr_m[1]),3);
-        const auto placed=place(rng,wanted,lo,hi,taken,true);if(placed){const auto [start,length]=*placed;obstacles.push_back(faceted<RockGarden>(s,rng,start,length,amp,corr));taken.emplace_back(start,start+length);}
+        const auto placed=place(rng,wanted,lo,hi,taken,true);if(placed){const auto [start,length]=*placed;obstacles.push_back(detail::faceted<RockGarden>(s,rng,start,length,amp,corr));taken.emplace_back(start,start+length);}
     }
     const auto scree_count=detail::count_draw(rng,s.n_scree);
     for(std::int64_t i=0;i<scree_count;++i){
@@ -110,7 +109,7 @@ TrackSpec generate_alpine_track(const AlpineGenSpec& s,std::string_view seed,std
         const double corr=rounded(rng.uniform(s.scree_corr_m[0],s.scree_corr_m[1]),3);
         Interval span{lo,hi};if(rng.uniform01()<s.scree_ramp_bias)span=ramps.at(static_cast<std::size_t>(rng.integers(0,static_cast<std::int64_t>(ramps.size()))));
         const auto placed=place(rng,wanted,span.first,span.second,taken,true);if(placed){
-            const auto [start,length]=*placed;obstacles.push_back(faceted<RoadRoughness>(s,rng,start,length,amp,corr));sections.push_back({.start_m=start,.end_m=rounded(start+length,2),.surface="scree"});taken.emplace_back(start,start+length);used.emplace_back(start,start+length);
+            const auto [start,length]=*placed;obstacles.push_back(detail::faceted<RoadRoughness>(s,rng,start,length,amp,corr));sections.push_back({.start_m=start,.end_m=rounded(start+length,2),.surface="scree"});taken.emplace_back(start,start+length);used.emplace_back(start,start+length);
         }
     }
     const auto boulder_count=detail::count_draw(rng,s.n_boulders);
@@ -138,7 +137,7 @@ TrackSpec generate_alpine_track(const AlpineGenSpec& s,std::string_view seed,std
     const double amp=rounded(rng.uniform(s.background_amp_m[0],s.background_amp_m[1]));
     const double corr=rounded(rng.uniform(s.background_corr_m[0],s.background_corr_m[1]),3);
     for(const auto& [a,b]:free_intervals({lo,hi},taken,0.))if(b-a>=4.*corr){
-        double length=rounded(b-a,6);while(a+length>b)length=rounded(length-1e-6,6);obstacles.push_back(faceted<RoadRoughness>(s,rng,a,length,amp,corr));
+        double length=rounded(b-a,6);while(a+length>b)length=rounded(length-1e-6,6);obstacles.push_back(detail::faceted<RoadRoughness>(s,rng,a,length,amp,corr));
     }
     std::ranges::stable_sort(sections,[](const auto&a,const auto&b){return a.start_m<b.start_m;});
     TrackSpec track{.name=(name&&!name->empty())?*name:"alpine_"+seed_text,.length_m=s.length_m,.obstacles=std::move(obstacles),.description="Alpine scree climb; seed="+seed_text+"; spec_sha256="+s.sha256(),.surface=s.base_surface,.grade_profile=std::move(grade),.surface_sections=std::move(sections)};

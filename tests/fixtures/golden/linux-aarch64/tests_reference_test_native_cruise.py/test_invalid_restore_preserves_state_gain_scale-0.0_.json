@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_cruise.py::test_invalid_restore_preserves_state[gain_scale-0.0]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ }
+]

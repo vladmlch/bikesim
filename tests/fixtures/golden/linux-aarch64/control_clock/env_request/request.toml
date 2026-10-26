@@ -1,0 +1,21 @@
+request_schema = 1
+physics_file = "physics.toml"
+track_file = "track.toml"
+model_mode = "ride"
+rider_variant = "articulated_planar"
+speed_kph = 0.0
+seed_decimal = "0"
+use_equilibrium_cache = false
+duration_s = 0.2
+control_period_s = 0.01
+actuator_delay_s = 0.005
+sensor_delay_s = 0.01
+check_policy = "diagnostic"
+capture_mode = "legacy"
+initial_state_file = "initial_state.json"
+
+[overrides]
+timestep_s = 0.0005
+
+[experiment]
+record_decimation = 80

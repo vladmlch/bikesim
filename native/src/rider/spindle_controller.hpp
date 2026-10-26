@@ -313,6 +313,19 @@ public:
     [[nodiscard]] const std::vector<JointEntry> &joints() const {
         return joints_;
     }
+    // rider_control.py locked_joints — reference joints absent from the
+    // compiled plant (the pinned topology's locked ankles).
+    [[nodiscard]] const std::vector<std::string> &locked_joints() const {
+        return locked_joints_;
+    }
+    // rider_control.py crank_spin_qpos / crank_spin_dof — the crank
+    // coordinate addresses the pedaling cadence reads.
+    [[nodiscard]] int crank_spin_qpos() const noexcept {
+        return crank_spin_qpos_;
+    }
+    [[nodiscard]] int crank_spin_dof() const noexcept {
+        return crank_spin_dof_;
+    }
     [[nodiscard]] const SpindleConfig &config() const noexcept { return config_; }
     // Accounting publishes only diagnostics; actuator/filter state is not
     // restored from an earlier interval. Both arguments were fully staged.

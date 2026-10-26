@@ -286,6 +286,9 @@ public:
     [[nodiscard]] rider::SpindleController &rider_control() {
         return engaged(rider_control_);
     }
+    [[nodiscard]] const rider::SpindleController &rider_control() const {
+        return engaged(rider_control_);
+    }
     [[nodiscard]] rider::RiderIntent &rider_intent() noexcept {
         return rider_intent_;
     }

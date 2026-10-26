@@ -18,6 +18,12 @@ std::array<double,3> cross(const std::array<double,3>& a,const std::array<double
 void RuntimeRigAccess::inspect(runtime::NativeRideRuntime& ride,const std::function<void(const Stepper&,const runtime::PhysicalStep&)>& callback) {
     const Guard guard(ride.advancing_);ride.require_open();callback(*ride.stepper_,*ride.physical_);
 }
+void RuntimeRigAccess::schedule_rider_pulse(runtime::NativeRideRuntime& ride,double start_s,double duration_s,double amplitude_rad) {
+    const Guard guard(ride.advancing_);ride.require_open();if(ride.committed_step_!=0||ride.stepper_->time()!=0.)throw std::invalid_argument("pulse scheduling requires t=0");ride.physical_->rider_intent().schedule_pulse(start_s,duration_s,amplitude_rad);
+}
+::rider::IntentSignals RuntimeRigAccess::fold_intent_signals(runtime::NativeRideRuntime& ride,const runtime::WireObject& sensors_and_tires) {
+    const Guard guard(ride.advancing_);ride.require_open();ride.physical_->update_intent_signals(sensors_and_tires);return ride.physical_->intent_signals();
+}
 void RuntimeRigAccess::release_rider(Stepper& stepper,runtime::PhysicalStep& physical){
     if(stepper.has_rider_contacts())stepper.rider_contacts_release_all();
     if(physical.rider_present()){auto state=physical.rider_control().state();state.enabled=false;physical.rider_control().restore(state);}

@@ -3379,13 +3379,17 @@
    "line": 36,
    "end_line": 54,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_curve_validation",
+   "native_test_id": "reference.joint_strength::test_curve_validation",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_curve_validation"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3393,13 +3397,17 @@
    "line": 57,
    "end_line": 65,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_plan_fixture_ordering_and_velocity_limits",
+   "native_test_id": "reference.joint_strength::test_plan_fixture_ordering_and_velocity_limits",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_plan_fixture_ordering_and_velocity_limits"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3407,13 +3415,17 @@
    "line": 68,
    "end_line": 74,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_isometric_interpolation_between_knots",
+   "native_test_id": "reference.joint_strength::test_isometric_interpolation_between_knots",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_isometric_interpolation_between_knots"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3421,13 +3433,17 @@
    "line": 77,
    "end_line": 89,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_concentric_decays_eccentric_is_bounded_and_finite",
+   "native_test_id": "reference.joint_strength::test_concentric_decays_eccentric_is_bounded_and_finite",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_concentric_decays_eccentric_is_bounded_and_finite"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3435,13 +3451,17 @@
    "line": 92,
    "end_line": 104,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_direction_sign_uses_the_torque_direction",
+   "native_test_id": "reference.joint_strength::test_direction_sign_uses_the_torque_direction",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_direction_sign_uses_the_torque_direction"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3449,13 +3469,17 @@
    "line": 107,
    "end_line": 122,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_positive_power_budget_scales_active_torque_only",
+   "native_test_id": "reference.joint_strength::test_positive_power_budget_scales_active_torque_only",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_positive_power_budget_scales_active_torque_only"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3463,13 +3487,17 @@
    "line": 125,
    "end_line": 132,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_reference_profile_covers_exactly_the_registry",
+   "native_test_id": "reference.joint_strength::test_reference_profile_covers_exactly_the_registry",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_reference_profile_covers_exactly_the_registry"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3477,13 +3505,17 @@
    "line": 135,
    "end_line": 144,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_verified_gate_rejects_the_provisional_profile",
+   "native_test_id": "reference.joint_strength::test_verified_gate_rejects_the_provisional_profile",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_verified_gate_rejects_the_provisional_profile"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3491,13 +3523,17 @@
    "line": 155,
    "end_line": 167,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_profile_rejects_incomplete_or_alien_coverage",
+   "native_test_id": "reference.joint_strength::test_profile_rejects_incomplete_or_alien_coverage",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_profile_rejects_incomplete_or_alien_coverage"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3505,13 +3541,17 @@
    "line": 170,
    "end_line": 175,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_curve_knots_must_cover_the_used_anatomical_range",
+   "native_test_id": "reference.joint_strength::test_curve_knots_must_cover_the_used_anatomical_range",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_curve_knots_must_cover_the_used_anatomical_range"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3519,13 +3559,17 @@
    "line": 178,
    "end_line": 186,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_strength_coordinates_agree_with_the_joint_envelope",
+   "native_test_id": "reference.joint_strength::test_strength_coordinates_agree_with_the_joint_envelope",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_strength_coordinates_agree_with_the_joint_envelope"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3533,13 +3577,17 @@
    "line": 203,
    "end_line": 216,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_actuators_are_pure_motors_with_dof_damping",
+   "native_test_id": "reference.joint_strength::test_actuators_are_pure_motors_with_dof_damping",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_actuators_are_pure_motors_with_dof_damping"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3547,13 +3595,17 @@
    "line": 220,
    "end_line": 251,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_stepped_effort_respects_strength_and_the_power_budget",
+   "native_test_id": "reference.joint_strength::test_stepped_effort_respects_strength_and_the_power_budget",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3561,13 +3613,17 @@
    "line": 255,
    "end_line": 270,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_directional_capacity_bounds_the_commanded_torque",
+   "native_test_id": "reference.joint_strength::test_directional_capacity_bounds_the_commanded_torque",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_directional_capacity_bounds_the_commanded_torque"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_joint_strength.py",
@@ -3575,13 +3631,17 @@
    "line": 273,
    "end_line": 290,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_joint_strength::test_leg_curves_span_a_120_rpm_pedalling_envelope",
+   "native_test_id": "reference.joint_strength::test_leg_curves_span_a_120_rpm_pedalling_envelope",
    "native_source": "native/tests/reference/test_joint_strength.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_joint_strength.py::test_leg_curves_span_a_120_rpm_pedalling_envelope"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_lean_limit.py",

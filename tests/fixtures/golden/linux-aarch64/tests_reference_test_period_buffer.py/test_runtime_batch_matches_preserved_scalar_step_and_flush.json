@@ -64,12 +64,12 @@
   "index": 4,
   "kind": "bitwise",
   "label": "expected/attachment_violations",
-  "nbytes": 134801,
+  "nbytes": 6010,
   "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
   "offset": 897344,
   "rtol": null,
   "shape": [
-   134801
+   6010
   ]
  },
  {
@@ -78,12 +78,12 @@
   "index": 5,
   "kind": "bitwise",
   "label": "monitor/first_failure_time_s",
-  "nbytes": 8,
+  "nbytes": 0,
   "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 1032145,
+  "offset": 903354,
   "rtol": null,
   "shape": [
-   1
+   0
   ]
  },
  {
@@ -92,12 +92,12 @@
   "index": 6,
   "kind": "bitwise",
   "label": "monitor/first_failure_violations",
-  "nbytes": 26,
+  "nbytes": 4,
   "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 1032153,
+  "offset": 903354,
   "rtol": null,
   "shape": [
-   26
+   4
   ]
  },
  {
@@ -108,7 +108,7 @@
   "label": "decimated/last_channel_keys",
   "nbytes": 819,
   "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 1032179,
+  "offset": 903358,
   "rtol": null,
   "shape": [
    819
@@ -122,7 +122,7 @@
   "label": "decimated/full_ids",
   "nbytes": 1816,
   "node": "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 1032998,
+  "offset": 904177,
   "rtol": null,
   "shape": [
    227

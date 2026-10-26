@@ -6418,3 +6418,116 @@ Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, Release):
   (`task-M*-report.md`, `examples/research/_tmp_*.toml`,
   `golden-episode-python-crossread/`, docs audit) were left untracked —
   not merge-back content.
+
+## 2026-10-26 — lane/d batch 3.20 brakes/cruise/suspension/clocks merge-back (merge `522250d1`)
+
+Serialized merge-back of `lane/d` tip `86624d70` (batch 3.20: 38 new
+dispositions + 4 static-brake record backfills + ledger sync) onto
+`553ba686`. Lane base `45d35190` predates F3, the cache fix, B3, 3.22a,
+3.18, 3.19 and F1. The lane's non-fixture footprint is test-only: four
+new reference ports (`native_cruise`, `native_brake_resistance`,
+`native_suspension`, `native_stepper`), edits to `test_control_clock` /
+`native_clock_contracts` / `native_static_brake` twins, Phase3Ports
+registrations, migration-ledger rows and the task-C320 report. Fixture
+recapture followed the documented darwin capture → linux-container
+recapture → pull flow.
+
+### Commits
+
+| SHA | Unit |
+|---|---|
+| `522250d1` | merge: lane/d batch 3.20 brakes/cruise/suspension/clocks |
+| `1206d1eb` | test(golden): post-F1 env_request recapture — both platforms |
+
+### Union verification (no textual conflicts; verified record-level)
+
+- `migration/test-port-map.json`: **2385 records, all keys unique**;
+  every merged record equals the expected side's version — lane's 41
+  edited records + 4 new `test_native_static_brake` backfill records
+  (functions never mapped before) on top of the F1-era ledger (276
+  head-edited records). `both modified` set empty — zero overlapping
+  record edits; nothing lost or duplicated. Headers:
+  `static_test_functions` = 2385, `top_level_test_functions` = 2369
+  (lane's values; head never touched them).
+- `migration/python-removal.json`: 535 rows; lane's 8
+  (`test_control_clock`, `test_native_{brake_resistance,
+  clock_contracts,cruise,static_brake,stepper,suspension}`,
+  `test_playback_clock` — `replacement_landed` + `reference.*`
+  verification ids) and head's 21 F1-era rows, disjoint — verified
+  per-row.
+- `native/tests/reference/Phase3Ports.cmake`: textual union — lane's
+  4 registrations + `target_link_libraries(reference.control_clock
+  PRIVATE bike_golden)` (lines 47–64) coexist with the F1-era
+  `native_encode_columns` registration.
+- `tests/fixtures/`: zero shared paths. `episode/pinned_savage_40_f2`
+  and all `<platform>/{control_clock,native_suspension,episode}` 3.20
+  dirs are lane-unique; F1's recapture surface (pneumatic/distributed
+  tire, encode_columns, period_buffer, drive_*) untouched.
+- `migration/cpp-linux-completion-evidence.md`: lane never edited it —
+  no seam; this section is the chronological append.
+- `migration/cpp-linux-phase3-{source-review.md,source-status.json}`
+  + `task-C320-report.md`: lane-only, taken cleanly.
+
+### Post-merge recapture (the only 3.20 golden red)
+
+- `control_clock/env_request/{initial_state.json,physics.toml}` on
+  **both** `darwin-arm64` and `linux-aarch64`: the lane's pre-F1
+  bundle's `physics.toml` is a captured copy of
+  `viewer_physics_welded.toml` predating the F1 weld-envelope +
+  delivered-budget keys (`ec9b031e`), so `initial_state.cpp`'s
+  `contract_sha256` check failed post-merge (`FAIL initial-state
+  physical model contract differs` — identical signature on both
+  platforms). Recaptured via the in-test `BIKE_GOLDEN_CAPTURE` hook
+  (`test_control_clock.py::_fixture_save_env_request`); physics.toml
+  now carries the F1 keys with asset paths bundle-relative, and
+  `initial_state.json` the post-F1 contract. `reference.control_clock`
+  green on both platforms after. All other 3.20 goldens
+  (`pinned_savage_40_f2` replay, `native_suspension/legacy_env`,
+  per-test bundles) passed bitwise against post-F1 physics with **no**
+  recapture — F1 physics did not drift those channels.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, Apple clang, Release)
+
+- `ctest -R 'cruise|brake_resistance|suspension|stepper|control_clock|
+  clock_contracts|static_brake|playback'`: **8/8** (control_clock red
+  pre-recapture → green after).
+- `ctest -L reference`: **66/70** — 4 reds, all documented post-F1
+  baseline: `golden_episode_tool` (`native recorder rows reproduce
+  Python oracle`), `pneumatic_tire_oracle` (`fixture is not a regular
+  file`), `native_numeric_completion` (`leg_track_damping_nms_rad:
+  missing required key`), `native_pneumatic_tire` (settle-iterate
+  residual compare). **Baseline exits**: `native_static_brake` +
+  `native_clock_contracts` leave the fixture-missing family — the 3.20
+  merge landed their fixtures. 4 new registrations all green.
+- `ctest -R 'migration_T' -j4`: **50/53** — `T09` + `T10` (frozen-oracle
+  family) + `T56` (shellcheck env drift) verbatim; `T25`/`T29` hold
+  their post-F1 exits.
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, Release)
+
+- `container.sh sync` → `build root-clang` (133 edges) + `build
+  native-clang` (60 edges): green.
+- Same batch filter on `root-clang`: **8/8** after the in-container
+  env_request recapture + pull.
+- `ctest root-clang -L reference -j8`: **66/70** — identical 4-red set
+  as darwin, signatures verified in `LastTest.log`.
+- `ctest native-clang -R 'migration_T' -j8`: **40/51** — exactly F1's
+  11-red linux set `{T03,T04,T09,T10,T14,T15,T16,T18,T20,T31,T32}`
+  (T03 missing-ABI env, T04 library-hash, T09/T10 frozen-oracle,
+  ±1-ulp `golden_f64` family). `T17`/`T19` stay green — the
+  pre-merge estimate's `T14–T20` range over-predicted; honest recount
+  = F1's verbatim set. `T54` + `T56` are not registered in the
+  `native-clang` graph (51 vs darwin's 53 — same split as F1's linux
+  run; `T56` is the darwin shellcheck-env node); `T25`/`T29` hold
+  their exits.
+
+### Assessment
+
+No new reds attributable to the merge on either platform; the single
+3.20 golden red (`control_clock` env_request) was the anticipated
+pre-F1-capture contract staleness, resolved by the two-platform
+recapture `1206d1eb`. Ledger totals: `len(records)` = 2385 =
+`static_test_functions`, verified key-level post-merge. L3
+(`tools/run_tests.sh native`) not run — bounded merge-back scope; the
+checkpoint profile owns it. Unrelated documented reds reported, not
+fixed.

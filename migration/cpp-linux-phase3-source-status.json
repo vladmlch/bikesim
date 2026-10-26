@@ -22,8 +22,8 @@
     "initial_map_records": 1611,
     "previously_unmapped_functions": 758,
     "new_capture_hook_functions": 12,
-    "current_test_functions_and_methods": 2381,
-    "top_level_functions": 2365,
+    "current_test_functions_and_methods": 2385,
+    "top_level_functions": 2369,
     "class_methods": 16,
     "baseline_python_files": 532,
     "initial_removal_rows": 459,
@@ -31,10 +31,10 @@
     "new_python_sources": 3,
     "current_removal_rows": 535,
     "test_dispositions": {
-      "planned": 2105,
-      "port": 183,
-      "drop": 35,
-      "golden": 58
+      "planned": 1569,
+      "port": 461,
+      "drop": 74,
+      "golden": 281
     },
     "validation_source_modules": 30,
     "validation_source_statuses": {
@@ -125,7 +125,7 @@
       "task": "3.06",
       "title": "Seated pedalling and posture",
       "source_status": "not_implemented",
-      "scope_and_remaining_work": "Reproduction and measured diagnosis performed 2026-10-22: all five nodes root-caused to startup-transient monitor-contract violations (energy.constraint_work; rider_elbow_left/right). Physics stop rule invoked — no fix applied; a user decision among the plan's three end states is pending. All five nodes still red in the 2026-10-23 refresh.",
+      "scope_and_remaining_work": "Reproduction and measured diagnosis performed 2026-10-22: all five nodes root-caused to startup-transient monitor-contract violations (energy.constraint_work; rider_elbow_left/right). Physics stop rule invoked \u2014 no fix applied; a user decision among the plan's three end states is pending. All five nodes still red in the 2026-10-23 refresh.",
       "phase_task_complete": false,
       "verification": "not_performed_in_this_session",
       "evidence": [
@@ -162,7 +162,7 @@
       "task": "3.09",
       "title": "Realistic pedelec acceptance",
       "source_status": "not_implemented",
-      "scope_and_remaining_work": "Reproduction and measured diagnosis performed 2026-10-22: all four acceptance nodes measured and root-caused to physical acceptance misses (835a48c stale-fixture drift ruled out; ride-CSV evidence saved). Physics stop rule invoked — no fix applied; a user decision among the plan's three end states is pending. All four nodes still red in the 2026-10-23 refresh.",
+      "scope_and_remaining_work": "Reproduction and measured diagnosis performed 2026-10-22: all four acceptance nodes measured and root-caused to physical acceptance misses (835a48c stale-fixture drift ruled out; ride-CSV evidence saved). Physics stop rule invoked \u2014 no fix applied; a user decision among the plan's three end states is pending. All four nodes still red in the 2026-10-23 refresh.",
       "phase_task_complete": false,
       "verification": "not_performed_in_this_session",
       "evidence": [
@@ -175,7 +175,7 @@
       "task": "3.10",
       "title": "Realtime gate",
       "source_status": "not_implemented",
-      "scope_and_remaining_work": "Reproduction and per-backend RTF measurements performed 2026-10-22: genuine oracle-path throughput miss (~24% over the 1.25 ms/step budget; measured factors ~0.78-0.87), remedy is a contract decision — both nodes kept listed pending user choice. Still red in the 2026-10-23 refresh (savage: equilibrium non-convergence residual 0.094603 @64000 steps; extreme: factor ~0.62).",
+      "scope_and_remaining_work": "Reproduction and per-backend RTF measurements performed 2026-10-22: genuine oracle-path throughput miss (~24% over the 1.25 ms/step budget; measured factors ~0.78-0.87), remedy is a contract decision \u2014 both nodes kept listed pending user choice. Still red in the 2026-10-23 refresh (savage: equilibrium non-convergence residual 0.094603 @64000 steps; extreme: factor ~0.62).",
       "phase_task_complete": false,
       "verification": "not_performed_in_this_session",
       "evidence": [
@@ -188,7 +188,7 @@
       "task": "3.11",
       "title": "Linux-only failures",
       "source_status": "source_implemented",
-      "scope_and_remaining_work": "All three retained Linux nodes fixed and verified in container bike-dev-python-free-cpp (3 passed in 4.93s) and on macOS (3 passed in 9.61s), re-confirmed green at fe4feaa in the 2026-10-23 refresh (3 passed in 20.97s, linux-aarch64); docs/development/linux.md retained-failures list emptied. Node 1 repaired test-side (privileged import/synthetic-capture warmup before the setuid drop); nodes 2+3 unblocked by the three-key projection-boundary drop in setup.py. The announced final native-gate container result was never written — owed to the next L2/L3 checkpoint.",
+      "scope_and_remaining_work": "All three retained Linux nodes fixed and verified in container bike-dev-python-free-cpp (3 passed in 4.93s) and on macOS (3 passed in 9.61s), re-confirmed green at fe4feaa in the 2026-10-23 refresh (3 passed in 20.97s, linux-aarch64); docs/development/linux.md retained-failures list emptied. Node 1 repaired test-side (privileged import/synthetic-capture warmup before the setuid drop); nodes 2+3 unblocked by the three-key projection-boundary drop in setup.py. The announced final native-gate container result was never written \u2014 owed to the next L2/L3 checkpoint.",
       "phase_task_complete": false,
       "verification": "not_performed_in_this_session",
       "evidence": [
@@ -325,7 +325,7 @@
       "task": "3.20",
       "title": "brakes, cruise, suspension, clocks (`runtime`)",
       "source_status": "source_implemented",
-      "scope_and_remaining_work": "All 66 records closed on lane/d (3.20): the earlier 28 successors (static brake5, native clocks13, control clock3, playback7) plus 34 new ports - 14 golden replay (cruise8, brake resistance2, suspension2, stepper1, control-clock solved effort1) and 20 contract ports (cruise contract/validation13, brake resistance2, suspension2, tire snapshot interval path3) - and 4 recorded binding-contract drops (cruise dict-shape3, resistance ndarray lifetime1). Goldens and runtime bundles captured on darwin-arm64 + linux-aarch64 under tests/fixtures/golden/<platform>/; all eight reference.* successors green on both platforms; byte-flip proof on the stepper .bin. Python oracles remain the parity gate until T63.",
+      "scope_and_remaining_work": "All 70 records closed on lane/d (3.20): the earlier 28 successors (static brake9 (4 hold records backfilled in the fix round), native clocks13, control clock3, playback7) plus 34 new ports - 14 golden replay (cruise8, brake resistance2, suspension2, stepper1, control-clock solved effort1) and 20 contract ports (cruise contract/validation13, brake resistance2, suspension2, tire snapshot interval path3) - and 4 recorded binding-contract drops (cruise dict-shape3, resistance ndarray lifetime1). Goldens and runtime bundles captured on darwin-arm64 + linux-aarch64 under tests/fixtures/golden/<platform>/; all eight reference.* successors green on both platforms; byte-flip proof on the stepper .bin. Python oracles remain the parity gate until T63.",
       "phase_task_complete": false,
       "verification": "not_performed_in_this_session",
       "evidence": [
@@ -337,7 +337,7 @@
       "task": "3.21a",
       "title": "numeric completion (`numerics`)",
       "source_status": "source_implemented",
-      "scope_and_remaining_work": "Numeric completion references ported and merged via lane/b (174686e; merge 14e8b58): 61 map records — 42 port / 4 golden / 15 drop; goldens captured on darwin-arm64 + linux-aarch64; reference.native_numeric_completion CTest green on both platforms (PASS 16663 checks); g++-frontend findings cleared in c7e5718. Parity pytest remains the transitional bitwise gate per ADR-0003.",
+      "scope_and_remaining_work": "Numeric completion references ported and merged via lane/b (174686e; merge 14e8b58): 61 map records \u2014 42 port / 4 golden / 15 drop; goldens captured on darwin-arm64 + linux-aarch64; reference.native_numeric_completion CTest green on both platforms (PASS 16663 checks); g++-frontend findings cleared in c7e5718. Parity pytest remains the transitional bitwise gate per ADR-0003.",
       "phase_task_complete": false,
       "verification": "not_performed_in_this_session",
       "evidence": [
@@ -371,7 +371,7 @@
       "task": "3.22b",
       "title": "recorder/HUD columns, period buffer (`recording`)",
       "source_status": "source_implemented",
-      "scope_and_remaining_work": "Recording column and period-buffer references ported and merged via lane/a (152aa0d; merge 9c08ff1): 21 records — 18 port / 2 golden / 1 drop; goldens captured on darwin-arm64 + linux-aarch64; all five CTest nodes green on both platforms; flip-byte failure proof recorded.",
+      "scope_and_remaining_work": "Recording column and period-buffer references ported and merged via lane/a (152aa0d; merge 9c08ff1): 21 records \u2014 18 port / 2 golden / 1 drop; goldens captured on darwin-arm64 + linux-aarch64; all five CTest nodes green on both platforms; flip-byte failure proof recorded.",
       "phase_task_complete": false,
       "verification": "not_performed_in_this_session",
       "evidence": [

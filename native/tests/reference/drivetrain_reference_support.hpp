@@ -105,21 +105,25 @@ inline void array(bt::oracle::Node& golden, std::span<const double> actual, std:
 inline void scalar(bt::oracle::Node& golden, double actual, std::string_view label = "") {
     policy_reference::scalar(golden, actual, label);
 }
-// A DriveSnapshot's range/coefficients/prepared buffers are ndarrays in
-// Python; its angles and policy/config lists remain scalar sequences.
+// A DriveSnapshot mixes array forms: coefficients and the prepared
+// jacobian/qpos buffers stay ndarrays on both the wire and the
+// python_state sides, while `range` is a plain list in a wire state and
+// an ndarray in python_state. The recorded label declares the form —
+// `path#length` for a list, `path` for an ndarray — so dispatch on the
+// next captured entry rather than on path names.
 // NOLINTNEXTLINE(misc-no-recursion) recursive JSON value tree walk
 inline void tree(bt::oracle::Node& golden, const Value& value, const std::string& path = "$") {
     if (std::holds_alternative<Value::Object>(value.data)) {
         policy_reference::keys(golden, value, path);
         for (const auto& key : policy_reference::sorted_keys(value)) { std::string next(path); next += '.'; next += key; tree(golden, field(value, key), next); }
     } else if (const auto* values = std::get_if<Value::Array>(&value.data)) {
-        if (path.ends_with(".range") || path.ends_with(".coefficients") || path.ends_with(".jacobian") || path.ends_with(".qpos")) {
+        if (golden.has_next() && golden.peek_label() == path + "#length") {
+            policy_reference::length(golden, values->size(), path);
+            for (std::size_t i = 0; i < values->size(); ++i) tree(golden, (*values)[i], path + "[" + std::to_string(i) + "]");
+        } else {
             std::vector<double> decoded; decoded.reserve(values->size());
             for (const auto& element : *values) decoded.push_back(bike::io::as_double(element, path));
             array(golden, decoded, path);
-        } else {
-            policy_reference::length(golden, values->size(), path);
-            for (std::size_t i = 0; i < values->size(); ++i) tree(golden, (*values)[i], path + "[" + std::to_string(i) + "]");
         }
     } else policy_reference::tree(golden, value, path);
 }

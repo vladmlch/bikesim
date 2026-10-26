@@ -58,6 +58,10 @@ the .so replaced all schema failures with the true baseline: 20 passed /
 TOML nodes. Lesson: on this lane always rebuild the extension before
 reading parity results off it.
 
+## Gate-blocking tidy regression (this session)
+
+The first `run_tests.sh native` attempt died at `check_tidy`: `native/src/drivetrain/shifting.cpp:66` — `modernize-loop-convert`, introduced earlier today by lane commit `5bbea70a` ("mirror multi-cog shift throw selection", reverse-iterator loop over the cassette). Fixed in place: `for (int const teeth : config_.cassette | std::views::reverse)` — identical descending iteration order and body (C++20 `<ranges>` already used tree-wide). The nanobind `clang-analyzer-cplusplus.Move` diagnostic in `contact_binding.cpp` is an allowlisted suppression, not a blocker.
+
 ## Byte-flip proof (this session)
 
 `tests/fixtures/golden/darwin-arm64/tests_reference_test_native_spindle_controller.py/test_spindle_disabled_command_matches_python.bin`, byte 98,400 inside the `output.torques.0` |u1 JSON payload flipped `0x46→0x47`:

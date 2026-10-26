@@ -2,6 +2,7 @@
 #include "../engaged.hpp"
 #include <algorithm>
 #include <limits>
+#include <ranges>
 
 namespace drivetrain {
     void CadenceShifter::set_state(ShiftingSnapshot s) {
@@ -63,8 +64,7 @@ namespace drivetrain {
             direction = ShiftDirection::up;
         } else if (engaged(next.cadence_ema) < config_.target_cadence_min_rpm) {
             int fallback = next.rear_teeth;
-            for (auto cog = config_.cassette.rbegin(); cog != config_.cassette.rend(); ++cog) {
-                const int teeth = *cog;
+            for (int const teeth : config_.cassette | std::views::reverse) {
                 if (teeth <= next.rear_teeth) continue;
                 fallback = teeth;  // descending order: the last candidate is min()
                 if (engaged(next.required_ema) * teeth / next.rear_teeth <= config_.target_cadence_max_rpm) {

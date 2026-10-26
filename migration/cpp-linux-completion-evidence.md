@@ -6185,3 +6185,54 @@ lane/a evidence strings. `migration/python-removal.json` —
 `tests/reference/test_native_benchmark.py` → `replacement_landed`
 (verification `reference.native_benchmark`; `sha256`/`line_count`
 refreshed to the capture-instrumented 1027-line source, snapshot kept).
+
+### Final gate — `bash tools/run_tests.sh native` (darwin-arm64, lane `8ec80842`)
+
+Build + all 9 static-analysis sweeps green: frontends, tidy (report-only
+alpha findings per policy), analyzer, cppcheck (0 findings), odr (0),
+scripts (0), produced headers (**260 headers / 9012 header TUs,
+findings none**), diagnostic-controls (6/0 failed), context SDK (all
+passed). CTest `native/build`: **55/62 in-gate** — documented baseline
+pair `migration_T09` (`integration vector resolves bitwise`) and
+`migration_T29` (`weld_servo_gain: unknown key`), plus five
+environmental reds `migration_T41`–`T45` that all failed identically on
+`No space left on device` writing DuckDB checkpoints while the host
+volume sat at 1.0 GiB free (shared host, sibling lanes building).
+After freeing ~5.7 GiB (`docker builder prune` + regenerable
+`native_check_work`), a focused `ctest -R 'migration_T4[1-5]$'` rerun
+passes **5/5** — the failure set is the documented baseline pair plus
+proven environmental noise, matching every prior lane's 60/62
+signature. `reference.native_benchmark` lives in the root graph
+(`build/native-release`), outside the 62-node `native/build` set; its
+focused run is recorded above.
+
+`bike-native-checks --kind contracts --build native/build --repo-root .`
+→ all controls passed (`analysis_policy`, `contract_source_manifest_membership`,
+`ctest_contract_cases`, `pure_core_python_free`, …).
+
+Profile-tail pytest (profile flags exactly: `-q --durations=10
+--ignore output tests/reference/test_native_*.py
+tests/reference/test_golden_episode*.py -p native_test_reporter`,
+`MallocScribble`/`MallocPreScribble`/`MallocGuardEdges` exported):
+**64 failed / 3175 passed / 1 skipped in 6676 s** —
+**zero failures in `test_native_benchmark.py`** (all 90 nodes green,
+including the three conformance replays). The 64 reds reproduce the
+task-F2 documented tail (F2 report: 75 failed / 3164 passed; 3.28-resume
+gate at `9726444`: 81 failed / 3157 passed) at the same file
+concentration — `test_native_spindle_controller` 22,
+`test_native_research_environment` 17, `test_native_runtime_*` 11,
+`test_native_distributed_tire` 2, `test_native_viewer_snapshot` 2,
+`test_native_numeric_completion` 2, plus singletons in
+`test_native_ride_frontend`, `test_native_research_recording`,
+`test_native_research_capture`, `test_native_runtime_accounting` and
+`test_native_pneumatic_tire`: C++↔oracle bitwise-drift gaps on sibling
+lanes' unported/planned records, none authored by this batch; the set
+shrank 75→64 as sibling batches landed their ports. LAPACK `DLASCL`
+stderr noise is documented-expected (3.19 note). The tail also embeds a
+legitimate ~90-min re-run of the full 9012-TU header sweep inside
+`test_native_check_tools.py::test_standalone_header_sweep_compiles_first_party_headers`
+(2 h timeout) — that is the dominant tail cost, not a stall.
+
+Anomaly worth recording: the mid-gate ENOSPC trace is a host-capacity
+event, not a suite defect — the disk filled during the header sweep +
+CTest overlap; nothing in this batch writes to `$TMPDIR` at scale.

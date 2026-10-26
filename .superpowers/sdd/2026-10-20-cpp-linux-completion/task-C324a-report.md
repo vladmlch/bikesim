@@ -118,8 +118,27 @@ No drops; no record was baseline-red; no expected-fail ports.
 
 ## Final gate — `bash tools/run_tests.sh native` (darwin-arm64)
 
-Run status recorded in `migration/cpp-linux-completion-evidence.md`
-(3.24a section); see the ledger entry below for the outcome.
+Run at lane tip `8ec80842`; full detail in
+`migration/cpp-linux-completion-evidence.md` (3.24a "Final gate").
+
+- Build + **all 9 static-analysis sweeps green**: frontends, tidy
+  (report-only alpha findings), analyzer, cppcheck 0, odr 0, scripts 0,
+  produced headers (260 headers / 9012 header TUs, findings none),
+  diagnostic-controls 6/0, context SDK all passed.
+- CTest `native/build` **55/62 in-gate** = documented baseline pair
+  (`migration_T09`, `migration_T29`) + `migration_T41`–`T45` failing on
+  host ENOSPC (`No space left on device`, 1.0 GiB free on a shared
+  host). After freeing ~5.7 GiB, focused rerun **5/5 PASS** — failure
+  set = documented baseline + proven environmental noise.
+- `bike-native-checks --kind contracts` → all controls passed.
+- Profile-tail pytest (exact profile flags, allocator scribble on):
+  **64 failed / 3175 passed / 1 skipped in 6676 s** — **zero failures
+  in `test_native_benchmark.py`** (90/90 incl. the 3 conformance
+  replays). The 64 reds reproduce the documented task-F2 tail at the
+  same file concentration (spindle 22, research_environment 17,
+  runtime_* 11, …): C++↔oracle bitwise-drift gaps on sibling lanes'
+  unported records, none authored by this batch; the set shrank 75→64
+  as sibling batches landed ports.
 
 ## Ledger
 

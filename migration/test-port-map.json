@@ -1,7 +1,7 @@
 {
   "status": "Complete static function/method inventory; source dispositions are not qualification; no project execution or pytest collection in this session",
-  "static_test_functions": 2381,
-  "top_level_test_functions": 2365,
+  "static_test_functions": 2385,
+  "top_level_test_functions": 2369,
   "runtime_node_acquisition_task": "T01",
   "records": [
     {
@@ -2093,8 +2093,8 @@
     {
       "source_path": "tests/reference/test_control_clock.py",
       "source_symbol": "test_period_must_be_an_integer_multiple_of_the_timestep",
-      "line": 8,
-      "end_line": 16,
+      "line": 66,
+      "end_line": 74,
       "owner_task": "T52",
       "native_test_id": "reference.control_clock::test_period_must_be_an_integer_multiple_of_the_timestep",
       "native_source": "native/tests/reference/test_control_clock.cpp",
@@ -2111,8 +2111,8 @@
     {
       "source_path": "tests/reference/test_control_clock.py",
       "source_symbol": "test_held_command_is_returned_unchanged_between_ticks",
-      "line": 19,
-      "end_line": 29,
+      "line": 77,
+      "end_line": 87,
       "owner_task": "T52",
       "native_test_id": "reference.control_clock::test_held_command_is_returned_unchanged_between_ticks",
       "native_source": "native/tests/reference/test_control_clock.cpp",
@@ -2129,8 +2129,8 @@
     {
       "source_path": "tests/reference/test_control_clock.py",
       "source_symbol": "test_clock_rejects_invalid_durations",
-      "line": 33,
-      "end_line": 35,
+      "line": 91,
+      "end_line": 93,
       "owner_task": "T52",
       "native_test_id": "reference.control_clock::test_clock_rejects_invalid_durations",
       "native_source": "native/tests/reference/test_control_clock.cpp",
@@ -2147,8 +2147,8 @@
     {
       "source_path": "tests/reference/test_control_clock.py",
       "source_symbol": "test_runtime_holds_ctrl_but_observes_solved_effort_each_step",
-      "line": 39,
-      "end_line": 84,
+      "line": 97,
+      "end_line": 145,
       "owner_task": "T52",
       "native_test_id": "reference.control_clock::test_runtime_holds_ctrl_but_observes_solved_effort_each_step",
       "native_source": "native/tests/reference/test_control_clock.cpp",
@@ -2160,6 +2160,10 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_control_clock.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.control_clock green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -6098,8 +6102,8 @@
     {
       "source_path": "tests/reference/test_native_brake_resistance.py",
       "source_symbol": "test_brake_torques_and_apply_bitwise",
-      "line": 90,
-      "end_line": 130,
+      "line": 111,
+      "end_line": 151,
       "owner_task": "T52",
       "native_test_id": "reference.native_brake_resistance::test_brake_torques_and_apply_bitwise",
       "native_source": "native/tests/reference/test_native_brake_resistance.cpp",
@@ -6111,13 +6115,17 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_brake_resistance.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_brake_resistance green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
       "source_path": "tests/reference/test_native_brake_resistance.py",
       "source_symbol": "test_resistance_components_bitwise",
-      "line": 134,
-      "end_line": 159,
+      "line": 155,
+      "end_line": 180,
       "owner_task": "T52",
       "native_test_id": "reference.native_brake_resistance::test_resistance_components_bitwise",
       "native_source": "native/tests/reference/test_native_brake_resistance.cpp",
@@ -6129,13 +6137,17 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_brake_resistance.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_brake_resistance green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
       "source_path": "tests/reference/test_native_brake_resistance.py",
       "source_symbol": "test_brake_resistance_require_config",
-      "line": 162,
-      "end_line": 180,
+      "line": 183,
+      "end_line": 201,
       "owner_task": "T52",
       "native_test_id": "reference.native_brake_resistance::test_brake_resistance_require_config",
       "native_source": "native/tests/reference/test_native_brake_resistance.cpp",
@@ -6152,8 +6164,8 @@
     {
       "source_path": "tests/reference/test_native_brake_resistance.py",
       "source_symbol": "test_brake_resistance_missing_key_names_it",
-      "line": 183,
-      "end_line": 187,
+      "line": 204,
+      "end_line": 208,
       "owner_task": "T52",
       "native_test_id": "reference.native_brake_resistance::test_brake_resistance_missing_key_names_it",
       "native_source": "native/tests/reference/test_native_brake_resistance.cpp",
@@ -6170,13 +6182,20 @@
     {
       "source_path": "tests/reference/test_native_brake_resistance.py",
       "source_symbol": "test_resistance_snapshot_array_conversion_lifetime",
-      "line": 192,
-      "end_line": 233,
+      "line": 213,
+      "end_line": 254,
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_brake_resistance.py::test_resistance_snapshot_array_conversion_lifetime[False-contiguous]",
+        "tests/reference/test_native_brake_resistance.py::test_resistance_snapshot_array_conversion_lifetime[False-strided]",
+        "tests/reference/test_native_brake_resistance.py::test_resistance_snapshot_array_conversion_lifetime[False-reversed]",
+        "tests/reference/test_native_brake_resistance.py::test_resistance_snapshot_array_conversion_lifetime[True-contiguous]",
+        "tests/reference/test_native_brake_resistance.py::test_resistance_snapshot_array_conversion_lifetime[True-strided]",
+        "tests/reference/test_native_brake_resistance.py::test_resistance_snapshot_array_conversion_lifetime[True-reversed]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
@@ -7268,6 +7287,10 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_cruise.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_cruise green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -7291,6 +7314,10 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_cruise.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_cruise green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -7309,6 +7336,10 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_cruise.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_cruise green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -7327,6 +7358,10 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_cruise.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_cruise green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -7345,6 +7380,10 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_cruise.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_cruise green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -7605,8 +7644,14 @@
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_cruise.py::test_missing_state_field_preserves_state[target_speed_mps]",
+        "tests/reference/test_native_cruise.py::test_missing_state_field_preserves_state[integral_mps_s]",
+        "tests/reference/test_native_cruise.py::test_missing_state_field_preserves_state[torque_nm]",
+        "tests/reference/test_native_cruise.py::test_missing_state_field_preserves_state[gain_scale]",
+        "tests/reference/test_native_cruise.py::test_missing_state_field_preserves_state[engaged]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
@@ -7621,8 +7666,10 @@
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_cruise.py::test_extra_state_field_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
@@ -7646,6 +7693,10 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_cruise.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_cruise green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -7664,6 +7715,10 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_cruise.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_cruise green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -7684,6 +7739,10 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_cruise.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_cruise green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -7694,8 +7753,21 @@
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[wrong-target_speed_mps]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[wrong-integral_mps_s]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[wrong-torque_nm]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[wrong-gain_scale]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[None-target_speed_mps]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[None-integral_mps_s]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[None-torque_nm]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[None-gain_scale]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[value2-target_speed_mps]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[value2-integral_mps_s]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[value2-torque_nm]",
+        "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[value2-gain_scale]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 12 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
@@ -19737,6 +19809,78 @@
       ]
     },
     {
+      "source_path": "tests/reference/test_native_static_brake.py",
+      "source_symbol": "test_hold_bite_parity_sequence",
+      "line": 227,
+      "end_line": 274,
+      "owner_task": "T52",
+      "native_test_id": "reference.native_static_brake::test_hold_bite_engagement_clip_release",
+      "native_source": "native/tests/reference/test_native_static_brake.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_native_static_brake.py::test_hold_bite_parity_sequence"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.20 lane/d fix-round backfill: the hold tests arrived with the F2-era brake-hold work (b21c63ec \"PHASE 3 cont 1\"; reseat field 051497c9 \"fix(physics): re-anchor a saturated brake-hold bite during settle relaxation\") and their C++ twins already stood in native/tests/reference/test_native_static_brake.cpp, but the ledger never gained records; native_test_id names the C++ twin test_hold_bite_engagement_clip_release, which replays the same engage/wind/clip/release/reset sequence against analytic literals; oracle green on darwin-arm64 + linux-aarch64 (4/4 hold leaves re-verified both platforms 2026-10-26); CTest reference.native_static_brake green on both platforms"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_native_static_brake.py",
+      "source_symbol": "test_hold_reseat_parity_sequence",
+      "line": 277,
+      "end_line": 334,
+      "owner_task": "T52",
+      "native_test_id": "reference.native_static_brake::test_hold_reseat_saturated_bite",
+      "native_source": "native/tests/reference/test_native_static_brake.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_native_static_brake.py::test_hold_reseat_parity_sequence"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.20 lane/d fix-round backfill: the hold tests arrived with the F2-era brake-hold work (b21c63ec \"PHASE 3 cont 1\"; reseat field 051497c9 \"fix(physics): re-anchor a saturated brake-hold bite during settle relaxation\") and their C++ twins already stood in native/tests/reference/test_native_static_brake.cpp, but the ledger never gained records; native_test_id names the C++ twin test_hold_reseat_saturated_bite, the F2 reseat regression sequence against analytic literals; oracle green on darwin-arm64 + linux-aarch64 (4/4 hold leaves re-verified both platforms 2026-10-26); CTest reference.native_static_brake green on both platforms"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_native_static_brake.py",
+      "source_symbol": "test_hold_bite_disabled_by_default",
+      "line": 337,
+      "end_line": 348,
+      "owner_task": "T52",
+      "native_test_id": "reference.native_static_brake::test_hold_validation_matches_python",
+      "native_source": "native/tests/reference/test_native_static_brake.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_native_static_brake.py::test_hold_bite_disabled_by_default"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.20 lane/d fix-round backfill: the hold tests arrived with the F2-era brake-hold work (b21c63ec \"PHASE 3 cont 1\"; reseat field 051497c9 \"fix(physics): re-anchor a saturated brake-hold bite during settle relaxation\") and their C++ twins already stood in native/tests/reference/test_native_static_brake.cpp, but the ledger never gained records; the disabled-by-default case is covered inside the C++ test_hold_validation_matches_python (default BrakeHoldSpec produces zero force); no standalone C++ twin; oracle green on darwin-arm64 + linux-aarch64 (4/4 hold leaves re-verified both platforms 2026-10-26); CTest reference.native_static_brake green on both platforms"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_native_static_brake.py",
+      "source_symbol": "test_hold_validation_matches_python",
+      "line": 351,
+      "end_line": 364,
+      "owner_task": "T52",
+      "native_test_id": "reference.native_static_brake::test_hold_validation_matches_python",
+      "native_source": "native/tests/reference/test_native_static_brake.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_native_static_brake.py::test_hold_validation_matches_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.20 lane/d fix-round backfill: the hold tests arrived with the F2-era brake-hold work (b21c63ec \"PHASE 3 cont 1\"; reseat field 051497c9 \"fix(physics): re-anchor a saturated brake-hold bite during settle relaxation\") and their C++ twins already stood in native/tests/reference/test_native_static_brake.cpp, but the ledger never gained records; native_test_id names the C++ twin test_hold_validation_matches_python (hold-spec rejection parity); oracle green on darwin-arm64 + linux-aarch64 (4/4 hold leaves re-verified both platforms 2026-10-26); CTest reference.native_static_brake green on both platforms"
+      ]
+    },
+    {
       "source_path": "tests/reference/test_native_stepper.py",
       "source_symbol": "test_native_step_matches_python_bitwise",
       "line": 13,
@@ -19752,32 +19896,39 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_stepper.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_stepper green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
       "source_path": "tests/reference/test_native_suspension.py",
       "source_symbol": "test_suspension_components_bitwise",
-      "line": 34,
-      "end_line": 57,
+      "line": 66,
+      "end_line": 89,
       "owner_task": "T52",
       "native_test_id": "reference.native_suspension::test_suspension_components_bitwise",
       "native_source": "native/tests/reference/test_native_suspension.cpp",
       "collected_node_ids": [
-        "tests/reference/test_native_suspension.py::test_suspension_components_bitwise",
-        "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy"
+        "tests/reference/test_native_suspension.py::test_suspension_components_bitwise"
       ],
-      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_suspension.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_suspension green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
       "source_path": "tests/reference/test_native_suspension.py",
       "source_symbol": "test_suspension_components_bitwise_legacy",
-      "line": 61,
-      "end_line": 100,
+      "line": 93,
+      "end_line": 133,
       "owner_task": "T52",
       "native_test_id": "reference.native_suspension::test_suspension_components_bitwise_legacy",
       "native_source": "native/tests/reference/test_native_suspension.cpp",
@@ -19789,13 +19940,17 @@
       "disposition": "golden",
       "evidence": [
         "2026-10-26 3.20 lane/d: ported to native/tests/reference/test_native_suspension.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_suspension green on both platforms (frozen two-platform goldens under tests/fixtures/golden/<platform>/)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
       "source_path": "tests/reference/test_native_suspension.py",
       "source_symbol": "test_suspension_components_require_config",
-      "line": 103,
-      "end_line": 109,
+      "line": 136,
+      "end_line": 142,
       "owner_task": "T52",
       "native_test_id": "reference.native_suspension::test_suspension_components_require_config",
       "native_source": "native/tests/reference/test_native_suspension.cpp",
@@ -19812,8 +19967,8 @@
     {
       "source_path": "tests/reference/test_native_suspension.py",
       "source_symbol": "test_config_missing_key_names_it",
-      "line": 112,
-      "end_line": 116,
+      "line": 145,
+      "end_line": 149,
       "owner_task": "T52",
       "native_test_id": "reference.native_suspension::test_config_missing_key_names_it",
       "native_source": "native/tests/reference/test_native_suspension.cpp",

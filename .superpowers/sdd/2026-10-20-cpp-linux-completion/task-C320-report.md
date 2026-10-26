@@ -125,15 +125,21 @@ was in scope and is now green on both platforms.
 - `migration/cpp-linux-phase3-source-status.json` + `-source-review.md`:
   3.20 marked `source_implemented` / complete.
 
-## Out-of-batch drive-by fix
+## Out-of-batch drive-by fix — correction (fix round)
 
-`native/src/terrain/alpine.cpp`: `faceted` (template, internal linkage by
-use) was wrapped in an anonymous namespace to clear a blocking
+The Darwin `check_tidy` gate at gate time ran on an **uncommitted**
+`native/src/terrain/alpine.cpp` edit that wrapped `faceted` (template,
+internal linkage by use) in an anonymous namespace to clear the blocking
 `-Wmissing-declarations`-family clang-tidy finding
 (`function 'faceted' can be made static or moved into an anonymous
-namespace`) that stopped the Darwin `check_tidy` sweep. The edit is
-behavior-preserving (anonymous namespace is exactly what the checker
-asked for); the file is otherwise untouched by this batch.
+namespace`). That edit was never committed on this branch and is absent
+from the reviewed tip `01d00bdf`: C9's batch 3.22a had already landed the
+identical fix on integration (`0d42a81a`, merged via `25a4d200`), so the
+local change was dropped rather than committed — keeping it would only
+have produced a duplicate-hunk conflict at merge time. The gate result
+above therefore reflects the tree plus the dropped uncommitted hunk; the
+fix itself stands on integration via C9's commit, and the file is
+otherwise untouched by this batch.
 
 ## Final gate
 
@@ -198,3 +204,55 @@ Per the documented Phase-3 batch procedure the required gates — per-file
 pytest greens, two-platform goldens, and the new CTest nodes on both
 platforms — are all green; the branch-level `check_tidy` (Linux) and
 `migration_T09/T29` (Darwin) reds are baseline and not authored here.
+
+## 3.20 fix-round findings response (2026-10-26)
+
+Review verdict "Needs fixes" — all items addressed in the fix-round
+commit; `migration/test-port-map.json` re-serialized with
+`indent=2, ensure_ascii=True` (byte-identical round-trip outside the
+edited records) and re-parsed clean.
+
+1. **`golden_platforms` on the 14 new golden records** — added
+   `"golden_platforms": ["darwin-arm64", "linux-aarch64"]` (last key,
+   matching the pre-dispositioned static-brake/clock goldens) to the 14
+   records this batch dispositioned golden: cruise ×8, brake resistance
+   ×2, suspension ×2, stepper ×1, control-clock solved-effort ×1. The 6
+   pre-dispositioned goldens (static brake ×2, clock contracts ×4)
+   already carried the field.
+2. **Report honesty (alpine.cpp)** — the "Out-of-batch drive-by fix"
+   section now states the gate ran on an uncommitted edit; the identical
+   fix stands on integration via C9's 3.22a commit `0d42a81a` (merge
+   `25a4d200`); the local hunk was dropped to avoid a duplicate-hunk
+   conflict. Verified the reviewed tip carries no such edit.
+3. **Static-brake ledger under-enumeration** — backfilled records for the
+   4 hold tests (`test_hold_bite_parity_sequence` → C++
+   `test_hold_bite_engagement_clip_release`;
+   `test_hold_reseat_parity_sequence` → `test_hold_reseat_saturated_bite`;
+   `test_hold_bite_disabled_by_default` → covered inside C++
+   `test_hold_validation_matches_python`'s disabled-by-default block;
+   `test_hold_validation_matches_python` → C++ twin of the same name),
+   all in `native/tests/reference/test_native_static_brake.cpp`:
+   `disposition: port`, `owner_task: T52`, AST-verified line spans,
+   measured `collected_node_ids`/`assertions_capture` (1 leaf each;
+   `-k hold` re-verified green 4/4 on darwin-arm64 and linux-aarch64
+   container `bike-dev-pfc-lane-d` 2026-10-26). Evidence notes the
+   F2-era origin (`b21c63ec`, `051497c9`) plus the 3.20 backfill.
+   `static_test_functions`/`top_level_test_functions` bumped 2381→2385 /
+   2365→2369 so the header counts again equal the record inventory.
+4. **Minor blemishes** —
+   - suspension `test_suspension_components_bitwise` collected node ids
+     split to its own leaf only (`_legacy` record already carries its
+     own); capture count 2→1.
+   - `line`/`end_line` refreshed to actual AST spans for all 13 records
+     in the three `.py` files `7854b454` extended (control_clock,
+     brake_resistance, suspension).
+   - `phase3-source-status.json` "all seven" → "all eight
+     `reference.*` successors" (the report's own linux evidence lists
+     8/8 including `reference.playback_clock`).
+   - `phase_task_complete` for 3.20 `true` → `false`, matching the
+     established convention (every other record, including same-state
+     siblings 3.21a/3.22b, uses `false`).
+   - The 4 drop records now carry their real collected leaves
+     (5/1/12/6 nodes, re-collected with pytest `--collect-only`) and
+     measured `assertions_capture`; the stale "T01 records source
+     assertions…" placeholder prose is removed from them.

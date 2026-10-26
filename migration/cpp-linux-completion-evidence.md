@@ -6221,3 +6221,200 @@ Pre-existing parity gap owned by the ADR-0003 golden gate, not F1.
   spindle 22 / research_env 17 / drivetrain 7 / runtime_* ~14); zero
   F1-authored regressions. Full record: `task-F1-report.md` fix-round
   native gate section.
+## 2026-10-26 — lane/b F1 welded-plant migration merge-back (merge `2c24dc43`)
+
+Merge-back of the F1 welded-plant native migration (weld-press servo,
+`weld_servo_gain`/`weld_servo_limit_nm`/`leg_track_damping_nms_rad` now
+required on the closed rider-controller wire, `coast_hold_nm` spindle
+material channel, delivered-power budgets, weld foot/saddle normal+shear
+envelopes). Twelve commits land post-merge; fixture recaptures follow the
+documented darwin capture → linux-container recapture → pull flow.
+
+### Commits
+
+| SHA | Unit |
+|---|---|
+| `093633c4` | test(reference): designated initializers for grown AttachmentBudget fields |
+| `f4c15531` | test(T12): sync resolved profiles with F1-grown articulated fields |
+| `96fe3d86` | feat(native): complete weld-press servo + coast_hold_nm wire |
+| `73168f02` | test(migration): F1-schema fixture repair + equilibrium recaptures |
+| `6e1c7733` | test(reference): retire stale derived-events count + recapture encode-columns |
+| `a323585d` | test(period_buffer): extend darwin parity floor for weld-servo feedback |
+| `27892084` | test(migration): T08 wire doc + T25 darwin integration pin refresh |
+| `020a13f3` | test(golden): env_fast recipe refresh + multi_contact darwin recapture |
+| `ed92ca7a` | test(fixtures): linux-aarch64 F1 recaptures |
+| `461381c0` | test(migration): oracle-manifest sync for the F1 fixture repairs |
+| `82d8caed` | test(golden): linux-aarch64 encode-columns twins for the F1 channel table |
+| `31f389b8` | fix(native): clang-tidy findings surfaced by the F1 wire changes |
+
+### Recapture ledger (reason per artifact)
+
+**Migration fixtures**
+
+- 12 bootstrap + 1 research `config.json` + 5 resolved/variant configs +
+  `viewer_physics_welded.toml` + standalone `config/rider_controller.json`
+  (73 keys): the three articulated keys became required by the strict
+  spindle decode — every closed-wire document carries them at
+  TOML-default values; `faults/` configs keep their own named faults.
+- `bootstrap/native_start_welded` (model.mjb, state.json + arrays,
+  integration, meta): equilibrium re-certified under the servo; state
+  gains `state_control_coast_hold_nm` — **decode now requires it**,
+  not just tolerates.
+- `initial_state/{darwin-arm64,linux-aarch64}/{probe_welded_0005,
+  welded_flat}.json`: `_t52`/`_t25` recipes re-solved per platform —
+  the servo bleeds the stored freehub preload at settle
+  (`ideal_boundary` 0 → −0.013, tire xi ~7e-4 → ~−2e-7).
+- `bootstrap/native_start_welded/{darwin-arm64,linux-aarch64}/
+  integration.f64`: t=0 platform pin regenerated via
+  `bike-native-ride --request requests/welded_flat.toml --steps 0
+  --dump-integration-state`; darwin pin differs only at indices 87–90
+  (leg feedforward/weld-servo now active). migration_T25 green on both
+  platforms — **baseline exit**.
+
+**Golden archives**
+
+- `pneumatic_tire/env_fast` + `native_distributed_tire/env_request`
+  initial states (both platforms): equilibrium refresh under F1 physics
+  via the declared `_fixture_save_env`/`_fixture_save_env_request`
+  recipes; the env_fast pose was additionally stale (drive.angles
+  −0.0677, foreign `source_sha256`) and now equals a fresh oracle
+  settle modulo NaN payloads.
+- `pneumatic_tire/episodes/fast40` (both platforms): F1 weld-envelope
+  repair empties `attachment_violations`/`energy.constraint_work`
+  entries **semantically** — the `attachment_violations` channel
+  shrinks **134801 → 6010 bytes** because violations were removed by
+  physics, not truncation.
+- `test_pneumatic_observations_declare_multi_contact.bin` (both
+  platforms): F1-settled loads (darwin 444.74/… → 430.78/593.47 N);
+  node passes its live sanity contract — capture valid; the C++ gate
+  still fails on a ~1.9e-5 N settle-iterate residual (see Reds).
+- `test_brake_and_cruise_numpy_numeric_controls.bin` (both platforms):
+  ride-state inputs re-recorded under the servo trajectory; expected
+  values/index unchanged.
+- period-buffer family: darwin `_floor` widened to 5e-11 qpos /
+  5e-10 qvel / 5e-9 rider power — ~4× headroom over the measured
+  post-servo darwin spread (≤1.3e-11/≤1.3e-10/≤1.4e-9), same convention
+  as the original floor, still ~100× tighter than the oracle's own
+  8.5e-6/6.5e-4 cross-platform spread; linux keeps bitwise 1e-12
+  floors — platform-spread adjustment, not oracle-parity loosening.
+  `expected/attachment_violations` 134801→6010 B rides the same
+  semantic shrink.
+- encode-columns family (5 pairs × 2 platforms): energy-closure
+  channel fields entered the C++ table; `derived_events_real_episode`
+  re-records under zero freehub transitions (servo holds the freehub
+  engaged — the ≥3-transition expectation retired with the derivation
+  recorded inline).
+
+**Explicitly NOT recaptured (skipped, named)**
+
+- `tests_reference_test_native_numeric_completion.py::
+  test_tire_channel_parity_across_backends` (darwin + linux goldens):
+  the node's live-oracle contract is red (native weld-plant drifts
+  ~1.4e-6 abs / ~3.3e-9 rel on `front.normal_load_n` — recorded
+  f64_close tol 1e-9). Per the capture contract no golden is committed
+  for a still-failing node; the embedded recorded input config also
+  predates the three required keys, so the C++ gate reports the honest
+  `leg_track_damping_nms_rad: missing required key` signature instead
+  of a masked drift.
+
+**Byte-flip proof**: `native_start_welded/darwin-arm64/
+integration.f64` byte 700/2336 XOR `0x01` → `migration_T25`
+**Failed** (7.75 s); restored byte-exact (sha256
+`47677f90f5cd…38271a`, `git status` clean) → **Passed** (7.26 s).
+
+### Platform matrix
+
+Darwin arm64 (`build/native-release`, Apple clang, Release):
+
+- `ctest -R 'motor_freewheel|recorder|period_buffer|encode_columns'`:
+  **4/4 PASS** — `reference.period_buffer` exits its documented
+  baseline red (initial-state contract now satisfied post-repair).
+- `ctest -R 'reference\.' -j4`: **60/66** — reds:
+  `golden_episode_tool` (baseline `native recorder rows reproduce
+  Python oracle`), `native_static_brake` / `pneumatic_tire_oracle` /
+  `native_clock_contracts` (baseline `fixture is not a regular file`
+  family), **`native_numeric_completion`** (new — stale recorded-input
+  config, capture contract blocked), **`native_pneumatic_tire`**
+  (new — ~1.9e-5 N settle-iterate residual on a bitwise control).
+  `native_drive_policies` + `native_drivetrain` exited the
+  fixture-missing family (green).
+- `ctest -R 'migration_T' -j4`: **50/53** — `T09` (baseline red,
+  signature *progressed*: `integration vector resolves bitwise` →
+  `post-advance integration vector matches the oracle` — decode and
+  the t=0 bitwise pin now pass; the 4-step trajectory compare diverges
+  from the **immutable pre-F1 oracle capture**, expected semantic
+  divergence), **`T10`** (new red, same family — the T01-captured
+  `transitions.json` oracle predates the servo and cannot be refreshed
+  against the frozen oracle), `T56` (baseline shellcheck-0.11.0
+  stderr-format env drift). `T25` green (pin regen), `T29` green
+  (**baseline exit** — `weld_servo_gain: unknown key` resolved by the
+  schema), `T08`/`T05`/`T12` green after fixture+manifest repair.
+
+Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, Release):
+
+- `ctest -R 'migration_T'` (`native-clang`, 51 tests): **40/51** —
+  11 reds {T03, T04, T09, T10, T14, T15, T16, T18, T20, T31, T32} vs
+  the documented 12-red baseline {T03, T04, T09, T14, T15, T16, T18,
+  T20, T25, T29, T31, T32}. **T25 + T29 exit the baseline**; T09 stays
+  red with the progressed signature; **T10 is the one new red**
+  (frozen-oracle family). Remaining reds are baseline-verbatim
+  (1-ULP `golden_f64` drift, library-hash, T03 missing-ABI env).
+- `ctest -R 'reference\.'` affected nodes (`root-clang`):
+  `period_buffer` / `native_distributed_tire` / `native_encode_columns`
+  / `recorder_columns` / `motor_freewheel` / `native_drive_policies` /
+  `native_drivetrain` all **green** (encode_columns green after the
+  5-pair linux recapture); `native_static_brake` /
+  `pneumatic_tire_oracle` / `native_clock_contracts` baseline-verbatim
+  fixture family; `native_numeric_completion` + `native_pneumatic_tire`
+  red with the same signatures as darwin.
+
+### Final gate
+
+- `bash tools/run_tests.sh native` (darwin-arm64, `native/build`,
+  log `/tmp/native_gate2.log`): **exit 8** — two runs:
+  - run 1 (`/tmp/native_gate.log`) aborted at `check_tidy` — three
+    blocking findings on F1-touched code (`shifting.cpp:66`
+    modernize-loop-convert, `equilibrium_cache.cpp:117`
+    bugprone-unchecked-optional-access, `project_config.cpp:330`
+    misc-const-correctness); fixed and committed as `31f389b8`,
+    `check_tidy` standalone → findings none.
+  - run 2: build green; **all nine sweeps green** (frontends none,
+    tidy none +1 documented nanobind `cplusplus.Move` suppression,
+    analyzer report-only alpha, cppcheck none, odr none, shellcheck
+    clean, headers/context/diagnostic-controls clean); CTest
+    **60/62** — reds `migration_T09` + `migration_T10`, both the
+    documented frozen-oracle family (T09 with the progressed
+    post-advance signature; T10 the T01 `transitions.json` drift).
+    Versus the prior documented gate (exit 8, T09+T29): **T29 exits**
+    — resolved by the F1-schema fixture repair — and T10 enters as
+    its same-family sibling; zero unexpected reds. The profile stops
+    at the first red stage (CTest) per documented gate-abort
+    behavior; the contracts checker then ran standalone:
+    `bike-native-checks --kind contracts` → all assertions passed
+    (incl. `pure_core_python_free`, `hot_kernel_dependency_free`,
+    `ctest_contract_cases`).
+
+### Anomalies / notes
+
+- `attachment_violations` channel: 134801 → 6010 B — **semantic**
+  removal of chronic violations under the repaired weld envelope
+  (empty diagnostics payloads remain), not truncation.
+- `test_derived_events_real_episode_bitwise`: the ≥3 freehub-transition
+  expectation retired — the completed servo holds the freehub engaged
+  through the episode (boxed scan + independent advance_python probe
+  both measure 0); the frozen-stream compare stays the assertion.
+- T09/T10 stay/enter the documented-red set because their oracles are
+  immutable T01-era captures; the F1 port deliberately extends native
+  physics beyond them. T25's pin is native-authored and was legitimately
+  regenerated.
+- `test_native_numeric_completion.py::test_tire_channel_parity_
+  across_backends` (python live-oracle node): stays red — weld-plant
+  port-maturity drift (~1.4e-6 abs, 3.3e-9 rel); tolerance NOT widened.
+- Sibling-worktree CPU contention during gate run 2: `pfc-lane-a`
+  `tests/reference` pytest and an `agentsview` process consumed
+  multiple cores through the analyzer/headers sweeps — wall-clock
+  elevated, results unaffected.
+- Pre-existing untracked research artifacts in the worktree
+  (`task-M*-report.md`, `examples/research/_tmp_*.toml`,
+  `golden-episode-python-crossread/`, docs audit) were left untracked —
+  not merge-back content.

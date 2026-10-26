@@ -5502,13 +5502,18 @@
       "line": 260,
       "end_line": 263,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_help_prints_usage",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_help_prints_usage"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5516,13 +5521,18 @@
       "line": 266,
       "end_line": 271,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_selftest_prints_crc64_check_vector",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_selftest_prints_crc64_check_vector"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5530,13 +5540,18 @@
       "line": 274,
       "end_line": 277,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_mode_is_required",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_mode_is_required"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5544,13 +5559,21 @@
       "line": 281,
       "end_line": 286,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_unknown_mode_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_unknown_mode_is_rejected[Glue]",
+        "tests/reference/test_native_benchmark.py::test_unknown_mode_is_rejected[spin]",
+        "tests/reference/test_native_benchmark.py::test_unknown_mode_is_rejected[0]",
+        "tests/reference/test_native_benchmark.py::test_unknown_mode_is_rejected[--mode]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5558,13 +5581,25 @@
       "line": 293,
       "end_line": 300,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_malformed_steps_are_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_malformed_steps_are_rejected[abc]",
+        "tests/reference/test_native_benchmark.py::test_malformed_steps_are_rejected[1x]",
+        "tests/reference/test_native_benchmark.py::test_malformed_steps_are_rejected[1.5]",
+        "tests/reference/test_native_benchmark.py::test_malformed_steps_are_rejected[0]",
+        "tests/reference/test_native_benchmark.py::test_malformed_steps_are_rejected[-3]",
+        "tests/reference/test_native_benchmark.py::test_malformed_steps_are_rejected[+5]",
+        "tests/reference/test_native_benchmark.py::test_malformed_steps_are_rejected[10000001]",
+        "tests/reference/test_native_benchmark.py::test_malformed_steps_are_rejected[99999999999999999999]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 8 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5572,13 +5607,24 @@
       "line": 306,
       "end_line": 313,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_invalid_rewind_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_invalid_rewind_is_rejected[0]",
+        "tests/reference/test_native_benchmark.py::test_invalid_rewind_is_rejected[-1]",
+        "tests/reference/test_native_benchmark.py::test_invalid_rewind_is_rejected[abc]",
+        "tests/reference/test_native_benchmark.py::test_invalid_rewind_is_rejected[1x]",
+        "tests/reference/test_native_benchmark.py::test_invalid_rewind_is_rejected[1.5]",
+        "tests/reference/test_native_benchmark.py::test_invalid_rewind_is_rejected[+2]",
+        "tests/reference/test_native_benchmark.py::test_invalid_rewind_is_rejected[10000001]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 7 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5586,13 +5632,18 @@
       "line": 316,
       "end_line": 319,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_missing_artifacts_flag_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_missing_artifacts_flag_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5600,13 +5651,18 @@
       "line": 322,
       "end_line": 325,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_artifacts_requires_a_directory",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_artifacts_requires_a_directory"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5614,13 +5670,18 @@
       "line": 328,
       "end_line": 335,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_artifacts_must_be_a_directory",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_artifacts_must_be_a_directory"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5628,13 +5689,18 @@
       "line": 338,
       "end_line": 345,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_unknown_option_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_unknown_option_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5642,13 +5708,18 @@
       "line": 348,
       "end_line": 355,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_duplicate_artifacts_flag_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_duplicate_artifacts_flag_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5656,13 +5727,18 @@
       "line": 358,
       "end_line": 364,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_extra_positional_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_extra_positional_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5670,13 +5746,18 @@
       "line": 371,
       "end_line": 377,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_missing_state_bin_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_missing_state_bin_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5684,13 +5765,18 @@
       "line": 380,
       "end_line": 387,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_missing_state_npz_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_missing_state_npz_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5698,13 +5784,18 @@
       "line": 390,
       "end_line": 397,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_missing_manifest_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_missing_manifest_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5712,13 +5803,18 @@
       "line": 400,
       "end_line": 406,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_missing_model_mjb_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_missing_model_mjb_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5726,13 +5822,18 @@
       "line": 409,
       "end_line": 419,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_pointer_root_resolves_to_bundle",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_pointer_root_resolves_to_bundle"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5740,13 +5841,18 @@
       "line": 422,
       "end_line": 430,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_concrete_bundle_dir_resolves_directly",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_concrete_bundle_dir_resolves_directly"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5754,13 +5860,18 @@
       "line": 433,
       "end_line": 444,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_malformed_pointer_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_malformed_pointer_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5768,13 +5879,18 @@
       "line": 447,
       "end_line": 458,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_pointer_to_missing_bundle_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_pointer_to_missing_bundle_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5782,13 +5898,18 @@
       "line": 461,
       "end_line": 474,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_pointer_name_cannot_escape_root",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_pointer_name_cannot_escape_root"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5796,13 +5917,18 @@
       "line": 477,
       "end_line": 488,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_corrupt_model_mjb_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_corrupt_model_mjb_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5810,13 +5936,18 @@
       "line": 491,
       "end_line": 501,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_corrupt_model_dimensions_are_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_corrupt_model_dimensions_are_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5824,13 +5955,18 @@
       "line": 504,
       "end_line": 510,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_make_data_failure_is_recoverable",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_make_data_failure_is_recoverable"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5838,13 +5974,18 @@
       "line": 517,
       "end_line": 526,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_legacy_state_format_is_rejected_with_hint",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_legacy_state_format_is_rejected_with_hint"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5852,13 +5993,18 @@
       "line": 529,
       "end_line": 536,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_bad_state_magic_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_bad_state_magic_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5866,13 +6012,18 @@
       "line": 539,
       "end_line": 546,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_unknown_state_version_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_unknown_state_version_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5880,13 +6031,18 @@
       "line": 549,
       "end_line": 556,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_unknown_state_flags_are_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_unknown_state_flags_are_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5894,13 +6050,18 @@
       "line": 559,
       "end_line": 565,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_truncated_state_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_truncated_state_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5908,13 +6069,18 @@
       "line": 568,
       "end_line": 575,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_truncated_state_header_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_truncated_state_header_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5922,13 +6088,18 @@
       "line": 578,
       "end_line": 585,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_trailing_state_bytes_are_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_trailing_state_bytes_are_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5936,13 +6107,18 @@
       "line": 588,
       "end_line": 603,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_huge_header_count_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_huge_header_count_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5950,13 +6126,18 @@
       "line": 606,
       "end_line": 617,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_excessive_header_count_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_excessive_header_count_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5964,13 +6145,22 @@
       "line": 621,
       "end_line": 634,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_state_model_dimension_mismatch_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_state_model_dimension_mismatch_is_rejected[nq]",
+        "tests/reference/test_native_benchmark.py::test_state_model_dimension_mismatch_is_rejected[nv]",
+        "tests/reference/test_native_benchmark.py::test_state_model_dimension_mismatch_is_rejected[na]",
+        "tests/reference/test_native_benchmark.py::test_state_model_dimension_mismatch_is_rejected[nu]",
+        "tests/reference/test_native_benchmark.py::test_state_model_dimension_mismatch_is_rejected[nbody]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5978,13 +6168,18 @@
       "line": 637,
       "end_line": 648,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_declared_payload_length_lie_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_declared_payload_length_lie_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -5992,13 +6187,18 @@
       "line": 651,
       "end_line": 666,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_payload_checksum_corruption_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_payload_checksum_corruption_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6006,13 +6206,18 @@
       "line": 669,
       "end_line": 678,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_declared_state_checksum_lie_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_declared_state_checksum_lie_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6020,13 +6225,18 @@
       "line": 681,
       "end_line": 694,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_state_from_other_generation_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_state_from_other_generation_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6034,13 +6244,18 @@
       "line": 697,
       "end_line": 704,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_state_from_other_model_dims_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_state_from_other_model_dims_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6048,13 +6263,18 @@
       "line": 707,
       "end_line": 713,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_nonfinite_state_scalar_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_nonfinite_state_scalar_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6062,13 +6282,18 @@
       "line": 720,
       "end_line": 730,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_bare_accepts_empty_model",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_bare_accepts_empty_model"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6076,13 +6301,19 @@
       "line": 734,
       "end_line": 740,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_non_bare_modes_reject_empty_model",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_non_bare_modes_reject_empty_model[glue]",
+        "tests/reference/test_native_benchmark.py::test_non_bare_modes_reject_empty_model[heavy]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6090,13 +6321,18 @@
       "line": 743,
       "end_line": 751,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_glue_rejects_no_actuators",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_glue_rejects_no_actuators"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6104,13 +6340,19 @@
       "line": 755,
       "end_line": 762,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_heavy_rejects_too_few_attachment_bodies",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_heavy_rejects_too_few_attachment_bodies[6]",
+        "tests/reference/test_native_benchmark.py::test_heavy_rejects_too_few_attachment_bodies[9]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6118,13 +6360,18 @@
       "line": 765,
       "end_line": 774,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_heavy_rejects_narrow_model",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_heavy_rejects_narrow_model"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6132,13 +6379,22 @@
       "line": 782,
       "end_line": 790,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_bare_dimension_sweep",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_bare_dimension_sweep[0]",
+        "tests/reference/test_native_benchmark.py::test_bare_dimension_sweep[1]",
+        "tests/reference/test_native_benchmark.py::test_bare_dimension_sweep[33]",
+        "tests/reference/test_native_benchmark.py::test_bare_dimension_sweep[65]",
+        "tests/reference/test_native_benchmark.py::test_bare_dimension_sweep[128]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6146,13 +6402,21 @@
       "line": 794,
       "end_line": 804,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_glue_dimension_sweep",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_glue_dimension_sweep[1]",
+        "tests/reference/test_native_benchmark.py::test_glue_dimension_sweep[33]",
+        "tests/reference/test_native_benchmark.py::test_glue_dimension_sweep[65]",
+        "tests/reference/test_native_benchmark.py::test_glue_dimension_sweep[128]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6160,13 +6424,18 @@
       "line": 807,
       "end_line": 820,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_glue_with_nu_greater_than_nv",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_glue_with_nu_greater_than_nv"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6174,13 +6443,18 @@
       "line": 823,
       "end_line": 834,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_heavy_nv33_paired_jacobians",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_heavy_nv33_paired_jacobians"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6188,13 +6462,18 @@
       "line": 837,
       "end_line": 847,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_heavy_boundary_model",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_heavy_boundary_model"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6202,13 +6481,18 @@
       "line": 850,
       "end_line": 866,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_operation_mix_mode_runs",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_operation_mix_mode_runs"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6216,13 +6500,21 @@
       "line": 875,
       "end_line": 885,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_tracked_artifacts_smoke",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_tracked_artifacts_smoke[bare-args0]",
+        "tests/reference/test_native_benchmark.py::test_tracked_artifacts_smoke[glue-args1]",
+        "tests/reference/test_native_benchmark.py::test_tracked_artifacts_smoke[heavy-args2]",
+        "tests/reference/test_native_benchmark.py::test_tracked_artifacts_smoke[operation_mix-args3]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6230,13 +6522,18 @@
       "line": 888,
       "end_line": 900,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_rewind_boundaries",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_rewind_boundaries"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6244,13 +6541,18 @@
       "line": 929,
       "end_line": 948,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_emit_json_report_shape",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_emit_json_report_shape"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6258,13 +6560,18 @@
       "line": 951,
       "end_line": 960,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_emit_json_unwritable_path_is_rejected",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_emit_json_unwritable_path_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: ported to native/tests/reference/test_native_benchmark.cpp; CTest reference.native_benchmark green on darwin-arm64 + linux-aarch64; pytest file 90 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_benchmark.py",
@@ -6272,13 +6579,23 @@
       "line": 964,
       "end_line": 1016,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_benchmark::test_matched_workload_python_native_conformance",
+      "native_test_id": "reference.native_benchmark",
       "native_source": "native/tests/reference/test_native_benchmark.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_benchmark.py::test_matched_workload_python_native_conformance[bare]",
+        "tests/reference/test_native_benchmark.py::test_matched_workload_python_native_conformance[glue]",
+        "tests/reference/test_native_benchmark.py::test_matched_workload_python_native_conformance[heavy]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.24a lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_benchmark green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_brake_resistance.py",

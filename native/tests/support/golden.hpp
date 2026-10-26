@@ -41,6 +41,10 @@ public:
     // Consumes the next entry, requiring a bitwise little-endian f8
     // payload, and returns its decoded doubles in C order.
     [[nodiscard]] std::vector<double> f64_input(std::string_view label);
+    // Same replay contract for byte documents (recorded JSON emissions and
+    // other "|u1" payloads the port parses instead of comparing): consumes
+    // the next entry and returns its recorded bytes untouched.
+    [[nodiscard]] std::vector<std::byte> bytes_input(std::string_view label);
     // The next unconsumed entry's label without advancing the cursor —
     // for replay branches (output tuple vs error capture) that choose
     // their consumer by the recorded kind. Empty at end of node.

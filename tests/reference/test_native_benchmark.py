@@ -28,6 +28,7 @@ import mujoco
 import numpy as np
 import pytest
 
+import _golden
 from native_loader import load_native, selected_build
 from tools.proto_native_bench import state_format
 
@@ -973,6 +974,16 @@ def test_matched_workload_python_native_conformance(
     bundle = _generated_bundle(tmp_path / 'artifacts', model)
     native = _emit_report(bench_executable, mode, bundle, tmp_path)
     python = _emit_report_py(mode, bundle, tmp_path)
+    # The whole oracle emission is one replayed input: the C++ port parses
+    # it and re-asserts every native-vs-oracle comparison below verbatim.
+    _golden.record(
+        np.frombuffer(
+            json.dumps(python, sort_keys=True, separators=(",", ":"))
+            .encode("utf-8"),
+            dtype=np.uint8,
+        ),
+        "input.report",
+    )
 
     assert native['comparison'] == 'matched'
     assert python['comparison'] == 'matched'

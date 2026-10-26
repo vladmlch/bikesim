@@ -297,10 +297,13 @@ def test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path):
     # atol 1e-12/1e-9 — an intra-engine contract the oracle satisfies bitwise.
     # Cross-engine parity on this plant is platform-limited: linux-aarch64
     # replays the 2003-step trajectory bitwise, while darwin-arm64 accumulates
-    # <=1.8e-11 in leg-dof qvel (<=1.4e-9 rider power) through the delayed
-    # load-share/trim activation — still ~400x tighter than the oracle's own
-    # 8.5e-6/6.5e-4 darwin<->linux spread. Each platform's golden therefore
-    # records its own measured parity floor as the gate.
+    # <=1.3e-11 in leg-dof/crank qpos and <=1.3e-10 in leg-dof qvel (rider
+    # power still <=1.4e-9) through the delayed load-share/trim activation —
+    # the F1 weld servo feeds ULP-level solve differences back into the leg
+    # torque request, so the welded plant spreads further than the unwelded
+    # baseline did. Each platform's golden therefore records its own
+    # measured parity floor as the gate; the floors stay ~100x tighter than
+    # the oracle's own 8.5e-6/6.5e-4 darwin<->linux spread.
     import json as _json
     from _golden import platform_key as _pk
     _qpos = np.asarray([np.asarray(sample.qpos, dtype=np.float64)
@@ -315,12 +318,13 @@ def test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path):
     _violations = _json.dumps([list(sample.channels['attachment_violations'])
                                for sample in expected],
                               separators=(',', ':')).encode()
-    _floor = {'darwin-arm64': (1e-10, 5e-9)}.get(_pk(), (1e-12, 1e-9))
-    record_golden(_qpos, 'expected/qpos', kind='close', rtol=0., atol=1e-12)
-    record_golden(_qvel, 'expected/qvel', kind='close', rtol=0., atol=_floor[0])
+    _floor = {'darwin-arm64': (5e-11, 5e-10, 5e-9)}.get(
+        _pk(), (1e-12, 1e-12, 1e-9))
+    record_golden(_qpos, 'expected/qpos', kind='close', rtol=0., atol=_floor[0])
+    record_golden(_qvel, 'expected/qvel', kind='close', rtol=0., atol=_floor[1])
     record_golden(_energy, 'expected/energy', kind='close', rtol=0., atol=1e-9)
     record_golden(_power, 'expected/rider_positive_power_w',
-                  kind='close', rtol=0., atol=_floor[1])
+                  kind='close', rtol=0., atol=_floor[2])
     record_golden(np.frombuffer(_violations, dtype=np.uint8),
                   'expected/attachment_violations')
     if failure is None:

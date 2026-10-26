@@ -6744,3 +6744,106 @@ verified key-level: 2385 records, lane's 56 benchmark edits and all
 integration-side records intact. L3 (`tools/run_tests.sh native`) not
 run — bounded merge-back scope; the checkpoint profile owns it.
 Unrelated documented reds reported, not fixed.
+
+## 2026-10-27 — lane/e F4 delivered-torque forward-refresh parity merge-back (merge `febbaef2`)
+
+### Surface
+
+Lane tip `7c419bb9` (3 commits over base `0f63db5e` — equal to the
+integration tip, clean linear `--no-ff` merge, zero conflicts;
+`git diff lane/e HEAD` empty post-merge): `df16bd4f` swaps
+`ensure_posvel_fresh` → `refresh_forward` on the rider control-tick
+branch of `apply_forces_body` (`native/src/runtime/step.cpp`) so the
+controller's `ConstraintDynamics` snapshot reads the current interval's
+solved arena instead of the previous post-step forward's actuator view;
+`cbf3ffe6` adds CTest `reference.native_coupled_rider_task`
+(`Phase3Ports.cmake` registration, labels `t52 rider slow`) porting the
+oracle's planned-vs-solved weld-torque invariant; `7c419bb9` records the
+lane report (`task-F4-report.md`, root cause + stale-replay proof +
+two-platform lane results). Physics change — review Approved, spec ✅.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Incremental `cmake --build` green; `reference.native_coupled_rider_task` linked.
+- `ctest -R 'coupled_rider_task|rider_intent|drivetrain|cadence|benchmark|golden_episode'`
+  (8 nodes; `rider_intent` matches no CTest node — the intent-lane checks
+  are pytest-side): **7/8** —
+  `reference.native_coupled_rider_task` **PASS 280 checks** (289.7 s;
+  57 checked control periods, matching the lane's darwin count);
+  `reference.golden_episode_tool` red with the documented baseline
+  signature `FAIL native recorder rows reproduce Python oracle`.
+- Control-tick interaction nodes
+  `ctest -R 'period_buffer|static_brake|atomicity|seated'`: **3/3**
+  (`period_buffer`, `native_static_brake`, `native_atomicity`; `seated`
+  matches no CTest node — the seated golden family is exercised by the
+  fixture audit below).
+- `ctest -L reference -j8`: **68/72** — exactly the documented 4-red
+  baseline {`golden_episode_tool`, `native_numeric_completion`,
+  `pneumatic_tire_oracle`, `native_pneumatic_tire`}, all signatures
+  verbatim (recorder-rows diff, `leg_track_damping_nms_rad` missing key,
+  `fixture is not a regular file`, `front.normal_load_n` ulp drift);
+  `native_coupled_rider_task` green inside the sweep (339.4 s).
+- `ctest -R 'migration_T(09|10|56)$'`: **0/3** — the documented darwin
+  baseline reds: `T09` (`post-advance integration vector matches the
+  oracle`), `T10` (`first transition matches the Python oracle`), `T56`
+  (shellcheck-0.11.0 stderr-format env drift, `native scripts tool
+  health: failed`).
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, Release)
+
+- `container.sh sync` → `build root-clang` (126 edges) + `build
+  native-clang` (57 edges): green; synced `step.cpp` verified to carry
+  the `refresh_forward` control-tick fix at line 1386.
+- Primary node set `ctest root-clang -R '<same regex>'`: **7/8** —
+  `reference.native_coupled_rider_task` **PASS 275 checks** (286.9 s;
+  56 checked control periods — the documented one-oracle-skip-tick
+  difference vs darwin's 280, fewer comparisons never a failing one);
+  `golden_episode_tool` red with the identical baseline signature.
+- Interaction + fixture nodes
+  `ctest root-clang -R 'period_buffer|static_brake|atomicity|seated|native_rider_forces|native_drive_policies'`:
+  **5/5**.
+- `ctest root-clang -L reference -j8`: **68/72** — the identical 4-red
+  documented baseline with verbatim signatures; `native_coupled_rider_task`
+  green inside the sweep (289.1 s).
+- `ctest native-clang -R 'migration_T' -j8`: **40/51** — exactly the
+  documented 11-red linux set {`T03`,`T04`,`T09`,`T10`,`T14`,`T15`,
+  `T16`,`T18`,`T20`,`T31`,`T32`} (T03 missing-ABI env, T04 library-hash,
+  T09/T10 frozen-oracle, ±1-ulp `golden_f64` family); `T54`/`T56`
+  unregistered in this graph per the standing 51-vs-53 split.
+- `ctest root-clang -R 'migration_T(09|10|56)$'` (registered in the root
+  graph on linux): **0/3** — `T09`/`T10` same frozen-oracle signatures;
+  `T56` same env-drift signature family (`native scripts tool health:
+  failed`, `shellcheck: rc=1`, stderr missing `linux/bad.sh`; plus
+  `t56_audit_doc_bad: expected failure, exited 0` — tool-environment
+  contract disjoint from the physics path, consistent with the
+  documented darwin env red).
+
+### Fixture-shift audit
+
+The forward fix changes control-tick state fed to the rider allocator,
+so goldens captured through that path were the shift candidates.
+Spot-checked the two most-affected consumers on **both** platforms:
+`reference.native_rider_forces` (`pinned_savage_40`/`_f2` episode-force
+goldens, active rider control + welds + seated variant) and
+`reference.native_drive_policies` (seated-pedaling branch goldens) —
+**all green**. The `-L reference` sweeps corroborate: every
+golden-labeled consumer passes except the documented
+`golden_episode_tool` baseline red (which fails on its pre-existing
+recorder-drift signature, not a new shift). Interpretation: committed
+goldens were captured against oracle-equivalent physics (the oracle
+always ran `mj_forward` inside the tick); the F4 fix brings the native
+path *into* that parity rather than moving it off a prior correct
+state. **No recapture required** — no non-baseline reds attributable to
+fixture shift.
+
+### Assessment
+
+No new reds attributable to the merge on either platform; every red
+reproduces a documented baseline signature verbatim. L3
+(`tools/run_tests.sh native|full`) not re-run — F4's lane already ran
+`full` once (exit 8, baseline-verbatim {T09,T10} ctest reds, contracts
+green standalone, recorded in `task-F4-report.md`); bounded merge-back
+scope per protocol. Unrelated documented reds reported, not fixed —
+including the A/B-verified pre-existing `test_native_runtime_step.py`
+live-parity reds noted in the lane report (pytest-side, past the
+merge-back ctest scope).

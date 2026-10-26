@@ -5467,3 +5467,138 @@ behavior; the per-batch required gates — focused CTest
 `reference.native_encode_columns` PASS on both platforms and the
 40-node oracle pytest green on both platforms — stand in per the
 Phase-3 batch procedure, with L2 at merge-back.
+
+## 2026-10-26 — Task 3.22a (lane/c) merge-back
+
+Merge of `lane/c` tip `0d42a81a` (base `c4cf470f`; single commit —
+39 ported nodes, 22 golden-both-platforms, 1 drop, plus the
+`misc-use-internal-linkage` tidy repair on `alpine.cpp::detail::faceted`
+documented in the lane's final-gate subsection) into
+`impl/python-free-cpp` at `45d35190` as merge commit `25a4d200`. The
+batch lands one reference port — 40 records, 17 port / 22 golden / 1
+drop — covering `test_native_encode_columns.py`; new CTest node
+`reference.native_encode_columns` (labels `t52 recording golden
+slow`). 88 golden payload files (22 `.bin`+`.json` pairs per
+platform) plus the committed bootstrap image
+`tests/fixtures/migration/bootstrap/encode_columns_welded/`
+(`model.mjb` + `meta.json`). Lane reviewed **Approved**; deferred
+minors carried unchanged: the dead `bit_cast` arm in `plain_bitwise`
+(documented reduction, unreachable by construction) and the
+`snapshot_sha256`/`snapshot_line_count` bookkeeping note in
+`python-removal.json` (snapshot fields intentionally keep the
+pre-port 1088-line oracle image).
+
+### Conflict resolution
+
+One real conflict; two auto-merges verified semantically:
+
+- `migration/cpp-linux-completion-evidence.md` — EOF seam: HEAD's
+  four appended sections (Task F3, F3 merge-back, equilibrium-cache
+  merge-back, the 2026-10-26 Linux `migration_T` baseline
+  enumeration) precede the lane's appended `Task 3.22a` section.
+  Chronological union — HEAD's block verbatim, then the lane's
+  section verbatim; file ends with the lane's final-gate paragraph.
+  This merge-back block follows it per the task-then-merge-back
+  adjacency convention.
+- `native/tests/reference/Phase3Ports.cmake` — auto-merged union:
+  HEAD's `reference.realtime_gate` executable block (lines 20–37)
+  and the lane's `bike_add_reference_test(native_encode_columns …)`
+  registration (lines 154–156) both present; no duplicate test
+  names.
+- `migration/test-port-map.json` — auto-merged; verified
+  programmatically as a record-level union over
+  `(source_path, source_symbol)` keys: all 2,381 keys identical
+  across base/HEAD/lane/merged; **40 changed only by the lane, 1
+  only by HEAD** (`test_realtime_gate.py::
+  test_realtime_factor_for_full_twenty_seconds`, the F3 record), **0
+  contested, 0 lost, 0 spurious** — merged field-equal to the
+  changing side on every record. The lane's 40 rows land as 17
+  `planned→port` / 22 `planned→golden` / 1 `planned→drop`; all 22
+  golden rows carry `golden_platforms: [darwin-arm64,
+  linux-aarch64]`.
+- `migration/python-removal.json` — clean (HEAD side untouched
+  since base): `test_native_encode_columns.py` flipped `planned →
+  replacement_landed`, `verification_ids` retargeted to
+  `reference.native_encode_columns`.
+- No `test_equilibrium_state_file.py` /
+  `test_pneumatic_physical_runtime.py` conflict materialized (the
+  predicted absent-at-base case did not apply — neither side's diff
+  touched them in the overlap window).
+- Post-merge `git diff HEAD@{1}..HEAD`: 99 files, +36,115/−253 —
+  byte-identical file set to the lane diff (staged-files ==
+  lane-files verified); all 96 non-shared lane-touched files
+  byte-identical to the lane blobs (the remaining three are the
+  shared-file merges above).
+
+### Ledger verification
+
+`test-port-map.json` totals, pre-merge `45d35190` → merged
+`25a4d200` (2,381 records both sides): `port` 437→454 (+17),
+`golden` 267→289 (+22), `planned` 1607→1567 (−40), `drop` 70→71
+(+1). Exactly the lane's 40 encode-columns records; no record
+lost or duplicated.
+
+`python-removal.json` (535 rows): `planned` 502→501,
+`replacement_landed` 33→34 — the one batch file.
+
+### Merge-back L2 — macOS arm64 (`build/native-release`, Apple clang, Release)
+
+- `cmake --build build/native-release -j`: green, all targets;
+  `reference.native_encode_columns` links at 100%.
+- `ctest -R native_encode_columns`: **PASS** — binary reports
+  `PASS 7834 checks`, matching the lane's count.
+- `ctest -L reference -j8`: **60/66** — the new node green inside
+  the sweep; six reds baseline-verbatim: the five
+  `FAIL fixture is not a regular file` members
+  (`native_static_brake`, `pneumatic_tire_oracle`,
+  `native_clock_contracts`, `native_drive_policies`,
+  `native_drivetrain`) plus `golden_episode_tool` (`FAIL native
+  recorder rows reproduce Python oracle`). Identical set and
+  signatures to the equilibrium-cache merge-back sweep.
+- `ctest -R 'migration_T' -j8`: **50/53** — reds baseline-verbatim:
+  `T09` (`integration vector resolves bitwise`), `T29`
+  (`weld_servo_gain: unknown key`), `T56` (documented
+  shellcheck-0.11.0 stderr-format env drift, 159.5 s).
+  `reference.motor_freewheel_topology` PASSED (3.33 s) inside the
+  reference sweep — the `4482d09e` designated-initializers fix is in
+  this merge's base.
+- Oracle pytest `NATIVE_TEST_BUILD_PATH=$PWD/native/build uv run
+  --frozen --no-sync pytest tests/reference/test_native_encode_columns.py
+  -x -q`: **40 passed, 3 warnings** (29.05 s) after rebuilding the
+  stale `native/build` bindings tree (source-hash gate tripped on
+  the alpine.cpp linkage delta; rebuilt via `tools/dev.py build`,
+  green). Warnings are the documented `energy.constraint_work`
+  RuntimeWarning on the three real-episode nodes — identical to the
+  lane's figure.
+
+### Merge-back L2 — Linux aarch64 (`bike-dev-python-free-cpp`, `/build/root-clang`, clang++-18, Release)
+
+- `container.sh sync` → `container.sh build root-clang`: 122 edges,
+  **0 failures** — `reference.native_encode_columns` and
+  `reference.motor_freewheel_topology` both compile and link under
+  `-Werror`; the `4482d09e` NOLINT/designated-initializers fix holds
+  on clang-18 (no `-Wmissing-field-initializers` trip).
+- `container.sh ctest root-clang -R native_encode_columns`:
+  **PASS** (0.50 s) — binary reports `PASS 7834 checks`.
+- `ctest -L reference -j8`: **60/66** — same six baseline-verbatim
+  reds (identical signatures); **`reference.motor_freewheel_topology`
+  PASSED (3.33 s) — it now RUNS** where the previous merge-back
+  recorded it Not Run (the TU break is resolved by `4482d09e` in
+  base). `reference.realtime_gate.rough_uphill_{savage,extreme}`
+  both PASS (~24 s) — the F3 gate exercises on this platform too.
+- `ctest -R 'migration_T' -j8`: **41/53** — exactly the enumerated
+  12-red linux-aarch64 baseline from the 2026-10-26 section above:
+  `T03` (harness deps staging), `T04` (darwin-pinned identity
+  fixture), `T09`, `T14`, `T15`, `T16`, `T18`, `T20`, `T31`, `T32`
+  (±1-ulp darwin-captured family), `T29`, `T56` (env drift).
+
+### Assessment
+
+No new reds attributable to the merge on either platform. The
+encode-columns port is exercised end-to-end by the 7834-check CTest
+node and the 40-node oracle pytest, green on both qualified
+platforms, and its 22 golden pairs validate on-platform on both
+darwin-arm64 and linux-aarch64. Ledger and evidence unions verified
+record-level; nothing lost or duplicated. L3 (`tools/run_tests.sh
+native`) not run — bounded merge-back scope; checkpoint profile owns
+it.

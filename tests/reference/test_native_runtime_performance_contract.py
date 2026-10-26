@@ -166,10 +166,13 @@ def _distributed_report(real_time_factor, *, valid=True):
     annotate_report writes it.
 
     valid=False reproduces the shape this track actually measures: the
-    documented baseline energy.constraint_work violation latches
-    numerically_valid False, so a --benchmark run still completes the
-    full 30 s prefix (steps == requested) while valid_prefix stays False
-    — an honest throughput sample that can never meet the gate.
+    welded rider's strength envelope trips inside the first 35 ms
+    (F1 re-measured on darwin-arm64; the old documented baseline was a
+    chronic energy.constraint_work latch that equality-to-closure
+    re-scoping removed). model_valid latches False while
+    numerically_valid stays True, so a --benchmark run still completes
+    the full 30 s prefix (steps == requested) while valid_prefix stays
+    False — an honest throughput sample that can never meet the gate.
     """
     report = _native_report(real_time_factor)
     report['comparability'] = dict(report['comparability'],
@@ -189,9 +192,11 @@ def _distributed_report(real_time_factor, *, valid=True):
             'Benchmark mode: the reference monitor was non-strict; the '
             'measured prefix is a throughput sample of a ride whose '
             'validity is not established, never a valid-ride claim.']
-        report['prefix']['numerically_valid'] = False
+        report['prefix']['model_valid'] = False
         report['prefix']['first_failure'] = dict(
-            interval_id=4, time_s=.005, reasons=['energy.constraint_work'])
+            interval_id=27, time_s=.03375,
+            reasons=['rider_strength.rider_elbow_left',
+                     'rider_strength.rider_elbow_right'])
     return report
 
 
@@ -276,8 +281,9 @@ def test_distributed_case_gates_on_the_same_headless_constant():
 def test_distributed_benchmark_sample_reports_but_never_meets_the_gate():
     """The measured alpine_rocky shape: a --benchmark run completes the
     full 30 s prefix so its median RTF is honest evidence, but the
-    latched numerically_valid keeps valid_prefix False — the headless
-    gate stays undecided (None), never a silent pass or a fake fail."""
+    latched model-status violation keeps valid_prefix False — the
+    headless gate stays undecided (None), never a silent pass or a
+    fake fail."""
     aggregate = _aggregate(_distributed_report(2., valid=False))
     assert aggregate['median_real_time_factor'] == pytest.approx(2.)
     assert aggregate['sampling_protocol_satisfied']

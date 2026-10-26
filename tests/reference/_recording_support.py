@@ -91,6 +91,8 @@ def energy_channels(**overrides):
             'source_positive_work_j': 1.75,
             'constraint_signed_j': 0.0,
             'constraint_absolute_j': 0.0,
+            'closure_signed_j': 0.0,
+            'closure_absolute_j': 0.0,
             'constraint_work_ratio': 0.0,
             'constraint_work_ok': True,
             'residual_j': -0.001,

@@ -276,9 +276,15 @@ def test_custom_rider_callback_runs_once_per_external_boundary(environment_pair,
 
 
 @pytest.mark.parametrize('strict', [False, True])
-def test_strict_and_diagnostic_outcomes_remain_visible(environment_pair, assert_tree, strict):
+def test_strict_and_diagnostic_outcomes_remain_visible(environment_pair, assert_tree, strict, tmp_path):
     from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
-    reference, native = environment_pair(strict=strict)
+    from _native_runtime_support import violating_physics
+    # F1: the re-scoped welded plant is healthy, so the strict arm pins the
+    # weld-envelope violation (weld_foot_min_normal_n = 100) to keep a real
+    # early invalid_controller stop — without it the pair now survives all
+    # four steps and the assert_tree leg hits the documented backend drift.
+    physics = violating_physics(tmp_path/'physics.toml') if strict else None
+    reference, native = environment_pair(strict=strict, physics_config=physics)
     for _ in range(4):
         results, errors = [], []
         for env in (reference, native):

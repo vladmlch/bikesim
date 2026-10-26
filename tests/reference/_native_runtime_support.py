@@ -16,6 +16,33 @@ from bike_sim.sim.ride.physical_samples import plain
 PHYSICS = Path("examples/research/viewer_physics_welded.toml")
 TRACK = Path("examples/research/rough_uphill_savage.toml")
 
+# F1: the re-scoped welded plant is healthy — weld/equality spring work is
+# charged to the closure channel and never trips ``energy.constraint_work``.
+# Outcome tests that need a deterministic strict stop therefore pin an absurd
+# compression floor on the pedal welds: every foot sample lands below it from
+# the first closing interval (first_failure
+# ``('foot_front.normal', 'foot_rear.normal')`` at t=0.00125 s, measured on
+# darwin-arm64 — the same trigger test_native_runtime_accounting.py uses).
+def violating_physics(path):
+    """Copy the welded physics TOML with ``weld_foot_min_normal_n = 100.``."""
+    source = Path(__file__).resolve().parents[2]/PHYSICS
+    text = source.read_text()
+    needle = 'weld_foot_min_normal_n = -1050.0'
+    assert needle in text, 'welded TOML floor moved; re-measure the trigger'
+    text = text.replace(needle, 'weld_foot_min_normal_n = 100.0')
+    # The TOML's asset paths resolve against its own directory, so the copy
+    # pins them to the originals' absolute locations.
+    for asset in ('rider_joint_envelope_anatomical.json',
+                  'rider_strength_reference.json'):
+        quoted = f'"{asset}"'
+        assert quoted in text, f'welded TOML asset moved: {asset}'
+        text = text.replace(quoted, f'"{source.parent/asset}"')
+    path.write_text(text)
+    return path
+
+
+VIOLATION_NAMES = ('foot_front.normal', 'foot_rear.normal')
+
 
 def make_python_ride(*, strict=False, decimation=1):
     args = ride.parse_args([

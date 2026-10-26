@@ -6055,3 +6055,54 @@ None attributable to this batch. No dangling ids, no missing
 functions, no semantic mismatches, no weakened asserts found in
 review. Unrelated baseline reds (`migration_T*` family, other
 batches' missing fixtures) untouched and not re-enumerated here.
+
+## 2026-10-27 — 3.19 (lane/c) merge-back
+
+Merge of `lane/c` tip `85fe1476` into `impl/python-free-cpp` at
+`8fb88439` as merge commit `a7efc4e8` (`git merge --no-ff`). The
+lane base equals the prior integration tip — a linear descendant —
+so the merge is clean by construction: merged tree verified
+byte-identical to the lane tip (`git diff 85fe1476 a7efc4e8`
+empty). No conflicts.
+
+The batch is ledgers + evidence only — no code, no goldens: 51
+`test-port-map.json` rows gained measured `collected_node_ids`,
+dated `assertions_capture`, and 3.19 evidence lines (the 9
+cadence_shifter rows were already qualified by the 3.18 fix
+round); five `python-removal.json` rows flipped to
+`replacement_landed`; the 3.19 evidence section above and the
+C319 report landed with it.
+
+### Ledger verification
+
+`test-port-map.json` (2,381 records both sides): `port` 454→454,
+`golden` 289→289, `planned` 1567→1567, `drop` 71→71 —
+**unchanged**. The lane's diff touches exactly the 51 unqualified
+3.19 rows: 22 `assist_controller` + 10 `pedal_waveform` + 9
+`pedaling_policy` + 8 `motor_profile` + 2 `system_momentum_drive`
+— field fills only, no disposition transitions, no records lost
+or added.
+
+`python-removal.json` (535 rows): `replacement_landed` 39→44 —
+the five files named in the section above; outer `status`
+`planned` 496→491; nested `source_triaged` 20→15 is the five
+dropped `phase3_source_implementation` blocks, not a row-level
+transition. Row count unchanged (535).
+
+### Merge-back verification — darwin-arm64 (`build/native-release`)
+
+- `ctest -R 'motor_profile|cadence_shifter|pedal_waveform|
+  pedaling_policy|assist_controller|system_momentum'`: **6/6
+  PASS**; binary check counts `motor_profile` **60**,
+  `cadence_shifter` **74**, `pedal_waveform` **87**,
+  `pedaling_policy` **3177**, `assist_controller` **72**,
+  `system_momentum_drive` **32** — identical to the lane's
+  recorded figures on both platforms.
+- No other nodes run — bounded scope for a no-code batch; the
+  outer gate owns the sweeps.
+
+### Assessment
+
+No anomalies. A docs/ledger-only merge: zero conflicts, zero
+disposition drift, the six named binaries still green at
+lane-matching check counts.

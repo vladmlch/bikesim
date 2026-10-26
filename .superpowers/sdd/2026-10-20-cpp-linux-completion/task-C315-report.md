@@ -117,4 +117,46 @@ Consumer contract (verified against captured fixtures): entry order per node is 
 - `test_closed_form_rider.py`: `test_flat_launch_delivers_crank_torque` (same parity family).
 - `test_native_spindle_controller.py`: 6 enabled-compute records / 20 nodes (native rear-leg chain torque defect — described above) + 2 `_damped_config` records (TOMLDecodeError baseline).
 
-**Still owed before batch completion:** the three defect fixes above (or an explicit waiver path), then `python-removal.json` flips for the affected files, and the final `bash tools/run_tests.sh native` gate — this session has NOT yet run it; it must exit 0.
+## Final gate — `bash tools/run_tests.sh native`
+
+Run 1 (exit 8): build green, `check_frontends` green, then `check_tidy`
+blocked on the `shifting.cpp:66` `modernize-loop-convert` regression from
+same-day lane commit `5bbea70a` — fixed as `std::views::reverse`
+range-for (`39c36ad9`), semantics-identical descending iteration.
+
+Run 2 (exit 8, `702c577d`+`39c36ad9`+`f8411594`): build green; all sweeps
+green — frontends/tidy/cppcheck/odr findings `none`, analyzer
+report-only, shellcheck clean, headers + diagnostic-controls (6/0) +
+context (all passed) kinds green. CTest (`native/build`, 62 tests):
+**60/62** — the two reds are the documented pre-existing baseline pair
+for this worktree, neither authored by this batch:
+`migration_T09` (`integration vector resolves bitwise`, documented
+baseline since F2) and `migration_T25` (`welded_flat.toml: initial-state
+physical model contract differs`, root-caused 2026-10-24 — the
+`contract_sha256` binds the absolute capturing-worktree path, so T25
+cannot pass outside its capture tree; verified pre-existing at `e843f0d`
+via stash+rerun). The gate's ctest phase aborts before the
+contracts+pytest tail (same shape every recorded lane gate since F2).
+
+Tail run manually with the profile's own flags:
+- `bike-native-checks --kind contracts` → all 12 controls passed.
+- `pytest tests/reference/test_native_*.py test_golden_episode*.py -p
+  native_test_reporter` → **64 failed / 3,176 passed / 1 skipped**
+  (6,102 s, host shared with sibling lanes). Zero failures in this
+  batch's files except the 22 documented spindle-defect nodes:
+  `test_native_rider_intent.py` 26/26 clean; the remaining 42 reds
+  reproduce the documented baseline tail (F2: 75 failed, same
+  concentration — research_environment 17, runtime_* ~14, distributed
+  tire, pneumatic, encode_columns) strictly reduced (drivetrain and
+  several runtime_* reds cleared by merged sibling fixes). No new red
+  authored by this batch.
+
+**Batch verdict: partially complete.** Everything this batch authored is
+green on both platforms; the batch cannot flip `run_tests.sh native` to
+exit 0 because the gate's red surface is entirely pre-existing documented
+defects (T09/T25 worktree-portability, spindle compute parity,
+damped-TOML baseline, baseline-tail oracle drift) plus one linux-only
+coupled record. Owed next: the delivered-torque/compute parity fix
+(unblocks 2 coupled/closed-form + 20 spindle nodes), the damped-TOML
+baseline re-anchor (2 nodes), and the linux tissue-damping drift (1
+record) — then the remaining `python-removal` flips.

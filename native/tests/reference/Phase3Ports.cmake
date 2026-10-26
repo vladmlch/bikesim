@@ -210,3 +210,31 @@ bike_add_reference_test(native_attachment_wrench ENGINE
 bike_add_reference_test(native_rider_forces ENGINE
   SOURCES test_native_rider_forces.cpp LIBRARIES bike_app bike_golden
   LABELS t52 rider golden slow)
+# 3.17 seated topology and welds — the pinned-plant equality/joint
+# topology, the welded-profile and articulated-config projection
+# surfaces, the seated-climb/pedaling/posture programs and the held-weld
+# integration episodes.
+bike_add_reference_test(seated_climb_surge ENGINE
+  SOURCES test_seated_climb_surge.cpp LIBRARIES bike_app bike_validation
+  LABELS t52 rider)
+bike_add_reference_test(seated_pedaling_cycle ENGINE
+  SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
+  LABELS t52 rider slow)
+bike_add_reference_test(seated_posture_program ENGINE
+  SOURCES test_seated_posture_program.cpp LIBRARIES bike_app bike_validation
+  LABELS t52 rider slow)
+bike_add_reference_test(seated_topology ENGINE
+  SOURCES test_seated_topology.cpp LIBRARIES bike_app bike_validation
+  LABELS t52 rider slow)
+bike_add_reference_test(pinned_topology ENGINE
+  SOURCES test_pinned_topology.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)
+bike_add_reference_test(rider_welds ENGINE
+  SOURCES ../integration/test_rider_welds.cpp LIBRARIES bike_app bike_validation
+  LABELS t52 rider slow)
+bike_add_reference_test(welded_profile_config ENGINE
+  SOURCES test_welded_profile_config.cpp LIBRARIES bike_app
+  LABELS t52 rider)
+bike_add_reference_test(articulated_config ENGINE
+  SOURCES test_articulated_config.cpp LIBRARIES bike_app
+  LABELS t52 rider)

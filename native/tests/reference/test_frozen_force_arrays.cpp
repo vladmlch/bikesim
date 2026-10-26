@@ -43,10 +43,12 @@ void test_freeze_force_is_immutable_finite_and_recognised() {
     bt::invalid([&] {
         (void)runtime::sample_wire::dot(std::span{short_force}, std::span{qvel}); });
     // step_work applies the same finite gate to the muscle/constraint power
-    // channels the frozen forces feed.
+    // channels the frozen forces feed (the F1 closure channel is an empty
+    // span here — the gate under test is the muscle row).
     const std::vector<double> nan_power{std::nan("")}, zero{};
     bt::invalid([&] {
-        (void)runtime::step_work(std::span{nan_power}, 0., std::span{zero}, .001); });
+        (void)runtime::step_work(std::span{nan_power}, 0., std::span{zero},
+                                 std::span{zero}, .001); });
     // is_frozen_array's writeable-array and writeable-view rejections have no
     // object identity surface in C++; the type system supplies the same
     // distinction (a mutable lvalue vector vs. the const span a frozen row

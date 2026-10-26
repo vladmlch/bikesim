@@ -710,7 +710,7 @@ void test_schema() {
     const Value& drive = member(fields[7], "fields", "fields.drive");
     bt::require(io::as_array(drive, "fields.drive.fields").size() == 22,
                 "drive field count");
-    bt::require(fields_named(fields[9], "articulated").size() == 62,
+    bt::require(fields_named(fields[9], "articulated").size() == 70,
                 "articulated field count");
     bt::require(fields_named(fields[10], "seated_climb").size() == 19,
                 "seated_climb field count");

@@ -314,7 +314,7 @@ void checks_drive_invalid() {
 }
 
 void checks_spindle() {
-    // The 66-key controller config plus resolved strength/envelope tables.
+    // The 70-key controller config plus resolved strength/envelope tables.
     const bio::Value config_doc =
         parse_fixture("config/rider_controller.json");
     const rider::SpindleConfig config =

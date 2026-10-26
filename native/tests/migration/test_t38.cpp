@@ -31,7 +31,9 @@ void catalog_contract() {
             bt::require(names.insert(name).second && !type.empty(), "generated columns never collide");
         }
     }
-    bt::require(count == 495, "full reviewed catalog retains all 495 repeated/nested descriptor occurrences");
+    // 495 reviewed occurrences + the F1 closure channel pair
+    // (closure_signed_j / closure_absolute_j) on channel_energy.
+    bt::require(count == 497, "full reviewed catalog retains all 497 repeated/nested descriptor occurrences");
     const auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
     const auto& coordinates = io::as_array(rec::value::require(rec::value::require(golden,"coordinates"),"qpos"),"qpos");
     std::vector<rec::JointCoords> joints;

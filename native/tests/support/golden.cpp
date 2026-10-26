@@ -210,6 +210,13 @@ std::vector<double> Node::f64_input(std::string_view label) {
     ++cursor_;
     return result;
 }
+std::vector<std::byte> Node::bytes_input(std::string_view label) {
+    const auto &entry = next(label);
+    bt::require(entry.kind == "bitwise" && entry.dtype == "|u1",
+                context() + ": expected bitwise byte-document input");
+    ++cursor_;
+    return entry.bytes;
+}
 std::string_view Node::peek_label() const {
     if (cursor_ >= entries_.size()) return {};
     return entries_[cursor_].label;

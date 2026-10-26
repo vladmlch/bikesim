@@ -609,6 +609,7 @@ void SpindleController::reset_activation() {
     allocation_memory_ = {};
     active_state_.assign(joints_.size(), 0.);
     activation_time_s_ = std::nullopt;
+    coast_hold_nm_ = 0.;
     effort_diagnostics_ = {};
     sole_goal_diagnostics_.clear();
     pedal_recovery_ = {{"front", PedalRecoveryState{}},
@@ -1094,7 +1095,8 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                            bool advance, std::optional<double> dt_s,
                            bool steady_state,
                            std::optional<std::array<bool,4>> support_available,
-                           bool pedal_recovery) {
+                           bool pedal_recovery,
+                           std::optional<double> weld_crank_torque_nm) {
     if (legacy_) {
         auto previous = state();
         try {
@@ -1154,15 +1156,52 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         const double phase = std::atan2(-spindles[0][1], spindles[0][0]);
         const double rate = qvel[static_cast<std::size_t>(crank_spin_dof_)];
         if (command.mean_crank_torque_nm > 0.) {
-            total = spindle::spindle_torque_waveform(
+            const double task = spindle::spindle_torque_waveform(
                 command.mean_crank_torque_nm, phase,
                 config_.pedal_torque_ripple);
+            // rider_control.py:873-878 — the press servo that zeroes pedal
+            // load while coasting keeps regulating once effort is
+            // requested: it integrates the residual between the requested
+            // waveform and the weld-measured press so a systematic
+            // tracking deficit is requested rather than lost. The weld
+            // reading is one tick stale and the bound is wide enough to
+            // cover the deficit without touching the clamp in normal
+            // pedaling.
+            if (weld_crank_torque_nm.has_value() && advance) {
+                const double held =
+                    coast_hold_nm_ + config_.weld_servo_gain *
+                                         (task - *weld_crank_torque_nm);
+                coast_hold_nm_ = held > config_.weld_servo_limit_nm
+                                     ? config_.weld_servo_limit_nm
+                                 : held < -config_.weld_servo_limit_nm
+                                     ? -config_.weld_servo_limit_nm
+                                     : held;
+            }
+            total = task + coast_hold_nm_;
         } else {
+            // rider_control.py:892-899 — freewheeling: damp toward the
+            // coasting crank rate and servo the weld-measured pedal press
+            // to zero. A coasting rider rests their feet on the pedals
+            // without loading the drivetrain — the welded feet are the
+            // only path by which static leg load reaches the crank, so
+            // the weld torque about crank_spin is the physical
+            // pedal-press sensor. The per-tick secant step converges
+            // because a requested crank torque maps nearly 1:1 into the
+            // measured weld moment.
+            if (weld_crank_torque_nm.has_value() && advance) {
+                const double held = coast_hold_nm_ - *weld_crank_torque_nm;
+                coast_hold_nm_ = held > config_.coasting_brake_limit_nm
+                                     ? config_.coasting_brake_limit_nm
+                                 : held < -config_.coasting_brake_limit_nm
+                                     ? -config_.coasting_brake_limit_nm
+                                     : held;
+            }
             // NaN must propagate like np.clip does (both branches' NaN
             // comparisons are false, so raw survives untouched).
             const double raw =
                 config_.coasting_brake_d_nm_s_rad *
-                (command.crank_target_rate_rad_s - rate);
+                    (command.crank_target_rate_rad_s - rate) +
+                coast_hold_nm_;
             total = raw > config_.coasting_brake_limit_nm
                         ? config_.coasting_brake_limit_nm
                     : raw < -config_.coasting_brake_limit_nm
@@ -1170,23 +1209,68 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                         : raw;
         }
         const Vec2 crank{0., 0.};
+        // or not the rider is mashing: a clipped-in foot keeps the same
+        // light stance pressure through the return stroke, and without it
+        // the weld reads unloaded.
         const Vec2 leg_targets_v = spindle::leg_crank_targets(
             total, phase, spindles[0], spindles[1], crank,
-            command.mean_crank_torque_nm > 0.
-                ? config_.return_foot_preload_n
-                : 0.);
+            config_.return_foot_preload_n);
+        // _leg_feedforward (rider_control.py:758-813): inverse dynamics of
+        // the weld-imposed leg motion. The feet are pinned to the pedals,
+        // so the measured crank motion imposes the leg joints' trajectory
+        // through the closed loop: q_ddot = J*phi_ddot + (dJ/dphi)*phi_dot^2.
+        // The weld reads the difference between applied and required joint
+        // torque, so the actuators must themselves supply the bias and
+        // inertia of the imposed motion; only the residual task circulates
+        // through the leg-crank-leg loop. The acceleration term is held at
+        // zero upstream: every solved-proximity estimate re-injects the
+        // weld equalities' own ringing. The same Jacobian rows feed the
+        // split below and the crank-task shortfall projection.
+        constexpr double kJacobianDelta = 1e-3;
+        std::array<Vec2, 2> djacs{};
         for (const auto side : kSides) {
             const auto s = side_index(side);
             const Vec2 hip = mat_t_vec_xz(
                 frame_r,
                 vec_sub(joint_anchor(model_, data, hip_joints_[s]),
                         crank_world));
-            const Vec2 jac =
+            jacobians[s] =
                 spindle::leg_loop_jacobian(leg_geometry_[s], hip, crank,
                                            crank_length_m_, phase,
                                            pelvis_pitch);
-            jacobians[s] = jac;
             has_jacobian[s] = true;
+            const Vec2 plus =
+                spindle::leg_loop_jacobian(leg_geometry_[s], hip, crank,
+                                           crank_length_m_,
+                                           phase + kJacobianDelta,
+                                           pelvis_pitch);
+            const Vec2 minus =
+                spindle::leg_loop_jacobian(leg_geometry_[s], hip, crank,
+                                           crank_length_m_,
+                                           phase - kJacobianDelta,
+                                           pelvis_pitch);
+            djacs[s] = {(plus[0] - minus[0]) / (2. * kJacobianDelta),
+                        (plus[1] - minus[1]) / (2. * kJacobianDelta)};
+        }
+        const double accel = 0.;
+        std::vector<double> imposed(static_cast<std::size_t>(model_->nv), 0.);
+        for (const auto side : kSides) {
+            const auto s = side_index(side);
+            for (std::size_t i = 0; i < 2; ++i) {
+                const auto dof = static_cast<std::size_t>(
+                    joints_[joint_index("rider_" +
+                                        std::string(i == 0 ? "hip_"
+                                                          : "knee_") +
+                                        std::string(side))]
+                        .dof_adr);
+                imposed[dof] = jacobians[s][i] * accel +
+                               djacs[s][i] * rate * rate;
+            }
+        }
+        std::vector<double> inertia(static_cast<std::size_t>(model_->nv));
+        engine::mul_m(model_, data, inertia.data(), imposed.data());
+        for (const auto side : kSides) {
+            const auto s = side_index(side);
             const auto capacity = [&](int joint, double sign) {
                 return directional_limit(
                     std::string("rider_") +
@@ -1195,15 +1279,28 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                     data, sign);
             };
             const Vec2 torques = spindle::split_joint_torques(
-                leg_targets_v[s], jac, capacity);
-            const std::size_t hip_slot =
-                joint_index("rider_hip_" + std::string(side));
-            const std::size_t knee_slot =
-                joint_index("rider_knee_" + std::string(side));
-            requested[hip_slot] = torques[0];
-            requested[knee_slot] = torques[1];
-            requested_filled[hip_slot] = 1;
-            requested_filled[knee_slot] = 1;
+                leg_targets_v[s], jacobians[s], capacity);
+            for (std::size_t i = 0; i < 2; ++i) {
+                const std::size_t slot = joint_index(
+                    "rider_" + std::string(i == 0 ? "hip_" : "knee_") +
+                    std::string(side));
+                const auto dof =
+                    static_cast<std::size_t>(joints_[slot].dof_adr);
+                // Velocity-domain tracking of the crank-imposed leg
+                // motion (rider_control.py:924-934): the weld pins the
+                // foot to the pedal, so a joint that lags J*rate is
+                // dragged through the weld and the constraint ledger
+                // counts the drag as numerical work. A bounded follow
+                // torque — muscle impedance about the imposed velocity,
+                // not a lock — lets the actuators carry their own
+                // imposed motion.
+                const double feedforward = bias[dof] + inertia[dof];
+                const double track =
+                    config_.leg_track_damping_nms_rad *
+                    (jacobians[s][i] * rate - qvel[dof]);
+                requested[slot] = torques[i] + feedforward + track;
+                requested_filled[slot] = 1;
+            }
         }
         const auto upper = upper_targets(data, &command.posture);
         for (const auto &[name, target] : upper) {
@@ -1390,6 +1487,9 @@ SpindleController::State SpindleController::state() const {
     out.command_enabled = command_enabled_;
     out.active_state = active_state_;
     out.activation_time_s = activation_time_s_;
+    // The weld-press hold leaves the 18-key wire only through the material
+    // channel; populate it so capture/material staging sees the live value.
+    if (!legacy_) out.coast_hold_nm = coast_hold_nm_;
     out.pd_split = pd_split_;
     for (const auto &joint : joints_)
         if (const auto *found = named_find(last_terms_, joint.name);
@@ -1433,6 +1533,14 @@ void SpindleController::validate_state(const State &state) const {
     if (state.allocation_memory && state.allocation_memory->solution)
         for (double const x : *state.allocation_memory->solution)
             if (!std::isfinite(x)) throw std::invalid_argument("rider_controller allocation warm start must be finite");
+    if (state.coast_hold_nm) {
+        if (!std::isfinite(*state.coast_hold_nm))
+            throw std::invalid_argument("rider_controller coast hold must be finite");
+        // equilibrium_cache.py forbids the material key without a spindle
+        // control; carrying a hold into the legacy delegate would drop it.
+        if (legacy_)
+            throw std::invalid_argument("non-spindle controller cannot restore a weld coast hold");
+    }
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved) fields are consumed selectively rather than by a whole-object move
@@ -1441,6 +1549,7 @@ void SpindleController::commit_state(State &&state) noexcept {
     command_enabled_ = state.command_enabled;
     active_state_ = std::move(state.active_state);
     activation_time_s_ = state.activation_time_s;
+    coast_hold_nm_ = state.coast_hold_nm.value_or(0.);
     last_terms_ = std::move(state.last_terms);
     pd_split_ = std::move(state.pd_split);
     saturated_ik_ = std::move(state.saturated_ik);

@@ -84,6 +84,13 @@ struct SpindleConfig {
     double return_foot_preload_n = 0.;
     double coasting_brake_d_nm_s_rad = 0.;
     double coasting_brake_limit_nm = 0.;
+    // Weld-press servo and weld-imposed leg-motion feedforward knobs
+    // (rider_control.py _coast_hold_nm/_leg_feedforward_nm): declared in
+    // ArticulatedConfig, carried on this wire since the native port below
+    // consumes them.
+    double weld_servo_gain = 0.;
+    double weld_servo_limit_nm = 0.;
+    double leg_track_damping_nms_rad = 0.;
     double joint_envelope_soft_k_nm_rad = 0.;
     double joint_envelope_soft_margin_rad = 0.;
     double arm_reach_fraction = 0.;
@@ -228,12 +235,16 @@ public:
     // compute() spindle branch (rider_control.py:756-843). Returns the
     // torque dict in joint order like the oracle. dt_s falls back to
     // model.opt.timestep exactly like Python's None default.
+    // weld_crank_torque_nm is the one-tick-stale weld-measured pedal press
+    // the coasting/preload servo reads (physical_runtime.py:391);
+    // nullopt mirrors the oracle's None (servo skipped).
     [[nodiscard]] NamedEntries<double>
     compute(mjData *data, const RiderCommand &command, bool advance = true,
             std::optional<double> dt_s = std::nullopt,
             bool steady_state = false,
             std::optional<std::array<bool,4>> support_available = std::nullopt,
-            bool pedal_recovery = false);
+            bool pedal_recovery = false,
+            std::optional<double> weld_crank_torque_nm = std::nullopt);
 
     // initialize()/initialize_velocity() — static-equilibrium-time pose
     // matching only; never inside the running step.
@@ -278,6 +289,13 @@ public:
         bool command_enabled = true;
         std::vector<double> active_state;
         std::optional<double> activation_time_s;
+        // rider_control.py `_coast_hold_nm` — the weld-press servo hold.
+        // Python keeps it off the 18-key `state_dict()` wire; it travels on
+        // the equilibrium material's flat `state_control_coast_hold_nm`
+        // channel (required for spindle, forbidden otherwise), so this field
+        // is populated by state() but never enters the wire dict — an absent
+        // material value commits as 0, matching reset_activation().
+        std::optional<double> coast_hold_nm;
         NamedEntries<JointTerms> last_terms;
         NamedEntries<std::array<double,2>> pd_split;
         NamedEntries<bool> saturated_ik;
@@ -429,6 +447,9 @@ private:
     NamedEntries<double> joint_torques_nm_;
     NamedEntries<double> joint_capacity_nm_;
     NamedEntries<PedalRecoveryState> pedal_recovery_;
+    // rider_control.py:628 _coast_hold_nm — the weld-press servo's
+    // integrated hold torque; reset_activation() clears it.
+    double coast_hold_nm_ = 0.;
     EffortDiagnostics effort_diagnostics_;
     AllocationDiagnostics allocation_diagnostics_;
     SupportDiagnostics support_diagnostics_;

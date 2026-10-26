@@ -755,7 +755,8 @@ namespace {
         "joint_envelope_soft_k_nm_rad", "joint_envelope_soft_margin_rad",
         "joint_kd_nms_rad", "joint_kp_nm_rad", "joint_limit_nm",
         "joint_passive_damping_nms_rad", "joint_power_limit_w",
-        "joint_speed_limit_rad_s", "joint_strength_path", "link_max_gap_m",
+        "joint_speed_limit_rad_s", "joint_strength_path",
+        "leg_track_damping_nms_rad", "link_max_gap_m",
         "pedal_ankle_amplitude_rad", "pedal_attachment", "pedal_c_ns_m",
         "pedal_min_normal_n", "pedal_patch_half_length_m",
         "pedal_scrape_fraction", "pedal_support_fraction",
@@ -771,7 +772,7 @@ namespace {
         "swing_clearance_m",
         "weld_foot_max_normal_n", "weld_foot_min_normal_n", "weld_foot_shear_n",
         "weld_saddle_max_normal_n", "weld_saddle_min_normal_n",
-        "weld_saddle_shear_n",
+        "weld_saddle_shear_n", "weld_servo_gain", "weld_servo_limit_nm",
         "strength", "strength_coordinates",
         "envelopes");
 
@@ -861,6 +862,11 @@ namespace {
             d["coasting_brake_d_nm_s_rad"].finite_real(path);
         config.coasting_brake_limit_nm =
             d["coasting_brake_limit_nm"].finite_real(path);
+        config.weld_servo_gain = d["weld_servo_gain"].finite_real(path);
+        config.weld_servo_limit_nm =
+            d["weld_servo_limit_nm"].finite_real(path);
+        config.leg_track_damping_nms_rad =
+            d["leg_track_damping_nms_rad"].finite_real(path);
         config.joint_envelope_soft_k_nm_rad =
             d["joint_envelope_soft_k_nm_rad"].finite_real(path);
         config.joint_envelope_soft_margin_rad =
@@ -908,6 +914,11 @@ namespace {
         "last_branch", "last_solution", "pedal_recovery",
         "effort_diagnostics", "allocation_diagnostics",
         "support_diagnostics", "sole_goal_diagnostics");
+    // Python's state_dict() stays 18-key: `_coast_hold_nm` rides the
+    // equilibrium material's flat `state_control_coast_hold_nm` channel.
+    // Native-authored documents additionally carry it here so a captured
+    // bootstrap re-seeds the servo deterministically on every reset.
+    constexpr auto kStateOptionalKeys = keys("coast_hold_nm");
     constexpr auto kIkJointKeys = keys("front", "rear", "torso", "arms");
     constexpr auto kSideKeys = keys("front", "rear");
 
@@ -2066,12 +2077,13 @@ JointTerms decode_joint_terms(const bio::Value &value,
 SpindleController::State decode_spindle_state(const bio::Value &value,
                                               std::string_view path) {
     const Dict d = mapping(VNode{&value}, path);
-    ncd::exact(d, kStateRequiredKeys);
+    ncd::exact(d, kStateRequiredKeys, kStateOptionalKeys);
     SpindleController::State state;
     state.enabled = d["enabled"].boolean(path);
     state.command_enabled = d["command_enabled"].boolean(path);
     state.active_state = vector(d["active_state"], path);
     state.activation_time_s = d["activation_time_s"].optional_real(path);
+    state.coast_hold_nm = d["coast_hold_nm"].optional_real(path);
     decode_state_terms(d, path, state);
     decode_state_ik(d, path, state);
     decode_state_recovery(d, path, state);
@@ -2102,6 +2114,11 @@ bio::Value encode_spindle_state(const SpindleController::State &state) {
                      bio::Value{state.command_enabled});
     out.emplace_back("active_state", vector_value(state.active_state));
     set_or_none(out, "activation_time_s", state.activation_time_s);
+    // Emitted only on spindle-authored states — legacy/Python-authored
+    // documents keep the canonical 18 keys.
+    if (state.coast_hold_nm.has_value())
+        out.emplace_back("coast_hold_nm",
+                         real_value(*state.coast_hold_nm));
     out.emplace_back("last_terms", last_terms_value(state.last_terms));
     bio::Value::Object split;
     for(const auto&[name,pair]:state.pd_split)split.emplace_back(name,vector_value(pair));

@@ -350,7 +350,8 @@ constexpr auto kConfigRequiredKeys = keys(
     "joint_envelope_soft_k_nm_rad", "joint_envelope_soft_margin_rad",
     "joint_kd_nms_rad", "joint_kp_nm_rad", "joint_limit_nm",
     "joint_passive_damping_nms_rad", "joint_power_limit_w",
-    "joint_speed_limit_rad_s", "joint_strength_path", "link_max_gap_m",
+    "joint_speed_limit_rad_s", "joint_strength_path",
+    "leg_track_damping_nms_rad", "link_max_gap_m",
     "pedal_ankle_amplitude_rad", "pedal_attachment", "pedal_c_ns_m",
     "pedal_min_normal_n", "pedal_patch_half_length_m",
     "pedal_scrape_fraction", "pedal_support_fraction",
@@ -366,7 +367,7 @@ constexpr auto kConfigRequiredKeys = keys(
     "swing_clearance_m",
     "weld_foot_max_normal_n", "weld_foot_min_normal_n", "weld_foot_shear_n",
     "weld_saddle_max_normal_n", "weld_saddle_min_normal_n",
-    "weld_saddle_shear_n",
+    "weld_saddle_shear_n", "weld_servo_gain", "weld_servo_limit_nm",
     "strength", "strength_coordinates",
     "envelopes");
 
@@ -466,6 +467,11 @@ void parse_geometry_scalars(const nb::dict &d, std::string_view path,
         wire::finite_real(d["coasting_brake_d_nm_s_rad"], path);
     config.coasting_brake_limit_nm =
         wire::finite_real(d["coasting_brake_limit_nm"], path);
+    config.weld_servo_gain = wire::finite_real(d["weld_servo_gain"], path);
+    config.weld_servo_limit_nm =
+        wire::finite_real(d["weld_servo_limit_nm"], path);
+    config.leg_track_damping_nms_rad =
+        wire::finite_real(d["leg_track_damping_nms_rad"], path);
     config.joint_envelope_soft_k_nm_rad =
         wire::finite_real(d["joint_envelope_soft_k_nm_rad"], path);
     config.joint_envelope_soft_margin_rad =
@@ -668,6 +674,11 @@ constexpr auto kStateRequiredKeys = keys(
     "pedal_recovery", "effort_diagnostics",
     "allocation_diagnostics", "support_diagnostics",
     "sole_goal_diagnostics");
+// state_codec.cpp accepts the same key as an optional document field so a
+// captured bootstrap re-seeds the weld-press servo; the binding's Python
+// dict surface keeps parity with the 18-key state_dict() and only accepts
+// the key on input.
+constexpr auto kStateOptionalKeys = keys("coast_hold_nm");
 constexpr auto kIkJointKeys = keys("front", "rear", "torso", "arms");
 constexpr auto kSideKeys = keys("front", "rear");
 
@@ -733,13 +744,16 @@ void parse_state_recovery(const nb::dict &d, std::string_view path,
 SpindleController::State parse_spindle_state(nb::handle value,
                                              std::string_view path) {
     const auto d = wire::mapping(value, path);
-    wire::exact_keys(d, kStateRequiredKeys, {}, path);
+    wire::exact_keys(d, kStateRequiredKeys, kStateOptionalKeys, path);
     SpindleController::State state;
     state.enabled = wire::boolean(d["enabled"], path);
     state.command_enabled = wire::boolean(d["command_enabled"], path);
     state.active_state = wire::vector(d["active_state"], path);
     state.activation_time_s =
         wire::optional_real(d["activation_time_s"], path);
+    if (d.contains("coast_hold_nm"))
+        state.coast_hold_nm =
+            wire::optional_real(d["coast_hold_nm"], path);
     parse_state_terms(d, path, state);
     parse_state_ik(d, path, state);
     parse_state_recovery(d, path, state);

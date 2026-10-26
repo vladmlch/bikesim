@@ -1386,7 +1386,11 @@ PhysicalStep::apply_forces_body(
                     // gated on active/initializing: the oracle passes the
                     // flag into every compute, including the init ticks
                     // where recovery geometry is first observed.
-                    config_.intent.enabled);
+                    config_.intent.enabled,
+                    // weld_crank_torque_nm — the same one-tick-stale weld
+                    // press reading the drivetrain tick consumed above
+                    // (physical_runtime.py:391).
+                    sensed);
                 if (advance) {
                     control_clock_.hold(torques);
                     if (!initializing_)

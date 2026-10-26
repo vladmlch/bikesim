@@ -109,6 +109,13 @@ std::unique_ptr<Material> decode_material(const SetupContext& context,const Stat
         if(!context.physical.rider_present())throw std::invalid_argument("unexpected rider controller state");
         next.controller=::rider::decode_spindle_state(io::parse_recording_json(text(state,"state_native_rider_controller")),"state.rider_controller");
     }
+    // equilibrium_cache.py:301-312 — the weld-press servo's coast hold rides
+    // a flat material channel: required when the rider control is a spindle
+    // controller, forbidden otherwise. rider_present() implies
+    // next.controller was staged by current_material or the blob above.
+    if(context.physical.rider_present()&&context.physical.rider_control().spindle())
+        next.controller->coast_hold_nm=doubles(state,"state_control_coast_hold_nm",{1}).front();
+    else if(find(state,"state_control_coast_hold_nm"))throw std::invalid_argument("unexpected control coast hold material");
     if(context.stepper.has_tire()){
         if(find(state,"state_tire_wire_names")){
             next.tire_names=state_array(state,"state_tire_wire_names").strings();shape(state_array(state,"state_tire_wire_names"),{next.tire_names.size()},"state_tire_wire_names");
@@ -200,6 +207,11 @@ StateFile capture_state(const SetupContext& context,std::int64_t steps,double re
         out.arrays.emplace_back("state_rider_keys",io::string_array(keys,{keys.size()}));out.arrays.emplace_back("state_rider_xi",io::double_array(xi,{xi.size()}));out.arrays.emplace_back("state_rider_tangent",io::double_array(tangent,{keys.size(),3}));out.arrays.emplace_back("state_rider_tangent_valid",io::bool_array(valid,{valid.size()}));out.arrays.emplace_back("state_rider_grip_xi",io::double_array(grip,{2,3}));out.arrays.emplace_back("state_rider_enabled",io::bool_array(enabled,{enabled.size()}));out.arrays.emplace_back("state_rider_pending_release_loss",io::double_array(std::array<double,1>{r.pending_release_loss_j},{1}));
     }
     if(material.controller)put_text(out,"state_native_rider_controller",io::recording_json(::rider::encode_spindle_state(*material.controller)));
+    // equilibrium_cache.py:203-208 — a spindle rider's weld-press hold is
+    // part of the equilibrium the pose was certified against: restoring the
+    // pose without it would release the pedal press the servo bled off.
+    if(material.controller&&context.physical.rider_control().spindle())
+        out.arrays.emplace_back("state_control_coast_hold_nm",io::double_array(std::array<double,1>{material.controller->coast_hold_nm.value_or(0.)},{1}));
     if(context.stepper.has_tire()){out.arrays.emplace_back("state_tire_wire_names",io::string_array(material.tire_names,{material.tire_names.size()}));out.arrays.emplace_back("state_tire_wire_row",io::double_array(material.tire_row,{material.tire_row.size()}));}
     const mjModel* m=context.stepper.model();const mjData* d=context.stepper.data();
     std::vector<double> integration(static_cast<std::size_t>(engine::state_size(m,mjSTATE_INTEGRATION)));engine::get_state(m,d,integration.data(),mjSTATE_INTEGRATION);out.arrays.emplace_back("integration_state",io::double_array(integration,{integration.size()}));

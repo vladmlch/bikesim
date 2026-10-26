@@ -230,3 +230,8 @@ bike_add_reference_test(joint_strength ENGINE
 bike_add_reference_test(planar_arms ENGINE
   SOURCES test_planar_arms.cpp LIBRARIES bike_app
   LABELS t52 rider slow)
+# The remaining 3.15 files replay the NativeTestAdapter `rider_intent` and
+# `spindle_controller` sessions as recorded JSON argument documents.
+bike_add_reference_test(native_rider_intent ENGINE
+  SOURCES test_native_rider_intent.cpp LIBRARIES bike_app
+  LABELS t52 rider golden)

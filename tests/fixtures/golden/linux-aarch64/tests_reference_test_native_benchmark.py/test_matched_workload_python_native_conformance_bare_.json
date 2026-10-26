@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.report",
+  "nbytes": 1619,
+  "node": "tests/reference/test_native_benchmark.py::test_matched_workload_python_native_conformance[bare]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   1619
+  ]
+ }
+]

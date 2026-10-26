@@ -6106,3 +6106,82 @@ transition. Row count unchanged (535).
 No anomalies. A docs/ledger-only merge: zero conflicts, zero
 disposition drift, the six named binaries still green at
 lane-matching check counts.
+
+## 2026-10-26 — 3.24a qualification (lane/a): native benchmark (`episode`)
+
+### Scope
+
+`tests/reference/test_native_benchmark.py` — 56 port-map records /
+90 collected nodes, the `native_bench` CLI + `BIKEST02` state contract.
+All 56 landed in `native/tests/reference/test_native_benchmark.cpp`
+(56 check functions under `check()`, source-file order, fresh
+`bt::TemporaryDirectory` per function to mirror pytest `tmp_path`
+isolation). CTest node `reference.native_benchmark`, labels
+`t52 episode golden`, `add_dependencies` on `native_bench`; the
+executable path reaches the TU through the CMake-generated header
+`bike_native_bench_path.hpp` (`$<TARGET_FILE:native_bench>`) rather
+than a quoted compile definition — check-context generation mangles
+target paths in definitions.
+
+The port drives the real `native_bench` binary through a subprocess
+boundary: CLI help/validation, `--artifacts` root and `current.json`
+pointer resolution, member validation (`model.mjb`/`state.bin`/
+`state.npz`/`manifest.json`), legacy `0xBEA0` and every `BIKEST02`
+header rejection (magic, version, flags, dimension caps, payload
+length, payload/state CRC64, finiteness, generation/model mismatch),
+`bare`/`glue`/`heavy`/`operation_mix` sweeps, rewind boundaries, the
+tracked `tools/proto_native_bench/artifacts` smoke, JSON report shape,
+and unwritable-report rejection. Bundle fixtures serialize through the
+same field order and CRC64-ECMA (`0x42F0E1EBA9EA3693`) as
+`tools/proto_native_bench/state_format.py`; `state.npz` is written via
+`bike::io::encode_npz`, models via `mj_saveModel`.
+
+The three conformance nodes replay the Python oracle's canonical
+compact JSON emission — one `input.report` bytewise entry per node —
+through the new `bt::oracle::bytes_input` accessor (strict `|u1`
+payload, cursor-advancing), then re-assert every comparison in the
+pytest body: workload/operation-count equality, exact `model_crc64` /
+`state_crc64` provenance, exact integer stages (`name_ids`,
+`trajectory_time`), `1e-12`-close float stages and solver outputs,
+finite checksum.
+
+### Verification
+
+- Parity pytest, full file: **90 passed** darwin-arm64
+  (`build/native-release`, capture run 4.26 s; plain rerun 4.50 s)
+  and **90 passed** linux-aarch64 (`/build/native-clang`,
+  `bike-dev-pfc-lane-a`, `NATIVE_TEST_BUILD_PATH=/build/native-clang`,
+  2.42–2.47 s, `BIKE_GOLDEN_CAPTURE=tests/fixtures/golden`).
+- Focused CTest: `reference.native_benchmark` → **PASS 18167 checks**
+  darwin-arm64 (`build/native-release`, 3.25 s) and **Passed**
+  linux-aarch64 (`/build/root-clang`, clang++-18, 1.01 s).
+- Golden fixtures: 3 conformance node pairs per platform under
+  `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/
+  tests_reference_test_native_benchmark.py/`; linux sidecars pulled via
+  `container.sh pull`.
+- Byte-flip proof: byte 844 of
+  `test_matched_workload_python_native_conformance_bare_.bin`
+  (darwin-arm64) flipped → FAIL `bike::io::parse_json: invalid JSON at
+  offset 844`, exit 1; restored byte-identical → PASS 18167 checks,
+  exit 0.
+- clang-18 strictness: `-Wmissing-field-initializers` on the two
+  `BundleSpec` designated initializers — all three fields now spelled
+  out. AppleClang needed `std::as_chars`→byte-loop conversion helpers
+  (no such facility in C++23) and `substr` over string_view iterator
+  arithmetic under `-Wunsafe-buffer-usage`.
+- Fixture isolation: the first green run passed `test_missing_*` cases
+  against a directory shared by sibling tests — leftovers masked the
+  missing-member branch. Every check function now receives a fresh
+  `TemporaryDirectory` (pytest `tmp_path` parity) via `with_tmp_path`.
+
+### Ledger
+
+`migration/test-port-map.json` — the file's 56 rows qualified: 55
+`port` (`native contract port`), 1 `golden` (`oracle-derived
+comparison`, `golden_platforms: [darwin-arm64, linux-aarch64]`) for
+`test_matched_workload_python_native_conformance`; measured
+`collected_node_ids` (90 total), dated `assertions_capture` and 3.24a
+lane/a evidence strings. `migration/python-removal.json` —
+`tests/reference/test_native_benchmark.py` → `replacement_landed`
+(verification `reference.native_benchmark`; `sha256`/`line_count`
+refreshed to the capture-instrumented 1027-line source, snapshot kept).

@@ -324,12 +324,13 @@
     {
       "task": "3.20",
       "title": "brakes, cruise, suspension, clocks (`runtime`)",
-      "source_status": "partial_source",
-      "scope_and_remaining_work": "28 of 66 original functions/methods have source successors: static brake5, native clocks13, control clock3, playback7. Remaining cruise24, brake resistance5, suspension4, stepper1, tire clocks3, solved-effort control clock1 not ported.",
-      "phase_task_complete": false,
+      "source_status": "source_implemented",
+      "scope_and_remaining_work": "All 66 records closed on lane/d (3.20): the earlier 28 successors (static brake5, native clocks13, control clock3, playback7) plus 34 new ports - 14 golden replay (cruise8, brake resistance2, suspension2, stepper1, control-clock solved effort1) and 20 contract ports (cruise contract/validation13, brake resistance2, suspension2, tire snapshot interval path3) - and 4 recorded binding-contract drops (cruise dict-shape3, resistance ndarray lifetime1). Goldens and runtime bundles captured on darwin-arm64 + linux-aarch64 under tests/fixtures/golden/<platform>/; all seven reference.* successors green on both platforms; byte-flip proof on the stepper .bin. Python oracles remain the parity gate until T63.",
+      "phase_task_complete": true,
       "verification": "not_performed_in_this_session",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md"
+        "migration/cpp-linux-phase3-source-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C320-report.md"
       ]
     },
     {

@@ -14641,8 +14641,8 @@
   },
   {
     "path": "tests/reference/test_control_clock.py",
-    "sha256": "4a27e65fbbb2cf2b9e39f3f348c62a7e75f70a2ac027532595bc7466c242d295",
-    "line_count": 84,
+    "sha256": "944f024cdc14215a222923addfd0dac893d953c64437384bff8d93764911d90f",
+    "line_count": 145,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -14651,10 +14651,11 @@
     "verification_ids": [
       "migration_T52",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.control_clock"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "8c80d9f1892b8c777f5754fa705cc1024f08f64352bb8b775435db7d32334893",
     "snapshot_line_count": 84,
     "tracked": true,
@@ -15244,8 +15245,8 @@
   },
   {
     "path": "tests/reference/test_native_brake_resistance.py",
-    "sha256": "497411358187592c18ab431c93fe4be10d885c988f0c2aa7ec342379ccd1f74f",
-    "line_count": 233,
+    "sha256": "b0750208744c9ade690a359707644f2526bea58c07f6b12d6f8ace4e3046109b",
+    "line_count": 254,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -15254,10 +15255,11 @@
     "verification_ids": [
       "migration_T52",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.native_brake_resistance"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "c88495e1047c8bfb3f978e0d86b8fcdecf835f059521589cea4ff099030c2c39",
     "snapshot_line_count": 233,
     "tracked": true,
@@ -15286,8 +15288,8 @@
   },
   {
     "path": "tests/reference/test_native_clock_contracts.py",
-    "sha256": "e0f767da4c4ef8dd7e22021d35d736e1cde23b40dbe61705ef1005c170706644",
-    "line_count": 370,
+    "sha256": "239396492525c10749250e3d85922659c12b2e678691ede2513a3c627107d594",
+    "line_count": 375,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -15296,10 +15298,11 @@
     "verification_ids": [
       "migration_T52",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.native_clock_contracts"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "d06f0969b2a34bb9b9f99a58e189dab833c761c2c721c327b1a51d502e7fb464",
     "snapshot_line_count": 370,
     "tracked": true,
@@ -15352,10 +15355,11 @@
     "verification_ids": [
       "migration_T52",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.native_cruise"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "4476218fbc98b601fed6568104f3b854491ff92dff30da5eb1e98349140919bd",
     "snapshot_line_count": 336,
     "tracked": true,
@@ -16338,8 +16342,8 @@
   },
   {
     "path": "tests/reference/test_native_static_brake.py",
-    "sha256": "c5c35ed1423338dc10bad87fed05459743b2e5d42c0e2d59e9b5d77cc604259d",
-    "line_count": 158,
+    "sha256": "d11674b78b42f78b7f9af15c9274de33f0ddd9be72c7cd843a153793e1ff217a",
+    "line_count": 364,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -16348,10 +16352,11 @@
     "verification_ids": [
       "migration_T52",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.native_static_brake"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ad0702cb4e44909a7c48f4ff834a90aeeb8c51bbd3d8ab0021929ce0a4a59fb5",
     "snapshot_line_count": 158,
     "tracked": true,
@@ -16382,10 +16387,11 @@
     "verification_ids": [
       "migration_T52",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.native_stepper"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b001f65ee0fd4cf5bc1635e12e5b5ba8ef8a8384c9dcbaf66aa0d38cdc2b6ea2",
     "snapshot_line_count": 22,
     "tracked": true,
@@ -16393,8 +16399,8 @@
   },
   {
     "path": "tests/reference/test_native_suspension.py",
-    "sha256": "d2a73cb0733aaf099ec738922a9997a9c8427e77d6ecd911c62649945ef61889",
-    "line_count": 116,
+    "sha256": "7e05656668cfcfeebc27a873aa3e21749e1ff64389159bc3753cc106ca5fd40c",
+    "line_count": 149,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -16403,10 +16409,11 @@
     "verification_ids": [
       "migration_T52",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.native_suspension"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b7fa00e186778706106e250e10a0eed37b2b96545d3d0d8040e0d780c37537f4",
     "snapshot_line_count": 116,
     "tracked": true,
@@ -16709,10 +16716,11 @@
     "verification_ids": [
       "migration_T52",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.playback_clock"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "8078b939ff576d962650dfb900f33a52a6b929563bd250a99f0bbf08750cf39a",
     "snapshot_line_count": 70,
     "tracked": true,

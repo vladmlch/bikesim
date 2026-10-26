@@ -227,3 +227,6 @@ bike_add_reference_test(closed_form_rider ENGINE
 bike_add_reference_test(joint_strength ENGINE
   SOURCES test_joint_strength.cpp LIBRARIES bike_app
   LABELS t52 rider slow)
+bike_add_reference_test(planar_arms ENGINE
+  SOURCES test_planar_arms.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)

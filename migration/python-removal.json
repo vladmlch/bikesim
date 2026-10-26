@@ -14969,7 +14969,7 @@
    "release_capability_matrix"
   ],
   "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-  "status": "planned",
+  "status": "replacement_landed",
   "snapshot_sha256": "d24458616a58521f74b1f6895548f8cdd8fba047834a04d560814ad327ed3187",
   "snapshot_line_count": 290,
   "tracked": true,
@@ -16557,7 +16557,7 @@
    "release_capability_matrix"
   ],
   "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-  "status": "planned",
+  "status": "replacement_landed",
   "snapshot_sha256": "6d79838f3458b347bb306d893986099a553180baf937f26bc2dedcc969c46c0b",
   "snapshot_line_count": 266,
   "tracked": true,

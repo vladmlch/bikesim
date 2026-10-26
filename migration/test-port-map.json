@@ -21844,13 +21844,17 @@
    "line": 30,
    "end_line": 38,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_split_preserves_the_anatomical_budget",
+   "native_test_id": "reference.planar_arms::test_split_preserves_the_anatomical_budget",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_split_preserves_the_anatomical_budget"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_planar_arms.py",
@@ -21858,13 +21862,17 @@
    "line": 41,
    "end_line": 53,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_arm_split_does_not_add_mass_or_strength",
+   "native_test_id": "reference.planar_arms::test_arm_split_does_not_add_mass_or_strength",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_arm_split_does_not_add_mass_or_strength"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_planar_arms.py",
@@ -21872,13 +21880,17 @@
    "line": 56,
    "end_line": 76,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_split_preserves_com_and_sagittal_inertia",
+   "native_test_id": "reference.planar_arms::test_split_preserves_com_and_sagittal_inertia",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_split_preserves_com_and_sagittal_inertia"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_planar_arms.py",
@@ -21886,13 +21898,17 @@
    "line": 79,
    "end_line": 86,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_hand_mass_stays_inside_each_forearm",
+   "native_test_id": "reference.planar_arms::test_hand_mass_stays_inside_each_forearm",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_hand_mass_stays_inside_each_forearm"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_planar_arms.py",
@@ -21900,13 +21916,17 @@
    "line": 89,
    "end_line": 97,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_registry_names_eleven_internal_joints",
+   "native_test_id": "reference.planar_arms::test_registry_names_eleven_internal_joints",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_registry_names_eleven_internal_joints"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_planar_arms.py",
@@ -21914,13 +21934,17 @@
    "line": 100,
    "end_line": 117,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_envelope_schema_two_requires_the_two_arm_topology",
+   "native_test_id": "reference.planar_arms::test_envelope_schema_two_requires_the_two_arm_topology",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_envelope_schema_two_requires_the_two_arm_topology"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_planar_arms.py",
@@ -21928,13 +21952,17 @@
    "line": 120,
    "end_line": 126,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_envelope_schema_missing_arm_fails_closed",
+   "native_test_id": "reference.planar_arms::test_envelope_schema_missing_arm_fails_closed",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_envelope_schema_missing_arm_fails_closed"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_planar_arms.py",
@@ -21942,13 +21970,17 @@
    "line": 143,
    "end_line": 185,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_compiled_topology_has_two_arms_and_two_grip_sites",
+   "native_test_id": "reference.planar_arms::test_compiled_topology_has_two_arms_and_two_grip_sites",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_compiled_topology_has_two_arms_and_two_grip_sites"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_planar_arms.py",
@@ -21956,13 +21988,17 @@
    "line": 189,
    "end_line": 223,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_each_hand_jacobian_loads_only_its_own_arm",
+   "native_test_id": "reference.planar_arms::test_each_hand_jacobian_loads_only_its_own_arm",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_each_hand_jacobian_loads_only_its_own_arm"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_planar_arms.py",
@@ -21970,13 +22006,17 @@
    "line": 227,
    "end_line": 251,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_welded_hands_report_finite_per_hand_reactions",
+   "native_test_id": "reference.planar_arms::test_welded_hands_report_finite_per_hand_reactions",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_welded_hands_report_finite_per_hand_reactions"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_planar_arms.py",
@@ -21984,13 +22024,17 @@
    "line": 255,
    "end_line": 266,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_planar_arms::test_initial_state_round_trip_restores_per_hand_anchors",
+   "native_test_id": "reference.planar_arms::test_initial_state_round_trip_restores_per_hand_anchors",
    "native_source": "native/tests/reference/test_planar_arms.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_planar_arms.py::test_initial_state_round_trip_restores_per_hand_anchors"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_playback_clock.py",

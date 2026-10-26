@@ -27,6 +27,7 @@
 #include <memory>
 #include <optional>
 #include <source_location>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -34,24 +35,30 @@
 #include "support/golden.hpp"
 #include "support/migration_test.hpp"
 
+#include "configuration/fields.hpp"
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"
 #include "engine_call.hpp"
+#include "engine_identity.hpp"
 #include "geometry/specs.hpp"
 #include "initialization/capture.hpp"
 #include "initialization/context.hpp"
 #include "initialization/equilibrium.hpp"
 #include "initialization/finalize.hpp"
 #include "initialization/setup_owner.hpp"
+#include "io/hash.hpp"
 #include "kinematics/solver.hpp"
 #include "model/builder.hpp"
+#include "model/export.hpp"
 #include "model/mapping.hpp"
 #include "model/rider_geometry.hpp"
+#include "platform/provenance.hpp"
 #include "research/environment.hpp"
 #include "rider/spindle_controller.hpp"
 #include "rider/state_codec.hpp"
 #include "runtime/config.hpp"
 #include "runtime/project_config.hpp"
+#include "runtime/provenance.hpp"
 #include "runtime/step.hpp"
 #include "stepper.hpp"
 #include "terrain/profile.hpp"
@@ -176,6 +183,12 @@ struct EnvRig {
     std::unique_ptr<::Stepper> stepper;
     std::unique_ptr<rcfg::PhysicalStep> physical;
     rider::SpindlePose pose;
+    // The live SetupContext behind make_environment — kept because
+    // PhysicalInitialState::capture/prepare (test_planar_arms'
+    // env.sim.physical_initial_state round trip) read the same context
+    // fields make_setup populates: identity/source/provider digests and
+    // the completed equilibrium evidence.
+    std::optional<init::SetupContext> context;
 };
 
 // NOLINTBEGIN(modernize-make-unique) same inlined-forwarding frame budget
@@ -246,9 +259,10 @@ pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
             nativecfg::decode(rig->config->writer_config))};
     rig->stepper = std::make_unique<::Stepper>(image.mjb, *writers);
     rig->physical = rcfg::make_physical_step(*rig->stepper, *rig->config);
-    init::SetupContext context{.stepper = *rig->stepper,
-                               .physical = *rig->physical,
-                               .physics = physics};
+    auto &context = rig->context.emplace(init::SetupContext{
+        .stepper = *rig->stepper,
+        .physical = *rig->physical,
+        .physics = physics});
     context.start_x_m = rig->request->start_x_m;
     context.ground_z_m =
         bike::geometry::compute_ground_z(model.bike) / 1000.;
@@ -274,6 +288,26 @@ pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
             return solver->solve_state_from_shock_stroke(stroke)
                 .wheel_travel;
         };
+    // make_setup's provenance quartet (setup_owner.cpp:193-208):
+    // PhysicalInitialState::capture binds the model contract to these
+    // digests, and prepare() re-derives them on restore.
+    context.identity = bike::io::Value{bike::io::Value::Object{
+        {"specs", bike::model::bike_specs_value(model.bike)},
+        {"mass_specs", bike::model::mass_specs_value(model.masses)},
+        {"rider", cfg::detail::plain_document(
+                      cfg::detail::as_object(cfg::detail::kRiderSpecsSchema,
+                                             &resolved_rider))},
+        {"track", bike::terrain::identity_value(rig->request->track)}}};
+    context.source_identity =
+        ::runtime::runtime_identity().native_source_sha256;
+    const auto engine_id = ::engine::identity();
+    const auto provider = engine_id.mujoco_version + "|" +
+                          engine_id.library_sha256 + "|" +
+                          engine_id.numeric_provider + "|" +
+                          bike::platform::execution_identity();
+    context.provider_identity =
+        bike::io::sha256(std::as_bytes(std::span{provider}));
+    context.model_sha256 = image.sha256;
     // make_environment's construction settle: the full braked physical
     // relaxation (initialize_pose + damped stepping + trust-region refine),
     // not a bare pose. Records that read tire loads, intent signals, or

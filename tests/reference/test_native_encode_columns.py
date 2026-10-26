@@ -1194,10 +1194,14 @@ def test_derived_events_real_episode_bitwise(monkeypatch, tmp_path):
                 AssertionError('boxed sample scan ran on the native path')))
         actual = list(native_module.iter_derived_events(
             episode, 2, start_event_id=5, received_wall_s=3.25))
-        # F1: the re-scoped welded plant is healthy, so the episode carries
-        # no model-status/violation flips; the measured real transitions are
-        # the three freehub_engaged toggles (intervals 1/10/48, darwin-arm64).
-        assert len(expected) >= 3   # the ride really transitions
+        # F1 merge-back: the completed weld-press servo holds the freehub
+        # engaged through this ride — both the boxed scan over the native
+        # episode and a standalone advance_python of the same plant
+        # measure zero transitions (the fix round had measured three
+        # freehub_engaged toggles at intervals 1/10/48 on darwin-arm64,
+        # before the servo port landed). The frozen-stream compare is the
+        # assertion here; populated scans stay covered by
+        # test_derived_events_bitwise_vs_oracle's staged episode.
         oracle.assert_derived_events(actual, expected)
     finally:
         driver.close()

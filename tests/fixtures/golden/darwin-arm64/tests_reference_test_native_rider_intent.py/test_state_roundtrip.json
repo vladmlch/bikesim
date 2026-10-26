@@ -1,0 +1,282 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 3912,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   489
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.resolve.0",
+  "nbytes": 3224,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 3912,
+  "rtol": null,
+  "shape": [
+   403
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "output.control.0",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 7136,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "output.state.0",
+  "nbytes": 565,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 7355,
+  "rtol": null,
+  "shape": [
+   565
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.resolve.1",
+  "nbytes": 3232,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 7920,
+  "rtol": null,
+  "shape": [
+   404
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "output.control.1",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 11152,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "output.state.1",
+  "nbytes": 728,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 11370,
+  "rtol": null,
+  "shape": [
+   728
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.resolve.2",
+  "nbytes": 3232,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 12098,
+  "rtol": null,
+  "shape": [
+   404
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "output.control.2",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 15330,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "output.state.2",
+  "nbytes": 896,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 15549,
+  "rtol": null,
+  "shape": [
+   896
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.resolve.3",
+  "nbytes": 3232,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 16445,
+  "rtol": null,
+  "shape": [
+   404
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "output.control.3",
+  "nbytes": 234,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 19677,
+  "rtol": null,
+  "shape": [
+   234
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "output.state.3",
+  "nbytes": 1106,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 19911,
+  "rtol": null,
+  "shape": [
+   1106
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.restore.0",
+  "nbytes": 8928,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 21017,
+  "rtol": null,
+  "shape": [
+   1116
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "output.state.4",
+  "nbytes": 1106,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 29945,
+  "rtol": null,
+  "shape": [
+   1106
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.restore.1",
+  "nbytes": 8928,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 31051,
+  "rtol": null,
+  "shape": [
+   1116
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "output.state.5",
+  "nbytes": 1106,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 39979,
+  "rtol": null,
+  "shape": [
+   1106
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "input.resolve.4",
+  "nbytes": 3224,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 41085,
+  "rtol": null,
+  "shape": [
+   403
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "output.control.4",
+  "nbytes": 234,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 44309,
+  "rtol": null,
+  "shape": [
+   234
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "output.state.6",
+  "nbytes": 1269,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_roundtrip",
+  "offset": 44543,
+  "rtol": null,
+  "shape": [
+   1269
+  ]
+ }
+]

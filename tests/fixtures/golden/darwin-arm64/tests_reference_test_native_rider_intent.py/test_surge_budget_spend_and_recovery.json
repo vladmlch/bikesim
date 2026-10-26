@@ -1,0 +1,238 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 3792,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   474
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.power.0",
+  "nbytes": 264,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 3792,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "output.power.0",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 4056,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.power.1",
+  "nbytes": 264,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 4064,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "output.power.1",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 4328,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.power.2",
+  "nbytes": 264,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 4336,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "output.power.2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 4600,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.power.3",
+  "nbytes": 264,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 4608,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "output.power.3",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 4872,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.power.4",
+  "nbytes": 272,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 4880,
+  "rtol": null,
+  "shape": [
+   34
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "output.power.4",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 5152,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "input.power.5",
+  "nbytes": 272,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 5160,
+  "rtol": null,
+  "shape": [
+   34
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "output.power.5",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 5432,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.power.6",
+  "nbytes": 272,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 5440,
+  "rtol": null,
+  "shape": [
+   34
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "output.power.6",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 5712,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.power.7",
+  "nbytes": 272,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 5720,
+  "rtol": null,
+  "shape": [
+   34
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "output.power.7",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 5992,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "output.state.0",
+  "nbytes": 383,
+  "node": "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery",
+  "offset": 6000,
+  "rtol": null,
+  "shape": [
+   383
+  ]
+ }
+]

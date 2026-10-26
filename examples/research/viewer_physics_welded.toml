@@ -142,7 +142,11 @@ delivered_joint_power_budget_w = 375.0
 # (foot tension -820 N, compression 2383 N, shear 1803 N; saddle tension
 # -1800 N onset transient / -1501 N p01, compression 1054 N, shear 1024 N),
 # consistent with clipless-pedal and saddle-rail retention ratings of order
-# 1-3 kN. A solved load outside the envelope is a defect signal.
+# 1-3 kN. A solved load outside the envelope is a defect signal. Extrema are
+# measured on the provisional strength sheet — audit status NOT ACCEPTED,
+# curves recalled/unverified
+# (docs/superpowers/audits/2026-10-04-seated-rider-closed-form.md) — so the
+# envelope bounds this plant, not rated hardware.
 weld_foot_min_normal_n = -1050.0
 weld_foot_max_normal_n = 3000.0
 weld_foot_shear_n = 2250.0

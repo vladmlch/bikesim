@@ -174,13 +174,36 @@ namespace {
             require(shifter.state().rear_teeth == 18,
                     "fresh shifter sits on the configured rear gear");
         }
-        {   // Valid control: unique teeth are the domain; ordering is parser
-            // normalization (policy_binding.cpp sorts the wire cassette).
+        {   // Valid control: unique teeth are the domain; ordering is ctor
+            // normalization — ShiftingConfig.__post_init__ sorts the cassette,
+            // so the shifter's copy is sorted like the wire/post_init paths.
             auto shifting = valid_shifting_config();
             shifting.cassette = {28, 11, 21, 18, 13, 15, 24};
             const drivetrain::CadenceShifter shifter(valid_gearing_config(), shifting);
             require(shifter.state().rear_teeth == 18,
                     "unsorted but unique cassette stays in the valid domain");
+        }
+        {   // Sorted access after unsorted construction: the multi-cog throw
+            // scans candidates in cassette order, so an unsorted stored order
+            // would diverge from the oracle's sorted iteration. Upshift from
+            // 24T at 96 rpm clears the 70 floor first at 18T (96*18/24 = 72);
+            // raw stored order would stop at 21T (84). Downshift from 13T at
+            // 60 rpm clears the 95 ceiling first at 18T (83.1); reversed
+            // stored order would stop at 15T (69.2).
+            auto gearing = valid_gearing_config();
+            auto shifting = valid_shifting_config();
+            shifting.cassette = {28, 11, 21, 18, 13, 15, 24};
+            shifting.cadence_smoothing_tau_s = 0.;
+            gearing.rear_teeth = 24;
+            drivetrain::CadenceShifter up(gearing, shifting);
+            require(up.update(96., 96., .01) && up.state().rear_teeth == 18 &&
+                    up.state().direction == "up",
+                    "unsorted cassette upshifts in sorted-cassette order");
+            gearing.rear_teeth = 13;
+            drivetrain::CadenceShifter down(gearing, shifting);
+            require(down.update(60., 60., .01) && down.state().rear_teeth == 18 &&
+                    down.state().direction == "down",
+                    "unsorted cassette downshifts in sorted-cassette order");
         }
         const auto invalid_gearing = [](auto mutate) {
             auto gearing = valid_gearing_config();

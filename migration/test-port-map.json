@@ -1604,162 +1604,189 @@
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_low_crank_cadence_downshifts_to_the_next_bigger_cog",
       "line": 17,
-      "end_line": 20,
+      "end_line": 22,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_low_crank_cadence_downshifts_to_the_next_bigger_cog",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_low_crank_cadence_downshifts_to_the_next_bigger_cog"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): expectation refreshed 33 -> 51 \u2014 the pre-b21c63ec one-step assert was red vs the live oracle since b21c63ec introduced the multi-cog throw; the refreshed value is the oracle-verified multi-cog landing. pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_a_wheel_implied_spike_alone_never_upshifts",
-      "line": 23,
-      "end_line": 29,
+      "line": 25,
+      "end_line": 31,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_a_wheel_implied_spike_alone_never_upshifts",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_a_wheel_implied_spike_alone_never_upshifts"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_high_crank_cadence_upshifts_when_the_landing_stays_in_band",
-      "line": 32,
-      "end_line": 35,
+      "line": 34,
+      "end_line": 39,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_high_crank_cadence_upshifts_when_the_landing_stays_in_band",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_high_crank_cadence_upshifts_when_the_landing_stays_in_band"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): expectation refreshed 24 -> 21 \u2014 the pre-b21c63ec one-step assert was red vs the live oracle since b21c63ec introduced the multi-cog throw; the refreshed value is the oracle-verified multi-cog landing. pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_upshifts_stop_at_the_smallest_cog",
-      "line": 38,
-      "end_line": 46,
+      "line": 42,
+      "end_line": 51,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_upshifts_stop_at_the_smallest_cog",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_upshifts_stop_at_the_smallest_cog"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): expectation refreshed 45 -> 39 \u2014 the pre-b21c63ec one-step assert was red vs the live oracle since b21c63ec introduced the multi-cog throw; the refreshed value is the oracle-verified multi-cog landing. pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_cooldown_and_not_pedalling_block_shifts",
-      "line": 49,
-      "end_line": 56,
+      "line": 54,
+      "end_line": 61,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_cooldown_and_not_pedalling_block_shifts",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_cooldown_and_not_pedalling_block_shifts"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_wheelspin_blocks_an_upshift_but_not_a_downshift",
-      "line": 59,
-      "end_line": 62,
+      "line": 64,
+      "end_line": 67,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_wheelspin_blocks_an_upshift_but_not_a_downshift",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_wheelspin_blocks_an_upshift_but_not_a_downshift"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_ema_filters_a_single_stroke_spike",
-      "line": 65,
-      "end_line": 71,
+      "line": 70,
+      "end_line": 76,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_ema_filters_a_single_stroke_spike",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_ema_filters_a_single_stroke_spike"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_upshift_that_lands_below_the_band_is_rejected",
-      "line": 74,
-      "end_line": 77,
+      "line": 79,
+      "end_line": 82,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_upshift_that_lands_below_the_band_is_rejected",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_upshift_that_lands_below_the_band_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_downshift_that_lands_above_the_band_is_rejected",
-      "line": 80,
-      "end_line": 83,
+      "line": 85,
+      "end_line": 88,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_downshift_that_lands_above_the_band_is_rejected",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_downshift_that_lands_above_the_band_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
@@ -2530,14 +2557,20 @@
       "owner_task": "T52",
       "native_test_id": "reference.drivetrain_policy_clone::test_clone_matches_deepcopy_and_shares_no_mutable_state",
       "native_source": "native/tests/reference/test_drivetrain_policy_clone.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_drivetrain_policy_clone.py::test_clone_matches_deepcopy_and_shares_no_mutable_state[shifting]",
+        "tests/reference/test_drivetrain_policy_clone.py::test_clone_matches_deepcopy_and_shares_no_mutable_state[pedaling]",
+        "tests/reference/test_drivetrain_policy_clone.py::test_clone_matches_deepcopy_and_shares_no_mutable_state[hub]",
+        "tests/reference/test_drivetrain_policy_clone.py::test_clone_matches_deepcopy_and_shares_no_mutable_state[assist]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: ported to native/tests/reference/test_drivetrain_policy_clone.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.drivetrain_policy_clone green on both platforms"
       ]
     },
     {
@@ -3764,14 +3797,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_freewheel_topology::test_rotor_torque_drives_the_crank_through_the_engaged_freewheel",
       "native_source": "native/tests/reference/test_motor_freewheel_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_freewheel_topology.py::test_rotor_torque_drives_the_crank_through_the_engaged_freewheel"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: coverage verified 1:1 against the existing native/tests/reference/test_motor_freewheel_topology.cpp implementation; oracle green on darwin-arm64 + linux-aarch64; CTest reference.motor_freewheel_topology green on both platforms"
       ]
     },
     {
@@ -3782,14 +3818,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_freewheel_topology::test_crank_overruns_a_coasting_rotor_without_backdriving_it",
       "native_source": "native/tests/reference/test_motor_freewheel_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_freewheel_topology.py::test_crank_overruns_a_coasting_rotor_without_backdriving_it"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: coverage verified 1:1 against the existing native/tests/reference/test_motor_freewheel_topology.cpp implementation; oracle green on darwin-arm64 + linux-aarch64; CTest reference.motor_freewheel_topology green on both platforms"
       ]
     },
     {
@@ -3800,14 +3839,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_freewheel_topology::test_rotor_catches_up_and_reengages_without_lash",
       "native_source": "native/tests/reference/test_motor_freewheel_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_freewheel_topology.py::test_rotor_catches_up_and_reengages_without_lash"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: coverage verified 1:1 against the existing native/tests/reference/test_motor_freewheel_topology.cpp implementation; oracle green on darwin-arm64 + linux-aarch64; CTest reference.motor_freewheel_topology green on both platforms"
       ]
     },
     {
@@ -3818,14 +3860,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_freewheel_topology::test_default_topology_is_rigid_crank_with_motor_on_the_crank",
       "native_source": "native/tests/reference/test_motor_freewheel_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_freewheel_topology.py::test_default_topology_is_rigid_crank_with_motor_on_the_crank"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: coverage verified 1:1 against the existing native/tests/reference/test_motor_freewheel_topology.cpp implementation; oracle green on darwin-arm64 + linux-aarch64; CTest reference.motor_freewheel_topology green on both platforms"
       ]
     },
     {
@@ -3836,14 +3881,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_freewheel_topology::test_rotor_inertia_adds_a_freewheeled_rotor_body",
       "native_source": "native/tests/reference/test_motor_freewheel_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_freewheel_topology.py::test_rotor_inertia_adds_a_freewheeled_rotor_body"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: coverage verified 1:1 against the existing native/tests/reference/test_motor_freewheel_topology.cpp implementation; oracle green on darwin-arm64 + linux-aarch64; CTest reference.motor_freewheel_topology green on both platforms"
       ]
     },
     {
@@ -3854,14 +3902,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_freewheel_topology::test_legacy_crank_clutch_still_builds_for_regression_ab",
       "native_source": "native/tests/reference/test_motor_freewheel_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_freewheel_topology.py::test_legacy_crank_clutch_still_builds_for_regression_ab"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: coverage verified 1:1 against the existing native/tests/reference/test_motor_freewheel_topology.cpp implementation; oracle green on darwin-arm64 + linux-aarch64; CTest reference.motor_freewheel_topology green on both platforms"
       ]
     },
     {
@@ -3872,14 +3923,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_freewheel_topology::test_rotor_and_legacy_clutch_are_exclusive",
       "native_source": "native/tests/reference/test_motor_freewheel_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_freewheel_topology.py::test_rotor_and_legacy_clutch_are_exclusive"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: coverage verified 1:1 against the existing native/tests/reference/test_motor_freewheel_topology.cpp implementation; oracle green on darwin-arm64 + linux-aarch64; CTest reference.motor_freewheel_topology green on both platforms"
       ]
     },
     {
@@ -3890,14 +3944,19 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_freewheel_topology::test_rotor_inertia_requires_a_finite_nonnegative_scalar",
       "native_source": "native/tests/reference/test_motor_freewheel_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_freewheel_topology.py::test_rotor_inertia_requires_a_finite_nonnegative_scalar[nan]",
+        "tests/reference/test_motor_freewheel_topology.py::test_rotor_inertia_requires_a_finite_nonnegative_scalar[inf]",
+        "tests/reference/test_motor_freewheel_topology.py::test_rotor_inertia_requires_a_finite_nonnegative_scalar[True]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: coverage verified 1:1 against the existing native/tests/reference/test_motor_freewheel_topology.cpp implementation; oracle green on darwin-arm64 + linux-aarch64; CTest reference.motor_freewheel_topology green on both platforms"
       ]
     },
     {
@@ -3908,14 +3967,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_freewheel_topology::test_rotor_requires_an_effort_drive_mode",
       "native_source": "native/tests/reference/test_motor_freewheel_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_freewheel_topology.py::test_rotor_requires_an_effort_drive_mode"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: coverage verified 1:1 against the existing native/tests/reference/test_motor_freewheel_topology.cpp implementation; oracle green on darwin-arm64 + linux-aarch64; CTest reference.motor_freewheel_topology green on both platforms"
       ]
     },
     {
@@ -7725,14 +7787,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_native_policy_api_exists",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_native_policy_api_exists"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: ported to native/tests/reference/test_native_drive_policies.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_drive_policies green on both platforms"
       ]
     },
     {
@@ -7743,14 +7808,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_crank_torque",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_crank_torque"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7765,14 +7833,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_battery_draw_matches_python",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_battery_draw_matches_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7787,14 +7858,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_pedaling_sequences",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_pedaling_sequences"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7809,14 +7883,20 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_shifting",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_shifting[raw-signed]",
+        "tests/reference/test_native_drive_policies.py::test_shifting[raw-magnitude]",
+        "tests/reference/test_native_drive_policies.py::test_shifting[ema-signed]",
+        "tests/reference/test_native_drive_policies.py::test_shifting[ema-magnitude]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7831,14 +7911,21 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_assist",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_assist[custom]",
+        "tests/reference/test_native_drive_policies.py::test_assist[eco]",
+        "tests/reference/test_native_drive_policies.py::test_assist[tour]",
+        "tests/reference/test_native_drive_policies.py::test_assist[emtb]",
+        "tests/reference/test_native_drive_policies.py::test_assist[turbo]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7853,14 +7940,20 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_energy_helpers",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_energy_helpers[disabled-lossless]",
+        "tests/reference/test_native_drive_policies.py::test_energy_helpers[disabled-copper]",
+        "tests/reference/test_native_drive_policies.py::test_energy_helpers[enabled-lossless]",
+        "tests/reference/test_native_drive_policies.py::test_energy_helpers[enabled-copper]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7875,14 +7968,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_freehub",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_freehub"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7897,14 +7993,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_replay_reset_and_ownership",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_replay_reset_and_ownership"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7919,14 +8018,21 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_invalid_restore_is_atomic",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_is_atomic[pedaling]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_is_atomic[shifting]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_is_atomic[assist]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_is_atomic[battery]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_is_atomic[hub]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7941,14 +8047,24 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_invalid_restore_values",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_values[battery-negative]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_values[hub-negative]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_values[cooldown-negative]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_values[teeth-small]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_values[count-negative]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_values[teeth-fractional]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_values[coasting-integer]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_restore_values[ema-unpaired]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 8 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7963,14 +8079,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_config_validation",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_config_validation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -7985,14 +8104,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_projection_resolves_runtime",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_projection_resolves_runtime"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: ported to native/tests/reference/test_native_drive_policies.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_drive_policies green on both platforms"
       ]
     },
     {
@@ -8003,14 +8125,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_projection_normalizes_numeric_leaves",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_projection_normalizes_numeric_leaves"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: ported to native/tests/reference/test_native_drive_policies.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_drive_policies green on both platforms"
       ]
     },
     {
@@ -8021,14 +8146,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_complete_reset_and_atomic_multi_policy_restore",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_complete_reset_and_atomic_multi_policy_restore"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8043,14 +8171,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_restored_finite_snapshots_preserve_bits",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_restored_finite_snapshots_preserve_bits"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8065,14 +8196,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_disabled_shifter_initial_teeth_outside_cassette",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8087,14 +8221,39 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_invalid_config_values",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[front-bool]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[rear-fractional]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[pitch-zero]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[pedaling-bool]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[stop-zero]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[resume-band]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[shifting-bool]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[cassette-duplicate]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[cassette-bool]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[cassette-empty]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[torque-factor]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[shift-cut]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[slip-mode]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[tau-zero]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[slew-zero]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[gain-negative]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[mode-integer]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[curve-short]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[curve-duplicate]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[curve-negative]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[profile-incomplete]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[battery-bool]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_config_values[energy-negative]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 23 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8109,14 +8268,23 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_missing_config_sections",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_missing_config_sections[gearing]",
+        "tests/reference/test_native_drive_policies.py::test_missing_config_sections[pedaling]",
+        "tests/reference/test_native_drive_policies.py::test_missing_config_sections[shifting]",
+        "tests/reference/test_native_drive_policies.py::test_missing_config_sections[assist]",
+        "tests/reference/test_native_drive_policies.py::test_missing_config_sections[battery]",
+        "tests/reference/test_native_drive_policies.py::test_missing_config_sections[hub_stiffness_nm_rad]",
+        "tests/reference/test_native_drive_policies.py::test_missing_config_sections[hub_damping_nm_s]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 7 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8131,14 +8299,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_random_curve_interpolation",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_random_curve_interpolation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8153,14 +8324,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_battery_nonzero_idle_remainder",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_battery_nonzero_idle_remainder"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8175,14 +8349,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_config_and_python_object_deletion",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_config_and_python_object_deletion"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8197,14 +8374,19 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_pedaling_parameter_branches",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+        "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[mash]",
+        "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[filtered]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8219,14 +8401,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_optional_config_sections",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_optional_config_sections"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8241,14 +8426,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_extra_and_missing_state_sections",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_extra_and_missing_state_sections"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8263,14 +8451,27 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_invalid_calls_preserve_state",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[pedal-nan]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[pedal-zero-dt]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[shift-zero-dt]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[shift-infinite]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[assist-zero-dt]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[assist-infinite]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[battery-infinite]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[battery-zero-dt]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[hub-infinite]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[power-infinite]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[limit-negative]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 11 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8285,14 +8486,20 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_invalid_human_torque",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_invalid_human_torque[nan]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_human_torque[infinite]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_human_torque[negative]",
+        "tests/reference/test_native_drive_policies.py::test_invalid_human_torque[one]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: ported to native/tests/reference/test_native_drive_policies.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_drive_policies green on both platforms"
       ]
     },
     {
@@ -8303,14 +8510,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_shifter_count_boundary_rejects_successful_increment_atomically",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_shifter_count_boundary_rejects_successful_increment_atomically"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8325,14 +8535,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_unrepresentable_count_restore_is_atomic",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_unrepresentable_count_restore_is_atomic"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8347,14 +8560,24 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_assist_computed_crank_overflow_matches_python_state",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[crank-negative-plain]",
+        "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[crank-negative-emtb]",
+        "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[crank-positive-plain]",
+        "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[crank-positive-emtb]",
+        "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-negative-plain]",
+        "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-negative-emtb]",
+        "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+        "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-emtb]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 8 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8369,14 +8592,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drive_policies::test_assist_braking_resets_before_computed_crank_overflow",
       "native_source": "native/tests/reference/test_native_drive_policies.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drive_policies.py::test_assist_braking_resets_before_computed_crank_overflow"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drive_policies green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8391,14 +8617,28 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_chain_core",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_chain_core[0]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[1]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[2]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[3]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[4]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[5]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[6]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[7]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[8]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[9]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[10]",
+        "tests/reference/test_native_drivetrain.py::test_chain_core[11]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 12 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8413,14 +8653,28 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_force_staging",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_force_staging[crank_effort-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[crank_effort-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[crank_effort-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[articulated_effort-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[articulated_effort-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[articulated_effort-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[coast-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[coast-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[ideal_speed_control-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[ideal_speed_control-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_force_staging[ideal_speed_control-geometric_ideal_mid_drive]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 12 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8435,14 +8689,44 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_solved_intervals",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-dense-elastic_chain-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-dense-ideal_mid_drive-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-dense-ideal_mid_drive-clutch]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-dense-ideal_mid_drive-rotor]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-dense-geometric_ideal_mid_drive-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-dense-geometric_ideal_mid_drive-clutch]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-dense-geometric_ideal_mid_drive-rotor]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-sparse-elastic_chain-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-sparse-ideal_mid_drive-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-sparse-ideal_mid_drive-clutch]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-sparse-ideal_mid_drive-rotor]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-sparse-geometric_ideal_mid_drive-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-sparse-geometric_ideal_mid_drive-clutch]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[crank_effort-sparse-geometric_ideal_mid_drive-rotor]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-dense-elastic_chain-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-dense-ideal_mid_drive-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-dense-ideal_mid_drive-clutch]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-dense-ideal_mid_drive-rotor]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-dense-geometric_ideal_mid_drive-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-dense-geometric_ideal_mid_drive-clutch]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-dense-geometric_ideal_mid_drive-rotor]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-sparse-elastic_chain-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-sparse-ideal_mid_drive-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-sparse-ideal_mid_drive-clutch]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-sparse-ideal_mid_drive-rotor]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-sparse-geometric_ideal_mid_drive-plain]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-sparse-geometric_ideal_mid_drive-clutch]",
+        "tests/reference/test_native_drivetrain.py::test_solved_intervals[articulated_effort-sparse-geometric_ideal_mid_drive-rotor]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 28 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8457,14 +8741,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_atomic_state_inputs_and_probes",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_atomic_state_inputs_and_probes"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8479,14 +8766,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_projection",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_projection"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8501,14 +8791,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_no_drive",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_no_drive"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: ported to native/tests/reference/test_native_drivetrain.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_drivetrain green on both platforms"
       ]
     },
     {
@@ -8519,14 +8812,22 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_transmission_core",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_transmission_core[reset-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_transmission_core[reset-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_transmission_core[prepare-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_transmission_core[prepare-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_transmission_core[ratio-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_transmission_core[ratio-geometric_ideal_mid_drive]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8541,14 +8842,40 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_random_multiturn_staging",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[0-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[0-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[0-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[1-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[1-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[1-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[2-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[2-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[2-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[3-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[3-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[3-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[4-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[4-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[4-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[5-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[5-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[5-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[6-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[6-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[6-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[7-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[7-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_random_multiturn_staging[7-geometric_ideal_mid_drive]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 24 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8563,14 +8890,24 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_shifting_prepared_state_and_clock",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_shifting_prepared_state_and_clock[contact-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_shifting_prepared_state_and_clock[contact-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_shifting_prepared_state_and_clock[airborne-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_shifting_prepared_state_and_clock[airborne-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_shifting_prepared_state_and_clock[slip-positive-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_shifting_prepared_state_and_clock[slip-positive-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_shifting_prepared_state_and_clock[slip-negative-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_shifting_prepared_state_and_clock[slip-negative-geometric_ideal_mid_drive]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 8 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8585,14 +8922,28 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_energy_ceiling_and_actual_force",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[empty-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[empty-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[empty-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[tiny-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[tiny-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[tiny-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[limited-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[limited-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[limited-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[disabled-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[disabled-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_energy_ceiling_and_actual_force[disabled-geometric_ideal_mid_drive]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 12 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8607,14 +8958,25 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_probe_does_not_touch_ratchets_or_live_state",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_probe_does_not_touch_ratchets_or_live_state[active-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_probe_does_not_touch_ratchets_or_live_state[active-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_probe_does_not_touch_ratchets_or_live_state[active-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_probe_does_not_touch_ratchets_or_live_state[inactive-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_probe_does_not_touch_ratchets_or_live_state[inactive-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_probe_does_not_touch_ratchets_or_live_state[inactive-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_probe_does_not_touch_ratchets_or_live_state[braking-elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_probe_does_not_touch_ratchets_or_live_state[braking-ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_probe_does_not_touch_ratchets_or_live_state[braking-geometric_ideal_mid_drive]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 9 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8629,14 +8991,22 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_invalid_config",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_invalid_config[drive-mode]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_config[transmission]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_config[ripple]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_config[clutch-integer]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_config[chain-zero]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_config[rotor-infinite]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: ported to native/tests/reference/test_native_drivetrain.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_drivetrain green on both platforms"
       ]
     },
     {
@@ -8647,14 +9017,25 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_invalid_calls_are_atomic",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_invalid_calls_are_atomic[dt-zero]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_calls_are_atomic[dt-nan]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_calls_are_atomic[speed-infinite]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_calls_are_atomic[braking-integer]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_calls_are_atomic[active-string]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_calls_are_atomic[advance-integer]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_calls_are_atomic[sensed-nan]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_calls_are_atomic[rider-integer]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_calls_are_atomic[motor-limit-negative]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 9 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8669,14 +9050,27 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_invalid_restoration_is_atomic",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[angles-width]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[reference-nan]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[time-infinite]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[ratio-zero]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[pending-integer]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[coefficient-width]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[count-overflow]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[coasting-integer]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[direction]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[battery-negative]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_restoration_is_atomic[assist-nan]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 11 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8691,14 +9085,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_set_inputs_cross_aliases_and_ownership",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8713,14 +9110,19 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_injected_valid_state_and_replay",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_injected_valid_state_and_replay[elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_injected_valid_state_and_replay[ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_injected_valid_state_and_replay[geometric_ideal_mid_drive]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8735,14 +9137,18 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_pending_and_duplicate_settlement_guards",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_pending_and_duplicate_settlement_guards[ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_pending_and_duplicate_settlement_guards[geometric_ideal_mid_drive]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8757,14 +9163,22 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_passive_topology_without_actuators",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[elastic_chain-coast]",
+        "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[elastic_chain-ideal_speed_control]",
+        "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+        "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-ideal_speed_control]",
+        "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[geometric_ideal_mid_drive-coast]",
+        "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[geometric_ideal_mid_drive-ideal_speed_control]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8779,14 +9193,22 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_diagnostic_state_validation",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[shift-direction]",
+        "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[transmission]",
+        "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[motor-integer]",
+        "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[teeth-overflow]",
+        "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+        "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[control-source]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8801,14 +9223,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_prepared_state_requires_boundary",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_prepared_state_requires_boundary"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8823,14 +9248,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_real_solved_request_violation",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_real_solved_request_violation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: ported to native/tests/reference/test_native_drivetrain.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_drivetrain green on both platforms"
       ]
     },
     {
@@ -8841,14 +9269,18 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_invalid_elastic_topology_rejects",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_invalid_elastic_topology_rejects[clutch]",
+        "tests/reference/test_native_drivetrain.py::test_invalid_elastic_topology_rejects[rotor]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: ported to native/tests/reference/test_native_drivetrain.cpp; oracle green on darwin-arm64 + linux-aarch64; CTest reference.native_drivetrain green on both platforms"
       ]
     },
     {
@@ -8859,14 +9291,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_optional_project_and_initial_gearing",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8881,14 +9316,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_set_inputs_both_cross_buffer_aliases",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_set_inputs_both_cross_buffer_aliases"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8903,14 +9341,19 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_diagnostic_ratio_and_integer_ranges",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_diagnostic_ratio_and_integer_ranges[ratio-zero]",
+        "tests/reference/test_native_drivetrain.py::test_diagnostic_ratio_and_integer_ranges[front-teeth-small]",
+        "tests/reference/test_native_drivetrain.py::test_diagnostic_ratio_and_integer_ranges[count-negative]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8925,14 +9368,19 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_genuine_wheel_and_rotor_overrun",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_genuine_wheel_and_rotor_overrun[elastic_chain]",
+        "tests/reference/test_native_drivetrain.py::test_genuine_wheel_and_rotor_overrun[ideal_mid_drive]",
+        "tests/reference/test_native_drivetrain.py::test_genuine_wheel_and_rotor_overrun[geometric_ideal_mid_drive]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8947,14 +9395,20 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_geometric_prepared_buffers_reuse_storage",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_geometric_prepared_buffers_reuse_storage[prepare]",
+        "tests/reference/test_native_drivetrain.py::test_geometric_prepared_buffers_reuse_storage[reset]",
+        "tests/reference/test_native_drivetrain.py::test_geometric_prepared_buffers_reuse_storage[shift]",
+        "tests/reference/test_native_drivetrain.py::test_geometric_prepared_buffers_reuse_storage[restore]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -8969,14 +9423,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_drivetrain::test_geometric_prepared_sentinel_owns_reused_storage",
       "native_source": "native/tests/reference/test_native_drivetrain.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-dispositions.json",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 lane/c: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_drivetrain green on both platforms"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -11830,7 +12287,8 @@
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
-        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators",
+        "2026-10-26 3.18 fix round (lane/c): dormant-fixture audit \u2014 the committed .json/.bin sidecar pair (float32 required_ema 90.40253, captured under 3.21a before this record was dispositioned drop) has no C++ consumer (reference.native_numeric_completion registers no node for it) and is un-reproducible under the live oracle: b21c63ec's multi-cog throw makes the node produce rear_teeth 14 and a different required_ema, so the Python node itself is a documented live-oracle red. Stale unverifiable bytes have no place in the golden tree; the sidecar pair was removed on both platforms (drop-with-reason, not a silent deletion). The disposition stays drop/python-only \u2014 the node asserts np.float32 marshalling internals no port mirrors. Sibling float32 drop-records keep their dormant sidecars: still reproducible under the live oracle."
       ],
       "golden_platforms": []
     },

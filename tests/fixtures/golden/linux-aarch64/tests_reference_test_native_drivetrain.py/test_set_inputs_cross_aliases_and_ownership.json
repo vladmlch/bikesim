@@ -1,0 +1,184 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 16,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 80,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 96,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 160,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 176,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 240,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 256,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 57,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 320,
+  "rtol": null,
+  "shape": [
+   57
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "$.chain",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 377,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "$.drive_bearings",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 441,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "$.freehub",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 505,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "$.ideal_transmission",
+  "nbytes": 64,
+  "node": "tests/reference/test_native_drivetrain.py::test_set_inputs_cross_aliases_and_ownership",
+  "offset": 569,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ }
+]

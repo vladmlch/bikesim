@@ -43,13 +43,36 @@ namespace drivetrain {
             std::min(cadence, required) < 0.) return finish(false);
         int selected = next.rear_teeth;
         ShiftDirection direction = ShiftDirection::none;
+        // A throw can jump several cogs: when the crank has spun far past the
+        // band the one-step shift lands the rider still overspun and the
+        // cooldown forces another wait. Take the smallest cog whose
+        // wheel-implied landing cadence still clears the band floor — the
+        // same no-hunting rule as below, applied across the throw (mirrors
+        // shifting.py; the cassette is sorted ascending after validation).
         if (engaged(next.cadence_ema) > config_.target_cadence_max_rpm) {
-            for (int const teeth: config_.cassette) if (
-                teeth < next.rear_teeth && (selected == next.rear_teeth || teeth > selected)) selected = teeth;
+            int fallback = next.rear_teeth;
+            for (int const teeth : config_.cassette) {
+                if (teeth >= next.rear_teeth) continue;
+                fallback = teeth;  // ascending order: the last candidate is max()
+                if (engaged(next.required_ema) * teeth / next.rear_teeth >= config_.target_cadence_min_rpm) {
+                    selected = teeth;
+                    break;
+                }
+            }
+            if (selected == next.rear_teeth) selected = fallback;
             direction = ShiftDirection::up;
         } else if (engaged(next.cadence_ema) < config_.target_cadence_min_rpm) {
-            for (int const teeth: config_.cassette) if (
-                teeth > next.rear_teeth && (selected == next.rear_teeth || teeth < selected)) selected = teeth;
+            int fallback = next.rear_teeth;
+            for (auto cog = config_.cassette.rbegin(); cog != config_.cassette.rend(); ++cog) {
+                const int teeth = *cog;
+                if (teeth <= next.rear_teeth) continue;
+                fallback = teeth;  // descending order: the last candidate is min()
+                if (engaged(next.required_ema) * teeth / next.rear_teeth <= config_.target_cadence_max_rpm) {
+                    selected = teeth;
+                    break;
+                }
+            }
+            if (selected == next.rear_teeth) selected = fallback;
             direction = ShiftDirection::down;
         } else return finish(false);
         if (selected == next.rear_teeth) return finish(false);

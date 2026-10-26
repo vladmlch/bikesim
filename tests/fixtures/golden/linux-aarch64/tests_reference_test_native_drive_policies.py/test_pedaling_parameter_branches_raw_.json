@@ -1,0 +1,2818 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 91,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   91
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "$.effort_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 91,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "$.mode",
+  "nbytes": 10,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 99,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "$.reason",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 109,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "$.required_cadence_rpm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 111,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "$.target_phase_rad",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 119,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "$.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 123,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 131,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 179,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 212,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 220,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 225,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 233,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 281,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 289,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 297,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 305,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 340,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 344,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 352,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 360,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 458,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 466,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 474,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 479,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 487,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 491,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 499,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 612,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 616,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 624,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 632,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 638,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 640,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 642,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 646,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 91,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 647,
+  "rtol": null,
+  "shape": [
+   91
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "$.effort_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 738,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "$.mode",
+  "nbytes": 10,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 746,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "$.reason",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 756,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "$.required_cadence_rpm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 765,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "$.target_phase_rad",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 773,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "$.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 781,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 789,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 837,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 870,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 878,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 883,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 891,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 939,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 947,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 955,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 963,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 998,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1002,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1010,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1018,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1116,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1124,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1132,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1136,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1144,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1152,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1160,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1273,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1277,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1285,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1293,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1299,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1301,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1303,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1307,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 91,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1308,
+  "rtol": null,
+  "shape": [
+   91
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "$.effort_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1399,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "$.mode",
+  "nbytes": 10,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1407,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "$.reason",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1417,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "$.required_cadence_rpm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1426,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "$.target_phase_rad",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1434,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "$.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1442,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1450,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1498,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1531,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1539,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1544,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1552,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1600,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1608,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1616,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1624,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1659,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1663,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1671,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1679,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1777,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1785,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1793,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1797,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1805,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1813,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1821,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1934,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1938,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1946,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1954,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1960,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1962,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1964,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1968,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 91,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 1969,
+  "rtol": null,
+  "shape": [
+   91
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "$.effort_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2060,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "$.mode",
+  "nbytes": 10,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2068,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "$.reason",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2078,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "$.required_cadence_rpm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2080,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "$.target_phase_rad",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2088,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "$.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2092,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2100,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2148,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2181,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2189,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2194,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2202,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2250,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2258,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2266,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2274,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2309,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2313,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2321,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2329,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2427,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2435,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2443,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2448,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2456,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2460,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2468,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2581,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2585,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2593,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2601,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2607,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2609,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2611,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2615,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 91,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2616,
+  "rtol": null,
+  "shape": [
+   91
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "$.effort_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2707,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "$.mode",
+  "nbytes": 10,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2715,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "$.reason",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2725,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "$.required_cadence_rpm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2734,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "$.target_phase_rad",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2742,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "$.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2750,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2758,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2806,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2839,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2847,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2852,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2860,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2908,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2916,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2924,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2932,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2967,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2971,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2979,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 2987,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3085,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3093,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3101,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3105,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3113,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3121,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3129,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3242,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3246,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3254,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3262,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3268,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3270,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3272,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3276,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 91,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3277,
+  "rtol": null,
+  "shape": [
+   91
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "$.effort_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3368,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "$.mode",
+  "nbytes": 10,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3376,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "$.reason",
+  "nbytes": 11,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3386,
+  "rtol": null,
+  "shape": [
+   11
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "$.required_cadence_rpm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3397,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "$.target_phase_rad",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3405,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "$.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3413,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3421,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3469,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3502,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3510,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3515,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3523,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3571,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3579,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3587,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3595,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3630,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3634,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3642,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3650,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3748,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3756,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3764,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3768,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3776,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3784,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3792,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3905,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3909,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3917,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3925,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3931,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3933,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3935,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw]",
+  "offset": 3939,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ }
+]

@@ -5602,3 +5602,166 @@ darwin-arm64 and linux-aarch64. Ledger and evidence unions verified
 record-level; nothing lost or duplicated. L3 (`tools/run_tests.sh
 native`) not run — bounded merge-back scope; checkpoint profile owns
 it.
+
+## 2026-10-26 — Task 3.18 (lane/c): drivetrain core (`drive`)
+
+### Scope
+
+Four source files, 69 records, 292 collected pytest nodes:
+
+- `test_native_drivetrain.py` — 28 records / 175 nodes (24 golden /
+  4 port).
+- `test_native_drive_policies.py` — 31 records / 102 nodes (27 golden
+  / 4 port).
+- `test_drivetrain_policy_clone.py` — 1 record / 4 nodes (port).
+- `test_motor_freewheel_topology.py` — 9 records / 11 nodes (port).
+
+`reference.motor_freewheel_topology` reconciled first: the target was
+already registered (`Phase3Ports.cmake`) and the TU already existed,
+so its nine records were verified 1:1 against the existing functions —
+no second test file; ledger rows keep their dispositions and gain only
+collected node ids plus a dated verification line. The other three
+TUs were likewise pre-landed at batch start; all 69 rows carried only
+`2026-10-21: source disposition only` evidence — this session supplies
+the runtime qualification. Dispositions: 51 golden / 18 port / 0 drop.
+
+### Fixes found by the oracle runs
+
+- `native/src/drivetrain/shifting.cpp` mirrored the multi-cog throw
+  selection that `b21c63ec` added to `physics/shifting.py`: smallest
+  upshift (largest downshift) candidate whose landing cadence stays
+  inside the EMA bounds, extreme candidate as fallback — replacing the
+  old one-step neighbour pick. Detected as 11 deterministic golden
+  mismatches on the first macOS pytest run (`required_cadence_rpm`
+  147.45237375 vs 70.21541607, `gear_ratio` 1.619047619 vs 2.125,
+  `ideal_hub.boundary` 0.5291 vs 0.4674). `5bbea70a`.
+- `drivetrain_reference_support.hpp` `tree()` dispatches sequence
+  leaves on the recorded form (`peek_label() == path + "#length"`)
+  instead of a path-name list: wire states carry `ideal_hub.range` as
+  a JSON list while `python_state` carries it as an ndarray;
+  `coefficients`/`prepared.jacobian`/`prepared.qpos` are ndarrays on
+  both sides. `45924d62`.
+
+### Verification
+
+- Oracle pytest, `uv run` (capture runs, full files): **102 passed**
+  `test_native_drive_policies.py` and **175 passed**
+  `test_native_drivetrain.py` on darwin-arm64 (`native/build`,
+  1255.51 s / 791.11 s); same counts on linux-aarch64 inside
+  `bike-dev-pfc-lane-c` (`/build/native-clang`). Clone+freewheel:
+  **14 passed, 1 skipped** on both platforms.
+- CTest, labels `t52 drive` / `t52 drive golden`:
+  - `reference.native_drivetrain`: **PASS 1079181 checks**
+    darwin-arm64 (`build/native-release`) and linux-aarch64
+    (`/build/root-clang`, clang++-18) — identical count.
+  - `reference.native_drive_policies`: **PASS 599289 checks** on both
+    platforms — identical count.
+  - `reference.drivetrain_policy_clone`: **PASS 17 checks** both.
+  - `reference.motor_freewheel_topology`: **PASS 297 checks** both.
+- Goldens: 95 + 165 node pairs (`.json`+`.bin`) per platform under
+  `tests/fixtures/golden/<platform>/
+  tests_reference_test_native_{drive_policies,drivetrain}.py/` —
+  identical node sets across platforms; the no-capture nodes are
+  exactly the `port` contract records (7 + 10, verified against
+  collection; zero orphans, zero foreign nodes). ~27.4 MiB +
+  ~54 MiB per platform (over the 20 MiB guideline, consistent with
+  3.22a-scale required captures).
+- Byte-flip proof: byte 1024 of
+  `test_atomic_state_inputs_and_probes.bin` (darwin-arm64) → FAIL
+  `comparison 5 label '$#keys': bytes differ` naming node, index and
+  label; restored byte-identical (md5 9b239af1024485b47014b46e32f79f14)
+  → PASS.
+- Equilibrium cache: all parity claims are cold-cache — each CTest
+  binary settles its own models; no canonical construction-settle key
+  warmed by a prior episode.
+- `bash tools/run_tests.sh native` not run — task scope bounded to
+  L2 by request; the outer gate owns the sweeps.
+- Baseline reds unchanged and unrelated: `native_static_brake`,
+  `pneumatic_tire_oracle`, `native_clock_contracts`
+  (missing-fixture signature, other batches), `golden_episode_tool`,
+  and the documented `migration_T09`/`T29`/`T56` (darwin) plus the
+  ten-linux-only migration reds. `native_drive_policies` and
+  `native_drivetrain` leave that list — their fixtures now exist and
+  validate on both platforms.
+
+### Ledger
+
+- `migration/test-port-map.json`: 69 rows updated — collected node ids
+  from measured pytest collection, `assertions_capture` replaced with
+  measured counts, dated two-platform evidence appended; the 9
+  freewheel rows got verification evidence only (dispositions and
+  `native_source` untouched). `golden_platforms` already present on
+  all 51 golden rows; line numbers verified drift-free.
+- `migration/python-removal.json`: all four rows →
+  `replacement_landed` with `verification_ids` set to the landed
+  CTest ids; `sha256`/`line_count` refreshed; snapshot hash retained.
+
+## 2026-10-26 — Task 3.18 review fix round (lane/c)
+
+### Findings and resolutions
+
+- **Critical — stale `cadence_shifter` expectations.** Both
+  `native/tests/reference/test_cadence_shifter.cpp` and
+  `tests/reference/test_cadence_shifter.py` pinned pre-`b21c63ec`
+  one-step landings (33/24/45); the oracle's multi-cog throw makes
+  them 51/21/39. Verified by executing `CadenceShifter.update` on the
+  oracle per scenario (60 rpm from 28T → 51 since 60·51/28 = 109.29
+  ≤ 110; 115 rpm from 28T → 21 since 115·18/28 = 73.93 < 75 but
+  115·21/28 = 86.25; 112 rpm from 51T → 39 since 33T lands 72.47 and
+  39T lands 85.65). Both files updated; structure, scenario coverage
+  and the six unaffected functions unchanged. The Python file had
+  been red vs the live oracle since `b21c63ec` with records never
+  runtime-qualified (`disposition: port`, empty node ids) — now
+  genuinely qualified.
+- **Important — unsorted-cassette divergence.** Oracle
+  `ShiftingConfig.__post_init__` sorts the cassette on every
+  construction; native sorted only in `post_init` and wire decode,
+  leaving directly-built `drivetrain::ShiftingConfig` order divergent
+  under the multi-cog scans. `CadenceShifter`'s ctor now sorts its
+  own copy post-`validate()`. Two order-sensitive probes added to
+  `test_shifter_ctor_domain` (`native/tests/test_contracts.cpp`)
+  on cassette `{28,11,21,18,13,15,24}` — upshift 24T@96 rpm → 18T
+  (unsorted iteration would pick 21T), downshift 13T@60 rpm → 18T
+  (would pick 15T), both outcomes oracle-verified.
+- **Dormant fixture audited.**
+  `test_numpy_float32_shifting_metadata_retains_baseline_bits` stays
+  `drop`/`python-only`: its committed sidecar pair (3.21a capture)
+  had no C++ consumer and is un-reproducible post-`b21c63ec` (live
+  oracle yields `rear_teeth == 14`, recorded bits pin `18` and
+  float32 `required_ema` 90.40253). Removed on both platforms with
+  the reason recorded in the record's evidence — a documented
+  drop-with-reason, not a silent deletion. The Python node remains a
+  live-oracle red in the same stale-expectation family; sibling
+  float32 drop-records keep their dormant-but-reproducible sidecars.
+
+### Verification
+
+- darwin-arm64, `build/native-release`:
+  `ctest -R 'cadence_shifter|native_contract_tests|drivetrain|
+  drive_policies|policy_clone|motor_freewheel'` — 6/6 PASS;
+  `reference.cadence_shifter` PASS 74 checks (was previously red on
+  the same stale asserts). `reference.native_numeric_completion`
+  PASS post-removal. `pytest tests/reference/test_cadence_shifter.py`
+  9 passed.
+- linux-aarch64, `bike-dev-pfc-lane-c` `/build/root-clang`
+  (clang++-18): same six tests 6/6 PASS, `reference.cadence_shifter`
+  PASS 74 checks (platform-identical count);
+  `reference.native_numeric_completion` PASS post-removal;
+  pytest 9 passed.
+- `bash tools/run_tests.sh native` not run — fix-round scope bounded
+  by request; sweeps remain the outer gate's business.
+
+### Ledger
+
+- `migration/test-port-map.json`: 9 cadence records — measured node
+  ids, refreshed line ranges and dated fix-round evidence (the three
+  changed rows name their 33→51/24→21/45→39 refresh and the
+  red-since-`b21c63ec` lineage); numeric_completion row gained the
+  dormant-fixture audit note.
+- `migration/python-removal.json`: `test_cadence_shifter.py` →
+  `replacement_landed`, `verification_ids =
+  [reference.cadence_shifter]`; `sha256`/`line_count` refreshed (88
+  lines post-comment); snapshot hash retained.
+- Commits: `b1aa217a` (expectation refresh), `add2eb90` (ctor
+  cassette sort + contract probes), `1fb3eab7` (ledger + sidecar
+  removal).

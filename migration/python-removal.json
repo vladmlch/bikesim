@@ -14566,36 +14566,22 @@
   },
   {
     "path": "tests/reference/test_cadence_shifter.py",
-    "sha256": "0de2d7c280d37cac0c541d4922021139bed8d5be3a92a19ab60546cd30d43a8e",
-    "line_count": 83,
+    "sha256": "150f2dc57a60b65c3b59e1e0961d4a019310aa16130c787643770432e5da39e0",
+    "line_count": 88,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_cadence_shifter.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.cadence_shifter"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "fc1719c6cca56a74e28ec4bfd93f94a6a87ae93d3310b47fcf9a5a0eff19a48d",
     "snapshot_line_count": 83,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 9
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_closed_form_rider.py",

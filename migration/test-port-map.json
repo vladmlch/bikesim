@@ -1604,162 +1604,189 @@
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_low_crank_cadence_downshifts_to_the_next_bigger_cog",
       "line": 17,
-      "end_line": 20,
+      "end_line": 22,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_low_crank_cadence_downshifts_to_the_next_bigger_cog",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_low_crank_cadence_downshifts_to_the_next_bigger_cog"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): expectation refreshed 33 -> 51 \u2014 the pre-b21c63ec one-step assert was red vs the live oracle since b21c63ec introduced the multi-cog throw; the refreshed value is the oracle-verified multi-cog landing. pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_a_wheel_implied_spike_alone_never_upshifts",
-      "line": 23,
-      "end_line": 29,
+      "line": 25,
+      "end_line": 31,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_a_wheel_implied_spike_alone_never_upshifts",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_a_wheel_implied_spike_alone_never_upshifts"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_high_crank_cadence_upshifts_when_the_landing_stays_in_band",
-      "line": 32,
-      "end_line": 35,
+      "line": 34,
+      "end_line": 39,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_high_crank_cadence_upshifts_when_the_landing_stays_in_band",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_high_crank_cadence_upshifts_when_the_landing_stays_in_band"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): expectation refreshed 24 -> 21 \u2014 the pre-b21c63ec one-step assert was red vs the live oracle since b21c63ec introduced the multi-cog throw; the refreshed value is the oracle-verified multi-cog landing. pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_upshifts_stop_at_the_smallest_cog",
-      "line": 38,
-      "end_line": 46,
+      "line": 42,
+      "end_line": 51,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_upshifts_stop_at_the_smallest_cog",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_upshifts_stop_at_the_smallest_cog"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): expectation refreshed 45 -> 39 \u2014 the pre-b21c63ec one-step assert was red vs the live oracle since b21c63ec introduced the multi-cog throw; the refreshed value is the oracle-verified multi-cog landing. pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_cooldown_and_not_pedalling_block_shifts",
-      "line": 49,
-      "end_line": 56,
+      "line": 54,
+      "end_line": 61,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_cooldown_and_not_pedalling_block_shifts",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_cooldown_and_not_pedalling_block_shifts"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_wheelspin_blocks_an_upshift_but_not_a_downshift",
-      "line": 59,
-      "end_line": 62,
+      "line": 64,
+      "end_line": 67,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_wheelspin_blocks_an_upshift_but_not_a_downshift",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_wheelspin_blocks_an_upshift_but_not_a_downshift"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_ema_filters_a_single_stroke_spike",
-      "line": 65,
-      "end_line": 71,
+      "line": 70,
+      "end_line": 76,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_ema_filters_a_single_stroke_spike",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_ema_filters_a_single_stroke_spike"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_upshift_that_lands_below_the_band_is_rejected",
-      "line": 74,
-      "end_line": 77,
+      "line": 79,
+      "end_line": 82,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_upshift_that_lands_below_the_band_is_rejected",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_upshift_that_lands_below_the_band_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
       "source_path": "tests/reference/test_cadence_shifter.py",
       "source_symbol": "test_downshift_that_lands_above_the_band_is_rejected",
-      "line": 80,
-      "end_line": 83,
+      "line": 85,
+      "end_line": 88,
       "owner_task": "T52",
       "native_test_id": "reference.cadence_shifter::test_downshift_that_lands_above_the_band_is_rejected",
       "native_source": "native/tests/reference/test_cadence_shifter.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_cadence_shifter.py::test_downshift_that_lands_above_the_band_is_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-26 3.18 fix round (lane/c): verified unchanged under the live oracle post-b21c63ec (the file-level refresh touched the three throw-landing asserts only). pytest file green on darwin-arm64 + linux-aarch64; CTest reference.cadence_shifter PASS 74 checks on both platforms."
       ]
     },
     {
@@ -12260,7 +12287,8 @@
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
-        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators"
+        "2026-10-22: drop \u2014 Python-only plumbing (np.float32 marshalling, pure-Python runtime state internals); typed-boundary behavior is covered by reference.native_numeric_completion::test_python_free_typed_numeric_validators",
+        "2026-10-26 3.18 fix round (lane/c): dormant-fixture audit \u2014 the committed .json/.bin sidecar pair (float32 required_ema 90.40253, captured under 3.21a before this record was dispositioned drop) has no C++ consumer (reference.native_numeric_completion registers no node for it) and is un-reproducible under the live oracle: b21c63ec's multi-cog throw makes the node produce rear_teeth 14 and a different required_ema, so the Python node itself is a documented live-oracle red. Stale unverifiable bytes have no place in the golden tree; the sidecar pair was removed on both platforms (drop-with-reason, not a silent deletion). The disposition stays drop/python-only \u2014 the node asserts np.float32 marshalling internals no port mirrors. Sibling float32 drop-records keep their dormant sidecars: still reproducible under the live oracle."
       ],
       "golden_platforms": []
     },

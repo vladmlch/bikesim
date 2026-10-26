@@ -5765,3 +5765,156 @@ the runtime qualification. Dispositions: 51 golden / 18 port / 0 drop.
 - Commits: `b1aa217a` (expectation refresh), `add2eb90` (ctor
   cassette sort + contract probes), `1fb3eab7` (ledger + sidecar
   removal).
+
+## 2026-10-26 — Task 3.18 (lane/c) merge-back
+
+Merge of `lane/c` tip `a7709351` into `impl/python-free-cpp` at
+`c91ae881` as merge commit `a48f0e5c` (`git merge --no-ff`). The
+lane base equals the prior integration tip — a linear descendant —
+so the merge is clean by construction: merged tree verified
+byte-identical to the lane tip (`git diff a7709351 a48f0e5c`
+empty) and the post-merge file set identical to the lane diff
+(1,054 files, +6,995,108/−392). Review trail: original review
+**Needs fixes** (Critical stale cadence asserts + Important
+unsorted-cassette hole) → fix round **Approved-for-merge**
+(oracle-verified, scope-checked).
+
+The batch lands batch 3.18 drivetrain core: 69 records qualified on
+both platforms (28 `test_native_drivetrain.py` + 31
+`test_native_drive_policies.py` + 9 `test_cadence_shifter.py` + 1
+`test_drivetrain_policy_clone.py`), the `shifting.cpp` multi-cog
+shift-throw mirror (the stale-golden divergence flagged since A1 —
+now resolved on the lane), the `CadenceShifter` ctor cassette sort
+mirroring `__post_init__` with two order-sensitive contract probes
+in `test_contracts.cpp`, the cadence_shifter expectation refresh
+(33→51/24→21/45→39 under multi-cog outcomes), and the
+drop-with-reason of the dormant
+`test_numpy_float32_shifting_metadata_retains_baseline_bits`
+sidecar pair. Golden payload: 520 `.bin`/`.json` pairs — 165
+drivetrain + 95 drive_policies per platform, ~164 MiB total
+(darwin 54+28, linux 54+28 MiB) — committed as-is per the
+established ruling. Fixture diff: 1,044 files (1,040 new + the 4
+stale-sidecar removals); 10 non-fixture files (2 source, 3 test
+TUs/support, 1 oracle test file, 3 ledger/evidence, 1 SDD report).
+
+### Conflict resolution
+
+None — linear-descendant merge. Ledger union verified
+programmatically post-merge: all 2,381 `(source_path,
+source_symbol)` keys identical across base/HEAD/merged; 79 records
+changed only by the lane; 0 contested, 0 lost, 0 spurious, 0
+disposition transitions (merged file byte-identical to the lane
+blob, as is `python-removal.json` and this file pre-append).
+
+### Ledger verification
+
+`test-port-map.json` totals, pre-merge `c91ae881` → merged
+`a48f0e5c` (2,381 records both sides): `port` 454→454,
+`golden` 289→289, `planned` 1567→1567, `drop` 71→71 — **unchanged**.
+The 3.18 dispositions were flipped `planned→port`/`golden` by the
+earlier source-disposition pass already in the merge base; this
+lane's ledger work is qualification, not transition: 79 records
+gained measured `assertions_capture` (pytest collection + oracle
+green darwin-arm64 + linux-aarch64), populated
+`collected_node_ids`, refreshed line ranges and dated 3.18/fix-round
+evidence entries. The 51 `golden` records among them all carry
+`golden_platforms: [darwin-arm64, linux-aarch64]`. Changed-record
+breakdown: 31 drive_policies + 28 drivetrain + 9 cadence_shifter
++ 9 motor_freewheel_topology + 1 drivetrain_policy_clone + 1
+numeric_completion (the dormant-sidecar audit note).
+
+`python-removal.json` (535 rows): `planned` 501→496,
+`replacement_landed` 34→39 — the five drivetrain files flipped:
+`test_cadence_shifter.py`, `test_drivetrain_policy_clone.py`,
+`test_motor_freewheel_topology.py`, `test_native_drive_policies.py`,
+`test_native_drivetrain.py`.
+
+### Merge-back L2 — macOS arm64 (`build/native-release`, Apple clang, Release)
+
+- `cmake --build build/native-release -j`: green, all targets;
+  `reference.native_drivetrain` / `reference.native_drive_policies`
+  link at 100%.
+- `ctest -R 'drivetrain|drive_polic|cadence_shifter|motor_freewheel|contracts'
+  --output-on-failure`: **7/8** — `native_drivetrain` PASS
+  (1.44 s; binary reports **PASS 1,079,181 checks**),
+  `native_drive_policies` PASS (**599,289 checks**),
+  `cadence_shifter` PASS (**74 checks** — platform-matching the
+  lane's figure), `drivetrain_policy_clone` PASS (17 checks),
+  `motor_freewheel_topology` PASS (297 checks),
+  `native_kernel_contracts`/`native_input_contracts` PASS. Sole
+  red: `native_clock_contracts` — `FAIL fixture is not a regular
+  file`, the documented pending-batch baseline member.
+- `ctest -L reference`: **62/66** — four reds, all
+  baseline-verbatim: `golden_episode_tool` (`FAIL native recorder
+  rows reproduce Python oracle`, the documented stale-golden
+  step-0 all-channel divergence) plus the three remaining
+  missing-fixture members `native_static_brake`,
+  `pneumatic_tire_oracle`, `native_clock_contracts`. The prior
+  6-red baseline shrinks by exactly this batch's two landings:
+  `native_drivetrain` and `native_drive_policies` leave the
+  missing-fixture list and validate on-platform against the
+  committed darwin-arm64 goldens.
+- `ctest -R 'migration_T' -j4`: **50/53** — reds
+  baseline-verbatim: `T09` (`FAIL integration vector resolves
+  bitwise`), `T29` (`FAIL config.rider_controller.weld_servo_gain:
+  unknown key`), `T56` (shellcheck-0.11.0 stderr-format env drift,
+  158.94 s — signature `t56_scripts_depth2_bad` only). No new
+  reds: the `shifting.cpp` multi-cog mirror regresses nothing in
+  the migration selection.
+
+### Merge-back L2 — Linux aarch64 (`bike-dev-python-free-cpp`, `/build/root-clang`, clang++-18, Release)
+
+- `container.sh sync` FIRST per the lane note (a header had
+  previously reached `/src` via stdin pipe) → `container.sh build
+  root-clang`: 281 edges, green — committed `shifting.{hpp,cpp}`
+  compiles under `-Werror` on clang-18.
+- `ctest root-clang -R 'drivetrain|drive_polic|cadence_shifter|motor_freewheel|contracts'`:
+  **7/8** — same signature as darwin; sole red
+  `native_clock_contracts` (fixture-missing baseline).
+- `ctest root-clang -L reference`: **62/66** — identical four
+  baseline reds, identical signatures; `native_drivetrain`
+  (0.91 s) and `native_drive_policies` (0.45 s) validate
+  on-platform against the linux-aarch64 goldens.
+- `ctest root-clang -R 'migration_T' -j8`: **41/53** — exactly
+  the enumerated 12-red linux-aarch64 baseline: `T03` (harness
+  deps staging), `T04` (darwin-pinned identity), `T09`, `T14`,
+  `T15`, `T16`, `T18`, `T20`, `T31`, `T32` (±1-ulp darwin-captured
+  family), `T29`, `T56` (env drift).
+
+### Anomaly — T56 linux sub-signature (reported, not fixed)
+
+The Linux `migration_T56` output carries a second failure line
+beyond the enumerated `t56_scripts_depth2_bad: stderr missing
+'linux/bad.sh'`: `t56_audit_doc_bad: expected failure, exited 0`.
+Root-caused, not merge-caused: the image-pinned cmake 3.28.3 hits
+the invalid `` \` `` escape inside the doc-fixture `file(WRITE)`
+literals (CMP0010 dev warnings at check lines 662–672 in the same
+log) and skips escape processing for the whole literal — `od` on
+`/build/root-clang/migration_T56/doc-bad/README.md` shows literal
+`\n`/`` \` `` bytes, so no real markdown fence exists and the doc
+audit correctly exits 0 (a correctly-written fixture audited
+standalone exits 1 as required). Sibling `file(WRITE)` fixtures
+without the backtick escape got real newlines. Darwin's cmake
+4.4.3 writes real escapes — its T56 shows only the shellcheck
+signature. Inputs to the check (script text `46862b17`, audit
+binary sources, policy file) are untouched by this merge, so the
+sub-signature is deterministic at the merge base on this image —
+environmental drift in the same class as the documented
+shellcheck-0.11.0 signature, under-enumerated by the 2026-10-26
+baseline section. Recorded here for the next baseline refresh; the
+node stays inside the 12-red baseline count.
+
+### Assessment
+
+No new reds attributable to the merge on either platform. The
+drivetrain-core port is exercised end-to-end:
+`reference.native_drivetrain` (1,079,181 checks),
+`reference.native_drive_policies` (599,289 checks),
+`reference.cadence_shifter` (74 checks),
+`reference.drivetrain_policy_clone` (17 checks),
+`reference.motor_freewheel_topology` (297 checks) — all green
+against committed goldens on both qualified platforms.
+`migration_T` baselines hold verbatim (50/53 darwin, 41/53
+linux). Ledger and evidence unions verified record-level; nothing
+lost or duplicated. L3 (`tools/run_tests.sh native`) not run —
+bounded merge-back scope; checkpoint profile owns it.

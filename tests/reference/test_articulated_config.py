@@ -46,6 +46,35 @@ def test_delivered_power_budgets_validate_like_other_budgets(field, value):
         ArticulatedConfig(**{field: value})
 
 
+@pytest.mark.parametrize('field', ('weld_foot_min_normal_n',
+                                   'weld_foot_max_normal_n',
+                                   'weld_saddle_min_normal_n',
+                                   'weld_saddle_max_normal_n'))
+@pytest.mark.parametrize('value', (float('nan'), float('inf'),
+                                   float('-inf'), 'bolts'))
+def test_weld_normal_bounds_must_be_finite_when_set(field, value):
+    # Tension retention makes negative bounds legal, so the post-init gate
+    # is the wire's optional_real one: None or a finite real, nothing else.
+    with pytest.raises(ValueError):
+        ArticulatedConfig(**{field: value})
+
+
+@pytest.mark.parametrize('field', ('weld_foot_min_normal_n',
+                                   'weld_foot_max_normal_n',
+                                   'weld_saddle_min_normal_n',
+                                   'weld_saddle_max_normal_n'))
+def test_weld_normal_bounds_accept_tension_retention(field):
+    cfg = ArticulatedConfig(**{field: -1050.})
+    assert getattr(cfg, field) == -1050.
+
+
+@pytest.mark.parametrize('field', ('weld_foot_shear_n', 'weld_saddle_shear_n'))
+@pytest.mark.parametrize('value', (-1., float('nan')))
+def test_weld_shear_capacity_is_nonnegative(field, value):
+    with pytest.raises(ValueError):
+        ArticulatedConfig(**{field: value})
+
+
 def test_balance_defaults():
     cfg = ArticulatedConfig()
     assert (cfg.balance_floor_kmh, cfg.balance_dwell_s, cfg.balance_grace_s) == (4., .5, 3.)

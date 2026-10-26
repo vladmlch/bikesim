@@ -707,7 +707,24 @@ void post_init(ArticulatedConfig &config) {
     // scalar carries minimum=0 with the bare field name as label.
     static const std::set<std::string_view> kSkipped{
         "joint_envelope_path", "joint_strength_path", "pedal_attachment",
-        "saddle_attachment", "grip_attachment", "coupled_task_control"};
+        "saddle_attachment", "grip_attachment", "coupled_task_control",
+        // Weld normal bounds may be negative (tension retention); a set
+        // bound is checked finite-only below, matching post_init's mirror
+        // of the wire's optional_real gate.
+        "weld_foot_min_normal_n", "weld_foot_max_normal_n",
+        "weld_saddle_min_normal_n", "weld_saddle_max_normal_n"};
+    for (const auto &[name, member] :
+         {std::pair{"weld_foot_min_normal_n",
+                    &ArticulatedConfig::weld_foot_min_normal_n},
+          {"weld_foot_max_normal_n",
+           &ArticulatedConfig::weld_foot_max_normal_n},
+          {"weld_saddle_min_normal_n",
+           &ArticulatedConfig::weld_saddle_min_normal_n},
+          {"weld_saddle_max_normal_n",
+           &ArticulatedConfig::weld_saddle_max_normal_n}}) {
+        const std::optional<double> &bound = config.*member;
+        if (bound) scalar(*bound, name);
+    }
     for (const FieldDecl &field : kArticulatedConfigFields) {
         if (kSkipped.contains(field.name)) continue;
         // Compile-time offsetof bound against the owning record — the
@@ -746,8 +763,6 @@ void post_init(ArticulatedConfig &config) {
           {"grip_pull_per_hand_n",
            &ArticulatedConfig::grip_pull_per_hand_n},
           {"link_max_gap_m", &ArticulatedConfig::link_max_gap_m},
-          {"weld_foot_shear_n", &ArticulatedConfig::weld_foot_shear_n},
-          {"weld_saddle_shear_n", &ArticulatedConfig::weld_saddle_shear_n},
           {"balance_floor_kmh", &ArticulatedConfig::balance_floor_kmh},
           {"balance_dwell_s", &ArticulatedConfig::balance_dwell_s}})
         scalar(config.*member, name, std::nullopt, true);

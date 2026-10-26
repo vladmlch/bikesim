@@ -525,9 +525,13 @@ class ArticulatedConfig:
                        'pedal_attachment', 'saddle_attachment',
                        'grip_attachment', 'coupled_task_control'):
                 continue
-            # Weld normal bounds may be negative (tension retention).
+            # Weld normal bounds may be negative (tension retention), so
+            # they skip the nonnegative sweep — a set bound still has to be
+            # a finite real, mirroring the wire's optional_real gate.
             if key in ('weld_foot_min_normal_n', 'weld_foot_max_normal_n',
                        'weld_saddle_min_normal_n', 'weld_saddle_max_normal_n'):
+                if getattr(self,key) is not None:
+                    scalar(getattr(self,key),key)
                 continue
             if key in ('grip_pair_force_limit_n','active_positive_power_limit_w',
                        'joint_passive_damping_nms_rad',

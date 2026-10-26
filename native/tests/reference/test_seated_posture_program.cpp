@@ -546,7 +546,7 @@ void test_preview_is_last_sample_and_preserves_exact_endpoint() {
 }
 
 // test_geometric_limit_replaces_the_legacy_config_ceiling_when_available
-void test_geometric_limit_replaces_the_legacy_config_ceiling() {
+void test_geometric_limit_replaces_the_legacy_config_ceiling_when_available() {
     rider::IntentConfig config;
     config.enabled = true;
     config.lean_rate_rad_s = 10.;
@@ -578,6 +578,6 @@ int main() {
         test_trim_is_delayed_and_increases_forward_lean_for_light_front();
         test_geometric_limit_caps_lean();
         test_preview_is_last_sample_and_preserves_exact_endpoint();
-        test_geometric_limit_replaces_the_legacy_config_ceiling();
+        test_geometric_limit_replaces_the_legacy_config_ceiling_when_available();
     });
 }

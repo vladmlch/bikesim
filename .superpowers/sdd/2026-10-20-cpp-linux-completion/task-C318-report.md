@@ -11,6 +11,14 @@ duplicate `bike_add_reference_test` additions).
 **Lane**: `.worktrees/pfc-lane-c`, branch `lane/c`, base `c91ae881`.
 No merge, no push, no subagents.
 
+## Status: landed, all 69 records green
+
+51 golden records carry both-platform fixtures (95 + 165 node pairs
+per platform, identical node sets); all four CTest ids pass with
+platform-identical check counts; the four `python-removal.json` rows
+are `replacement_landed` with the landed CTest ids; deletion remains
+gated to T63 per ADR-0003.
+
 ## Triage (69 records)
 
 | File | port | golden | drop | planned |
@@ -82,8 +90,11 @@ no `_golden.record` additions required).
 
 | File | nodes | darwin-arm64 | linux-aarch64 |
 |---|---|---|---|
-| `test_native_drive_policies.py` | 95 | 95 `.json`+`.bin` pairs, 27.4 MiB | pending pull |
-| `test_native_drivetrain.py` | 165 | 165 `.json`+`.bin` pairs, 54 MiB | 165 pairs |
+| `test_native_drive_policies.py` | 95 | 95 `.json`+`.bin` pairs, 27.4 MiB | 95 pairs, ~28 MiB |
+| `test_native_drivetrain.py` | 165 | 165 `.json`+`.bin` pairs, 54 MiB | 165 pairs, ~53 MiB |
+
+Node sets are identical across platforms for both files (verified
+record-level); linux sidecars pulled via `container.sh pull`.
 
 Capture via `BIKE_GOLDEN_CAPTURE=tests/fixtures/golden` on the full
 green files (darwin: `pytest -q` → **102 passed** policies, **175
@@ -103,7 +114,7 @@ node ids; zero orphans, zero foreign nodes in either fixture dir.
 | Test | darwin-arm64 (`build/native-release`) | linux-aarch64 (`/build/root-clang`, clang++-18) |
 |---|---|---|
 | `reference.native_drivetrain` | PASS 1079181 checks | PASS 1079181 checks |
-| `reference.native_drive_policies` | PASS 599289 checks | pending capture |
+| `reference.native_drive_policies` | PASS 599289 checks | PASS 599289 checks |
 | `reference.drivetrain_policy_clone` | PASS 17 checks | PASS 17 checks |
 | `reference.motor_freewheel_topology` | PASS 297 checks | PASS 297 checks |
 | oracle pytest `test_native_drivetrain.py` | 175 passed | 175 passed |
@@ -140,6 +151,13 @@ after — rerun `PASS 1079181 checks`.
   on the recorded form
 - `52ad66c1` — test(golden): capture drivetrain oracle fixtures on
   darwin-arm64
+- `353caca9` — test(golden): capture drivetrain oracle fixtures on
+  linux-aarch64 + draft C318 report
+- `961ecde7` — test(golden): capture drive_policies oracle fixtures on
+  linux-aarch64
+- `c6546a5b` — docs(migration): qualify batch 3.18 drivetrain records
+  on both platforms
+- `205e1361` — docs(migration): 3.18 drivetrain-core evidence section
 
 ## Baseline reds (documented, not caused by this batch)
 
@@ -151,7 +169,7 @@ From the `ctest -L reference` sweeps recorded in
   (other batches' missing goldens; untouched here).
 - `native_drive_policies`, `native_drivetrain` — were the same
   missing-fixture signature before this batch; **cleared by these
-  fixtures** (darwin now, linux once the policies pull lands).
+  fixtures on both platforms**.
 - `golden_episode_tool` — `FAIL native recorder rows reproduce Python
   oracle` (pre-existing recorder drift).
 - `migration_T09` (integration vector bitwise), `migration_T29`

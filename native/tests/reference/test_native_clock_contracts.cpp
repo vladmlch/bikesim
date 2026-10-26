@@ -1,14 +1,20 @@
-// Completion 3.20: 10 interval conversion and 3 live cruise timestep tests.
-// The three pinned-model tyre snapshot functions remain separately planned;
-// this file does not claim their integration coverage.
+// Completion 3.20: 10 interval conversion tests, 3 live cruise timestep
+// tests, and the 3 pinned-model tyre snapshot interval-path tests —
+// TestTireSnapshotIntervalPath drives a real tire writer's clock through
+// Stepper::tire_qfrc on the pinned bench model (pure assertions; the ids
+// are verified against interval_id in-process, matching the Python test
+// which compares both implementations to the same helper).
 #include "support/model_fixture.hpp"
 #include "support/golden.hpp"
 #include "interval_clock.hpp"
 #include "initialization/capture.hpp"
+#include "io/json.hpp"
+#include "platform/files.hpp"
 #include "random/numpy_compat.hpp"
 #include "stepper.hpp"
 #include "writer_config.hpp"
 #include "writers/cruise.hpp"
+#include "writers/tire_common.hpp"
 #include <array>
 #include <bit>
 #include <cfenv>
@@ -207,6 +213,128 @@ void test_native_matches_python_at_each_serialized_timestep() {
     bt::require(integrals[0] != integrals[1] && integrals[1] != integrals[2], "each owned model timestep enters integrator");
     golden.done();
 }
+
+// ---------------------------------------------------------------------
+// TestTireSnapshotIntervalPath — the snapshot id path through the live
+// tire writer on the pinned bench model (compliant_2d wire mirrors
+// test_native_tire._tire_cfg; ids carry no golden rows because the
+// source test is a pure assertion — the oracle comparison was frozen at
+// capture when the interval ids were last verified equal).
+// ---------------------------------------------------------------------
+[[nodiscard]] std::vector<std::string> tire_state_names() {
+    std::vector<std::string> out;
+    for (const char *side : {"front", "rear"})
+        for (const char *field :
+             {"xi", "tangent.0", "tangent.1", "tangent.2", "point.0",
+              "point.1", "point.2", "segment", "center.0", "center.1",
+              "center.2"})
+            out.emplace_back(std::string(side) + "." + field);
+    return out;
+}
+[[nodiscard]] std::string bench_mjb() {
+    return (bt::oracle::root().parent_path().parent_path().parent_path() /
+            "tools/proto_native_bench/artifacts/model.mjb").string();
+}
+[[nodiscard]] nativecfg::WriterConfig tire_cfg() {
+    const std::string material =
+            R"({"radial_k_n_m":130000.0,"radial_c_ns_m":800.0,)"
+            R"("pressure_pa_gauge":200000.0,"provenance":"synthetic",)"
+            R"("valid_load_range_n":[0.0,2000.0]})";
+    const std::string side =
+            "{\"material\":" + material +
+            ",\"tangent_k_n_m\":20000.0,\"mu\":0.8,"
+            "\"relaxation_length_m\":0.2}";
+    const std::string doc =
+            "{\"schema\":1,\"tire\":{\"backend\":\"compliant_2d\","
+            "\"surface_mode\":\"configured\",\"significant_delta_m\":"
+            "0.0001,\"significance_fraction\":0.05,"
+            "\"distinct_normal_deg\":20.0,\"front\":" + side +
+            ",\"rear\":" + side + "}}";
+    return nativecfg::decode(bike::io::parse_json(doc));
+}
+// The _tire_rig preamble: wheels slid +0.6 over the road, clean brush
+// state. Every parametrize case rebuilds this rig (fresh writer clock).
+struct TireRig {
+    Stepper st;
+    std::vector<double> qpos, qvel, act, warm;
+    TireRig() : st(bench_mjb(), tire_cfg()) {
+        // data.qpos of a fresh MjData is the model's qpos0 — the Python
+        // rig slides +.6 on it.
+        qpos.assign(st.qpos().begin(), st.qpos().end());
+        qpos[0] += .6;
+        qpos[14] += .6;
+        qvel.assign(static_cast<std::size_t>(st.model()->nv), 0.);
+        act.assign(static_cast<std::size_t>(st.model()->na), 0.);
+        warm.assign(static_cast<std::size_t>(st.model()->nv), 0.);
+    }
+    // _snapshot_ids native half: restore at `time`, clean brush state,
+    // one advancing tire_qfrc(dt); both snapshot ids land at the
+    // returned pair (front, rear).
+    [[nodiscard]] std::pair<std::int64_t, std::int64_t>
+    ids_at(double time, double dt) {
+        st.set_state(qpos, qvel, act, warm, time);
+        st.forward();
+        const auto names = tire_state_names();
+        st.set_tire_state(names,
+                          std::vector<double>(names.size(), 0.));
+        (void)st.tire_qfrc(dt);
+        const auto snaps = st.tire_writer().snapshots();
+        bt::require(snaps[0].has_value() && snaps[1].has_value(),
+                    "both tire snapshots published");
+        return {snaps[0]->interval_id, snaps[1]->interval_id};
+    }
+};
+void test_snapshot_ids_match_python_and_helper() {
+    struct Row { double time, dt; std::int64_t expected; };
+    for (const auto &c : std::array{
+            Row{0., .00125, 0}, Row{-0., .00125, 0}, Row{1., .00125, 800},
+            Row{.25, .5, 0}, Row{.75, .5, 2}, Row{1.25, .5, 2},
+            Row{1.75, .5, 4}, Row{.3, .1, 3}, Row{1., 3., 0},
+            Row{largest, 1., largest_id}}) {
+        TireRig rig;
+        const auto [front, rear] = rig.ids_at(c.time, c.dt);
+        bt::require(front == c.expected && rear == c.expected &&
+                        c.expected == interval_id(c.time, c.dt),
+                    "native snapshot ids equal the helper and Python ids");
+    }
+}
+void test_snapshot_overflow_is_overflowerror_and_atomic() {
+    TireRig rig;
+    rig.st.set_state(rig.qpos, rig.qvel, rig.act, rig.warm, bound);
+    rig.st.forward();
+    const auto names = tire_state_names();
+    rig.st.set_tire_state(names, std::vector<double>(names.size(), 0.));
+    const auto before = rig.st.tire_state();
+    bool caught = false;
+    try { (void)rig.st.tire_qfrc(1.); }
+    catch (const std::overflow_error &) { caught = true; }
+    bt::require(caught, "out-of-domain interval raises overflow_error");
+    const auto after = rig.st.tire_state();
+    bt::require(std::ranges::equal(std::as_bytes(std::span{after}),
+                                   std::as_bytes(std::span{before})),
+                "rejected interval preserves the brush state bitwise");
+    // Halving the quotient re-enters the domain: the retry advances.
+    (void)rig.st.tire_qfrc(2.);
+    const auto snaps = rig.st.tire_writer().snapshots();
+    bt::require(snaps[0]->interval_id == (std::int64_t{1} << 62),
+                "halved-dt retry lands on interval 2**62");
+}
+void test_snapshot_ids_under_foreign_rounding_modes() {
+    RoundingGuard guard;
+    prove_rounding_controls();
+    TireRig rig;
+    for (int const mode : std::array{FE_UPWARD, FE_DOWNWARD, FE_TOWARDZERO}) {
+        bt::require(std::fesetround(mode) == 0, "fesetround accepted");
+        for (const auto &[time, dt] : std::array{
+                     std::pair{1. / 3., .25}, std::pair{2. / 7., 1.},
+                     std::pair{.7, .3}}) {
+            const auto [front, rear] = rig.ids_at(time, dt);
+            bt::require(front == interval_id(time, dt) &&
+                            rear == interval_id(time, dt),
+                        "snapshot ids match under the foreign mode");
+        }
+    }
+}
 } // namespace
 int main() { return bt::run([] {
     test_half_even_ties(); test_nextafter_neighbours_of_ties(); test_scaled_dt_quotients();
@@ -216,4 +344,7 @@ int main() { return bt::run([] {
     test_ids_are_rounding_mode_independent(); test_python_oracle_reads_timestep_live();
     test_python_oracle_checks_timestep_only_when_integrating();
     test_native_matches_python_at_each_serialized_timestep();
+    test_snapshot_ids_match_python_and_helper();
+    test_snapshot_overflow_is_overflowerror_and_atomic();
+    test_snapshot_ids_under_foreign_rounding_modes();
 }); }

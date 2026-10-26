@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 32,
+  "node": "tests/reference/test_native_cruise.py::test_nonnumeric_restore_preserves_state[value2-integral_mps_s]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ }
+]

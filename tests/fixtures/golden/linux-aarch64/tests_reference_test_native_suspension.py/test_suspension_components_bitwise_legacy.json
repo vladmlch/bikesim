@@ -1,0 +1,394 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "fork_spring @ travel=0.0 stroke=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "fork_damper @ travel=0.0 stroke=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 136,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "shock_coil @ travel=0.0 stroke=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 272,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "shock_bumper @ travel=0.0 stroke=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 408,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "shock_damper @ travel=0.0 stroke=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 544,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "shock_top_out @ travel=0.0 stroke=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 680,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "shock_upper_stop @ travel=0.0 stroke=0.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 816,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "fork_spring @ travel=61.3 stroke=12.5",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 952,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "fork_damper @ travel=61.3 stroke=12.5",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 1088,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "shock_coil @ travel=61.3 stroke=12.5",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 1224,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "shock_bumper @ travel=61.3 stroke=12.5",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 1360,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "shock_damper @ travel=61.3 stroke=12.5",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 1496,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "shock_top_out @ travel=61.3 stroke=12.5",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 1632,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "shock_upper_stop @ travel=61.3 stroke=12.5",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 1768,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "fork_spring @ travel=179.5 stroke=64.9",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 1904,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "fork_damper @ travel=179.5 stroke=64.9",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 2040,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "shock_coil @ travel=179.5 stroke=64.9",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 2176,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "shock_bumper @ travel=179.5 stroke=64.9",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 2312,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "shock_damper @ travel=179.5 stroke=64.9",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 2448,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "shock_top_out @ travel=179.5 stroke=64.9",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 2584,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "shock_upper_stop @ travel=179.5 stroke=64.9",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 2720,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "fork_spring @ travel=0.5 stroke=1.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 2856,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "fork_damper @ travel=0.5 stroke=1.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 2992,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "shock_coil @ travel=0.5 stroke=1.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 3128,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "shock_bumper @ travel=0.5 stroke=1.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 3264,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "shock_damper @ travel=0.5 stroke=1.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 3400,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "shock_top_out @ travel=0.5 stroke=1.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 3536,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "shock_upper_stop @ travel=0.5 stroke=1.0",
+  "nbytes": 136,
+  "node": "tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy",
+  "offset": 3672,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ }
+]

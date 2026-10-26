@@ -102,9 +102,12 @@ void test_hold_bite_engagement_clip_release() {
     // standstill inside the engage band latches the angle, zero windup
     probe.wheel(.02, 0.);
     bt::require(probe.front_hold(.8, .8, true) == 0., "fresh latch carries no spring torque");
-    // wound spring below the clip: -k*(theta-latched)
+    // wound spring below the clip: -k*(theta-latched); the literal is not
+    // exactly -10 (0.03-0.02 is 0.009999999999999998 in binary64), so the
+    // expectation spells the same arithmetic the writer performs.
     probe.wheel(.03, 0.);
-    bt::require(probe.front_hold(.8, .8, true) == -10., "below-clip spring torque");
+    bt::require(probe.front_hold(.8, .8, true) == -1000. * (.03 - .02),
+                "below-clip spring torque");
     // wound past the clip: demand-scaled cap 50*.8
     probe.wheel(.5, 0.);
     bt::require(probe.front_hold(.8, .8, true) == -40., "clip bounds the stored torque");
@@ -147,8 +150,9 @@ void test_hold_reseat_saturated_bite() {
     bt::require(probe.front_hold(.8, .8, true, true) == 0.,
                 "reseat drops the saturated stale offset");
     // below the clip nothing re-seats — the fresh anchor holds
+    // (same binary64 spelling caveat as above: 0.51-0.5 is not exact 0.01)
     probe.wheel(.51, 0.);
-    bt::require(probe.front_hold(.8, .8, true, true) == -10.,
+    bt::require(probe.front_hold(.8, .8, true, true) == -1000. * (.51 - .5),
                 "unsaturated spring keeps the anchor");
     // a probe pass never moves the latch even with reseat set
     probe.wheel(.6, 0.);
@@ -160,7 +164,8 @@ void test_hold_reseat_saturated_bite() {
     // inside the hysteresis band (above engage, below release) a rolling
     // wheel is not a standstill slip — the bite stays pinned at the clip
     probe.wheel(.62, .4);
-    bt::require(probe.front_hold(.8, .8, true, true) == -22.,
+    bt::require(probe.front_hold(.8, .8, true, true) ==
+                    -1000. * (.62 - .6) - 5. * .4,
                 "hysteresis band is not a re-seat slip");
     // above the release speed the latch forgets as before
     probe.wheel(.62, 1.);

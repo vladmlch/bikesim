@@ -1,0 +1,4 @@
+name = "probe"
+length_m = 200.0
+surface = "hardpack"
+grade_profile = { knots = [[0.0, 0.0], [200.0, 0.0]] }

@@ -181,7 +181,8 @@ void test_rotor_inertia_adds_a_freewheeled_rotor_body() {
     velocity[crank] = 60. * drive_reference::rpm_to_rad_s;
     engine.note_posvel_stale(); engine.forward();
     const drivetrain::PedalingState pedaling{.mode=drivetrain::PedalMode::pedaling,
-        .reason=drivetrain::CoastReason::none, .effort_nm=20., .required_cadence_rpm=60.}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
+        .reason=drivetrain::CoastReason::none, .effort_nm=20., .required_cadence_rpm=60.,
+        .target_phase_rad=std::nullopt, .target_rate_rad_s=0.};
     (void)engine.drive().components({}, .001, 3., false, true, true, 100., pedaling, true, std::nullopt);
     // Independent linear interpolation of the source fixture's 120.1/180 rpm segment.
     const double expected = 47.7 + (150. - 120.1) * (0. - 47.7) / (180. - 120.1);

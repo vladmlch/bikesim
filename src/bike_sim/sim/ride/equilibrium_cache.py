@@ -5,6 +5,17 @@ contract: the derived-name auto-cache (``equilibrium_cache_enabled``) and explic
 user-managed pose files (``equilibrium_state_file``, written by ``bike-settle``).
 The auto-cache names entries by :func:`fingerprint`; the pose file embeds it so a
 load can prove the pose belongs to the resolved configuration.
+
+Two namespaces coexist under the cache directory. The *canonical* one —
+:func:`fingerprint`, a pure function of the plant — is the only key ``load``
+ever reads, and only the construction-time settle (``generation == 0``, the
+run that provably started from pristine material state) may write it. A
+``reset()`` re-settle starts from post-episode state, so its pose is a
+function of the episode that just ran: valid, but not canonical. Those
+results are published under :func:`episode_fingerprint`, which additionally
+binds the experiment context (``sim.equilibrium_context``) the owning
+environment attaches — quarantined evidence of which experiment produced
+which pose, never a cache hit.
 """
 import hashlib
 import json
@@ -21,7 +32,11 @@ from bike_sim.terrain.trackfile import track_to_dict
 from bike_sim.validation.environment import source_fingerprint
 
 
-CACHE_VERSION = 5
+# 6: the canonical key now binds every plant input the pose derives from
+# (settle options, speed target, active suspension overrides, drivetrain/tyre
+# compile inputs, heightfield spec, explicit initial state). A re-settle's
+# output moved to the quarantined episode namespace at the same bump.
+CACHE_VERSION = 6
 
 
 def _serializable(value):
@@ -46,15 +61,44 @@ def _update_array(digest, name, value):
     digest.update(array.tobytes())
 
 
+def _active_suspension(sim):
+    """Effective suspension identity, mirroring ``configuration_metadata``.
+
+    The suspension owners default to ``build_suspension_components(specs)``
+    but callers may substitute their own controller/coil; those overrides are
+    not reachable through ``sim.specs``. The recorded fields are the same ones
+    the run metadata certifies.
+    """
+    controller = sim.controller
+    return {
+        'fork_pressure_psi': controller.air_spring.gauge_pressure_psi,
+        'fork_tokens': controller.air_spring.num_tokens,
+        'coil': _serializable(sim.applier.coil_shock.specs),
+        'fork_damper': _serializable(
+            controller.suspension_system.fork_damper.get_effective_coefficients()),
+        'shock_damper': _serializable(
+            controller.suspension_system.shock_damper.get_effective_coefficients()),
+    }
+
+
 def fingerprint(runtime) -> str:
     """The configuration digest a settled pose is pinned to.
 
     Covers everything that can change the equilibrium itself: source, engine,
-    physics config, geometry, track and the compiled model. The reuse
+    physics config, geometry, track, compiled model, the settle contract
+    (step budget and residual tolerance), and the compile/run inputs that
+    live outside ``physics_config`` — the speed-controller target, legacy
+    drivetrain/tyre/compile knobs, the heightfield spec, effective suspension
+    coefficients and an explicit t=0 transfer's identity. The reuse
     *mechanism* knobs — the auto-cache toggle and the pose-file pointer — are
     deliberately excluded (``initial_state._contract`` pops them likewise): a
     file path or a cache flag is not physics, and pinning them would make a
     written pose reject a consumer that only differs in how it reuses poses.
+
+    The experiment context (``sim.equilibrium_context``) is just as
+    deliberately excluded: the canonical entry must stay loadable by every
+    experiment on the same plant, so only ``episode_fingerprint`` — the
+    quarantine namespace — binds it.
     """
     sim = runtime.sim
     source_root = Path(__file__).resolve().parents[2]
@@ -71,6 +115,19 @@ def fingerprint(runtime) -> str:
         'rider': _serializable(sim.rider),
         'track': plain(track_to_dict(sim.track)),
         'start_x_m': sim.start_x_m,
+        'field': _serializable(sim.field),
+        'drive_mode': sim.drive_mode,
+        'visual_pedalling': sim.visual_pedalling,
+        'drivetrain_specs': _serializable(sim.drivetrain_specs),
+        'tyre_config': _serializable(sim.tyre_config),
+        'target_speed_kmh': (sim.cruise.target_speed_kmh
+                             if sim.physics_config.drive_mode == 'ideal_speed_control'
+                             else None),
+        'active_suspension': _active_suspension(sim),
+        'equilibrium_max_steps': sim.equilibrium_max_steps,
+        'equilibrium_tolerance': sim.equilibrium_tolerance,
+        'initial_state': (None if sim.physical_initial_state is None
+                          else sim.physical_initial_state.sha256),
     }
     encoded = json.dumps(payload, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
     digest = hashlib.sha256(encoded)
@@ -81,10 +138,38 @@ def fingerprint(runtime) -> str:
     return digest.hexdigest()
 
 
-def _cache_path(runtime):
+def episode_fingerprint(runtime, canonical=None) -> str:
+    """The quarantine digest for a settle that did not start canonically.
+
+    A ``reset()`` re-settle starts from post-episode material state, so its
+    pose is a function of the episode that just ran — not of the plant alone.
+    This key therefore binds the canonical fingerprint, the fact of the
+    re-settle, and ``sim.equilibrium_context``: the experiment identity
+    (config, demand, rider program/behavior, sensors, seed) the owning
+    environment attaches to mark whose episode seeded the state. Two
+    different experiment inputs yield different keys under one cache
+    directory; a ``None`` context (a bare ``sim.reset()``) still lands
+    outside the canonical namespace. Entries named by this digest are
+    quarantined evidence — nothing loads them — so a history-dependent pose
+    can never masquerade as the canonical one again.
+    """
+    canonical = fingerprint(runtime) if canonical is None else canonical
+    payload = {
+        'equilibrium': canonical,
+        'resettle': True,
+        'experiment': _serializable(getattr(runtime.sim, 'equilibrium_context', None)),
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _cache_dir():
     root = os.environ.get('BIKE_SIM_EQUILIBRIUM_CACHE_DIR')
-    directory = Path(root) if root else Path(tempfile.gettempdir()) / 'bike_sim_equilibrium'
-    return directory / f'{fingerprint(runtime)}.npz'
+    return Path(root) if root else Path(tempfile.gettempdir()) / 'bike_sim_equilibrium'
+
+
+def _cache_path(runtime):
+    return _cache_dir() / f'{fingerprint(runtime)}.npz'
 
 
 def _state_arrays(runtime):
@@ -378,10 +463,11 @@ def load_state_file(runtime, path):
     return path, qpos, steps, residual, state
 
 
-def _write(path, runtime, qpos, steps, residual):
+def _write(path, runtime, qpos, steps, residual, *, key=None):
     """Single npz writer behind ``save``/``save_state_file``; the payload is the
     pose, the settle provenance, the material state and the configuration
-    fingerprint the file is pinned to."""
+    fingerprint the file is pinned to (``key`` — the canonical fingerprint
+    unless a quarantined episode write supplies its own digest)."""
     temporary = None
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -389,7 +475,8 @@ def _write(path, runtime, qpos, steps, residual):
             temporary = Path(stream.name)
             np.savez_compressed(stream, qpos=np.asarray(qpos, dtype=float),
                                 steps=int(steps), residual_qacc=float(residual),
-                                fingerprint_sha256=fingerprint(runtime),
+                                fingerprint_sha256=(
+                                    fingerprint(runtime) if key is None else key),
                                 **_state_arrays(runtime))
         temporary.replace(path)
     except (OSError, ValueError):
@@ -399,10 +486,31 @@ def _write(path, runtime, qpos, steps, residual):
 
 
 def save(runtime, qpos, steps, residual):
-    # A missed cache write must not fail the run that just settled.
+    """Persist a freshly settled pose; a missed write must not fail the run.
+
+    Only the first solve — the construction-time settle ``generation == 0``,
+    the one that provably started from pristine material state — may write
+    the canonical key ``load`` reads. A ``reset()`` re-settle starts from
+    post-episode state; its pose is a valid equilibrium for this plant but
+    not the canonical one, and publishing it under the load key is the
+    poisoning vector: the next consumer of that name adopts a pose no
+    canonical settle produced. Re-settles are therefore written under
+    :func:`episode_fingerprint`, a quarantined namespace nothing loads.
+
+    ``TypeError`` joins the swallowed errors: an ``equilibrium_context``
+    carrying a value JSON cannot encode must never fail the run that just
+    settled — the write is evidence, not physics.
+    """
     try:
-        _write(_cache_path(runtime), runtime, qpos, steps, residual)
-    except (OSError, ValueError):
+        canonical = fingerprint(runtime)
+        if getattr(runtime, 'generation', 0) == 0:
+            _write(_cache_dir()/f'{canonical}.npz', runtime, qpos, steps, residual,
+                   key=canonical)
+        else:
+            episode = episode_fingerprint(runtime, canonical)
+            _write(_cache_dir()/f'{episode}.npz', runtime, qpos, steps, residual,
+                   key=episode)
+    except (OSError, ValueError, TypeError):
         pass
 
 

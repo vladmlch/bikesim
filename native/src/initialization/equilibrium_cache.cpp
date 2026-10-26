@@ -159,7 +159,12 @@ std::string context_fingerprint(const SetupContext& context,bool legacy){
     std::erase_if(fields,[](const auto& field){return field.first=="equilibrium_cache_enabled"||field.first=="equilibrium_state_file";});
     io::Value::Object payload{{"version",io::Value{io::Number{"4"}}},{"source",io::Value{legacy?*context.legacy_source_identity:context.source_identity}},{"mujoco",io::Value{std::string(mj_versionString())}},{"physics",std::move(physics)},
         {"specs",plain(field(identity,"specs"))},{"mass_specs",plain(field(identity,"mass_specs"))},{"rider",plain(field(identity,"rider"))},{"track",plain(legacy?*context.legacy_track_identity:field(identity,"track"))},{"start_x_m",number(context.start_x_m)}};
-    if(!legacy){payload.emplace_back("native_equilibrium_schema",io::Value{io::Number{"1"}});payload.emplace_back("provider_identity",io::Value{context.provider_identity});payload.emplace_back("model_sha256",io::Value{context.model_sha256});}
+    // Schema 2 pins the settle contract: max_steps truncates and tolerance
+    // accepts a residual, so both shape the pose a canonical name serves. The
+    // legacy branch keeps its historical payload byte-for-byte.
+    if(!legacy){payload.emplace_back("native_equilibrium_schema",io::Value{io::Number{"2"}});payload.emplace_back("provider_identity",io::Value{context.provider_identity});payload.emplace_back("model_sha256",io::Value{context.model_sha256});
+        payload.emplace_back("equilibrium_max_steps",context.equilibrium_options.max_steps?io::Value{io::Number{std::to_string(*context.equilibrium_options.max_steps)}}:io::Value{});
+        payload.emplace_back("equilibrium_tolerance",number(context.equilibrium_options.tolerance));}
     const io::Value identity_payload{std::move(payload)};
     const auto json=legacy?detail::source_json(identity_payload):io::canonical_json(identity_payload);io::Sha256 digest;digest.update(std::as_bytes(std::span{json}));
     const mjModel* m=context.stepper.model();

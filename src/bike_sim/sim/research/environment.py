@@ -4,7 +4,7 @@ Policies receive SensorObservation only. Truth/metrics are a separate evaluation
 surface. This wrapper never adds forces or edits qpos/qvel to keep the bike up.
 """
 from collections import deque
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, is_dataclass, replace
 from pathlib import Path
 from time import monotonic
 import mujoco
@@ -138,6 +138,7 @@ class ResearchEnvironment:
         if sim.steps != 0 or sim.time_s != 0.:
             raise ValueError('construct research environment from a freshly reset simulation')
         self.seed = self.config.seed
+        self.sim.equilibrium_context = self._equilibrium_context()
         try:
             self._begin_episode()
         except BaseException as error:
@@ -226,6 +227,33 @@ class ResearchEnvironment:
             from bike_sim.recording.native import model_joints
             self._recording_catalog = build_catalog(model_joints(self.sim.model))
 
+    def _equilibrium_context(self):
+        """The experiment identity attached to ``sim.equilibrium_context``.
+
+        The settled pose is a function of the plant alone — this context
+        never enters the canonical equilibrium-cache fingerprint. Only the
+        quarantined episode key binds it, so a post-episode re-settle is
+        namespaced by the experiment inputs that shaped the dirty state it
+        started from. ``rider_behavior`` is an opaque protocol object: its
+        entry pins the implementation type plus its fields when dataclass
+        inspection is possible, which is the cheap bound that separates it
+        from a positional ``repr``.
+        """
+        from bike_sim.sim.ride.equilibrium_cache import _serializable
+        behavior = self.rider_behavior
+        return {
+            'experiment': _serializable(asdict(self.config)),
+            'sensors': _serializable(asdict(self.sensor_config)),
+            'seed': self.seed,
+            'demand': None if self.demand is None else self.demand.to_dict(),
+            'rider_program': None if self.rider_program is None else self.rider_program.to_dict(),
+            'rider_behavior': None if behavior is None else {
+                'type': f'{type(behavior).__module__}.{type(behavior).__qualname__}',
+                **({'fields': _serializable(asdict(behavior))}
+                   if is_dataclass(behavior) and not isinstance(behavior, type) else {}),
+            },
+        }
+
     @property
     def done(self):
         return self.terminated or self.truncated
@@ -245,6 +273,9 @@ class ResearchEnvironment:
             if type(seed) is not int or seed < 0:
                 raise ValueError('reset seed must be a nonnegative integer')
             self.seed = seed
+        # Refresh before sim.reset(): a post-episode re-settle publishes under
+        # the episode key, which binds this context.
+        self.sim.equilibrium_context = self._equilibrium_context()
         self.sim.reset()
         self._begin_episode()
         return self.observation

@@ -47,6 +47,10 @@ struct SetupContext {
     std::optional<std::filesystem::path> cache_directory{};
     bool initializing = true;
     bool completed = false;
+    // The settle contract actually used by the running/completed solve, set
+    // by settle_context before the cache lookup. The fingerprint binds it:
+    // a looser-tolerance pose must not serve a stricter request.
+    EquilibriumOptions equilibrium_options{};
     std::optional<EquilibriumResult> equilibrium{};
     const PhysicalInitialState* initial_state = nullptr;
 };

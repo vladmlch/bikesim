@@ -138,3 +138,72 @@ def test_equilibrium_override_kwargs_reach_the_solve():
             track=get_preset('flat'), rider='lumped',
             physics_config=SimulationPhysicsConfig('physical', drive_mode='coast'),
             equilibrium_tolerance=float('nan'))
+
+
+def _research_env(*, seed=0, duration_s=3.):
+    """A real research environment on the cheap flat/lumped rig."""
+    from bike_sim.sim.research.configuration import build_environment
+    from bike_sim.sim.research.environment import ExperimentConfig
+    from bike_sim.sim.research.sensors import SensorConfig
+    return build_environment(
+        track=get_preset('flat'), rider=RiderSpecs(variant='lumped'),
+        physics_config=SimulationPhysicsConfig(
+            'physical', drive_mode='crank_effort', pitch_assist=False,
+            tires=TireBackendConfig(backend='compliant_2d', surface_mode='track'),
+            equilibrium_cache_enabled=True),
+        experiment=ExperimentConfig(seed=seed, duration_s=duration_s),
+        sensors=SensorConfig())
+
+
+def test_experiment_configs_produce_different_episode_keys(tmp_path, monkeypatch):
+    """The poisoning regression: experiment inputs must scope what a
+    post-episode re-settle publishes under one cache directory.
+
+    The canonical fingerprint stays shared — the settled pose is a function
+    of the plant alone, so env B legitimately warm-loads env A's entry — but
+    the episode key binds the experiment context, so two different
+    ``ExperimentConfig`` values can never publish to the same name.
+    """
+    monkeypatch.setenv('BIKE_SIM_EQUILIBRIUM_CACHE_DIR', str(tmp_path))
+    from bike_sim.sim.ride import equilibrium_cache
+    env_a = _research_env(seed=11, duration_s=1.)
+    env_b = _research_env(seed=22, duration_s=2.)
+    try:
+        canonical_a = equilibrium_cache.fingerprint(env_a.sim.physical)
+        canonical_b = equilibrium_cache.fingerprint(env_b.sim.physical)
+        assert canonical_a == canonical_b
+        episode_a = equilibrium_cache.episode_fingerprint(env_a.sim.physical)
+        episode_b = equilibrium_cache.episode_fingerprint(env_b.sim.physical)
+        assert episode_a != episode_b
+        assert episode_a != canonical_a and episode_b != canonical_b
+    finally:
+        env_a.close()
+        env_b.close()
+
+
+def test_dirty_resettle_writes_the_episode_key_not_the_canonical_name(tmp_path, monkeypatch):
+    """A post-episode re-settle must never republish under the load key.
+
+    The canonical entry is deleted so ``reset()`` actually re-settles — the
+    first-run-race / self-heal path where the dirty-settle poisoning vector
+    fired. The result must land under the quarantined episode name and leave
+    the canonical name absent, so the next consumer settles fresh instead of
+    adopting a pose an episode history shaped.
+    """
+    monkeypatch.setenv('BIKE_SIM_EQUILIBRIUM_CACHE_DIR', str(tmp_path))
+    from bike_sim.sim.ride import equilibrium_cache
+    sim = _sim(equilibrium_cache_enabled=True)
+    # The coast rig's strict monitor rejects linkage constraint-work numerics
+    # during free stepping; the cache path under test does not depend on it.
+    sim.physical.set_strict(False)
+    key = equilibrium_cache.fingerprint(sim.physical)
+    canonical = tmp_path / f'{key}.npz'
+    assert canonical.is_file()
+    for _ in range(40):
+        sim.step()
+    canonical.unlink()
+    sim.reset()
+    assert not canonical.exists()
+    episode = tmp_path / f'{equilibrium_cache.episode_fingerprint(sim.physical)}.npz'
+    assert episode.is_file()
+    assert equilibrium_cache.load(sim.physical) is None

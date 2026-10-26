@@ -8986,562 +8986,751 @@
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_make_episode_builds_retained_samples",
-      "line": 13,
-      "end_line": 22,
+      "line": 103,
+      "end_line": 114,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_make_episode_builds_retained_samples",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_make_episode_preserves_authored_value_tree",
-      "line": 25,
-      "end_line": 54,
+      "line": 115,
+      "end_line": 146,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_make_episode_preserves_authored_value_tree",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_make_episode_rejects_malformed_channels",
-      "line": 57,
-      "end_line": 65,
+      "line": 147,
+      "end_line": 157,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_make_episode_rejects_malformed_channels",
+      "native_test_id": null,
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-25: drop \u2014 the rejected shapes are Python-binding surface only: a sample row without a \"channels\" key or with a non-mapping channels cannot be expressed by the typed C++ PhysicalSampleData, so the gate lives entirely in python_to_wire"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_column_bits_detects_negative_zero_and_nan",
-      "line": 68,
-      "end_line": 73,
+      "line": 158,
+      "end_line": 165,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_column_bits_detects_negative_zero_and_nan",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_physics_and_forces_bitwise_vs_oracle",
-      "line": 76,
-      "end_line": 87,
+      "line": 166,
+      "end_line": 179,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_physics_and_forces_bitwise_vs_oracle",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_compile_plan_contract",
-      "line": 90,
-      "end_line": 106,
+      "line": 180,
+      "end_line": 198,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_compile_plan_contract",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_encode_table_piece_shape_and_domain",
-      "line": 109,
-      "end_line": 124,
+      "line": 199,
+      "end_line": 216,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_encode_table_piece_shape_and_domain",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_encode_table_rejects_bad_plans_and_ranges",
-      "line": 127,
-      "end_line": 139,
+      "line": 217,
+      "end_line": 231,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_encode_table_rejects_bad_plans_and_ranges",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_forces_missing_power_is_value_error",
-      "line": 142,
-      "end_line": 149,
+      "line": 232,
+      "end_line": 241,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_forces_missing_power_is_value_error",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_flat_channel_tables_bitwise",
-      "line": 152,
-      "end_line": 160,
+      "line": 242,
+      "end_line": 252,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_flat_channel_tables_bitwise",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_optional_leaf_absent_vs_null",
-      "line": 163,
-      "end_line": 183,
+      "line": 253,
+      "end_line": 275,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_optional_leaf_absent_vs_null",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_parent_mask_absent_vs_null",
-      "line": 186,
-      "end_line": 203,
+      "line": 276,
+      "end_line": 295,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_parent_mask_absent_vs_null",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_required_leaf_missing_vs_null_rejects",
-      "line": 206,
-      "end_line": 218,
+      "line": 296,
+      "end_line": 310,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_required_leaf_missing_vs_null_rejects",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_leaf_type_and_shape_gates",
-      "line": 221,
-      "end_line": 236,
+      "line": 311,
+      "end_line": 328,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_leaf_type_and_shape_gates",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_unknown_channel_root_rejected",
-      "line": 239,
-      "end_line": 246,
+      "line": 329,
+      "end_line": 338,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_unknown_channel_root_rejected",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_unknown_channel_member_rejected",
-      "line": 249,
-      "end_line": 258,
+      "line": 339,
+      "end_line": 350,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_unknown_channel_member_rejected",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_map_channel_tables_bitwise",
-      "line": 261,
-      "end_line": 303,
+      "line": 351,
+      "end_line": 395,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_map_channel_tables_bitwise",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_map_leaf_rejects_non_dict_and_bad_member",
-      "line": 306,
-      "end_line": 323,
+      "line": 396,
+      "end_line": 415,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_map_leaf_rejects_non_dict_and_bad_member",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_map_required_leaf_missing_rejects",
-      "line": 326,
-      "end_line": 340,
+      "line": 416,
+      "end_line": 432,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_map_required_leaf_missing_rejects",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_map_except_keys_routes_owned_member",
-      "line": 343,
-      "end_line": 382,
+      "line": 433,
+      "end_line": 474,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_map_except_keys_routes_owned_member",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_all_list_and_map_dtypes_bitwise",
-      "line": 385,
-      "end_line": 432,
+      "line": 475,
+      "end_line": 524,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_all_list_and_map_dtypes_bitwise",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_struct_field_bitwise_channel_mass",
-      "line": 435,
-      "end_line": 457,
+      "line": 525,
+      "end_line": 549,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_struct_field_bitwise_channel_mass",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_struct_field_optional_member_channel_control",
-      "line": 460,
-      "end_line": 484,
+      "line": 550,
+      "end_line": 576,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_struct_field_optional_member_channel_control",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_struct_nested_and_verdict_channel_model_status",
-      "line": 487,
-      "end_line": 523,
+      "line": 577,
+      "end_line": 615,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_struct_nested_and_verdict_channel_model_status",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_struct_list_patches_channel_tires",
-      "line": 526,
-      "end_line": 556,
+      "line": 616,
+      "end_line": 648,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_struct_list_patches_channel_tires",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_map_struct_except_keys_and_nesting_channel_rider",
-      "line": 559,
-      "end_line": 607,
+      "line": 649,
+      "end_line": 699,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_map_struct_except_keys_and_nesting_channel_rider",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_struct_member_validation_parity",
-      "line": 610,
-      "end_line": 648,
+      "line": 700,
+      "end_line": 740,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_struct_member_validation_parity",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_map_struct_bad_key_and_member_parity",
-      "line": 651,
-      "end_line": 680,
+      "line": 741,
+      "end_line": 772,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_map_struct_bad_key_and_member_parity",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_struct_fragments_respect_batch_rows_bound",
-      "line": 683,
-      "end_line": 717,
+      "line": 773,
+      "end_line": 810,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_struct_fragments_respect_batch_rows_bound",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_applied_rows_bitwise_vs_python_mirror",
-      "line": 720,
-      "end_line": 756,
+      "line": 811,
+      "end_line": 863,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_applied_rows_bitwise_vs_python_mirror",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_verdict_leaf_coerces_bool_to_text",
-      "line": 759,
-      "end_line": 804,
+      "line": 864,
+      "end_line": 911,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_verdict_leaf_coerces_bool_to_text",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_applied_rows_missing_control_rejects",
-      "line": 807,
-      "end_line": 813,
+      "line": 912,
+      "end_line": 920,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_applied_rows_missing_control_rejects",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_forces_fragments_respect_batch_rows_bound",
-      "line": 816,
-      "end_line": 845,
+      "line": 921,
+      "end_line": 953,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_forces_fragments_respect_batch_rows_bound",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_map_fragments_respect_batch_rows_bound",
-      "line": 848,
-      "end_line": 881,
+      "line": 954,
+      "end_line": 990,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_map_fragments_respect_batch_rows_bound",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_real_episode_all_tables_bitwise",
-      "line": 884,
-      "end_line": 902,
+      "line": 991,
+      "end_line": 1012,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_real_episode_all_tables_bitwise",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms",
+        "2026-10-25: the t=0 bootstrap \u2014 config.json, state.json, state.arrays and the platform-serialized model.mjb \u2014 travels as recorded input entries; mj_saveModel bytes drift ~1e-13 across qualified platforms, which the bitwise physics lanes observe"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_whole_episode_single_pass",
-      "line": 905,
-      "end_line": 938,
+      "line": 1013,
+      "end_line": 1100,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_whole_episode_single_pass",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms",
+        "2026-10-25: the t=0 bootstrap \u2014 config.json, state.json, state.arrays and the platform-serialized model.mjb \u2014 travels as recorded input entries; mj_saveModel bytes drift ~1e-13 across qualified platforms, which the bitwise physics lanes observe"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_derived_events_bitwise_vs_oracle",
-      "line": 992,
-      "end_line": 1022,
+      "line": 1101,
+      "end_line": 1134,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_derived_events_bitwise_vs_oracle",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_derived_rows_window_seeding",
-      "line": 1025,
-      "end_line": 1043,
+      "line": 1135,
+      "end_line": 1155,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_derived_rows_window_seeding",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_derived_rows_rejects_bad_plans_and_ranges",
-      "line": 1046,
-      "end_line": 1059,
+      "line": 1156,
+      "end_line": 1171,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_derived_rows_rejects_bad_plans_and_ranges",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "native contract port",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-25: ported to native/tests/reference/test_native_encode_columns.cpp; CTest reference.native_encode_columns green on darwin-arm64 and linux-aarch64; pytest file 40 green on both platforms"
+      ],
+      "golden_platforms": []
     },
     {
       "source_path": "tests/reference/test_native_encode_columns.py",
       "source_symbol": "test_derived_events_real_episode_bitwise",
-      "line": 1062,
-      "end_line": 1088,
+      "line": 1172,
+      "end_line": 1201,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_encode_columns::test_derived_events_real_episode_bitwise",
+      "native_test_id": "reference.native_encode_columns",
       "native_source": "native/tests/reference/test_native_encode_columns.cpp",
       "collected_node_ids": [],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "oracle-derived comparison",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-25: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_encode_columns green on both platforms",
+        "2026-10-25: the t=0 bootstrap \u2014 config.json, state.json, state.arrays and the platform-serialized model.mjb \u2014 travels as recorded input entries; mj_saveModel bytes drift ~1e-13 across qualified platforms, which the bitwise physics lanes observe"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",

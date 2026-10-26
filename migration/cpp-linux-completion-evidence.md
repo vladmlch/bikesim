@@ -4991,3 +4991,106 @@ check over `(source_path, source_symbol)` keys):
   infrastructure defect for the parent to surface.
 - L3 (`tools/run_tests.sh native`) not run — bounded merge-back scope;
   checkpoint profile owns it.
+
+## 2026-10-25 — Task 3.22a (lane/c): encode columns
+
+### Scope
+
+One source file, 40 records, 40 collected pytest nodes (no
+parametrization; `pytestmark` binds the `native_module` fixture only):
+
+- `test_native_encode_columns.py` — 40 records / 40 nodes / 22 golden
+  nodes covering every `assert_identical` table stream, the three
+  fragment-boundary compares, the applied-mirror fragments, both
+  derived-event streams, and the three real-episode bootstrap replays.
+
+Dispositions: 22 golden / 17 port / 1 drop
+(`test_make_episode_rejects_malformed_channels` — the rejected shapes are
+Python-binding surface only: a sample row without `channels` or with a
+non-mapping `channels` cannot be expressed by the typed C++
+`PhysicalSampleData`, so the gate lives entirely in `python_to_wire`).
+`python-removal.json` marks the file `replacement_landed`; deletion
+remains deferred to T63 per ADR-0003.
+
+### Port notes
+
+- `native/tests/reference/test_native_encode_columns.cpp` (2649 lines)
+  reproduces the `column_bits` byte identity over `EncodedTable` pieces —
+  validity bitmap + int32 offsets + payload lanes, struct members in
+  catalog order with generated `<child>_present` companions — plus
+  move-only `Piece` deep-copy and fragment concat (mask widening,
+  offsets rebasing) mirroring `pa.concat_batches`.
+- The recorded side of every `assert_identical` is the
+  `arrow_batch`/`pa.array` materialization, not `pieces_to_arrow`: Arrow
+  suppresses member masks under an absent parent slot (the child lane is
+  stored valid with default payload), so the mirror carries an
+  arrow-validity context — `masked(i) = piece_invalid(i) &&
+  parent_arrow_valid(i)` — verified against pyarrow directly and against
+  the `commands_applied` `control` struct golden (nested members under an
+  absent `posture` emit raw lanes, no bitmaps).
+- `np.linspace(0,1,8)` is *not* `k/7`: intermediates are `k*fl(1/7)`
+  with the endpoint pinned at exactly 1.0 — the qpos staged rows in
+  `test_physics_and_forces_bitwise_vs_oracle` needed that lowering for
+  bitwise parity.
+- Bootstrap replay: the whole t=0 inventory — `config.json`,
+  `state.json`, `state.arrays/*` and the live `model.mjb` — travels as
+  `ride.file::<path>` golden inputs. `mj_saveModel` bytes differ across
+  qualified platforms (~1e-13 model-field drift; live linux-aarch64
+  sha256 `26a9dfb9…` vs committed darwin-arm64 `3f1d0d41…`), which the
+  bitwise physics lanes observe, so the earlier repoint-and-skip scheme
+  could not hold here; the committed fixture
+  `tests/fixtures/migration/bootstrap/encode_columns_welded/`
+  (model.mjb + meta.json) stays the canonical reference image.
+- Linux in-flight fixes: clang-18 `-Wmissing-field-initializers` on
+  eight `FieldSpec`/`TableSpec` designated initializers, and a
+  `-Wframe-larger-than=8192` trip in `drive_channels` — the ~110-pair
+  `WireObject` initializer-list became `emplace_back` calls.
+
+### Verification
+
+- Oracle pytest, `uv run --frozen --no-sync`: **40 passed, 3 warnings**
+  on darwin-arm64 (`native/build`, 9.72 s) and on linux-aarch64
+  (`/build/native-clang`, `bike-dev-pfc-lane-c`, 3.49 s). The warning is
+  the known `invalid reference step at 0.005000000:
+  ('energy.constraint_work',)` RuntimeWarning in the three real-episode
+  nodes.
+- CTest `reference.native_encode_columns` (labels `t52 recording golden
+  slow`): **PASS 7834 checks on darwin-arm64** (`build/native-release`)
+  and **PASS 7834 checks on linux-aarch64** (`/build/root-clang`).
+- Golden corruption proof: flipped byte 1024 of
+  `test_physics_and_forces_bitwise_vs_oracle.bin` on darwin-arm64 → FAIL
+  `physics/bits/qvel: bytes differ`; byte restored → PASS. The bitwise
+  comparator detects single-byte fixture corruption.
+- Goldens: 22 node pairs per platform under
+  `tests/fixtures/golden/<platform>/tests_reference_test_native_encode_columns.py/`.
+
+### Final gate — `bash tools/run_tests.sh native` (darwin-arm64, `native/build`)
+
+Run 1 exited at `check_tidy`: one blocking finding
+`native/src/terrain/alpine.cpp:84 misc-use-internal-linkage` on
+`faceted`. The symbol was moved out of the anonymous namespace into
+`detail` by `5df6c45e` (lane/d 3.13 merge, in base `c4cf470f`) but is
+*not* declared in `detail.hpp` — its external linkage was incidental.
+Repaired by wrapping `faceted` in `namespace { }` inside `detail`
+(the tidy-prescribed fix; `detail::faceted` still resolves via the
+implicit using-directive). Standalone `check_tidy` rerun: green, zero
+findings on all 334 TUs.
+
+Run 2 (the completion gate) result: exit 8 — build green, **all nine
+static-analysis sweeps green** (frontends none, tidy none, analyzer
+report-only, cppcheck none, odr none, shellcheck clean, headers 9012 TUs
+none, diagnostic-controls 0 failed, context all passed), then CTest
+**60/62** — `migration_T09` (`integration vector resolves bitwise`) and
+`migration_T29` (`config.rider_controller.weld_servo_gain: unknown
+key`). This is the documented baseline pair — identical signature
+already recorded 2026-10-24 (§F2 gate results: "without F2 exits at the
+identical T09/T25/T29 trio", T25 since root-caused) and in the 60/62
+entries at this file's earlier dated sections; neither test file nor its
+code path is touched by this batch (`git merge-base` confirms the
+breaking commit `5df6c45e` predates base `c4cf470f`; the only native-src
+edit here is the zero-behavior linkage fix above). The pytest tail is
+not reached after the ctest stop, matching the documented gate-abort
+behavior; the per-batch required gates — focused CTest
+`reference.native_encode_columns` PASS on both platforms and the
+40-node oracle pytest green on both platforms — stand in per the
+Phase-3 batch procedure, with L2 at merge-back.

@@ -1,0 +1,688 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "channel_energy/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/episode_id",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/interval_id",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 32,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/mechanical_energy_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 56,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/elastic_energy_j",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 82,
+  "rtol": null,
+  "shape": [
+   40
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/elastic_energy_j_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 122,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/active_work_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 125,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/external_work_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 151,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/loss_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 177,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/loss_step_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 203,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/solver_constraint_work_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 229,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/energy_scale_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 255,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/muscle_signed_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 281,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/muscle_positive_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 307,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/motor_signed_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 333,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/motor_positive_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 359,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/source_positive_work_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 385,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/constraint_signed_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 411,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/constraint_absolute_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 437,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/constraint_work_ratio",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 463,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/constraint_work_ratio_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 489,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/constraint_work_ok",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 492,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/residual_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 497,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/residual_j_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 523,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/electrical_work_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 526,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/electrical_residual_j",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 552,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/measured",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 578,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/source_interval_id",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 583,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/source_interval_id_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 609,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/source_time_s",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 612,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/source_time_s_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 638,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/component_work_j",
+  "nbytes": 48,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 641,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/component_work_j_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 689,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/__component_work_j_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 692,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/__component_work_j_valid",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 695,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/__energy_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 698,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/__energy_valid",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 701,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "channel_suspension/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 704,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/episode_id",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 712,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/interval_id",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 736,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/fork_travel_m",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 760,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/shock_stroke_m",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 786,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/fork_velocity_mps",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 812,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/shock_velocity_mps",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 838,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/shock_solver_limit_power_w",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 864,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/linkage_closure_max_m",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 890,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/generalized_force_components_n",
+  "nbytes": 59,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 916,
+  "rtol": null,
+  "shape": [
+   59
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/__suspension_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 975,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/__suspension_valid",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_channel_tables_bitwise",
+  "offset": 978,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

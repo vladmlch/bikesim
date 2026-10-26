@@ -1,0 +1,86 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "forces/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_forces_fragments_respect_batch_rows_bound",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "forces/bits/episode_id",
+  "nbytes": 120,
+  "node": "tests/reference/test_native_encode_columns.py::test_forces_fragments_respect_batch_rows_bound",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   120
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "forces/bits/interval_id",
+  "nbytes": 120,
+  "node": "tests/reference/test_native_encode_columns.py::test_forces_fragments_respect_batch_rows_bound",
+  "offset": 128,
+  "rtol": null,
+  "shape": [
+   120
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "forces/bits/component",
+  "nbytes": 30,
+  "node": "tests/reference/test_native_encode_columns.py::test_forces_fragments_respect_batch_rows_bound",
+  "offset": 248,
+  "rtol": null,
+  "shape": [
+   30
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "forces/bits/qfrc",
+  "nbytes": 1025,
+  "node": "tests/reference/test_native_encode_columns.py::test_forces_fragments_respect_batch_rows_bound",
+  "offset": 278,
+  "rtol": null,
+  "shape": [
+   1025
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "forces/bits/power_w",
+  "nbytes": 120,
+  "node": "tests/reference/test_native_encode_columns.py::test_forces_fragments_respect_batch_rows_bound",
+  "offset": 1303,
+  "rtol": null,
+  "shape": [
+   120
+  ]
+ }
+]

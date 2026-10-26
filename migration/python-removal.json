@@ -15469,20 +15469,18 @@
   },
   {
     "path": "tests/reference/test_native_encode_columns.py",
-    "sha256": "6c8a6e325a966440c885bdc2e2b60f597d207a7b1c627f24e7e72337d1f05395",
-    "line_count": 1088,
+    "sha256": "9408d9cc8a90c72bbeebce84f1b44f31403cdfb2ba2b0a913f97f9977eb25693",
+    "line_count": 1200,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_native_encode_columns.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_encode_columns"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "6ca5bb3aad74d07f245904a398c6d5a756463967f7b9bcc6b272b0449d8d2c30",
     "snapshot_line_count": 1088,
     "tracked": true,

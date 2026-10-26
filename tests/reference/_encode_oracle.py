@@ -3,6 +3,7 @@ import numpy as np
 import pyarrow as pa
 from native_loader import load_native
 from _bits import assert_bitwise_equal
+import _golden
 import _recording_support as support
 from bike_sim.recording.encoding import encode_rows
 from bike_sim.recording.schema import arrow_batch
@@ -195,6 +196,22 @@ def assert_derived_events(actual, expected):
                              f'{label}.changes')
 
 
+def _record_batch_bits(record_batch, prefix):
+    """Freeze the oracle RecordBatch the C++ port must reproduce.
+
+    ``<prefix>/rows`` pins the row count; ``<prefix>/bits/<name>`` then
+    carries each column's ``column_bits`` identity in schema order. The
+    native port walks ``column_types(spec)`` in the same order, so a
+    missing, extra or reordered column mismatches a label or a byte lane.
+    """
+    _golden.record(np.asarray([record_batch.num_rows], dtype=np.int64),
+                   f'{prefix}/rows')
+    for name in record_batch.schema.names:
+        _golden.record(np.frombuffer(column_bits(record_batch.column(name)),
+                                     dtype=np.uint8),
+                       f'{prefix}/bits/{name}')
+
+
 def assert_identical(spec, episode_or_rows, episode_id=0, catalog=None):
     """Encode the same rows/episode through both paths; compare bytes.
 
@@ -214,6 +231,7 @@ def assert_identical(spec, episode_or_rows, episode_id=0, catalog=None):
         episode = make_episode(list(episode_or_rows))
     oracle_rb = oracle_record_batch_from_episode(spec, episode, episode_id,
                                                  catalog=catalog)
+    _record_batch_bits(oracle_rb, spec.name)
     native_rb = native_record_batch(spec, episode, episode_id,
                                     catalog=catalog)
     assert oracle_rb.schema.equals(native_rb.schema), spec.name

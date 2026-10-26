@@ -1,0 +1,128 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "channel_owned_map/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_except_keys_routes_owned_member",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "channel_owned_map/bits/episode_id",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_except_keys_routes_owned_member",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "channel_owned_map/bits/interval_id",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_except_keys_routes_owned_member",
+  "offset": 32,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "channel_owned_map/bits/bag",
+  "nbytes": 50,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_except_keys_routes_owned_member",
+  "offset": 56,
+  "rtol": null,
+  "shape": [
+   50
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "channel_owned_map/bits/bag_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_except_keys_routes_owned_member",
+  "offset": 106,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "channel_owned_map/bits/owned_value",
+  "nbytes": 26,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_except_keys_routes_owned_member",
+  "offset": 109,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "channel_owned_map/bits/owned_value_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_except_keys_routes_owned_member",
+  "offset": 135,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "channel_owned_map/bits/__bag_present",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_except_keys_routes_owned_member",
+  "offset": 138,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "channel_owned_map/bits/__bag_valid",
+  "nbytes": 3,
+  "node": "tests/reference/test_native_encode_columns.py::test_map_except_keys_routes_owned_member",
+  "offset": 141,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

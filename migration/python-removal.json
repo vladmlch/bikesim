@@ -14775,28 +14775,14 @@
       "native/tests/reference/test_drivetrain_policy_clone.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.drivetrain_policy_clone"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "f9b16b2329d7359d12fe0c9587e2e76788e2c16248befcf6cfe407a4b3d28f3a",
     "snapshot_line_count": 39,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 1
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_energy_ledger.py",
@@ -15125,28 +15111,14 @@
       "native/tests/reference/test_motor_freewheel_topology.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.motor_freewheel_topology"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ac22a546576368ea32d2160f77e581003789b1e172afd71343595ecd4b036f10",
     "snapshot_line_count": 203,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 9
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_motor_profile.py",
@@ -15401,41 +15373,26 @@
   },
   {
     "path": "tests/reference/test_native_drive_policies.py",
-    "sha256": "b6cdca1f92a3cbd0600ab9c739f5f4628cd0c636c22bb37f541a791a79fd7f36",
-    "line_count": 510,
+    "sha256": "18ec3dec26cad50f3c5021bf4192b739a1ed3fbbbcf6d73e1855eef1fb26e2cd",
+    "line_count": 527,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_native_drive_policies.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_drive_policies"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b8a177d4f573f69ef9616c135cfc6cf8919f2b13b488b8103307ebca3ffdfcda",
     "snapshot_line_count": 510,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 4,
-        "golden": 27
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_native_drivetrain.py",
-    "sha256": "4386e76f026664a06df52cdefe3493dbf60f82e016c3826ea56ea183c2672f66",
+    "sha256": "3c5d349b747decac219d26dc2652404ed58f6f6cfedb9a6c59b6ca6b5728686e",
     "line_count": 560,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
@@ -15443,29 +15400,14 @@
       "native/tests/reference/test_native_drivetrain.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_drivetrain"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "c34cf400ad78e9cbdb583fd6f1a03c3882a1f48de059d37aa08008e9c49810bf",
     "snapshot_line_count": 560,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "golden": 24,
-        "port": 4
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_native_encode_columns.py",

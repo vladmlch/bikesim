@@ -1,0 +1,100 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 92112,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   11514
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.state.0",
+  "nbytes": 2960,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
+  "offset": 92112,
+  "rtol": null,
+  "shape": [
+   370
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.forward.0",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
+  "offset": 95072,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.compute.0",
+  "nbytes": 2112,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
+  "offset": 95088,
+  "rtol": null,
+  "shape": [
+   264
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.reset_activation.0",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
+  "offset": 97200,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": 0.0,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "close",
+  "label": "output.active_state.0",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
+  "offset": 97216,
+  "rtol": 0.0,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "output.state_meta.0",
+  "nbytes": 77,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
+  "offset": 97288,
+  "rtol": null,
+  "shape": [
+   77
+  ]
+ }
+]

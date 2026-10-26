@@ -1,0 +1,86 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 92112,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_write_matches_python",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   11514
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.state.0",
+  "nbytes": 2960,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_write_matches_python",
+  "offset": 92112,
+  "rtol": null,
+  "shape": [
+   370
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.forward.0",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_write_matches_python",
+  "offset": 95072,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.compute.0",
+  "nbytes": 2112,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_write_matches_python",
+  "offset": 95088,
+  "rtol": null,
+  "shape": [
+   264
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.write.0",
+  "nbytes": 2960,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_write_matches_python",
+  "offset": 97200,
+  "rtol": null,
+  "shape": [
+   370
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "close",
+  "label": "output.ctrl.0",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_write_matches_python",
+  "offset": 100160,
+  "rtol": 1e-12,
+  "shape": [
+   12
+  ]
+ }
+]

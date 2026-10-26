@@ -15959,20 +15959,18 @@
  },
  {
   "path": "tests/reference/test_native_rider_intent.py",
-  "sha256": "5be12c9b95e6b41e5cbbfcbeda03f3fd56331529fac88ce80f18c49eeb17d6cb",
-  "line_count": 617,
+  "sha256": "1416835835ec9f821d62b185a879533246a54d0141ea3e990da118ce4ea843ad",
+  "line_count": 799,
   "owner_task": "T52",
   "action": "port_assertions_and_fixture_orchestration",
   "replacement_paths": [
    "native/tests/reference/test_native_rider_intent.cpp"
   ],
   "verification_ids": [
-   "migration_T52",
-   "source_assertion_map",
-   "release_capability_matrix"
+   "reference.native_rider_intent"
   ],
   "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-  "status": "planned",
+  "status": "replacement_landed",
   "snapshot_sha256": "d126ee58d49e2c51581d074d07cda923b1673fe90f54a132180ecd234d6a4893",
   "snapshot_line_count": 617,
   "tracked": true,
@@ -16148,8 +16146,8 @@
  },
  {
   "path": "tests/reference/test_native_spindle_controller.py",
-  "sha256": "549406d5867513397f378fa591b1af585621615d1a0ada11d7ba456016e2bac0",
-  "line_count": 586,
+  "sha256": "7cbe8971e8f7d33bba31aaa01892a8501fe70cdc309a0f96e8aa384a9d5a1840",
+  "line_count": 829,
   "owner_task": "T52",
   "action": "port_assertions_and_fixture_orchestration",
   "replacement_paths": [

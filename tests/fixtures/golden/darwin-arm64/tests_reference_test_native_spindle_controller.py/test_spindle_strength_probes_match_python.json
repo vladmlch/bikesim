@@ -1,0 +1,1022 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 93216,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   11652
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.state.0",
+  "nbytes": 2960,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 93216,
+  "rtol": null,
+  "shape": [
+   370
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.forward.0",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 96176,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.anatomical.0",
+  "nbytes": 368,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 96192,
+  "rtol": null,
+  "shape": [
+   46
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "close",
+  "label": "output.anatomical.0",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 96560,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.capacity.0",
+  "nbytes": 704,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 96568,
+  "rtol": null,
+  "shape": [
+   88
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "close",
+  "label": "output.capacity.0",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 97272,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.capacity.1",
+  "nbytes": 712,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 97280,
+  "rtol": null,
+  "shape": [
+   89
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "close",
+  "label": "output.capacity.1",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 97992,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.capacity.2",
+  "nbytes": 712,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 98000,
+  "rtol": null,
+  "shape": [
+   89
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "close",
+  "label": "output.capacity.2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 98712,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "input.anatomical.1",
+  "nbytes": 384,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 98720,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "close",
+  "label": "output.anatomical.1",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 99104,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.capacity.3",
+  "nbytes": 720,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 99112,
+  "rtol": null,
+  "shape": [
+   90
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "close",
+  "label": "output.capacity.3",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 99832,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.capacity.4",
+  "nbytes": 728,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 99840,
+  "rtol": null,
+  "shape": [
+   91
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "close",
+  "label": "output.capacity.4",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 100568,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "input.capacity.5",
+  "nbytes": 728,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 100576,
+  "rtol": null,
+  "shape": [
+   91
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "close",
+  "label": "output.capacity.5",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 101304,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.anatomical.2",
+  "nbytes": 360,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 101312,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "close",
+  "label": "output.anatomical.2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 101672,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.capacity.6",
+  "nbytes": 696,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 101680,
+  "rtol": null,
+  "shape": [
+   87
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "close",
+  "label": "output.capacity.6",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 102376,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "input.capacity.7",
+  "nbytes": 704,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 102384,
+  "rtol": null,
+  "shape": [
+   88
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "close",
+  "label": "output.capacity.7",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 103088,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "input.capacity.8",
+  "nbytes": 704,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 103096,
+  "rtol": null,
+  "shape": [
+   88
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "close",
+  "label": "output.capacity.8",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 103800,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "input.anatomical.3",
+  "nbytes": 392,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 103808,
+  "rtol": null,
+  "shape": [
+   49
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "close",
+  "label": "output.anatomical.3",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 104200,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "input.capacity.9",
+  "nbytes": 728,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 104208,
+  "rtol": null,
+  "shape": [
+   91
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "close",
+  "label": "output.capacity.9",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 104936,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "input.capacity.10",
+  "nbytes": 736,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 104944,
+  "rtol": null,
+  "shape": [
+   92
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "close",
+  "label": "output.capacity.10",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 105680,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "input.capacity.11",
+  "nbytes": 736,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 105688,
+  "rtol": null,
+  "shape": [
+   92
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "close",
+  "label": "output.capacity.11",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 106424,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "input.anatomical.4",
+  "nbytes": 368,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 106432,
+  "rtol": null,
+  "shape": [
+   46
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "close",
+  "label": "output.anatomical.4",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 106800,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "input.capacity.12",
+  "nbytes": 704,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 106808,
+  "rtol": null,
+  "shape": [
+   88
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "close",
+  "label": "output.capacity.12",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 107512,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "input.capacity.13",
+  "nbytes": 712,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 107520,
+  "rtol": null,
+  "shape": [
+   89
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "close",
+  "label": "output.capacity.13",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 108232,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "input.capacity.14",
+  "nbytes": 712,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 108240,
+  "rtol": null,
+  "shape": [
+   89
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "close",
+  "label": "output.capacity.14",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 108952,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "input.anatomical.5",
+  "nbytes": 352,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 108960,
+  "rtol": null,
+  "shape": [
+   44
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "close",
+  "label": "output.anatomical.5",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 109312,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "input.capacity.15",
+  "nbytes": 688,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 109320,
+  "rtol": null,
+  "shape": [
+   86
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "close",
+  "label": "output.capacity.15",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 110008,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "input.capacity.16",
+  "nbytes": 696,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 110016,
+  "rtol": null,
+  "shape": [
+   87
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "close",
+  "label": "output.capacity.16",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 110712,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "input.capacity.17",
+  "nbytes": 696,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 110720,
+  "rtol": null,
+  "shape": [
+   87
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "close",
+  "label": "output.capacity.17",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 111416,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "input.anatomical.6",
+  "nbytes": 360,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 111424,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "close",
+  "label": "output.anatomical.6",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 111784,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "input.capacity.18",
+  "nbytes": 696,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 111792,
+  "rtol": null,
+  "shape": [
+   87
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "close",
+  "label": "output.capacity.18",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 112488,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "input.capacity.19",
+  "nbytes": 704,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 112496,
+  "rtol": null,
+  "shape": [
+   88
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "close",
+  "label": "output.capacity.19",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 113200,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "input.capacity.20",
+  "nbytes": 704,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 113208,
+  "rtol": null,
+  "shape": [
+   88
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "close",
+  "label": "output.capacity.20",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 113912,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "input.anatomical.7",
+  "nbytes": 344,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 113920,
+  "rtol": null,
+  "shape": [
+   43
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "close",
+  "label": "output.anatomical.7",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 114264,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "input.capacity.21",
+  "nbytes": 760,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 114272,
+  "rtol": null,
+  "shape": [
+   95
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "close",
+  "label": "output.capacity.21",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 115032,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "input.capacity.22",
+  "nbytes": 768,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 115040,
+  "rtol": null,
+  "shape": [
+   96
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "close",
+  "label": "output.capacity.22",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 115808,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "input.capacity.23",
+  "nbytes": 768,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 115816,
+  "rtol": null,
+  "shape": [
+   96
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "close",
+  "label": "output.capacity.23",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 116584,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "input.anatomical.8",
+  "nbytes": 352,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 116592,
+  "rtol": null,
+  "shape": [
+   44
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "close",
+  "label": "output.anatomical.8",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 116944,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "input.capacity.24",
+  "nbytes": 688,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 116952,
+  "rtol": null,
+  "shape": [
+   86
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "close",
+  "label": "output.capacity.24",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 117640,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "input.capacity.25",
+  "nbytes": 696,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 117648,
+  "rtol": null,
+  "shape": [
+   87
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "close",
+  "label": "output.capacity.25",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 118344,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "input.capacity.26",
+  "nbytes": 696,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 118352,
+  "rtol": null,
+  "shape": [
+   87
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "close",
+  "label": "output.capacity.26",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 119048,
+  "rtol": 1e-12,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "input.strength_limited.0",
+  "nbytes": 2344,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 119056,
+  "rtol": null,
+  "shape": [
+   293
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "close",
+  "label": "output.clipped.0",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 121400,
+  "rtol": 1e-12,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "output.limited.0",
+  "nbytes": 122,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 121472,
+  "rtol": null,
+  "shape": [
+   122
+  ]
+ }
+]

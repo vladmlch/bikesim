@@ -235,3 +235,9 @@ bike_add_reference_test(planar_arms ENGINE
 bike_add_reference_test(native_rider_intent ENGINE
   SOURCES test_native_rider_intent.cpp LIBRARIES bike_app
   LABELS t52 rider golden)
+# native_spindle_controller replays only the 20 oracle-green nodes — the
+# two `_damped_config` TOML-baseline nodes and the 20 enabled-compute
+# parity-defect nodes carry no consumable golden (task-C315 report).
+bike_add_reference_test(native_spindle_controller ENGINE
+  SOURCES test_native_spindle_controller.cpp LIBRARIES bike_app
+  LABELS t52 rider golden)

@@ -147,15 +147,23 @@ Oracle leg (`uv run pytest` on the eight source files):
 - `migration_T25` — red on darwin-arm64: `FAIL
   tests/fixtures/migration/requests/welded_flat.toml: initial-state
   physical model contract differs (only timestep/road mesh may vary)`.
-  Documented `[reproduced]` root cause (evidence file, 2026-10-24 F2
-  section): the initial-state `contract_sha256` serializes resolved
-  **absolute** `joint_envelope_path`/`joint_strength_path` strings, so
-  the hash binds to the capturing worktree — `python-free-cpp`
-  reproduces the pinned `04cab701…` and T25 PASSED there (6.13 s),
-  while `pfc-lane-b` computes `bb4ceb98…`. Structurally unpassable on
-  sibling worktrees until the path-hash portability fix lands;
-  provably independent of this batch's diff (no change to
-  initial-state contract hashing or config-path resolution).
+  The worktree-path portability defect previously cited here is
+  already retired: `59b3c4e4` (landed via merge `327820b1`, an
+  ancestor of this lane's base) re-bound the schema-2
+  `contract_sha256` to asset **content**, not resolved paths. The
+  live red is a **stale pre-F1 fixture**: lane/b's
+  `initial_state/{darwin-arm64,linux-aarch64}/welded_flat.json` pins
+  (`dc9ce816…` / `639f49c5…`, captured by `59b3c4e4`) predate F1's
+  required config-key additions (`weld_servo_gain`,
+  `weld_servo_limit_nm`, `leg_track_damping_nms_rad`), so the
+  recomputed contract digest no longer matches the pin. Integration
+  recaptured post-F1 — `73168f02` → `1cec4d06…` (darwin-arm64),
+  `ed92ca7a` → `16e4b506…` (linux-aarch64); neither commit is an
+  ancestor of this lane — and T25 is green there. Same
+  stale-F1-artifact family as `migration_T38` (paired with T25 in the
+  evidence file's F1 gate record); baseline, not batch-authored — no
+  3.17 diff touches contract hashing, config-path resolution, or the
+  `welded_flat` fixture.
 - `migration_T29` — **signature changed post-F1**: the documented
   `config.rider_controller.weld_servo_gain: unknown key` failure is
   gone — the F1 schema absorbed the servo keys into
@@ -184,8 +192,9 @@ pre-existing baselines; nothing attributable to this batch:
   controls (all passed).
 - CTest: **60/62** — `migration_T09` (`integration vector resolves
   bitwise`, unchanged baseline) and `migration_T25`
-  (`welded_flat.toml` contract — documented worktree-path
-  portability defect, green on the capturing worktree). `migration_T29`
+  (`welded_flat.toml` contract — stale pre-F1 fixture pin vs
+  post-F1 `contract_sha256`; green on integration after the
+  `73168f02`/`ed92ca7a` recaptures). `migration_T29`
   **Passed** (0.79 s) — green at HEAD, stale-binary artifact retired.
 - The gate stops at ctest exactly like the documented F2 gate;
   the contracts + pytest tail it skips was run manually:
@@ -243,3 +252,41 @@ pre-existing baselines; nothing attributable to this batch:
 - `migration_T09` remains the documented bitwise baseline red;
   `migration_T29` is now green — the baseline list should be updated
   wherever T09/T29 are cited as a pair.
+
+## Fix round (review: needs fixes — documentation/ledger hygiene only)
+
+1. **T25 mechanism corrected.** The baseline-red bullet (and its gate-
+   section echo) previously attributed the red to the schema-1
+   worktree-path hash (`04cab701…`/`bb4ceb98…` narrative). That defect
+   was retired before this batch ran: `59b3c4e4` (merged via
+   `327820b1`, ancestor of this lane's base) re-bound the schema-2
+   `contract_sha256` to asset content. The paragraph now records the
+   live mechanism — stale pre-F1 fixture pins (`dc9ce816…` darwin /
+   `639f49c5…` linux, captured by `59b3c4e4`) vs the post-F1 contract
+   digest; integration recaptured (`73168f02` → `1cec4d06…`,
+   `ed92ca7a` → `16e4b506…`; neither on this lane) and is green.
+   Verified against the objects: digests read from
+   `HEAD`/`impl/python-free-cpp` fixture blobs and the
+   `git merge-base` ancestry checks above.
+2. **Ledger byte regressions repaired.** Both ledgers lost their
+   trailing EOF newline in the batch refresh; restored.
+   `migration/python-removal.json` additionally carried the only raw
+   non-ASCII bytes the batch introduced — literal `–` at lines
+   12433/12739 in the `scope_and_limits` fields of the
+   `benchmarks.py` / `fidelity_sweep.py` records (both
+   `status: planned`, outside this batch; the file is clean at base
+   `2c24dc43`). Re-serialized with `json.dumps(indent=2,
+   ensure_ascii=True)` + trailing newline; the en-dashes are now
+   `\u2013` escapes matching base/integration. Post-write
+   verification: `rg -n '[^\x00-\x7F]'` → zero hits;
+   `tail -c 3` → `]\n` / `}\n`; `git diff` shows record-level changes
+   only (2 lines + EOF marker on python-removal; pure block moves +
+   EOF marker on test-port-map — no whole-file reserialization).
+3. **Post-F1 record ordering (minor).** Chose to **reorder**: the 5
+   post-F1 `articulated_config` records now sit in source-line order
+   inside the file's contiguous record group (lines 7→103) rather
+   than appended after `test_balance_grace_must_be_finite_and_
+   nonnegative`. The diff is a pure 80-line block move (added ==
+   removed line sets); note the ledger as a whole holds no global
+   line-order invariant — this restores it for the one group the
+   batch touched.

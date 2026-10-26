@@ -689,85 +689,6 @@
     },
     {
       "source_path": "tests/reference/test_articulated_config.py",
-      "source_symbol": "test_balance_defaults",
-      "line": 78,
-      "end_line": 80,
-      "owner_task": "T52",
-      "native_test_id": "reference.articulated_config::test_balance_defaults",
-      "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [
-        "tests/reference/test_articulated_config.py::test_balance_defaults"
-      ],
-      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
-      "comparison_class": "contract",
-      "disposition": "port",
-      "evidence": [
-        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
-      ]
-    },
-    {
-      "source_path": "tests/reference/test_articulated_config.py",
-      "source_symbol": "test_invalid_balance_thresholds_are_rejected",
-      "line": 85,
-      "end_line": 87,
-      "owner_task": "T52",
-      "native_test_id": "reference.articulated_config::test_invalid_balance_thresholds_are_rejected",
-      "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [
-        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[-1.0-balance_floor_kmh]",
-        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[-1.0-balance_dwell_s]",
-        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[0.0-balance_floor_kmh]",
-        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[0.0-balance_dwell_s]",
-        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[nan-balance_floor_kmh]",
-        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[nan-balance_dwell_s]"
-      ],
-      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
-      "comparison_class": "contract",
-      "disposition": "port",
-      "evidence": [
-        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
-      ]
-    },
-    {
-      "source_path": "tests/reference/test_articulated_config.py",
-      "source_symbol": "test_surge_and_trim_are_validated_in_climb_config",
-      "line": 90,
-      "end_line": 99,
-      "owner_task": "T52",
-      "native_test_id": "reference.articulated_config::test_surge_and_trim_are_validated_in_climb_config",
-      "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [
-        "tests/reference/test_articulated_config.py::test_surge_and_trim_are_validated_in_climb_config"
-      ],
-      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
-      "comparison_class": "contract",
-      "disposition": "port",
-      "evidence": [
-        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
-      ]
-    },
-    {
-      "source_path": "tests/reference/test_articulated_config.py",
-      "source_symbol": "test_balance_grace_must_be_finite_and_nonnegative",
-      "line": 103,
-      "end_line": 105,
-      "owner_task": "T52",
-      "native_test_id": "reference.articulated_config::test_balance_grace_must_be_finite_and_nonnegative",
-      "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [
-        "tests/reference/test_articulated_config.py::test_balance_grace_must_be_finite_and_nonnegative[-1.0]",
-        "tests/reference/test_articulated_config.py::test_balance_grace_must_be_finite_and_nonnegative[nan]",
-        "tests/reference/test_articulated_config.py::test_balance_grace_must_be_finite_and_nonnegative[inf]"
-      ],
-      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
-      "comparison_class": "contract",
-      "disposition": "port",
-      "evidence": [
-        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
-      ]
-    },
-    {
-      "source_path": "tests/reference/test_articulated_config.py",
       "source_symbol": "test_delivered_power_budgets_fall_back_to_capability_caps",
       "line": 24,
       "end_line": 38,
@@ -880,6 +801,85 @@
       "disposition": "port",
       "evidence": [
         "2026-10-26 3.17 lane/b: post-F1 record absent from the ledger snapshot; ported with the file in native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle green darwin-arm64"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_articulated_config.py",
+      "source_symbol": "test_balance_defaults",
+      "line": 78,
+      "end_line": 80,
+      "owner_task": "T52",
+      "native_test_id": "reference.articulated_config::test_balance_defaults",
+      "native_source": "native/tests/reference/test_articulated_config.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_balance_defaults"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_articulated_config.py",
+      "source_symbol": "test_invalid_balance_thresholds_are_rejected",
+      "line": 85,
+      "end_line": 87,
+      "owner_task": "T52",
+      "native_test_id": "reference.articulated_config::test_invalid_balance_thresholds_are_rejected",
+      "native_source": "native/tests/reference/test_articulated_config.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[-1.0-balance_floor_kmh]",
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[-1.0-balance_dwell_s]",
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[0.0-balance_floor_kmh]",
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[0.0-balance_dwell_s]",
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[nan-balance_floor_kmh]",
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[nan-balance_dwell_s]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_articulated_config.py",
+      "source_symbol": "test_surge_and_trim_are_validated_in_climb_config",
+      "line": 90,
+      "end_line": 99,
+      "owner_task": "T52",
+      "native_test_id": "reference.articulated_config::test_surge_and_trim_are_validated_in_climb_config",
+      "native_source": "native/tests/reference/test_articulated_config.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_surge_and_trim_are_validated_in_climb_config"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_articulated_config.py",
+      "source_symbol": "test_balance_grace_must_be_finite_and_nonnegative",
+      "line": 103,
+      "end_line": 105,
+      "owner_task": "T52",
+      "native_test_id": "reference.articulated_config::test_balance_grace_must_be_finite_and_nonnegative",
+      "native_source": "native/tests/reference/test_articulated_config.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_balance_grace_must_be_finite_and_nonnegative[-1.0]",
+        "tests/reference/test_articulated_config.py::test_balance_grace_must_be_finite_and_nonnegative[nan]",
+        "tests/reference/test_articulated_config.py::test_balance_grace_must_be_finite_and_nonnegative[inf]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
       ]
     },
     {

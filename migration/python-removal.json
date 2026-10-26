@@ -12430,7 +12430,7 @@
     "phase3_source_implementation": {
       "date": "2026-10-21",
       "status": "partial_source_implementation",
-      "scope_and_limits": "All 41 registry entries, original bounds, convergence keys/floors, mandatory-vs-diagnostic selection, complete-suite and exact-dt gates. `jobs=1` executes sequentially; source isolated worker execution for jobs 2–32 is explicitly rejected. Native versions are declared as native versions.",
+      "scope_and_limits": "All 41 registry entries, original bounds, convergence keys/floors, mandatory-vs-diagnostic selection, complete-suite and exact-dt gates. `jobs=1` executes sequentially; source isolated worker execution for jobs 2\u201332 is explicitly rejected. Native versions are declared as native versions.",
       "evidence": [
         "migration/cpp-linux-phase3-validation-review.md"
       ],
@@ -12736,7 +12736,7 @@
     "phase3_source_implementation": {
       "date": "2026-10-21",
       "status": "partial_source_implementation",
-      "scope_and_limits": "Resolution validation, interval integration, all comparison criteria, seven cases, physical seeds, periodic station projection, rows/events/metrics and finest-pair summaries. Jobs 2–16 are explicitly unavailable. Runtime rows consume each immutable finalized interval once; this differs from the source's repeated `sim.physical.sample` read after each physics step. Initial state files preserve the exact payload bytes used for their hashes.",
+      "scope_and_limits": "Resolution validation, interval integration, all comparison criteria, seven cases, physical seeds, periodic station projection, rows/events/metrics and finest-pair summaries. Jobs 2\u201316 are explicitly unavailable. Runtime rows consume each immutable finalized interval once; this differs from the source's repeated `sim.physical.sample` read after each physics step. Initial state files preserve the exact payload bytes used for their hashes.",
       "evidence": [
         "migration/cpp-linux-phase3-validation-review.md"
       ],

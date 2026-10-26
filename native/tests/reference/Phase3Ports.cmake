@@ -204,6 +204,9 @@ endforeach()
 bike_add_reference_test(native_rider_allocation ENGINE
   SOURCES test_native_rider_allocation.cpp LIBRARIES bike_app
   LABELS t52 rider slow)
+bike_add_reference_test(native_coupled_rider_task ENGINE
+  SOURCES test_native_coupled_rider_task.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)
 bike_add_reference_test(native_rider_dynamics ENGINE
   SOURCES test_native_rider_dynamics.cpp LIBRARIES bike_app LABELS t52 rider)
 bike_add_reference_test(native_rider_information_boundary ENGINE

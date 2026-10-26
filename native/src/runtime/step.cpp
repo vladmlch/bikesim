@@ -1374,7 +1374,16 @@ PhysicalStep::apply_forces_body(
                 std::ranges::copy(
                     total,
                     wbuf(d->qfrc_applied, m->nv).begin());
-                ensure_posvel_fresh(m, d);
+                // physical_runtime.py:381-384 — `mujoco.mj_forward` inside
+                // the tick is NOT a pos/vel refresh: compute() builds its
+                // ConstraintDynamics snapshot on the efc arena, qfrc_bias,
+                // qfrc_passive and qfrc_actuator this solve leaves, so the
+                // model's known-force inputs must reflect the forces
+                // assembled for THIS interval rather than the previous
+                // post-step forward's actuator view (the zero-input solve
+                // omission the oracle calls out). ensure_posvel_fresh
+                // would leave the prior interval's arena in place.
+                refresh_forward(m, d);
                 torques = engaged(rider_control_).compute(
                     d, command, advance,
                     advance && !initializing_ ? control_clock_.period_s : dt,

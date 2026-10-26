@@ -739,14 +739,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_profile_owns_limits_and_lag",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_profile_owns_limits_and_lag"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_profile_owns_limits_and_lag in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -757,14 +760,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_turbo_multiplies_rider_torque_through_a_40ms_first_order_lag",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_turbo_multiplies_rider_torque_through_a_40ms_first_order_lag"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_turbo_multiplies_rider_torque_through_a_40ms_first_order_lag in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -775,14 +781,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_emtb_gain_rises_with_rider_torque",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_emtb_gain_rises_with_rider_torque"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_emtb_gain_rises_with_rider_torque in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -793,14 +802,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_stationary_or_backward_crank_gets_nothing_even_with_pedal_pressure",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_stationary_or_backward_crank_gets_nothing_even_with_pedal_pressure"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_stationary_or_backward_crank_gets_nothing_even_with_pedal_pressure in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -811,14 +823,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_torque_below_engage_threshold_is_not_pedalling",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_torque_below_engage_threshold_is_not_pedalling"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_torque_below_engage_threshold_is_not_pedalling in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -829,14 +844,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_release_of_rider_torque_hard_zeroes_and_forgets",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_release_of_rider_torque_hard_zeroes_and_forgets"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_release_of_rider_torque_hard_zeroes_and_forgets in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -847,14 +865,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_positive_unloading_keeps_the_lag",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_positive_unloading_keeps_the_lag"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_positive_unloading_keeps_the_lag in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -865,14 +886,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_speed_taper_and_cutoff",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_speed_taper_and_cutoff"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_speed_taper_and_cutoff in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -883,14 +907,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_torque_curve_and_power_ceiling_bind_on_shaft_rpm",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_torque_curve_and_power_ceiling_bind_on_shaft_rpm"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_torque_curve_and_power_ceiling_bind_on_shaft_rpm in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -901,14 +928,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_external_request_is_a_ceiling_not_a_throttle",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_external_request_is_a_ceiling_not_a_throttle"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_external_request_is_a_ceiling_not_a_throttle in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -919,14 +949,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_braking_resets_everything",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_braking_resets_everything"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_braking_resets_everything in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -937,14 +970,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_without_profile_the_plain_gain_is_used",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_without_profile_the_plain_gain_is_used"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_without_profile_the_plain_gain_is_used in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -955,14 +991,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_rejects_unknown_profile_mode_and_removed_knobs",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_rejects_unknown_profile_mode_and_removed_knobs"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_rejects_unknown_profile_mode_and_removed_knobs in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -973,14 +1012,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_assist_config_accepts_profile_and_mode",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_assist_config_accepts_profile_and_mode"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_assist_config_accepts_profile_and_mode in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -991,14 +1033,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_slow_forward_pedalling_is_assisted_without_a_stall_timer",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_slow_forward_pedalling_is_assisted_without_a_stall_timer"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_slow_forward_pedalling_is_assisted_without_a_stall_timer in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -1009,14 +1054,19 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_crank_gate_resets_the_filter_even_with_an_external_cap",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_crank_gate_resets_the_filter_even_with_an_external_cap[0.0]",
+        "tests/reference/test_assist_controller.py::test_crank_gate_resets_the_filter_even_with_an_external_cap[-30.0]",
+        "tests/reference/test_assist_controller.py::test_crank_gate_resets_the_filter_even_with_an_external_cap[0.8333333333333334]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_crank_gate_resets_the_filter_even_with_an_external_cap in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -1027,14 +1077,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_cutoff_is_instantaneous_after_assist_has_settled",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_cutoff_is_instantaneous_after_assist_has_settled"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_cutoff_is_instantaneous_after_assist_has_settled in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -1045,14 +1098,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_profile_overrides_explicit_torque_power_tau_speed_and_gate",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_profile_overrides_explicit_torque_power_tau_speed_and_gate"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_profile_overrides_explicit_torque_power_tau_speed_and_gate in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -1063,14 +1119,20 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_controller_rejects_invalid_parameters",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_controller_rejects_invalid_parameters[changes0]",
+        "tests/reference/test_assist_controller.py::test_controller_rejects_invalid_parameters[changes1]",
+        "tests/reference/test_assist_controller.py::test_controller_rejects_invalid_parameters[changes2]",
+        "tests/reference/test_assist_controller.py::test_controller_rejects_invalid_parameters[changes3]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_controller_rejects_invalid_parameters in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -1081,14 +1143,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_assist_config_exposes_profile_torque_limit",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_assist_config_exposes_profile_torque_limit"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_assist_config_exposes_profile_torque_limit in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -1099,14 +1164,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_profile_controller_can_be_copied_for_read_only_force_probes",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_profile_controller_can_be_copied_for_read_only_force_probes"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_profile_controller_can_be_copied_for_read_only_force_probes in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -1117,14 +1185,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.assist_controller::test_physical_cli_assist_selects_mode_without_replacing_the_toml_profile",
       "native_source": "native/tests/reference/test_assist_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_assist_controller.py::test_physical_cli_assist_selects_mode_without_replacing_the_toml_profile"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_physical_cli_assist_selects_mode_without_replacing_the_toml_profile in native/tests/reference/test_assist_controller.cpp asserts the same contract as the Python record; CTest reference.assist_controller PASS 72 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -3988,14 +4059,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_profile::test_bosch_profile_values_are_the_recalled_unverified_set",
       "native_source": "native/tests/reference/test_motor_profile.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_profile.py::test_bosch_profile_values_are_the_recalled_unverified_set"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_bosch_profile_values_are_the_recalled_unverified_set in native/tests/reference/test_motor_profile.cpp asserts the same contract as the Python record; CTest reference.motor_profile PASS 60 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -4006,14 +4080,25 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_profile::test_mode_gains",
       "native_source": "native/tests/reference/test_motor_profile.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_profile.py::test_mode_gains[eco-30.0-0.6]",
+        "tests/reference/test_motor_profile.py::test_mode_gains[tour-30.0-1.4]",
+        "tests/reference/test_motor_profile.py::test_mode_gains[turbo-30.0-3.4]",
+        "tests/reference/test_motor_profile.py::test_mode_gains[turbo-0.0-3.4]",
+        "tests/reference/test_motor_profile.py::test_mode_gains[emtb-0.0-1.4]",
+        "tests/reference/test_motor_profile.py::test_mode_gains[emtb-20.0-2.4]",
+        "tests/reference/test_motor_profile.py::test_mode_gains[emtb-40.0-3.4]",
+        "tests/reference/test_motor_profile.py::test_mode_gains[emtb-80.0-3.4]",
+        "tests/reference/test_motor_profile.py::test_mode_gains[emtb--5.0-1.4]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 9 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_mode_gains in native/tests/reference/test_motor_profile.cpp asserts the same contract as the Python record; CTest reference.motor_profile PASS 60 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -4024,14 +4109,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_profile::test_unknown_mode_is_rejected",
       "native_source": "native/tests/reference/test_motor_profile.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_profile.py::test_unknown_mode_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_unknown_mode_is_rejected in native/tests/reference/test_motor_profile.cpp asserts the same contract as the Python record; CTest reference.motor_profile PASS 60 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -4042,14 +4130,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_profile::test_profile_is_frozen_and_copies_the_gain_mapping",
       "native_source": "native/tests/reference/test_motor_profile.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_profile.py::test_profile_is_frozen_and_copies_the_gain_mapping"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_profile_is_frozen_and_copies_the_gain_mapping in native/tests/reference/test_motor_profile.cpp asserts the same contract as the Python record; CTest reference.motor_profile PASS 60 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -4060,14 +4151,28 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_profile::test_profile_rejects_invalid_data",
       "native_source": "native/tests/reference/test_motor_profile.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes0]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes1]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes2]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes3]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes4]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes5]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes6]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes7]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes8]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes9]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes10]",
+        "tests/reference/test_motor_profile.py::test_profile_rejects_invalid_data[changes11]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 12 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_profile_rejects_invalid_data in native/tests/reference/test_motor_profile.cpp asserts the same contract as the Python record; CTest reference.motor_profile PASS 60 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -4078,14 +4183,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_profile::test_pedelec_cap_is_a_permission_not_a_throttle",
       "native_source": "native/tests/reference/test_motor_profile.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_profile.py::test_pedelec_cap_is_a_permission_not_a_throttle"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_pedelec_cap_is_a_permission_not_a_throttle in native/tests/reference/test_motor_profile.cpp asserts the same contract as the Python record; CTest reference.motor_profile PASS 60 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -4096,14 +4204,22 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_profile::test_pedelec_cap_rejects_invalid_inputs",
       "native_source": "native/tests/reference/test_motor_profile.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_profile.py::test_pedelec_cap_rejects_invalid_inputs[changes0]",
+        "tests/reference/test_motor_profile.py::test_pedelec_cap_rejects_invalid_inputs[changes1]",
+        "tests/reference/test_motor_profile.py::test_pedelec_cap_rejects_invalid_inputs[changes2]",
+        "tests/reference/test_motor_profile.py::test_pedelec_cap_rejects_invalid_inputs[changes3]",
+        "tests/reference/test_motor_profile.py::test_pedelec_cap_rejects_invalid_inputs[changes4]",
+        "tests/reference/test_motor_profile.py::test_pedelec_cap_rejects_invalid_inputs[changes5]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_pedelec_cap_rejects_invalid_inputs in native/tests/reference/test_motor_profile.cpp asserts the same contract as the Python record; CTest reference.motor_profile PASS 60 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -4114,14 +4230,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.motor_profile::test_gain_rejects_nonfinite_human_torque",
       "native_source": "native/tests/reference/test_motor_profile.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_motor_profile.py::test_gain_rejects_nonfinite_human_torque"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_gain_rejects_nonfinite_human_torque in native/tests/reference/test_motor_profile.cpp asserts the same contract as the Python record; CTest reference.motor_profile PASS 60 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20766,14 +20885,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedal_waveform::test_waveform_mean_and_ripple",
       "native_source": "native/tests/reference/test_pedal_waveform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedal_waveform.py::test_waveform_mean_and_ripple"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_waveform_mean_and_ripple in native/tests/reference/test_pedal_waveform.cpp asserts the same contract as the Python record; CTest reference.pedal_waveform PASS 87 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20784,14 +20906,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedal_waveform::test_waveform_rejects_invalid_ripple",
       "native_source": "native/tests/reference/test_pedal_waveform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedal_waveform.py::test_waveform_rejects_invalid_ripple"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_waveform_rejects_invalid_ripple in native/tests/reference/test_pedal_waveform.cpp asserts the same contract as the Python record; CTest reference.pedal_waveform PASS 87 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20802,14 +20927,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedal_waveform::test_force_requests_honour_the_ripple_argument",
       "native_source": "native/tests/reference/test_pedal_waveform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedal_waveform.py::test_force_requests_honour_the_ripple_argument"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_force_requests_honour_the_ripple_argument in native/tests/reference/test_pedal_waveform.cpp asserts the same contract as the Python record; CTest reference.pedal_waveform PASS 87 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20820,14 +20948,22 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedal_waveform::test_horizontal_power_stroke_requests_the_finite_crank_torque",
       "native_source": "native/tests/reference/test_pedal_waveform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedal_waveform.py::test_horizontal_power_stroke_requests_the_finite_crank_torque[0.0-0.0]",
+        "tests/reference/test_pedal_waveform.py::test_horizontal_power_stroke_requests_the_finite_crank_torque[0.0-3.141592653589793]",
+        "tests/reference/test_pedal_waveform.py::test_horizontal_power_stroke_requests_the_finite_crank_torque[0.9-0.0]",
+        "tests/reference/test_pedal_waveform.py::test_horizontal_power_stroke_requests_the_finite_crank_torque[0.9-3.141592653589793]",
+        "tests/reference/test_pedal_waveform.py::test_horizontal_power_stroke_requests_the_finite_crank_torque[5.0-0.0]",
+        "tests/reference/test_pedal_waveform.py::test_horizontal_power_stroke_requests_the_finite_crank_torque[5.0-3.141592653589793]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_horizontal_power_stroke_requests_the_finite_crank_torque in native/tests/reference/test_pedal_waveform.cpp asserts the same contract as the Python record; CTest reference.pedal_waveform PASS 87 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20838,14 +20974,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedal_waveform::test_articulated_config_exposes_the_ripple",
       "native_source": "native/tests/reference/test_pedal_waveform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedal_waveform.py::test_articulated_config_exposes_the_ripple"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_articulated_config_exposes_the_ripple in native/tests/reference/test_pedal_waveform.cpp asserts the same contract as the Python record; CTest reference.pedal_waveform PASS 87 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20856,14 +20995,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedal_waveform::test_return_foot_preload_is_a_nonnegative_force",
       "native_source": "native/tests/reference/test_pedal_waveform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedal_waveform.py::test_return_foot_preload_is_a_nonnegative_force"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_return_foot_preload_is_a_nonnegative_force in native/tests/reference/test_pedal_waveform.cpp asserts the same contract as the Python record; CTest reference.pedal_waveform PASS 87 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20874,14 +21016,24 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedal_waveform::test_recovery_preload_preserves_the_requested_net_crank_waveform",
       "native_source": "native/tests/reference/test_pedal_waveform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedal_waveform.py::test_recovery_preload_preserves_the_requested_net_crank_waveform[False-0.0]",
+        "tests/reference/test_pedal_waveform.py::test_recovery_preload_preserves_the_requested_net_crank_waveform[False-0.35]",
+        "tests/reference/test_pedal_waveform.py::test_recovery_preload_preserves_the_requested_net_crank_waveform[False-3.141592653589793]",
+        "tests/reference/test_pedal_waveform.py::test_recovery_preload_preserves_the_requested_net_crank_waveform[False-3.491592653589793]",
+        "tests/reference/test_pedal_waveform.py::test_recovery_preload_preserves_the_requested_net_crank_waveform[True-0.0]",
+        "tests/reference/test_pedal_waveform.py::test_recovery_preload_preserves_the_requested_net_crank_waveform[True-0.35]",
+        "tests/reference/test_pedal_waveform.py::test_recovery_preload_preserves_the_requested_net_crank_waveform[True-3.141592653589793]",
+        "tests/reference/test_pedal_waveform.py::test_recovery_preload_preserves_the_requested_net_crank_waveform[True-3.491592653589793]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 8 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_recovery_preload_preserves_the_requested_net_crank_waveform in native/tests/reference/test_pedal_waveform.cpp asserts the same contract as the Python record; CTest reference.pedal_waveform PASS 87 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20892,14 +21044,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedal_waveform::test_recovering_foot_can_be_excluded_from_preload",
       "native_source": "native/tests/reference/test_pedal_waveform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedal_waveform.py::test_recovering_foot_can_be_excluded_from_preload"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_recovering_foot_can_be_excluded_from_preload in native/tests/reference/test_pedal_waveform.cpp asserts the same contract as the Python record; CTest reference.pedal_waveform PASS 87 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20910,14 +21065,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedal_waveform::test_infeasible_preload_geometry_never_requests_negative_drive",
       "native_source": "native/tests/reference/test_pedal_waveform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedal_waveform.py::test_infeasible_preload_geometry_never_requests_negative_drive"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_infeasible_preload_geometry_never_requests_negative_drive in native/tests/reference/test_pedal_waveform.cpp asserts the same contract as the Python record; CTest reference.pedal_waveform PASS 87 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20928,14 +21086,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedal_waveform::test_preload_inputs_are_validated_and_zero_load_stays_bounded",
       "native_source": "native/tests/reference/test_pedal_waveform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedal_waveform.py::test_preload_inputs_are_validated_and_zero_load_stays_bounded"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_preload_inputs_are_validated_and_zero_load_stays_bounded in native/tests/reference/test_pedal_waveform.cpp asserts the same contract as the Python record; CTest reference.pedal_waveform PASS 87 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20946,14 +21107,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedaling_policy::test_reposition_knobs_and_mode_are_gone",
       "native_source": "native/tests/reference/test_pedaling_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedaling_policy.py::test_reposition_knobs_and_mode_are_gone"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_reposition_knobs_and_mode_are_gone in native/tests/reference/test_pedaling_policy.cpp asserts the same contract as the Python record; CTest reference.pedaling_policy PASS 3177 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20964,14 +21128,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedaling_policy::test_a_rocking_loaded_crank_simply_keeps_pedalling",
       "native_source": "native/tests/reference/test_pedaling_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedaling_policy.py::test_a_rocking_loaded_crank_simply_keeps_pedalling"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_a_rocking_loaded_crank_simply_keeps_pedalling in native/tests/reference/test_pedaling_policy.cpp asserts the same contract as the Python record; CTest reference.pedaling_policy PASS 3177 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -20982,14 +21149,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedaling_policy::test_ride_control_has_no_reposition_field",
       "native_source": "native/tests/reference/test_pedaling_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedaling_policy.py::test_ride_control_has_no_reposition_field"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_ride_control_has_no_reposition_field in native/tests/reference/test_pedaling_policy.cpp asserts the same contract as the Python record; CTest reference.pedaling_policy PASS 3177 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -21000,14 +21170,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedaling_policy::test_rider_program_rejects_the_removed_reposition_command",
       "native_source": "native/tests/reference/test_pedaling_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedaling_policy.py::test_rider_program_rejects_the_removed_reposition_command"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_rider_program_rejects_the_removed_reposition_command in native/tests/reference/test_pedaling_policy.cpp asserts the same contract as the Python record; CTest reference.pedaling_policy PASS 3177 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -21018,14 +21191,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedaling_policy::test_coast_decision_filters_a_single_stroke_spike_with_ema",
       "native_source": "native/tests/reference/test_pedaling_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedaling_policy.py::test_coast_decision_filters_a_single_stroke_spike_with_ema"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_coast_decision_filters_a_single_stroke_spike_with_ema in native/tests/reference/test_pedaling_policy.cpp asserts the same contract as the Python record; CTest reference.pedaling_policy PASS 3177 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -21036,14 +21212,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedaling_policy::test_zero_tau_keeps_the_raw_hysteresis",
       "native_source": "native/tests/reference/test_pedaling_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedaling_policy.py::test_zero_tau_keeps_the_raw_hysteresis"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_zero_tau_keeps_the_raw_hysteresis in native/tests/reference/test_pedaling_policy.cpp asserts the same contract as the Python record; CTest reference.pedaling_policy PASS 3177 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -21054,14 +21233,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedaling_policy::test_coast_tau_must_be_nonnegative",
       "native_source": "native/tests/reference/test_pedaling_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedaling_policy.py::test_coast_tau_must_be_nonnegative"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_coast_tau_must_be_nonnegative in native/tests/reference/test_pedaling_policy.cpp asserts the same contract as the Python record; CTest reference.pedaling_policy PASS 3177 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -21072,14 +21254,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedaling_policy::test_wheel_implied_cadence_does_not_stop_legs_below_their_limit",
       "native_source": "native/tests/reference/test_pedaling_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedaling_policy.py::test_wheel_implied_cadence_does_not_stop_legs_below_their_limit"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_wheel_implied_cadence_does_not_stop_legs_below_their_limit in native/tests/reference/test_pedaling_policy.cpp asserts the same contract as the Python record; CTest reference.pedaling_policy PASS 3177 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -21090,14 +21275,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.pedaling_policy::test_stopped_cranks_resume_while_the_open_freehub_wheel_keeps_turning",
       "native_source": "native/tests/reference/test_pedaling_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_pedaling_policy.py::test_stopped_cranks_resume_while_the_open_freehub_wheel_keeps_turning"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_stopped_cranks_resume_while_the_open_freehub_wheel_keeps_turning in native/tests/reference/test_pedaling_policy.cpp asserts the same contract as the Python record; CTest reference.pedaling_policy PASS 3177 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -26318,14 +26506,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.system_momentum_drive::test_airborne_motor_stand_delivers_work_without_root_actuation",
       "native_source": "native/tests/reference/test_system_momentum_drive.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_system_momentum_drive.py::test_airborne_motor_stand_delivers_work_without_root_actuation"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_airborne_motor_stand_delivers_work_without_root_actuation in native/tests/reference/test_system_momentum_drive.cpp asserts the same contract as the Python record; CTest reference.system_momentum_drive PASS 32 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {
@@ -26336,14 +26527,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.system_momentum_drive::test_passive_airborne_stand_has_no_motor_or_joint_work",
       "native_source": "native/tests/reference/test_system_momentum_drive.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_system_momentum_drive.py::test_passive_airborne_stand_has_no_motor_or_joint_work"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "migration/cpp-linux-phase3-drive-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-27 3.19 qualification (lane/c): native_test_id verified \u2014 C++ test_passive_airborne_stand_has_no_motor_or_joint_work in native/tests/reference/test_system_momentum_drive.cpp asserts the same contract as the Python record; CTest reference.system_momentum_drive PASS 32 checks on darwin-arm64 + linux-aarch64 (identical); oracle pytest file green on both platforms."
       ]
     },
     {

@@ -14478,28 +14478,14 @@
       "native/tests/reference/test_assist_controller.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.assist_controller"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "0b42a9006455aa00eb40cd4fd55f3acef69d2a332bb321f12931a11242257502",
     "snapshot_line_count": 197,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 22
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_attachment_budget.py",
@@ -15116,28 +15102,14 @@
       "native/tests/reference/test_motor_profile.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.motor_profile"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "581846b5ca91890f887ead4df97208506487a9beb5fa3621f9e0774a425ce898",
     "snapshot_line_count": 90,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 8
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_native_atomicity.py",
@@ -16443,28 +16415,14 @@
       "native/tests/reference/test_pedal_waveform.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.pedal_waveform"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "2f3940fd671e61204b4eb4dda95c8ab2ac982015f155d340d9b54d35eed75ac2",
     "snapshot_line_count": 110,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 10
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_pedaling_policy.py",
@@ -16476,28 +16434,14 @@
       "native/tests/reference/test_pedaling_policy.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.pedaling_policy"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "3d0547d3ab5e6d54fd49b6b3f0a0a27380b7fa7642abbae0f5227de3e305299b",
     "snapshot_line_count": 89,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 9
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_pedelec_replay_contract.py",
@@ -17470,28 +17414,14 @@
       "native/tests/reference/test_system_momentum_drive.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.system_momentum_drive"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "5252f723579715f5279033fa55732e45ded7eb92ce04777284fc01e7f0675198",
     "snapshot_line_count": 25,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 2
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_terrain_placement_regression.py",

@@ -5208,3 +5208,114 @@ re-run here per bounded merge-back scope. Housekeeping: the lane-local
 `.superpowers/sdd/2026-10-20-cpp-linux-completion/` (untracked); the
 lane's stray `tests/reference/_probe_*.py` and `.superpowers/` dir stay
 unmerged untracked content on `lane/a` by construction.
+
+## 2026-10-26 — lane/d equilibrium-cache poisoning fix merge-back
+
+Merge `0997b349` — `git merge --no-ff lane/d` (tip `f30a0eab`, base
+`3cdfc8a7`; two commits: `8bb51212` quarantine post-episode equilibrium
+re-settles from the canonical cache key + `f30a0eab` bind the settle
+contract into the native equilibrium fingerprint, schema 1→2). Lane was
+reviewed Approved; nine files touched
+(`equilibrium_cache.py`, `environment.py`, `ride_sim.py`,
+`context.hpp`, `equilibrium.cpp`, `equilibrium_cache.cpp`, two test
+files, `native-startup.md`) — no ledger files, no conflicts.
+
+### Conflict resolution
+
+None — clean `ort` merge (merge-base == base tip; lane/d is a linear
+descendant). No shared-file overlap with in-flight merge-backs.
+
+### Merge-back L2 — macOS arm64 (`build/native-release`, Apple clang, Release)
+
+- `cmake --build build/native-release -j10`: green, all targets.
+- `uv run pytest tests/reference/test_equilibrium_state_file.py
+  tests/reference/test_pneumatic_physical_runtime.py -x`: **17/17
+  passed** (30.21 s) — includes the new
+  `test_dirty_resettle_writes_the_episode_key_not_the_canonical_name`
+  quarantine regression and the npz codec path; only the documented
+  `energy.constraint_work` RuntimeWarning noise.
+- `uv run pytest tests/reference/test_replay_*` (55 items): cold cache
+  (fresh `$TMPDIR/bike_sim_equilibrium`, `BIKE_SIM_EQUILIBRIUM_CACHE_DIR`
+  unset) **55/55** in 326.21 s; warm re-run **55/55** in 327.67 s.
+- `ctest --test-dir build/native-release -L reference -j8`: **59/65** —
+  six reds baseline-verbatim: the five `FAIL fixture is not a regular
+  file` members (`native_static_brake`, `pneumatic_tire_oracle`,
+  `native_clock_contracts`, `native_drive_policies`,
+  `native_drivetrain`) plus `golden_episode_tool` keeping its documented
+  `FAIL native recorder rows reproduce Python oracle` signature —
+  identical set to the F3 merge-back sweep.
+- `ctest -R 'migration_T' -j8`: **50/53** — reds baseline-verbatim:
+  `T09` (`FAIL integration vector resolves bitwise`), `T29`
+  (`FAIL config.rider_controller.weld_servo_gain: unknown key`), `T56`
+  (documented shellcheck stderr-format env drift). All
+  fingerprint-covering nodes green (`T12`/`T13`/`T22`–`T25`/`T44`/`T47`).
+
+### Merge-back L2 — Linux aarch64 (`bike-dev-python-free-cpp`, `/build/root-clang`, clang++-18, Release)
+
+- `container.sh sync` → `build root-clang`: 280/281 targets compile
+  under `-Werror`; **one pre-existing TU break** —
+  `test_motor_freewheel_topology.cpp:184` `missing field
+  'target_phase_rad' initializer [-Werror,-Wmissing-field-initializers]`.
+  The `PedalingState.target_phase_rad` field was added by `d167411a`
+  (lane/c Task 3.16, already in the merge base); the TU's `NOLINT` names
+  `clang-diagnostic-missing-designated-field-initializers`, which does
+  not cover the diagnostic clang-18 actually emits. Untouched by this
+  merge — reported, not fixed. Apple clang emits no diagnostic here.
+- `container.sh exec uv run --frozen pytest
+  tests/reference/test_equilibrium_state_file.py
+  tests/reference/test_pneumatic_physical_runtime.py -x`: **17/17**
+  (47.32 s, venv provisioned via `container.sh venv` first —
+  `/opt/bike-venv` absent).
+- `container.sh exec env BIKE_SIM_EQUILIBRIUM_CACHE_DIR=/tmp/eq-cache-merge
+  uv run --frozen pytest tests/reference/test_replay_*`: cold **55/55**
+  (502.93 s), warm **55/55** (474.65 s).
+- `ctest -L reference -j8`: **58/65** — the same six baseline-verbatim
+  reds as macOS (identical `FAIL fixture is not a regular file` ×5 +
+  `FAIL native recorder rows reproduce Python oracle` signatures) plus
+  `reference.motor_freewheel_topology` Not Run (the pre-existing TU
+  break above — no executable).
+- `ctest -R 'migration_T' -j8`: **41/53**. Documented-baseline reds:
+  `T09`, `T29`, `T56` (same signatures as macOS). Additional
+  **pre-existing lane reds**, never previously enumerated because prior
+  merge-backs ran scoped `-R` selections on this lane only:
+  - `T03` — harness deps staging: the check's scratch `deps-noabi`
+    tree lacks pinned MuJoCo headers (`BIKE_MUJOCO_VERSION_312` probe
+    inside the deliberately ABI-broken configure); orthogonal to the
+    diff.
+  - `T04` — `FAIL identity: loaded-library sha256 mismatch`: the
+    committed fixture `tests/fixtures/migration/engine/identity.json`
+    pins `"numeric_provider": "accelerate"` and the darwin MuJoCo
+    library sha — platform-bound by construction, cannot pass on Linux.
+  - `T14`, `T15`, `T16`, `T18`, `T20`, `T31`, `T32` — shared
+    darwin-captured migration fixtures compared bitwise on aarch64
+    (`golden_f64` ±1-ulp family: `geometry/hardpoints`,
+    `model/component_centers`, `tracks/preset_alpine_rocky_profile`,
+    `metrics/filter_expected`, `bootstrap/legacy_flat/integration`,
+    plus `body_pos[69]`/geometry-pose variants). None of the nine
+    merged files are on any of these paths.
+- **Base spot-check** (stash-equivalent at `3cdfc8a7`): detached HEAD →
+  `container.sh sync` → scoped rebuild (12 edges) →
+  `ctest -R 'migration_T(14|31)$'`: both fail **byte-identically** at
+  the merge base (`index=1` same expected/actual hex). Pre-existing
+  confirmed, not merge-caused. Worktree restored to `0997b349` and
+  re-synced.
+- Post-restore scoped confirmation at merged state: `ctest -R
+  'migration_T(12|13|22|23|24|25|44|47)$|reference\.native_rider_allocation'`
+  — **9/9 green**, covering every test that exercises
+  `context_fingerprint`/`settle_context` per the lane's diff.
+
+### Assessment
+
+No new reds attributable to the merge on either platform. The schema-2
+fingerprint and episode-quarantine writes are exercised end-to-end by
+the 17-node pytest set (green both platforms), the 55-node replay set
+(cold and warm, green both platforms), and every native
+fingerprint-covering CTest node (green both platforms). Two unrelated
+pre-existing defects are recorded, not fixed: the clang-18
+`-Wmissing-field-initializers` NOLINT gap in
+`test_motor_freewheel_topology.cpp` (from `d167411a`), and the
+undocumented linux-aarch64 `migration_T` drift family (shared
+darwin-captured fixtures — T14/T15/T16/T18/T20/T31/T32 — plus
+platform-pinned T04 and harness-staged T03). L3
+(`tools/run_tests.sh native`) not run — bounded merge-back scope per
+D17; checkpoint profile owns it.

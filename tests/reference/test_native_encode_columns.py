@@ -3,11 +3,101 @@ import numpy as np
 import pytest
 from native_loader import load_native
 import _encode_oracle as oracle
+import _golden
 import _recording_support as support
 
 pytestmark = pytest.mark.usefixtures('native_module')
 
 bike_native = load_native()
+
+
+def _freeze(value):
+    """Deterministic typed-tree serializer shared with the C++ port.
+
+    Mirrors ``assert_plain_bitwise``'s strength byte-exactly: dicts keep
+    insertion order, lists keep order, bool/int/str compare by type and
+    value, and floats go through their IEEE-754 bit pattern so NaN
+    payloads and signed zeros stay distinguishable. The tags 'n','b','i',
+    'f','s','l','d' make type changes (bool vs int, list vs dict) visible.
+    """
+    import struct
+    if value is None:
+        return b'n'
+    if isinstance(value, bool):
+        return b'b' + (b'\x01' if value else b'\x00')
+    if isinstance(value, int):
+        return b'i' + struct.pack('<q', value)
+    if isinstance(value, float):
+        return b'f' + struct.pack('<d', value)
+    if isinstance(value, str):
+        encoded = value.encode('utf-8')
+        return b's' + struct.pack('<i', len(encoded)) + encoded
+    if isinstance(value, (list, tuple)):
+        out = struct.pack('<i', len(value))
+        for member in value:
+            out += _freeze(member)
+        return b'l' + out
+    if isinstance(value, dict):
+        out = struct.pack('<i', len(value))
+        for key, member in value.items():
+            encoded = str(key).encode('utf-8')
+            out += encoded + b'\x00' + _freeze(member)
+        return b'd' + out
+    raise TypeError(f'unhandled freeze type {type(value).__name__}')
+
+
+def _record_events(events, label):
+    """Freeze an expected ``iter_derived_events`` sequence: identity, kind,
+    steps, received_wall_s and the ``values`` tree (``changes`` dict order
+    and float bit patterns included)."""
+    from bike_sim.recording.json_codec import thaw
+    _golden.record(np.frombuffer(_freeze([
+        {'episode_id': event.episode_id, 'event_id': event.event_id,
+         'kind': event.kind, 'received_wall_s': event.received_wall_s,
+         'processed_step': event.processed_step,
+         'applied_step': event.applied_step,
+         'values': thaw(dict(event.values))}
+        for event in events]), dtype=np.uint8), label)
+
+
+def _record_bootstrap(sim, side, committed_name, tmp_path):
+    """Freeze the oracle's complete t=0 runtime inventory as golden inputs.
+
+    The live reset's settled state is platform-dependent (libm/settle code
+    paths differ ~1e-6 between darwin-arm64 and linux-aarch64) and the
+    serialized model bytes drift too (~1e-13 in model fields) — a drift the
+    tolerance comparisons absorb but the bitwise physics lanes do not.
+    The canonical config.json/state.json documents and the live model.mjb
+    therefore all travel as input entries; the C++ port materializes the
+    full manifest and replays the same platform-faithful start. The
+    committed bootstrap fixture remains the canonical reference image."""
+    import json
+    import sys
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(root / 'tools' / 'migration'))
+    from capture_reference import FixtureWriter, write_canonical
+    from bike_sim.native.setup import capture_bootstrap
+    committed = root / 'tests/fixtures/migration/bootstrap' / committed_name
+    assert (committed / 'model.mjb').is_file(), committed_name
+    stage = tmp_path / f'bootstrap-{side}'
+    stage.mkdir(exist_ok=True)
+    boot = capture_bootstrap(sim, stage)
+    writer = FixtureWriter(stage)
+    records = [writer.copy('model.mjb', boot.model_path)]
+    records += write_canonical(writer, 'config.json', boot.config)
+    records += write_canonical(writer, 'state.json', boot.state)
+    manifest = json.dumps(
+        [{'name': record['path'], 'bytes': record['bytes']}
+         for record in records],
+        separators=(',', ':')).encode('utf-8')
+    _golden.record(np.frombuffer(
+        manifest + b' ' * (-len(manifest) % 8)).view('<f8'), f'{side}.files')
+    for record in records:
+        blob = (stage / record['path']).read_bytes()
+        _golden.record(np.frombuffer(
+            blob + b'\x00' * (-len(blob) % 8)).view('<f8'),
+            f"{side}.file::{record['path']}")
 
 
 def test_make_episode_builds_retained_samples():
@@ -711,6 +801,7 @@ def test_struct_fragments_respect_batch_rows_bound():
              for b in batches])
         reference = oracle.oracle_record_batch_from_episode(
             spec, episode, 0, catalog=cat)
+        oracle._record_batch_bits(reference, spec.name)
         assert reference.num_rows == assembled.num_rows
         for col in reference.schema.names:
             assert oracle.column_bits(reference.column(col)) == \
@@ -741,14 +832,28 @@ def test_applied_rows_bitwise_vs_python_mirror():
     episode = oracle.make_episode(rows)
 
     def applied(source):
-        return [(batch.row_count, dict(batch.columns))
-                for batch in source.tables(batch_rows=4)
+        return [batch for batch in source.tables(batch_rows=4)
                 if batch.table == 'commands_applied']
 
-    reference = applied(NativePhysicalSource(
+    reference_batches = applied(NativePhysicalSource(
         oracle._PythonPathEpisode(episode), mini, ordinary_commands=True))
-    native = applied(NativePhysicalSource(
+    reference = [(batch.row_count, dict(batch.columns))
+                 for batch in reference_batches]
+    # The frozen oracle side: each fragment's RecordBatch bit identity, so
+    # the native port reproduces the same chunked emission and contents.
+    from bike_sim.recording.schema import arrow_batch, research_tables
+    import pyarrow as pa
+    applied_spec = next(spec for spec in research_tables()
+                        if spec.name == 'commands_applied')
+    _golden.record(np.asarray([len(reference_batches)], dtype=np.int64),
+                   'applied/count')
+    for index, batch in enumerate(reference_batches):
+        oracle._record_batch_bits(
+            arrow_batch(applied_spec, batch, 1, pa), f'applied/{index}')
+    native_batches = applied(NativePhysicalSource(
         episode, mini, ordinary_commands=True))
+    native = [(batch.row_count, dict(batch.columns))
+              for batch in native_batches]
     assert native == reference
     steps = [step for batch in native
              for step in batch[1]['step']]
@@ -839,6 +944,7 @@ def test_forces_fragments_respect_batch_rows_bound():
              for b in forces]
     assembled = pa.concat_batches(parts)
     reference = oracle.oracle_record_batch_from_episode(spec, episode, 0)
+    oracle._record_batch_bits(reference, spec.name)
     assert reference.num_rows == assembled.num_rows
     for name in reference.schema.names:
         assert oracle.column_bits(reference.column(name)) == \
@@ -875,13 +981,14 @@ def test_map_fragments_respect_batch_rows_bound():
         [pieces_to_arrow(spec, b.row_count, b.pieces, 0, pa)
          for b in batches])
     reference = oracle.oracle_record_batch_from_episode(spec, episode, 0)
+    oracle._record_batch_bits(reference, spec.name)
     assert reference.num_rows == assembled.num_rows
     for name in reference.schema.names:
         assert oracle.column_bits(reference.column(name)) == \
             oracle.column_bits(assembled.column(name)), name
 
 
-def test_real_episode_all_tables_bitwise():
+def test_real_episode_all_tables_bitwise(tmp_path):
     """Every table in catalog.table_order() is emitted natively and
     byte-identical to the oracle — including the struct-bound channel
     tables this task unlocks."""
@@ -891,6 +998,7 @@ def test_real_episode_all_tables_bitwise():
     from bike_sim.recording.native import model_joints
     sim = make_python_ride()
     driver = create_native_ride(sim, record_decimation=80, retention='full')
+    _record_bootstrap(sim, 'ride', 'encode_columns_welded', tmp_path)
     try:
         driver.advance(65)
         driver.flush()
@@ -902,7 +1010,7 @@ def test_real_episode_all_tables_bitwise():
         driver.close()
 
 
-def test_whole_episode_single_pass(monkeypatch):
+def test_whole_episode_single_pass(monkeypatch, tmp_path):
     """A real episode streams every catalog table through ``encode_table``
     in one pass — ``encode_rows`` is never called for physical tables."""
     from _native_runtime_support import make_python_ride
@@ -913,6 +1021,7 @@ def test_whole_episode_single_pass(monkeypatch):
     from bike_sim.recording.native import NativePhysicalSource, model_joints
     sim = make_python_ride()
     driver = create_native_ride(sim, record_decimation=80, retention='full')
+    _record_bootstrap(sim, 'ride', 'encode_columns_welded', tmp_path)
     try:
         driver.advance(65)
         driver.flush()
@@ -1003,6 +1112,7 @@ def test_derived_events_bitwise_vs_oracle(monkeypatch):
     expected = list(native_module.iter_derived_events(
         oracle._PythonPathEpisode(episode), 7,
         start_event_id=3, received_wall_s=1.5))
+    _record_events(expected, 'events')
 
     def no_boxed_scan(*args, **kwargs):
         raise AssertionError('boxed sample scan ran on the native path')
@@ -1059,7 +1169,7 @@ def test_derived_rows_rejects_bad_plans_and_ranges():
             episode.derived_rows(plan, start, limit)
 
 
-def test_derived_events_real_episode_bitwise(monkeypatch):
+def test_derived_events_real_episode_bitwise(monkeypatch, tmp_path):
     """A sealed ride's derived_transition stream is identical whether the
     C++ scan or the boxed Python scan produces it — including dict-valued
     ``changes`` (model_violation_counts, first_model_violation). The
@@ -1069,6 +1179,7 @@ def test_derived_events_real_episode_bitwise(monkeypatch):
     from bike_sim.native.runtime import create_native_ride
     sim = make_python_ride()
     driver = create_native_ride(sim, record_decimation=80, retention='full')
+    _record_bootstrap(sim, 'ride', 'encode_columns_welded', tmp_path)
     try:
         driver.advance(65)
         driver.flush()
@@ -1076,6 +1187,7 @@ def test_derived_events_real_episode_bitwise(monkeypatch):
         expected = list(native_module.iter_derived_events(
             oracle._PythonPathEpisode(episode), 2,
             start_event_id=5, received_wall_s=3.25))
+        _record_events(expected, 'events')
         monkeypatch.setattr(
             native_module, '_sample_batch',
             lambda *a, **k: (_ for _ in ()).throw(

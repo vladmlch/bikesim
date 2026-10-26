@@ -1,0 +1,5322 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "ride.files",
+  "nbytes": 864,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "ride.file::model.mjb",
+  "nbytes": 5808840,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 864,
+  "rtol": null,
+  "shape": [
+   726105
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "ride.file::config.json",
+  "nbytes": 25864,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5809704,
+  "rtol": null,
+  "shape": [
+   3233
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "ride.file::state.json",
+  "nbytes": 32720,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5835568,
+  "rtol": null,
+  "shape": [
+   4090
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a000.f64",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5868288,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a001.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870624,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a002.f64",
+  "nbytes": 176,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870648,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a003.f64",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870824,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a004.f64",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870840,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a005.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870848,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a006.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870872,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a007.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870896,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a008.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870920,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a009.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870944,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a010.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870968,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a011.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5870992,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a012.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5871016,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a013.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5871040,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a014.f64",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5871064,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a015.f64",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5871088,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "ride.file::state.arrays/a016.f64",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5871160,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "physics/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5871232,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "physics/bits/episode_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5871240,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "physics/bits/interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5871760,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "physics/bits/time_s",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5872280,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "physics/bits/interval_end_s",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5872800,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "physics/bits/dt_s",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5873320,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "physics/bits/qpos",
+  "nbytes": 13785,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5873840,
+  "rtol": null,
+  "shape": [
+   13785
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "physics/bits/qvel",
+  "nbytes": 13785,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5887625,
+  "rtol": null,
+  "shape": [
+   13785
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "forces/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5901410,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "forces/bits/episode_id",
+  "nbytes": 19240,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5901418,
+  "rtol": null,
+  "shape": [
+   19240
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "forces/bits/interval_id",
+  "nbytes": 19240,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5920658,
+  "rtol": null,
+  "shape": [
+   19240
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "forces/bits/component",
+  "nbytes": 37375,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5939898,
+  "rtol": null,
+  "shape": [
+   37375
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "forces/bits/qfrc",
+  "nbytes": 509865,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 5977273,
+  "rtol": null,
+  "shape": [
+   509865
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "forces/bits/power_w",
+  "nbytes": 19240,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6487138,
+  "rtol": null,
+  "shape": [
+   19240
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "channel_mass/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6506378,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/episode_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6506386,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6506906,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/mass_kg",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6507426,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/com_m",
+  "nbytes": 1825,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6507946,
+  "rtol": null,
+  "shape": [
+   1825
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/com_velocity_mps",
+  "nbytes": 683,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6509771,
+  "rtol": null,
+  "shape": [
+   683
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/com_velocity_mps_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6510454,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/linear_momentum_kg_mps",
+  "nbytes": 683,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6510519,
+  "rtol": null,
+  "shape": [
+   683
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/linear_momentum_kg_mps_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6511202,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/angular_momentum_kg_m2_s",
+  "nbytes": 683,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6511267,
+  "rtol": null,
+  "shape": [
+   683
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/angular_momentum_kg_m2_s_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6511950,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/kinetic_energy_j",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6512015,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/kinetic_energy_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6512545,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/gravitational_energy_j",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6512610,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/gravitational_energy_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6513140,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/endpoint_mass",
+  "nbytes": 4694,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6513205,
+  "rtol": null,
+  "shape": [
+   4694
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/endpoint_mass_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6517899,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/measurement_scope",
+  "nbytes": 75,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6517964,
+  "rtol": null,
+  "shape": [
+   75
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/measurement_scope_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6518039,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/__endpoint_mass_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6518104,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/__endpoint_mass_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6518169,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/__mass_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6518234,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/__mass_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6518299,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "channel_energy/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6518364,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/episode_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6518372,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6518892,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/mechanical_energy_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6519412,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/elastic_energy_j",
+  "nbytes": 11446,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6519932,
+  "rtol": null,
+  "shape": [
+   11446
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/elastic_energy_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6531378,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/active_work_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6531443,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/external_work_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6531963,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/loss_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6532483,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/loss_step_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6533003,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/solver_constraint_work_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6533523,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/energy_scale_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6534043,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/muscle_signed_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6534563,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/muscle_positive_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6535083,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/motor_signed_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6535603,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/motor_positive_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6536123,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/source_positive_work_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6536643,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/constraint_signed_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6537163,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/constraint_absolute_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6537683,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/constraint_work_ratio",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6538203,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/constraint_work_ratio_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6538733,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/constraint_work_ok",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6538798,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/residual_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6538863,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/residual_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6539383,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/electrical_work_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6539448,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/electrical_residual_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6539968,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/measured",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6540488,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/source_interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6540553,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/source_interval_id_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6541073,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/source_time_s",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6541138,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/source_time_s_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6541658,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/component_work_j",
+  "nbytes": 15954,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6541723,
+  "rtol": null,
+  "shape": [
+   15954
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/component_work_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6557677,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/__component_work_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6557742,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/__component_work_j_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6557807,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/__energy_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6557872,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "channel_energy/bits/__energy_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6557937,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "channel_sensors/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6558002,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/episode_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6558010,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6558530,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/frame_specific_force_body_mps2",
+  "nbytes": 1825,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6559050,
+  "rtol": null,
+  "shape": [
+   1825
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/frame_gyro_body_rad_s",
+  "nbytes": 1825,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6560875,
+  "rtol": null,
+  "shape": [
+   1825
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/encoder_front_wheel_rad_s",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6562700,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/encoder_rear_wheel_rad_s",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6563220,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/encoder_crank_rad_s",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6563740,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/motor_torque_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6564260,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/human_torque_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6564780,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/__sensors_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6565300,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/__sensors_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6565365,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/__sensors.encoders_rad_s_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6565430,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/__sensors.encoders_rad_s_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6565495,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "channel_drive/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6565560,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/episode_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6565568,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6566088,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_model",
+  "nbytes": 1040,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6566608,
+  "rtol": null,
+  "shape": [
+   1040
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/omits_suspension_coupling",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6567648,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/chain_extension_m",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6567713,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/chain_extension_rate_mps",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6568233,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/chain_tension_n",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6568753,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/chain_energy_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6569273,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/chain_dissipation_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6569793,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/chain_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6570313,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/freehub_torque_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6570833,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/freehub_energy_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6571353,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/freehub_engaged",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6571873,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/freehub_deflection_rad",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6571938,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/freehub_dissipation_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6572458,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/freehub_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6572978,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/cadence_rpm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6573498,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_rad_s",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6574018,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/drive_shaft_rad_s",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6574538,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_phase_rad",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6575058,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/human_torque_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6575578,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/human_sensor_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6576098,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/human_setpoint_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6576618,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/human_setpoint_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6577138,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/human_command_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6577203,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/human_active_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6577723,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/human_joint_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6578243,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/assist_demand_gated",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6578763,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/assist_sensor_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6578828,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/assist_mode",
+  "nbytes": 390,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6579348,
+  "rtol": null,
+  "shape": [
+   390
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/assist_gain",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6579738,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/assist_gain_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6580258,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/rider_mode",
+  "nbytes": 585,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6580323,
+  "rtol": null,
+  "shape": [
+   585
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/coasting_reason",
+  "nbytes": 650,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6580908,
+  "rtol": null,
+  "shape": [
+   650
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/coasting_reason_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6581558,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/required_cadence_rpm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6581623,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_target_phase_rad",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6582143,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_target_phase_rad_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6582663,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_target_rate_rad_s",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6582728,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_target_rate_rad_s_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6583248,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_request_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6583313,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_setpoint_nm",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6583833,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_setpoint_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6584363,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_limit_nm",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6584428,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_limit_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6584958,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_limited_request_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6585023,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_torque_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6585543,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_control_source",
+  "nbytes": 455,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6586063,
+  "rtol": null,
+  "shape": [
+   455
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/safety_limited",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6586518,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/energy_limited",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6586583,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_enabled",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6586648,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/battery_empty",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6586713,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/battery_energy_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6586778,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/battery_energy_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6587298,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_shaft_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6587363,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_shaft_power_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6587883,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/electrical_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6587948,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/electrical_power_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6588468,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_freewheel_engaged",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6588533,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_freewheel_torque_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6588598,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_freewheel_dissipation_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6589118,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_clutch_torque_nm",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6589638,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_clutch_torque_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6590168,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_clutch_engaged",
+  "nbytes": 75,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6590233,
+  "rtol": null,
+  "shape": [
+   75
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_clutch_engaged_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6590308,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_clutch_dissipation_power_w",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6590373,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_clutch_dissipation_power_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6590903,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/gear_front_teeth",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6590968,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/gear_rear_teeth",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6591488,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/gear_ratio",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6592008,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_active",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6592528,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_direction",
+  "nbytes": 325,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6592593,
+  "rtol": null,
+  "shape": [
+   325
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_from_teeth",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6592918,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_count",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6593438,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_time_s",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6593958,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_time_s_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6594488,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_torque_factor",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6594553,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/front_brake_demand",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6595073,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/rear_brake_demand",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6595593,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/rollback_brake_demand",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6596113,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/front_brake_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6596633,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/rear_brake_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6597153,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/front_brake_torque_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6597673,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/rear_brake_torque_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6598193,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_phi_m",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6598713,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_phi_m_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6599243,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_boundary_m",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6599308,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_boundary_m_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6599838,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_gap_m",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6599903,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_gap_m_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6600433,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_tension_n",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6600498,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_tension_n_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6601028,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_constraint_defect_m",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6601093,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_constraint_defect_m_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6601623,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_interval_work_j",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6601688,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_interval_work_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6602218,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_reaction_error_n",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6602283,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_reaction_error_n_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6602813,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_reference_status",
+  "nbytes": 75,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6602878,
+  "rtol": null,
+  "shape": [
+   75
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_reference_status_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6602953,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_parameter_work_j",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6603018,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_parameter_work_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6603548,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_interval_constraint_work_j",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6603613,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_interval_constraint_work_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6604143,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_constraint_work_cumulative_j",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6604208,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_constraint_work_cumulative_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6604738,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/__drive_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6604803,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/__drive_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6604868,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 218,
+  "kind": "bitwise",
+  "label": "channel_tires/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6604933,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/episode_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6604941,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6605461,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 221,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/front",
+  "nbytes": 28350,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6605981,
+  "rtol": null,
+  "shape": [
+   28350
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 222,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/rear",
+  "nbytes": 28350,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6634331,
+  "rtol": null,
+  "shape": [
+   28350
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 223,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/__tires_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6662681,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 224,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/__tires_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6662746,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 225,
+  "kind": "bitwise",
+  "label": "channel_suspension/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6662811,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 226,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/episode_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6662819,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 227,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6663339,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 228,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/fork_travel_m",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6663859,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/shock_stroke_m",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6664379,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 230,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/fork_velocity_mps",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6664899,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 231,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/shock_velocity_mps",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6665419,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 232,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/shock_solver_limit_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6665939,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 233,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/linkage_closure_max_m",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6666459,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/generalized_force_components_n",
+  "nbytes": 12811,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6666979,
+  "rtol": null,
+  "shape": [
+   12811
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 235,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/__suspension_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6679790,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 236,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/__suspension_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6679855,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 237,
+  "kind": "bitwise",
+  "label": "channel_control/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6679920,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 238,
+  "kind": "bitwise",
+  "label": "channel_control/bits/episode_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6679928,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 239,
+  "kind": "bitwise",
+  "label": "channel_control/bits/interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6680448,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "channel_control/bits/motor_torque_nm",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6680968,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "channel_control/bits/motor_torque_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6681498,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 242,
+  "kind": "bitwise",
+  "label": "channel_control/bits/motor_limit_nm",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6681563,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 243,
+  "kind": "bitwise",
+  "label": "channel_control/bits/motor_limit_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6682093,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 244,
+  "kind": "bitwise",
+  "label": "channel_control/bits/human_torque_nm",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6682158,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 245,
+  "kind": "bitwise",
+  "label": "channel_control/bits/human_torque_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6682678,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 246,
+  "kind": "bitwise",
+  "label": "channel_control/bits/crank_target_rate_rad_s",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6682743,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 247,
+  "kind": "bitwise",
+  "label": "channel_control/bits/crank_target_rate_rad_s_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6683273,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 248,
+  "kind": "bitwise",
+  "label": "channel_control/bits/posture",
+  "nbytes": 1450,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6683338,
+  "rtol": null,
+  "shape": [
+   1450
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 249,
+  "kind": "bitwise",
+  "label": "channel_control/bits/posture_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6684788,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 250,
+  "kind": "bitwise",
+  "label": "channel_control/bits/rider_enabled",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6684853,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 251,
+  "kind": "bitwise",
+  "label": "channel_control/bits/__control_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6684918,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 252,
+  "kind": "bitwise",
+  "label": "channel_control/bits/__control_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6684983,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 253,
+  "kind": "bitwise",
+  "label": "channel_rider/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6685048,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 254,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/episode_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6685056,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 255,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6685576,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 256,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider",
+  "nbytes": 28512,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6686096,
+  "rtol": null,
+  "shape": [
+   28512
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 257,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6714608,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 258,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_welds",
+  "nbytes": 5760,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6714673,
+  "rtol": null,
+  "shape": [
+   5760
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 259,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_welds_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6720433,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 260,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/weld_crank_torque_nm",
+  "nbytes": 530,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6720498,
+  "rtol": null,
+  "shape": [
+   530
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 261,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/weld_crank_torque_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6721028,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 262,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_control",
+  "nbytes": 22492,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6721093,
+  "rtol": null,
+  "shape": [
+   22492
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 263,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_control_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6743585,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 264,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_allocation",
+  "nbytes": 2054,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6743650,
+  "rtol": null,
+  "shape": [
+   2054
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 265,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_allocation_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6745704,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 266,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_ik_saturation",
+  "nbytes": 510,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6745769,
+  "rtol": null,
+  "shape": [
+   510
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 267,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_ik_saturation_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6746279,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 268,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_support_targets",
+  "nbytes": 7016,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6746344,
+  "rtol": null,
+  "shape": [
+   7016
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 269,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_support_targets_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6753360,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 270,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_intent",
+  "nbytes": 2700,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6753425,
+  "rtol": null,
+  "shape": [
+   2700
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 271,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_intent_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6756125,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 272,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_torques",
+  "nbytes": 15216,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6756190,
+  "rtol": null,
+  "shape": [
+   15216
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 273,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_torques_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6771406,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 274,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_capacity_nm",
+  "nbytes": 15216,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6771471,
+  "rtol": null,
+  "shape": [
+   15216
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 275,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_capacity_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6786687,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 276,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_lean_limit_rad",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6786752,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 277,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_lean_limit_rad_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6787272,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 278,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_balance",
+  "nbytes": 2302,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6787337,
+  "rtol": null,
+  "shape": [
+   2302
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 279,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_balance_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6789639,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 280,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/attachment_samples",
+  "nbytes": 5971,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6789704,
+  "rtol": null,
+  "shape": [
+   5971
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 281,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/attachment_samples_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6795675,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 282,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_active_request_nm",
+  "nbytes": 15216,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6795740,
+  "rtol": null,
+  "shape": [
+   15216
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 283,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_active_request_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6810956,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 284,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_active_delivered_nm",
+  "nbytes": 15216,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6811021,
+  "rtol": null,
+  "shape": [
+   15216
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 285,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_active_delivered_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6826237,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 286,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_positive_power_w",
+  "nbytes": 15216,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6826302,
+  "rtol": null,
+  "shape": [
+   15216
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 287,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_positive_power_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6841518,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 288,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_positive_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6841583,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 289,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_positive_power_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6842103,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 290,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_passive_power_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6842168,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 291,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_passive_power_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6842688,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 292,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_positive_work_step_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6842753,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 293,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_positive_work_step_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6843273,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 294,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_passive_work_step_j",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6843338,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 295,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_passive_work_step_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6843858,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 296,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_activation_saturated",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6843923,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 297,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_activation_saturated_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6843988,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 298,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_strength_limited",
+  "nbytes": 265,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6844053,
+  "rtol": null,
+  "shape": [
+   265
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 299,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_strength_limited_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6844318,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 300,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_strength_violations",
+  "nbytes": 265,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6844383,
+  "rtol": null,
+  "shape": [
+   265
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 301,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_strength_violations_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6844648,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 302,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_power_violations",
+  "nbytes": 265,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6844713,
+  "rtol": null,
+  "shape": [
+   265
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 303,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_power_violations_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6844978,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 304,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_speed_violations",
+  "nbytes": 265,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6845043,
+  "rtol": null,
+  "shape": [
+   265
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 305,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_speed_violations_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6845308,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 306,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_effort_budget_exceeded",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6845373,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 307,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_effort_budget_exceeded_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6845438,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 308,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_active_positive_power_limit_w",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6845503,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 309,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_active_positive_power_limit_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6846023,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 310,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_effort_observation",
+  "nbytes": 2795,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6846088,
+  "rtol": null,
+  "shape": [
+   2795
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 311,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_effort_observation_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6848883,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 312,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__attachment_samples_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6848948,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 313,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__attachment_samples_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849013,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 314,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849078,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 315,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849143,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 316,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_activation_saturated_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849208,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 317,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_activation_saturated_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849273,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 318,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_delivered_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849338,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 319,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_delivered_nm_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849403,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 320,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_positive_power_limit_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849468,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 321,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_positive_power_limit_w_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849533,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 322,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_request_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849598,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 323,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_request_nm_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849663,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 324,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_allocation_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849728,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 325,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_allocation_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849793,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 326,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_balance_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849858,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 327,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_balance_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849923,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 328,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_control_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6849988,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 329,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_control_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850053,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 330,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_effort_budget_exceeded_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850118,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 331,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_effort_budget_exceeded_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850183,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 332,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_effort_observation_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850248,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 333,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_effort_observation_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850313,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 334,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_ik_saturation_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850378,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 335,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_ik_saturation_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850443,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 336,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_intent_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850508,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 337,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_intent_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850573,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 338,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_capacity_nm_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850638,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 339,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_capacity_nm_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850703,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 340,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_positive_power_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850768,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 341,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_positive_power_w_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850833,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 342,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_power_violations_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850898,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 343,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_power_violations_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6850963,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 344,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_speed_violations_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851028,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 345,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_speed_violations_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851093,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 346,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_torques_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851158,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 347,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_torques_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851223,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 348,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_lean_limit_rad_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851288,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 349,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_lean_limit_rad_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851353,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 350,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_passive_power_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851418,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 351,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_passive_power_w_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851483,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 352,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_passive_work_step_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851548,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 353,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_passive_work_step_j_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851613,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 354,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_positive_power_w_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851678,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 355,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_positive_power_w_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851743,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 356,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_positive_work_step_j_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851808,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 357,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_positive_work_step_j_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851873,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 358,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_strength_limited_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6851938,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 359,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_strength_limited_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6852003,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 360,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_strength_violations_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6852068,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 361,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_strength_violations_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6852133,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 362,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_support_targets_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6852198,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 363,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_support_targets_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6852263,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 364,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_welds_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6852328,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 365,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_welds_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6852393,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 366,
+  "kind": "bitwise",
+  "label": "channel_model_status/rows",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6852458,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 367,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/episode_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6852466,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 368,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/interval_id",
+  "nbytes": 520,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6852986,
+  "rtol": null,
+  "shape": [
+   520
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 369,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/model_status",
+  "nbytes": 7682,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6853506,
+  "rtol": null,
+  "shape": [
+   7682
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 370,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/contact_crash_cause",
+  "nbytes": 75,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6861188,
+  "rtol": null,
+  "shape": [
+   75
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 371,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/contact_crash_cause_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6861263,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 372,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/attachment_violations",
+  "nbytes": 567,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6861328,
+  "rtol": null,
+  "shape": [
+   567
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 373,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/attachment_violations_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6861895,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 374,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/__attachment_violations_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6861960,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 375,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/__attachment_violations_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6862025,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 376,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/__contact_crash_cause_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6862090,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 377,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/__contact_crash_cause_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6862155,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 378,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/__model_status_present",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6862220,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 379,
+  "kind": "bitwise",
+  "label": "channel_model_status/bits/__model_status_valid",
+  "nbytes": 65,
+  "node": "tests/reference/test_native_encode_columns.py::test_real_episode_all_tables_bitwise",
+  "offset": 6862285,
+  "rtol": null,
+  "shape": [
+   65
+  ]
+ }
+]

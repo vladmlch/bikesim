@@ -81,6 +81,7 @@ std::pair<GradeProfile,std::vector<Interval>> rhythm(const AlpineGenSpec& s,bike
     for(const auto& row:rows){grade.knots.push_back({row.start,row.grade});grade.knots.push_back({row.end,row.grade});if(row.kind=="ramp"||row.kind=="wall")ramps.emplace_back(row.start,row.end);}
     grade.knots.push_back({rounded(s.length_m-s.lead_out_m,2),0.});grade.knots.push_back({s.length_m,0.});grade.validate();return {std::move(grade),std::move(ramps)};
 }
+namespace {
 template<class T> Obstacle faceted(const AlpineGenSpec& s,bike::random::NumpyRng& rng,double start,double length,double amp,double corr){
     for(int redraw=0;redraw<25;++redraw){
         for(int attempt=0;attempt<PLACEMENT_TRIES;++attempt){
@@ -90,6 +91,7 @@ template<class T> Obstacle faceted(const AlpineGenSpec& s,bike::random::NumpyRng
     }
     throw std::invalid_argument("concave-span redraw exhausted at "+detail::gd::py_g(start)+" m: amplitude reached the grid floor without passing max_kink_deg");
 }
+} // namespace
 }
 TrackSpec generate_alpine_track(const AlpineGenSpec& s,std::string_view seed,std::optional<std::string> name){
     s.validate();const auto seed_text=detail::seed_plus(std::string(seed),0);bike::random::NumpyRng rng(seed_text,{});

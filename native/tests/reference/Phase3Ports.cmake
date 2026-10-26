@@ -148,6 +148,12 @@ bike_add_reference_test(hud_columns ENGINE
   SOURCES test_hud_columns.cpp LIBRARIES bike_app bike_viewer LABELS t52 recording)
 bike_add_reference_test(period_buffer ENGINE
   SOURCES test_period_buffer.cpp LIBRARIES bike_app LABELS t52 recording golden slow)
+# 3.22a encode columns — the columnar encoder + physical source against the
+# frozen column_bits identity; the staged bootstrap replays the recorded
+# ride on both qualified platforms.
+bike_add_reference_test(native_encode_columns ENGINE
+  SOURCES test_native_encode_columns.cpp LIBRARIES bike_recording
+  LABELS t52 recording golden slow)
 bike_add_reference_test(frozen_force_arrays ENGINE
   SOURCES test_frozen_force_arrays.cpp LIBRARIES bike_app LABELS t52 recording)
 bike_add_reference_test(ride_plots_html_markers ENGINE

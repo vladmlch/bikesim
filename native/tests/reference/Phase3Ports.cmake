@@ -44,6 +44,24 @@ bike_add_reference_test(control_clock ENGINE
   LABELS t52 runtime)
 bike_add_reference_test(native_static_brake ENGINE
   SOURCES test_native_static_brake.cpp LIBRARIES bike_app LABELS t52 runtime golden)
+# 3.20 T52 batch — brakes, cruise, suspension, clocks. Golden consumers
+# replay the frozen pinned_savage_40_f2 episode (post-F2 recapture) and the
+# native_suspension/legacy_env + control_clock/env_request bundles under
+# tests/fixtures/golden/<platform>/.
+bike_add_reference_test(native_cruise ENGINE
+  SOURCES test_native_cruise.cpp LIBRARIES bike_app bike_random
+  LABELS t52 runtime golden)
+bike_add_reference_test(native_brake_resistance ENGINE
+  SOURCES test_native_brake_resistance.cpp LIBRARIES bike_app bike_golden
+  LABELS t52 runtime golden slow)
+bike_add_reference_test(native_suspension ENGINE
+  SOURCES test_native_suspension.cpp LIBRARIES bike_app bike_golden
+  LABELS t52 runtime golden slow)
+bike_add_reference_test(native_stepper ENGINE
+  SOURCES test_native_stepper.cpp LIBRARIES bike_app LABELS t52 runtime golden)
+# control_clock gains the env_request replay — needs the golden capture
+# seam (bike_golden) and the research environment builder.
+target_link_libraries(reference.control_clock PRIVATE bike_golden)
 bike_add_reference_test(native_numeric_domains ENGINE
   SOURCES test_native_numeric_domains.cpp LIBRARIES bike_app LABELS t52 numerics)
 bike_add_reference_test(native_numeric_completion ENGINE

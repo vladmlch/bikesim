@@ -28,6 +28,26 @@ MJB = 'tools/proto_native_bench/artifacts/model.mjb'
 DEMANDS = (0.0, 0.3, 0.7, 1.0, -0.2, 1.5)
 
 
+def _fixture_save_episode(env, ep):
+    """Frozen post-F2 oracle bundle the C++ ports replay:
+    tests/fixtures/golden/<platform>/episode/pinned_savage_40_f2/ — the
+    Python EpisodeArtifact (episode.npz + manifest.json + model.mjb) plus
+    wire.json, the tools.native_config.project(env) dict the Stepper
+    decodes. Deterministic re-capture overwrites the same bytes."""
+    root = os.environ.get('BIKE_GOLDEN_CAPTURE')
+    if root is None:
+        return
+    import json
+    import _golden
+    from tools.golden_episode import save
+    from tools.native_config import project
+    target = (Path(root) / _golden.platform_key()
+              / 'episode' / 'pinned_savage_40_f2')
+    save(ep, target, env.sim.model)
+    (target / 'wire.json').write_text(
+        json.dumps(project(env), sort_keys=True) + '\n')
+
+
 def _golden(tmp_path, steps=40):
     from bike_sim.cli import research as research_cli
     from test_pinned_topology import _pinned_config
@@ -41,6 +61,7 @@ def _golden(tmp_path, steps=40):
     env = research_cli.make_environment(args)
     ep = capture_episode(env, steps, RideControl(human_torque_nm=35.))
     save(ep, tmp_path/'g', env.sim.model)
+    _fixture_save_episode(env, ep)
     return env, tmp_path/'g'
 
 

@@ -16,6 +16,7 @@ MJB = 'tools/proto_native_bench/artifacts/model.mjb'
 
 def _golden(tmp_path, steps=40):
     from bike_sim.cli import research as research_cli
+    from test_native_brake_resistance import _fixture_save_episode
     from test_pinned_topology import _pinned_config
     from tools.golden_episode import capture_episode, save
     from bike_sim.sim.ride.control import RideControl
@@ -27,7 +28,38 @@ def _golden(tmp_path, steps=40):
     env = research_cli.make_environment(args)
     ep = capture_episode(env, steps, RideControl(human_torque_nm=35.))
     save(ep, tmp_path/'g', env.sim.model)
+    _fixture_save_episode(env, ep)
     return env, tmp_path/'g'
+
+
+def _fixture_save_legacy(sim, mjb):
+    """Legacy-mode replay bundle the C++ port consumes:
+    tests/fixtures/golden/<platform>/native_suspension/legacy_env/ —
+    model.mjb, the projected wire (physics_mode 'legacy'), the baseline
+    qpos and the resolved fork/shock joint addresses the probe states
+    start from."""
+    root = os.environ.get('BIKE_GOLDEN_CAPTURE')
+    if root is None:
+        return
+    import json
+    import shutil
+    import _golden
+    from tools.native_config import project
+    target = (Path(root) / _golden.platform_key()
+              / 'native_suspension' / 'legacy_env')
+    target.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(mjb, target / 'model.mjb')
+    (target / 'wire.json').write_text(
+        json.dumps(project(sim), sort_keys=True) + '\n')
+    ap = sim.applier
+    (target / 'meta.json').write_text(json.dumps({
+        'nq': int(sim.model.nq), 'nv': int(sim.model.nv),
+        'na': int(sim.model.na), 'nu': int(sim.model.nu),
+        'fork_qposadr': int(ap.fork_qposadr),
+        'shock_qposadr': int(ap.shock_qposadr),
+        'fork_dofadr': int(ap.fork_dofadr),
+        'shock_dofadr': int(ap.shock_dofadr),
+        'qpos0': sim.data.qpos.tolist()}) + '\n')
 
 
 @pytest.mark.slow
@@ -70,6 +102,7 @@ def test_suspension_components_bitwise_legacy(tmp_path):
     mjb = tmp_path / 'model.mjb'
     mujoco.mj_saveModel(sim.model, str(mjb))
     st = bike_native.Stepper(str(mjb), project(sim))
+    _fixture_save_legacy(sim, mjb)
     # Probe a spread of compression/velocity states, including top-out
     # (negative) and bottom-out-adjacent strokes — the legacy paths keep
     # the bumper and both damper branches reachable.

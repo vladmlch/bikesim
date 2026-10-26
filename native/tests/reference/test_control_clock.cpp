@@ -1,11 +1,22 @@
-// Three pure control-clock functions from test_control_clock.py (3.20).
-// The fourth, solved-effort physical-step test, remains a separate unported
-// integration assertion; these unit contracts must not claim its coverage.
+// The four control-clock functions from test_control_clock.py (3.20).
+// The solved-effort physical-step test is ported through the frozen
+// env_request bundle (<platform>/control_clock/env_request/) and the
+// golden capture seam: the monkeypatched compute-call counting has no
+// native analog, but the observable contract — the ctrl vector held
+// byte-identical on non-tick physics steps, the per-step solved-effort
+// telemetry channel, the interval cadence and the reset semantics — is
+// asserted on the episode artifact the native runtime produces.
 #include "support/migration_test.hpp"
+#include "support/golden.hpp"
 #include "runtime/control.hpp"
 #include "configuration/model_config.hpp"
+#include "golden/episode.hpp"
+#include "research/environment.hpp"
+#include "runtime/research.hpp"
 #include <array>
+#include <cmath>
 #include <limits>
+#include <optional>
 #include <type_traits>
 
 namespace {
@@ -42,8 +53,84 @@ void test_clock_rejects_invalid_durations() {
     // both durations are finite; no out-of-range floating-to-int conversion.
     bt::invalid([] { runtime::ControlClock const invalid(1e-300, 1e300); });
 }
+
+// tests/reference/test_control_clock.py::test_runtime_holds_ctrl_but_observes_solved_effort_each_step
+// 403 physics steps over the flat-track welded env: ticks at steps
+// 0,10,...,400 (41 advancing control windows — the oracle's monkeypatch
+// counting of ArticulatedRiderController.compute has no native seam; the
+// cadence is observed through the applied command count), ctrl held
+// bitwise on non-tick steps, a solved-effort channel row per physics
+// step, and reset returning the runtime to step 0.
+[[gnu::noinline]] void
+test_runtime_holds_ctrl_but_observes_solved_effort_each_step() {
+    const auto env = bike::research::make_environment(
+            bt::oracle::root() / bt::oracle::platform() / "control_clock" /
+                    "env_request" / "request.toml");
+    const runtime::RideControl zero{
+            .motor_torque_nm = 0., .motor_limit_nm = std::nullopt,
+            .human_torque_nm = 0., .crank_target_rate_rad_s = std::nullopt,
+            .posture = std::nullopt, .rider_enabled = true};
+    const auto episode = bike::golden::capture_episode(*env, 403, zero);
+    bt::require(episode.controls.size() == 403,
+                "one applied intent per physics step");
+    // Every applied control encodes the held zero command.
+    for (const auto &control : episode.controls) {
+        const auto &object = bike::io::as_object(control, "controls[]");
+        const auto *human = bike::io::find_member(object, "human_torque_nm");
+        const auto *motor = bike::io::find_member(object, "motor_torque_nm");
+        bt::require(human != nullptr && motor != nullptr,
+                    "control rows carry the torque channels");
+        bt::require(bike::io::as_double(*human, "human_torque_nm") == 0. &&
+                            bike::io::as_double(*motor, "motor_torque_nm") == 0.,
+                    "held zero command applied every step");
+    }
+    // The ctrl vector is written only on control ticks: for every
+    // non-tick step the captured post-step ctrl row is byte-identical to
+    // the previous step's.
+    const auto ctrl = episode.ctrl_written.doubles(true);
+    const std::size_t nu = episode.ctrl_written.shape.at(1);
+    for (std::size_t i = 1; i < episode.controls.size(); ++i) {
+        if (i % 10 == 0) continue;
+        const auto now = std::span(ctrl).subspan(i * nu, nu);
+        const auto prev = std::span(ctrl).subspan((i - 1) * nu, nu);
+        bt::require(std::ranges::equal(std::as_bytes(now),
+                                       std::as_bytes(prev)),
+                    "ctrl held byte-identical on a non-tick step");
+    }
+    // Solved-effort telemetry: every published sample row carries the
+    // solved_actuator_force_at_incoming_interval marker and a finite
+    // rider_positive_power_w (the oracle drained 400 + 3 flushed).
+    std::size_t effort_rows = 0;
+    for (const auto &row : episode.rows) {
+        bool marker = false, finite_power = false;
+        for (const auto &[name, leaf] : row) {
+            if (name.ends_with("rider_effort_observation"))
+                marker = std::holds_alternative<std::string>(leaf) &&
+                        std::get<std::string>(leaf) ==
+                                "solved_actuator_force_at_incoming_interval";
+            if (name.ends_with("rider_positive_power_w"))
+                finite_power = std::holds_alternative<double>(leaf) &&
+                        std::isfinite(std::get<double>(leaf));
+        }
+        if (marker) {
+            bt::require(finite_power,
+                        "effort sample carries a finite power channel");
+            ++effort_rows;
+        }
+    }
+    bt::require(effort_rows >= 400,
+                "solved effort observed at the physics rate");
+    // reset() clears the committed clock; the first post-reset step is a
+    // fresh control tick (ctrl row free to move).
+    env->reset();
+    bt::require(env->snapshot().step == 0, "reset returns to step 0");
+    const auto tail = bike::golden::capture_episode(*env, 10, zero);
+    bt::require(tail.controls.size() == 10,
+                "post-reset stepping resumes the control clock");
+}
 } // namespace
 int main() { return bt::run([] {
     test_period_must_be_an_integer_multiple_of_the_timestep();
     test_held_command_is_returned_unchanged_between_ticks(); test_clock_rejects_invalid_durations();
+    test_runtime_holds_ctrl_but_observes_solved_effort_each_step();
 }); }

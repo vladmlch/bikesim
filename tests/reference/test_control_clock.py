@@ -1,8 +1,66 @@
+import os
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from bike_sim.physics.model_config import SimulationPhysicsConfig
 from bike_sim.sim.ride.control_clock import ControlClock
+
+
+# bike::research::make_environment request mirroring the make_environment
+# call below: flat 200 m track, dt=.0005, welded pinned plant, diagnostic
+# policy. The settled t=0 state transfers through initial_state.json.
+_ENV_REQUEST = '''\
+request_schema = 1
+physics_file = "physics.toml"
+track_file = "track.toml"
+model_mode = "ride"
+rider_variant = "articulated_planar"
+speed_kph = 0.0
+seed_decimal = "0"
+use_equilibrium_cache = false
+duration_s = 0.2
+control_period_s = 0.01
+actuator_delay_s = 0.005
+sensor_delay_s = 0.01
+check_policy = "diagnostic"
+capture_mode = "legacy"
+initial_state_file = "initial_state.json"
+
+[overrides]
+timestep_s = 0.0005
+
+[experiment]
+record_decimation = 80
+'''
+
+
+def _fixture_save_env_request(env, physics_path, track_path):
+    """tests/fixtures/golden/<platform>/control_clock/env_request/ — the
+    bundle the C++ port feeds bike::research::make_environment: pinned
+    physics TOML (asset paths rewritten relative to the bundle), the flat
+    track, request.toml and the settled t=0 state."""
+    root = os.environ.get('BIKE_GOLDEN_CAPTURE')
+    if root is None:
+        return
+    import re
+    import _golden
+    target = Path(root) / _golden.platform_key() / 'control_clock' / 'env_request'
+    target.mkdir(parents=True, exist_ok=True)
+    physics_text = Path(physics_path).read_text()
+    for key in ('joint_envelope_path', 'joint_strength_path'):
+        physics_text = re.sub(
+            rf'{key} = "([^"]+)"',
+            lambda m: (f'{key} = "'
+                       f'{os.path.relpath((Path(physics_path).parent / m.group(1)).resolve(), target)}"'),
+            physics_text)
+    (target / 'physics.toml').write_text(physics_text)
+    (target / 'track.toml').write_text(Path(track_path).read_text())
+    (target / 'request.toml').write_text(_ENV_REQUEST)
+    from bike_sim.sim.ride.initial_state import PhysicalInitialState
+    (target / 'initial_state.json').write_text(
+        PhysicalInitialState.capture(env.sim).payload_json)
 
 
 def test_period_must_be_an_integer_multiple_of_the_timestep():
@@ -57,6 +115,9 @@ def test_runtime_holds_ctrl_but_observes_solved_effort_each_step(tmp_path, monke
         '--track-file', str(track), '--dt', '.0005', '--duration', '.2',
         '--diagnostic-model-limits', '--out', str(tmp_path / 'out')])
     env = research_cli.make_environment(args)
+    _fixture_save_env_request(
+        env, Path(__file__).resolve().parents[2] /
+        'examples/research/viewer_physics_welded.toml', track)
     sim = env.sim
     start = len(calls)
     ctrl = None

@@ -1,5 +1,8 @@
 // Task 3.19: tests/reference/test_cadence_shifter.py, all nine functions.
-// Source port only: platform CTest and oracle qualification remain pending.
+// Expectations are multi-cog-throw outcomes per the oracle's shifting.py
+// (post-b21c63ec semantics): a shift may jump several cogs, selecting the
+// extreme candidate whose wheel-implied landing cadence stays inside the
+// target band — not the one-step neighbour the original asserts pinned.
 #include "drive_reference_support.hpp"
 
 namespace {
@@ -8,7 +11,8 @@ using drive_reference::shifter;
 void test_low_crank_cadence_downshifts_to_the_next_bigger_cog() {
     auto s = shifter();
     bt::require(s.update(60., 60., .01), "low crank cadence shifts");
-    bt::require(s.state().rear_teeth == 33 && s.state().direction == "down", "next larger cog");
+    // 60*51/28 = 109.3 <= 110 stays in band, so the throw lands 28 -> 51.
+    bt::require(s.state().rear_teeth == 51 && s.state().direction == "down", "multi-cog throw lands on 51T");
 }
 void test_a_wheel_implied_spike_alone_never_upshifts() {
     auto s = shifter();
@@ -19,11 +23,13 @@ void test_a_wheel_implied_spike_alone_never_upshifts() {
 void test_high_crank_cadence_upshifts_when_the_landing_stays_in_band() {
     auto s = shifter();
     bt::require(s.update(115., 115., .01), "high crank cadence shifts");
-    bt::require(s.state().rear_teeth == 24 && s.state().direction == "up", "next smaller cog");
+    // 115*18/28 = 73.9 < 75 falls short; 115*21/28 = 86.3 clears it, 28 -> 21.
+    bt::require(s.state().rear_teeth == 21 && s.state().direction == "up", "multi-cog throw lands on 21T");
 }
 void test_upshifts_stop_at_the_smallest_cog() {
     auto large = shifter(51);
-    bt::require(large.update(112., 112., .01) && large.state().rear_teeth == 45, "51T lands on 45T");
+    // 112*39/51 = 85.6 is the first landing above the 75 floor (33T -> 72.5).
+    bt::require(large.update(112., 112., .01) && large.state().rear_teeth == 39, "51T throw lands on 39T");
     auto small = shifter(12);
     bt::require(small.update(112., 112., .01) && small.state().rear_teeth == 10, "12T lands on 10T");
     auto state = small.state(); state.cooldown_s = 0.; small.set_state(state);

@@ -17,7 +17,9 @@ def _shifter(rear=28, **kw):
 def test_low_crank_cadence_downshifts_to_the_next_bigger_cog():
     s = _shifter(28)
     assert s.update(60., 60., .01)
-    assert s.rear_teeth == 33 and s.direction == 'down'
+    # Multi-cog throw: the largest cog whose landing stays in band --
+    # 60*51/28 = 109.3 <= 110, so the throw jumps 28 -> 51, not one step.
+    assert s.rear_teeth == 51 and s.direction == 'down'
 
 
 def test_a_wheel_implied_spike_alone_never_upshifts():
@@ -32,13 +34,16 @@ def test_a_wheel_implied_spike_alone_never_upshifts():
 def test_high_crank_cadence_upshifts_when_the_landing_stays_in_band():
     s = _shifter(28)
     assert s.update(115., 115., .01)
-    assert s.rear_teeth == 24 and s.direction == 'up'
+    # Multi-cog throw: the smallest cog clearing the band floor --
+    # 115*18/28 = 73.9 < 75, 115*21/28 = 86.3 >= 75, so 28 -> 21.
+    assert s.rear_teeth == 21 and s.direction == 'up'
 
 
 def test_upshifts_stop_at_the_smallest_cog():
     s = _shifter(51)
-    # 112 rpm on 51T lands at 112*45/51 = 98.8 -> allowed; on 10T -> 12T impossible (smallest)
-    assert s.update(112., 112., .01) and s.rear_teeth == 45
+    # Multi-cog throw: 112 rpm on 51T clears the floor first at 39T
+    # (112*39/51 = 85.6 >= 75, 33T would land at 72.5); on 10T -> 12T impossible (smallest)
+    assert s.update(112., 112., .01) and s.rear_teeth == 39
     s = _shifter(12)
     # 112 on 12T -> 10T lands at 93 (in band) -> allowed; then no smaller cog
     assert s.update(112., 112., .01) and s.rear_teeth == 10

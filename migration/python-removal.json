@@ -3316,8 +3316,8 @@
   },
   {
     "path": "src/bike_sim/physics/physical_config.py",
-    "sha256": "9744109ad38a1711e06563fb52d4d984f2afdf5e680e7c5e82e3020686dd34b3",
-    "line_count": 474,
+    "sha256": "b03269a4444c239906f0b1d7a65de75d613bd06455cee57651de8cd0481b3160",
+    "line_count": 568,
     "owner_task": "T12",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
@@ -14031,8 +14031,8 @@
   },
   {
     "path": "tests/reference/_native_runtime_support.py",
-    "sha256": "34109738614b631111b3453ff7219eaaea2bcd47dbb269f163b81504828e9ee3",
-    "line_count": 78,
+    "sha256": "ed3e2623b198b3af825caeee24095248c7314c03dbf5cbbc120d8c9e48b01284",
+    "line_count": 105,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -14221,8 +14221,8 @@
   },
   {
     "path": "tests/reference/_recording_support.py",
-    "sha256": "5cbdf4bf3f1e655ff24a4f84296418fcaf97a1ca4e0ab0d3b5ad5261fcf4068f",
-    "line_count": 668,
+    "sha256": "01fa2326bbf69f222ec1d05cf46eccb76eb4841e833d0e6b4abebd79e19477c9",
+    "line_count": 670,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -14449,8 +14449,8 @@
   },
   {
     "path": "tests/reference/test_articulated_config.py",
-    "sha256": "4d3c64632c3cc4749d103946383a6104c95c2e5b21efea73548dd5088024f280",
-    "line_count": 51,
+    "sha256": "70f81a546f225372d9da18722c7d0ba3d711bfdd19baa56350927629a2fddc14",
+    "line_count": 105,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -15369,8 +15369,8 @@
   },
   {
     "path": "tests/reference/test_native_encode_columns.py",
-    "sha256": "9408d9cc8a90c72bbeebce84f1b44f31403cdfb2ba2b0a913f97f9977eb25693",
-    "line_count": 1200,
+    "sha256": "68cbe0cb7c7a01df58e5902587185b1ea6bded62c41517ab923b49db671cc5fc",
+    "line_count": 1203,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -15631,8 +15631,8 @@
   },
   {
     "path": "tests/reference/test_native_recording_lifecycle.py",
-    "sha256": "ea4c9489ab64023ff7a9330bbf3571b53439ac54c9e432725c190729ca5cd710",
-    "line_count": 967,
+    "sha256": "1d59cc4d49932d7a0b2ef52bc36126611817a919768e90a4cfe3cadfcf59d35f",
+    "line_count": 987,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -15736,8 +15736,8 @@
   },
   {
     "path": "tests/reference/test_native_research_environment.py",
-    "sha256": "4653ceacb0229ccfde142cf5b912edb1b4c978a8bbfc1f040c675cc4bc2da779",
-    "line_count": 351,
+    "sha256": "c7b9e3730f7566f9bcf133bdbd7b55bab64b51abf582220519f86678af607813",
+    "line_count": 357,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -16089,8 +16089,8 @@
   },
   {
     "path": "tests/reference/test_native_runtime_performance_contract.py",
-    "sha256": "aa0f11e8360b9426d3ed513016c0de34f2ffee1b2e3561b16ef0d99f3f5fd7b9",
-    "line_count": 317,
+    "sha256": "6cdf80fc13a16bb71c09f706ee856221008858827cbf90db370c6380fc922788",
+    "line_count": 323,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -17343,8 +17343,8 @@
   },
   {
     "path": "tests/reference/test_seated_posture_program.py",
-    "sha256": "d0f51c42ccd3c3c462614cbe910cd8e76172f88e53800b7ebedbca8f65e69928",
-    "line_count": 276,
+    "sha256": "bcf5009ca868fb0ee72c3267b41f757722e6900b631f005e4a0972d13f2397a0",
+    "line_count": 299,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -18762,8 +18762,8 @@
   },
   {
     "path": "tests/reference/test_native_linux_headless.py",
-    "sha256": "19cd0a4f4ba3e5b2675120ca87d5145c44f3e1a70e2dd098ea6ac368cde021a4",
-    "line_count": 336,
+    "sha256": "474730a4f37f654be56de2f885c0b5b5e41bc1a6c4b198498172c9466024e8f9",
+    "line_count": 349,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -18838,8 +18838,8 @@
   },
   {
     "path": "tests/reference/test_native_platform_recording.py",
-    "sha256": "d9ad5b846add89e0e4ff09f6bb0ead72b6bc08bda6947d810cd6b58ce1b0ce26",
-    "line_count": 679,
+    "sha256": "9acf686c51b2247d87f12eb78e97dd408406b9c609fcc7a93682ba9f0bcd58c2",
+    "line_count": 738,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [

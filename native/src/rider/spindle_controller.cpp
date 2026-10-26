@@ -1073,8 +1073,11 @@ SpindleController::finalize_effort(mjData *data,
     effort_diagnostics_.activation_saturated = saturated;
     effort_diagnostics_.strength_limited = limited_names;
     effort_diagnostics_.budget_exceeded = false;
+    // F1: the published bound is the effective delivered-power budget — the
+    // declared monitor bound when re-banded, else the capability cap — so the
+    // (limit, budget_exceeded) diagnostic pair stays coherent.
     effort_diagnostics_.positive_power_limit_w =
-        config_.active_positive_power_limit_w;
+        config_.delivered_positive_budget_w();
     effort_diagnostics_.observation = "incoming_request";
     for (std::size_t i = 0; i < n; ++i) {
         auto &terms = named_at(last_terms_, joints_[i].name);
@@ -1371,9 +1374,11 @@ EffortDiagnostics SpindleController::solved_effort(
     effort_diagnostics_.strength_violations = violations;
     effort_diagnostics_.budget_present = true;
     effort_diagnostics_.observation_present = true;
+    // F1: the solved-delivery verdict reads the re-banded monitor budget,
+    // falling back to the capability cap when no re-band is declared.
     effort_diagnostics_.budget_exceeded =
-        config_.active_positive_power_limit_w.has_value() &&
-        positive > *config_.active_positive_power_limit_w + 1e-9;
+        config_.delivered_positive_budget_w().has_value() &&
+        positive > *config_.delivered_positive_budget_w() + 1e-9;
     effort_diagnostics_.observation =
         "solved_actuator_force_at_incoming_interval";
     return effort_diagnostics_;

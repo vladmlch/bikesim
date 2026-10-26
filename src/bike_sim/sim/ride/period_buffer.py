@@ -133,7 +133,9 @@ def _effort_observations(runtime, raws):
     passive = np.stack([raw.qfrc_passive[dofs] for raw in raws])
     positive = np.maximum(delivered*speeds, 0.).sum(axis=1)
     damping_power = (passive*speeds).sum(axis=1)
-    limit = c.config.active_positive_power_limit_w
+    # F1: the delivery verdict reads the re-banded monitor budget, falling
+    # back to the capability cap when no re-band is declared.
+    limit = c.config.delivered_positive_budget_w
     dt = runtime.control_clock.timestep_s
     result = []
     for i, raw in enumerate(raws):
@@ -183,8 +185,11 @@ def evaluate_period(runtime, raws, budget):
         muscle = np.array([float(f@v) for n, f in components.items()
                            if n == 'human_crank' or n.startswith('act_rider_')])
         motor = float(components.get('mid_drive', np.zeros_like(v))@v)
-        constraint = np.array(list(raw.metadata['numerical_constraint_power_w'].values()))
-        works.append(step_work(muscle, motor, constraint, runtime.control_clock.timestep_s))
+        from bike_sim.sim.ride.physical_observations import split_constraint_powers
+        constraint, closure = split_constraint_powers(
+            raw.metadata['numerical_constraint_power_w'])
+        works.append(step_work(muscle, motor, constraint, closure,
+                               runtime.control_clock.timestep_s))
     return PeriodReport(tuple(violations), tuple(works), first, tuple(attachments), tuple(efforts))
 
 
@@ -247,6 +252,11 @@ def publish_close(rt, raws):
         rt.motor_positive_j+=work.motor_positive_j
         rt.constraint_absolute_j+=work.constraint_absolute_j
         rt.solver_work_j+=work.constraint_signed_j
+        # F1 re-scope: equality closures are soft springs, so their work is
+        # elastic exchange and accumulates on its own channel, never inside
+        # the numerical constraint-work bound.
+        rt.closure_signed_j+=work.closure_signed_j
+        rt.closure_absolute_j+=work.closure_absolute_j
         rt.active_work_j+=work.muscle_signed_j+work.motor_signed_j
         rt.external_work_j+=sum(float(components[n]@v)*dt for n in _EXTERNAL_FORCE_NAMES if n in components)
         rt.electrical_work_j+=raw.metadata['electrical_power_w']*dt
@@ -275,6 +285,7 @@ def publish_close(rt, raws):
             'motor_signed_j':rt.motor_signed_j,'motor_positive_j':rt.motor_positive_j,
             'source_positive_work_j':rt.muscle_positive_j+rt.motor_positive_j,
             'constraint_signed_j':rt.solver_work_j,'constraint_absolute_j':rt.constraint_absolute_j,
+            'closure_signed_j':rt.closure_signed_j,'closure_absolute_j':rt.closure_absolute_j,
             'constraint_work_ratio':(rt.constraint_absolute_j/source_positive
                                      if source_positive > 0. else None),
             'constraint_work_ok':work_ok,

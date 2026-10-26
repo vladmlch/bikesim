@@ -34,6 +34,11 @@ struct AttachmentBudget {
     double foot_min_normal_n = 0.;
     double foot_mu = 0., saddle_mu = 0.;
     double grip_pull_n = 0., max_gap_m = 0.;
+    // F1 weld load envelope (attachment_budget.py): nullopt/0 disables each
+    // bound and keeps the unilateral-contact checks bitwise-identical.
+    double saddle_min_normal_n = 0.;
+    std::optional<double> foot_max_normal_n, saddle_max_normal_n;
+    double foot_shear_n = 0., saddle_shear_n = 0.;
 };
 using AttachmentSamples = std::vector<std::pair<std::string, rider::AttachmentSample>>;
 [[nodiscard]] std::vector<std::string>

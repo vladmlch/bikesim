@@ -126,7 +126,8 @@ def test_held_command_power_and_strength_are_checked_at_each_incoming_state():
     from bike_sim.sim.ride.rider_effort import solved_effort
     c = SimpleNamespace(joints={'joint':(0, 0, 0)}, last_terms={'joint':{}},
         config=SimpleNamespace(active_positive_power_limit_w=10.,
-            joint_power_limit_w=250.,joint_speed_limit_rad_s=20.), effort_diagnostics={},
+            delivered_positive_budget_w=10.,joint_power_limit_w=250.,
+            delivered_joint_budget_w=250.,joint_speed_limit_rad_s=20.), effort_diagnostics={},
         strength_violations=lambda active, q, v: ('joint',) if q[0] >= 2. else ())
     runtime = SimpleNamespace(rider_control=c, control_clock=SimpleNamespace(timestep_s=.0005))
     raws, expected = [], []
@@ -151,7 +152,8 @@ def test_held_intervals_reject_joint_power_and_speed_between_control_ticks():
     from bike_sim.sim.ride.period_buffer import evaluate_period
     c = SimpleNamespace(joints={'joint':(0,0,0)},
         config=SimpleNamespace(active_positive_power_limit_w=450.,
-            joint_power_limit_w=250.,joint_speed_limit_rad_s=20.),
+            delivered_positive_budget_w=450.,joint_power_limit_w=250.,
+            delivered_joint_budget_w=250.,joint_speed_limit_rad_s=20.),
         strength_violations=lambda *args: ())
     runtime = SimpleNamespace(rider_control=c, control_clock=SimpleNamespace(timestep_s=.0005))
     raws = []
@@ -372,6 +374,23 @@ def test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path):
         assert scalar.channels['attachment_violations'] == sample.channels['attachment_violations']
         assert sample.channels['energy']['muscle_positive_j'] == pytest.approx(
             scalar.channels['energy']['muscle_positive_j'], abs=1e-9)
+
+
+def test_equality_rows_charge_the_closure_channel_not_the_bound():
+    # F1 re-scope: 'equality:*' rows are soft spring-damper closures whose
+    # work is elastic exchange; limit rows stay numerical constraint work.
+    from bike_sim.sim.ride.physical_observations import split_constraint_powers
+    from bike_sim.physics.energy_ledger import step_work
+    powers = {'equality:pedal_left': 2., 'joint_limit:hip': -.5,
+              'equality:saddle': -1., 'tendon_limit:knee': .25}
+    constraint, closure = split_constraint_powers(powers)
+    assert list(constraint) == [-.5, .25]
+    assert list(closure) == [2., -1.]
+    work = step_work(np.array([400.]), 100., constraint, closure, .1)
+    assert work.constraint_signed_j == pytest.approx(-.025)
+    assert work.constraint_absolute_j == pytest.approx(.075)
+    assert work.closure_signed_j == pytest.approx(.1)
+    assert work.closure_absolute_j == pytest.approx(.3)
 
 
 @pytest.mark.slow

@@ -6,6 +6,7 @@ stays receipt-ordered, publication happens only at ``finalize``, and every
 failure path keeps its owned evidence alive for retry or post-mortem.
 """
 import signal
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -733,9 +734,15 @@ def test_headless_off_writes_no_artifact_files(native_module, tmp_path):
     --out: no telemetry.csv, intervals.jsonl or preview artifacts — not
     even empty ones."""
     from bike_sim.cli import ride
-    from _native_runtime_support import PHYSICS, TRACK
+    import tempfile
+    from _native_runtime_support import TRACK, violating_physics
+    # F1: the re-scoped welded plant is healthy; pin the weld-envelope
+    # violation so the recipe still reports a real model violation (the
+    # config lives outside tmp_path — the tail asserts --out stayed empty).
+    config_dir = tempfile.TemporaryDirectory()
+    physics = violating_physics(Path(config_dir.name)/'physics.toml')
     args = ride.parse_args([
-        '--physics-config', str(PHYSICS), '--track', str(TRACK),
+        '--physics-config', str(physics), '--track', str(TRACK),
         '--backend', 'native', '--check-policy', 'diagnostic',
         '--headless', '--duration', '0.01', '--no-plots',
         '--out', str(tmp_path)])
@@ -747,6 +754,7 @@ def test_headless_off_writes_no_artifact_files(native_module, tmp_path):
     # outcome is honest even though no artifact was requested or written.
     assert code == 2
     assert list(tmp_path.rglob('*')) == []
+    config_dir.cleanup()
 
 
 def test_explicit_programmatic_export_still_writes_artifacts(
@@ -882,9 +890,14 @@ def test_make_run_capture_rejects_non_native_recording():
 def test_headless_native_run_records_one_episode(native_module, tmp_path):
     """A real native --record headless run seals once and publishes at end."""
     from bike_sim.cli import ride
-    from _native_runtime_support import PHYSICS, TRACK
+    import tempfile
+    from _native_runtime_support import TRACK, violating_physics
+    # F1: the re-scoped welded plant is healthy; pin the weld-envelope
+    # violation so the recipe still trips a real model-check violation.
+    config_dir = tempfile.TemporaryDirectory()
+    physics = violating_physics(Path(config_dir.name)/'physics.toml')
     args = ride.parse_args([
-        '--physics-config', str(PHYSICS), '--track', str(TRACK),
+        '--physics-config', str(physics), '--track', str(TRACK),
         '--backend', 'native', '--record', '--check-policy', 'diagnostic',
         '--headless', '--duration', '0.01', '--no-plots',
         '--out', str(tmp_path)])
@@ -904,7 +917,7 @@ def test_headless_native_run_records_one_episode(native_module, tmp_path):
     assert episodes[0].physical.row_count > 0
     assert episodes[0].summary['outcome']['reason'] == 'duration_reached'
     failure_time, violations = episodes[0].summary['first_failure']
-    assert 'energy.constraint_work' in violations
+    assert 'foot_front.normal' in violations
     events = list(capture.iter_events())
     assert events[0].kind == 'episode_start'
     first_failures = [e for e in events if e.kind == 'model_first_failure']
@@ -923,9 +936,15 @@ def test_viewer_native_pump_seals_reset_generations(
         environment_factory, native_module, tmp_path, monkeypatch):
     """A real native driver under the fake window seals each generation."""
     import bike_sim.sim.ride.physical_frontend as frontend
+    import tempfile
+    from _native_runtime_support import violating_physics
     from bike_sim.sim.ride.physical_driver import PhysicalRideDriver
-    driver = PhysicalRideDriver(environment_factory().sim, backend='native',
-                                duration_s=.02, record=True)
+    # F1: the re-scoped welded plant is healthy; pin the weld-envelope
+    # violation so each generation still reports a sticky model violation.
+    config_dir = tempfile.TemporaryDirectory()
+    physics = violating_physics(Path(config_dir.name)/'physics.toml')
+    driver = PhysicalRideDriver(environment_factory(physics_config=physics).sim,
+                                backend='native', duration_s=.02, record=True)
     clock = Clock()
     patch_window(monkeypatch, frontend, clock,
                  {3: [32], 6: [ord('R')], 12: [ord('Q')]})
@@ -952,16 +971,17 @@ def test_viewer_native_pump_seals_reset_generations(
                             'derived_transition') for kind in ep1)
         assert {e.values['record'] for e in events
                 if e.kind == 'brake_demand'} == {'applied'}
-        # Derived transitions re-read the real sealed channel rows; the
-        # sticky model-status violation is the transition this recipe
-        # actually produces.
+        # Derived transitions re-read the real sealed channel rows. F1's
+        # deterministic trigger violates the weld envelope at the first
+        # retained row, so ``model_status.first_model_violation`` never
+        # changes row-to-row and no ``model_first_failure`` *transition*
+        # is derived — the measured monitor event below carries the fact.
         derived = [e for e in events if e.kind == 'derived_transition']
         assert derived
         assert all(e.values.get('derivation_rule') == DERIVED_TRANSITION_RULE
                    for e in derived)
-        assert any(e.values.get('derived_kind') == 'model_first_failure'
-                   for e in derived)
         assert any(e.values.get('derived_kind') == 'model_validity'
                    for e in derived)
+        assert any(e.kind == 'model_first_failure' for e in events)
     finally:
         driver.close()

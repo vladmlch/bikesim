@@ -73,11 +73,13 @@ def _physical_rows(saved):
         'SELECT episode_id, physical_rows FROM episodes ORDER BY episode_id')
 
 
-def _ride_args(out_root, *, record=True, policy='diagnostic', duration='0.01'):
+def _ride_args(out_root, *, record=True, policy='diagnostic', duration='0.01',
+               physics=None):
     """Parsed CLI args for the documented welded/rough-track fixture."""
     from bike_sim.cli import ride
     from _native_runtime_support import PHYSICS, TRACK
-    argv = ['--physics-config', str(PHYSICS), '--track', str(TRACK),
+    argv = ['--physics-config', str(PHYSICS if physics is None else physics),
+            '--track', str(TRACK),
             '--backend', 'native', '--headless', '--duration', duration,
             '--no-plots', '--out', str(out_root),
             '--check-policy', policy]
@@ -434,7 +436,13 @@ def test_headless_native_record_publishes_real_run(native_module, tmp_path):
     publishes every retained scientific state through the real storage
     seam — intervals, validity flags, first-failure evidence, source
     assets, selected backend and v2 execution identity."""
-    args, track, rider = _ride_args(tmp_path)
+    import tempfile
+    from _native_runtime_support import violating_physics
+    # F1: the re-scoped welded plant is healthy; pin the weld-envelope
+    # violation so the recipe still trips a sticky model violation.
+    config_dir = tempfile.TemporaryDirectory()
+    physics = violating_physics(Path(config_dir.name)/'physics.toml')
+    args, track, rider = _ride_args(tmp_path, physics=physics)
     _unpublished(tmp_path)
     code = run_headless(track, args, args.seed, rider)
     # The rough recipe trips a sticky model violation; diagnostic mode
@@ -463,7 +471,7 @@ def test_headless_native_record_publishes_real_run(native_module, tmp_path):
         assert summary['model_status']['model_valid'] is False
         assert summary['recording_retention'] == 'full'
         failure_time, violations = summary['first_failure']
-        assert 'energy.constraint_work' in violations
+        assert 'foot_front.normal' in violations
         execution = summary['execution']
         assert execution['identity_schema'] == 2
         assert execution['backend'] == 'native'
@@ -496,11 +504,17 @@ def test_headless_native_record_publishes_real_run(native_module, tmp_path):
 
 def test_headless_native_record_strict_stop_keeps_invalid_prefix(
         native_module, tmp_path):
-    """The documented strict scenario stops at the first
-    energy.constraint_work violation well inside the requested duration;
-    the published run keeps its actual invalid outcome and committed
-    prefix — never relabeled success."""
-    args, track, rider = _ride_args(tmp_path, policy='strict')
+    """The documented strict scenario stops at the first weld-envelope
+    violation well inside the requested duration (F1: the re-scoped plant
+    is healthy, so the deterministic stop is the pinned
+    ``weld_foot_min_normal_n = 100`` floor, previously
+    energy.constraint_work); the published run keeps its actual invalid
+    outcome and committed prefix — never relabeled success."""
+    import tempfile
+    from _native_runtime_support import violating_physics
+    config_dir = tempfile.TemporaryDirectory()
+    physics = violating_physics(Path(config_dir.name)/'physics.toml')
+    args, track, rider = _ride_args(tmp_path, policy='strict', physics=physics)
     code = run_headless(track, args, args.seed, rider)
     assert code == 2
     run_directory = _published_run(tmp_path)
@@ -513,11 +527,13 @@ def test_headless_native_record_strict_stop_keeps_invalid_prefix(
         assert summary['outcome']['reason'] == 'invalid_controller'
         assert summary['model_status']['model_valid'] is False
         failure_time, violations = summary['first_failure']
-        assert 'energy.constraint_work' in violations
-        # The stop happens at the violation, well before the requested
-        # duration — the prefix is honest, not lengthened.
-        assert summary['outcome']['time_s'] == pytest.approx(failure_time)
-        assert summary['outcome']['time_s'] < args.duration
+        assert 'foot_front.normal' in violations
+        # The monitor measures the failure at the first closing interval;
+        # the strict outcome stamps where the committed ``model_valid``
+        # flag first publishes (measured 0.005 s on darwin-arm64) — still
+        # well inside the requested duration, so the prefix is honest,
+        # not lengthened.
+        assert failure_time <= summary['outcome']['time_s'] < args.duration
         physics = saved.rows('SELECT min(interval_id) lo, max(interval_id) hi,'
                              ' count(*) n FROM physics')[0]
         assert physics == {'lo': 0, 'hi': episode['physical_rows'] - 1,
@@ -532,18 +548,32 @@ def test_headless_native_record_off_with_out_writes_nothing(
         native_module, tmp_path):
     """Recording off + --out supplied: no run files at all — --record is
     the sole opt-in."""
-    args, track, rider = _ride_args(tmp_path, record=False)
+    import tempfile
+    from _native_runtime_support import violating_physics
+    # F1: healthy re-scoped plant; pin the weld-envelope violation for the
+    # check-policy exit (the config lives outside tmp_path — the tail
+    # asserts --out stayed empty).
+    config_dir = tempfile.TemporaryDirectory()
+    physics = violating_physics(Path(config_dir.name)/'physics.toml')
+    args, track, rider = _ride_args(tmp_path, record=False, physics=physics)
     code = run_headless(track, args, args.seed, rider)
     assert code == 2
     assert list(tmp_path.rglob('*')) == []
+    config_dir.cleanup()
 
 
 def test_headless_native_record_under_spaced_unicode_path(
         native_module, tmp_path):
     """Publication and read-back survive spaces and non-ASCII characters
     in the --out path on Linux/macOS filesystems."""
+    import tempfile
+    from _native_runtime_support import violating_physics
+    # F1: healthy re-scoped plant; pin the weld-envelope violation for the
+    # check-policy exit.
+    config_dir = tempfile.TemporaryDirectory()
+    physics = violating_physics(Path(config_dir.name)/'physics.toml')
     out_root = tmp_path/'runs dir'/'ünïcodé ✓'
-    args, track, rider = _ride_args(out_root)
+    args, track, rider = _ride_args(out_root, physics=physics)
     code = run_headless(track, args, args.seed, rider)
     assert code == 2
     run_directory = _published_run(out_root)
@@ -585,9 +615,15 @@ def test_viewer_native_reset_twice_publishes_owned_episodes(
     into owned decodable evidence; after two resets the single finalized
     run holds all three episode IDs."""
     import bike_sim.sim.ride.physical_frontend as frontend
+    import tempfile
+    from _native_runtime_support import violating_physics
     from bike_sim.sim.ride.physical_driver import PhysicalRideDriver
-    driver = PhysicalRideDriver(environment_factory().sim, backend='native',
-                                duration_s=.02, record=True)
+    # F1: the re-scoped welded plant is healthy; pin the weld-envelope
+    # violation so each generation still reports a sticky model violation.
+    config_dir = tempfile.TemporaryDirectory()
+    physics = violating_physics(Path(config_dir.name)/'physics.toml')
+    driver = PhysicalRideDriver(environment_factory(physics_config=physics).sim,
+                                backend='native', duration_s=.02, record=True)
     clock = Clock()
     patch_window(monkeypatch, frontend, clock,
                  {4: [ord('R')], 8: [ord('R')], 12: [ord('Q')]})

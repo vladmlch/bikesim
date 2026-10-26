@@ -1300,6 +1300,8 @@
     },
     "energy": {
       "active_work_j": 0.0,
+      "closure_absolute_j": 0.0,
+      "closure_signed_j": 0.0,
       "constraint_absolute_j": 0.0,
       "elastic_energy_j": {
         "fork_air": 12.068281048189178,

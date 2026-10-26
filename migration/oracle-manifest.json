@@ -191,9 +191,9 @@
       },
       "files": [
         {
-          "bytes": 9686,
+          "bytes": 9987,
           "path": "config/resolved/welded.json",
-          "sha256": "05fa92af892c592815957efba587e0780d1eb6c23cad67bd2e7b2030c0ff9853"
+          "sha256": "cbdc3242000521f53ad20f0ce2508e4b86f4c105c7dcd80625d0c291610147d4"
         }
       ],
       "group": "config",
@@ -215,9 +215,9 @@
       },
       "files": [
         {
-          "bytes": 9698,
+          "bytes": 9999,
           "path": "config/resolved/distributed.json",
-          "sha256": "008c9dff0e3256b8af159bec777c2832520bbce2d2e0653685c3855a9192acef"
+          "sha256": "b77e569d956261783fbde6c0d0096a9b45695f58262bed19e341e6384a6f6a30"
         }
       ],
       "group": "config",
@@ -239,9 +239,9 @@
       },
       "files": [
         {
-          "bytes": 9818,
+          "bytes": 10119,
           "path": "config/resolved/pneumatic.json",
-          "sha256": "ffcf6cd58bbed76f4ba2a2f75a1db4f86836a9879dfe344fc9da29f96f28b279"
+          "sha256": "6e235d3a70670296dce42d30a9966b933aee0773a9ba85ecdbcd83ddfd10cd46"
         }
       ],
       "group": "config",
@@ -268,9 +268,9 @@
           "sha256": "7906b7f121c426e61d0cb916611fae6943ec2faf25963b70270f1b28c6478525"
         },
         {
-          "bytes": 9685,
+          "bytes": 9986,
           "path": "config/variant_elastic_chain.resolved.json",
-          "sha256": "f4fbc22289c2957f18f7faa0002d6ba182b22cdef37acf11dc08129b48cf79a1"
+          "sha256": "5f1c101b39e2c2bcd53c8e654f28ba074ac13dbefc6653217e4ce3f46a1c6e32"
         }
       ],
       "group": "config",
@@ -323,9 +323,9 @@
           "sha256": "737c97dd518d1a1b752d96e9c838f7792f6e1908f32f467b1c93a58cfddcbb5f"
         },
         {
-          "bytes": 9683,
+          "bytes": 9984,
           "path": "config/variant_alt_support.resolved.json",
-          "sha256": "bec4fe6c6363ea9b887b869612d627562735141d357516c0a1874c63342f0b09"
+          "sha256": "5df8091aa832d2e5737583208afddeeb758dde59dcea95851f3909d861cd7c0e"
         }
       ],
       "group": "config",
@@ -353,9 +353,9 @@
           "sha256": "93894b289d3d07ebad201cd5ac963a365a25f9cd3c55cc5608856359482a1119"
         },
         {
-          "bytes": 9686,
+          "bytes": 9987,
           "path": "config/variant_grip_weld_coercion.resolved.json",
-          "sha256": "05fa92af892c592815957efba587e0780d1eb6c23cad67bd2e7b2030c0ff9853"
+          "sha256": "cbdc3242000521f53ad20f0ce2508e4b86f4c105c7dcd80625d0c291610147d4"
         }
       ],
       "group": "config",
@@ -377,9 +377,9 @@
       },
       "files": [
         {
-          "bytes": 46093,
+          "bytes": 47392,
           "path": "config/schema.json",
-          "sha256": "065e4af84d569e6556356819164c39f38247fdf63d72b73390e0b7492b4d4fe2"
+          "sha256": "b0ea9d62fd2b8cbeb9e78c1342281b841acfac4236409c451c6c531f3f9ac438"
         }
       ],
       "group": "config",
@@ -13418,14 +13418,14 @@
           "sha256": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/welded/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
-          "bytes": 32408,
+          "bytes": 32472,
           "path": "bootstrap/welded/state.json",
-          "sha256": "5bc19eb05f5c47fe36bab744fd4fda873e997596c6e932e1ddb57dacf772529a"
+          "sha256": "6e00fb7d062827842031f9d5fe919f941b4593dab8d009af8a6b579ac56922dc"
         },
         {
           "bytes": 2336,
@@ -14009,14 +14009,14 @@
           "sha256": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/welded/reset/1/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
-          "bytes": 32544,
+          "bytes": 32608,
           "path": "bootstrap/welded/reset/1/state.json",
-          "sha256": "7444dfaea049756b6a45c19adb6326cff7abd1a95acde008d9bdc9459d8cd3f5"
+          "sha256": "dcc37a6b4e8e18b22b8a01d0857b82b60857acf4598f76deb0979d250e545126"
         },
         {
           "bytes": 2336,
@@ -14209,14 +14209,14 @@
           "sha256": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/welded/reset/2/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
-          "bytes": 32544,
+          "bytes": 32608,
           "path": "bootstrap/welded/reset/2/state.json",
-          "sha256": "c97cdfcae464d9f413c8756607c64d933f5f30eeac2b846ca7d9eb617f70ce56"
+          "sha256": "3f8d384ca51c2e189a0d186a21d59240090cfb6f9ceff5d81c1f41f4c1abd6b4"
         },
         {
           "bytes": 2336,
@@ -14423,14 +14423,14 @@
           "sha256": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/welded_pinned/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
-          "bytes": 32528,
+          "bytes": 32592,
           "path": "bootstrap/welded_pinned/state.json",
-          "sha256": "737cd0c19066298e3790cbdac188c571cc99cf52328a0ef1b3da0b03e07b4edd"
+          "sha256": "2903568a54db308e23e886791477f355b4d3c6b1b636ffad705ab1b2303b003f"
         },
         {
           "bytes": 2336,
@@ -14637,14 +14637,14 @@
           "sha256": "da3148c80ba4ae3f8a776d402678d6f49c8e6ba27ac8047b445ef446d73f2ed9"
         },
         {
-          "bytes": 26032,
+          "bytes": 26333,
           "path": "bootstrap/native_start_welded/config.json",
-          "sha256": "f305f039b5e0bd5382d4b023d781b2c4972c941fb89244f5496532749f644367"
+          "sha256": "2e1183afe57c02a343034d3a3e1d620a246e0fdbb3fb3c30f53c1536854e92f8"
         },
         {
-          "bytes": 33140,
+          "bytes": 33204,
           "path": "bootstrap/native_start_welded/state.json",
-          "sha256": "c3e4a3480e19fd8747e33984f3b6dfab9ffb80ccbf380846be442243b4d8cd9f"
+          "sha256": "a09132d8ceadbdad368a35f3498cae137ad5dc697ff12720816c5324dfaafd4e"
         },
         {
           "bytes": 2336,
@@ -15013,14 +15013,14 @@
       },
       "files": [
         {
-          "bytes": 32318,
+          "bytes": 32382,
           "path": "bootstrap/faults/schema/state.json",
-          "sha256": "440880e9addaba3b757ad867a2480b1f163923f89f5c238704de3a8622e59054"
+          "sha256": "6406276d64191bd35683f432668cd70e50049d1565e8a00f4b8118a3bc2ba0ca"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/faults/schema/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
           "bytes": 167,
@@ -15044,14 +15044,14 @@
       },
       "files": [
         {
-          "bytes": 32317,
+          "bytes": 32381,
           "path": "bootstrap/faults/digest/state.json",
-          "sha256": "75c3704143ab1ced0d430a97e8aa6a54f04157441c64ccf705a3b3224a99b8eb"
+          "sha256": "b1ec66c91c9910c3dc701d9e6120a907cf6da7dd850541935601d2e1aaadfb63"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/faults/digest/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
           "bytes": 188,
@@ -15075,14 +15075,14 @@
       },
       "files": [
         {
-          "bytes": 32317,
+          "bytes": 32381,
           "path": "bootstrap/faults/dims/state.json",
-          "sha256": "2725ba8786a20db7252df2e6e43496824fd1a6758e050125dad944137d3dec15"
+          "sha256": "48a3197e1c481bf1f9805324f199691e58a56b47a38f56c0a72ec4895fa4bea7"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/faults/dims/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
           "bytes": 177,
@@ -15106,14 +15106,14 @@
       },
       "files": [
         {
-          "bytes": 32308,
+          "bytes": 32372,
           "path": "bootstrap/faults/width/state.json",
-          "sha256": "74d1f8cddf1552b7e8c7002b9be76b6b396a23f7cbd9fd2e5b68799c4ba9f91d"
+          "sha256": "09ef22444a1bb78eed31622bf0f56ec9c6ac9127eaf8862a462300eeb7f54413"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/faults/width/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
           "bytes": 193,
@@ -15137,14 +15137,14 @@
       },
       "files": [
         {
-          "bytes": 32347,
+          "bytes": 32411,
           "path": "bootstrap/faults/nonfinite/state.json",
-          "sha256": "731e224f419e4000eb3f1824b79e0caf1798ace5733dca83b793d34745bc2f50"
+          "sha256": "c1d92d940dd8e143259d15eb6146df94dd243b601f12aceeeb959789b10f0c6c"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/faults/nonfinite/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
           "bytes": 192,
@@ -15168,14 +15168,14 @@
       },
       "files": [
         {
-          "bytes": 32302,
+          "bytes": 32366,
           "path": "bootstrap/faults/missing_key/state.json",
-          "sha256": "3d891ffc9ad7ddc0118e7c602f49423f85ec82038f6d9ce4cab3105eb34ca9b1"
+          "sha256": "efb25c6f3359179f7af0cd3019ae2f60aa0d2d19580d8876281b93dd82bac7c4"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/faults/missing_key/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
           "bytes": 176,
@@ -15199,14 +15199,14 @@
       },
       "files": [
         {
-          "bytes": 32349,
+          "bytes": 32413,
           "path": "bootstrap/faults/unknown_key/state.json",
-          "sha256": "38fc255ec9e33480dbf0bc09d4e5b8ffa5c7048817247106b0ed0fe2515092e1"
+          "sha256": "898bc428581a890b4e1d9e725d52b6167f8a78def9c7bdc907d9c9f450b11162"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/faults/unknown_key/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
           "bytes": 182,
@@ -15228,14 +15228,14 @@
       },
       "files": [
         {
-          "bytes": 32317,
+          "bytes": 32381,
           "path": "bootstrap/faults/malformed_drive/state.json",
-          "sha256": "2f1cd7327c99ac885b8f12c937501928a8e1d3cdea1b36489c6cbff4914e2f2b"
+          "sha256": "406531aafc7a2e486347c0274a343b32089c9c1a4c16608a7a4f6119a812cb04"
         },
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/faults/malformed_drive/config.json",
-          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+          "sha256": "633fe9f11c5cd1d2fafe9c617f38f04c9a415d23572c9fe36a631da41cd4d325"
         },
         {
           "bytes": 109,
@@ -15259,9 +15259,9 @@
       },
       "files": [
         {
-          "bytes": 25805,
+          "bytes": 26106,
           "path": "bootstrap/faults/control_period/config.json",
-          "sha256": "4b295eaf02fa6f5298fdd6f7109a9313f9561742c0a7e222095fb46969e81b94"
+          "sha256": "565c35bbbf958fe6a2f8a5d1102ad5cc2506ee4b8d11ab15553d667376d8764b"
         },
         {
           "bytes": 193,
@@ -15485,9 +15485,9 @@
       },
       "files": [
         {
-          "bytes": 25815,
+          "bytes": 26116,
           "path": "research/delayed_bootstrap/config.json",
-          "sha256": "5608d1225169791ecbb9826a60393f2b2ebab9c1f3f3a7bc11d8611738592096"
+          "sha256": "a19b34f32a72078a2b7e7f9948dec6d8f37ce4c2ed682b7d1c35ffd71a0567c8"
         },
         {
           "bytes": 790,
@@ -15605,9 +15605,9 @@
           "sha256": "c8dea082c4c95bbcf87232b3d5553013ad7f7ef23e22b17058f8a7bf53c36c78"
         },
         {
-          "bytes": 35621,
+          "bytes": 35685,
           "path": "research/delayed_bootstrap/state.json",
-          "sha256": "f6f0b9314b105b903edc57147b171e576cdbd5a5575cd7822b982cbc2399e942"
+          "sha256": "d25574ff65a38ebcbfd05550cded135fcd44414200e1bf01d59de637a998259d"
         },
         {
           "bytes": 6613,
@@ -17510,9 +17510,9 @@
       },
       "files": [
         {
-          "bytes": 10592,
+          "bytes": 10845,
           "path": "config/rider_controller.json",
-          "sha256": "4d54d21a6ee698d29da5e27492932710b7375d4204474a6cdcee8017075a6af2"
+          "sha256": "3d201965d6325a7a18890e374f1fe620eaa375979307f7b07a61696a86ecdfaa"
         }
       ],
       "group": "config",

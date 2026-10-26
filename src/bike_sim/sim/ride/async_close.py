@@ -37,6 +37,7 @@ _RESULT_FIELDS = ('period_violations', 'energy',
                   'loss_j', 'active_work_j', 'external_work_j', 'solver_work_j',
                   'muscle_signed_j', 'muscle_positive_j', 'motor_signed_j',
                   'motor_positive_j', 'constraint_absolute_j',
+                  'closure_signed_j', 'closure_absolute_j',
                   'electrical_work_j', 'history', 'model_status')
 
 
@@ -94,7 +95,9 @@ def _build_rt(ctx):
         muscle_positive_j=ctx['muscle_positive_j'],
         motor_signed_j=ctx['motor_signed_j'],
         motor_positive_j=ctx['motor_positive_j'],
-        constraint_absolute_j=ctx['constraint_absolute_j'])
+        constraint_absolute_j=ctx['constraint_absolute_j'],
+        closure_signed_j=ctx['closure_signed_j'],
+        closure_absolute_j=ctx['closure_absolute_j'])
     rider = ctx['rider_control']
     if rider is not None:
         rt.rider_control = _RiderControlView(rider)

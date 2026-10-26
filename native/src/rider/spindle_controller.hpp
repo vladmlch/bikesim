@@ -73,6 +73,11 @@ struct SpindleConfig {
     double joint_speed_limit_rad_s = 0.;
     double joint_power_limit_w = 0.;
     std::optional<double> active_positive_power_limit_w;
+    // F1 delivered-power budgets (physical_config.py): monitor-side bounds on
+    // the solved envelope; the capability clips above keep bounding the
+    // command. nullopt falls back to the capability bound bitwise.
+    std::optional<double> delivered_positive_power_budget_w;
+    std::optional<double> delivered_joint_power_budget_w;
     std::optional<double> joint_passive_damping_nms_rad;
     double activation_tau_s = 0.;
     double pedal_torque_ripple = 0.;
@@ -94,6 +99,16 @@ struct SpindleConfig {
 
     [[nodiscard]] double passive_damping_nms_rad() const {
         return joint_passive_damping_nms_rad.value_or(joint_kd_nms_rad);
+    }
+    // physical_config.py delivered_*_budget_w properties: the effective
+    // monitor bound falls back to the declared capability cap.
+    [[nodiscard]] std::optional<double> delivered_positive_budget_w() const {
+        return delivered_positive_power_budget_w.has_value()
+                   ? delivered_positive_power_budget_w
+                   : active_positive_power_limit_w;
+    }
+    [[nodiscard]] double delivered_joint_budget_w() const {
+        return delivered_joint_power_budget_w.value_or(joint_power_limit_w);
     }
 };
 

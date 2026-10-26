@@ -17,11 +17,16 @@ struct StepWork {
     double muscle_signed_j = 0., muscle_positive_j = 0.;
     double motor_signed_j = 0., motor_positive_j = 0.;
     double constraint_signed_j = 0., constraint_absolute_j = 0.;
+    // F1 re-scope: equality closures are the solver's soft spring-dampers;
+    // their work is elastic exchange, charged to its own channel and never
+    // counted in the numerical constraint-work bound (energy_ledger.py).
+    double closure_signed_j = 0., closure_absolute_j = 0.;
     [[nodiscard]] WireObject as_wire() const;
 };
 [[nodiscard]] StepWork step_work(std::span<const double> muscle_power_w,
                                  double motor_power_w,
                                  std::span<const double> constraint_power_w,
+                                 std::span<const double> closure_power_w,
                                  double dt_s);
 [[nodiscard]] bool constraint_work_ok(double absolute_j, double source_positive_j,
                                       double roundoff_j = 1e-8);

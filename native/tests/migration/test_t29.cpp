@@ -77,7 +77,13 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const auto stopped_document=::rider::encode_spindle_state(stopped);
     bt::require(bike::io::canonical_json(::rider::encode_spindle_state(::rider::decode_spindle_state(stopped_document,"rider")))==bike::io::canonical_json(stopped_document),"disabled effort and terms preserve omitted source fields");
     auto config=bike::configuration::default_physics();config.articulated.coupled_task_control=true;config.articulated.pedal_attachment="weld";config.articulated.saddle_attachment="weld";config.articulated.grip_attachment="connect";
-    auto const full=bike::configuration::detail::plain_document(bike::configuration::to_value(config));const auto& object=bike::io::as_object(full,"config");auto rider=*bike::io::find_member(object,"articulated");auto& members=std::get<bike::io::Value::Object>(rider.data);members.emplace_back("strength",bike::io::Value{});members.emplace_back("strength_coordinates",bike::io::Value{bike::io::Value::Object{}});members.emplace_back("envelopes",bike::io::Value{bike::io::Value::Object{}});
+    auto const full=bike::configuration::detail::plain_document(bike::configuration::to_value(config));const auto& object=bike::io::as_object(full,"config");auto rider=*bike::io::find_member(object,"articulated");auto& members=std::get<bike::io::Value::Object>(rider.data);
+    // runtime/project_config.cpp's project_rider_controller strips the
+    // declared Python-only knobs before the closed wire — mirror the same
+    // projection here so the doc carries exactly the wire key set.
+    for(const std::string_view key:{"weld_servo_gain","weld_servo_limit_nm","leg_track_damping_nms_rad"})
+        std::erase_if(members,[key](const auto& member){return member.first==key;});
+    members.emplace_back("strength",bike::io::Value{});members.emplace_back("strength_coordinates",bike::io::Value{bike::io::Value::Object{}});members.emplace_back("envelopes",bike::io::Value{bike::io::Value::Object{}});
     const auto decoded=::rider::decode_spindle_config(rider);
     bt::require(decoded.legacy&&decoded.legacy->coupled_task_control&&decoded.legacy->pedal_attachment=="weld","normal config path reaches coupled controller parameters");
 }

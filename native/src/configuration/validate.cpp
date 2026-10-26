@@ -707,7 +707,24 @@ void post_init(ArticulatedConfig &config) {
     // scalar carries minimum=0 with the bare field name as label.
     static const std::set<std::string_view> kSkipped{
         "joint_envelope_path", "joint_strength_path", "pedal_attachment",
-        "saddle_attachment", "grip_attachment", "coupled_task_control"};
+        "saddle_attachment", "grip_attachment", "coupled_task_control",
+        // Weld normal bounds may be negative (tension retention); a set
+        // bound is checked finite-only below, matching post_init's mirror
+        // of the wire's optional_real gate.
+        "weld_foot_min_normal_n", "weld_foot_max_normal_n",
+        "weld_saddle_min_normal_n", "weld_saddle_max_normal_n"};
+    for (const auto &[name, member] :
+         {std::pair{"weld_foot_min_normal_n",
+                    &ArticulatedConfig::weld_foot_min_normal_n},
+          {"weld_foot_max_normal_n",
+           &ArticulatedConfig::weld_foot_max_normal_n},
+          {"weld_saddle_min_normal_n",
+           &ArticulatedConfig::weld_saddle_min_normal_n},
+          {"weld_saddle_max_normal_n",
+           &ArticulatedConfig::weld_saddle_max_normal_n}}) {
+        const std::optional<double> &bound = config.*member;
+        if (bound) scalar(*bound, name);
+    }
     for (const FieldDecl &field : kArticulatedConfigFields) {
         if (kSkipped.contains(field.name)) continue;
         // Compile-time offsetof bound against the owning record — the
@@ -754,6 +771,14 @@ void post_init(ArticulatedConfig &config) {
     if (config.joint_passive_damping_nms_rad)
         scalar(*config.joint_passive_damping_nms_rad,
                "joint_passive_damping_nms_rad", 0.);
+    // Weld normal bounds may be negative (tension retention), matching the
+    // Python post-init skip; the delivered budgets are nonnegative when set.
+    if (config.delivered_positive_power_budget_w)
+        scalar(*config.delivered_positive_power_budget_w,
+               "delivered_positive_power_budget_w", 0.);
+    if (config.delivered_joint_power_budget_w)
+        scalar(*config.delivered_joint_power_budget_w,
+               "delivered_joint_power_budget_w", 0.);
     if (config.pedal_torque_ripple >= 1.)
         fail("pedal torque ripple must be below one");
     if (config.pedal_scrape_fraction > 1.)

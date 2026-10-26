@@ -341,7 +341,9 @@ constexpr auto kConfigRequiredKeys = keys(
     "arm_reach_fraction", "balance_dwell_s", "balance_floor_kmh",
     "balance_grace_s", "bar_support_fraction",
     "coasting_brake_d_nm_s_rad", "coasting_brake_limit_nm",
-    "coupled_task_control", "foot_mu", "grip_attachment",
+    "coupled_task_control",
+    "delivered_joint_power_budget_w", "delivered_positive_power_budget_w",
+    "foot_mu", "grip_attachment",
     "grip_c_ns_m", "grip_capture_distance_m", "grip_capture_speed_mps",
     "grip_k_n_m", "grip_pair_force_limit_n", "grip_pull_per_hand_n",
     "grip_release_distance_m", "joint_envelope_path",
@@ -361,7 +363,11 @@ constexpr auto kConfigRequiredKeys = keys(
     "saddle_reserve_weight_fraction", "stance_blend_load_n",
     "support_c_ns_m", "support_k_n_m", "support_length_m",
     "support_mu", "support_pad_radius_m", "support_tangent_k_n_m",
-    "swing_clearance_m", "strength", "strength_coordinates",
+    "swing_clearance_m",
+    "weld_foot_max_normal_n", "weld_foot_min_normal_n", "weld_foot_shear_n",
+    "weld_saddle_max_normal_n", "weld_saddle_min_normal_n",
+    "weld_saddle_shear_n",
+    "strength", "strength_coordinates",
     "envelopes");
 
 // CTAD keeps the element count honest — a manual count that drifts past
@@ -381,7 +387,8 @@ constexpr std::array kUnmodeledScalarKeys{
     "pedal_min_normal_n", "saddle_reserve_weight_fraction",
     "pedal_ankle_amplitude_rad", "pedal_scrape_fraction",
     "link_max_gap_m", "road_lookahead_m", "balance_floor_kmh",
-    "balance_dwell_s", "balance_grace_s"};
+    "balance_dwell_s", "balance_grace_s",
+    "weld_foot_shear_n", "weld_saddle_shear_n"};
 
 void parse_optional_path(const nb::dict &d, const char *key,
                          std::string_view path) {
@@ -397,6 +404,11 @@ void validate_unmodeled_scalars(const nb::dict &d,
     for (const char *key : kUnmodeledScalarKeys)
         (void)wire::finite_real(d[key], path);
     (void)wire::optional_real(d["grip_pair_force_limit_n"], path);
+    // F1 weld load envelope: normal bounds may be negative (tension
+    // retention) so only the optional-real type is enforced at the wire.
+    for (const char *key : {"weld_foot_min_normal_n", "weld_foot_max_normal_n",
+                            "weld_saddle_min_normal_n", "weld_saddle_max_normal_n"})
+        (void)wire::optional_real(d[key], path);
     (void)wire::boolean(d["coupled_task_control"], path);
 }
 
@@ -434,6 +446,10 @@ void parse_actuation_scalars(const nb::dict &d, std::string_view path,
         wire::finite_real(d["joint_power_limit_w"], path);
     config.active_positive_power_limit_w =
         wire::optional_real(d["active_positive_power_limit_w"], path);
+    config.delivered_positive_power_budget_w =
+        wire::optional_real(d["delivered_positive_power_budget_w"], path);
+    config.delivered_joint_power_budget_w =
+        wire::optional_real(d["delivered_joint_power_budget_w"], path);
     config.joint_passive_damping_nms_rad =
         wire::optional_real(d["joint_passive_damping_nms_rad"], path);
     config.activation_tau_s =

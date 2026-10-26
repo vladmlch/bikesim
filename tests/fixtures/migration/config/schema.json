@@ -1373,6 +1373,54 @@
           "type": "<class 'float'>"
         },
         {
+          "default": null,
+          "default_factory": null,
+          "name": "weld_foot_min_normal_n",
+          "type": "float | None"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "weld_foot_max_normal_n",
+          "type": "float | None"
+        },
+        {
+          "default": 0.0,
+          "default_factory": null,
+          "name": "weld_foot_shear_n",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "weld_saddle_min_normal_n",
+          "type": "float | None"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "weld_saddle_max_normal_n",
+          "type": "float | None"
+        },
+        {
+          "default": 0.0,
+          "default_factory": null,
+          "name": "weld_saddle_shear_n",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "delivered_positive_power_budget_w",
+          "type": "float | None"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "delivered_joint_power_budget_w",
+          "type": "float | None"
+        },
+        {
           "default": 0.0,
           "default_factory": null,
           "name": "road_lookahead_m",

@@ -2056,7 +2056,7 @@
   },
   {
     "path": "src/bike_sim/native/setup.py",
-    "lines": 419,
+    "lines": 430,
     "symbols": [
       {
         "name": "_reject",
@@ -2103,55 +2103,55 @@
       {
         "name": "_runtime_state",
         "line": 154,
-        "end": 227,
+        "end": 229,
         "kind": "FunctionDef"
       },
       {
         "name": "_joint_ref",
-        "line": 230,
-        "end": 235,
+        "line": 232,
+        "end": 237,
         "kind": "FunctionDef"
       },
       {
         "name": "_model_mutable",
-        "line": 238,
-        "end": 258,
+        "line": 240,
+        "end": 260,
         "kind": "FunctionDef"
       },
       {
         "name": "_curve_dict",
-        "line": 261,
-        "end": 267,
+        "line": 263,
+        "end": 269,
         "kind": "FunctionDef"
       },
       {
         "name": "_envelope_dict",
-        "line": 270,
-        "end": 275,
+        "line": 272,
+        "end": 277,
         "kind": "FunctionDef"
       },
       {
         "name": "rider_controller_config",
-        "line": 278,
-        "end": 304,
+        "line": 280,
+        "end": 315,
         "kind": "FunctionDef"
       },
       {
         "name": "_geometry",
-        "line": 307,
-        "end": 324,
+        "line": 318,
+        "end": 335,
         "kind": "FunctionDef"
       },
       {
         "name": "RuntimeBootstrap",
-        "line": 328,
-        "end": 339,
+        "line": 339,
+        "end": 350,
         "kind": "ClassDef"
       },
       {
         "name": "capture_bootstrap",
-        "line": 342,
-        "end": 419,
+        "line": 353,
+        "end": 430,
         "kind": "FunctionDef"
       }
     ],
@@ -2211,24 +2211,24 @@
   },
   {
     "path": "src/bike_sim/physics/attachment_budget.py",
-    "lines": 55,
+    "lines": 76,
     "symbols": [
       {
         "name": "AttachmentSample",
-        "line": 12,
-        "end": 19,
+        "line": 18,
+        "end": 25,
         "kind": "ClassDef"
       },
       {
         "name": "AttachmentBudget",
-        "line": 23,
-        "end": 28,
+        "line": 29,
+        "end": 42,
         "kind": "ClassDef"
       },
       {
         "name": "attachment_violations",
-        "line": 31,
-        "end": 55,
+        "line": 45,
+        "end": 76,
         "kind": "FunctionDef"
       }
     ],
@@ -2637,24 +2637,24 @@
   },
   {
     "path": "src/bike_sim/physics/energy_ledger.py",
-    "lines": 42,
+    "lines": 55,
     "symbols": [
       {
         "name": "StepWork",
-        "line": 14,
-        "end": 20,
+        "line": 21,
+        "end": 29,
         "kind": "ClassDef"
       },
       {
         "name": "step_work",
-        "line": 23,
-        "end": 34,
+        "line": 32,
+        "end": 47,
         "kind": "FunctionDef"
       },
       {
         "name": "constraint_work_ok",
-        "line": 37,
-        "end": 42,
+        "line": 50,
+        "end": 55,
         "kind": "FunctionDef"
       }
     ],
@@ -2989,7 +2989,7 @@
   },
   {
     "path": "src/bike_sim/physics/physical_config.py",
-    "lines": 474,
+    "lines": 568,
     "symbols": [
       {
         "name": "_material",
@@ -3004,10 +3004,22 @@
         "kind": "ClassDef"
       },
       {
+        "name": "TireParameters.__post_init__",
+        "line": 30,
+        "end": 37,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "PneumaticTireConfig",
         "line": 41,
         "end": 64,
         "kind": "ClassDef"
+      },
+      {
+        "name": "PneumaticTireConfig.__post_init__",
+        "line": 54,
+        "end": 64,
+        "kind": "FunctionDef"
       },
       {
         "name": "TireBackendConfig",
@@ -3016,10 +3028,28 @@
         "kind": "ClassDef"
       },
       {
+        "name": "TireBackendConfig.__post_init__",
+        "line": 79,
+        "end": 101,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "AssistConfig",
         "line": 105,
         "end": 134,
         "kind": "ClassDef"
+      },
+      {
+        "name": "AssistConfig.__post_init__",
+        "line": 121,
+        "end": 128,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "AssistConfig.effective_max_torque",
+        "line": 131,
+        "end": 134,
+        "kind": "FunctionDef"
       },
       {
         "name": "BatteryConfig",
@@ -3028,10 +3058,22 @@
         "kind": "ClassDef"
       },
       {
+        "name": "BatteryConfig.__post_init__",
+        "line": 147,
+        "end": 152,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "PedalingConfig",
         "line": 156,
         "end": 203,
         "kind": "ClassDef"
+      },
+      {
+        "name": "PedalingConfig.__post_init__",
+        "line": 181,
+        "end": 203,
+        "kind": "FunctionDef"
       },
       {
         "name": "ShiftingConfig",
@@ -3040,22 +3082,70 @@
         "kind": "ClassDef"
       },
       {
+        "name": "ShiftingConfig.__post_init__",
+        "line": 219,
+        "end": 241,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "PhysicalDriveConfig",
         "line": 245,
-        "end": 303,
+        "end": 321,
         "kind": "ClassDef"
+      },
+      {
+        "name": "PhysicalDriveConfig.__post_init__",
+        "line": 282,
+        "end": 321,
+        "kind": "FunctionDef"
       },
       {
         "name": "ResistanceConfig",
-        "line": 307,
-        "end": 324,
+        "line": 325,
+        "end": 342,
         "kind": "ClassDef"
       },
       {
+        "name": "ResistanceConfig.__post_init__",
+        "line": 333,
+        "end": 342,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "ArticulatedConfig",
-        "line": 328,
-        "end": 474,
+        "line": 346,
+        "end": 568,
         "kind": "ClassDef"
+      },
+      {
+        "name": "ArticulatedConfig.attachment_budget",
+        "line": 470,
+        "end": 488,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "ArticulatedConfig.passive_damping_nms_rad",
+        "line": 491,
+        "end": 494,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "ArticulatedConfig.delivered_positive_budget_w",
+        "line": 497,
+        "end": 505,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "ArticulatedConfig.delivered_joint_budget_w",
+        "line": 508,
+        "end": 512,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "ArticulatedConfig.__post_init__",
+        "line": 514,
+        "end": 568,
+        "kind": "FunctionDef"
       }
     ],
     "imports": [
@@ -4040,7 +4130,7 @@
   },
   {
     "path": "src/bike_sim/recording/catalog.py",
-    "lines": 1699,
+    "lines": 1711,
     "symbols": [
       {
         "name": "FieldSpec",
@@ -4105,79 +4195,79 @@
       {
         "name": "_energy_table",
         "line": 348,
-        "end": 448,
+        "end": 460,
         "kind": "FunctionDef"
       },
       {
         "name": "_sensors_table",
-        "line": 451,
-        "end": 494,
+        "line": 463,
+        "end": 506,
         "kind": "FunctionDef"
       },
       {
         "name": "_tire_side",
-        "line": 497,
-        "end": 609,
+        "line": 509,
+        "end": 621,
         "kind": "FunctionDef"
       },
       {
         "name": "_tires_table",
-        "line": 612,
-        "end": 626,
+        "line": 624,
+        "end": 638,
         "kind": "FunctionDef"
       },
       {
         "name": "_suspension_table",
-        "line": 629,
-        "end": 662,
+        "line": 641,
+        "end": 674,
         "kind": "FunctionDef"
       },
       {
         "name": "_drive_table",
-        "line": 665,
-        "end": 945,
+        "line": 677,
+        "end": 957,
         "kind": "FunctionDef"
       },
       {
         "name": "_posture_children",
-        "line": 948,
-        "end": 961,
+        "line": 960,
+        "end": 973,
         "kind": "FunctionDef"
       },
       {
         "name": "_control_table",
-        "line": 964,
-        "end": 995,
+        "line": 976,
+        "end": 1007,
         "kind": "FunctionDef"
       },
       {
         "name": "_model_status_table",
-        "line": 998,
-        "end": 1041,
+        "line": 1010,
+        "end": 1053,
         "kind": "FunctionDef"
       },
       {
         "name": "_rider_table",
-        "line": 1044,
-        "end": 1450,
+        "line": 1056,
+        "end": 1462,
         "kind": "FunctionDef"
       },
       {
         "name": "_coordinate_catalog",
-        "line": 1467,
-        "end": 1491,
+        "line": 1479,
+        "end": 1503,
         "kind": "FunctionDef"
       },
       {
         "name": "Catalog",
-        "line": 1494,
-        "end": 1604,
+        "line": 1506,
+        "end": 1616,
         "kind": "ClassDef"
       },
       {
         "name": "build_catalog",
-        "line": 1614,
-        "end": 1699,
+        "line": 1626,
+        "end": 1711,
         "kind": "FunctionDef"
       }
     ],
@@ -6129,12 +6219,12 @@
   },
   {
     "path": "src/bike_sim/sim/ride/_step_oracle.py",
-    "lines": 213,
+    "lines": 229,
     "symbols": [
       {
         "name": "step_reference",
         "line": 43,
-        "end": 213,
+        "end": 229,
         "kind": "FunctionDef"
       }
     ],
@@ -6160,7 +6250,6 @@
       "bike_sim.sim.ride.rider_contacts",
       "bike_sim.sim.ride.rider_control",
       "bike_sim.sim.ride.rider_effort",
-      "bike_sim.sim.ride.rider_intent",
       "bike_sim.sim.ride.rider_state",
       "bike_sim.sim.ride.static_braking",
       "bike_sim.sim.ride.telemetry_v2",
@@ -6175,54 +6264,72 @@
   },
   {
     "path": "src/bike_sim/sim/ride/async_close.py",
-    "lines": 289,
+    "lines": 385,
     "symbols": [
       {
         "name": "_sample_transport",
-        "line": 42,
-        "end": 50,
+        "line": 44,
+        "end": 52,
         "kind": "FunctionDef"
       },
       {
         "name": "_sample_restore",
-        "line": 53,
-        "end": 65,
+        "line": 55,
+        "end": 67,
         "kind": "FunctionDef"
       },
       {
         "name": "_build_rt",
-        "line": 68,
-        "end": 103,
+        "line": 70,
+        "end": 107,
         "kind": "FunctionDef"
       },
       {
         "name": "_RiderControlView",
-        "line": 106,
-        "end": 132,
+        "line": 110,
+        "end": 136,
         "kind": "ClassDef"
       },
       {
         "name": "_extract_result",
-        "line": 135,
-        "end": 149,
+        "line": 139,
+        "end": 153,
         "kind": "FunctionDef"
       },
       {
         "name": "_close_worker_main",
-        "line": 152,
-        "end": 168,
+        "line": 156,
+        "end": 172,
         "kind": "FunctionDef"
       },
       {
         "name": "AsyncWorkerLost",
-        "line": 171,
-        "end": 172,
+        "line": 175,
+        "end": 176,
         "kind": "ClassDef"
       },
       {
+        "name": "AsyncPublicationError",
+        "line": 179,
+        "end": 184,
+        "kind": "ClassDef"
+      },
+      {
+        "name": "_worker_start_method",
+        "line": 187,
+        "end": 189,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_close_queues",
+        "line": 192,
+        "end": 207,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "AsyncCloseRunner",
-        "line": 191,
-        "end": 289,
+        "line": 226,
+        "end": 385,
         "kind": "ClassDef"
       }
     ],
@@ -6236,6 +6343,7 @@
       "importlib",
       "multiprocessing",
       "pickle",
+      "platform",
       "queue",
       "types"
     ]
@@ -7445,7 +7553,7 @@
   },
   {
     "path": "src/bike_sim/sim/ride/period_buffer.py",
-    "lines": 342,
+    "lines": 353,
     "symbols": [
       {
         "name": "RawStep",
@@ -7480,19 +7588,19 @@
       {
         "name": "_effort_observations",
         "line": 123,
-        "end": 152,
+        "end": 154,
         "kind": "FunctionDef"
       },
       {
         "name": "evaluate_period",
-        "line": 155,
-        "end": 188,
+        "line": 157,
+        "end": 193,
         "kind": "FunctionDef"
       },
       {
         "name": "publish_close",
-        "line": 195,
-        "end": 342,
+        "line": 200,
+        "end": 353,
         "kind": "FunctionDef"
       }
     ],
@@ -7500,6 +7608,7 @@
       "bike_sim.physics.attachment_budget",
       "bike_sim.physics.energy_ledger",
       "bike_sim.sim.ride.attachment_wrench",
+      "bike_sim.sim.ride.physical_observations",
       "bike_sim.sim.ride.physical_samples",
       "bike_sim.sim.ride.rider_effort",
       "copy",
@@ -7792,7 +7901,7 @@
   },
   {
     "path": "src/bike_sim/sim/ride/physical_observations.py",
-    "lines": 193,
+    "lines": 207,
     "symbols": [
       {
         "name": "tire_channels",
@@ -7843,9 +7952,15 @@
         "kind": "FunctionDef"
       },
       {
-        "name": "sensor_channels",
+        "name": "split_constraint_powers",
         "line": 178,
-        "end": 193,
+        "end": 189,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "sensor_channels",
+        "line": 192,
+        "end": 207,
         "kind": "FunctionDef"
       }
     ],
@@ -7909,7 +8024,7 @@
   },
   {
     "path": "src/bike_sim/sim/ride/physical_runtime.py",
-    "lines": 951,
+    "lines": 1043,
     "symbols": [
       {
         "name": "_connect_equality_rows",
@@ -7926,7 +8041,7 @@
       {
         "name": "PhysicalRuntime",
         "line": 63,
-        "end": 951,
+        "end": 1043,
         "kind": "ClassDef"
       }
     ],
@@ -8556,7 +8671,7 @@
   },
   {
     "path": "src/bike_sim/sim/ride/rider_effort.py",
-    "lines": 122,
+    "lines": 125,
     "symbols": [
       {
         "name": "activation_target",
@@ -8567,19 +8682,19 @@
       {
         "name": "finalize_effort",
         "line": 15,
-        "end": 81,
+        "end": 83,
         "kind": "FunctionDef"
       },
       {
         "name": "joint_effort_limits",
-        "line": 84,
-        "end": 91,
+        "line": 86,
+        "end": 93,
         "kind": "FunctionDef"
       },
       {
         "name": "solved_effort",
-        "line": 94,
-        "end": 122,
+        "line": 96,
+        "end": 125,
         "kind": "FunctionDef"
       }
     ],
@@ -12409,30 +12524,36 @@
   },
   {
     "path": "tests/reference/_native_runtime_support.py",
-    "lines": 78,
+    "lines": 105,
     "symbols": [
       {
+        "name": "violating_physics",
+        "line": 26,
+        "end": 41,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "make_python_ride",
-        "line": 20,
-        "end": 28,
+        "line": 47,
+        "end": 55,
         "kind": "FunctionDef"
       },
       {
         "name": "advance_python",
-        "line": 31,
-        "end": 46,
+        "line": 58,
+        "end": 73,
         "kind": "FunctionDef"
       },
       {
         "name": "make_python_research",
-        "line": 49,
-        "end": 56,
+        "line": 76,
+        "end": 83,
         "kind": "FunctionDef"
       },
       {
         "name": "assert_tree_close",
-        "line": 59,
-        "end": 78,
+        "line": 86,
+        "end": 105,
         "kind": "FunctionDef"
       }
     ],
@@ -12489,7 +12610,7 @@
   },
   {
     "path": "tests/reference/_recording_support.py",
-    "lines": 668,
+    "lines": 670,
     "symbols": [
       {
         "name": "run_metadata",
@@ -12518,103 +12639,145 @@
       {
         "name": "energy_channels",
         "line": 75,
-        "end": 110,
+        "end": 112,
         "kind": "FunctionDef"
       },
       {
         "name": "drive_channels",
-        "line": 113,
-        "end": 210,
+        "line": 115,
+        "end": 212,
         "kind": "FunctionDef"
       },
       {
         "name": "sensors_channels",
-        "line": 213,
-        "end": 238,
+        "line": 215,
+        "end": 240,
         "kind": "FunctionDef"
       },
       {
         "name": "mass_channels",
-        "line": 241,
-        "end": 277,
+        "line": 243,
+        "end": 279,
         "kind": "FunctionDef"
       },
       {
         "name": "control_channels",
-        "line": 280,
-        "end": 308,
+        "line": 282,
+        "end": 310,
         "kind": "FunctionDef"
       },
       {
         "name": "model_status_channels",
-        "line": 311,
-        "end": 338,
+        "line": 313,
+        "end": 340,
         "kind": "FunctionDef"
       },
       {
         "name": "tire_patch",
-        "line": 341,
-        "end": 354,
+        "line": 343,
+        "end": 356,
         "kind": "FunctionDef"
       },
       {
         "name": "tire_side",
-        "line": 357,
-        "end": 395,
+        "line": 359,
+        "end": 397,
         "kind": "FunctionDef"
       },
       {
         "name": "tires_channels",
-        "line": 398,
-        "end": 401,
+        "line": 400,
+        "end": 403,
         "kind": "FunctionDef"
       },
       {
         "name": "rider_channels",
-        "line": 404,
-        "end": 458,
+        "line": 406,
+        "end": 460,
         "kind": "FunctionDef"
       },
       {
         "name": "suspension_channels",
-        "line": 461,
-        "end": 488,
+        "line": 463,
+        "end": 490,
         "kind": "FunctionDef"
       },
       {
         "name": "TreePhysicalSource",
-        "line": 491,
-        "end": 543,
+        "line": 493,
+        "end": 545,
         "kind": "ClassDef"
       },
       {
+        "name": "TreePhysicalSource.__init__",
+        "line": 503,
+        "end": 505,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "TreePhysicalSource.catalog",
+        "line": 508,
+        "end": 509,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "TreePhysicalSource.row_count",
+        "line": 512,
+        "end": 513,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "TreePhysicalSource._table_rows",
+        "line": 515,
+        "end": 527,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "TreePhysicalSource._check_channel_roots",
+        "line": 529,
+        "end": 536,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "TreePhysicalSource.tables",
+        "line": 538,
+        "end": 545,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "episode",
-        "line": 546,
-        "end": 549,
+        "line": 548,
+        "end": 551,
         "kind": "FunctionDef"
       },
       {
         "name": "value_case_rows",
-        "line": 552,
-        "end": 580,
+        "line": 554,
+        "end": 582,
         "kind": "FunctionDef"
       },
       {
         "name": "_with_forces",
-        "line": 583,
-        "end": 594,
+        "line": 585,
+        "end": 596,
         "kind": "FunctionDef"
       },
       {
         "name": "_forwarded",
-        "line": 597,
-        "end": 609,
+        "line": 599,
+        "end": 611,
         "kind": "FunctionDef"
       },
       {
         "name": "synthetic_capture",
-        "line": 612,
-        "end": 668,
+        "line": 614,
+        "end": 670,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "synthetic_capture.materialize",
+        "line": 652,
+        "end": 657,
         "kind": "FunctionDef"
       }
     ],
@@ -13071,7 +13234,7 @@
   },
   {
     "path": "tests/reference/test_articulated_config.py",
-    "lines": 51,
+    "lines": 105,
     "symbols": [
       {
         "name": "test_spindle_and_connect_are_valid_attachments",
@@ -13092,27 +13255,57 @@
         "kind": "FunctionDef"
       },
       {
-        "name": "test_balance_defaults",
+        "name": "test_delivered_power_budgets_fall_back_to_capability_caps",
         "line": 24,
-        "end": 26,
+        "end": 38,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_delivered_power_budgets_validate_like_other_budgets",
+        "line": 44,
+        "end": 46,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_normal_bounds_must_be_finite_when_set",
+        "line": 55,
+        "end": 59,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_normal_bounds_accept_tension_retention",
+        "line": 66,
+        "end": 68,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_shear_capacity_is_nonnegative",
+        "line": 73,
+        "end": 75,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_balance_defaults",
+        "line": 78,
+        "end": 80,
         "kind": "FunctionDef"
       },
       {
         "name": "test_invalid_balance_thresholds_are_rejected",
-        "line": 31,
-        "end": 33,
+        "line": 85,
+        "end": 87,
         "kind": "FunctionDef"
       },
       {
         "name": "test_surge_and_trim_are_validated_in_climb_config",
-        "line": 36,
-        "end": 45,
+        "line": 90,
+        "end": 99,
         "kind": "FunctionDef"
       },
       {
         "name": "test_balance_grace_must_be_finite_and_nonnegative",
-        "line": 49,
-        "end": 51,
+        "line": 103,
+        "end": 105,
         "kind": "FunctionDef"
       }
     ],
@@ -13283,7 +13476,7 @@
   },
   {
     "path": "tests/reference/test_attachment_budget.py",
-    "lines": 79,
+    "lines": 137,
     "symbols": [
       {
         "name": "test_violations_use_the_supplied_budget",
@@ -13337,6 +13530,30 @@
         "name": "test_negative_measurement_fields_are_rejected",
         "line": 74,
         "end": 79,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_weld_budget",
+        "line": 82,
+        "end": 89,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_envelope_admits_tension_and_shear_within_capacity",
+        "line": 92,
+        "end": 108,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_envelope_bounds_compression_and_saddle_tension",
+        "line": 111,
+        "end": 120,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_fields_apply_only_to_welded_interfaces",
+        "line": 123,
+        "end": 137,
         "kind": "FunctionDef"
       }
     ],
@@ -17494,7 +17711,7 @@
   },
   {
     "path": "tests/reference/test_native_encode_columns.py",
-    "lines": 1088,
+    "lines": 1091,
     "symbols": [
       {
         "name": "test_make_episode_builds_retained_samples",
@@ -17617,9 +17834,21 @@
         "kind": "FunctionDef"
       },
       {
+        "name": "test_map_except_keys_routes_owned_member.leaf",
+        "line": 354,
+        "end": 357,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "test_all_list_and_map_dtypes_bitwise",
         "line": 385,
         "end": 432,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_all_list_and_map_dtypes_bitwise.leaf",
+        "line": 393,
+        "end": 395,
         "kind": "FunctionDef"
       },
       {
@@ -17659,9 +17888,21 @@
         "kind": "FunctionDef"
       },
       {
+        "name": "test_struct_member_validation_parity.as_row",
+        "line": 618,
+        "end": 621,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "test_map_struct_bad_key_and_member_parity",
         "line": 651,
         "end": 680,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_map_struct_bad_key_and_member_parity.as_row",
+        "line": 658,
+        "end": 661,
         "kind": "FunctionDef"
       },
       {
@@ -17677,9 +17918,21 @@
         "kind": "FunctionDef"
       },
       {
+        "name": "test_applied_rows_bitwise_vs_python_mirror.applied",
+        "line": 743,
+        "end": 746,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "test_verdict_leaf_coerces_bool_to_text",
         "line": 759,
         "end": 804,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_verdict_leaf_coerces_bool_to_text.leaf",
+        "line": 769,
+        "end": 771,
         "kind": "FunctionDef"
       },
       {
@@ -17725,6 +17978,12 @@
         "kind": "FunctionDef"
       },
       {
+        "name": "test_derived_events_bitwise_vs_oracle.no_boxed_scan",
+        "line": 1007,
+        "end": 1008,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "test_derived_rows_window_seeding",
         "line": 1025,
         "end": 1043,
@@ -17739,7 +17998,7 @@
       {
         "name": "test_derived_events_real_episode_bitwise",
         "line": 1062,
-        "end": 1088,
+        "end": 1091,
         "kind": "FunctionDef"
       }
     ],
@@ -20098,258 +20357,408 @@
   },
   {
     "path": "tests/reference/test_native_recording_lifecycle.py",
-    "lines": 967,
+    "lines": 987,
     "symbols": [
       {
         "name": "_capture",
-        "line": 32,
-        "end": 47,
+        "line": 33,
+        "end": 48,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_capture.spy",
+        "line": 40,
+        "end": 45,
         "kind": "FunctionDef"
       },
       {
         "name": "_recording",
-        "line": 50,
-        "end": 58,
+        "line": 51,
+        "end": 59,
         "kind": "FunctionDef"
       },
       {
         "name": "_interrupting_publisher",
-        "line": 61,
+        "line": 62,
+        "end": 68,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_interrupting_publisher.publish",
+        "line": 65,
         "end": 67,
         "kind": "FunctionDef"
       },
       {
         "name": "kinds",
-        "line": 70,
-        "end": 72,
+        "line": 71,
+        "end": 73,
         "kind": "FunctionDef"
       },
       {
         "name": "RecordingDriver",
-        "line": 75,
-        "end": 120,
+        "line": 76,
+        "end": 121,
         "kind": "ClassDef"
+      },
+      {
+        "name": "RecordingDriver.__init__",
+        "line": 79,
+        "end": 88,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "RecordingDriver.advance",
+        "line": 90,
+        "end": 97,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "RecordingDriver.summary",
+        "line": 99,
+        "end": 104,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "RecordingDriver.seal_episode",
+        "line": 106,
+        "end": 121,
+        "kind": "FunctionDef"
       },
       {
         "name": "StoredPhysical",
-        "line": 123,
-        "end": 137,
+        "line": 124,
+        "end": 138,
         "kind": "ClassDef"
+      },
+      {
+        "name": "StoredPhysical.__init__",
+        "line": 132,
+        "end": 134,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "StoredPhysical.episode",
+        "line": 137,
+        "end": 138,
+        "kind": "FunctionDef"
       },
       {
         "name": "StoringDriver",
-        "line": 140,
-        "end": 170,
+        "line": 141,
+        "end": 171,
         "kind": "ClassDef"
       },
       {
+        "name": "StoringDriver.__init__",
+        "line": 148,
+        "end": 150,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "StoringDriver.seal_episode",
+        "line": 152,
+        "end": 171,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "_second_sigint",
-        "line": 173,
-        "end": 175,
+        "line": 174,
+        "end": 176,
         "kind": "FunctionDef"
       },
       {
         "name": "_event_kinds",
-        "line": 178,
-        "end": 183,
+        "line": 179,
+        "end": 184,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_journals_two_episodes_and_publishes_once",
-        "line": 186,
-        "end": 230,
+        "line": 187,
+        "end": 231,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_requests_are_journaled_before_state_changes",
-        "line": 233,
-        "end": 252,
+        "line": 234,
+        "end": 253,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_playback_scale_is_requested_only",
-        "line": 255,
-        "end": 268,
+        "line": 256,
+        "end": 269,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_duplicate_terminal_notice_keeps_one_episode",
-        "line": 271,
-        "end": 290,
+        "line": 272,
+        "end": 291,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_viewer_duplicate_terminal_notice_keeps_one_episode.Ended",
+        "line": 276,
+        "end": 280,
+        "kind": "ClassDef"
+      },
+      {
+        "name": "test_viewer_duplicate_terminal_notice_keeps_one_episode.Ended.advance",
+        "line": 277,
+        "end": 280,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_ctrl_c_adds_no_control_and_still_finalizes",
-        "line": 293,
-        "end": 315,
+        "line": 294,
+        "end": 316,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_simulation_error_seals_prefix_and_reraises",
-        "line": 318,
-        "end": 331,
+        "line": 319,
+        "end": 332,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_second_ctrl_c_during_cleanup_seal_still_publishes",
-        "line": 334,
-        "end": 361,
+        "line": 335,
+        "end": 362,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_second_ctrl_c_during_cleanup_finalize_still_publishes",
-        "line": 364,
-        "end": 386,
+        "line": 365,
+        "end": 387,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_ctrl_c_during_normal_finalize_publishes_then_stops",
-        "line": 389,
-        "end": 408,
+        "line": 390,
+        "end": 409,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_ctrl_c_during_normal_finalize_is_noted_on_stop",
-        "line": 411,
-        "end": 427,
+        "line": 412,
+        "end": 428,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_strict_seal_rejection_retries_once",
-        "line": 430,
-        "end": 444,
+        "line": 431,
+        "end": 445,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_python_backend_record_rejected_before_window",
-        "line": 447,
-        "end": 455,
+        "line": 448,
+        "end": 456,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_transitions_carry_rule_version_and_interval",
-        "line": 458,
-        "end": 479,
+        "line": 459,
+        "end": 480,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_transitions_cover_shift_coast_and_limiter_gates",
-        "line": 482,
-        "end": 537,
+        "line": 483,
+        "end": 538,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_derived_transitions_cover_shift_coast_and_limiter_gates.drive_row",
+        "line": 485,
+        "end": 489,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_first_model_failure_stays_a_derived_transition",
-        "line": 540,
-        "end": 560,
+        "line": 541,
+        "end": 561,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_derived_first_model_failure_stays_a_derived_transition.violation_row",
+        "line": 542,
+        "end": 547,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_missing_reason_instrumentation_emits_nothing_source",
-        "line": 563,
-        "end": 586,
+        "line": 564,
+        "end": 587,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_derived_missing_reason_instrumentation_emits_nothing_source.crash_row",
+        "line": 567,
+        "end": 573,
         "kind": "FunctionDef"
       },
       {
         "name": "test_episode_interval_for_time_maps_failure_timestamp",
-        "line": 589,
-        "end": 594,
+        "line": 590,
+        "end": 595,
         "kind": "FunctionDef"
       },
       {
         "name": "test_capture_retries_publication_with_evidence_intact",
-        "line": 597,
-        "end": 618,
+        "line": 598,
+        "end": 619,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_capture_retries_publication_with_evidence_intact.flaky",
+        "line": 600,
+        "end": 604,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_rejects_python_record_before_any_setup",
-        "line": 621,
-        "end": 628,
+        "line": 622,
+        "end": 629,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_headless_rejects_python_record_before_any_setup.forbidden",
+        "line": 624,
+        "end": 625,
         "kind": "FunctionDef"
       },
       {
         "name": "_headless_driver",
-        "line": 631,
-        "end": 652,
+        "line": 632,
+        "end": 653,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_headless_driver.Headless",
+        "line": 636,
+        "end": 650,
+        "kind": "ClassDef"
+      },
+      {
+        "name": "_headless_driver.Headless.__init__",
+        "line": 637,
+        "end": 639,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_headless_driver.Headless.max_steps",
+        "line": 640,
+        "end": 641,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_headless_driver.Headless.advance",
+        "line": 642,
+        "end": 650,
         "kind": "FunctionDef"
       },
       {
         "name": "_headless_args",
-        "line": 655,
-        "end": 658,
+        "line": 656,
+        "end": 659,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_records_seals_and_finalizes_once",
-        "line": 661,
-        "end": 678,
+        "line": 662,
+        "end": 679,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_zero_step_failure_keeps_owned_episode",
-        "line": 681,
-        "end": 703,
+        "line": 682,
+        "end": 704,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_headless_zero_step_failure_keeps_owned_episode.advance",
+        "line": 689,
+        "end": 691,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_trailer_names_only_existing_artifacts",
-        "line": 707,
-        "end": 728,
+        "line": 708,
+        "end": 729,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_off_writes_no_artifact_files",
-        "line": 731,
-        "end": 749,
+        "line": 732,
+        "end": 757,
         "kind": "FunctionDef"
       },
       {
         "name": "test_explicit_programmatic_export_still_writes_artifacts",
-        "line": 752,
-        "end": 774,
+        "line": 760,
+        "end": 782,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_success_with_failed_publication_is_nonzero",
-        "line": 777,
-        "end": 791,
+        "line": 785,
+        "end": 799,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_headless_success_with_failed_publication_is_nonzero.boom",
+        "line": 791,
+        "end": 792,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_publish_failure_preserves_primary_and_evidence",
-        "line": 794,
-        "end": 816,
+        "line": 802,
+        "end": 824,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_headless_publish_failure_preserves_primary_and_evidence.advance",
+        "line": 809,
+        "end": 811,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_headless_publish_failure_preserves_primary_and_evidence.boom",
+        "line": 813,
+        "end": 814,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_second_ctrl_c_during_seal_journals_and_still_publishes",
-        "line": 819,
-        "end": 844,
+        "line": 827,
+        "end": 852,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_second_ctrl_c_during_finalize_is_noted_and_publishes",
-        "line": 847,
-        "end": 866,
+        "line": 855,
+        "end": 874,
         "kind": "FunctionDef"
       },
       {
         "name": "test_make_run_capture_rejects_non_native_recording",
-        "line": 869,
-        "end": 876,
+        "line": 877,
+        "end": 884,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_native_run_records_one_episode",
-        "line": 882,
-        "end": 919,
+        "line": 890,
+        "end": 932,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_native_pump_seals_reset_generations",
-        "line": 922,
-        "end": 967,
+        "line": 935,
+        "end": 987,
         "kind": "FunctionDef"
       }
     ],
@@ -20366,8 +20775,10 @@
       "bike_sim.sim.ride.physical_frontend",
       "bike_sim.sim.ride.reference_monitor",
       "native_loader",
+      "pathlib",
       "pytest",
       "signal",
+      "tempfile",
       "test_frontend_windows",
       "types"
     ]
@@ -20599,7 +21010,7 @@
   },
   {
     "path": "tests/reference/test_native_research_environment.py",
-    "lines": 351,
+    "lines": 357,
     "symbols": [
       {
         "name": "test_native_research_matches_every_external_transition",
@@ -20650,6 +21061,12 @@
         "kind": "FunctionDef"
       },
       {
+        "name": "test_native_loop_never_calls_python_interval_or_rng.forbidden",
+        "line": 185,
+        "end": 186,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "test_reset_seed_generation_snapshot_and_facade_ownership",
         "line": 194,
         "end": 222,
@@ -20668,6 +21085,24 @@
         "kind": "ClassDef"
       },
       {
+        "name": "BoundaryRider.__init__",
+        "line": 250,
+        "end": 251,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "BoundaryRider.reset",
+        "line": 253,
+        "end": 255,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "BoundaryRider.act",
+        "line": 257,
+        "end": 259,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "test_custom_rider_callback_runs_once_per_external_boundary",
         "line": 262,
         "end": 275,
@@ -20676,19 +21111,19 @@
       {
         "name": "test_strict_and_diagnostic_outcomes_remain_visible",
         "line": 279,
-        "end": 303,
+        "end": 309,
         "kind": "FunctionDef"
       },
       {
         "name": "test_differing_control_and_sensor_periods_match_python",
-        "line": 316,
-        "end": 338,
+        "line": 322,
+        "end": 344,
         "kind": "FunctionDef"
       },
       {
         "name": "test_stop_on_ended_episode_preserves_original_reason",
-        "line": 341,
-        "end": 351,
+        "line": 347,
+        "end": 357,
         "kind": "FunctionDef"
       }
     ],
@@ -21798,78 +22233,78 @@
   },
   {
     "path": "tests/reference/test_native_runtime_accounting.py",
-    "lines": 207,
+    "lines": 246,
     "symbols": [
       {
         "name": "test_independent_opposing_work_is_not_cancelled",
         "line": 22,
-        "end": 32,
+        "end": 37,
         "kind": "FunctionDef"
       },
       {
         "name": "test_zero_source_uses_a_fixed_absolute_roundoff_budget",
-        "line": 35,
-        "end": 40,
+        "line": 40,
+        "end": 45,
         "kind": "FunctionDef"
       },
       {
         "name": "test_work_rejects_nonfinite_or_nonpositive_inputs",
-        "line": 47,
-        "end": 49,
+        "line": 53,
+        "end": 55,
         "kind": "FunctionDef"
       },
       {
         "name": "test_interval_markers_survive_period_clear",
-        "line": 60,
-        "end": 62,
+        "line": 66,
+        "end": 68,
         "kind": "FunctionDef"
       },
       {
         "name": "test_consecutive_intervals_can_cross_multiple_periods",
-        "line": 65,
-        "end": 67,
+        "line": 71,
+        "end": 73,
         "kind": "FunctionDef"
       },
       {
         "name": "_history_row",
-        "line": 70,
-        "end": 74,
+        "line": 76,
+        "end": 80,
         "kind": "FunctionDef"
       },
       {
         "name": "test_airtime_uses_working_road_contact_not_catch_plane",
-        "line": 77,
-        "end": 88,
+        "line": 83,
+        "end": 94,
         "kind": "FunctionDef"
       },
       {
         "name": "test_malformed_contact_evidence_is_not_airtime",
-        "line": 92,
-        "end": 103,
+        "line": 98,
+        "end": 109,
         "kind": "FunctionDef"
       },
       {
         "name": "test_history_rejects_duplicate_interval_after_valid_evidence",
-        "line": 106,
-        "end": 108,
+        "line": 112,
+        "end": 114,
         "kind": "FunctionDef"
       },
       {
         "name": "test_inter_tick_effort_uses_each_captured_velocity_and_strength",
-        "line": 112,
-        "end": 152,
+        "line": 118,
+        "end": 158,
         "kind": "FunctionDef"
       },
       {
         "name": "test_strict_rejection_publishes_the_whole_period_before_raising",
-        "line": 156,
-        "end": 188,
+        "line": 162,
+        "end": 217,
         "kind": "FunctionDef"
       },
       {
         "name": "test_diagnostic_warns_once_and_keeps_failure_after_more_periods",
-        "line": 192,
-        "end": 207,
+        "line": 221,
+        "end": 246,
         "kind": "FunctionDef"
       }
     ],
@@ -22365,7 +22800,7 @@
   },
   {
     "path": "tests/reference/test_native_runtime_performance_contract.py",
-    "lines": 317,
+    "lines": 323,
     "symbols": [
       {
         "name": "_Clock",
@@ -22374,16 +22809,100 @@
         "kind": "ClassDef"
       },
       {
+        "name": "_Clock.__init__",
+        "line": 42,
+        "end": 43,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_Clock.__call__",
+        "line": 45,
+        "end": 46,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "_FailingDriver",
         "line": 49,
         "end": 90,
         "kind": "ClassDef"
       },
       {
+        "name": "_FailingDriver.__init__",
+        "line": 57,
+        "end": 66,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_FailingDriver.start",
+        "line": 68,
+        "end": 69,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_FailingDriver.advance",
+        "line": 71,
+        "end": 72,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_FailingDriver.flush",
+        "line": 74,
+        "end": 75,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_FailingDriver.snapshot",
+        "line": 77,
+        "end": 78,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_FailingDriver.summary",
+        "line": 80,
+        "end": 84,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_FailingDriver.export",
+        "line": 86,
+        "end": 87,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_FailingDriver.close",
+        "line": 89,
+        "end": 90,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "_MeasuredDriver",
         "line": 93,
         "end": 115,
         "kind": "ClassDef"
+      },
+      {
+        "name": "_MeasuredDriver.__init__",
+        "line": 99,
+        "end": 102,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_MeasuredDriver.start",
+        "line": 104,
+        "end": 105,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_MeasuredDriver.advance",
+        "line": 107,
+        "end": 112,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_MeasuredDriver.flush",
+        "line": 114,
+        "end": 115,
+        "kind": "FunctionDef"
       },
       {
         "name": "_failing_report",
@@ -22406,67 +22925,67 @@
       {
         "name": "_distributed_report",
         "line": 161,
-        "end": 195,
+        "end": 200,
         "kind": "FunctionDef"
       },
       {
         "name": "test_selected_native_artifact_loads",
-        "line": 198,
-        "end": 202,
+        "line": 203,
+        "end": 207,
         "kind": "FunctionDef"
       },
       {
         "name": "test_failed_run_is_measured_not_ok_and_short",
-        "line": 205,
-        "end": 214,
+        "line": 210,
+        "end": 219,
         "kind": "FunctionDef"
       },
       {
         "name": "test_failed_runs_are_never_comparable",
-        "line": 217,
-        "end": 231,
+        "line": 222,
+        "end": 236,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_threshold_boundary_is_exactly_the_named_constant",
-        "line": 234,
-        "end": 241,
+        "line": 239,
+        "end": 246,
         "kind": "FunctionDef"
       },
       {
         "name": "test_threshold_gate_only_applies_to_native_release",
-        "line": 244,
-        "end": 249,
+        "line": 249,
+        "end": 254,
         "kind": "FunctionDef"
       },
       {
         "name": "test_visual_1x_gate_is_emitted_as_a_pending_gate",
-        "line": 252,
-        "end": 258,
+        "line": 257,
+        "end": 263,
         "kind": "FunctionDef"
       },
       {
         "name": "test_distributed_case_gates_on_the_same_headless_constant",
-        "line": 261,
-        "end": 273,
+        "line": 266,
+        "end": 278,
         "kind": "FunctionDef"
       },
       {
         "name": "test_distributed_benchmark_sample_reports_but_never_meets_the_gate",
-        "line": 276,
-        "end": 289,
+        "line": 281,
+        "end": 295,
         "kind": "FunctionDef"
       },
       {
         "name": "test_measure_run_binds_the_selected_artifact_identity",
-        "line": 292,
-        "end": 305,
+        "line": 298,
+        "end": 311,
         "kind": "FunctionDef"
       },
       {
         "name": "test_threshold_gate_tracks_the_selected_artifact_build_type",
-        "line": 308,
-        "end": 317,
+        "line": 314,
+        "end": 323,
         "kind": "FunctionDef"
       }
     ],
@@ -23970,82 +24489,89 @@
   },
   {
     "path": "tests/reference/test_period_buffer.py",
-    "lines": 397,
+    "lines": 501,
     "symbols": [
       {
         "name": "_raw",
-        "line": 11,
-        "end": 13,
+        "line": 13,
+        "end": 15,
         "kind": "FunctionDef"
       },
       {
         "name": "_current_budget_contract_on_scalar_sample",
-        "line": 16,
-        "end": 33,
+        "line": 18,
+        "end": 35,
         "kind": "FunctionDef"
       },
       {
         "name": "test_batched_wrench_matches_scalar_and_first_violation",
-        "line": 36,
-        "end": 52,
+        "line": 38,
+        "end": 54,
         "kind": "FunctionDef"
       },
       {
         "name": "test_missing_wrench_is_not_replaced_by_zero",
-        "line": 55,
-        "end": 59,
+        "line": 57,
+        "end": 61,
         "kind": "FunctionDef"
       },
       {
         "name": "test_buffer_overflow_and_discontinuous_interval_are_rejected",
-        "line": 62,
-        "end": 71,
+        "line": 64,
+        "end": 73,
         "kind": "FunctionDef"
       },
       {
         "name": "test_recording_a_published_period_twice_is_idempotent",
-        "line": 74,
-        "end": 89,
+        "line": 76,
+        "end": 91,
         "kind": "FunctionDef"
       },
       {
         "name": "test_actual_spatial_body_inputs_match_scalar_attachment_measurement",
-        "line": 92,
-        "end": 118,
+        "line": 94,
+        "end": 120,
         "kind": "FunctionDef"
       },
       {
         "name": "test_held_command_power_and_strength_are_checked_at_each_incoming_state",
-        "line": 121,
-        "end": 144,
+        "line": 123,
+        "end": 147,
         "kind": "FunctionDef"
       },
       {
         "name": "test_held_intervals_reject_joint_power_and_speed_between_control_ticks",
-        "line": 147,
-        "end": 164,
+        "line": 150,
+        "end": 168,
         "kind": "FunctionDef"
       },
       {
         "name": "test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
-        "line": 168,
-        "end": 221,
+        "line": 172,
+        "end": 261,
         "kind": "FunctionDef"
       },
       {
         "name": "test_runtime_batch_matches_preserved_scalar_step_and_flush",
-        "line": 225,
-        "end": 289,
+        "line": 265,
+        "end": 376,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_equality_rows_charge_the_closure_channel_not_the_bound",
+        "line": 379,
+        "end": 393,
         "kind": "FunctionDef"
       },
       {
         "name": "test_record_decimation_forwards_period_closing_energy",
-        "line": 293,
-        "end": 397,
+        "line": 397,
+        "end": 501,
         "kind": "FunctionDef"
       }
     ],
     "imports": [
+      "_golden",
       "bike_sim.cli",
       "bike_sim.physics.attachment_budget",
       "bike_sim.physics.energy_ledger",
@@ -24054,9 +24580,11 @@
       "bike_sim.sim.ride.attachment_wrench",
       "bike_sim.sim.ride.control",
       "bike_sim.sim.ride.period_buffer",
+      "bike_sim.sim.ride.physical_observations",
       "bike_sim.sim.ride.physical_recorder",
       "bike_sim.sim.ride.rider_effort",
       "dataclasses",
+      "json",
       "mujoco",
       "numpy",
       "pathlib",
@@ -26734,7 +27262,7 @@
   },
   {
     "path": "tests/reference/test_seated_pedaling_cycle.py",
-    "lines": 229,
+    "lines": 254,
     "symbols": [
       {
         "name": "test_ankle_program_is_periodic_and_scrape_is_only_an_intent",
@@ -26769,55 +27297,55 @@
       {
         "name": "_assert_physical_intervals",
         "line": 82,
-        "end": 98,
+        "end": 116,
         "kind": "FunctionDef"
       },
       {
         "name": "test_cadence_control_validates_a_finite_nonnegative_wish",
-        "line": 101,
-        "end": 106,
+        "line": 119,
+        "end": 124,
         "kind": "FunctionDef"
       },
       {
         "name": "test_first_pedal_command_and_restart_respect_configured_effort_slew",
-        "line": 109,
-        "end": 120,
+        "line": 127,
+        "end": 138,
         "kind": "FunctionDef"
       },
       {
         "name": "test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue",
-        "line": 123,
-        "end": 145,
+        "line": 141,
+        "end": 163,
         "kind": "FunctionDef"
       },
       {
         "name": "_save_cycle",
-        "line": 148,
-        "end": 156,
+        "line": 166,
+        "end": 174,
         "kind": "FunctionDef"
       },
       {
         "name": "_collect",
-        "line": 159,
-        "end": 166,
-        "kind": "FunctionDef"
-      },
-      {
-        "name": "revolutions",
-        "line": 169,
-        "end": 171,
-        "kind": "FunctionDef"
-      },
-      {
-        "name": "test_strict_flat_cycle_delivers_and_stays_within_budgets",
-        "line": 176,
+        "line": 177,
         "end": 184,
         "kind": "FunctionDef"
       },
       {
+        "name": "revolutions",
+        "line": 187,
+        "end": 189,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_strict_flat_cycle_delivers_and_stays_within_budgets",
+        "line": 194,
+        "end": 209,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "test_free_coast_is_an_intent_not_a_crank_lock",
-        "line": 188,
-        "end": 229,
+        "line": 213,
+        "end": 254,
         "kind": "FunctionDef"
       }
     ],
@@ -26840,108 +27368,120 @@
   },
   {
     "path": "tests/reference/test_seated_posture_program.py",
-    "lines": 276,
+    "lines": 299,
     "symbols": [
       {
         "name": "test_posture_program_reads_no_inertial_signal",
-        "line": 23,
-        "end": 31,
+        "line": 24,
+        "end": 32,
         "kind": "FunctionDef"
       },
       {
         "name": "test_lean_follows_road_grade_not_body_pitch",
-        "line": 34,
-        "end": 38,
+        "line": 35,
+        "end": 39,
         "kind": "FunctionDef"
       },
       {
         "name": "test_road_grade_uses_underwheel_and_preview_samples_uniformly",
-        "line": 41,
-        "end": 46,
+        "line": 42,
+        "end": 47,
         "kind": "FunctionDef"
       },
       {
         "name": "test_resolver_road_grade_survives_probe_and_ignores_imu",
-        "line": 49,
-        "end": 65,
+        "line": 50,
+        "end": 66,
         "kind": "FunctionDef"
       },
       {
         "name": "test_runtime_passes_current_road_snapshot_before_intent_and_force_evaluation",
-        "line": 68,
-        "end": 92,
+        "line": 69,
+        "end": 93,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_runtime_passes_current_road_snapshot_before_intent_and_force_evaluation.StopBeforeForces",
+        "line": 86,
+        "end": 86,
+        "kind": "ClassDef"
+      },
+      {
+        "name": "test_runtime_passes_current_road_snapshot_before_intent_and_force_evaluation.resolve",
+        "line": 87,
+        "end": 90,
         "kind": "FunctionDef"
       },
       {
         "name": "test_body_pulse_is_finite_and_has_no_impulsive_endpoint",
-        "line": 95,
-        "end": 99,
+        "line": 96,
+        "end": 100,
         "kind": "FunctionDef"
       },
       {
         "name": "test_body_pulse_validates_its_inputs",
-        "line": 102,
-        "end": 111,
+        "line": 103,
+        "end": 112,
         "kind": "FunctionDef"
       },
       {
         "name": "test_body_pulse_is_continuous_around_its_edges",
-        "line": 114,
-        "end": 117,
+        "line": 115,
+        "end": 118,
         "kind": "FunctionDef"
       },
       {
         "name": "test_posture_program_rate_limits_and_bounds_the_pulse",
-        "line": 120,
-        "end": 147,
+        "line": 121,
+        "end": 148,
         "kind": "FunctionDef"
       },
       {
         "name": "test_posture_program_rejects_nonfinite_or_reversed_schedules",
-        "line": 150,
-        "end": 157,
+        "line": 151,
+        "end": 158,
         "kind": "FunctionDef"
       },
       {
         "name": "_environment",
-        "line": 160,
-        "end": 171,
+        "line": 161,
+        "end": 173,
         "kind": "FunctionDef"
       },
       {
         "name": "_run",
-        "line": 174,
-        "end": 214,
+        "line": 176,
+        "end": 217,
         "kind": "FunctionDef"
       },
       {
         "name": "test_pulse_redistributes_load_through_inertia_only",
-        "line": 218,
-        "end": 241,
+        "line": 221,
+        "end": 264,
         "kind": "FunctionDef"
       },
       {
         "name": "test_trim_is_delayed_and_increases_forward_lean_for_light_front",
-        "line": 244,
-        "end": 253,
+        "line": 267,
+        "end": 276,
         "kind": "FunctionDef"
       },
       {
         "name": "test_geometric_limit_caps_lean",
-        "line": 255,
-        "end": 259,
+        "line": 278,
+        "end": 282,
         "kind": "FunctionDef"
       },
       {
         "name": "test_preview_is_last_sample_and_preserves_exact_endpoint",
-        "line": 261,
-        "end": 268,
+        "line": 284,
+        "end": 291,
         "kind": "FunctionDef"
       },
       {
         "name": "test_geometric_limit_replaces_the_legacy_config_ceiling_when_available",
-        "line": 271,
-        "end": 276,
+        "line": 294,
+        "end": 299,
         "kind": "FunctionDef"
       }
     ],
@@ -26961,6 +27501,7 @@
       "math",
       "numpy",
       "pathlib",
+      "platform",
       "pytest",
       "types"
     ]

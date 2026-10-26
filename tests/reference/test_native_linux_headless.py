@@ -12,9 +12,12 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 from types import SimpleNamespace
 
 import pytest
+
+from _native_runtime_support import violating_physics
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -168,9 +171,16 @@ def test_native_cli_without_display_retains_real_outcome(
         tmp_path, record_property, policy, duration, expected_reason):
     """The rough-track model violation must not masquerade as a GL failure.
 
-    The .01 diagnostic source baseline is in
+    F1: the re-scoped welded plant is healthy — weld/equality spring work is
+    charged to the closure channel, so the chronic ``energy.constraint_work``
+    verdict is gone. The deterministic trigger is now the F1 weld-envelope
+    injection (``weld_foot_min_normal_n = 100`` — every foot sample violates
+    from the first closing interval), mirroring
+    test_native_runtime_accounting.py; the first_failure signature is the
+    attachment names ``foot_front.normal``/``foot_rear.normal``. The .01
+    diagnostic source baseline is in
     test_native_recording_lifecycle.py::test_headless_native_run_records_one_episode:
-    duration_reached, exit 2, sticky energy.constraint_work. The ordinary
+    duration_reached, exit 2, sticky violation. The ordinary
     .04 command keeps the strict policy and must stop for that violation.
     These are assertions to qualify on the target host, not claimed runs.
     """
@@ -196,9 +206,12 @@ def test_native_cli_without_display_retains_real_outcome(
         previous = environment.get(preload, '')
         environment[preload] = os.pathsep.join(filter(None, (runtime, previous)))
     output = tmp_path / 'output'
+    # Kept outside tmp_path: the tail asserts the run wrote nothing at all.
+    config_dir = tempfile.TemporaryDirectory()
+    physics = violating_physics(Path(config_dir.name)/'physics.toml')
     arguments = [
         '--backend', 'native',
-        '--physics-config', str(ROOT / 'examples/research/viewer_physics_welded.toml'),
+        '--physics-config', str(physics),
         '--track', str(ROOT / 'examples/research/rough_uphill_savage.toml'),
         '--headless', '--duration', duration, '--no-plots', '--out', str(output),
     ]
@@ -230,7 +243,7 @@ def test_native_cli_without_display_retains_real_outcome(
     failure_time, violations = evidence['first_failure']
     assert math.isfinite(failure_time), diagnostic
     assert 0 <= failure_time <= evidence['outcome']['time_s'], diagnostic
-    assert 'energy.constraint_work' in violations, diagnostic
+    assert 'foot_front.normal' in violations, diagnostic
     if policy is None:
         assert 0 < evidence['outcome']['time_s'] < float(duration), diagnostic
     else:

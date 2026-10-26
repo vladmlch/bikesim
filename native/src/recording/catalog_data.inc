@@ -872,7 +872,7 @@ R"CATALOG({
           "optional": false,
           "measurement": "derived",
           "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
-          "description": "cumulative signed work of equality/limit constraint rows"
+          "description": "cumulative signed work of joint/tendon limit constraint rows (equality closures are charged to closure_signed_j)"
         },
         {
           "frame": "n/a",
@@ -1012,7 +1012,7 @@ R"CATALOG({
           "optional": false,
           "measurement": "derived",
           "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
-          "description": "cumulative signed numerical constraint work"
+          "description": "cumulative signed numerical constraint work (joint/tendon limit rows; equality closures are charged to closure_signed_j)"
         },
         {
           "frame": "n/a",
@@ -1032,7 +1032,47 @@ R"CATALOG({
           "optional": false,
           "measurement": "derived",
           "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
-          "description": "cumulative absolute numerical constraint work"
+          "description": "cumulative absolute numerical constraint work (joint/tendon limit rows only)"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "energy",
+            "closure_signed_j"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "closure_signed_j",
+          "dtype": "double",
+          "unit": "J",
+          "phase": "episode",
+          "optional": false,
+          "measurement": "derived",
+          "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+          "description": "cumulative signed weld/closure spring work charged to the elastic channel (equality constraint rows)"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "energy",
+            "closure_absolute_j"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "closure_absolute_j",
+          "dtype": "double",
+          "unit": "J",
+          "phase": "episode",
+          "optional": false,
+          "measurement": "derived",
+          "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+          "description": "cumulative absolute weld/closure spring work charged to the elastic channel (equality constraint rows)"
         },
         {
           "frame": "n/a",

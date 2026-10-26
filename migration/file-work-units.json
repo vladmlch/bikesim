@@ -1304,7 +1304,7 @@
     "owner_task": "T47",
     "source_hash": "713440ec970d39ad385c991bc6ba8e5e2f3fa7394e66ea7cdc8db7b12e57c9e9",
     "line_count": 188,
-    "module_summary": "CLI entrypoint ``bike-settle``: settle a physical scenario once, write the pose.\n\nThe run relaxes the fully coupled physical model to its validated initial\nequilibrium — the same solve ``solve_physical_equilibrium`` performs at the\nstart of every physical ride — and writes the settled pose plus the committed\nmaterial state to ``--out`` as an npz pose file. A run whose physics config sets\n``equilibrium_state_file`` to that file loads the pose instead of re-settling;\nthe embedded configuration fingerprint, the strict material-state restore and\na re-measured residual are all enforced at load time.\n\nEvery runtime-selection flag is forwarded verbatim to ``bike-ride``'s parser so\nthe settled runtime is identical to the one a ride with the same flags builds.\nThe pose file is pinned to the resolved configuration — track, rider, physics\nconfig and compiled model — not to the mechanism that produced it: settle and\nload must run the same scenario, while ``equilibrium_cache_enabled`` stays a\nlocal mechanism choice on each side.",
+    "module_summary": "CLI entrypoint ``bike-settle``: settle a physical scenario once, write the pose.\n\nThe run relaxes the fully coupled physical model to its validated initial\nequilibrium \u2014 the same solve ``solve_physical_equilibrium`` performs at the\nstart of every physical ride \u2014 and writes the settled pose plus the committed\nmaterial state to ``--out`` as an npz pose file. A run whose physics config sets\n``equilibrium_state_file`` to that file loads the pose instead of re-settling;\nthe embedded configuration fingerprint, the strict material-state restore and\na re-measured residual are all enforced at load time.\n\nEvery runtime-selection flag is forwarded verbatim to ``bike-ride``'s parser so\nthe settled runtime is identical to the one a ride with the same flags builds.\nThe pose file is pinned to the resolved configuration \u2014 track, rider, physics\nconfig and compiled model \u2014 not to the mechanism that produced it: settle and\nload must run the same scenario, while ``equilibrium_cache_enabled`` stays a\nlocal mechanism choice on each side.",
     "symbols": [
       {
         "name": "parse_args",
@@ -2983,7 +2983,7 @@
     "owner_task": "T03",
     "source_hash": "fd5ebfe70ff35b3830b6e6c1b198c8dfb004633254eb60f4b9349b5758540747",
     "line_count": 7,
-    "module_summary": "Native ride-runtime boundary: capability validation, artifact loading and\nthe t=0 setup bootstrap for the owned C++ physical runtime (design section 3).\n\nNothing in this package imports the compiled extension eagerly — loading is\nexplicit through ``bike_sim.native.artifact.load_native_extension`` so\nPython-only frontends stay free of the native dependency.",
+    "module_summary": "Native ride-runtime boundary: capability validation, artifact loading and\nthe t=0 setup bootstrap for the owned C++ physical runtime (design section 3).\n\nNothing in this package imports the compiled extension eagerly \u2014 loading is\nexplicit through ``bike_sim.native.artifact.load_native_extension`` so\nPython-only frontends stay free of the native dependency.",
     "symbols": [],
     "imports": [],
     "direct_test_imports": [],
@@ -3123,7 +3123,7 @@
     "owner_task": "T18",
     "source_hash": "170ce31158a86840243365a382224ea1d2eef1e5ca00b6db81207de08e5932f3",
     "line_count": 468,
-    "module_summary": "Project a ride environment into the plain-data config the native port reads.\n\nThe C++ writers cannot consume live Python objects; ``project(env)`` walks the\npublic attributes of ``env.sim.applier`` (the ``SuspensionForceApplier``),\n``env.sim.brakes`` (the ``BrakeController``) and\n``physics_config.resistance``, and emits only the fields the ported writers\nactually read, as a versioned dict::\n\n    {'schema': 2,\n     'suspension': {'physics_mode': ..., 'joints': ..., 'air_spring': ...,\n                    'fork_damper': ..., 'shock_damper': ..., 'coil': ...,\n                    'end_stops': ...},\n     'brake': {'torque_ceiling_nm': ..., 'taper_radps': ...},\n     'resistance': {'crr': ..., 'rolling_taper_rad_s': ..., 'rho_kg_m3': ...,\n                    'cda_m2': ..., 'wind_world_mps': [...],\n                    'point_body_m': [...], 'bodies': {...}},\n     'tire': {'backend': ..., 'surface_mode': ...,\n              'significant_delta_m': ..., 'significance_fraction': ...,\n              'distinct_normal_deg': ...,\n              'front': {material, tangent_k_n_m, mu, relaxation_length_m},\n              'rear': {...},\n              'surface_map': {'surface': {...SurfaceSpec fields...},\n                              'sections': [{start_m, end_m, surface}]}},\n     'rider_forces': {'paths': [{joint, stiffness_n_m, damping_ns_m,\n                                 preload_deflection_m, unilateral,\n                                 offset_m}, ...]},\n     'rider_contacts': {'arm_reach_m': ..., 'pedal_attachment': ...,\n                        'saddle_attachment': ..., 'grip_attachment': ...,\n                        <resolved ArticulatedConfig contact fields>},\n    }\n\nThe 'tire' section is emitted for the three backends the native port's\nconfig layer accepts — ``compliant_2d``, ``distributed_2d_reference`` and\n``pneumatic`` (``native_reference`` produces no tire writer in Python\neither, so no section). For ``compliant_2d`` each side's material must be\na ``TireSpec``; a ``TabulatedTireSpec`` follows a different force law the\nnative writer does not implement and is rejected here. For\n``distributed_2d_reference`` the material is the hinge-density law under\n``tire.distributed`` — the resolved ``for_wheel`` records per side — so\n``front``/``rear`` carry only the shared tangential parameters and\n``material`` is not projected. The pneumatic backend likewise skips\n``material`` and instead carries ``tire.pneumatic``: the resolved tier\nparameters, the per-side ``TyreSpecs``, the configured uniform surface\nwhen one is named (the track map still ships under ``surface_mode =\n'track'``), and the sampled road profile. The surface map is serialized\nwith every named surface resolved to its numeric fields.\n\nThe 'rider_contacts' section is emitted only when ``sim.physical`` owns a\n``RiderContactApplier`` (an ``articulated_planar`` rider; ``None`` otherwise\nor without a physical runtime). ``arm_reach_m`` carries the applier's\npose-resolved reach — ``ArticulatedConfig.arm_reach_fraction`` is a build-time\nknob, not a wire field — and ``grip_pair_force_limit_n`` keeps the dataclass's\n``float | None`` optionality on the wire.\n\nThe 'rider_forces' section is emitted only while\n``sim.rider_forces.active`` — on rider variants without a seated pose\n(e.g. ``articulated_planar``) the applier is inert and no section appears.\nEach entry carries the resolved per-path spring parameters the writer's\n``compute`` reads, plus ``offset_m`` — the current pedal offset\n``set_pedal_offsets`` left on the path at projection time. These offsets are\nmutable: legacy ``_follow_cranks`` updates them during stepping, so P3/P4 must\nport those updates and supply current offsets before step-loop equivalence.\nThe P2 config captures effective values, not the crank derivation.\n``preload_deflection_m`` is emitted evaluated — the body's\nproperty computes preload/stiffness, and the resulting double is what the\nwriter's compute reads.\n\nEvery leaf is a builtin int/float/bool/str so the dict crosses nanobind without\npickle or numpy types. ``schema`` versions the layout: the C++ bridge rejects\nunknown versions. Schema 2 carries the exact fork ``legacy_behavior`` flag.\nSchema 1 infers legacy when resolved ``hbo_start_mm == 160.0`` and keeps\nresolved damping parameters, including the ambiguous modern 180 mm fork.",
+    "module_summary": "Project a ride environment into the plain-data config the native port reads.\n\nThe C++ writers cannot consume live Python objects; ``project(env)`` walks the\npublic attributes of ``env.sim.applier`` (the ``SuspensionForceApplier``),\n``env.sim.brakes`` (the ``BrakeController``) and\n``physics_config.resistance``, and emits only the fields the ported writers\nactually read, as a versioned dict::\n\n    {'schema': 2,\n     'suspension': {'physics_mode': ..., 'joints': ..., 'air_spring': ...,\n                    'fork_damper': ..., 'shock_damper': ..., 'coil': ...,\n                    'end_stops': ...},\n     'brake': {'torque_ceiling_nm': ..., 'taper_radps': ...},\n     'resistance': {'crr': ..., 'rolling_taper_rad_s': ..., 'rho_kg_m3': ...,\n                    'cda_m2': ..., 'wind_world_mps': [...],\n                    'point_body_m': [...], 'bodies': {...}},\n     'tire': {'backend': ..., 'surface_mode': ...,\n              'significant_delta_m': ..., 'significance_fraction': ...,\n              'distinct_normal_deg': ...,\n              'front': {material, tangent_k_n_m, mu, relaxation_length_m},\n              'rear': {...},\n              'surface_map': {'surface': {...SurfaceSpec fields...},\n                              'sections': [{start_m, end_m, surface}]}},\n     'rider_forces': {'paths': [{joint, stiffness_n_m, damping_ns_m,\n                                 preload_deflection_m, unilateral,\n                                 offset_m}, ...]},\n     'rider_contacts': {'arm_reach_m': ..., 'pedal_attachment': ...,\n                        'saddle_attachment': ..., 'grip_attachment': ...,\n                        <resolved ArticulatedConfig contact fields>},\n    }\n\nThe 'tire' section is emitted for the three backends the native port's\nconfig layer accepts \u2014 ``compliant_2d``, ``distributed_2d_reference`` and\n``pneumatic`` (``native_reference`` produces no tire writer in Python\neither, so no section). For ``compliant_2d`` each side's material must be\na ``TireSpec``; a ``TabulatedTireSpec`` follows a different force law the\nnative writer does not implement and is rejected here. For\n``distributed_2d_reference`` the material is the hinge-density law under\n``tire.distributed`` \u2014 the resolved ``for_wheel`` records per side \u2014 so\n``front``/``rear`` carry only the shared tangential parameters and\n``material`` is not projected. The pneumatic backend likewise skips\n``material`` and instead carries ``tire.pneumatic``: the resolved tier\nparameters, the per-side ``TyreSpecs``, the configured uniform surface\nwhen one is named (the track map still ships under ``surface_mode =\n'track'``), and the sampled road profile. The surface map is serialized\nwith every named surface resolved to its numeric fields.\n\nThe 'rider_contacts' section is emitted only when ``sim.physical`` owns a\n``RiderContactApplier`` (an ``articulated_planar`` rider; ``None`` otherwise\nor without a physical runtime). ``arm_reach_m`` carries the applier's\npose-resolved reach \u2014 ``ArticulatedConfig.arm_reach_fraction`` is a build-time\nknob, not a wire field \u2014 and ``grip_pair_force_limit_n`` keeps the dataclass's\n``float | None`` optionality on the wire.\n\nThe 'rider_forces' section is emitted only while\n``sim.rider_forces.active`` \u2014 on rider variants without a seated pose\n(e.g. ``articulated_planar``) the applier is inert and no section appears.\nEach entry carries the resolved per-path spring parameters the writer's\n``compute`` reads, plus ``offset_m`` \u2014 the current pedal offset\n``set_pedal_offsets`` left on the path at projection time. These offsets are\nmutable: legacy ``_follow_cranks`` updates them during stepping, so P3/P4 must\nport those updates and supply current offsets before step-loop equivalence.\nThe P2 config captures effective values, not the crank derivation.\n``preload_deflection_m`` is emitted evaluated \u2014 the body's\nproperty computes preload/stiffness, and the resulting double is what the\nwriter's compute reads.\n\nEvery leaf is a builtin int/float/bool/str so the dict crosses nanobind without\npickle or numpy types. ``schema`` versions the layout: the C++ bridge rejects\nunknown versions. Schema 2 carries the exact fork ``legacy_behavior`` flag.\nSchema 1 infers legacy when resolved ``hbo_start_mm == 160.0`` and keeps\nresolved damping parameters, including the ambiguous modern 180 mm fork.",
     "symbols": [
       {
         "name": "_joint_name",
@@ -4490,9 +4490,9 @@
     "id": "F050",
     "path": "src/bike_sim/native/setup.py",
     "owner_task": "T25",
-    "source_hash": "a778aa58690850805aead9019da059d402ca97f6f9f08f7482e521dee17bc943",
-    "line_count": 419,
-    "module_summary": "Setup boundary for the owned native ride runtime (design section 3.1).\n\n``validate_supported`` gates the resolved configuration against the design\nsection-1 capability set — structural predicates, never filenames.\n``capture_bootstrap`` freezes the complete t=0 state inventory (compiled\nmodel, integration vector, mutable model coefficients, mechanical and\ncontroller state) into an owning ``RuntimeBootstrap`` the native\n``NativeRideRuntime`` restores verbatim.",
+    "source_hash": "7b1f8d9fb292e6a3fb3b02641fdef579e2944e9c1129f675310d20348440e4b7",
+    "line_count": 430,
+    "module_summary": "Setup boundary for the owned native ride runtime (design section 3.1).\n\n``validate_supported`` gates the resolved configuration against the design\nsection-1 capability set \u2014 structural predicates, never filenames.\n``capture_bootstrap`` freezes the complete t=0 state inventory (compiled\nmodel, integration vector, mutable model coefficients, mechanical and\ncontroller state) into an owning ``RuntimeBootstrap`` the native\n``NativeRideRuntime`` restores verbatim.",
     "symbols": [
       {
         "name": "_reject",
@@ -4554,63 +4554,63 @@
         "name": "_runtime_state",
         "signature": "_runtime_state(sim, physical) -> dict",
         "line": 154,
-        "end_line": 227,
+        "end_line": 229,
         "kind": "FunctionDef"
       },
       {
         "name": "_joint_ref",
         "signature": "_joint_ref(model, dofadr: int, what: str) -> dict",
-        "line": 230,
-        "end_line": 235,
+        "line": 232,
+        "end_line": 237,
         "kind": "FunctionDef"
       },
       {
         "name": "_model_mutable",
         "signature": "_model_mutable(sim, physical, model) -> dict",
-        "line": 238,
-        "end_line": 258,
+        "line": 240,
+        "end_line": 260,
         "kind": "FunctionDef"
       },
       {
         "name": "_curve_dict",
         "signature": "_curve_dict(curve) -> dict",
-        "line": 261,
-        "end_line": 267,
+        "line": 263,
+        "end_line": 269,
         "kind": "FunctionDef"
       },
       {
         "name": "_envelope_dict",
         "signature": "_envelope_dict(envelope) -> dict",
-        "line": 270,
-        "end_line": 275,
+        "line": 272,
+        "end_line": 277,
         "kind": "FunctionDef"
       },
       {
         "name": "rider_controller_config",
         "signature": "rider_controller_config(articulated, control) -> dict",
-        "line": 278,
-        "end_line": 304,
+        "line": 280,
+        "end_line": 315,
         "kind": "FunctionDef"
       },
       {
         "name": "_geometry",
         "signature": "_geometry(sim, physical, model) -> dict",
-        "line": 307,
-        "end_line": 324,
+        "line": 318,
+        "end_line": 335,
         "kind": "FunctionDef"
       },
       {
         "name": "RuntimeBootstrap",
         "signature": "class RuntimeBootstrap()",
-        "line": 328,
-        "end_line": 339,
+        "line": 339,
+        "end_line": 350,
         "kind": "ClassDef"
       },
       {
         "name": "capture_bootstrap",
         "signature": "capture_bootstrap(sim, directory: Path) -> RuntimeBootstrap",
-        "line": 342,
-        "end_line": 419,
+        "line": 353,
+        "end_line": 430,
         "kind": "FunctionDef"
       }
     ],
@@ -4851,29 +4851,29 @@
     "id": "F053",
     "path": "src/bike_sim/physics/attachment_budget.py",
     "owner_task": "T26",
-    "source_hash": "fe20bf07de07b77bcffc722903a773cdb93b8128066cf92b746c98c471b18338",
-    "line_count": 55,
+    "source_hash": "e13e75cf9b2bfc754e2e1622e6717753bec1496790d80579ad8e2afa0ebd3ff3",
+    "line_count": 76,
     "module_summary": "Physical budgets of the seated rider's attachments, checked per step.\n\nForces are the support force **on the rider** in newtons, expressed in the\nattachment's own normal/tangent basis, never world axes. A violation marks the\nrun invalid; it is never repaired by clipping the solved reaction.",
     "symbols": [
       {
         "name": "AttachmentSample",
         "signature": "class AttachmentSample()",
-        "line": 12,
-        "end_line": 19,
+        "line": 18,
+        "end_line": 25,
         "kind": "ClassDef"
       },
       {
         "name": "AttachmentBudget",
         "signature": "class AttachmentBudget()",
-        "line": 23,
-        "end_line": 28,
+        "line": 29,
+        "end_line": 42,
         "kind": "ClassDef"
       },
       {
         "name": "attachment_violations",
         "signature": "attachment_violations(s: AttachmentSample, budget: AttachmentBudget) -> tuple[str, ...]",
-        "line": 31,
-        "end_line": 55,
+        "line": 45,
+        "end_line": 76,
         "kind": "FunctionDef"
       }
     ],
@@ -5913,29 +5913,29 @@
     "id": "F063",
     "path": "src/bike_sim/physics/energy_ledger.py",
     "owner_task": "T26",
-    "source_hash": "43a7a635d7d7b0488392272746d88080b33620c657ef8dffec46082fda01d511",
-    "line_count": 42,
+    "source_hash": "82dd6c078d043a9e5230795aef28afc64497e35842a26ec85489d90961ce4049",
+    "line_count": 55,
     "module_summary": "Per-interval work bookkeeping: sources and constraints never blur.\n\nMuscle and motor work are recorded as both the signed total and the\npositive-only total, so a joint that brakes cannot cancel a joint that drives\ninside the same sum. Numerical constraint work (joint limits, closures, ideal\ntransmissions) is tracked by signed and by absolute value, and is never\ncounted as physical dissipation or as source work.",
     "symbols": [
       {
         "name": "StepWork",
         "signature": "class StepWork()",
-        "line": 14,
-        "end_line": 20,
+        "line": 21,
+        "end_line": 29,
         "kind": "ClassDef"
       },
       {
         "name": "step_work",
-        "signature": "step_work(muscle_power_w, motor_power_w, numerical_constraint_power_w, dt_s: float) -> StepWork",
-        "line": 23,
-        "end_line": 34,
+        "signature": "step_work(muscle_power_w, motor_power_w, numerical_constraint_power_w, closure_power_w, dt_s: float) -> StepWork",
+        "line": 32,
+        "end_line": 47,
         "kind": "FunctionDef"
       },
       {
         "name": "constraint_work_ok",
         "signature": "constraint_work_ok(absolute_j: float, source_positive_j: float, roundoff_j: float=1e-08) -> bool",
-        "line": 37,
-        "end_line": 42,
+        "line": 50,
+        "end_line": 55,
         "kind": "FunctionDef"
       }
     ],
@@ -6800,8 +6800,8 @@
     "id": "F074",
     "path": "src/bike_sim/physics/physical_config.py",
     "owner_task": "T12",
-    "source_hash": "9aa5687635ea90e2835248b55f28c239d3e9e3837c84eb82828344eb57a9bb5d",
-    "line_count": 474,
+    "source_hash": "a83e12168734f67b28e8cd2fc1b86fec4812d44ff145e837fd19c6c33e336589",
+    "line_count": 568,
     "module_summary": "Immutable, explicit SI parameters for the physical force components.\n\nAll supplied defaults describe synthetic rigs. Native solver settings are never\ninterpreted as tire stiffness, and neither a component name nor a low residual\nupgrades these parameters to a measured/calibrated model.",
     "symbols": [
       {
@@ -6920,56 +6920,70 @@
         "name": "PhysicalDriveConfig",
         "signature": "class PhysicalDriveConfig()",
         "line": 245,
-        "end_line": 303,
+        "end_line": 321,
         "kind": "ClassDef"
       },
       {
         "name": "PhysicalDriveConfig.__post_init__",
         "signature": "__post_init__(self)",
-        "line": 269,
-        "end_line": 303,
+        "line": 282,
+        "end_line": 321,
         "kind": "FunctionDef"
       },
       {
         "name": "ResistanceConfig",
         "signature": "class ResistanceConfig()",
-        "line": 307,
-        "end_line": 324,
+        "line": 325,
+        "end_line": 342,
         "kind": "ClassDef"
       },
       {
         "name": "ResistanceConfig.__post_init__",
         "signature": "__post_init__(self)",
-        "line": 315,
-        "end_line": 324,
+        "line": 333,
+        "end_line": 342,
         "kind": "FunctionDef"
       },
       {
         "name": "ArticulatedConfig",
         "signature": "class ArticulatedConfig()",
-        "line": 328,
-        "end_line": 474,
+        "line": 346,
+        "end_line": 568,
         "kind": "ClassDef"
       },
       {
         "name": "ArticulatedConfig.attachment_budget",
         "signature": "attachment_budget(self) -> AttachmentBudget",
-        "line": 419,
-        "end_line": 422,
+        "line": 470,
+        "end_line": 488,
         "kind": "FunctionDef"
       },
       {
         "name": "ArticulatedConfig.passive_damping_nms_rad",
         "signature": "passive_damping_nms_rad(self)",
-        "line": 425,
-        "end_line": 428,
+        "line": 491,
+        "end_line": 494,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "ArticulatedConfig.delivered_positive_budget_w",
+        "signature": "delivered_positive_budget_w(self)",
+        "line": 497,
+        "end_line": 505,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "ArticulatedConfig.delivered_joint_budget_w",
+        "signature": "delivered_joint_budget_w(self)",
+        "line": 508,
+        "end_line": 512,
         "kind": "FunctionDef"
       },
       {
         "name": "ArticulatedConfig.__post_init__",
         "signature": "__post_init__(self)",
-        "line": 430,
-        "end_line": 474,
+        "line": 514,
+        "end_line": 568,
         "kind": "FunctionDef"
       }
     ],
@@ -8760,7 +8774,7 @@
     "owner_task": "T31",
     "source_hash": "742a18772f5ea4cec002ddd08c64feb0c60686d40a3186823e2fa54ae25efe75",
     "line_count": 319,
-    "module_summary": "Pneumatic Tyre Specifications and Literature Targets.\n\nThe parameters of the `pneumatic` tyre model (docs/RIDE.md sections 3.1 and 4.1) and the\nmeasured quantities it is fitted to and tested against (section 11.2). A pure calculator in\nthis package's convention -- millimetres and bar at the public boundary, no MuJoCo. The\nper-step force kernels live in `bike_sim.sim.ride.tyre` and work in metres.\n\nThree groups of numbers live here:\n\n- **`TyreSpecs`** -- one tyre: geometry, pressure, and the model constants. The fitted ones\n  (`area_factor`, `carcass_stiffness_n_mm2`, `contact_length_factor`, `rate_stiffening`,\n  `loss_factor`) are set by the calibration of plan task 5 and recorded in RIDE.md §3.1.\n- **`TyreConfig`** -- which tyre model a run uses, at which tier, on which tyres, with an\n  optional surface override. The one object the simulation and the CLI pass around.\n- **Targets** -- the literature values (static stiffness law, contact length, dynamic\n  stiffness ratio, damping band, rim-strike band, drum rolling resistance), with the\n  tolerances the tests hold the model to.",
+    "module_summary": "Pneumatic Tyre Specifications and Literature Targets.\n\nThe parameters of the `pneumatic` tyre model (docs/RIDE.md sections 3.1 and 4.1) and the\nmeasured quantities it is fitted to and tested against (section 11.2). A pure calculator in\nthis package's convention -- millimetres and bar at the public boundary, no MuJoCo. The\nper-step force kernels live in `bike_sim.sim.ride.tyre` and work in metres.\n\nThree groups of numbers live here:\n\n- **`TyreSpecs`** -- one tyre: geometry, pressure, and the model constants. The fitted ones\n  (`area_factor`, `carcass_stiffness_n_mm2`, `contact_length_factor`, `rate_stiffening`,\n  `loss_factor`) are set by the calibration of plan task 5 and recorded in RIDE.md \u00a73.1.\n- **`TyreConfig`** -- which tyre model a run uses, at which tier, on which tyres, with an\n  optional surface override. The one object the simulation and the CLI pass around.\n- **Targets** -- the literature values (static stiffness law, contact length, dynamic\n  stiffness ratio, damping band, rim-strike band, drum rolling resistance), with the\n  tolerances the tests hold the model to.",
     "symbols": [
       {
         "name": "TyreSpecs",
@@ -9404,9 +9418,9 @@
     "id": "F098",
     "path": "src/bike_sim/recording/catalog.py",
     "owner_task": "T38",
-    "source_hash": "a6e403356de92096240996ffc32f68c3ae98056e31bcf58379c6bd98408cd1dd",
-    "line_count": 1699,
-    "module_summary": "Reviewed field and coordinate catalog for run recordings (R08, R09).\n\nEvery canonical field is declared here with its DuckDB type, unit, physical\nframe/reference, phase, authoritative source, optionality and measurement\nsemantics. Channel fields are inventoried from the schema-2 record the\nruntime publishes (``PhysicalSample.channels`` in\n``sim/ride/physical_runtime.py`` and ``native/src/runtime/samples.cpp``);\nlegacy flat-column names from ``sim/ride/physical_recorder.py`` /\n``PhysicalSampleData::flat_columns`` survive only as aliases resolved to the\ncanonical field they mean — never as duplicated columns.\n\nModel facts (joint/qpos/DOF maps) arrive through ``build_catalog`` so the\ncoordinate catalog and the indexed aliases reflect the actual model rather\nthan a guessed layout.",
+    "source_hash": "2fca87c3dc81993e367a669b9eb034b50a831c9de8475e842e955be0237e3f91",
+    "line_count": 1711,
+    "module_summary": "Reviewed field and coordinate catalog for run recordings (R08, R09).\n\nEvery canonical field is declared here with its DuckDB type, unit, physical\nframe/reference, phase, authoritative source, optionality and measurement\nsemantics. Channel fields are inventoried from the schema-2 record the\nruntime publishes (``PhysicalSample.channels`` in\n``sim/ride/physical_runtime.py`` and ``native/src/runtime/samples.cpp``);\nlegacy flat-column names from ``sim/ride/physical_recorder.py`` /\n``PhysicalSampleData::flat_columns`` survive only as aliases resolved to the\ncanonical field they mean \u2014 never as duplicated columns.\n\nModel facts (joint/qpos/DOF maps) arrive through ``build_catalog`` so the\ncoordinate catalog and the indexed aliases reflect the actual model rather\nthan a guessed layout.",
     "symbols": [
       {
         "name": "FieldSpec",
@@ -9531,154 +9545,154 @@
         "name": "_energy_table",
         "signature": "_energy_table() -> TableSpec",
         "line": 348,
-        "end_line": 448,
+        "end_line": 460,
         "kind": "FunctionDef"
       },
       {
         "name": "_sensors_table",
         "signature": "_sensors_table() -> TableSpec",
-        "line": 451,
-        "end_line": 494,
+        "line": 463,
+        "end_line": 506,
         "kind": "FunctionDef"
       },
       {
         "name": "_tire_side",
         "signature": "_tire_side() -> tuple",
-        "line": 497,
-        "end_line": 609,
+        "line": 509,
+        "end_line": 621,
         "kind": "FunctionDef"
       },
       {
         "name": "_tires_table",
         "signature": "_tires_table() -> TableSpec",
-        "line": 612,
-        "end_line": 626,
+        "line": 624,
+        "end_line": 638,
         "kind": "FunctionDef"
       },
       {
         "name": "_suspension_table",
         "signature": "_suspension_table() -> TableSpec",
-        "line": 629,
-        "end_line": 662,
+        "line": 641,
+        "end_line": 674,
         "kind": "FunctionDef"
       },
       {
         "name": "_drive_table",
         "signature": "_drive_table() -> TableSpec",
-        "line": 665,
-        "end_line": 945,
+        "line": 677,
+        "end_line": 957,
         "kind": "FunctionDef"
       },
       {
         "name": "_posture_children",
         "signature": "_posture_children() -> tuple",
-        "line": 948,
-        "end_line": 961,
+        "line": 960,
+        "end_line": 973,
         "kind": "FunctionDef"
       },
       {
         "name": "_control_table",
         "signature": "_control_table() -> TableSpec",
-        "line": 964,
-        "end_line": 995,
+        "line": 976,
+        "end_line": 1007,
         "kind": "FunctionDef"
       },
       {
         "name": "_model_status_table",
         "signature": "_model_status_table() -> TableSpec",
-        "line": 998,
-        "end_line": 1041,
+        "line": 1010,
+        "end_line": 1053,
         "kind": "FunctionDef"
       },
       {
         "name": "_rider_table",
         "signature": "_rider_table() -> TableSpec",
-        "line": 1044,
-        "end_line": 1450,
+        "line": 1056,
+        "end_line": 1462,
         "kind": "FunctionDef"
       },
       {
         "name": "_coordinate_catalog",
         "signature": "_coordinate_catalog(joints) -> CoordinateCatalog",
-        "line": 1467,
-        "end_line": 1491,
+        "line": 1479,
+        "end_line": 1503,
         "kind": "FunctionDef"
       },
       {
         "name": "Catalog",
         "signature": "class Catalog()",
-        "line": 1494,
-        "end_line": 1604,
+        "line": 1506,
+        "end_line": 1616,
         "kind": "ClassDef"
       },
       {
         "name": "Catalog.__init__",
         "signature": "__init__(self, tables, coordinates, aliases)",
-        "line": 1497,
-        "end_line": 1512,
+        "line": 1509,
+        "end_line": 1524,
         "kind": "FunctionDef"
       },
       {
         "name": "Catalog.table",
         "signature": "table(self, name: str) -> TableSpec",
-        "line": 1514,
-        "end_line": 1518,
+        "line": 1526,
+        "end_line": 1530,
         "kind": "FunctionDef"
       },
       {
         "name": "Catalog.table_order",
         "signature": "table_order(self) -> tuple",
-        "line": 1520,
-        "end_line": 1521,
+        "line": 1532,
+        "end_line": 1533,
         "kind": "FunctionDef"
       },
       {
         "name": "Catalog.channel_roots",
         "signature": "channel_roots(self) -> frozenset",
-        "line": 1523,
-        "end_line": 1524,
+        "line": 1535,
+        "end_line": 1536,
         "kind": "FunctionDef"
       },
       {
         "name": "Catalog.channel_table",
         "signature": "channel_table(self, root: str) -> TableSpec",
-        "line": 1526,
-        "end_line": 1527,
+        "line": 1538,
+        "end_line": 1539,
         "kind": "FunctionDef"
       },
       {
         "name": "Catalog.resolve_alias",
         "signature": "resolve_alias(self, name: str) -> AliasSpec | None",
-        "line": 1529,
-        "end_line": 1546,
+        "line": 1541,
+        "end_line": 1558,
         "kind": "FunctionDef"
       },
       {
         "name": "Catalog._resolve_flat_path",
         "signature": "_resolve_flat_path(self, name: str) -> AliasSpec | None",
-        "line": 1548,
-        "end_line": 1554,
+        "line": 1560,
+        "end_line": 1566,
         "kind": "FunctionDef"
       },
       {
         "name": "Catalog._walk_alias",
         "signature": "_walk_alias(self, spec, path, name) -> AliasSpec | None",
-        "line": 1556,
-        "end_line": 1576,
+        "line": 1568,
+        "end_line": 1588,
         "kind": "FunctionDef"
       },
       {
         "name": "Catalog._walk_struct",
         "signature": "_walk_struct(self, field, rest, table, name) -> AliasSpec | None",
-        "line": 1578,
-        "end_line": 1604,
+        "line": 1590,
+        "end_line": 1616,
         "kind": "FunctionDef"
       },
       {
         "name": "build_catalog",
         "signature": "build_catalog(joints, *, scalar_aliases=None) -> Catalog",
-        "line": 1614,
-        "end_line": 1699,
+        "line": 1626,
+        "end_line": 1711,
         "kind": "FunctionDef"
       }
     ],
@@ -9964,7 +9978,7 @@
     "owner_task": "T39",
     "source_hash": "766db8904bdc5e6fc46530e21b9e64886ed6329b3181e626a463bd848bca1685",
     "line_count": 425,
-    "module_summary": "Typed batch encoding of reviewed rows (R08).\n\nRows are ordinary Python data at documented reference values:\n\n* ``physics`` rows address fields by their source name (``time_s``,\n  ``end_time_s``, ``qpos``, ``qvel``, ...); ``channels``/``forces``/\n  ``powers_w`` members are delegated to the other tables and exempted.\n* ``forces`` rows are exploded per component (see ``force_rows``).\n* channel-table rows carry their claimed ``channels`` roots at top level:\n  ``{'energy': {...}, 'component_work_j': {...}}``. A root member is routed\n  to the field whose ``path`` matches; a ``map<*>``/``struct`` field placed\n  at the root itself receives the remaining members verbatim.\n\n``encode_rows`` materializes a ``TableBatch`` fragment against a\n``TableSpec``; ``decode_rows`` rebuilds rows for tests. Optional fields\nproject to ``<key>_present`` categories plus a value column so absence is\nrecorded explicitly rather than inferred from a padding value. Doubles are\npreserved verbatim — NaN and ±inf round-trip and never become null — while\nintegral columns are validated as integers (a float NaN is rejected).\nUnknown row keys raise ``UnknownFieldError`` naming the offender; a missing\nrequired field raises ``MissingFieldError``.\n\nIdentity keys (``episode_id``, ``interval_id``) are fragment-optional: they\nare typed when present and may be injected per batch via ``episode_id=``\n(the publisher owns attaching episode identity when it assembles tables);\nother declared keys such as ``component`` are required per row.",
+    "module_summary": "Typed batch encoding of reviewed rows (R08).\n\nRows are ordinary Python data at documented reference values:\n\n* ``physics`` rows address fields by their source name (``time_s``,\n  ``end_time_s``, ``qpos``, ``qvel``, ...); ``channels``/``forces``/\n  ``powers_w`` members are delegated to the other tables and exempted.\n* ``forces`` rows are exploded per component (see ``force_rows``).\n* channel-table rows carry their claimed ``channels`` roots at top level:\n  ``{'energy': {...}, 'component_work_j': {...}}``. A root member is routed\n  to the field whose ``path`` matches; a ``map<*>``/``struct`` field placed\n  at the root itself receives the remaining members verbatim.\n\n``encode_rows`` materializes a ``TableBatch`` fragment against a\n``TableSpec``; ``decode_rows`` rebuilds rows for tests. Optional fields\nproject to ``<key>_present`` categories plus a value column so absence is\nrecorded explicitly rather than inferred from a padding value. Doubles are\npreserved verbatim \u2014 NaN and \u00b1inf round-trip and never become null \u2014 while\nintegral columns are validated as integers (a float NaN is rejected).\nUnknown row keys raise ``UnknownFieldError`` naming the offender; a missing\nrequired field raises ``MissingFieldError``.\n\nIdentity keys (``episode_id``, ``interval_id``) are fragment-optional: they\nare typed when present and may be injected per batch via ``episode_id=``\n(the publisher owns attaching episode identity when it assembles tables);\nother declared keys such as ``component`` are required per row.",
     "symbols": [
       {
         "name": "EncodingError",
@@ -10155,7 +10169,7 @@
     "owner_task": "T42",
     "source_hash": "17ab7536f457aa3599c18902a6fefb0bc2124fd73c1fe394b5ce614875e5301c",
     "line_count": 64,
-    "module_summary": "Deferred-SIGINT shield for evidence-critical publication sections (R04).\n\nSeal+finalize is a critical section: a second Ctrl-C delivered mid-write\ncan strand journaled input events against an unsealed episode or corrupt\nthe staged publication — the launch then loses its entire owned\nrecording. On the main thread, ``InterruptShield`` swaps the SIGINT\nhandler for a flag-setting one for the scope of its ``with`` block, so an\ninterrupt is recorded in ``deferred`` and honored after the section\ncompletes instead of interrupting the write. ``signal.signal`` cannot\ninstall handlers off the main thread; there the shield degrades to a\nflag holder, and ``note()`` is the injected-hook seam a caller (or a\ntest without access to real signal delivery) uses to record a deferred\ninterrupt.",
+    "module_summary": "Deferred-SIGINT shield for evidence-critical publication sections (R04).\n\nSeal+finalize is a critical section: a second Ctrl-C delivered mid-write\ncan strand journaled input events against an unsealed episode or corrupt\nthe staged publication \u2014 the launch then loses its entire owned\nrecording. On the main thread, ``InterruptShield`` swaps the SIGINT\nhandler for a flag-setting one for the scope of its ``with`` block, so an\ninterrupt is recorded in ``deferred`` and honored after the section\ncompletes instead of interrupting the write. ``signal.signal`` cannot\ninstall handlers off the main thread; there the shield degrades to a\nflag holder, and ``note()`` is the injected-hook seam a caller (or a\ntest without access to real signal delivery) uses to record a deferred\ninterrupt.",
     "symbols": [
       {
         "name": "InterruptShield",
@@ -10354,7 +10368,7 @@
     "owner_task": "T40",
     "source_hash": "27def9d2e5e8a380b729c54e902cd30e9adfbe6990dc3b260ef7ca0d636eff51",
     "line_count": 370,
-    "module_summary": "Catalog-governed typed encoding of a sealed native episode (A2).\n\n``NativePhysicalSource`` adapts an ``OwnedNativeEpisode`` — or any\nduck-typed value exposing ``generation``, ``row_count`` and\n``batch(start, limit)`` — to the ``PhysicalSource`` contract. Every table\nin the bound catalog is emitted through the reviewed ``encode_rows``\nencoder. Each bounded native sample batch is projected once into all domain\ntables; unknown channel roots reject their batch, and absent\noptional roots encode explicit NULLs rather than padding.\n\n``iter_derived_events`` re-reads a sealed episode and emits compact\n``derived_transition`` input-journal events where the instrumented\nchannels change. These are DERIVED facts over retained rows — labeled\nwith their derivation rule and version, never source events — so the\njournal keeps controller gate flips readable without a second per-row\nrecording pass.",
+    "module_summary": "Catalog-governed typed encoding of a sealed native episode (A2).\n\n``NativePhysicalSource`` adapts an ``OwnedNativeEpisode`` \u2014 or any\nduck-typed value exposing ``generation``, ``row_count`` and\n``batch(start, limit)`` \u2014 to the ``PhysicalSource`` contract. Every table\nin the bound catalog is emitted through the reviewed ``encode_rows``\nencoder. Each bounded native sample batch is projected once into all domain\ntables; unknown channel roots reject their batch, and absent\noptional roots encode explicit NULLs rather than padding.\n\n``iter_derived_events`` re-reads a sealed episode and emits compact\n``derived_transition`` input-journal events where the instrumented\nchannels change. These are DERIVED facts over retained rows \u2014 labeled\nwith their derivation rule and version, never source events \u2014 so the\njournal keeps controller gate flips readable without a second per-row\nrecording pass.",
     "symbols": [
       {
         "name": "model_joints",
@@ -10533,7 +10547,7 @@
     "owner_task": "T39",
     "source_hash": "7f1fa5251611d422978555c0901c39df92fa18ccd3d1f87564ae7d9a90114ada",
     "line_count": 286,
-    "module_summary": "Plan compiler + Arrow assembler for the native recording encoder.\n\n``compile_plan`` turns a catalog ``TableSpec`` into the plain-data plan the\nC++ projector (``OwnedNativeEpisode.encode_table``) executes; tables whose\nspec uses a dtype the projector does not cover yet compile to ``None`` and\nkeep flowing through the reviewed ``encode_rows``/``arrow_batch`` oracle.\n``pieces_to_arrow`` assembles the same ``pa.RecordBatch`` the oracle path\nwould produce, so publication output is bitwise-identical either way.\n\nThe module must stay importable without pyarrow — the assembler receives\n``pa`` from its caller, matching the lazy-import convention in storage.py.",
+    "module_summary": "Plan compiler + Arrow assembler for the native recording encoder.\n\n``compile_plan`` turns a catalog ``TableSpec`` into the plain-data plan the\nC++ projector (``OwnedNativeEpisode.encode_table``) executes; tables whose\nspec uses a dtype the projector does not cover yet compile to ``None`` and\nkeep flowing through the reviewed ``encode_rows``/``arrow_batch`` oracle.\n``pieces_to_arrow`` assembles the same ``pa.RecordBatch`` the oracle path\nwould produce, so publication output is bitwise-identical either way.\n\nThe module must stay importable without pyarrow \u2014 the assembler receives\n``pa`` from its caller, matching the lazy-import convention in storage.py.",
     "symbols": [
       {
         "name": "_leaf_plan",
@@ -15382,15 +15396,15 @@
     "id": "F144",
     "path": "src/bike_sim/sim/ride/_step_oracle.py",
     "owner_task": "T26",
-    "source_hash": "af0b71d2f552b3e641feb03da7b63b308df3e698bea717b6b023d875fa99d4bb",
-    "line_count": 213,
+    "source_hash": "f27f4cbf944a0167c2047edfadfa716d3d59d20659616ea6e8e05b82fca9925a",
+    "line_count": 229,
     "module_summary": "Independent scalar integration oracle captured before P3 batching.\n\nG5 corrects its constraint-work inputs to individual physical constraints, just\nas the real ledger requires; scalar stepping and scalar wrench recovery remain\nindependent of the batched runtime. Never called by runtime.",
     "symbols": [
       {
         "name": "step_reference",
         "signature": "step_reference(self, front=0.0, rear=0.0, external=None, *, control=None)",
         "line": 43,
-        "end_line": 213,
+        "end_line": 229,
         "kind": "FunctionDef"
       }
     ],
@@ -15459,148 +15473,183 @@
     "id": "F145",
     "path": "src/bike_sim/sim/ride/async_close.py",
     "owner_task": "T42",
-    "source_hash": "5d00e508a62c5ebc4fa23f1553bfb5dc89ba8a4b0dc9d9e8505ef974ec570f0c",
-    "line_count": 289,
-    "module_summary": "Off-path period publication: a spawned process evaluates closes.\n\nPhysicalRuntime accumulates RawStep payloads for one control period, then\npublishes them through publish_close — pure data work (attachment wrenches,\neffort channels, ledger bookkeeping, sample assembly) that never touches live\nmjData. That makes it movable: this module runs the same publish_close inside\na spawned worker, so the stepping loop only serializes raws and applies\nresults at the next step boundary.\n\nSemantics: identical code on identical data, applied one step later. Runs\nwhere nothing consumes mid-period published state for control decisions are\nbitwise identical to synchronous runs; the interactive viewer is such a\nconsumer-free path. Policy sessions that read ``physical.sample`` to act may\nobserve one-period-older observations under a slow worker.\n\nWire protocol (parent -> worker), all payloads pickled explicitly so a\nserialization failure is a normal error on the stepping path, never a silent\ndrop inside the queue feeder thread:\n  ('context', ctx_dict)  -- rebuild worker-side close state\n  ('close', seq, bytes)  -- pickled raws for one drained period\n  ('stop',)              -- terminate\nWorker -> parent:\n  ('ok', seq, result_dict)  -- fields to replay onto the runtime\n  ('err', seq, (type_name, message))",
+    "source_hash": "8c7d66bf0dc2ae8ddc104c372f9ad434a987d7e97feaeb3cf5d27489cb0c489e",
+    "line_count": 385,
+    "module_summary": "Off-path period publication: a spawned process evaluates closes.\n\nPhysicalRuntime accumulates RawStep payloads for one control period, then\npublishes them through publish_close \u2014 pure data work (attachment wrenches,\neffort channels, ledger bookkeeping, sample assembly) that never touches live\nmjData. That makes it movable: this module runs the same publish_close inside\na spawned worker, so the stepping loop only serializes raws and applies\nresults at the next step boundary.\n\nSemantics: identical code on identical data, applied one step later. Runs\nwhere nothing consumes mid-period published state for control decisions are\nbitwise identical to synchronous runs; the interactive viewer is such a\nconsumer-free path. Policy sessions that read ``physical.sample`` to act may\nobserve one-period-older observations under a slow worker.\n\nWire protocol (parent -> worker), all payloads pickled explicitly so a\nserialization failure is a normal error on the stepping path, never a silent\ndrop inside the queue feeder thread:\n  ('context', ctx_dict)  -- rebuild worker-side close state\n  ('close', seq, bytes)  -- pickled raws for one drained period\n  ('stop',)              -- terminate\nWorker -> parent:\n  ('ok', seq, result_dict)  -- fields to replay onto the runtime\n  ('err', seq, (type_name, message))",
     "symbols": [
       {
         "name": "_sample_transport",
         "signature": "_sample_transport(sample)",
-        "line": 42,
-        "end_line": 50,
+        "line": 44,
+        "end_line": 52,
         "kind": "FunctionDef"
       },
       {
         "name": "_sample_restore",
         "signature": "_sample_restore(spec)",
-        "line": 53,
-        "end_line": 65,
+        "line": 55,
+        "end_line": 67,
         "kind": "FunctionDef"
       },
       {
         "name": "_build_rt",
         "signature": "_build_rt(ctx)",
-        "line": 68,
-        "end_line": 103,
+        "line": 70,
+        "end_line": 107,
         "kind": "FunctionDef"
       },
       {
         "name": "_RiderControlView",
         "signature": "class _RiderControlView()",
-        "line": 106,
-        "end_line": 132,
+        "line": 110,
+        "end_line": 136,
         "kind": "ClassDef"
       },
       {
         "name": "_RiderControlView.__init__",
         "signature": "__init__(self, spec)",
-        "line": 113,
-        "end_line": 119,
+        "line": 117,
+        "end_line": 123,
         "kind": "FunctionDef"
       },
       {
         "name": "_RiderControlView.strength_violations",
         "signature": "strength_violations(self, active_torques, qpos, qvel)",
-        "line": 121,
-        "end_line": 123,
+        "line": 125,
+        "end_line": 127,
         "kind": "FunctionDef"
       },
       {
         "name": "_RiderControlView.strength_capacity",
         "signature": "strength_capacity(self, name, angle_rad, velocity_rad_s, torque_nm)",
-        "line": 125,
-        "end_line": 128,
+        "line": 129,
+        "end_line": 132,
         "kind": "FunctionDef"
       },
       {
         "name": "_RiderControlView.anatomical_joint_angle",
         "signature": "anatomical_joint_angle(self, name, qpos_value)",
-        "line": 130,
-        "end_line": 132,
+        "line": 134,
+        "end_line": 136,
         "kind": "FunctionDef"
       },
       {
         "name": "_extract_result",
         "signature": "_extract_result(rt)",
-        "line": 135,
-        "end_line": 149,
+        "line": 139,
+        "end_line": 153,
         "kind": "FunctionDef"
       },
       {
         "name": "_close_worker_main",
         "signature": "_close_worker_main(in_q, out_q)",
-        "line": 152,
-        "end_line": 168,
+        "line": 156,
+        "end_line": 172,
         "kind": "FunctionDef"
       },
       {
         "name": "AsyncWorkerLost",
         "signature": "class AsyncWorkerLost(Exception)",
-        "line": 171,
-        "end_line": 172,
+        "line": 175,
+        "end_line": 176,
         "kind": "ClassDef"
+      },
+      {
+        "name": "AsyncPublicationError",
+        "signature": "class AsyncPublicationError(RuntimeError)",
+        "line": 179,
+        "end_line": 184,
+        "kind": "ClassDef"
+      },
+      {
+        "name": "AsyncPublicationError.__init__",
+        "signature": "__init__(self, message, completed_results)",
+        "line": 182,
+        "end_line": 184,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_worker_start_method",
+        "signature": "_worker_start_method(system: str) -> str",
+        "line": 187,
+        "end_line": 189,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_close_queues",
+        "signature": "_close_queues(queues)",
+        "line": 192,
+        "end_line": 207,
+        "kind": "FunctionDef"
       },
       {
         "name": "AsyncCloseRunner",
         "signature": "class AsyncCloseRunner()",
-        "line": 191,
-        "end_line": 289,
+        "line": 226,
+        "end_line": 385,
         "kind": "ClassDef"
       },
       {
         "name": "AsyncCloseRunner.__init__",
-        "signature": "__init__(self)",
-        "line": 201,
-        "end_line": 214,
+        "signature": "__init__(self, *, start_method: str | None=None)",
+        "line": 234,
+        "end_line": 266,
         "kind": "FunctionDef"
       },
       {
         "name": "AsyncCloseRunner.send_context",
         "signature": "send_context(self, ctx)",
-        "line": 216,
-        "end_line": 217,
+        "line": 268,
+        "end_line": 269,
         "kind": "FunctionDef"
       },
       {
         "name": "AsyncCloseRunner.submit",
         "signature": "submit(self, raws)",
-        "line": 219,
-        "end_line": 224,
+        "line": 271,
+        "end_line": 276,
         "kind": "FunctionDef"
       },
       {
         "name": "AsyncCloseRunner.collect",
         "signature": "collect(self, *, block=False)",
-        "line": 226,
-        "end_line": 258,
+        "line": 278,
+        "end_line": 316,
         "kind": "FunctionDef"
       },
       {
         "name": "AsyncCloseRunner._check_alive",
         "signature": "_check_alive(self)",
-        "line": 260,
-        "end_line": 264,
+        "line": 318,
+        "end_line": 322,
         "kind": "FunctionDef"
       },
       {
         "name": "AsyncCloseRunner.drain",
         "signature": "drain(self, apply)",
-        "line": 266,
-        "end_line": 269,
+        "line": 324,
+        "end_line": 333,
         "kind": "FunctionDef"
       },
       {
         "name": "AsyncCloseRunner.detach_pending",
         "signature": "detach_pending(self)",
-        "line": 271,
-        "end_line": 275,
+        "line": 335,
+        "end_line": 339,
         "kind": "FunctionDef"
       },
       {
         "name": "AsyncCloseRunner.close",
         "signature": "close(self)",
-        "line": 277,
-        "end_line": 289,
+        "line": 341,
+        "end_line": 385,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "AsyncCloseRunner.close.remember",
+        "signature": "remember(error)",
+        "line": 347,
+        "end_line": 353,
         "kind": "FunctionDef"
       }
     ],
@@ -18101,7 +18150,7 @@
     "owner_task": "T26",
     "source_hash": "8bd27a22fc592fb79d293b95e56f7173dfed12cb181a8f4ca20bdbd1ee235f00",
     "line_count": 193,
-    "module_summary": "Locally linearized one-way geometric tendon, with explicit defect metering.\n\nThe engine solves the ONLY reaction. ``constraint_reaction`` is an independent\nsign/power oracle, never an additional applied force. Model constants are\nupdated using detached data, so a coefficient update cannot reset live state.\n\nEvery mutation is a staged transaction: the candidate gearing, linearization,\nand boundary are computed first, the candidate ``mj_setConst`` rehearses on an\nowned scratch model (a fatal lands on the copy), live model writes run next,\nand the plain attributes publish last — so a rejected candidate leaves every\nattribute and model row untouched.",
+    "module_summary": "Locally linearized one-way geometric tendon, with explicit defect metering.\n\nThe engine solves the ONLY reaction. ``constraint_reaction`` is an independent\nsign/power oracle, never an additional applied force. Model constants are\nupdated using detached data, so a coefficient update cannot reset live state.\n\nEvery mutation is a staged transaction: the candidate gearing, linearization,\nand boundary are computed first, the candidate ``mj_setConst`` rehearses on an\nowned scratch model (a fatal lands on the copy), live model writes run next,\nand the plain attributes publish last \u2014 so a rejected candidate leaves every\nattribute and model row untouched.",
     "symbols": [
       {
         "name": "GeometricFreehubConstraint",
@@ -19679,8 +19728,8 @@
     "id": "F179",
     "path": "src/bike_sim/sim/ride/period_buffer.py",
     "owner_task": "T11",
-    "source_hash": "c1294df6bd12c9c8d67be92a844eb17a47d2a053d92bc7af8f8d413ec80e1a87",
-    "line_count": 342,
+    "source_hash": "9d298f95ccec99394d38e64a305e628cd7c0ee69ed92251e6391110f16fd9958",
+    "line_count": 353,
     "module_summary": "Capture every solved interval; evaluate attachments together at period close.",
     "symbols": [
       {
@@ -19750,21 +19799,21 @@
         "name": "_effort_observations",
         "signature": "_effort_observations(runtime, raws)",
         "line": 123,
-        "end_line": 152,
+        "end_line": 154,
         "kind": "FunctionDef"
       },
       {
         "name": "evaluate_period",
         "signature": "evaluate_period(runtime, raws, budget)",
-        "line": 155,
-        "end_line": 188,
+        "line": 157,
+        "end_line": 193,
         "kind": "FunctionDef"
       },
       {
         "name": "publish_close",
         "signature": "publish_close(rt, raws)",
-        "line": 195,
-        "end_line": 342,
+        "line": 200,
+        "end_line": 353,
         "kind": "FunctionDef"
       }
     ],
@@ -20242,7 +20291,7 @@
     "owner_task": "T49",
     "source_hash": "929ec4014ea8d3a4dc7da45557a960aabc94589512b276945f524148c8f81564",
     "line_count": 545,
-    "module_summary": "Physical CLI frontends: backend-neutral owner, playback clock and the\nlaunch-level run-recording lifecycle (R03, R11, R14, R16).\n\nBoth frontends own one ``RunCapture`` across reset-separated episodes:\nepisodes are sealed into RAM as they close (``driver.seal_episode``),\ninput requests are journaled in receipt order with received/processed\ntimestamps, and publication happens exactly once at launch end through\n``RunCapture.finalize`` — never from advance, reset or render. Preview\nCSV and recording-derived plots are produced only when recording is on;\na non-recording launch leaves no persistent side effects.",
+    "module_summary": "Physical CLI frontends: backend-neutral owner, playback clock and the\nlaunch-level run-recording lifecycle (R03, R11, R14, R16).\n\nBoth frontends own one ``RunCapture`` across reset-separated episodes:\nepisodes are sealed into RAM as they close (``driver.seal_episode``),\ninput requests are journaled in receipt order with received/processed\ntimestamps, and publication happens exactly once at launch end through\n``RunCapture.finalize`` \u2014 never from advance, reset or render. Preview\nCSV and recording-derived plots are produced only when recording is on;\na non-recording launch leaves no persistent side effects.",
     "symbols": [
       {
         "name": "physical_exit_code",
@@ -20499,8 +20548,8 @@
     "id": "F186",
     "path": "src/bike_sim/sim/ride/physical_observations.py",
     "owner_task": "T26",
-    "source_hash": "32999da0d6ec3b2ae6f6f2eeb227cf9bf5e88b07ac1e1994d370d31498ad3633",
-    "line_count": 193,
+    "source_hash": "b4f322aa9c6d04d3087e7216ed1f14bae4586151f0e4f4ab90d875573b44e81a",
+    "line_count": 207,
     "module_summary": "Serialized physical contact, force and energy observations (no state advance).",
     "symbols": [
       {
@@ -20560,10 +20609,17 @@
         "kind": "FunctionDef"
       },
       {
+        "name": "split_constraint_powers",
+        "signature": "split_constraint_powers(powers)",
+        "line": 178,
+        "end_line": 189,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "sensor_channels",
         "signature": "sensor_channels(runtime, *, qvel=None, drive_channels=None)",
-        "line": 178,
-        "end_line": 193,
+        "line": 192,
+        "end_line": 207,
         "kind": "FunctionDef"
       }
     ],
@@ -20860,8 +20916,8 @@
     "id": "F189",
     "path": "src/bike_sim/sim/ride/physical_runtime.py",
     "owner_task": "T26",
-    "source_hash": "3185a78dcdd3cb09a2258900c72c4af017fe47d2c9577d31c8d56cb9b0f1e55f",
-    "line_count": 951,
+    "source_hash": "27d550060da4be46c06540286e0844c02301e1d64799bd9335a78dcc7f322bd6",
+    "line_count": 1043,
     "module_summary": "Single owner of the physical initialization, force step and work ledger.",
     "symbols": [
       {
@@ -20882,217 +20938,238 @@
         "name": "PhysicalRuntime",
         "signature": "class PhysicalRuntime()",
         "line": 63,
-        "end_line": 951,
+        "end_line": 1043,
         "kind": "ClassDef"
       },
       {
         "name": "PhysicalRuntime.__init__",
         "signature": "__init__(self, sim, *, strict: bool=True)",
         "line": 69,
-        "end_line": 144,
+        "end_line": 150,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.set_strict",
         "signature": "set_strict(self, strict: bool) -> None",
-        "line": 146,
-        "end_line": 153,
+        "line": 152,
+        "end_line": 159,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.preview_mode",
         "signature": "preview_mode(self)",
-        "line": 155,
-        "end_line": 157,
+        "line": 161,
+        "end_line": 163,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.preview_real_time_factor",
         "signature": "preview_real_time_factor(self)",
-        "line": 160,
-        "end_line": 162,
+        "line": 166,
+        "end_line": 168,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.strict",
         "signature": "strict(self) -> bool",
-        "line": 165,
-        "end_line": 166,
+        "line": 171,
+        "end_line": 172,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.held_rider_terms",
         "signature": "held_rider_terms(self)",
-        "line": 169,
-        "end_line": 171,
+        "line": 175,
+        "end_line": 177,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.rollback_hold",
         "signature": "rollback_hold(self) -> bool",
-        "line": 174,
-        "end_line": 175,
+        "line": 180,
+        "end_line": 181,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.wheel_bodies",
         "signature": "wheel_bodies(self) -> tuple",
-        "line": 178,
-        "end_line": 180,
+        "line": 184,
+        "end_line": 186,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.address",
         "signature": "address(self, name)",
-        "line": 182,
-        "end_line": 191,
+        "line": 188,
+        "end_line": 197,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._contacts",
         "signature": "_contacts(self, *, final=False, time_s=None, qvel=None, update_grounded=False)",
-        "line": 193,
-        "end_line": 227,
+        "line": 199,
+        "end_line": 233,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._rollback_brake_demand",
         "signature": "_rollback_brake_demand(self, speed_mps, control=None)",
-        "line": 229,
-        "end_line": 246,
+        "line": 235,
+        "end_line": 252,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.apply_forces",
         "signature": "apply_forces(self, *, active=True, advance=True, front=0.0, rear=0.0, external=None, control=None, braking=None)",
-        "line": 248,
-        "end_line": 396,
+        "line": 254,
+        "end_line": 420,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.reset",
         "signature": "reset(self)",
-        "line": 398,
-        "end_line": 505,
+        "line": 422,
+        "end_line": 533,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.update_rider_intent_signals",
         "signature": "update_rider_intent_signals(self, sensors, tires=None)",
-        "line": 507,
-        "end_line": 512,
+        "line": 535,
+        "end_line": 540,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._initial_speed",
         "signature": "_initial_speed(self)",
-        "line": 514,
-        "end_line": 563,
+        "line": 542,
+        "end_line": 591,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._loss_increment",
         "signature": "_loss_increment(self, forces, velocity, dt)",
-        "line": 565,
-        "end_line": 598,
+        "line": 593,
+        "end_line": 629,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._balance_channel",
         "signature": "_balance_channel(self, front, rear, *, braking, rider_enabled)",
-        "line": 600,
-        "end_line": 604,
+        "line": 631,
+        "end_line": 635,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.step",
         "signature": "step(self, front=0.0, rear=0.0, external=None, *, control=None)",
-        "line": 606,
-        "end_line": 616,
+        "line": 637,
+        "end_line": 647,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._advance_physics",
         "signature": "_advance_physics(self, front=0.0, rear=0.0, external=None, *, control=None)",
-        "line": 618,
-        "end_line": 776,
+        "line": 649,
+        "end_line": 807,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.set_measurement_decimation",
         "signature": "set_measurement_decimation(self, n)",
-        "line": 778,
-        "end_line": 781,
+        "line": 809,
+        "end_line": 812,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.set_recording_retention",
         "signature": "set_recording_retention(self, mode)",
-        "line": 783,
-        "end_line": 786,
+        "line": 814,
+        "end_line": 817,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "PhysicalRuntime.has_pending_close",
+        "signature": "has_pending_close(self)",
+        "line": 819,
+        "end_line": 821,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.flush",
         "signature": "flush(self)",
-        "line": 788,
-        "end_line": 798,
+        "line": 823,
+        "end_line": 833,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._close_period",
         "signature": "_close_period(self)",
-        "line": 800,
-        "end_line": 807,
+        "line": 835,
+        "end_line": 842,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._publish_and_accept",
         "signature": "_publish_and_accept(self, raws)",
-        "line": 809,
-        "end_line": 815,
+        "line": 844,
+        "end_line": 850,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime.set_async_close",
         "signature": "set_async_close(self, enabled: bool) -> None",
-        "line": 817,
-        "end_line": 839,
+        "line": 852,
+        "end_line": 877,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "PhysicalRuntime._close_async_worker",
+        "signature": "_close_async_worker(self, *, primary=None)",
+        "line": 879,
+        "end_line": 891,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "PhysicalRuntime._replay_async_periods",
+        "signature": "_replay_async_periods(self, periods)",
+        "line": 893,
+        "end_line": 915,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._async_context",
         "signature": "_async_context(self)",
-        "line": 841,
-        "end_line": 867,
+        "line": 917,
+        "end_line": 945,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._async_submit",
         "signature": "_async_submit(self, raws)",
-        "line": 869,
-        "end_line": 883,
+        "line": 947,
+        "end_line": 967,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._apply_close_result",
         "signature": "_apply_close_result(self, result)",
-        "line": 885,
-        "end_line": 903,
+        "line": 969,
+        "end_line": 987,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._drain_async",
         "signature": "_drain_async(self, block=False)",
-        "line": 905,
-        "end_line": 943,
+        "line": 989,
+        "end_line": 1035,
         "kind": "FunctionDef"
       },
       {
         "name": "PhysicalRuntime._attachment_violations",
         "signature": "_attachment_violations(self)",
-        "line": 945,
-        "end_line": 951,
+        "line": 1037,
+        "end_line": 1043,
         "kind": "FunctionDef"
       }
     ],
@@ -22180,7 +22257,7 @@
     "owner_task": "T26",
     "source_hash": "456d347ae3d0b0de538c289d454823c8d1e369cda0820c8f4461f774f0e5d864",
     "line_count": 31,
-    "module_summary": "Per-physics-step rejection of invalid reference intervals.\n\nStrict research raises on the first violated budget so the bad interval can\nnever be hidden by recording decimation or reported as a legal outcome. The\nnon-strict (viewer/diagnostic) mode warns once, keeps the first failure and\nlets recording continue — it never restores a valid status.",
+    "module_summary": "Per-physics-step rejection of invalid reference intervals.\n\nStrict research raises on the first violated budget so the bad interval can\nnever be hidden by recording decimation or reported as a legal outcome. The\nnon-strict (viewer/diagnostic) mode warns once, keeps the first failure and\nlets recording continue \u2014 it never restores a valid status.",
     "symbols": [
       {
         "name": "InvalidReferenceRun",
@@ -23205,8 +23282,8 @@
     "id": "F204",
     "path": "src/bike_sim/sim/ride/rider_effort.py",
     "owner_task": "T26",
-    "source_hash": "93e9d2bc908318c0f3cf1500d88883856c634f3b65ac64e276fdb9b75e3fede4",
-    "line_count": 122,
+    "source_hash": "a1f954dde8cf614bda5730ae86f4434a80432d860e7c6af8e9fff16c93da98a9",
+    "line_count": 125,
     "module_summary": "Active/passive actuator bookkeeping shared by compute and solved samples.",
     "symbols": [
       {
@@ -23220,21 +23297,21 @@
         "name": "finalize_effort",
         "signature": "finalize_effort(controller, data, torques, *, advance, dt_s, steady_state)",
         "line": 15,
-        "end_line": 81,
+        "end_line": 83,
         "kind": "FunctionDef"
       },
       {
         "name": "joint_effort_limits",
         "signature": "joint_effort_limits(active, speeds, config)",
-        "line": 84,
-        "end_line": 91,
+        "line": 86,
+        "end_line": 93,
         "kind": "FunctionDef"
       },
       {
         "name": "solved_effort",
         "signature": "solved_effort(controller, data, incoming_state, dt_s)",
-        "line": 94,
-        "end_line": 122,
+        "line": 96,
+        "end_line": 125,
         "kind": "FunctionDef"
       }
     ],
@@ -31598,7 +31675,7 @@
     "owner_task": "T52",
     "source_hash": "3c7474c840962362e5742fd1cce7c2db9d45676824014afc71e2acfc8bda6562",
     "line_count": 17,
-    "module_summary": "Bitwise equality for the native-port oracle contract.\n\n``np.array_equal`` uses IEEE equality: ``-0.0 == +0.0`` and NaN compares by\nvalue-class, not payload. The port contract is bit-identical output, so the\nassert compares raw bytes — ``tobytes()`` distinguishes signed zeros and NaN\npayloads. Scalars and array-likes are normalized through ``np.asarray`` (a\nPython float becomes a 0-d float64 array, still byte-comparable).",
+    "module_summary": "Bitwise equality for the native-port oracle contract.\n\n``np.array_equal`` uses IEEE equality: ``-0.0 == +0.0`` and NaN compares by\nvalue-class, not payload. The port contract is bit-identical output, so the\nassert compares raw bytes \u2014 ``tobytes()`` distinguishes signed zeros and NaN\npayloads. Scalars and array-likes are normalized through ``np.asarray`` (a\nPython float becomes a 0-d float64 array, still byte-comparable).",
     "symbols": [
       {
         "name": "assert_bitwise_equal",
@@ -32133,36 +32210,43 @@
     "id": "F290",
     "path": "tests/reference/_native_runtime_support.py",
     "owner_task": "T53",
-    "source_hash": "3295a291bf398d76054455e07e6ddb0efbb481924c7a95137e363a4e0bc41746",
-    "line_count": 78,
+    "source_hash": "1a8be2482042743199b3bfba7634b7113a498c9cae7422c6f7dc03eb24c0dc8d",
+    "line_count": 105,
     "module_summary": "Shared helpers for native-runtime reference tests.\n\nThese helpers execute fresh scalar Python intervals and read independently\ncaptured output; they do not reconstruct native results from the same force\nmatrix.",
     "symbols": [
       {
+        "name": "violating_physics",
+        "signature": "violating_physics(path)",
+        "line": 26,
+        "end_line": 41,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "make_python_ride",
         "signature": "make_python_ride(*, strict=False, decimation=1)",
-        "line": 20,
-        "end_line": 28,
+        "line": 47,
+        "end_line": 55,
         "kind": "FunctionDef"
       },
       {
         "name": "advance_python",
         "signature": "advance_python(sim, steps, control=None, *, front=0.0, rear=0.0)",
-        "line": 31,
-        "end_line": 46,
+        "line": 58,
+        "end_line": 73,
         "kind": "FunctionDef"
       },
       {
         "name": "make_python_research",
         "signature": "make_python_research(*, duration=0.1, seed=210)",
-        "line": 49,
-        "end_line": 56,
+        "line": 76,
+        "end_line": 83,
         "kind": "FunctionDef"
       },
       {
         "name": "assert_tree_close",
         "signature": "assert_tree_close(actual, expected, *, atol=1e-09, rtol=1e-09, path='root')",
-        "line": 59,
-        "end_line": 78,
+        "line": 86,
+        "end_line": 105,
         "kind": "FunctionDef"
       }
     ],
@@ -32482,9 +32566,9 @@
     "id": "F292",
     "path": "tests/reference/_recording_support.py",
     "owner_task": "T53",
-    "source_hash": "368d3aa13ce9c451db5c318b5e2f84c5e8cd31fe57c07430509d757f45c32f48",
-    "line_count": 668,
-    "module_summary": "Shared synthetic fixtures for the run-recording contract tests.\n\n``run_metadata`` carries the fixed identity of the recording contract tests;\n``TreePhysicalSource`` converts hand-authored nested sample rows into typed\n``TableBatch`` values strictly through the production field catalog and\nencoder — never through the native adapter or a simulator.",
+    "source_hash": "0b39bb330a1c54a9f30b99a667f772e99192ba034040e8742e8e1b6e4dff0817",
+    "line_count": 670,
+    "module_summary": "Shared synthetic fixtures for the run-recording contract tests.\n\n``run_metadata`` carries the fixed identity of the recording contract tests;\n``TreePhysicalSource`` converts hand-authored nested sample rows into typed\n``TableBatch`` values strictly through the production field catalog and\nencoder \u2014 never through the native adapter or a simulator.",
     "symbols": [
       {
         "name": "run_metadata",
@@ -32518,168 +32602,168 @@
         "name": "energy_channels",
         "signature": "energy_channels(**overrides)",
         "line": 75,
-        "end_line": 110,
+        "end_line": 112,
         "kind": "FunctionDef"
       },
       {
         "name": "drive_channels",
         "signature": "drive_channels(speed=0.0, **overrides)",
-        "line": 113,
-        "end_line": 210,
+        "line": 115,
+        "end_line": 212,
         "kind": "FunctionDef"
       },
       {
         "name": "sensors_channels",
         "signature": "sensors_channels(speed=0.0, **overrides)",
-        "line": 213,
-        "end_line": 238,
+        "line": 215,
+        "end_line": 240,
         "kind": "FunctionDef"
       },
       {
         "name": "mass_channels",
         "signature": "mass_channels(measured=True, **overrides)",
-        "line": 241,
-        "end_line": 277,
+        "line": 243,
+        "end_line": 279,
         "kind": "FunctionDef"
       },
       {
         "name": "control_channels",
         "signature": "control_channels(*, posture=True, pelvis_offset=False, **overrides)",
-        "line": 280,
-        "end_line": 308,
+        "line": 282,
+        "end_line": 310,
         "kind": "FunctionDef"
       },
       {
         "name": "model_status_channels",
         "signature": "model_status_channels(*, verdict=True, violation=False, **overrides)",
-        "line": 311,
-        "end_line": 338,
+        "line": 313,
+        "end_line": 340,
         "kind": "FunctionDef"
       },
       {
         "name": "tire_patch",
         "signature": "tire_patch(load=160.0, *, couple_world=True, source_geom='terrain')",
-        "line": 341,
-        "end_line": 354,
+        "line": 343,
+        "end_line": 356,
         "kind": "FunctionDef"
       },
       {
         "name": "tire_side",
         "signature": "tire_side(patches=(), *, seed=0.0)",
-        "line": 357,
-        "end_line": 395,
+        "line": 359,
+        "end_line": 397,
         "kind": "FunctionDef"
       },
       {
         "name": "tires_channels",
         "signature": "tires_channels(front_patches=(), rear_patches=())",
-        "line": 398,
-        "end_line": 401,
+        "line": 400,
+        "end_line": 403,
         "kind": "FunctionDef"
       },
       {
         "name": "rider_channels",
         "signature": "rider_channels(**overrides)",
-        "line": 404,
-        "end_line": 458,
+        "line": 406,
+        "end_line": 460,
         "kind": "FunctionDef"
       },
       {
         "name": "suspension_channels",
         "signature": "suspension_channels(**overrides)",
-        "line": 461,
-        "end_line": 488,
+        "line": 463,
+        "end_line": 490,
         "kind": "FunctionDef"
       },
       {
         "name": "TreePhysicalSource",
         "signature": "class TreePhysicalSource()",
-        "line": 491,
-        "end_line": 543,
+        "line": 493,
+        "end_line": 545,
         "kind": "ClassDef"
       },
       {
         "name": "TreePhysicalSource.__init__",
         "signature": "__init__(self, rows=(), *, catalog=None)",
-        "line": 501,
-        "end_line": 503,
+        "line": 503,
+        "end_line": 505,
         "kind": "FunctionDef"
       },
       {
         "name": "TreePhysicalSource.catalog",
         "signature": "catalog(self)",
-        "line": 506,
-        "end_line": 507,
+        "line": 508,
+        "end_line": 509,
         "kind": "FunctionDef"
       },
       {
         "name": "TreePhysicalSource.row_count",
         "signature": "row_count(self)",
-        "line": 510,
-        "end_line": 511,
+        "line": 512,
+        "end_line": 513,
         "kind": "FunctionDef"
       },
       {
         "name": "TreePhysicalSource._table_rows",
         "signature": "_table_rows(self, spec)",
-        "line": 513,
-        "end_line": 525,
+        "line": 515,
+        "end_line": 527,
         "kind": "FunctionDef"
       },
       {
         "name": "TreePhysicalSource._check_channel_roots",
         "signature": "_check_channel_roots(self)",
-        "line": 527,
-        "end_line": 534,
+        "line": 529,
+        "end_line": 536,
         "kind": "FunctionDef"
       },
       {
         "name": "TreePhysicalSource.tables",
         "signature": "tables(self, *, batch_rows)",
-        "line": 536,
-        "end_line": 543,
+        "line": 538,
+        "end_line": 545,
         "kind": "FunctionDef"
       },
       {
         "name": "episode",
         "signature": "episode(source, episode_id=0, *, generation=0, summary=None, assets=())",
-        "line": 546,
-        "end_line": 549,
+        "line": 548,
+        "end_line": 551,
         "kind": "FunctionDef"
       },
       {
         "name": "value_case_rows",
         "signature": "value_case_rows(dt=1 / 8)",
-        "line": 552,
-        "end_line": 580,
+        "line": 554,
+        "end_line": 582,
         "kind": "FunctionDef"
       },
       {
         "name": "_with_forces",
         "signature": "_with_forces(row)",
-        "line": 583,
-        "end_line": 594,
+        "line": 585,
+        "end_line": 596,
         "kind": "FunctionDef"
       },
       {
         "name": "_forwarded",
         "signature": "_forwarded(rows)",
-        "line": 597,
-        "end_line": 609,
+        "line": 599,
+        "end_line": 611,
         "kind": "FunctionDef"
       },
       {
         "name": "synthetic_capture",
         "signature": "synthetic_capture(rows=None, *, episodes=1, summary=None, assets=(), channels=None, forces=False, forwarded=False, value_cases=False, events=(), metadata=None, catalog=None, enabled=True)",
-        "line": 612,
-        "end_line": 668,
+        "line": 614,
+        "end_line": 670,
         "kind": "FunctionDef"
       },
       {
         "name": "synthetic_capture.materialize",
         "signature": "materialize(row)",
-        "line": 650,
-        "end_line": 655,
+        "line": 652,
+        "end_line": 657,
         "kind": "FunctionDef"
       }
     ],
@@ -33372,8 +33456,8 @@
     "id": "F299",
     "path": "tests/reference/test_articulated_config.py",
     "owner_task": "T52",
-    "source_hash": "71f9a2f76fa6c3c51c3dc4c1ca6b6c95d5df67e89c013087cfd54a6578d3a4e4",
-    "line_count": 51,
+    "source_hash": "4ad84b50077dcba52e8bf0d5ff8d242cd9701b9edae1c0be0ba558f273db2cf6",
+    "line_count": 105,
     "module_summary": "Topology normalization and gate budgets belong to their configuration.",
     "symbols": [
       {
@@ -33398,31 +33482,66 @@
         "kind": "FunctionDef"
       },
       {
+        "name": "test_delivered_power_budgets_fall_back_to_capability_caps",
+        "signature": "test_delivered_power_budgets_fall_back_to_capability_caps()",
+        "line": 24,
+        "end_line": 38,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_delivered_power_budgets_validate_like_other_budgets",
+        "signature": "test_delivered_power_budgets_validate_like_other_budgets(field, value)",
+        "line": 44,
+        "end_line": 46,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_normal_bounds_must_be_finite_when_set",
+        "signature": "test_weld_normal_bounds_must_be_finite_when_set(field, value)",
+        "line": 55,
+        "end_line": 59,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_normal_bounds_accept_tension_retention",
+        "signature": "test_weld_normal_bounds_accept_tension_retention(field)",
+        "line": 66,
+        "end_line": 68,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_shear_capacity_is_nonnegative",
+        "signature": "test_weld_shear_capacity_is_nonnegative(field, value)",
+        "line": 73,
+        "end_line": 75,
+        "kind": "FunctionDef"
+      },
+      {
         "name": "test_balance_defaults",
         "signature": "test_balance_defaults()",
-        "line": 24,
-        "end_line": 26,
+        "line": 78,
+        "end_line": 80,
         "kind": "FunctionDef"
       },
       {
         "name": "test_invalid_balance_thresholds_are_rejected",
         "signature": "test_invalid_balance_thresholds_are_rejected(field, value)",
-        "line": 31,
-        "end_line": 33,
+        "line": 85,
+        "end_line": 87,
         "kind": "FunctionDef"
       },
       {
         "name": "test_surge_and_trim_are_validated_in_climb_config",
         "signature": "test_surge_and_trim_are_validated_in_climb_config()",
-        "line": 36,
-        "end_line": 45,
+        "line": 90,
+        "end_line": 99,
         "kind": "FunctionDef"
       },
       {
         "name": "test_balance_grace_must_be_finite_and_nonnegative",
         "signature": "test_balance_grace_must_be_finite_and_nonnegative(value)",
-        "line": 49,
-        "end_line": 51,
+        "line": 103,
+        "end_line": 105,
         "kind": "FunctionDef"
       }
     ],
@@ -33637,8 +33756,8 @@
     "id": "F301",
     "path": "tests/reference/test_attachment_budget.py",
     "owner_task": "T52",
-    "source_hash": "3274716f283dbc6661bca5fad255abfc8efb153f1194100caa00dfe21b6d7b18",
-    "line_count": 79,
+    "source_hash": "c684793b6252caeddf420ac97ef0770001c0443293a8fb86a97c5e327e246ae4",
+    "line_count": 137,
     "module_summary": "",
     "symbols": [
       {
@@ -33702,6 +33821,34 @@
         "signature": "test_negative_measurement_fields_are_rejected()",
         "line": 74,
         "end_line": 79,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "_weld_budget",
+        "signature": "_weld_budget(**overrides)",
+        "line": 82,
+        "end_line": 89,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_envelope_admits_tension_and_shear_within_capacity",
+        "signature": "test_weld_envelope_admits_tension_and_shear_within_capacity()",
+        "line": 92,
+        "end_line": 108,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_envelope_bounds_compression_and_saddle_tension",
+        "signature": "test_weld_envelope_bounds_compression_and_saddle_tension()",
+        "line": 111,
+        "end_line": 120,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_weld_fields_apply_only_to_welded_interfaces",
+        "signature": "test_weld_fields_apply_only_to_welded_interfaces()",
+        "line": 123,
+        "end_line": 137,
         "kind": "FunctionDef"
       }
     ],
@@ -35873,7 +36020,7 @@
     "owner_task": "T53",
     "source_hash": "7fcdbcdbb5daac15657e1442f187823c2c95994be572c1e5acacee3fdafaf4c9",
     "line_count": 131,
-    "module_summary": "Unit coverage for the realtime report's provenance and baseline blocks.\n\nmeasure_realtime() itself is exercised end-to-end by the slow realtime\ngate; these tests pin the bookkeeping contracts — percentile keys,\nbuild/hardening provenance, per-metric deltas and the comparability\nflags — without paying for a 20-second simulation.",
+    "module_summary": "Unit coverage for the realtime report's provenance and baseline blocks.\n\nmeasure_realtime() itself is exercised end-to-end by the slow realtime\ngate; these tests pin the bookkeeping contracts \u2014 percentile keys,\nbuild/hardening provenance, per-metric deltas and the comparability\nflags \u2014 without paying for a 20-second simulation.",
     "symbols": [
       {
         "name": "_write_json",
@@ -36346,7 +36493,7 @@
     "owner_task": "T53",
     "source_hash": "dc7d586dd7f8fe93d6b11220b07bcb62971ab8ca9b965ee84902bab71cabbf88",
     "line_count": 533,
-    "module_summary": "Native drivetrain transactions: a rejected staged update publishes nothing.\n\nEvery mutating drivetrain path — shift, prepare, reset, restore — stages the\ncandidate on owned scratch model/data and only commits fully validated state.\nThese tests pin the observable contract over the FFI: frozen ``drive_state``\nsnapshots, engine qpos/qvel, and the prepared-storage generation counters must\nbe bitwise-identical after any rejection, and a repeated attempt must reject\nidentically. Successful commits must land atomically without reallocating the\nprepared buffers (generation and capacity stable).",
+    "module_summary": "Native drivetrain transactions: a rejected staged update publishes nothing.\n\nEvery mutating drivetrain path \u2014 shift, prepare, reset, restore \u2014 stages the\ncandidate on owned scratch model/data and only commits fully validated state.\nThese tests pin the observable contract over the FFI: frozen ``drive_state``\nsnapshots, engine qpos/qvel, and the prepared-storage generation counters must\nbe bitwise-identical after any rejection, and a repeated attempt must reject\nidentically. Successful commits must land atomically without reallocating the\nprepared buffers (generation and capacity stable).",
     "symbols": [
       {
         "name": "_invalid_cassette",
@@ -36564,7 +36711,7 @@
     "owner_task": "T52",
     "source_hash": "7b848b53425d8594b24d87b0a15eca5b6bab92f0551d134fc29ce60bfb131f73",
     "line_count": 1183,
-    "module_summary": "Native equality reactions + Accelerate DGELSD least squares (T2a).\n\nEvery native reading is taken on the Stepper's owned (mjModel, mjData)\npair — the same solved EFC arena the Python oracle reads — so the outputs\nmust be bitwise identical. Equality rows are re-derived from the CURRENT\nefc_type/efc_id arena on every evaluation: membership is never cached.\nThe least-squares hook runs the same Accelerate ILP64 DGELSD\n(_dgelsd$NEWLAPACK$ILP64) that numpy.linalg.lstsq dispatches to on this\nplatform, with numpy's exact buffer layout, workspace query, FP-flag\nerror semantics, and output contract.",
+    "module_summary": "Native equality reactions + Accelerate DGELSD least squares (T2a).\n\nEvery native reading is taken on the Stepper's owned (mjModel, mjData)\npair \u2014 the same solved EFC arena the Python oracle reads \u2014 so the outputs\nmust be bitwise identical. Equality rows are re-derived from the CURRENT\nefc_type/efc_id arena on every evaluation: membership is never cached.\nThe least-squares hook runs the same Accelerate ILP64 DGELSD\n(_dgelsd$NEWLAPACK$ILP64) that numpy.linalg.lstsq dispatches to on this\nplatform, with numpy's exact buffer layout, workspace query, FP-flag\nerror semantics, and output contract.",
     "symbols": [
       {
         "name": "bits",
@@ -36971,7 +37118,7 @@
     "owner_task": "T52",
     "source_hash": "d7777d18fa58d835641a8509c6617f17ad33d5995919eff76de43fbc9960e34c",
     "line_count": 1016,
-    "module_summary": "native_bench CLI/state contract regressions (native-safety plan tasks R2/R3).\n\nFixtures are generated per test — a slide-joint chain sized to the case plus\na BIKEST02 state.bin — so no case depends on the tracked artifacts alone.\nThe executable comes from the selected build (the same\nNATIVE_TEST_BUILD_PATH / NATIVE_TEST_BUILD_DIR resolution used by the native\nextension tests), which keeps the ASan/UBSan build's native_bench reachable\nfrom this suite.\n\nBundle fixtures are written through tools/proto_native_bench/state_format.py\nserialize_state: an 80-byte little-endian header (magic BIKEST02, version,\nflags, nq/nv/na/nu/nbody, payload_bytes, model_crc64, state_crc64) followed by\nthe binary64 payload. Python-side coverage of the same format lives in\ntest_native_state_bundle.py; this file exercises the C++ consumer through the\nnative_bench CLI, including the matched-workload conformance report.",
+    "module_summary": "native_bench CLI/state contract regressions (native-safety plan tasks R2/R3).\n\nFixtures are generated per test \u2014 a slide-joint chain sized to the case plus\na BIKEST02 state.bin \u2014 so no case depends on the tracked artifacts alone.\nThe executable comes from the selected build (the same\nNATIVE_TEST_BUILD_PATH / NATIVE_TEST_BUILD_DIR resolution used by the native\nextension tests), which keeps the ASan/UBSan build's native_bench reachable\nfrom this suite.\n\nBundle fixtures are written through tools/proto_native_bench/state_format.py\nserialize_state: an 80-byte little-endian header (magic BIKEST02, version,\nflags, nq/nv/na/nu/nbody, payload_bytes, model_crc64, state_crc64) followed by\nthe binary64 payload. Python-side coverage of the same format lives in\ntest_native_state_bundle.py; this file exercises the C++ consumer through the\nnative_bench CLI, including the matched-workload conformance report.",
     "symbols": [
       {
         "name": "bench_executable",
@@ -37513,7 +37660,7 @@
     "owner_task": "T52",
     "source_hash": "c88495e1047c8bfb3f978e0d86b8fcdecf835f059521589cea4ff099030c2c39",
     "line_count": 233,
-    "module_summary": "Native brake + resistance writers are bitwise-equal to the Python writers.\n\nDual-run oracle per stored golden state (mirrors the T2 oracle): a fresh\n``MjData`` on the saved ``model.mjb`` is reset to ``state_*[k]`` and forwarded,\nthen the PYTHON writer objects from the capturing env\n(``env.sim.brakes`` / ``env.sim.physical.resistance``) run on it — this\nexercises input-derivation too, not just the artifact. The native writers run\nthrough ``Stepper(path, project(env))``.",
+    "module_summary": "Native brake + resistance writers are bitwise-equal to the Python writers.\n\nDual-run oracle per stored golden state (mirrors the T2 oracle): a fresh\n``MjData`` on the saved ``model.mjb`` is reset to ``state_*[k]`` and forwarded,\nthen the PYTHON writer objects from the capturing env\n(``env.sim.brakes`` / ``env.sim.physical.resistance``) run on it \u2014 this\nexercises input-derivation too, not just the artifact. The native writers run\nthrough ``Stepper(path, project(env))``.",
     "symbols": [
       {
         "name": "_golden",
@@ -37953,7 +38100,7 @@
     "owner_task": "T52",
     "source_hash": "d06f0969b2a34bb9b9f99a58e189dab833c761c2c721c327b1a51d502e7fb464",
     "line_count": 370,
-    "module_summary": "F5: deterministic interval ids and the live cruise timestep.\n\n``bike_sim.sim.ride.tire_forces.interval_id`` and its native twin\n``interval_clock::interval_id`` implement the spec-S4 interval conversion:\nbinary64 ``time / dt`` rounded half-even — independent of the process\nfloating-point rounding mode — accepted on ``[0, 2**63 - 1]``. Domain\nviolations (nonfinite or negative time, nonpositive or nonfinite dt) are\n``ValueError``; a finite input whose interval overflows int64 is\n``OverflowError``. The native tire snapshot path must emit the same ids as\nthe Python applier, and the cruise integrators must read\n``model.opt.timestep`` at compute time, not a constructor-cached copy.",
+    "module_summary": "F5: deterministic interval ids and the live cruise timestep.\n\n``bike_sim.sim.ride.tire_forces.interval_id`` and its native twin\n``interval_clock::interval_id`` implement the spec-S4 interval conversion:\nbinary64 ``time / dt`` rounded half-even \u2014 independent of the process\nfloating-point rounding mode \u2014 accepted on ``[0, 2**63 - 1]``. Domain\nviolations (nonfinite or negative time, nonpositive or nonfinite dt) are\n``ValueError``; a finite input whose interval overflows int64 is\n``OverflowError``. The native tire snapshot path must emit the same ids as\nthe Python applier, and the cruise integrators must read\n``model.opt.timestep`` at compute time, not a constructor-cached copy.",
     "symbols": [
       {
         "name": "_fenv",
@@ -38599,7 +38746,7 @@
     "owner_task": "T52",
     "source_hash": "7ce2ccbe72f0aa6a49e1818951db04aeda875f67bf8d1d0a709f401b97caa6be",
     "line_count": 159,
-    "module_summary": "Native distributed-tire stands: the contact_manifold_rigs flat/step rigs\nrunning on the native Stepper's distributed writer.\n\nThe loop mirrors validation/contact_manifold_rigs.py::_run_stand line for\nline on the SAME wheel_stand models (hfield terrain, collision-disabled\nwheel geoms): the native writer's ``tire_qfrc`` supplies the interval\nforce while the energy ledger reads native diagnostics, the native\n``kinetic_energy``/``tire_stored_energy`` accessors and the MuJoCo state\nexposed through the Stepper views — nothing is reconstructed from a\nshared force matrix. The asserted bounds are the oracle rigs' own.",
+    "module_summary": "Native distributed-tire stands: the contact_manifold_rigs flat/step rigs\nrunning on the native Stepper's distributed writer.\n\nThe loop mirrors validation/contact_manifold_rigs.py::_run_stand line for\nline on the SAME wheel_stand models (hfield terrain, collision-disabled\nwheel geoms): the native writer's ``tire_qfrc`` supplies the interval\nforce while the energy ledger reads native diagnostics, the native\n``kinetic_energy``/``tire_stored_energy`` accessors and the MuJoCo state\nexposed through the Stepper views \u2014 nothing is reconstructed from a\nshared force matrix. The asserted bounds are the oracle rigs' own.",
     "symbols": [
       {
         "name": "_stand",
@@ -39392,8 +39539,8 @@
     "id": "F340",
     "path": "tests/reference/test_native_encode_columns.py",
     "owner_task": "T52",
-    "source_hash": "6ca5bb3aad74d07f245904a398c6d5a756463967f7b9bcc6b272b0449d8d2c30",
-    "line_count": 1088,
+    "source_hash": "223e1332f555f3af5e2553002e44f7f66c369e070c577a343e87254a1989b335",
+    "line_count": 1091,
     "module_summary": "Differential tests: native columnar encoder vs the encode_rows oracle.",
     "symbols": [
       {
@@ -39691,13 +39838,6 @@
         "kind": "FunctionDef"
       },
       {
-        "name": "test_whole_episode_single_pass.spy",
-        "signature": "spy(*args, **kwargs)",
-        "line": 923,
-        "end_line": 926,
-        "kind": "FunctionDef"
-      },
-      {
         "name": "_derived_stage_rows",
         "signature": "_derived_stage_rows(stages=_DERIVED_STAGE)",
         "line": 969,
@@ -39736,7 +39876,7 @@
         "name": "test_derived_events_real_episode_bitwise",
         "signature": "test_derived_events_real_episode_bitwise(monkeypatch)",
         "line": 1062,
-        "end_line": 1088,
+        "end_line": 1091,
         "kind": "FunctionDef"
       }
     ],
@@ -41131,7 +41271,7 @@
     "owner_task": "T52",
     "source_hash": "5de0a7fc289dd40dc125af7fa98b6a906c6268f6c249b1f30cbdc9b920a48898",
     "line_count": 893,
-    "module_summary": "Bitwise oracle tests for the native pneumatic tyre brush kernels.\n\nCovers the Task-9 debug surfaces in ``bike_native``:\n\n* ``_debug_pneumatic_relax``             — ``brush.relax``\n* ``_debug_pneumatic_sigma_x``           — ``brush._sigma_x``\n* ``_debug_pneumatic_surface_mu``        — ``SurfaceSpec.mu`` Stribeck\n* ``_debug_pneumatic_tread_stiffness``   — ``brush._tread_stiffness_n_m2``\n* ``_debug_pneumatic_lumped_brush``      — ``brush.lumped_brush``\n* ``_debug_pneumatic_discretised_brush`` — ``brush.DiscretisedBrush.step``\n  plus the post-call state (bristle row + ``kappa_prime``)\n\nEvery floating-point scalar and array is compared raw-byte-for-raw-byte\nagainst the pure-Python oracle in\n``src/bike_sim/sim/ride/tyre/brush.py`` — ``tobytes()`` keeps signed\nzeros, infinities and NaN payloads distinguishable.  The discretised\nsurface also returns the post-call state, so bristle evolution and the\ntransient slip filter are pinned bitwise across multi-step sequences.\n\nThe corpus exercises every oracle branch: all four ``relax`` return\npaths (zero sigma moving, zero sigma parked, parked linear integration,\nthe exponential lag) and its two rejection levels; ``_sigma_x``'s\nlocked-wheel -inf limit, the +inf copysign and the ratio; both\n``_tread_stiffness_n_m2`` resolutions and its invalid-value rejection;\n``lumped_brush``'s staged finite gate (inf kappa allowed), zero-load\nand zero-stiffness early returns, the saturated |z|>=1 copysign force\nand the cubic region; ``DiscretisedBrush.step``'s shape/content/scalar\nvalidation order, the zero-load reset mutation, advection under both\ntransport directions and out-of-window interp sentinels, the verbatim\ncopy at zero wheel speed, active masking, the exact |trial|==limit\nclip boundary, partial and full sliding, and single-element patches.",
+    "module_summary": "Bitwise oracle tests for the native pneumatic tyre brush kernels.\n\nCovers the Task-9 debug surfaces in ``bike_native``:\n\n* ``_debug_pneumatic_relax``             \u2014 ``brush.relax``\n* ``_debug_pneumatic_sigma_x``           \u2014 ``brush._sigma_x``\n* ``_debug_pneumatic_surface_mu``        \u2014 ``SurfaceSpec.mu`` Stribeck\n* ``_debug_pneumatic_tread_stiffness``   \u2014 ``brush._tread_stiffness_n_m2``\n* ``_debug_pneumatic_lumped_brush``      \u2014 ``brush.lumped_brush``\n* ``_debug_pneumatic_discretised_brush`` \u2014 ``brush.DiscretisedBrush.step``\n  plus the post-call state (bristle row + ``kappa_prime``)\n\nEvery floating-point scalar and array is compared raw-byte-for-raw-byte\nagainst the pure-Python oracle in\n``src/bike_sim/sim/ride/tyre/brush.py`` \u2014 ``tobytes()`` keeps signed\nzeros, infinities and NaN payloads distinguishable.  The discretised\nsurface also returns the post-call state, so bristle evolution and the\ntransient slip filter are pinned bitwise across multi-step sequences.\n\nThe corpus exercises every oracle branch: all four ``relax`` return\npaths (zero sigma moving, zero sigma parked, parked linear integration,\nthe exponential lag) and its two rejection levels; ``_sigma_x``'s\nlocked-wheel -inf limit, the +inf copysign and the ratio; both\n``_tread_stiffness_n_m2`` resolutions and its invalid-value rejection;\n``lumped_brush``'s staged finite gate (inf kappa allowed), zero-load\nand zero-stiffness early returns, the saturated |z|>=1 copysign force\nand the cubic region; ``DiscretisedBrush.step``'s shape/content/scalar\nvalidation order, the zero-load reset mutation, advection under both\ntransport directions and out-of-window interp sentinels, the verbatim\ncopy at zero wheel speed, active masking, the exact |trial|==limit\nclip boundary, partial and full sliding, and single-element patches.",
     "symbols": [
       {
         "name": "_surface_dict",
@@ -41408,7 +41548,7 @@
     "owner_task": "T52",
     "source_hash": "e17adfddc6a9b907e57ac8277518dd88ab5624fa78a60dee4d80cad1a3d8d973",
     "line_count": 868,
-    "module_summary": "Bitwise oracle tests for the native pneumatic tyre carcass kernel.\n\nCovers the Task-8 debug surfaces in ``bike_native``:\n\n* ``_debug_pneumatic_carcass``           — ``carcass.evaluate_carcass`` +\n  ``CarcassState`` state transitions\n* ``_debug_pneumatic_advance_unloaded``  — ``CarcassState.advance_unloaded``\n* ``_debug_pneumatic_material_rate``     — ``material_deflection_rate_mps``\n* ``_debug_pneumatic_advect``            — ``_advect_material``\n* ``_debug_pneumatic_math``              — the ``np.tanh`` / ``np.hypot``\n  lowerings the kernel uses\n\nEvery floating-point array and scalar is compared raw-byte-for-raw-byte\nagainst the pure-Python oracle in\n``src/bike_sim/sim/ride/tyre/carcass.py`` across identical multi-step\nsequences — ``tobytes()`` keeps signed zeros and NaN payloads\ndistinguishable.  The state dict carries every ``CarcassState`` field\n(three history rows, ``initialized`` and the five rim-event slots), so\nthe post-call state is pinned bitwise alongside each step's result.\n\nThe corpus exercises every oracle branch: the ``initialized`` first-step\npath, both upwind directions of ``material_deflection_rate_mps``, the\n``omega == 0`` advect copy, fractional/out-of-range ``np.interp`` source\nbins, the single-ray contact-length cell, ``np.maximum`` saturation at\nzero, the rim-strike FSM start/track/release cycle, ``advance_unloaded``'s\nearly return, validation and ``np.any`` gate, and the four-level\ninvalid-input rejection order with failure atomicity.",
+    "module_summary": "Bitwise oracle tests for the native pneumatic tyre carcass kernel.\n\nCovers the Task-8 debug surfaces in ``bike_native``:\n\n* ``_debug_pneumatic_carcass``           \u2014 ``carcass.evaluate_carcass`` +\n  ``CarcassState`` state transitions\n* ``_debug_pneumatic_advance_unloaded``  \u2014 ``CarcassState.advance_unloaded``\n* ``_debug_pneumatic_material_rate``     \u2014 ``material_deflection_rate_mps``\n* ``_debug_pneumatic_advect``            \u2014 ``_advect_material``\n* ``_debug_pneumatic_math``              \u2014 the ``np.tanh`` / ``np.hypot``\n  lowerings the kernel uses\n\nEvery floating-point array and scalar is compared raw-byte-for-raw-byte\nagainst the pure-Python oracle in\n``src/bike_sim/sim/ride/tyre/carcass.py`` across identical multi-step\nsequences \u2014 ``tobytes()`` keeps signed zeros and NaN payloads\ndistinguishable.  The state dict carries every ``CarcassState`` field\n(three history rows, ``initialized`` and the five rim-event slots), so\nthe post-call state is pinned bitwise alongside each step's result.\n\nThe corpus exercises every oracle branch: the ``initialized`` first-step\npath, both upwind directions of ``material_deflection_rate_mps``, the\n``omega == 0`` advect copy, fractional/out-of-range ``np.interp`` source\nbins, the single-ray contact-length cell, ``np.maximum`` saturation at\nzero, the rim-strike FSM start/track/release cycle, ``advance_unloaded``'s\nearly return, validation and ``np.any`` gate, and the four-level\ninvalid-input rejection order with failure atomicity.",
     "symbols": [
       {
         "name": "_spec_dict",
@@ -41692,7 +41832,7 @@
     "owner_task": "T52",
     "source_hash": "f46bedec4d1dedd0f2005c34391341218b9779d8907c59fd17e62a530c8427c3",
     "line_count": 338,
-    "module_summary": "Bitwise oracle tests for the native pneumatic tyre geometry kernel.\n\nCovers the Task-7 debug surfaces in ``bike_native``:\n\n* ``_debug_pneumatic_ring``     — ``geometry.RayRing``\n* ``_debug_pneumatic_intersect``— ``geometry.RoadProfile`` + ``geometry.intersect``\n* ``_debug_pneumatic_patches``  — ``geometry.patches``\n\nEvery floating-point array is compared raw-byte-for-raw-byte against the\npure-Python oracle in ``src/bike_sim/sim/ride/tyre/geometry.py`` (NumPy\nlinspace/sin/cos/atan2/interp semantics).  ``tobytes()`` comparison keeps\nsigned zeros and NaN payloads distinguishable — ``np.array_equal`` would\nhide both.\n\nThe corpus is constructed so every oracle branch in ``intersect`` is\ntaken at least once:\n\n* ``early_window``    — ``index_range`` yields ``hi - lo < 2`` (wheel\n  off either profile end, or ``radius == 0``).\n* ``airborne``        — window present but no profile sample inside the\n  disc (``inside.any()`` false).\n* ``fast``            — monotone ``phi`` window, ``searchsorted`` row.\n* ``brute``           — non-monotone ``phi`` window, O(n·m) row.\n* coverage            — both ``|phi| > half_angle + 1e-9`` and\n  ``pz >= cz`` causes, on fast and brute paths.\n\n``_oracle_branch`` replicates the oracle's own window/phi computation so\neach corpus entry can pin the branch it is meant to exercise; the real\nverification is always the bitwise row comparison.",
+    "module_summary": "Bitwise oracle tests for the native pneumatic tyre geometry kernel.\n\nCovers the Task-7 debug surfaces in ``bike_native``:\n\n* ``_debug_pneumatic_ring``     \u2014 ``geometry.RayRing``\n* ``_debug_pneumatic_intersect``\u2014 ``geometry.RoadProfile`` + ``geometry.intersect``\n* ``_debug_pneumatic_patches``  \u2014 ``geometry.patches``\n\nEvery floating-point array is compared raw-byte-for-raw-byte against the\npure-Python oracle in ``src/bike_sim/sim/ride/tyre/geometry.py`` (NumPy\nlinspace/sin/cos/atan2/interp semantics).  ``tobytes()`` comparison keeps\nsigned zeros and NaN payloads distinguishable \u2014 ``np.array_equal`` would\nhide both.\n\nThe corpus is constructed so every oracle branch in ``intersect`` is\ntaken at least once:\n\n* ``early_window``    \u2014 ``index_range`` yields ``hi - lo < 2`` (wheel\n  off either profile end, or ``radius == 0``).\n* ``airborne``        \u2014 window present but no profile sample inside the\n  disc (``inside.any()`` false).\n* ``fast``            \u2014 monotone ``phi`` window, ``searchsorted`` row.\n* ``brute``           \u2014 non-monotone ``phi`` window, O(n\u00b7m) row.\n* coverage            \u2014 both ``|phi| > half_angle + 1e-9`` and\n  ``pz >= cz`` causes, on fast and brute paths.\n\n``_oracle_branch`` replicates the oracle's own window/phi computation so\neach corpus entry can pin the branch it is meant to exercise; the real\nverification is always the bitwise row comparison.",
     "symbols": [
       {
         "name": "_road",
@@ -41856,7 +41996,7 @@
     "owner_task": "T52",
     "source_hash": "9d2966dc27f1099ad94b691e902da7cc7df502a6957b2581e5db50bafba8d20f",
     "line_count": 1058,
-    "module_summary": "Bitwise oracle tests for the native pneumatic tyre model.\n\nCovers the Task-10 debug surfaces in ``bike_native``:\n\n* ``_debug_pneumatic_evaluate``            — ``PneumaticTyre.evaluate``:\n  intersect → ``evaluate_carcass`` → patch-state migration → lumped or\n  discretised brush → wheel outputs, plus the post-call\n  ``{carcass, patch_states}`` snapshot; the optional ``pressure`` key\n  in the ``step`` dict runs ``set_pressure`` before the step\n* ``_debug_pneumatic_model_set_pressure``  — ``set_pressure``'s clamp\n* ``_debug_pneumatic_model_reset``         — ``reset`` on restored\n  state: the ``WheelOutputs.empty`` snapshot plus cleared state\n\nEvery floating-point scalar and array is compared raw-byte-for-raw-byte\nagainst the pure-Python oracle in ``src/bike_sim/sim/ride/tyre/model.py``\n— ``tobytes()`` keeps signed zeros, infinities and NaN payloads\ndistinguishable.  The state dict carries every ``CarcassState`` field\nplus the ordered ``_patch_states`` slots (``kappa_prime`` and, under the\ndiscretised tier, the detailed brush's bristle row and its own\n``kappa_prime``), so patch-state migration is pinned bitwise alongside\neach step's outputs.\n\nThe corpus exercises every oracle path in ``evaluate``: the airborne\nclean-state fast path (``advance_unloaded`` + patch-state clear), the\nloaded-then-airborne no-patch path (unloaded outputs carrying rim\nstate), the loaded path end to end in both brush modes, exact-key and\nmax-overlap patch-state migration with bristle copying — including the\nused-set drop and the slice-broadcast rejection — multi-patch roads,\nrim-strike events, the tread rolling loss in every ``np.sign``\ncombination including the stationary fallback and the rest taper, the\npressure-dependent Crr power, ``set_pressure`` clamping, ``reset``, and\nthe input-validation order with failure atomicity.",
+    "module_summary": "Bitwise oracle tests for the native pneumatic tyre model.\n\nCovers the Task-10 debug surfaces in ``bike_native``:\n\n* ``_debug_pneumatic_evaluate``            \u2014 ``PneumaticTyre.evaluate``:\n  intersect \u2192 ``evaluate_carcass`` \u2192 patch-state migration \u2192 lumped or\n  discretised brush \u2192 wheel outputs, plus the post-call\n  ``{carcass, patch_states}`` snapshot; the optional ``pressure`` key\n  in the ``step`` dict runs ``set_pressure`` before the step\n* ``_debug_pneumatic_model_set_pressure``  \u2014 ``set_pressure``'s clamp\n* ``_debug_pneumatic_model_reset``         \u2014 ``reset`` on restored\n  state: the ``WheelOutputs.empty`` snapshot plus cleared state\n\nEvery floating-point scalar and array is compared raw-byte-for-raw-byte\nagainst the pure-Python oracle in ``src/bike_sim/sim/ride/tyre/model.py``\n\u2014 ``tobytes()`` keeps signed zeros, infinities and NaN payloads\ndistinguishable.  The state dict carries every ``CarcassState`` field\nplus the ordered ``_patch_states`` slots (``kappa_prime`` and, under the\ndiscretised tier, the detailed brush's bristle row and its own\n``kappa_prime``), so patch-state migration is pinned bitwise alongside\neach step's outputs.\n\nThe corpus exercises every oracle path in ``evaluate``: the airborne\nclean-state fast path (``advance_unloaded`` + patch-state clear), the\nloaded-then-airborne no-patch path (unloaded outputs carrying rim\nstate), the loaded path end to end in both brush modes, exact-key and\nmax-overlap patch-state migration with bristle copying \u2014 including the\nused-set drop and the slice-broadcast rejection \u2014 multi-patch roads,\nrim-strike events, the tread rolling loss in every ``np.sign``\ncombination including the stationary fallback and the rest taper, the\npressure-dependent Crr power, ``set_pressure`` clamping, ``reset``, and\nthe input-validation order with failure atomicity.",
     "symbols": [
       {
         "name": "_spec_dict",
@@ -42506,7 +42646,7 @@
     "owner_task": "T52",
     "source_hash": "674fdcc9c44bbcccbaafe4642b0e54ab3e86e13f384bb243d421db1e42d7a480",
     "line_count": 378,
-    "module_summary": "The pneumatic backend's native wire: projection shape, schema\nround-trip, the configured/track surface modes, and the C++ parser\nboundary.\n\n``project()`` is exercised end-to-end on a real physical RideSimulation;\nthe structural and rejection checks mutate the emitted ``tire`` section\nand re-run ``validate_config``, and the ``selected_native_parser_*``\ntests pin where the selected artifact accepts the wire — the C++ config\nlayer (Task 6) parses and validates it while the pneumatic writer lands\nwith the Stepper dispatch task.",
+    "module_summary": "The pneumatic backend's native wire: projection shape, schema\nround-trip, the configured/track surface modes, and the C++ parser\nboundary.\n\n``project()`` is exercised end-to-end on a real physical RideSimulation;\nthe structural and rejection checks mutate the emitted ``tire`` section\nand re-run ``validate_config``, and the ``selected_native_parser_*``\ntests pin where the selected artifact accepts the wire \u2014 the C++ config\nlayer (Task 6) parses and validates it while the pneumatic writer lands\nwith the Stepper dispatch task.",
     "symbols": [
       {
         "name": "_sim",
@@ -42712,477 +42852,477 @@
     "id": "F352",
     "path": "tests/reference/test_native_recording_lifecycle.py",
     "owner_task": "T53",
-    "source_hash": "3c096bc1f01ace4f033e5ca30a219d0b8f0308fd283488ca66d64fb517fb6d06",
-    "line_count": 967,
+    "source_hash": "b00c54e67126afb9569a8958485980d6cdaa2c5d179ea07c7d069020a75f2568",
+    "line_count": 987,
     "module_summary": "A3 launch-level run-recording lifecycle contracts (R03/R11/R14/R16).\n\nFake-window viewer-pump tests (fake input + fake clock) sit beside real\nnative-driver adapter tests: episodes seal exactly once, the input journal\nstays receipt-ordered, publication happens only at ``finalize``, and every\nfailure path keeps its owned evidence alive for retry or post-mortem.",
     "symbols": [
       {
         "name": "_capture",
         "signature": "_capture(published, *, backend='native', mode='viewer', publisher=None, strict=False)",
-        "line": 32,
-        "end_line": 47,
+        "line": 33,
+        "end_line": 48,
         "kind": "FunctionDef"
       },
       {
         "name": "_capture.spy",
         "signature": "spy(capture, out_root)",
-        "line": 39,
-        "end_line": 44,
+        "line": 40,
+        "end_line": 45,
         "kind": "FunctionDef"
       },
       {
         "name": "_recording",
         "signature": "_recording(*, mode='viewer', publisher=None)",
-        "line": 50,
-        "end_line": 58,
+        "line": 51,
+        "end_line": 59,
         "kind": "FunctionDef"
       },
       {
         "name": "_interrupting_publisher",
         "signature": "_interrupting_publisher()",
-        "line": 61,
-        "end_line": 67,
+        "line": 62,
+        "end_line": 68,
         "kind": "FunctionDef"
       },
       {
         "name": "_interrupting_publisher.publish",
         "signature": "publish(capture, out_root)",
-        "line": 64,
-        "end_line": 66,
+        "line": 65,
+        "end_line": 67,
         "kind": "FunctionDef"
       },
       {
         "name": "kinds",
         "signature": "kinds(events, episode_id=None)",
-        "line": 70,
-        "end_line": 72,
+        "line": 71,
+        "end_line": 73,
         "kind": "FunctionDef"
       },
       {
         "name": "RecordingDriver",
         "signature": "class RecordingDriver(Driver)",
-        "line": 75,
-        "end_line": 120,
+        "line": 76,
+        "end_line": 121,
         "kind": "ClassDef"
       },
       {
         "name": "RecordingDriver.__init__",
         "signature": "__init__(self, clock, *, published=None, episode_rows=(), first_failure=None, advance_failures=(), seal_failures=())",
-        "line": 78,
-        "end_line": 87,
+        "line": 79,
+        "end_line": 88,
         "kind": "FunctionDef"
       },
       {
         "name": "RecordingDriver.advance",
         "signature": "advance(self, target, **kwargs)",
-        "line": 89,
-        "end_line": 96,
+        "line": 90,
+        "end_line": 97,
         "kind": "FunctionDef"
       },
       {
         "name": "RecordingDriver.summary",
         "signature": "summary(self, reason=None)",
-        "line": 98,
-        "end_line": 103,
+        "line": 99,
+        "end_line": 104,
         "kind": "FunctionDef"
       },
       {
         "name": "RecordingDriver.seal_episode",
         "signature": "seal_episode(self, episode_id, *, reason)",
-        "line": 105,
-        "end_line": 120,
+        "line": 106,
+        "end_line": 121,
         "kind": "FunctionDef"
       },
       {
         "name": "StoredPhysical",
         "signature": "class StoredPhysical(TreePhysicalSource)",
-        "line": 123,
-        "end_line": 137,
+        "line": 124,
+        "end_line": 138,
         "kind": "ClassDef"
       },
       {
         "name": "StoredPhysical.__init__",
         "signature": "__init__(self, rows, deriver_episode)",
-        "line": 131,
-        "end_line": 133,
+        "line": 132,
+        "end_line": 134,
         "kind": "FunctionDef"
       },
       {
         "name": "StoredPhysical.episode",
         "signature": "episode(self)",
-        "line": 136,
-        "end_line": 137,
+        "line": 137,
+        "end_line": 138,
         "kind": "FunctionDef"
       },
       {
         "name": "StoringDriver",
         "signature": "class StoringDriver(RecordingDriver)",
-        "line": 140,
-        "end_line": 170,
+        "line": 141,
+        "end_line": 171,
         "kind": "ClassDef"
       },
       {
         "name": "StoringDriver.__init__",
         "signature": "__init__(self, clock, *, seal_hooks=(), **kwargs)",
-        "line": 147,
-        "end_line": 149,
+        "line": 148,
+        "end_line": 150,
         "kind": "FunctionDef"
       },
       {
         "name": "StoringDriver.seal_episode",
         "signature": "seal_episode(self, episode_id, *, reason)",
-        "line": 151,
-        "end_line": 170,
+        "line": 152,
+        "end_line": 171,
         "kind": "FunctionDef"
       },
       {
         "name": "_second_sigint",
         "signature": "_second_sigint()",
-        "line": 173,
-        "end_line": 175,
+        "line": 174,
+        "end_line": 176,
         "kind": "FunctionDef"
       },
       {
         "name": "_event_kinds",
         "signature": "_event_kinds(path, episode_id=0)",
-        "line": 178,
-        "end_line": 183,
+        "line": 179,
+        "end_line": 184,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_journals_two_episodes_and_publishes_once",
         "signature": "test_viewer_journals_two_episodes_and_publishes_once(tmp_path, monkeypatch)",
-        "line": 186,
-        "end_line": 230,
+        "line": 187,
+        "end_line": 231,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_requests_are_journaled_before_state_changes",
         "signature": "test_viewer_requests_are_journaled_before_state_changes(tmp_path, monkeypatch)",
-        "line": 233,
-        "end_line": 252,
+        "line": 234,
+        "end_line": 253,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_playback_scale_is_requested_only",
         "signature": "test_viewer_playback_scale_is_requested_only(tmp_path, monkeypatch)",
-        "line": 255,
-        "end_line": 268,
+        "line": 256,
+        "end_line": 269,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_duplicate_terminal_notice_keeps_one_episode",
         "signature": "test_viewer_duplicate_terminal_notice_keeps_one_episode(tmp_path, monkeypatch)",
-        "line": 271,
-        "end_line": 290,
+        "line": 272,
+        "end_line": 291,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_duplicate_terminal_notice_keeps_one_episode.Ended",
         "signature": "class Ended(RecordingDriver)",
-        "line": 275,
-        "end_line": 279,
+        "line": 276,
+        "end_line": 280,
         "kind": "ClassDef"
       },
       {
         "name": "test_viewer_duplicate_terminal_notice_keeps_one_episode.Ended.advance",
         "signature": "advance(self, target, **kwargs)",
-        "line": 276,
-        "end_line": 279,
+        "line": 277,
+        "end_line": 280,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_ctrl_c_adds_no_control_and_still_finalizes",
         "signature": "test_viewer_ctrl_c_adds_no_control_and_still_finalizes(tmp_path, monkeypatch)",
-        "line": 293,
-        "end_line": 315,
+        "line": 294,
+        "end_line": 316,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_simulation_error_seals_prefix_and_reraises",
         "signature": "test_viewer_simulation_error_seals_prefix_and_reraises(tmp_path, monkeypatch)",
-        "line": 318,
-        "end_line": 331,
+        "line": 319,
+        "end_line": 332,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_second_ctrl_c_during_cleanup_seal_still_publishes",
         "signature": "test_viewer_second_ctrl_c_during_cleanup_seal_still_publishes(tmp_path, monkeypatch)",
-        "line": 334,
-        "end_line": 361,
+        "line": 335,
+        "end_line": 362,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_second_ctrl_c_during_cleanup_finalize_still_publishes",
         "signature": "test_viewer_second_ctrl_c_during_cleanup_finalize_still_publishes(tmp_path, monkeypatch)",
-        "line": 364,
-        "end_line": 386,
+        "line": 365,
+        "end_line": 387,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_ctrl_c_during_normal_finalize_publishes_then_stops",
         "signature": "test_viewer_ctrl_c_during_normal_finalize_publishes_then_stops(tmp_path, monkeypatch)",
-        "line": 389,
-        "end_line": 408,
+        "line": 390,
+        "end_line": 409,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_ctrl_c_during_normal_finalize_is_noted_on_stop",
         "signature": "test_viewer_ctrl_c_during_normal_finalize_is_noted_on_stop(tmp_path, monkeypatch)",
-        "line": 411,
-        "end_line": 427,
+        "line": 412,
+        "end_line": 428,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_strict_seal_rejection_retries_once",
         "signature": "test_viewer_strict_seal_rejection_retries_once(tmp_path, monkeypatch)",
-        "line": 430,
-        "end_line": 444,
+        "line": 431,
+        "end_line": 445,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_python_backend_record_rejected_before_window",
         "signature": "test_viewer_python_backend_record_rejected_before_window(tmp_path, monkeypatch)",
-        "line": 447,
-        "end_line": 455,
+        "line": 448,
+        "end_line": 456,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_transitions_carry_rule_version_and_interval",
         "signature": "test_derived_transitions_carry_rule_version_and_interval()",
-        "line": 458,
-        "end_line": 479,
+        "line": 459,
+        "end_line": 480,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_transitions_cover_shift_coast_and_limiter_gates",
         "signature": "test_derived_transitions_cover_shift_coast_and_limiter_gates()",
-        "line": 482,
-        "end_line": 537,
+        "line": 483,
+        "end_line": 538,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_transitions_cover_shift_coast_and_limiter_gates.drive_row",
         "signature": "drive_row(interval_id, **fields)",
-        "line": 484,
-        "end_line": 488,
+        "line": 485,
+        "end_line": 489,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_first_model_failure_stays_a_derived_transition",
         "signature": "test_derived_first_model_failure_stays_a_derived_transition()",
-        "line": 540,
-        "end_line": 560,
+        "line": 541,
+        "end_line": 561,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_first_model_failure_stays_a_derived_transition.violation_row",
         "signature": "violation_row(interval_id, first)",
-        "line": 541,
-        "end_line": 546,
+        "line": 542,
+        "end_line": 547,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_missing_reason_instrumentation_emits_nothing_source",
         "signature": "test_derived_missing_reason_instrumentation_emits_nothing_source()",
-        "line": 563,
-        "end_line": 586,
+        "line": 564,
+        "end_line": 587,
         "kind": "FunctionDef"
       },
       {
         "name": "test_derived_missing_reason_instrumentation_emits_nothing_source.crash_row",
         "signature": "crash_row(interval_id, *, cause_present, cause)",
-        "line": 566,
-        "end_line": 572,
+        "line": 567,
+        "end_line": 573,
         "kind": "FunctionDef"
       },
       {
         "name": "test_episode_interval_for_time_maps_failure_timestamp",
         "signature": "test_episode_interval_for_time_maps_failure_timestamp()",
-        "line": 589,
-        "end_line": 594,
+        "line": 590,
+        "end_line": 595,
         "kind": "FunctionDef"
       },
       {
         "name": "test_capture_retries_publication_with_evidence_intact",
         "signature": "test_capture_retries_publication_with_evidence_intact(tmp_path)",
-        "line": 597,
-        "end_line": 618,
+        "line": 598,
+        "end_line": 619,
         "kind": "FunctionDef"
       },
       {
         "name": "test_capture_retries_publication_with_evidence_intact.flaky",
         "signature": "flaky(capture, out_root)",
-        "line": 599,
-        "end_line": 603,
+        "line": 600,
+        "end_line": 604,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_rejects_python_record_before_any_setup",
         "signature": "test_headless_rejects_python_record_before_any_setup(tmp_path, monkeypatch)",
-        "line": 621,
-        "end_line": 628,
+        "line": 622,
+        "end_line": 629,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_rejects_python_record_before_any_setup.forbidden",
         "signature": "forbidden(*args, **kwargs)",
-        "line": 623,
-        "end_line": 624,
+        "line": 624,
+        "end_line": 625,
         "kind": "FunctionDef"
       },
       {
         "name": "_headless_driver",
         "signature": "_headless_driver(clock=None, cls=RecordingDriver, **driver_kwargs)",
-        "line": 631,
-        "end_line": 652,
+        "line": 632,
+        "end_line": 653,
         "kind": "FunctionDef"
       },
       {
         "name": "_headless_driver.Headless",
         "signature": "class Headless(cls)",
-        "line": 635,
-        "end_line": 649,
+        "line": 636,
+        "end_line": 650,
         "kind": "ClassDef"
       },
       {
         "name": "_headless_driver.Headless.__init__",
         "signature": "__init__(self)",
-        "line": 636,
-        "end_line": 638,
+        "line": 637,
+        "end_line": 639,
         "kind": "FunctionDef"
       },
       {
         "name": "_headless_driver.Headless.max_steps",
         "signature": "max_steps(self)",
-        "line": 639,
-        "end_line": 640,
+        "line": 640,
+        "end_line": 641,
         "kind": "FunctionDef"
       },
       {
         "name": "_headless_driver.Headless.advance",
         "signature": "advance(self, target, **kwargs)",
-        "line": 641,
-        "end_line": 649,
+        "line": 642,
+        "end_line": 650,
         "kind": "FunctionDef"
       },
       {
         "name": "_headless_args",
         "signature": "_headless_args(tmp_path, *, record=False, backend='native')",
-        "line": 655,
-        "end_line": 658,
+        "line": 656,
+        "end_line": 659,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_records_seals_and_finalizes_once",
         "signature": "test_headless_records_seals_and_finalizes_once(tmp_path, monkeypatch)",
-        "line": 661,
-        "end_line": 678,
+        "line": 662,
+        "end_line": 679,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_zero_step_failure_keeps_owned_episode",
         "signature": "test_headless_zero_step_failure_keeps_owned_episode(tmp_path, monkeypatch)",
-        "line": 681,
-        "end_line": 703,
+        "line": 682,
+        "end_line": 704,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_zero_step_failure_keeps_owned_episode.advance",
         "signature": "advance(target, **kwargs)",
-        "line": 688,
-        "end_line": 690,
+        "line": 689,
+        "end_line": 691,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_trailer_names_only_existing_artifacts",
         "signature": "test_headless_trailer_names_only_existing_artifacts(tmp_path, monkeypatch, capsys, record)",
-        "line": 707,
-        "end_line": 728,
+        "line": 708,
+        "end_line": 729,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_off_writes_no_artifact_files",
         "signature": "test_headless_off_writes_no_artifact_files(native_module, tmp_path)",
-        "line": 731,
-        "end_line": 749,
+        "line": 732,
+        "end_line": 757,
         "kind": "FunctionDef"
       },
       {
         "name": "test_explicit_programmatic_export_still_writes_artifacts",
         "signature": "test_explicit_programmatic_export_still_writes_artifacts(environment_factory, native_module, tmp_path)",
-        "line": 752,
-        "end_line": 774,
+        "line": 760,
+        "end_line": 782,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_success_with_failed_publication_is_nonzero",
         "signature": "test_headless_success_with_failed_publication_is_nonzero(tmp_path, monkeypatch)",
-        "line": 777,
-        "end_line": 791,
+        "line": 785,
+        "end_line": 799,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_success_with_failed_publication_is_nonzero.boom",
         "signature": "boom(capture, out_root)",
-        "line": 783,
-        "end_line": 784,
+        "line": 791,
+        "end_line": 792,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_publish_failure_preserves_primary_and_evidence",
         "signature": "test_headless_publish_failure_preserves_primary_and_evidence(tmp_path, monkeypatch)",
-        "line": 794,
-        "end_line": 816,
+        "line": 802,
+        "end_line": 824,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_publish_failure_preserves_primary_and_evidence.advance",
         "signature": "advance(target, **kwargs)",
-        "line": 801,
-        "end_line": 803,
+        "line": 809,
+        "end_line": 811,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_publish_failure_preserves_primary_and_evidence.boom",
         "signature": "boom(capture, out_root)",
-        "line": 805,
-        "end_line": 806,
+        "line": 813,
+        "end_line": 814,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_second_ctrl_c_during_seal_journals_and_still_publishes",
         "signature": "test_headless_second_ctrl_c_during_seal_journals_and_still_publishes(tmp_path, monkeypatch)",
-        "line": 819,
-        "end_line": 844,
+        "line": 827,
+        "end_line": 852,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_second_ctrl_c_during_finalize_is_noted_and_publishes",
         "signature": "test_headless_second_ctrl_c_during_finalize_is_noted_and_publishes(tmp_path, monkeypatch)",
-        "line": 847,
-        "end_line": 866,
+        "line": 855,
+        "end_line": 874,
         "kind": "FunctionDef"
       },
       {
         "name": "test_make_run_capture_rejects_non_native_recording",
         "signature": "test_make_run_capture_rejects_non_native_recording()",
-        "line": 869,
-        "end_line": 876,
+        "line": 877,
+        "end_line": 884,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_native_run_records_one_episode",
         "signature": "test_headless_native_run_records_one_episode(native_module, tmp_path)",
-        "line": 882,
-        "end_line": 919,
+        "line": 890,
+        "end_line": 932,
         "kind": "FunctionDef"
       },
       {
         "name": "test_viewer_native_pump_seals_reset_generations",
         "signature": "test_viewer_native_pump_seals_reset_generations(environment_factory, native_module, tmp_path, monkeypatch)",
-        "line": 922,
-        "end_line": 967,
+        "line": 935,
+        "end_line": 987,
         "kind": "FunctionDef"
       }
     ],
@@ -43199,8 +43339,10 @@
       "bike_sim.sim.ride.physical_frontend",
       "bike_sim.sim.ride.reference_monitor",
       "native_loader",
+      "pathlib",
       "pytest",
       "signal",
+      "tempfile",
       "test_frontend_windows",
       "types"
     ],
@@ -43546,8 +43688,8 @@
     "id": "F357",
     "path": "tests/reference/test_native_research_environment.py",
     "owner_task": "T53",
-    "source_hash": "85e1a2ed0b0db81e724c856fff6519cb720df74ff03131fd5fb8f8279b7d61ef",
-    "line_count": 351,
+    "source_hash": "d2b1a45f4c39c0cf3d1f8b6d79a3812eb50cc6dc4ade06f8a6f092e2c784df72",
+    "line_count": 357,
     "module_summary": "",
     "symbols": [
       {
@@ -43597,13 +43739,6 @@
         "signature": "test_publication_failure_retry_does_not_advance_twice(environment_pair, monkeypatch, assert_tree)",
         "line": 165,
         "end_line": 180,
-        "kind": "FunctionDef"
-      },
-      {
-        "name": "test_publication_failure_retry_does_not_advance_twice.fail_transition",
-        "signature": "fail_transition(_)",
-        "line": 170,
-        "end_line": 171,
         "kind": "FunctionDef"
       },
       {
@@ -43671,23 +43806,23 @@
       },
       {
         "name": "test_strict_and_diagnostic_outcomes_remain_visible",
-        "signature": "test_strict_and_diagnostic_outcomes_remain_visible(environment_pair, assert_tree, strict)",
+        "signature": "test_strict_and_diagnostic_outcomes_remain_visible(environment_pair, assert_tree, strict, tmp_path)",
         "line": 279,
-        "end_line": 303,
+        "end_line": 309,
         "kind": "FunctionDef"
       },
       {
         "name": "test_differing_control_and_sensor_periods_match_python",
         "signature": "test_differing_control_and_sensor_periods_match_python(environment_pair, assert_tree, control_period, sensor_period, control_steps, sensor_steps)",
-        "line": 316,
-        "end_line": 338,
+        "line": 322,
+        "end_line": 344,
         "kind": "FunctionDef"
       },
       {
         "name": "test_stop_on_ended_episode_preserves_original_reason",
         "signature": "test_stop_on_ended_episode_preserves_original_reason(environment_pair)",
-        "line": 341,
-        "end_line": 351,
+        "line": 347,
+        "end_line": 357,
         "kind": "FunctionDef"
       }
     ],
@@ -44728,7 +44863,7 @@
     "owner_task": "T52",
     "source_hash": "e1b4405398559ea046dbf3312d2202414f48b045e3b77d26b72b44f1e2393831",
     "line_count": 345,
-    "module_summary": "Native rider_forces writer is bitwise-equal to RiderForceApplier —\nplus the P2 accumulator-order gate.\n\nFINDING this file's shape encodes: the canonical golden env\n(--rider articulated_planar) leaves ``env.sim.rider_forces`` inactive\n(ride_sim.py:246-247 gives it ``pose=None``), so ``'seated_interfaces'``\nnever appears in ``ep.force_names`` — the canonical episode does not\nexercise this writer. The port is verified instead on a seated-variant\nplant (``generate_mujoco_xml`` + ``seated_pose`` + ``RiderForceApplier``,\nthe same construction ride_sim.py:296 runs) via the dual-run oracle:\nthe live applier's ``apply`` on a restored ``MjData`` vs\n``Stepper.rider_forces_qfrc()`` on the same (qpos, qvel), sweeping each\npath across the spring's active range — loaded, lifted off, the exact\ndeflection==0 boundary, and the damper-dominated clamp — with the\nprojection-time pedal offsets (``set_pedal_offsets``,\nride_sim.py:587) carried through the config.",
+    "module_summary": "Native rider_forces writer is bitwise-equal to RiderForceApplier \u2014\nplus the P2 accumulator-order gate.\n\nFINDING this file's shape encodes: the canonical golden env\n(--rider articulated_planar) leaves ``env.sim.rider_forces`` inactive\n(ride_sim.py:246-247 gives it ``pose=None``), so ``'seated_interfaces'``\nnever appears in ``ep.force_names`` \u2014 the canonical episode does not\nexercise this writer. The port is verified instead on a seated-variant\nplant (``generate_mujoco_xml`` + ``seated_pose`` + ``RiderForceApplier``,\nthe same construction ride_sim.py:296 runs) via the dual-run oracle:\nthe live applier's ``apply`` on a restored ``MjData`` vs\n``Stepper.rider_forces_qfrc()`` on the same (qpos, qvel), sweeping each\npath across the spring's active range \u2014 loaded, lifted off, the exact\ndeflection==0 boundary, and the damper-dominated clamp \u2014 with the\nprojection-time pedal offsets (``set_pedal_offsets``,\nride_sim.py:587) carried through the config.",
     "symbols": [
       {
         "name": "_plant",
@@ -44875,7 +45010,7 @@
     "owner_task": "T52",
     "source_hash": "d126ee58d49e2c51581d074d07cda923b1673fe90f54a132180ecd234d6a4893",
     "line_count": 617,
-    "module_summary": "Parity between the native seated-climb intent stack and the Python oracle.\n\nRiderIntent (rider_intent.py RiderIntentResolver), SeatedClimbPolicy and\nSeatedPostureProgram are exercised through NativeTestAdapter's\n``rider_intent`` section and compared against the live Python objects on\nidentical inputs — the integer-step clock, probe-mode non-mutation, surge\nbudget, inclination filter, effort slew, trim delay queue, posture-program\nrate limits, scheduled pulses and the state_dict wire are all part of the\ncontract.",
+    "module_summary": "Parity between the native seated-climb intent stack and the Python oracle.\n\nRiderIntent (rider_intent.py RiderIntentResolver), SeatedClimbPolicy and\nSeatedPostureProgram are exercised through NativeTestAdapter's\n``rider_intent`` section and compared against the live Python objects on\nidentical inputs \u2014 the integer-step clock, probe-mode non-mutation, surge\nbudget, inclination filter, effort slew, trim delay queue, posture-program\nrate limits, scheduled pulses and the state_dict wire are all part of the\ncontract.",
     "symbols": [
       {
         "name": "_config",
@@ -45154,92 +45289,92 @@
     "id": "F369",
     "path": "tests/reference/test_native_runtime_accounting.py",
     "owner_task": "T53",
-    "source_hash": "7a7bd97418ea27f858cef339b64fe2b1c3a2fd2bbb75c67176492d31f041e868",
-    "line_count": 207,
+    "source_hash": "27354b05b722b97ff8943bc47b6500786e9ff16ac0d469d49b6c3912de29e110",
+    "line_count": 246,
     "module_summary": "A4: independent work/contact gates and complete-period strict publication.",
     "symbols": [
       {
         "name": "test_independent_opposing_work_is_not_cancelled",
         "signature": "test_independent_opposing_work_is_not_cancelled()",
         "line": 22,
-        "end_line": 32,
+        "end_line": 37,
         "kind": "FunctionDef"
       },
       {
         "name": "test_zero_source_uses_a_fixed_absolute_roundoff_budget",
         "signature": "test_zero_source_uses_a_fixed_absolute_roundoff_budget()",
-        "line": 35,
-        "end_line": 40,
+        "line": 40,
+        "end_line": 45,
         "kind": "FunctionDef"
       },
       {
         "name": "test_work_rejects_nonfinite_or_nonpositive_inputs",
         "signature": "test_work_rejects_nonfinite_or_nonpositive_inputs(arguments)",
-        "line": 47,
-        "end_line": 49,
+        "line": 53,
+        "end_line": 55,
         "kind": "FunctionDef"
       },
       {
         "name": "test_interval_markers_survive_period_clear",
         "signature": "test_interval_markers_survive_period_clear(intervals, capacity)",
-        "line": 60,
-        "end_line": 62,
+        "line": 66,
+        "end_line": 68,
         "kind": "FunctionDef"
       },
       {
         "name": "test_consecutive_intervals_can_cross_multiple_periods",
         "signature": "test_consecutive_intervals_can_cross_multiple_periods()",
-        "line": 65,
-        "end_line": 67,
+        "line": 71,
+        "end_line": 73,
         "kind": "FunctionDef"
       },
       {
         "name": "_history_row",
         "signature": "_history_row(interval_id=0, *, front=(), rear=())",
-        "line": 70,
-        "end_line": 74,
+        "line": 76,
+        "end_line": 80,
         "kind": "FunctionDef"
       },
       {
         "name": "test_airtime_uses_working_road_contact_not_catch_plane",
         "signature": "test_airtime_uses_working_road_contact_not_catch_plane()",
-        "line": 77,
-        "end_line": 88,
+        "line": 83,
+        "end_line": 94,
         "kind": "FunctionDef"
       },
       {
         "name": "test_malformed_contact_evidence_is_not_airtime",
         "signature": "test_malformed_contact_evidence_is_not_airtime(problem)",
-        "line": 92,
-        "end_line": 103,
+        "line": 98,
+        "end_line": 109,
         "kind": "FunctionDef"
       },
       {
         "name": "test_history_rejects_duplicate_interval_after_valid_evidence",
         "signature": "test_history_rejects_duplicate_interval_after_valid_evidence()",
-        "line": 106,
-        "end_line": 108,
+        "line": 112,
+        "end_line": 114,
         "kind": "FunctionDef"
       },
       {
         "name": "test_inter_tick_effort_uses_each_captured_velocity_and_strength",
         "signature": "test_inter_tick_effort_uses_each_captured_velocity_and_strength(tmp_path)",
-        "line": 112,
-        "end_line": 152,
+        "line": 118,
+        "end_line": 158,
         "kind": "FunctionDef"
       },
       {
         "name": "test_strict_rejection_publishes_the_whole_period_before_raising",
         "signature": "test_strict_rejection_publishes_the_whole_period_before_raising()",
-        "line": 156,
-        "end_line": 188,
+        "line": 162,
+        "end_line": 217,
         "kind": "FunctionDef"
       },
       {
         "name": "test_diagnostic_warns_once_and_keeps_failure_after_more_periods",
         "signature": "test_diagnostic_warns_once_and_keeps_failure_after_more_periods()",
-        "line": 192,
-        "end_line": 207,
+        "line": 221,
+        "end_line": 246,
         "kind": "FunctionDef"
       }
     ],
@@ -45273,7 +45408,7 @@
     "owner_task": "T53",
     "source_hash": "0948d77758a3d8004c509a5bb9ee592932eaed3eb0845b2cea045ec01e36461a",
     "line_count": 211,
-    "module_summary": "A1 — NativeRideRuntime construction, bootstrap ownership and restore.\n\nThe owning boundary: the runtime decodes the capture once, holds its own\ncopies, and replays them on reset(). Rejections name the state/config field\npath; a failed construction leaves nothing partially restored.",
+    "module_summary": "A1 \u2014 NativeRideRuntime construction, bootstrap ownership and restore.\n\nThe owning boundary: the runtime decodes the capture once, holds its own\ncopies, and replays them on reset(). Rejections name the state/config field\npath; a failed construction leaves nothing partially restored.",
     "symbols": [
       {
         "name": "sim",
@@ -45454,7 +45589,7 @@
     "owner_task": "T53",
     "source_hash": "e61c3c2021200a95490ea5b858e7641ff2db00fde419c6c4dc871a5ba59f4bf0",
     "line_count": 248,
-    "module_summary": "A3 — command handling through NativeRideRuntime.advance().\n\nRideControl fields drive the same intent/drivetrain/rider paths as the\nPython step; every variant below is cross-checked against the oracle's\nintegration vector. Command holding across calls stays explicit: each\nadvance() takes the full control dict for its whole interval range.",
+    "module_summary": "A3 \u2014 command handling through NativeRideRuntime.advance().\n\nRideControl fields drive the same intent/drivetrain/rider paths as the\nPython step; every variant below is cross-checked against the oracle's\nintegration vector. Command holding across calls stays explicit: each\nadvance() takes the full control dict for its whole interval range.",
     "symbols": [
       {
         "name": "sim",
@@ -45890,8 +46025,8 @@
     "id": "F374",
     "path": "tests/reference/test_native_runtime_performance_contract.py",
     "owner_task": "T53",
-    "source_hash": "36cfcb9b80b29fbf7c9b9dcb1e925b87775128dbe004bc8a20d10cd81f607e87",
-    "line_count": 317,
+    "source_hash": "41881d46ab35ef572cddea065873223acf611934bbb07a9e6957ecc75be4c373",
+    "line_count": 323,
     "module_summary": "C4 performance-acceptance contract gates.\n\nThe acceptance contract (spec section 1 item 8; plan C4 completion) is:\nnative unpaced median RTF >= 1.0 headless, and a real window sustaining\nmean achieved RTF >= 0.95 at requested 1x. This file pins the contract\nboundaries the sibling suites do not already assert:\n\n- the threshold constants as gate behavior (below -> False, at -> True,\n  wrong backend/build -> None rather than a False claim),\n- failed runs are ineligible by construction: ``measured_ok`` is False,\n  ``compare_runs`` refuses them even when every field matches, and a full\n  warmup+3x sampling of invalid runs leaves ``headless_rtf_threshold_met``\n  undecided (None), not failed (False).\n\nMachinery coverage stays in test_realtime_measurement.py /\ntest_measure_realtime_report.py: wall-clock composition, chunk\npercentiles, comparability settings, short-prefix visibility, sampling\nprotocol, CLI dt preservation, provenance and baseline blocks.",
     "symbols": [
       {
@@ -46038,77 +46173,77 @@
         "name": "_distributed_report",
         "signature": "_distributed_report(real_time_factor, *, valid=True)",
         "line": 161,
-        "end_line": 195,
+        "end_line": 200,
         "kind": "FunctionDef"
       },
       {
         "name": "test_selected_native_artifact_loads",
         "signature": "test_selected_native_artifact_loads()",
-        "line": 198,
-        "end_line": 202,
+        "line": 203,
+        "end_line": 207,
         "kind": "FunctionDef"
       },
       {
         "name": "test_failed_run_is_measured_not_ok_and_short",
         "signature": "test_failed_run_is_measured_not_ok_and_short()",
-        "line": 205,
-        "end_line": 214,
+        "line": 210,
+        "end_line": 219,
         "kind": "FunctionDef"
       },
       {
         "name": "test_failed_runs_are_never_comparable",
         "signature": "test_failed_runs_are_never_comparable()",
-        "line": 217,
-        "end_line": 231,
+        "line": 222,
+        "end_line": 236,
         "kind": "FunctionDef"
       },
       {
         "name": "test_headless_threshold_boundary_is_exactly_the_named_constant",
         "signature": "test_headless_threshold_boundary_is_exactly_the_named_constant()",
-        "line": 234,
-        "end_line": 241,
+        "line": 239,
+        "end_line": 246,
         "kind": "FunctionDef"
       },
       {
         "name": "test_threshold_gate_only_applies_to_native_release",
         "signature": "test_threshold_gate_only_applies_to_native_release()",
-        "line": 244,
-        "end_line": 249,
+        "line": 249,
+        "end_line": 254,
         "kind": "FunctionDef"
       },
       {
         "name": "test_visual_1x_gate_is_emitted_as_a_pending_gate",
         "signature": "test_visual_1x_gate_is_emitted_as_a_pending_gate()",
-        "line": 252,
-        "end_line": 258,
+        "line": 257,
+        "end_line": 263,
         "kind": "FunctionDef"
       },
       {
         "name": "test_distributed_case_gates_on_the_same_headless_constant",
         "signature": "test_distributed_case_gates_on_the_same_headless_constant()",
-        "line": 261,
-        "end_line": 273,
+        "line": 266,
+        "end_line": 278,
         "kind": "FunctionDef"
       },
       {
         "name": "test_distributed_benchmark_sample_reports_but_never_meets_the_gate",
         "signature": "test_distributed_benchmark_sample_reports_but_never_meets_the_gate()",
-        "line": 276,
-        "end_line": 289,
+        "line": 281,
+        "end_line": 295,
         "kind": "FunctionDef"
       },
       {
         "name": "test_measure_run_binds_the_selected_artifact_identity",
         "signature": "test_measure_run_binds_the_selected_artifact_identity(native_module)",
-        "line": 292,
-        "end_line": 305,
+        "line": 298,
+        "end_line": 311,
         "kind": "FunctionDef"
       },
       {
         "name": "test_threshold_gate_tracks_the_selected_artifact_build_type",
         "signature": "test_threshold_gate_tracks_the_selected_artifact_build_type(native_module)",
-        "line": 308,
-        "end_line": 317,
+        "line": 314,
+        "end_line": 323,
         "kind": "FunctionDef"
       }
     ],
@@ -46225,7 +46360,7 @@
     "owner_task": "T53",
     "source_hash": "2bc2b754098131c9a63e5fb36ba0a184d24aae44f21fd96b2b2a9ac6387ad166",
     "line_count": 225,
-    "module_summary": "A3 — the owned physical step and bounded NativeRideRuntime.advance().\n\nThe native runtime steps the same compiled model the Python physical\nruntime steps, in the same statement order. The integration vector\n(mjSTATE_INTEGRATION: qpos/qvel/act/warmstart/time) is the strongest\nper-step parity surface available before A4 drains sample rows — a\nbitwise-equal vector certifies every force the solve consumed.",
+    "module_summary": "A3 \u2014 the owned physical step and bounded NativeRideRuntime.advance().\n\nThe native runtime steps the same compiled model the Python physical\nruntime steps, in the same statement order. The integration vector\n(mjSTATE_INTEGRATION: qpos/qvel/act/warmstart/time) is the strongest\nper-step parity surface available before A4 drains sample rows \u2014 a\nbitwise-equal vector certifies every force the solve consumed.",
     "symbols": [
       {
         "name": "sim",
@@ -46336,7 +46471,7 @@
     "owner_task": "T52",
     "source_hash": "4ad6bb3068aa5937fc4bfa5ab9424859c543678c052edf7b21161aea7bf40965",
     "line_count": 585,
-    "module_summary": "Parity between the native spindle kernels/controller and the Python oracle.\n\nThe pure kernels are bound as module functions; the stateful\nSpindleController port is exercised through NativeTestAdapter's\n``spindle_controller`` section on the pinned welded plant (the same model\nand config the Python oracle runs). Every comparison is against the live\nPython controller on an identically staged mjData — no recorded dumps.",
+    "module_summary": "Parity between the native spindle kernels/controller and the Python oracle.\n\nThe pure kernels are bound as module functions; the stateful\nSpindleController port is exercised through NativeTestAdapter's\n``spindle_controller`` section on the pinned welded plant (the same model\nand config the Python oracle runs). Every comparison is against the live\nPython controller on an identically staged mjData \u2014 no recorded dumps.",
     "symbols": [
       {
         "name": "test_spindle_waveform_matches_python",
@@ -46892,7 +47027,7 @@
     "owner_task": "T53",
     "source_hash": "c630a75ecd0dd2aec1eca2cad667d4887a481653a9f970ab45df8214a43b7e5c",
     "line_count": 116,
-    "module_summary": "Hypothesis-driven fuzzing of the native FFI state-restore parsers.\n\nThe property under test: a mutated snapshot is either accepted or rejected\nwith a CONTRACTED error type — never a crash, a foreign exception, or silent\ncorruption (a rejected restore must leave the live state untouched). The\nseed for every mutation is a genuine drive_state() snapshot, so paths that\nreject only wrong widths would otherwise be vacuous.",
+    "module_summary": "Hypothesis-driven fuzzing of the native FFI state-restore parsers.\n\nThe property under test: a mutated snapshot is either accepted or rejected\nwith a CONTRACTED error type \u2014 never a crash, a foreign exception, or silent\ncorruption (a rejected restore must leave the live state untouched). The\nseed for every mutation is a genuine drive_state() snapshot, so paths that\nreject only wrong widths would otherwise be vacuous.",
     "symbols": [
       {
         "name": "dict_paths",
@@ -47187,7 +47322,7 @@
     "owner_task": "T52",
     "source_hash": "ad0702cb4e44909a7c48f4ff834a90aeeb8c51bbd3d8ab0021929ce0a4a59fb5",
     "line_count": 158,
-    "module_summary": "Parity between native StaticBrake and Python StaticBrakeApplier.\n\nStatic brakes are model frictionloss writes plus solved\nmjCNSTR_FRICTION_DOF generalized forces — never an actuator torque. The\nprobe model is a falling body carrying two spin hinges; an external\nqfrc_applied on a wheel DOF gives the friction row real work to hold.",
+    "module_summary": "Parity between native StaticBrake and Python StaticBrakeApplier.\n\nStatic brakes are model frictionloss writes plus solved\nmjCNSTR_FRICTION_DOF generalized forces \u2014 never an actuator torque. The\nprobe model is a falling body carrying two spin hinges; an external\nqfrc_applied on a wheel DOF gives the friction row real work to hold.",
     "symbols": [
       {
         "name": "_dof",
@@ -47274,7 +47409,7 @@
     "owner_task": "T52",
     "source_hash": "b001f65ee0fd4cf5bc1635e12e5b5ba8ef8a8384c9dcbaf66aa0d38cdc2b6ea2",
     "line_count": 22,
-    "module_summary": "Native mj_step is bitwise-identical to Python mj_step — same dylib.",
+    "module_summary": "Native mj_step is bitwise-identical to Python mj_step \u2014 same dylib.",
     "symbols": [
       {
         "name": "test_native_step_matches_python_bitwise",
@@ -47540,7 +47675,7 @@
     "owner_task": "T53",
     "source_hash": "f1a9ca16fca1613796454c0482ae4182441d4faaa4fd9ff94a3793ab924968af",
     "line_count": 187,
-    "module_summary": "Stepper array-owner contracts (F4): fixed-buffer views retain their\nStepper via rv_policy::reference_internal, while efc_force is an owned\nsnapshot because its arena offset moves with the constraint set. Drive\ndiagnostics expose storage generations and capacities — never raw\naddresses — and _drive_core refuses kinds outside the closed set or any\ncall on a Stepper whose drive writer is installed.",
+    "module_summary": "Stepper array-owner contracts (F4): fixed-buffer views retain their\nStepper via rv_policy::reference_internal, while efc_force is an owned\nsnapshot because its arena offset moves with the constraint set. Drive\ndiagnostics expose storage generations and capacities \u2014 never raw\naddresses \u2014 and _drive_core refuses kinds outside the closed set or any\ncall on a Stepper whose drive writer is installed.",
     "symbols": [
       {
         "name": "saved_model",
@@ -47694,7 +47829,7 @@
     "owner_task": "T52",
     "source_hash": "d3e2c718112c1705efe5f180d8d4ed52ed2c8adbbc2ba2616feee9bea45786f9",
     "line_count": 178,
-    "module_summary": "Equivalence of the numba-JIT kernels against preserved Python references.\n\nEvery ``@numba.njit(cache=True)`` kernel keeps its pre-JIT body importable as a\n``*_py`` function. These tests draw 1000 random inputs per kernel and require\nthe compiled path to agree with the reference at ``rel=1e-12`` — a band two\norders of magnitude above measured codegen drift (~1 ulp from op ordering/FMA)\nand six below the stage-2 aggregate gate (rtol=1e-6). ``abs=1e-12`` covers\nlast-ulp differences on results that cancel to ~0 from O(1e2-1e3) operands.",
+    "module_summary": "Equivalence of the numba-JIT kernels against preserved Python references.\n\nEvery ``@numba.njit(cache=True)`` kernel keeps its pre-JIT body importable as a\n``*_py`` function. These tests draw 1000 random inputs per kernel and require\nthe compiled path to agree with the reference at ``rel=1e-12`` \u2014 a band two\norders of magnitude above measured codegen drift (~1 ulp from op ordering/FMA)\nand six below the stage-2 aggregate gate (rtol=1e-6). ``abs=1e-12`` covers\nlast-ulp differences on results that cancel to ~0 from O(1e2-1e3) operands.",
     "symbols": [
       {
         "name": "_torque_curves",
@@ -48034,120 +48169,127 @@
     "id": "F391",
     "path": "tests/reference/test_period_buffer.py",
     "owner_task": "T52",
-    "source_hash": "ac25448e437ab587f5ae1060f943b31fed5f29e3ba407d52969ebb08668ed95b",
-    "line_count": 397,
+    "source_hash": "3e35743c3409c6773e9ec123b169bae94ec0b7891bc571fd5ba4ededd1c1a71b",
+    "line_count": 501,
     "module_summary": "",
     "symbols": [
       {
         "name": "_raw",
         "signature": "_raw(i, jac, qfrc)",
-        "line": 11,
-        "end_line": 13,
+        "line": 13,
+        "end_line": 15,
         "kind": "FunctionDef"
       },
       {
         "name": "_current_budget_contract_on_scalar_sample",
         "signature": "_current_budget_contract_on_scalar_sample(sample, *, closes_period)",
-        "line": 16,
-        "end_line": 33,
+        "line": 18,
+        "end_line": 35,
         "kind": "FunctionDef"
       },
       {
         "name": "test_batched_wrench_matches_scalar_and_first_violation",
         "signature": "test_batched_wrench_matches_scalar_and_first_violation()",
-        "line": 36,
-        "end_line": 52,
+        "line": 38,
+        "end_line": 54,
         "kind": "FunctionDef"
       },
       {
         "name": "test_missing_wrench_is_not_replaced_by_zero",
         "signature": "test_missing_wrench_is_not_replaced_by_zero()",
-        "line": 55,
-        "end_line": 59,
+        "line": 57,
+        "end_line": 61,
         "kind": "FunctionDef"
       },
       {
         "name": "test_buffer_overflow_and_discontinuous_interval_are_rejected",
         "signature": "test_buffer_overflow_and_discontinuous_interval_are_rejected()",
-        "line": 62,
-        "end_line": 71,
+        "line": 64,
+        "end_line": 73,
         "kind": "FunctionDef"
       },
       {
         "name": "test_recording_a_published_period_twice_is_idempotent",
         "signature": "test_recording_a_published_period_twice_is_idempotent()",
-        "line": 74,
-        "end_line": 89,
+        "line": 76,
+        "end_line": 91,
         "kind": "FunctionDef"
       },
       {
         "name": "test_recording_a_published_period_twice_is_idempotent.record_sample",
         "signature": "record_sample(sim, sample)",
-        "line": 82,
-        "end_line": 85,
+        "line": 84,
+        "end_line": 87,
         "kind": "FunctionDef"
       },
       {
         "name": "test_actual_spatial_body_inputs_match_scalar_attachment_measurement",
         "signature": "test_actual_spatial_body_inputs_match_scalar_attachment_measurement()",
-        "line": 92,
-        "end_line": 118,
+        "line": 94,
+        "end_line": 120,
         "kind": "FunctionDef"
       },
       {
         "name": "test_held_command_power_and_strength_are_checked_at_each_incoming_state",
         "signature": "test_held_command_power_and_strength_are_checked_at_each_incoming_state()",
-        "line": 121,
-        "end_line": 144,
+        "line": 123,
+        "end_line": 147,
         "kind": "FunctionDef"
       },
       {
         "name": "test_held_intervals_reject_joint_power_and_speed_between_control_ticks",
         "signature": "test_held_intervals_reject_joint_power_and_speed_between_control_ticks()",
-        "line": 147,
-        "end_line": 164,
+        "line": 150,
+        "end_line": 168,
         "kind": "FunctionDef"
       },
       {
         "name": "test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
         "signature": "test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms(tmp_path)",
-        "line": 168,
-        "end_line": 221,
+        "line": 172,
+        "end_line": 261,
         "kind": "FunctionDef"
       },
       {
         "name": "test_runtime_batch_matches_preserved_scalar_step_and_flush",
         "signature": "test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path)",
-        "line": 225,
-        "end_line": 289,
+        "line": 265,
+        "end_line": 376,
+        "kind": "FunctionDef"
+      },
+      {
+        "name": "test_equality_rows_charge_the_closure_channel_not_the_bound",
+        "signature": "test_equality_rows_charge_the_closure_channel_not_the_bound()",
+        "line": 379,
+        "end_line": 393,
         "kind": "FunctionDef"
       },
       {
         "name": "test_record_decimation_forwards_period_closing_energy",
         "signature": "test_record_decimation_forwards_period_closing_energy(tmp_path)",
-        "line": 293,
-        "end_line": 397,
+        "line": 397,
+        "end_line": 501,
         "kind": "FunctionDef"
       },
       {
         "name": "test_record_decimation_forwards_period_closing_energy.collect",
         "signature": "collect(decimation)",
-        "line": 322,
-        "end_line": 331,
+        "line": 426,
+        "end_line": 435,
         "kind": "FunctionDef"
       },
       {
         "name": "test_record_decimation_forwards_period_closing_energy.closing",
         "signature": "closing(interval_id)",
-        "line": 341,
-        "end_line": 350,
+        "line": 445,
+        "end_line": 454,
         "kind": "FunctionDef"
       },
       {
         "name": "test_record_decimation_forwards_period_closing_energy.elastic_equal",
         "signature": "elastic_equal(energy, expected_elastic, i)",
-        "line": 351,
-        "end_line": 354,
+        "line": 455,
+        "end_line": 458,
         "kind": "FunctionDef"
       }
     ],
@@ -52234,8 +52376,8 @@
     "id": "F430",
     "path": "tests/reference/test_seated_pedaling_cycle.py",
     "owner_task": "T52",
-    "source_hash": "3a61d7ec0722c26380558954ad19044d63408e98b5d53bf507e4b712d5b63a09",
-    "line_count": 229,
+    "source_hash": "1a64d71887b9f531d308aa07967a98c2b85e9304dfcf75e4a7edaabe0c52e163",
+    "line_count": 254,
     "module_summary": "Pinned strict cycles and free coast; legacy ankle-intent unit contracts remain.\n\nBoth feet keep their support objective for the whole revolution; there is no\ncontrol-mode foot lift. Pedal intent is a bounded wish (cadence request,\nphase-locked ankle offset, scrape fraction) consumed by the rider allocator --\nnever an externally applied crank moment and never a kinematic lock.",
     "symbols": [
       {
@@ -52282,79 +52424,79 @@
       },
       {
         "name": "_assert_physical_intervals",
-        "signature": "_assert_physical_intervals(rows)",
+        "signature": "_assert_physical_intervals(rows, articulated)",
         "line": 82,
-        "end_line": 98,
+        "end_line": 116,
         "kind": "FunctionDef"
       },
       {
         "name": "test_cadence_control_validates_a_finite_nonnegative_wish",
         "signature": "test_cadence_control_validates_a_finite_nonnegative_wish()",
-        "line": 101,
-        "end_line": 106,
+        "line": 119,
+        "end_line": 124,
         "kind": "FunctionDef"
       },
       {
         "name": "test_first_pedal_command_and_restart_respect_configured_effort_slew",
         "signature": "test_first_pedal_command_and_restart_respect_configured_effort_slew()",
-        "line": 109,
-        "end_line": 120,
+        "line": 127,
+        "end_line": 138,
         "kind": "FunctionDef"
       },
       {
         "name": "test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue",
         "signature": "test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue()",
-        "line": 123,
-        "end_line": 145,
+        "line": 141,
+        "end_line": 163,
         "kind": "FunctionDef"
       },
       {
         "name": "test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue.CommandObserved",
         "signature": "class CommandObserved(Exception)",
-        "line": 135,
-        "end_line": 135,
+        "line": 153,
+        "end_line": 153,
         "kind": "ClassDef"
       },
       {
         "name": "test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue.step",
         "signature": "step(*args, control)",
-        "line": 136,
-        "end_line": 139,
+        "line": 154,
+        "end_line": 157,
         "kind": "FunctionDef"
       },
       {
         "name": "_save_cycle",
         "signature": "_save_cycle(env, rows)",
-        "line": 148,
-        "end_line": 156,
+        "line": 166,
+        "end_line": 174,
         "kind": "FunctionDef"
       },
       {
         "name": "_collect",
         "signature": "_collect(env, control)",
-        "line": 159,
-        "end_line": 166,
+        "line": 177,
+        "end_line": 184,
         "kind": "FunctionDef"
       },
       {
         "name": "revolutions",
         "signature": "revolutions(rows, controller)",
-        "line": 169,
-        "end_line": 171,
+        "line": 187,
+        "end_line": 189,
         "kind": "FunctionDef"
       },
       {
         "name": "test_strict_flat_cycle_delivers_and_stays_within_budgets",
         "signature": "test_strict_flat_cycle_delivers_and_stays_within_budgets(tmp_path, torque_nm)",
-        "line": 176,
-        "end_line": 184,
+        "line": 194,
+        "end_line": 209,
         "kind": "FunctionDef"
       },
       {
         "name": "test_free_coast_is_an_intent_not_a_crank_lock",
         "signature": "test_free_coast_is_an_intent_not_a_crank_lock(tmp_path)",
-        "line": 188,
-        "end_line": 229,
+        "line": 213,
+        "end_line": 254,
         "kind": "FunctionDef"
       }
     ],
@@ -52386,141 +52528,141 @@
     "id": "F431",
     "path": "tests/reference/test_seated_posture_program.py",
     "owner_task": "T52",
-    "source_hash": "d5379dd21e0fbbca7995fbef167cad6755d68d09d3bd8de460c372ed9556440a",
-    "line_count": 276,
+    "source_hash": "c80b037e0642b0f866d49a6e43f35f9221bbd6bbe7b054080adfa7febfc1dac6",
+    "line_count": 299,
     "module_summary": "R6: forward lean and a bounded body-thrust pulse as posture intent.\n\nThe posture program produces only a torso-lean wish: no instantaneous jump\n(rate-limited, endpoint-free pulse), no wheelie feedback, no extra bar or\nCOM force. Anything the intent cannot achieve is reduced by the R4\nallocator or reported invalid -- never granted extra grip budget.",
     "symbols": [
       {
         "name": "test_posture_program_reads_no_inertial_signal",
         "signature": "test_posture_program_reads_no_inertial_signal()",
-        "line": 23,
-        "end_line": 31,
+        "line": 24,
+        "end_line": 32,
         "kind": "FunctionDef"
       },
       {
         "name": "test_lean_follows_road_grade_not_body_pitch",
         "signature": "test_lean_follows_road_grade_not_body_pitch()",
-        "line": 34,
-        "end_line": 38,
+        "line": 35,
+        "end_line": 39,
         "kind": "FunctionDef"
       },
       {
         "name": "test_road_grade_uses_underwheel_and_preview_samples_uniformly",
         "signature": "test_road_grade_uses_underwheel_and_preview_samples_uniformly()",
-        "line": 41,
-        "end_line": 46,
+        "line": 42,
+        "end_line": 47,
         "kind": "FunctionDef"
       },
       {
         "name": "test_resolver_road_grade_survives_probe_and_ignores_imu",
         "signature": "test_resolver_road_grade_survives_probe_and_ignores_imu()",
-        "line": 49,
-        "end_line": 65,
+        "line": 50,
+        "end_line": 66,
         "kind": "FunctionDef"
       },
       {
         "name": "test_runtime_passes_current_road_snapshot_before_intent_and_force_evaluation",
         "signature": "test_runtime_passes_current_road_snapshot_before_intent_and_force_evaluation()",
-        "line": 68,
-        "end_line": 92,
+        "line": 69,
+        "end_line": 93,
         "kind": "FunctionDef"
       },
       {
         "name": "test_runtime_passes_current_road_snapshot_before_intent_and_force_evaluation.StopBeforeForces",
         "signature": "class StopBeforeForces(Exception)",
-        "line": 85,
-        "end_line": 85,
+        "line": 86,
+        "end_line": 86,
         "kind": "ClassDef"
       },
       {
         "name": "test_runtime_passes_current_road_snapshot_before_intent_and_force_evaluation.resolve",
         "signature": "resolve(control, signals, **kwargs)",
-        "line": 86,
-        "end_line": 89,
+        "line": 87,
+        "end_line": 90,
         "kind": "FunctionDef"
       },
       {
         "name": "test_body_pulse_is_finite_and_has_no_impulsive_endpoint",
         "signature": "test_body_pulse_is_finite_and_has_no_impulsive_endpoint()",
-        "line": 95,
-        "end_line": 99,
+        "line": 96,
+        "end_line": 100,
         "kind": "FunctionDef"
       },
       {
         "name": "test_body_pulse_validates_its_inputs",
         "signature": "test_body_pulse_validates_its_inputs()",
-        "line": 102,
-        "end_line": 111,
+        "line": 103,
+        "end_line": 112,
         "kind": "FunctionDef"
       },
       {
         "name": "test_body_pulse_is_continuous_around_its_edges",
         "signature": "test_body_pulse_is_continuous_around_its_edges()",
-        "line": 114,
-        "end_line": 117,
+        "line": 115,
+        "end_line": 118,
         "kind": "FunctionDef"
       },
       {
         "name": "test_posture_program_rate_limits_and_bounds_the_pulse",
         "signature": "test_posture_program_rate_limits_and_bounds_the_pulse()",
-        "line": 120,
-        "end_line": 147,
+        "line": 121,
+        "end_line": 148,
         "kind": "FunctionDef"
       },
       {
         "name": "test_posture_program_rejects_nonfinite_or_reversed_schedules",
         "signature": "test_posture_program_rejects_nonfinite_or_reversed_schedules()",
-        "line": 150,
-        "end_line": 157,
+        "line": 151,
+        "end_line": 158,
         "kind": "FunctionDef"
       },
       {
         "name": "_environment",
-        "signature": "_environment(tmp_path, grade=0.18, duration_s=6.0)",
-        "line": 160,
-        "end_line": 171,
+        "signature": "_environment(tmp_path, grade=0.18, duration_s=6.0, check_policy='strict')",
+        "line": 161,
+        "end_line": 173,
         "kind": "FunctionDef"
       },
       {
         "name": "_run",
-        "signature": "_run(tmp_path, pulse=None, duration_s=6.0)",
-        "line": 174,
-        "end_line": 214,
+        "signature": "_run(tmp_path, pulse=None, duration_s=6.0, check_policy='strict')",
+        "line": 176,
+        "end_line": 217,
         "kind": "FunctionDef"
       },
       {
         "name": "test_pulse_redistributes_load_through_inertia_only",
         "signature": "test_pulse_redistributes_load_through_inertia_only(tmp_path)",
-        "line": 218,
-        "end_line": 241,
+        "line": 221,
+        "end_line": 264,
         "kind": "FunctionDef"
       },
       {
         "name": "test_trim_is_delayed_and_increases_forward_lean_for_light_front",
         "signature": "test_trim_is_delayed_and_increases_forward_lean_for_light_front()",
-        "line": 244,
-        "end_line": 253,
+        "line": 267,
+        "end_line": 276,
         "kind": "FunctionDef"
       },
       {
         "name": "test_geometric_limit_caps_lean",
         "signature": "test_geometric_limit_caps_lean()",
-        "line": 255,
-        "end_line": 259,
+        "line": 278,
+        "end_line": 282,
         "kind": "FunctionDef"
       },
       {
         "name": "test_preview_is_last_sample_and_preserves_exact_endpoint",
         "signature": "test_preview_is_last_sample_and_preserves_exact_endpoint()",
-        "line": 261,
-        "end_line": 268,
+        "line": 284,
+        "end_line": 291,
         "kind": "FunctionDef"
       },
       {
         "name": "test_geometric_limit_replaces_the_legacy_config_ceiling_when_available",
         "signature": "test_geometric_limit_replaces_the_legacy_config_ceiling_when_available()",
-        "line": 271,
-        "end_line": 276,
+        "line": 294,
+        "end_line": 299,
         "kind": "FunctionDef"
       }
     ],
@@ -52540,6 +52682,7 @@
       "math",
       "numpy",
       "pathlib",
+      "platform",
       "pytest",
       "types"
     ],
@@ -53508,7 +53651,7 @@
     "owner_task": "T55",
     "source_hash": "4c68dfee040e0c9cbcf36671134dad3d890aad6ab9002914206f16d58bdd039a",
     "line_count": 164,
-    "module_summary": "Measure the chaos-divergence horizon that bounds deterministic comparison.\n\nTwo runs of the same episode, one perturbed by eps in a single qvel dof:\nthe first step any recorded channel exceeds tol is the layer-2 horizon\n(ADR 0001 §6). Below tol both runs are the 'same simulation'.",
+    "module_summary": "Measure the chaos-divergence horizon that bounds deterministic comparison.\n\nTwo runs of the same episode, one perturbed by eps in a single qvel dof:\nthe first step any recorded channel exceeds tol is the layer-2 horizon\n(ADR 0001 \u00a76). Below tol both runs are the 'same simulation'.",
     "symbols": [
       {
         "name": "_run",
@@ -53593,7 +53736,7 @@
     "owner_task": "T55",
     "source_hash": "f637b45afe42a2fa033e7d1dfd2e016071325458258e6e30f659608bbb5898ed",
     "line_count": 125,
-    "module_summary": "Replay a golden episode and diff it row-by-row — the equivalence harness.\n\nLayer-2 of the correctness bar: same applied controls in, all recorder\nchannels out, plus identical first monitor failure (ADR 0001 §6).\n\nConstraint: `EpisodeArtifact.initial` (qpos/qvel/act/ctrl/warmstart) is\ncaptured but NOT applied here — replay reaches t=0 through the same\ndeterministic equilibrium reset as capture, which is bitwise-true\nPython↔Python. The NATIVE replay path (P2+) must apply `ep.initial`\nexplicitly or goldens captured from non-fresh states diverge at step 0.",
+    "module_summary": "Replay a golden episode and diff it row-by-row \u2014 the equivalence harness.\n\nLayer-2 of the correctness bar: same applied controls in, all recorder\nchannels out, plus identical first monitor failure (ADR 0001 \u00a76).\n\nConstraint: `EpisodeArtifact.initial` (qpos/qvel/act/ctrl/warmstart) is\ncaptured but NOT applied here \u2014 replay reaches t=0 through the same\ndeterministic equilibrium reset as capture, which is bitwise-true\nPython\u2194Python. The NATIVE replay path (P2+) must apply `ep.initial`\nexplicitly or goldens captured from non-fresh states diverge at step 0.",
     "symbols": [
       {
         "name": "_control",
@@ -53675,7 +53818,7 @@
     "owner_task": "T55",
     "source_hash": "f0b7b48de88012d8cc9ab32748b364cda29691e8473b08ea3093d15734345d06",
     "line_count": 342,
-    "module_summary": "Freeze a deterministic episode as the correctness oracle artifact.\n\nCaptures per-step applied control, raw mjData state, and every recorder\nchannel row, plus the first monitor failure — the layer-2 contract a native\nport must reproduce (ADR 0001 §6).\n\nv2 additionally captures, per physics step, the mjData state at the entry of\n``runtime.apply_forces`` (qpos/qvel/act/warmstart/time), the ``d.ctrl`` and\n``d.qfrc_applied`` buffers it leaves behind, every named force component in\n``acc.add`` insertion order, and the flattened tire brush states the call\nconsumes — the inputs/outputs\nper-call writer-equivalence checks replay.",
+    "module_summary": "Freeze a deterministic episode as the correctness oracle artifact.\n\nCaptures per-step applied control, raw mjData state, and every recorder\nchannel row, plus the first monitor failure \u2014 the layer-2 contract a native\nport must reproduce (ADR 0001 \u00a76).\n\nv2 additionally captures, per physics step, the mjData state at the entry of\n``runtime.apply_forces`` (qpos/qvel/act/warmstart/time), the ``d.ctrl`` and\n``d.qfrc_applied`` buffers it leaves behind, every named force component in\n``acc.add`` insertion order, and the flattened tire brush states the call\nconsumes \u2014 the inputs/outputs\nper-call writer-equivalence checks replay.",
     "symbols": [
       {
         "name": "EpisodeArtifact",
@@ -54334,7 +54477,7 @@
     "owner_task": "T56",
     "source_hash": "6cbddc360b4bb6ac5ad3db9dffd3ed984f253fe286b4132cc273d6ca153a73d3",
     "line_count": 15,
-    "module_summary": "Compatibility shim — the projection implementation lives in bike_sim.native.config.\n\nKept so existing ``tools.native_config`` imports (tests, sweep tooling and\nout-of-tree scripts under output/) keep working unchanged. The schema\nhelpers and leading-underscore names mirror the original module surface\nexactly: ``from tools.native_config import validate_config`` kept working\nbecause the original imported it from the schema module.",
+    "module_summary": "Compatibility shim \u2014 the projection implementation lives in bike_sim.native.config.\n\nKept so existing ``tools.native_config`` imports (tests, sweep tooling and\nout-of-tree scripts under output/) keep working unchanged. The schema\nhelpers and leading-underscore names mirror the original module surface\nexactly: ``from tools.native_config import validate_config`` kept working\nbecause the original imported it from the schema module.",
     "symbols": [],
     "imports": [
       "bike_sim.native.config"
@@ -54458,7 +54601,7 @@
     "owner_task": "T56",
     "source_hash": "af4197bb46e43e9a54c5cf59ee75af9dffd9093282875b4fd628738b3edc486d",
     "line_count": 12,
-    "module_summary": "Compatibility shim — the schema implementation lives in bike_sim.native.schema.\n\nKept so existing ``tools.native_schema`` imports (tests, sweep tooling and\nout-of-tree scripts under output/) keep working unchanged.",
+    "module_summary": "Compatibility shim \u2014 the schema implementation lives in bike_sim.native.schema.\n\nKept so existing ``tools.native_schema`` imports (tests, sweep tooling and\nout-of-tree scripts under output/) keep working unchanged.",
     "symbols": [],
     "imports": [
       "bike_sim.native.schema"
@@ -54486,7 +54629,7 @@
     "owner_task": "T55",
     "source_hash": "f0119f97418200c7a60c0b283e705168b4ed37ebd7088596efd16eee8d1ee314",
     "line_count": 631,
-    "module_summary": "Python twin of bench.cpp — the matched per-step workloads plus the\nretained R2 approximation.\n\nModes:\n  bare           mj_step only (frozen replayed state, periodic rewind)\n  glue           bare + matched engine-call surface\n  heavy          glue + matched telemetry/accounting volume\n  operation_mix  the retained R2 approximation — intentionally does NOT\n                 match bench.cpp's per-step mix and carries no parity claim\n\nCLI mirrors native_bench:\n\n  uv run python tools/proto_native_bench/bench.py       {bare,glue,heavy,operation_mix} [steps] [rewind]       --artifacts <directory> [--emit-json <path>]\n\n--artifacts names an artifacts root (a current.json pointer resolved once)\nor a concrete bundle directory holding model.mjb / state.npz / state.bin /\nmanifest.json.\n\nbare/glue/heavy are the *matched* workloads: both languages run the same\nwarmup/rewind phases, stage order, operation counts, attachment Jacobian +\n1e-6*I-regularized 3x3 solve sequence, and the same actuator->velocity\nmapping (the engine-projected qfrc_actuator, never qvel[:nu] slicing).\n--emit-json writes operation counts, per-stage checksum contributions,\nsolver outputs, and provenance; tests/reference/test_native_benchmark.py\ncompares them against the C++ emission (counts and the declared exact\nscalar stages byte-equal, solver outputs at rtol=atol=1e-12).",
+    "module_summary": "Python twin of bench.cpp \u2014 the matched per-step workloads plus the\nretained R2 approximation.\n\nModes:\n  bare           mj_step only (frozen replayed state, periodic rewind)\n  glue           bare + matched engine-call surface\n  heavy          glue + matched telemetry/accounting volume\n  operation_mix  the retained R2 approximation \u2014 intentionally does NOT\n                 match bench.cpp's per-step mix and carries no parity claim\n\nCLI mirrors native_bench:\n\n  uv run python tools/proto_native_bench/bench.py       {bare,glue,heavy,operation_mix} [steps] [rewind]       --artifacts <directory> [--emit-json <path>]\n\n--artifacts names an artifacts root (a current.json pointer resolved once)\nor a concrete bundle directory holding model.mjb / state.npz / state.bin /\nmanifest.json.\n\nbare/glue/heavy are the *matched* workloads: both languages run the same\nwarmup/rewind phases, stage order, operation counts, attachment Jacobian +\n1e-6*I-regularized 3x3 solve sequence, and the same actuator->velocity\nmapping (the engine-projected qfrc_actuator, never qvel[:nu] slicing).\n--emit-json writes operation counts, per-stage checksum contributions,\nsolver outputs, and provenance; tests/reference/test_native_benchmark.py\ncompares them against the C++ emission (counts and the declared exact\nscalar stages byte-equal, solver outputs at rtol=atol=1e-12).",
     "symbols": [
       {
         "name": "Splitmix64",
@@ -54630,7 +54773,7 @@
     "owner_task": "T55",
     "source_hash": "0b75e39df46917b5200c12335d269c25bdf9b913e5a9f1a4bea4ad9c48024394",
     "line_count": 113,
-    "module_summary": "Dump the compiled welded-physical model + a mid-ride state as a\nversioned BIKEST02 bundle (native-safety plan task R3).\n\nBuilds the sim exactly like tools/measure_realtime.py (extreme track +\nviewer_physics_welded, dt=0.5ms), warms up so the snapshot is a real\nmid-ride configuration, then calls state_format.write_bundle:\n\n    <out>/<name>/model.mjb     compiled MjModel (incl. patched hfield_data)\n    <out>/<name>/state.npz     qpos/qvel/act + frozen ctrl/qfrc_applied/\n                              xfrc_applied + qacc_warmstart snapshot\n    <out>/<name>/state.bin     BIKEST02 header + binary64 payload\n    <out>/<name>/manifest.json dims, timestep, source, checksums, workload\n    <out>/current.json         atomically published bundle pointer\n\nThe snapshot is captured once and every file is re-read and validated\nbefore current.json is replaced, so consumers either see the previous\ncomplete generation or the new one — never a mix.\n\nRun:\n  uv run python tools/proto_native_bench/dump_model.py       [--out DIR] [--name NAME] [--warmup-steps N] [--duration S]\n      [--timestep S] [--decimate N]",
+    "module_summary": "Dump the compiled welded-physical model + a mid-ride state as a\nversioned BIKEST02 bundle (native-safety plan task R3).\n\nBuilds the sim exactly like tools/measure_realtime.py (extreme track +\nviewer_physics_welded, dt=0.5ms), warms up so the snapshot is a real\nmid-ride configuration, then calls state_format.write_bundle:\n\n    <out>/<name>/model.mjb     compiled MjModel (incl. patched hfield_data)\n    <out>/<name>/state.npz     qpos/qvel/act + frozen ctrl/qfrc_applied/\n                              xfrc_applied + qacc_warmstart snapshot\n    <out>/<name>/state.bin     BIKEST02 header + binary64 payload\n    <out>/<name>/manifest.json dims, timestep, source, checksums, workload\n    <out>/current.json         atomically published bundle pointer\n\nThe snapshot is captured once and every file is re-read and validated\nbefore current.json is replaced, so consumers either see the previous\ncomplete generation or the new one \u2014 never a mix.\n\nRun:\n  uv run python tools/proto_native_bench/dump_model.py       [--out DIR] [--name NAME] [--warmup-steps N] [--duration S]\n      [--timestep S] [--decimate N]",
     "symbols": [
       {
         "name": "_parse_args",
@@ -54679,7 +54822,7 @@
     "owner_task": "T55",
     "source_hash": "409c447a3b703c865b2b92a90b3207bb994c3238dc9b58740ed7ea9eb7cde579",
     "line_count": 577,
-    "module_summary": "BIKEST02 versioned benchmark state bundle — generator and reader.\n\nA bundle directory is one immutable generation of the benchmark inputs:\n\n    model.mjb      compiled MjModel bytes\n    state.npz      float64 arrays: time(1,), qpos(nq), qvel(nv), act(na),\n                   ctrl(nu), qfrc_applied(nv), xfrc_applied(nbody,6),\n                   qacc_warmstart(nv)\n    state.bin      80-byte little-endian header + binary64 payload (below)\n    manifest.json  provenance: model dims, timestep, source config/track,\n                   warmup steps, generator commit, checksums, workload params\n\nAn artifacts ROOT additionally carries a small pointer file:\n\n    current.json   {\"format\": 1, \"bundle\": \"<bundle-dir-name>\"}\n\n`write_bundle` builds a NEW versioned directory under the root, validates every\nwritten file, then publishes `current.json` atomically via os.replace. Readers\nresolve the pointer once, so a bundle can never be observed mid-generation and\nfiles from different generations can never be mixed. A concrete bundle\ndirectory (one that directly contains the four files) is equally valid input —\ntests use it to skip the pointer indirection.\n\nstate.bin header layout (exactly 80 bytes, little-endian):\n\n    offset  0  magic8         \"BIKEST02\"\n    offset  8  version        u32 = 2\n    offset 12  flags          u32 = 0\n    offset 16  nq, nv, na, nu, nbody   u64 each\n    offset 56  payload_bytes  u64\n    offset 64  model_crc64    u64  (CRC64-ECMA over model.mjb bytes)\n    offset 72  state_crc64    u64  (CRC64-ECMA over the payload bytes)\n\nPayload is binary64 little-endian, in order:\n    time(1), qpos(nq), qvel(nv), act(na), ctrl(nu), qfrc_applied(nv),\n    xfrc_applied flattened (6*nbody), qacc_warmstart(nv)\n\nRequired payload = 8 * (1 + nq + 3*nv + na + nu + 6*nbody) bytes; the reader\nrecomputes it with overflow checks and requires the file to end exactly there.\nDimensions, the CRCs, and the exact length are independently mandatory checks:\na dimension match does not excuse a checksum mismatch and vice versa.\n\nCRC64-ECMA parameters: polynomial 0x42F0E1EBA9EA3693, init 0, no reflection,\nno final xor. Check vector: b\"123456789\" -> 0x6C40DF5F0B497347 (asserted in\nthe tests). The checksums detect corruption and cross-generation mixing; they\nare an integrity signal, not an authenticity/security guarantee.\n\nThe legacy 0xBEA0 layout (R2) is retired: files starting with that magic are\nrejected with a regeneration instruction.",
+    "module_summary": "BIKEST02 versioned benchmark state bundle \u2014 generator and reader.\n\nA bundle directory is one immutable generation of the benchmark inputs:\n\n    model.mjb      compiled MjModel bytes\n    state.npz      float64 arrays: time(1,), qpos(nq), qvel(nv), act(na),\n                   ctrl(nu), qfrc_applied(nv), xfrc_applied(nbody,6),\n                   qacc_warmstart(nv)\n    state.bin      80-byte little-endian header + binary64 payload (below)\n    manifest.json  provenance: model dims, timestep, source config/track,\n                   warmup steps, generator commit, checksums, workload params\n\nAn artifacts ROOT additionally carries a small pointer file:\n\n    current.json   {\"format\": 1, \"bundle\": \"<bundle-dir-name>\"}\n\n`write_bundle` builds a NEW versioned directory under the root, validates every\nwritten file, then publishes `current.json` atomically via os.replace. Readers\nresolve the pointer once, so a bundle can never be observed mid-generation and\nfiles from different generations can never be mixed. A concrete bundle\ndirectory (one that directly contains the four files) is equally valid input \u2014\ntests use it to skip the pointer indirection.\n\nstate.bin header layout (exactly 80 bytes, little-endian):\n\n    offset  0  magic8         \"BIKEST02\"\n    offset  8  version        u32 = 2\n    offset 12  flags          u32 = 0\n    offset 16  nq, nv, na, nu, nbody   u64 each\n    offset 56  payload_bytes  u64\n    offset 64  model_crc64    u64  (CRC64-ECMA over model.mjb bytes)\n    offset 72  state_crc64    u64  (CRC64-ECMA over the payload bytes)\n\nPayload is binary64 little-endian, in order:\n    time(1), qpos(nq), qvel(nv), act(na), ctrl(nu), qfrc_applied(nv),\n    xfrc_applied flattened (6*nbody), qacc_warmstart(nv)\n\nRequired payload = 8 * (1 + nq + 3*nv + na + nu + 6*nbody) bytes; the reader\nrecomputes it with overflow checks and requires the file to end exactly there.\nDimensions, the CRCs, and the exact length are independently mandatory checks:\na dimension match does not excuse a checksum mismatch and vice versa.\n\nCRC64-ECMA parameters: polynomial 0x42F0E1EBA9EA3693, init 0, no reflection,\nno final xor. Check vector: b\"123456789\" -> 0x6C40DF5F0B497347 (asserted in\nthe tests). The checksums detect corruption and cross-generation mixing; they\nare an integrity signal, not an authenticity/security guarantee.\n\nThe legacy 0xBEA0 layout (R2) is retired: files starting with that magic are\nrejected with a regeneration instruction.",
     "symbols": [
       {
         "name": "StateFormatError",
@@ -54835,7 +54978,7 @@
     "owner_task": "T55",
     "source_hash": "5546a3249ac2f00104561260dff19800fe0fb78a03ca5b47052c7bf42a41233f",
     "line_count": 201,
-    "module_summary": "Time the recording finalization seam: encode -> Arrow -> DuckDB write.\n\nRuns a real native ride episode (``create_native_ride`` over the same\nsettled t=0 sim ``tests/reference/_native_runtime_support.make_python_ride``\nbuilds), seals it, then measures the three bounded publication stages of\n``storage._streams``/``_write_batch`` separately:\n\n* ``source.tables(batch_rows=...)`` — the catalog projection: the C++\n  ``encode_table`` projector by default, or the reviewed\n  ``encode_rows``/canonical path under ``--oracle`` (which pins\n  ``native_encode.compile_plan`` to ``None`` so every spec falls back);\n* RecordBatch assembly — ``pieces_to_arrow`` for ``PieceBatch`` fragments,\n  ``arrow_batch`` for ``TableBatch`` (``commands_applied`` is a\n  ``TableBatch`` in both modes);\n* the DuckDB ingestion — ``create_streams`` plus, per batch, the\n  register/INSERT ... SELECT/unregister sequence ``_write_batch`` runs,\n  inside one transaction with CHECKPOINT, into ``tempfile.mkdtemp``.\n\nProduction interleaves the stages per batch; separating them attributes\ncost at the price of holding assembled RecordBatches in memory — fine at\nthe default episode size. The per-table encode breakdown attributes each\n``next()`` of the stream to the batch it yields: on the oracle path the\nfirst batch of each window also absorbs that window's shared canonical\nmaterialization (in practice ``commands_applied``/``physics``); the rest\nof a window's cost lands on the table whose ``encode_rows`` ran it.\nThe default native dispatch itself — every physical stream through\n``encode_table``, ``encode_rows`` never invoked — is pinned by\n``tests/reference/test_native_encode_columns.py::test_whole_episode_single_pass``.\n\n    BIKE_NATIVE_BUILD_PATH=\"$PWD/native/build\"         uv run --frozen --group native python tools/recording_finalize_bench.py\n    BIKE_NATIVE_BUILD_PATH=\"$PWD/native/build\"         uv run --frozen --group native python tools/recording_finalize_bench.py --oracle",
+    "module_summary": "Time the recording finalization seam: encode -> Arrow -> DuckDB write.\n\nRuns a real native ride episode (``create_native_ride`` over the same\nsettled t=0 sim ``tests/reference/_native_runtime_support.make_python_ride``\nbuilds), seals it, then measures the three bounded publication stages of\n``storage._streams``/``_write_batch`` separately:\n\n* ``source.tables(batch_rows=...)`` \u2014 the catalog projection: the C++\n  ``encode_table`` projector by default, or the reviewed\n  ``encode_rows``/canonical path under ``--oracle`` (which pins\n  ``native_encode.compile_plan`` to ``None`` so every spec falls back);\n* RecordBatch assembly \u2014 ``pieces_to_arrow`` for ``PieceBatch`` fragments,\n  ``arrow_batch`` for ``TableBatch`` (``commands_applied`` is a\n  ``TableBatch`` in both modes);\n* the DuckDB ingestion \u2014 ``create_streams`` plus, per batch, the\n  register/INSERT ... SELECT/unregister sequence ``_write_batch`` runs,\n  inside one transaction with CHECKPOINT, into ``tempfile.mkdtemp``.\n\nProduction interleaves the stages per batch; separating them attributes\ncost at the price of holding assembled RecordBatches in memory \u2014 fine at\nthe default episode size. The per-table encode breakdown attributes each\n``next()`` of the stream to the batch it yields: on the oracle path the\nfirst batch of each window also absorbs that window's shared canonical\nmaterialization (in practice ``commands_applied``/``physics``); the rest\nof a window's cost lands on the table whose ``encode_rows`` ran it.\nThe default native dispatch itself \u2014 every physical stream through\n``encode_table``, ``encode_rows`` never invoked \u2014 is pinned by\n``tests/reference/test_native_encode_columns.py::test_whole_episode_single_pass``.\n\n    BIKE_NATIVE_BUILD_PATH=\"$PWD/native/build\"         uv run --frozen --group native python tools/recording_finalize_bench.py\n    BIKE_NATIVE_BUILD_PATH=\"$PWD/native/build\"         uv run --frozen --group native python tools/recording_finalize_bench.py --oracle",
     "symbols": [
       {
         "name": "make_ride",

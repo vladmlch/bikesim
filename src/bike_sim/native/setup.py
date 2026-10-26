@@ -196,6 +196,8 @@ def _runtime_state(sim, physical) -> dict:
             'motor_signed_j': physical.motor_signed_j,
             'motor_positive_j': physical.motor_positive_j,
             'constraint_absolute_j': physical.constraint_absolute_j,
+            'closure_signed_j': physical.closure_signed_j,
+            'closure_absolute_j': physical.closure_absolute_j,
             'initial_battery_j': physical.initial_battery_j,
             'electrical_work_j': physical.electrical_work_j,
             'mechanical_energy_j': energy['mechanical_energy_j'],

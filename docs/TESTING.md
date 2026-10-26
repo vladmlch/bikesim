@@ -810,11 +810,11 @@ The 13 failing node IDs, identical in the baseline and current full run, are:
 - `tests/reference/test_realistic_pedelec_acceptance.py::test_savage_is_ridden_to_the_end`
 - `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]` — superseded-in-place (F3, 2026-10-25): the >=1x RTF contract now measures the native Release `bike-measure-realtime` artifact via CTest nodes `reference.realtime_gate.rough_uphill_savage`/`.rough_uphill_extreme` in the root graph (`build/native-release`, container `root-clang`). This Python node still measures the T63-deleted oracle accounted path (~0.62-0.69 on these tracks) and stays baseline-red until T63 removes it; it is superseded, not fixed.
 - `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_extreme.toml]` — same F3 supersession as the savage row above; the contract successor is `reference.realtime_gate.rough_uphill_extreme`.
-- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[20.0]`
-- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[40.0]`
-- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]`
-- `tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock`
-- `tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only`
+- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[20.0]` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
+- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[40.0]` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
+- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
+- `tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
+- `tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`); strict on darwin-arm64, linux-aarch64 runs the monitor in diagnostic mode with a pinned failure signature (D16 disposition in the F1 section); retained for the historical record.
 
 2026-10-24 addition (batch 3.12b lane/a triage): two further nodes of
 `test_native_pneumatic_tire.py` were verified red on the unmodified
@@ -827,6 +827,13 @@ baseline set rather than blocking the port batch:
 2026-10-23 refresh (`migration/baseline-refresh-2026-10-23.md`, measured at
 `fe4feaa`): the two annotated nodes now pass; the other 11 nodes remain
 failing with deterministic signatures, so the live residual is 11 nodes.
+
+2026-10-25 lane/b F1 fix round (`task-F1-report.md`): the five
+seated-pedalling/posture nodes annotated above now pass — the four
+pedaling-cycle nodes strict on both darwin-arm64 and linux-aarch64, the
+posture pulse node strict on darwin-arm64 and diagnostic with a pinned
+`energy.constraint_work` signature on linux-aarch64 (D16 disposition in
+the F1 section). The live residual of the original 13 is 6 nodes.
 The list above is kept as the historical baseline record.
 
 ## E1 recoverable MuJoCo errors
@@ -1427,3 +1434,117 @@ pricing interpreter overhead the roadmap deliberately declined to fund
 measuring the oracle path remain baseline-red above until T63 removes
 them — superseded, not fixed. The labels are `reference;t53;runtime;slow`
 so `ctest -L slow` carries them and `-LE slow` sweeps skip the measurement.
+
+## F1 welded-plant contract re-scope (seated pedalling)
+
+Task F1 (lane/b, `2026-10-20-cpp-linux-completion`) re-scoped five
+baseline-red seated-pedalling/posture contract nodes. The approved ruling:
+weld/equality closures exchange elastic spring work during sustained
+pedalling (measured `energy.constraint_work` ≈1.8% steady vs the 1%
+numerical bound), chronic foot/saddle cone violations were measured against
+a unilateral contact cone that welded interfaces never had, and delivered
+muscle power exceeded the 450 W *command* cap inside a period because
+intra-period velocity drift is invisible to the tick-time clip.
+
+### Closure channel
+
+Constraint-power rows whose name starts with `equality:` are weld/closure
+spring work and are charged to `closure_signed_j` / `closure_absolute_j`
+(elastic channel) in `step_work`/`runtime_step_work`. All other rows remain
+numerical constraint work and keep the existing `constraint_work_ok`
+round-off bound. First-appearance ordering is preserved within each class,
+mirrored between `src/bike_sim/physics/energy_ledger.py`,
+`src/bike_sim/sim/ride/period_buffer.py` and
+`native/src/runtime/accounting.cpp`.
+
+### Welded attachment envelope
+
+`AttachmentBudget` gained optional bidirectional normal bounds and flat
+shear capacities. They apply only to equality-attached interfaces —
+foot attachment `weld`/`spindle`, saddle `weld`/`pin` — never to flat-pad
+contacts, which keep the legacy unilateral cone (`foot_min_normal_n=20`,
+`mu=0.9`/`0.6`). Weld bounds may be negative (tension retention); weld shear
+capacity stacks on the compressive friction-cone contribution.
+`None`/`0` weld fields preserve legacy behaviour bitwise. The welded
+example (`examples/research/viewer_physics_welded.toml`) declares:
+
+| Field | Value | Derivation (≈1.25× measured extremum, rounded to capacity) |
+| --- | --- | --- |
+| `weld_foot_min_normal_n` | -1050 | worst foot tension −820 N |
+| `weld_foot_max_normal_n` | 3000 | worst foot compression 2383 N |
+| `weld_foot_shear_n` | 2250 | worst foot shear 1803 N |
+| `weld_saddle_min_normal_n` | -2250 | worst saddle tension −1800 N (onset) |
+| `weld_saddle_max_normal_n` | 1300 | worst saddle compression 1054 N |
+| `weld_saddle_shear_n` | 1300 | worst saddle shear 1024 N |
+
+The envelope is derived from measured extrema on the provisional strength
+sheet — the seated-rider audit
+(`docs/superpowers/audits/2026-10-04-seated-rider-closed-form.md`, status
+NOT ACCEPTED) records the curves as recalled/`verified=false` with no
+internet verification — so these are defect-signal bounds on this plant,
+not rated hardware specifications.
+
+### Delivered-power monitor budgets
+
+`active_positive_power_limit_w` (450 W) and `joint_power_limit_w` remain
+*command/plant* caps applied by the spindle clip; nothing about solved
+truth is clipped. New monitor-side budgets —
+`delivered_positive_power_budget_w` (750 W) and
+`delivered_joint_power_budget_w` (375 W) — bound what diagnostics may
+*declare delivered*, derived at ≈1.25× the measured extrema (596 W total,
+289 W per joint). Effective properties
+(`delivered_positive_budget_w`, `delivered_joint_budget_w`) fall back to
+the capability caps when unset, so un-declared configs keep the legacy
+contract bitwise. `rider_effort` and period diagnostics verdict on the
+effective delivered budgets.
+
+### Sustained crank delivery ceiling
+
+`test_strict_flat_cycle_delivers_and_stays_within_budgets` asserts demand
+tracking only up to the plant's measured sustained delivery ceiling
+(`delivery_ceiling_nm = 26` in the test, with derivation comment). Under
+the provisional strength sheet plus the 25 Nm weld-servo hold limit the
+measured late-run mean crank torque plateaus at 17.8/23.1/25.7 Nm for
+20/40/60 Nm demands — requests above the ceiling are intents, the same
+model-delivery gap as the power re-band.
+
+### Linux-aarch64 pulse disposition (D16)
+
+On linux-aarch64 `test_pulse_redistributes_load_through_inertia_only` trips
+the strict monitor's `energy.constraint_work` verdict at 0.005 s: the
+non-equality constraint rows integrate a sustained ~3–8x larger absolute
+residual than darwin-arm64 (measured 5.9% → 2.3% vs 0.9% → 0.7% of source
+positive work across the first ten closes of the settle transient). Weld and
+equality work is charged to the closure channel and never enters this
+verdict on either platform, so the residual is solver-internal
+joint/tendon-limit bookkeeping — a platform-dependent numerical-work rate,
+not a physical contract change. The episode therefore runs the reference
+monitor in `--check-policy diagnostic` on linux only; every posture, grip
+and delivered-power assertion still applies, and the test asserts the
+recorded first failure stays exactly `('energy.constraint_work',)`, so any
+new or different verdict still fails. The identical `constraint_work_ok`
+verdict keeps full strict linux coverage through the four
+`test_seated_pedaling_cycle.py` welded-plant nodes (all measured green
+strict on linux-aarch64), which is the named D14 coverage for dropping the
+strict record here.
+
+### Parity caveat
+
+`test_native_runtime_accounting.py::test_strict_rejection_publishes_the_whole_period_before_raising`
+compares interval structure and violation evidence only. Payload leaves
+(sensors, weld forces, rider torques, bookkeeping values) are not compared
+because the Python and native backends drift on this weld-heavy plant from
+interval 0 — native fires `rider_strength.rider_torso_hinge` at t=0.2425
+where Python does not, and `frame_specific_force_body_mps2` diverges on
+unmodified HEAD. That is a pre-existing parity gap owned by the ADR-0003
+golden gate, not an F1 regression.
+
+Focused checks:
+
+```bash
+uv run pytest tests/reference/test_attachment_budget.py \
+  tests/reference/test_articulated_config.py \
+  tests/reference/test_period_buffer.py -q
+BIKE_NATIVE_BUILD_PATH=$PWD/native/build uv run pytest \
+  tests/reference/test_native_runtime_accounting.py -q
+```

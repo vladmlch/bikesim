@@ -140,6 +140,7 @@ class PhysicalRuntime:
         self.initial_energy_j = None
         self.loss_j = 0.
         self.active_work_j = self.external_work_j = self.solver_work_j = 0.
+        self.closure_signed_j = self.closure_absolute_j = 0.
         self.snapshots = {}
         self.generation = 0
         self.interactive_preview = False
@@ -474,6 +475,7 @@ class PhysicalRuntime:
         self.muscle_signed_j=self.muscle_positive_j=0.
         self.motor_signed_j=self.motor_positive_j=0.
         self.constraint_absolute_j=0.
+        self.closure_signed_j=self.closure_absolute_j=0.
         self.attachment_samples,self.attachment_errors={},()
         self.step_violations=()
         from bike_sim.sim.ride.reference_monitor import ReferenceMonitor
@@ -938,6 +940,8 @@ class PhysicalRuntime:
                 'motor_signed_j': self.motor_signed_j,
                 'motor_positive_j': self.motor_positive_j,
                 'constraint_absolute_j': self.constraint_absolute_j,
+                'closure_signed_j': self.closure_signed_j,
+                'closure_absolute_j': self.closure_absolute_j,
                 'history': self.history, 'model_status': self.model_status}
 
     def _async_submit(self, raws):

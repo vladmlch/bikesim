@@ -80,6 +80,7 @@ Value energy(const runtime::EnergyState& e) {
         {"solver_work_j", real(e.solver_work_j)}, {"muscle_signed_j", real(e.muscle_signed_j)},
         {"muscle_positive_j", real(e.muscle_positive_j)}, {"motor_signed_j", real(e.motor_signed_j)},
         {"motor_positive_j", real(e.motor_positive_j)}, {"constraint_absolute_j", real(e.constraint_absolute_j)},
+        {"closure_signed_j", real(e.closure_signed_j)}, {"closure_absolute_j", real(e.closure_absolute_j)},
         {"initial_battery_j", optional(e.initial_battery_j)}, {"electrical_work_j", real(e.electrical_work_j)},
         {"mechanical_energy_j", real(e.mechanical_energy_j)},
         {"elastic_energy_j", wire_value(runtime::Wire(e.elastic_energy_j))}, {"residual_j", real(e.residual_j)}}};

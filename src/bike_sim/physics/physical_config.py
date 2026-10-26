@@ -436,6 +436,24 @@ class ArticulatedConfig:
     # velocity, not a kinematic lock.
     leg_track_damping_nms_rad: float = 0.
     link_max_gap_m: float = .005
+    # F1 weld load envelope for the pinned plant: connect equalities are
+    # bidirectional soft springs that carry tension and shear a unilateral
+    # friction cone cannot express. These monitor-side capacities bound the
+    # solved weld load — never controller inputs. None preserves the
+    # unilateral-contact checks bitwise.
+    weld_foot_min_normal_n: float | None = None
+    weld_foot_max_normal_n: float | None = None
+    weld_foot_shear_n: float = 0.
+    weld_saddle_min_normal_n: float | None = None
+    weld_saddle_max_normal_n: float | None = None
+    weld_saddle_shear_n: float = 0.
+    # F1 delivered-power budgets, monitor-side. The capability clips above
+    # bound the command at tick speeds; the delivered envelope additionally
+    # covers intra-period velocity drift and weld drag — the model-delivery
+    # gap the contract tracks separately. None falls back to the capability
+    # bound, preserving the legacy contract bitwise.
+    delivered_positive_power_budget_w: float | None = None
+    delivered_joint_power_budget_w: float | None = None
     # Bounded road preview the rider planner may see ahead of the front wheel.
     road_lookahead_m: float = 0.
     joint_strength_path: str | None = None
@@ -450,15 +468,48 @@ class ArticulatedConfig:
     balance_grace_s: float = 3.
 
     def attachment_budget(self) -> AttachmentBudget:
-        return AttachmentBudget(self.pedal_min_normal_n, self.foot_mu,
-                                self.saddle_mu, self.grip_pull_per_hand_n,
-                                self.link_max_gap_m)
+        # The weld load envelope applies only where the interface is a real
+        # connect-equality weld ('weld'/'spindle' pedals, 'weld'/'pin' saddle);
+        # flat pads keep the unilateral floor regardless of declared fields.
+        foot_welded = self.pedal_attachment in ('weld', 'spindle')
+        saddle_welded = self.saddle_attachment in ('weld', 'pin')
+        return AttachmentBudget(
+            (self.weld_foot_min_normal_n
+             if foot_welded and self.weld_foot_min_normal_n is not None
+             else self.pedal_min_normal_n),
+            self.foot_mu, self.saddle_mu, self.grip_pull_per_hand_n,
+            self.link_max_gap_m,
+            saddle_min_normal_n=(self.weld_saddle_min_normal_n
+                                 if saddle_welded
+                                 and self.weld_saddle_min_normal_n is not None else 0.),
+            foot_max_normal_n=(self.weld_foot_max_normal_n if foot_welded else None),
+            saddle_max_normal_n=(self.weld_saddle_max_normal_n if saddle_welded else None),
+            foot_shear_n=(self.weld_foot_shear_n if foot_welded else 0.),
+            saddle_shear_n=(self.weld_saddle_shear_n if saddle_welded else 0.))
 
     @property
     def passive_damping_nms_rad(self):
         """Hinge tissue damping actually compiled into the rider model."""
         return (self.joint_kd_nms_rad if self.joint_passive_damping_nms_rad is None
                 else self.joint_passive_damping_nms_rad)
+
+    @property
+    def delivered_positive_budget_w(self):
+        """Effective monitor bound on delivered positive power.
+
+        The re-banded delivered budget when declared, else the capability
+        cap — bitwise-identical to the legacy bound when unset.
+        """
+        return (self.delivered_positive_power_budget_w
+                if self.delivered_positive_power_budget_w is not None
+                else self.active_positive_power_limit_w)
+
+    @property
+    def delivered_joint_budget_w(self):
+        """Effective per-joint delivered-power monitor bound."""
+        return (self.delivered_joint_power_budget_w
+                if self.delivered_joint_power_budget_w is not None
+                else self.joint_power_limit_w)
 
     def __post_init__(self):
         if not 0 < scalar(self.arm_reach_fraction,'arm reach fraction',positive=True) < 1:
@@ -474,8 +525,18 @@ class ArticulatedConfig:
                        'pedal_attachment', 'saddle_attachment',
                        'grip_attachment', 'coupled_task_control'):
                 continue
+            # Weld normal bounds may be negative (tension retention), so
+            # they skip the nonnegative sweep — a set bound still has to be
+            # a finite real, mirroring the wire's optional_real gate.
+            if key in ('weld_foot_min_normal_n', 'weld_foot_max_normal_n',
+                       'weld_saddle_min_normal_n', 'weld_saddle_max_normal_n'):
+                if getattr(self,key) is not None:
+                    scalar(getattr(self,key),key)
+                continue
             if key in ('grip_pair_force_limit_n','active_positive_power_limit_w',
-                       'joint_passive_damping_nms_rad') and getattr(self,key) is None:
+                       'joint_passive_damping_nms_rad',
+                       'delivered_positive_power_budget_w',
+                       'delivered_joint_power_budget_w') and getattr(self,key) is None:
                 continue
             scalar(getattr(self,key),key,minimum=0)
         if self.grip_pair_force_limit_n is not None:

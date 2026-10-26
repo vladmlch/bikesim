@@ -1,4 +1,4 @@
-[{"name":"config.json","bytes":25655},{"name":"state.json","bytes":32167},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":176},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]{
+[{"name":"config.json","bytes":25956},{"name":"state.json","bytes":32231},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":176},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]{
   "control_period_s": 0.005,
   "control_period_steps": 4,
   "drive_mode": "articulated_effort",
@@ -117,6 +117,8 @@
     "coasting_brake_d_nm_s_rad": 2.0,
     "coasting_brake_limit_nm": 60.0,
     "coupled_task_control": false,
+    "delivered_joint_power_budget_w": null,
+    "delivered_positive_power_budget_w": null,
     "envelopes": {
       "rider_elbow_left": {
         "direction": -1,
@@ -603,7 +605,13 @@
     "support_mu": 0.8,
     "support_pad_radius_m": 0.02,
     "support_tangent_k_n_m": 20000.0,
-    "swing_clearance_m": 0.003
+    "swing_clearance_m": 0.003,
+    "weld_foot_max_normal_n": null,
+    "weld_foot_min_normal_n": null,
+    "weld_foot_shear_n": 0.0,
+    "weld_saddle_max_normal_n": null,
+    "weld_saddle_min_normal_n": null,
+    "weld_saddle_shear_n": 0.0
   },
   "rider_intent": {
     "enabled": true,
@@ -917,7 +925,7 @@
     }
   }
 }
- {
+    {
   "drive": {
     "angles": {
       "$tuple": [
@@ -2004,6 +2012,8 @@
     },
     "energy": {
       "active_work_j": 0.0,
+      "closure_absolute_j": 0.0,
+      "closure_signed_j": 0.0,
       "constraint_absolute_j": 0.0,
       "elastic_energy_j": {
         "fork_air": 12.068281032026361,
@@ -2152,7 +2162,7 @@
          v£Ø‚Ì @&R6í4D«¿¤©,4›5x?ƒEktÀgt?ÑmàÜ¥u?DYàÜ¥u?rØÆ²+,¯?8cSC™¿HL`ü®À?Í3Û¬¡W±¿hg\:tí^?C¶í3
 +Ì?g(H?ŞÊÇ¿æäÛµ?‘²¥.½5 @;}Ïô/M«¿pÂÊ½²CÈ?Ô,µŠŠ^Ç¿Jã˜Lû·?·Šû'şSÃ¿ûà˜Lû·?{ˆû'şSÃ¿úŸ©ßæMÇ¿sÂ0°‘?XĞ5Æ¿²böÑ•z?                                                                                                                                                                                                                                                                                                                                                                                                                                                        €Ï<)<à?¨ÕnªŸÀÔŒj•›@'ÀnªŸÀ>9j•›@               €               € àŒ€pS?h+`˜§ @l{¬ySÀ                        @ê¢H!>A@õ`Pë@v?dåm@X7™0"âB@¬5V`À                ö`lªØ™À                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ğ?      ğ?      ğ?      ğ?      ğ?      ğ?      ğ?xéP/v²?Cıw¾Hã>¿j/¨Så?¦Ìnêè8?      ğ?               €îÆ•$Š@        È °J5^Ö¿     ˜@îÆ•$Š@        À:r×'©“?pìr°ç8¿      ğ?               €VÁZ’õø?        È °J5^Ö¿     ps@VÁZ’õø?        ¸¯íê;a¿   ¢”mÂ        œ›››››Û?                                                €î v¦Ğ‰¿š™™™™™¹¿x¦Ğy]À?€î v¦Ğ‰¿š™™™™™¹?x¦Ğy]À?                                                                                                                                                €Ï<)<à?¨ÕnªŸÀÔŒj•›@'ÀnªŸÀ>9j•›@               €               €€Ï<)<à?¨ÕnªŸÀÔŒj•›@'ÀnªŸÀ>9j•›@               €               €["front","rear"]["backend","branch_release_loss_j","brush_loss_j","controller_grounded","effective_radius_m","friction_coefficient","geometric_contact","multi_support","normal_load_n","normal_speed_mps","normal_vertical_n","omega_abs_rad_s","omega_rel_rad_s","outside_material_load_range","patches","penetration_m","radial_energy_j","raw_contact","shear_energy_j","slip_mps","slip_ratio","supports_multiple_contacts","surface","tangent_center_speed_mps","tangent_force_n","unloaded_radius_m","vertical_force_n","wheel_axis_m","wheel_axis_moment_nm","world_force_n"]"compliant_2d"        É Ââq¢Ì>trueö¢Í˜×?• 0ÇÈğ?truefalse 5vÊ)Æz@
 Z¦sâA? 5vÊ)Æz@c¯ŠK(»¥?¾É´ı¸z¦?false1["couple_world_nm","normal","normal_load_n","point_m","slip_mps","source_geom","tangent_force_n","world_force_n"]3                        3                      ğ? 5vÊ)Æz@3ƒælÙ%Š@        È °J5^Ö¿Ÿ†”lÁ6¿"terrain"Z›|IGÀ3Z›|IGÀ         5vÊ)Æz@ ”=ºk?pê¬Oä¡æ?trueEh£­Q?Ÿ†”lÁ6¿#ÔÜã8âÂ?false"asphalt"'´À]M?Z›|IGÀ+‡ÙÎ×? 5vÊ)Æz@3ƒælÙ%Š@        à"¾u…©“?Í»bL¸`@3Z›|IGÀ         5vÊ)Æz@["backend","branch_release_loss_j","brush_loss_j","controller_grounded","effective_radius_m","friction_coefficient","geometric_contact","multi_support","normal_load_n","normal_speed_mps","normal_vertical_n","omega_abs_rad_s","omega_rel_rad_s","outside_material_load_range","patches","penetration_m","radial_energy_j","raw_contact","shear_energy_j","slip_mps","slip_ratio","supports_multiple_contacts","surface","tangent_center_speed_mps","tangent_force_n","unloaded_radius_m","vertical_force_n","wheel_axis_m","wheel_axis_moment_nm","world_force_n"]"compliant_2d"        ºZj\GTº>true µÆ"<Ö?À>Êğ?truefalse‹‘§‚@6 ¡„½7T¿‹‘§‚@QÙ*’ù?YJÎ¤Â ?false1["couple_world_nm","normal","normal_load_n","point_m","slip_mps","source_geom","tangent_force_n","world_force_n"]3                        3                      ğ?‹‘§‚@3éÎ“õø?        È °J5^Ö¿“£Ï}u„¿"terrain"õ£jı@3õ£jı@        ‹‘§‚@€.eÑwÆr?¬0U
-Úõ?trueï`<c§2Z?“£Ï}u„¿wŒCñÜ’¹?false"asphalt"Ùk‰v·A?õ£jı@ºI+‡Ö?‹‘§‚@3éÎ“õø?        Èãµôa¿Å*î‹E:À3õ£jı@        ‹‘§‚@[{"name":"config.json","bytes":27752},{"name":"state.json","bytes":60927},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":8192},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]       {
+Úõ?trueï`<c§2Z?“£Ï}u„¿wŒCñÜ’¹?false"asphalt"Ùk‰v·A?õ£jı@ºI+‡Ö?‹‘§‚@3éÎ“õø?        Èãµôa¿Å*î‹E:À3õ£jı@        ‹‘§‚@[{"name":"config.json","bytes":28053},{"name":"state.json","bytes":60991},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":8192},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]       {
   "control_period_s": 0.005,
   "control_period_steps": 4,
   "drive_mode": "articulated_effort",
@@ -2271,6 +2281,8 @@ Z¦sâA? 5vÊ)Æz@c¯ŠK(»¥?¾É´ı¸z¦?false1["couple_world_nm","normal","normal_load_n"
     "coasting_brake_d_nm_s_rad": 2.0,
     "coasting_brake_limit_nm": 60.0,
     "coupled_task_control": false,
+    "delivered_joint_power_budget_w": null,
+    "delivered_positive_power_budget_w": null,
     "envelopes": {
       "rider_elbow_left": {
         "direction": -1,
@@ -2757,7 +2769,13 @@ Z¦sâA? 5vÊ)Æz@c¯ŠK(»¥?¾É´ı¸z¦?false1["couple_world_nm","normal","normal_load_n"
     "support_mu": 0.8,
     "support_pad_radius_m": 0.02,
     "support_tangent_k_n_m": 20000.0,
-    "swing_clearance_m": 0.003
+    "swing_clearance_m": 0.003,
+    "weld_foot_max_normal_n": null,
+    "weld_foot_min_normal_n": null,
+    "weld_foot_shear_n": 0.0,
+    "weld_saddle_max_normal_n": null,
+    "weld_saddle_min_normal_n": null,
+    "weld_saddle_shear_n": 0.0
   },
   "rider_intent": {
     "enabled": true,
@@ -3154,7 +3172,7 @@ Z¦sâA? 5vÊ)Æz@c¯ŠK(»¥?¾É´ı¸z¦?false1["couple_world_nm","normal","normal_load_n"
     }
   }
 }
-{
+   {
   "drive": {
     "angles": {
       "$tuple": [
@@ -4241,6 +4259,8 @@ Z¦sâA? 5vÊ)Æz@c¯ŠK(»¥?¾É´ı¸z¦?false1["couple_world_nm","normal","normal_load_n"
     },
     "energy": {
       "active_work_j": 0.0,
+      "closure_absolute_j": 0.0,
+      "closure_signed_j": 0.0,
       "constraint_absolute_j": 0.0,
       "elastic_energy_j": {
         "fork_air": 10.688853565142658,

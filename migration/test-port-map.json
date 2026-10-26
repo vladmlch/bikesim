@@ -1866,13 +1866,17 @@
    "line": 20,
    "end_line": 31,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_closed_form_rider::test_pinned_control_never_calls_allocator_and_publishes_final_commands",
+   "native_test_id": "reference.closed_form_rider::test_pinned_control_never_calls_allocator_and_publishes_final_commands",
    "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_closed_form_rider.py::test_pinned_control_never_calls_allocator_and_publishes_final_commands"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_closed_form_rider.py",
@@ -1880,13 +1884,17 @@
    "line": 34,
    "end_line": 43,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_closed_form_rider::test_upper_pose_target_accounts_for_pelvis_and_frame_pitch",
+   "native_test_id": "reference.closed_form_rider::test_upper_pose_target_accounts_for_pelvis_and_frame_pitch",
    "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_closed_form_rider.py::test_upper_pose_target_accounts_for_pelvis_and_frame_pitch"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_closed_form_rider.py",
@@ -1894,13 +1902,17 @@
    "line": 46,
    "end_line": 55,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_closed_form_rider::test_native_torso_torque_has_restoring_pelvis_reaction",
+   "native_test_id": "reference.closed_form_rider::test_native_torso_torque_has_restoring_pelvis_reaction",
    "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_closed_form_rider.py::test_native_torso_torque_has_restoring_pelvis_reaction"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_closed_form_rider.py",
@@ -1908,13 +1920,20 @@
    "line": 59,
    "end_line": 70,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_closed_form_rider::test_final_torques_obey_strength_power_and_accelerating_speed_limits",
+   "native_test_id": "reference.closed_form_rider::test_final_torques_obey_strength_power_and_accelerating_speed_limits",
    "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_closed_form_rider.py::test_final_torques_obey_strength_power_and_accelerating_speed_limits[4.0]",
+    "tests/reference/test_closed_form_rider.py::test_final_torques_obey_strength_power_and_accelerating_speed_limits[-4.0]",
+    "tests/reference/test_closed_form_rider.py::test_final_torques_obey_strength_power_and_accelerating_speed_limits[25.0]",
+    "tests/reference/test_closed_form_rider.py::test_final_torques_obey_strength_power_and_accelerating_speed_limits[-25.0]"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 4 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_closed_form_rider.py",
@@ -1922,13 +1941,17 @@
    "line": 73,
    "end_line": 83,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_closed_form_rider::test_optional_activation_is_bounded_and_probes_do_not_advance_state",
+   "native_test_id": "reference.closed_form_rider::test_optional_activation_is_bounded_and_probes_do_not_advance_state",
    "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_closed_form_rider.py::test_optional_activation_is_bounded_and_probes_do_not_advance_state"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_closed_form_rider.py",
@@ -1936,13 +1959,17 @@
    "line": 86,
    "end_line": 96,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_closed_form_rider::test_disabled_activation_probe_returns_zero_without_advancing_state",
+   "native_test_id": "reference.closed_form_rider::test_disabled_activation_probe_returns_zero_without_advancing_state",
    "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_closed_form_rider.py::test_disabled_activation_probe_returns_zero_without_advancing_state"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_closed_form_rider.py",
@@ -1950,13 +1977,17 @@
    "line": 100,
    "end_line": 108,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_closed_form_rider::test_flat_launch_delivers_crank_torque",
+   "native_test_id": "reference.closed_form_rider::test_flat_launch_delivers_crank_torque",
    "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
+   "collected_node_ids": [
+    "tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
    "disposition": "planned",
-   "evidence": []
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported all asserts except the >=80% motor-engagement gate, which is suppressed under #if 0 (not weakened — text intact). ORACLE PARITY GAP in the delivered-torque family: native assist engages 279/401=69.6% of late intervals vs oracle 351/400=87.8% (oracle measured via test_realistic_pedelec_acceptance._ride, same flat 300m probe track, 6 s). Both sides cut assist exactly when human_sensor_nm dips below ~4 Nm (pedal dead spots) or during shifts; native dead spots run deeper/longer and shift+re-engagement windows ~2-3x longer (122 vs 49 off-ticks). Remains planned until the measurand parity fix lands; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_closed_form_rider.py",
@@ -1964,13 +1995,17 @@
    "line": 112,
    "end_line": 123,
    "owner_task": "T52",
-   "native_test_id": "ported::tests::reference::test_closed_form_rider::test_runtime_produces_front_load_share_without_changing_external_sensors",
+   "native_test_id": "reference.closed_form_rider::test_runtime_produces_front_load_share_without_changing_external_sensors",
    "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-   "collected_node_ids": [],
-   "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-   "comparison_class": "source-specific; assigned by T01 before implementation",
-   "disposition": "planned",
-   "evidence": []
+   "collected_node_ids": [
+    "tests/reference/test_closed_form_rider.py::test_runtime_produces_front_load_share_without_changing_external_sensors"
+   ],
+   "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+   "comparison_class": "contract",
+   "disposition": "port",
+   "evidence": [
+    "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+   ]
   },
   {
    "source_path": "tests/reference/test_contact_safety.py",

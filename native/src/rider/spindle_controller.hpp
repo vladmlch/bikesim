@@ -321,6 +321,12 @@ public:
         effort_diagnostics_ = std::move(diagnostics);
         last_terms_ = std::move(terms);
     }
+    // _upper_targets() welded-grip + spindle branch — the oracle's
+    // c._upper_targets; public so reference ports can assert the pelvis/
+    // frame-pitch contract directly.
+    [[nodiscard]] std::vector<std::pair<std::string, double>>
+    upper_targets(const mjData *data, const RiderPosture *posture);
+
     [[nodiscard]] bool spindle() const { return !legacy_; }
     [[nodiscard]] bool welded() const {
         return config_.legacy && config_.legacy->pedal_attachment == "weld";
@@ -340,9 +346,6 @@ private:
     // sole/IK diagnostic mirrors.
     [[nodiscard]] spindle::Vec2 leg_targets(const mjData *data,
                                             const char *side);
-    // _upper_targets() welded-grip + spindle branch.
-    [[nodiscard]] std::vector<std::pair<std::string, double>>
-    upper_targets(const mjData *data, const RiderPosture *posture);
     // _predict_target_state — detached kinematics on a scratch mjData.
     void predict_target_state(const mjData *data, mjData *scratch,
                               bool reverse) const;

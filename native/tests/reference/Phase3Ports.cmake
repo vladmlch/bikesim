@@ -221,3 +221,6 @@ bike_add_reference_test(leg_loop ENGINE
 bike_add_reference_test(coupled_rider_task ENGINE
   SOURCES test_coupled_rider_task.cpp LIBRARIES bike_app
   LABELS t52 rider slow)
+bike_add_reference_test(closed_form_rider ENGINE
+  SOURCES test_closed_form_rider.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)

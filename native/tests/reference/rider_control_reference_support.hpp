@@ -131,7 +131,9 @@ struct PinnedPlant {
 
 [[nodiscard]] inline PinnedPlant
 pinned_model(std::string_view physics_toml =
-                 "examples/research/viewer_physics_welded.toml") {
+                 "examples/research/viewer_physics_welded.toml",
+             const std::function<void(::rider::SpindleConfig &)>
+                 &config_patch = {}) {
     PinnedPlant plant;
     plant.request.mode = "ride";
     plant.request.rider = cfg::RiderSpecs{};
@@ -145,10 +147,13 @@ pinned_model(std::string_view physics_toml =
         mdl::geometry_pose(*plant.request.rider, plant.request.bike);
     plant.pose = ::rider::decode_spindle_pose(
         rcfg::project_articulated_pose(pose), "pose");
+    auto controller_config = ::rider::decode_spindle_config(
+        rcfg::project_rider_controller(*plant.request.physics,
+                                       *plant.model));
+    if (config_patch)
+        config_patch(controller_config);
     plant.controller = std::make_unique<rider::SpindleController>(
-        plant.model.get(), plant.pose,
-        ::rider::decode_spindle_config(rcfg::project_rider_controller(
-            *plant.request.physics, *plant.model)),
+        plant.model.get(), plant.pose, std::move(controller_config),
         plant.request.bike.crank_length / 1000.);
     return plant;
 }
@@ -162,8 +167,8 @@ pinned_model(std::string_view physics_toml =
 // --track-file rough_uphill_savage. skip_initial_state: the shipped
 // welded_flat.json was captured for this same pinned topology, but
 // make_environment constructs from the document alone — no state transfer
-// — so the bounded owner settle poses the rig like the oracle's
-// construction-settle.
+// — so the rig runs init::settle_context, the same braked physical
+// relaxation + trust-region refine as the oracle's construction settle.
 // ---------------------------------------------------------------------
 struct EnvRig {
     std::unique_ptr<init::SetupRequest> request;
@@ -189,6 +194,10 @@ pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
     model.physics = cfg::load_physics(
         repo_file("examples/research/viewer_physics_welded.toml"));
     auto &physics = model.physics.value();
+    // The test context owns no cache identity or directory; a fresh braked
+    // relaxation converges to the same state the oracle's make_environment
+    // settle produces on a cache miss.
+    physics.equilibrium_cache_enabled = false;
     if (physics_overrides)
         physics_overrides(physics);
     cfg::post_init(physics);
@@ -265,29 +274,14 @@ pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
             return solver->solve_state_from_shock_stroke(stroke)
                 .wheel_travel;
         };
-    init::initialize_pose(context);
-    init::EquilibriumResult result;
-    result.residual_qacc = init::acceleration_residual(context);
-    const auto settled_qpos = rig->stepper->qpos();
-    result.fork_travel_mm =
-        1000. * settled_qpos[static_cast<std::size_t>(
-            rig->stepper->suspension().fork_qposadr())];
-    result.shock_stroke_mm =
-        1000. * settled_qpos[static_cast<std::size_t>(
-            rig->stepper->suspension().shock_qposadr())];
-    result.rear_travel_mm =
-        context.rear_travel_from_shock_mm(result.shock_stroke_mm);
-    result.root_z_m = settled_qpos[static_cast<std::size_t>(
-        init::joint_address(context, "root_z").qpos)];
-    result.pitch_rad = settled_qpos[static_cast<std::size_t>(
-        init::joint_address(context, "root_pitch").qpos)];
-    result.initial_crank_phase_rad = physics.drive.crank_phase_rad;
-    result.settled_crank_phase_rad = settled_qpos[static_cast<std::size_t>(
-        init::joint_address(context, "crank_spin").qpos)];
-    context.equilibrium = result;
+    // make_environment's construction settle: the full braked physical
+    // relaxation (initialize_pose + damped stepping + trust-region refine),
+    // not a bare pose. Records that read tire loads, intent signals, or
+    // launch dynamics depend on the wheels actually carrying weight at t=0.
+    const auto settled = init::settle_context(context);
+    (void)settled;
     init::finalize_initial_state(context, *rig->config);
     context.initializing = false;
-    context.completed = true;
     return rig;
 }
 // NOLINTEND(modernize-make-unique)

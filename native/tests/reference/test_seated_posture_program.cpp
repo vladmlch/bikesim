@@ -364,7 +364,10 @@ RunResult run_episode(bool diagnostic,
         });
     RunResult out;
     const runtime::RideControl control{.motor_torque_nm = 0.,
-                                       .human_torque_nm = 30.};
+                                       .motor_limit_nm = std::nullopt,
+                                       .human_torque_nm = 30.,
+                                       .crank_target_rate_rad_s = std::nullopt,
+                                       .posture = std::nullopt};
     for (int tick = 0; tick < 6000; ++tick) {
         if (env.runtime->snapshot().outcome.has_value() ||
             env.runtime->snapshot().step >= env.max_steps)

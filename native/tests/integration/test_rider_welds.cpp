@@ -125,7 +125,10 @@ struct HeldEpisode {
 HeldEpisode held_episode(double grade) {
     auto runtime = weld_env(grade);
     const runtime::RideControl control{.motor_torque_nm = 0.,
-                                       .human_torque_nm = 0.};
+                                       .motor_limit_nm = std::nullopt,
+                                       .human_torque_nm = 0.,
+                                       .crank_target_rate_rad_s = std::nullopt,
+                                       .posture = std::nullopt};
     std::vector<WeldSample> samples;
     double weight = 0.;
     // steps = round(1.5 / dt) — the physics timestep lives on the model.
@@ -202,7 +205,10 @@ void test_held_rider_weight_is_carried_by_the_connects() {
 void test_contact_diagnostics_carry_the_solved_weight() {
     auto runtime = weld_env(0.);
     const runtime::RideControl control{.motor_torque_nm = 0.,
-                                       .human_torque_nm = 0.};
+                                       .motor_limit_nm = std::nullopt,
+                                       .human_torque_nm = 0.,
+                                       .crank_target_rate_rad_s = std::nullopt,
+                                       .posture = std::nullopt};
     std::vector<writers::RiderContactsDiagnostics> rows;
     double weight = 0.;
     int model_steps = 0;
@@ -252,7 +258,10 @@ void test_contact_diagnostics_carry_the_solved_weight() {
 void test_torque_sensor_reads_the_previous_solved_crank_torque() {
     auto runtime = weld_env(0., 1);
     const runtime::RideControl control{.motor_torque_nm = 0.,
-                                       .human_torque_nm = 40.};
+                                       .motor_limit_nm = std::nullopt,
+                                       .human_torque_nm = 40.,
+                                       .crank_target_rate_rad_s = std::nullopt,
+                                       .posture = std::nullopt};
     std::vector<double> sensed, solved;
     std::size_t cursor = 0;
     for (int i = 0; i < 400; ++i) {

@@ -263,7 +263,10 @@ void test_pin_rows_free_pelvis_pitch_and_carry_no_moment() {
         });
     const auto result = env.runtime->advance(
         env.runtime->snapshot().step + env.period,
-        {.motor_torque_nm = 0., .human_torque_nm = 0.}, 1., 1.,
+        {.motor_torque_nm = 0., .motor_limit_nm = std::nullopt,
+         .human_torque_nm = 0.,
+         .crank_target_rate_rad_s = std::nullopt,
+         .posture = std::nullopt}, 1., 1.,
         std::nullopt);
     bt::require(result.reason != "outcome",
                 "the held pinned plant survives a control tick");

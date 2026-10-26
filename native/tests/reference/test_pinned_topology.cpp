@@ -74,7 +74,9 @@ Compiled compiled() {
     // generate_mujoco_xml(specs, mode='ride', rider=RiderSpecs(
     // variant='articulated_planar'), crank_joint=True, physics_config=cfg)
     const auto rider = mdl::resolve_rider(
-        cfg::RiderSpecs{.variant = "articulated_planar"}, true, "seated");
+        cfg::RiderSpecs{.variant = "articulated_planar",
+                        .inseam_m = std::nullopt},
+        true, "seated");
     request.rider = rider;
     request.crank_joint = true;
     request.physics = physics;

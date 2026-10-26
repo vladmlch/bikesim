@@ -355,7 +355,10 @@ void test_strict_flat_cycle_delivers_and_stays_within_budgets() {
     for (const double torque_nm : {20., 40., 60.}) {
         auto env = cycle_env();
         const runtime::RideControl control{.motor_torque_nm = 0.,
-                                           .human_torque_nm = torque_nm};
+                                           .motor_limit_nm = std::nullopt,
+                                           .human_torque_nm = torque_nm,
+                                           .crank_target_rate_rad_s = std::nullopt,
+                                           .posture = std::nullopt};
         while (!env.runtime->snapshot().outcome.has_value() &&
                env.runtime->snapshot().step < env.max_steps) {
             const auto result = env.runtime->advance(
@@ -410,10 +413,16 @@ void test_strict_flat_cycle_delivers_and_stays_within_budgets() {
 // test_free_coast_is_an_intent_not_a_crank_lock
 void test_free_coast_is_an_intent_not_a_crank_lock() {
     auto env = cycle_env();
-    const runtime::RideControl pedal{.motor_torque_nm = 0.,
-                                     .human_torque_nm = 30.};
-    const runtime::RideControl coast{.motor_torque_nm = 0.,
-                                     .human_torque_nm = 0.};
+    const runtime::RideControl pedal{
+        .motor_torque_nm = 0., .motor_limit_nm = std::nullopt,
+        .human_torque_nm = 30.,
+        .crank_target_rate_rad_s = std::nullopt,
+        .posture = std::nullopt};
+    const runtime::RideControl coast{
+        .motor_torque_nm = 0., .motor_limit_nm = std::nullopt,
+        .human_torque_nm = 0.,
+        .crank_target_rate_rad_s = std::nullopt,
+        .posture = std::nullopt};
     // 4 s of pedaling, then the free spin-down — the oracle's 400+1600
     // control ticks at a 10 ms research window.
     for (int i = 0;

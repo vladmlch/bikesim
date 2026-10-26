@@ -231,6 +231,7 @@ cfg::SimulationPhysicsConfig welded_profile() {
     shifting.upshift_slip_limit_mps = 0.5;
     auto& articulated = c.articulated;
     articulated.joint_passive_damping_nms_rad = 0.0;
+    articulated.activation_tau_s = 0.025;
     articulated.balance_floor_kmh = 4.0;
     articulated.balance_dwell_s = 0.5;
     articulated.balance_grace_s = 3.0;
@@ -248,6 +249,14 @@ cfg::SimulationPhysicsConfig welded_profile() {
     articulated.joint_strength_path =
         bt::fixture("config/rider_strength_reference.json").string();
     articulated.active_positive_power_limit_w = 450.0;
+    articulated.delivered_positive_power_budget_w = 750.0;
+    articulated.delivered_joint_power_budget_w = 375.0;
+    articulated.weld_foot_min_normal_n = -1050.0;
+    articulated.weld_foot_max_normal_n = 3000.0;
+    articulated.weld_foot_shear_n = 2250.0;
+    articulated.weld_saddle_min_normal_n = -2250.0;
+    articulated.weld_saddle_max_normal_n = 1300.0;
+    articulated.weld_saddle_shear_n = 1300.0;
     articulated.pedal_torque_ripple = 0.5;
     articulated.return_foot_preload_n = 40.0;
     auto& climb = c.seated_climb;
@@ -1057,6 +1066,21 @@ void test_resolved_profiles() {
                   [](cfg::SimulationPhysicsConfig& c) {
                       c.tires.backend = "distributed_2d_reference";
                       c.tires.distributed.station_count = 128;
+                      // The distributed TOML is byte-mirrored from the
+                      // shipped profile too, but unlike the welded profile
+                      // it does not supply the activation lag or the F1
+                      // delivered/weld envelope fields — reset to defaults.
+                      c.articulated.activation_tau_s = 0.0;
+                      c.articulated.delivered_positive_power_budget_w =
+                          std::nullopt;
+                      c.articulated.delivered_joint_power_budget_w =
+                          std::nullopt;
+                      c.articulated.weld_foot_min_normal_n = std::nullopt;
+                      c.articulated.weld_foot_max_normal_n = std::nullopt;
+                      c.articulated.weld_foot_shear_n = 0.0;
+                      c.articulated.weld_saddle_min_normal_n = std::nullopt;
+                      c.articulated.weld_saddle_max_normal_n = std::nullopt;
+                      c.articulated.weld_saddle_shear_n = 0.0;
                   });
     resolved_case("config/resolved/pneumatic.json",
                   "config/resolved/pneumatic.json",
@@ -1071,6 +1095,20 @@ void test_resolved_profiles() {
                       c.equilibrium_state_file =
                           bt::fixture("config/poses/savage_pneumatic.npz")
                               .string();
+                      // Pneumatic profile likewise does not supply the
+                      // welded-only activation lag or F1 delivered/weld
+                      // envelope fields — reset to defaults.
+                      c.articulated.activation_tau_s = 0.0;
+                      c.articulated.delivered_positive_power_budget_w =
+                          std::nullopt;
+                      c.articulated.delivered_joint_power_budget_w =
+                          std::nullopt;
+                      c.articulated.weld_foot_min_normal_n = std::nullopt;
+                      c.articulated.weld_foot_max_normal_n = std::nullopt;
+                      c.articulated.weld_foot_shear_n = 0.0;
+                      c.articulated.weld_saddle_min_normal_n = std::nullopt;
+                      c.articulated.weld_saddle_max_normal_n = std::nullopt;
+                      c.articulated.weld_saddle_shear_n = 0.0;
                   });
 
     // Optional-vs-missing on the encoded tree: a disengaged optional

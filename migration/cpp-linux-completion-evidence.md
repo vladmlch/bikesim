@@ -5319,3 +5319,48 @@ darwin-captured fixtures — T14/T15/T16/T18/T20/T31/T32 — plus
 platform-pinned T04 and harness-staged T03). L3
 (`tools/run_tests.sh native`) not run — bounded merge-back scope per
 D17; checkpoint profile owns it.
+
+## 2026-10-26 — Linux aarch64 `migration_T` baseline enumeration
+
+Bookkeeping follow-up to the merge-back block above (merge `0997b349`
+— the "Merge-back L2 — Linux aarch64" and "Assessment" subsections are
+the M12 evidence). That merge-back ran the first **full** `ctest -R
+'migration_T' -j8` on this lane (`bike-dev-python-free-cpp`,
+`/build/root-clang`, clang++-18, Release): 41/53. Prior merge-backs ran
+scoped `-R` selections on this lane, so the reds beyond the documented
+pair had never been enumerated. All twelve are pre-existing — T14/T31
+proven byte-identical at merge base `3cdfc8a7` by the detached-HEAD
+spot-check in the M12 block — and are recorded here as the
+linux-aarch64 `migration_T` baseline. Honest enumeration only: no row
+is reclassified or fixed by this entry.
+
+| CTest node | linux-aarch64 signature | Disposition |
+|---|---|---|
+| `migration_T03` | the script test's scratch `deps-noabi` configure fails the `BIKE_MUJOCO_VERSION_312` probe — pinned MuJoCo headers absent from the staged tree | environmental: harness deps-staging gap inside the build-contract script test, orthogonal to any product diff |
+| `migration_T04` | `FAIL identity: loaded-library sha256 mismatch` | platform-pinned by construction: committed fixture `tests/fixtures/migration/engine/identity.json` records `"numeric_provider": "accelerate"` plus the darwin MuJoCo library sha — cannot pass on Linux without a platform-keyed identity fixture |
+| `migration_T09` | `FAIL integration vector resolves bitwise` | documented baseline pair member: input-determined `bootstrap/native_start_welded/state.json` `$array`-pin vs native-shaped pin mismatch; red on both platforms, unchanged |
+| `migration_T14` | `geometry/hardpoints` `golden_f64` bitwise mismatch | fixture-platform-bound: darwin-captured golden compared bitwise on aarch64 (±1-ulp family), pending linux-aarch64 recapture |
+| `migration_T15` | `model/component_centers` `golden_f64` bitwise mismatch | same darwin-captured ±1-ulp family, pending linux-aarch64 recapture |
+| `migration_T16` | generated-vs-captured `mjModel` array element differs (`body_pos[69]` family) | same family: the generated MJCF compiles to ±1-ulp-different elements than the darwin-captured `model/welded.xml` reference, pending linux-aarch64 recapture |
+| `migration_T18` | resolved `geometry.pose` canonical-JSON element differs | same family: resolved projection compared verbatim against the darwin-captured setup snapshot, pending linux-aarch64 recapture |
+| `migration_T20` | `tracks/preset_*_profile.f64` `golden_f64` bitwise mismatch (`preset_alpine_rocky_profile`) | same darwin-captured ±1-ulp family, pending linux-aarch64 recapture |
+| `migration_T29` | `FAIL config.rider_controller.weld_servo_gain: unknown key` | documented baseline pair member: config-key contract predating T25; red on both platforms, unchanged |
+| `migration_T31` | `bootstrap/legacy_flat/integration.f64` `golden_f64` bitwise mismatch | same darwin-captured ±1-ulp family, pending linux-aarch64 recapture |
+| `migration_T32` | `metrics/filter_expected.f64` `golden_f64` bitwise mismatch | same family, pending linux-aarch64 recapture |
+| `migration_T56` | `t56_scripts_depth2_bad: stderr missing 'linux/bad.sh'` | documented environment-dependent flake: shellcheck-0.11.0 stderr-format drift, reproduces standalone |
+
+Totals: the linux-aarch64 `migration_T` baseline is **12 reds** in the
+53-node selection (41/53 at M12); the darwin-arm64 baseline remains the
+documented pair `migration_T09` + `migration_T29` plus the `T56`
+environment flake (50/53). The fixture-platform-bound rows close when
+their linux-aarch64 goldens are captured under ADR-0003's two-platform
+rule; `T04` closes with a platform-keyed identity fixture; `T03` is a
+harness provisioning fix, not a port.
+
+Related but separate: the same M12 block's `-L reference` lane carried
+`reference.motor_freewheel_topology` as Not Run (the pre-existing
+clang-18 `-Wmissing-field-initializers` TU break). That TU break is
+fixed by `4482d09e` (`test_motor_freewheel_topology.cpp`: all six
+`PedalingState` fields now designated) — the node compiles and passes
+on `/build/root-clang` (1.99 s). It is a build break resolution, not a
+baseline-red reclassification, so it is not a row above.

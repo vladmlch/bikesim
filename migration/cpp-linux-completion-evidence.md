@@ -6661,3 +6661,86 @@ legitimate ~90-min re-run of the full 9012-TU header sweep inside
 Anomaly worth recording: the mid-gate ENOSPC trace is a host-capacity
 event, not a suite defect — the disk filled during the header sweep +
 CTest overlap; nothing in this batch writes to `$TMPDIR` at scale.
+
+## 2026-10-27 — lane/a batch 3.24a `native_benchmark` merge-back (merge `132a85f2`)
+
+### Surface
+
+Lane tip `a1524b6e` (4 commits over base `c35ebfae`): T52 3.24a port of
+`tests/reference/test_native_benchmark.py` (56 records / 90 nodes) into
+`native/tests/reference/test_native_benchmark.cpp`, two-platform goldens
+for the three conformance replays, the `bytes_input` golden accessor, the
+`shifting.cpp` `std::views::reverse` tidy, plus ledger updates. Base
+predates F1 (`2c24dc43` + 13 commits) and 3.20 (M17 backfill), so the
+overlap set was exactly the five predicted paths:
+`test-port-map.json`, `python-removal.json`, `Phase3Ports.cmake`,
+`shifting.cpp`, `cpp-linux-completion-evidence.md` (EOF).
+
+### Conflict resolutions
+
+- `native/src/drivetrain/shifting.cpp` — both sides applied the same
+  `std::views::reverse` range-for tidy at line 66/67 (lane `8ec80842`,
+  integration `31f389b8`); hunks differed only in `int const` vs
+  `const int` spelling. Kept integration's (`const int teeth`) —
+  semantically identical either way.
+- `migration/cpp-linux-completion-evidence.md` — EOF seam union: F1 +
+  3.20 sections followed by lane's 3.24a section (chronological).
+- Clean auto-merges: `Phase3Ports.cmake` (3.20 four-registration block
+  mid-file + 3.24a `native_benchmark`/`bike_native_bench_path.hpp`
+  block at EOF), `python-removal.json` (only
+  `test_native_benchmark.py` differs vs pre-merge HEAD — lane-verbatim
+  `replacement_landed`), `test-port-map.json`.
+
+### Ledger verification (key-level)
+
+`len(records)` = **2385** = `static_test_functions`. Dispositions:
+port 478→**533** (+55), golden 303→**304** (+1), planned 1529→**1473**
+(−56), drop 75 (the M17 four-record backfill rides inside the 2385 and
+is preserved). All 56 benchmark records carry lane's 3.24a evidence,
+`collected_node_ids`, and `native_source =
+native/tests/reference/test_native_benchmark.cpp`. (The pre-merge
+estimate quoted lane-side deltas 454→509 / 289→290 / 1567→1511 — those
+are the lane's own base→tip transition; post-merge totals are the union
+with F1/3.20 deltas and reconcile exactly: 533/304/1473/75.)
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Incremental `cmake --build` green; `reference.native_benchmark` +
+  `native_bench` linked; `shifting.cpp` compiles.
+- `ctest -R native_benchmark`: **PASS 5.02 s — 18,167 checks**
+  (binary-standalone recount identical).
+- `ctest -R 'reference\.(cadence_shifter|native_drivetrain)$'`:
+  **2/2** — shifting.cpp sanity.
+- `ctest -L reference -j8`: **67/71** — the documented 4-red baseline
+  {`golden_episode_tool`, `native_numeric_completion`,
+  `pneumatic_tire_oracle`, `native_pneumatic_tire`}; `native_benchmark`
+  green inside the sweep.
+- `ctest -R 'migration_T(09|10|56)$'`: 0/3 — all three are documented
+  darwin reds: `T09` (`post-advance integration vector matches the
+  oracle`, progressed frozen-oracle signature), `T10` (T01
+  `transitions.json` drift family, entered baseline at F1), `T56`
+  (shellcheck-0.11.0 stderr-format env drift).
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, Release)
+
+- `container.sh sync` → `build root-clang` (168 edges) + `build
+  native-clang` (56 edges): green.
+- `ctest root-clang -R native_benchmark`: **PASS — 18,167 checks**
+  (binary-standalone recount identical).
+- `ctest root-clang -L reference -j8`: **67/71** — same documented
+  4-red set as darwin (predicted "66/70" pattern scales by the one new
+  green node).
+- `ctest native-clang -R 'migration_T' -j8`: **40/51** — exactly the
+  documented 11-red linux set
+  `{T03,T04,T09,T10,T14,T15,T16,T18,T20,T31,T32}` (T03 missing-ABI env,
+  T04 library-hash, T09/T10 frozen-oracle, ±1-ulp `golden_f64`
+  family). `T54`/`T56` unregistered in this graph per the standing
+  51-vs-53 split; `T25`/`T29` hold their baseline exits.
+
+### Assessment
+
+No new reds attributable to the merge on either platform. Ledger union
+verified key-level: 2385 records, lane's 56 benchmark edits and all
+integration-side records intact. L3 (`tools/run_tests.sh native`) not
+run — bounded merge-back scope; the checkpoint profile owns it.
+Unrelated documented reds reported, not fixed.

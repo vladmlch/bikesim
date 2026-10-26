@@ -210,3 +210,11 @@ bike_add_reference_test(native_attachment_wrench ENGINE
 bike_add_reference_test(native_rider_forces ENGINE
   SOURCES test_native_rider_forces.cpp LIBRARIES bike_app bike_golden
   LABELS t52 rider golden slow)
+# 3.15 rider-control ports (T52 batch) — crank_split's pure virtual-work /
+# preload / power-budget contracts need no engine.
+bike_add_reference_test(crank_split
+  SOURCES test_crank_split.cpp LIBRARIES bike_rider_math
+  LABELS t52 rider)
+bike_add_reference_test(leg_loop ENGINE
+  SOURCES test_leg_loop.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)

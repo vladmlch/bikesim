@@ -218,3 +218,6 @@ bike_add_reference_test(crank_split
 bike_add_reference_test(leg_loop ENGINE
   SOURCES test_leg_loop.cpp LIBRARIES bike_app
   LABELS t52 rider slow)
+bike_add_reference_test(coupled_rider_task ENGINE
+  SOURCES test_coupled_rider_task.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)

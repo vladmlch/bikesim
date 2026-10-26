@@ -177,7 +177,8 @@ struct EnvRig {
 // as review_rig/WeldedRig.
 [[nodiscard]] inline std::unique_ptr<EnvRig>
 pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
-               &physics_overrides = {}) {
+               &physics_overrides = {},
+           std::optional<bike::terrain::TrackSpec> track = std::nullopt) {
     auto rig = std::make_unique<EnvRig>();
     rig->request = std::unique_ptr<init::SetupRequest>{new init::SetupRequest(
         init::read_setup_request(bt::fixture("requests/welded_flat.toml"),
@@ -195,8 +196,11 @@ pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
     // request schema defaults model.field to FIELD, which only spans the
     // flat fixture — the env derivation (build_field_data(track)) sizes the
     // heightfield to the loaded profile instead.
-    rig->request->track = bike::terrain::load_track(
-        repo_file("examples/research/rough_uphill_savage.toml"));
+    rig->request->track =
+        track.has_value()
+            ? *track
+            : bike::terrain::load_track(
+                  repo_file("examples/research/rough_uphill_savage.toml"));
     model.field = bike::terrain::HeightFieldSpec::for_track(
         rig->request->track);
     const auto resolved_rider = bike::model::resolve_rider(
@@ -292,10 +296,11 @@ pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
 // — the oracle's count * control_steps loop, idling like test_rider_
 // allocation's advance_env_steps (research control period .01 s).
 [[nodiscard]] inline rcfg::RideControl idle_control() {
-    rcfg::RideControl control;
-    control.motor_torque_nm = 0.;
-    control.human_torque_nm = 0.;
-    return control;
+    // Python RideControl(): every torque channel None — motor gets the
+    // configured pedelec assistance and human effort stays automatic
+    // (rider intent drives the crank). Setting a numeric value would
+    // pin the channel and disable automatic effort.
+    return rcfg::RideControl{};
 }
 
 inline rcfg::RawStep advance_env_steps(rcfg::PhysicalStep &physical,
@@ -305,7 +310,9 @@ inline rcfg::RawStep advance_env_steps(rcfg::PhysicalStep &physical,
         physical.control_clock().timestep_s));
     rcfg::RawStep last;
     for (std::int64_t i = 0; i < count * per; ++i)
-        last = physical.advance_physics(1., 1., std::nullopt,
+        // env.step defaults: front/rear brake demand 0 (research
+        // environment.py:357), external qfrc None.
+        last = physical.advance_physics(0., 0., std::nullopt,
                                         idle_control());
     return last;
 }

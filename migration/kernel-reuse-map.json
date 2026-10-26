@@ -1455,8 +1455,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/physics/attachment_budget.py",
-          "line": 12,
-          "end_line": 19
+          "line": 18,
+          "end_line": 25
         },
         "native": [
           {
@@ -1502,8 +1502,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/physics/attachment_budget.py",
-          "line": 23,
-          "end_line": 28
+          "line": 29,
+          "end_line": 42
         },
         "native": [
           {
@@ -1546,8 +1546,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/physics/attachment_budget.py",
-          "line": 31,
-          "end_line": 55
+          "line": 45,
+          "end_line": 76
         },
         "native": [
           {
@@ -3602,8 +3602,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/physics/energy_ledger.py",
-          "line": 14,
-          "end_line": 20
+          "line": 21,
+          "end_line": 29
         },
         "native": [
           {
@@ -3643,8 +3643,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/physics/energy_ledger.py",
-          "line": 23,
-          "end_line": 34
+          "line": 32,
+          "end_line": 47
         },
         "native": [
           {
@@ -3693,8 +3693,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/physics/energy_ledger.py",
-          "line": 37,
-          "end_line": 42
+          "line": 50,
+          "end_line": 55
         },
         "native": [
           {
@@ -7009,7 +7009,7 @@
         "python": {
           "path": "src/bike_sim/sim/ride/_step_oracle.py",
           "line": 43,
-          "end_line": 213
+          "end_line": 229
         },
         "native": [
           {
@@ -19680,8 +19680,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_observations.py",
-          "line": 178,
-          "end_line": 193
+          "line": 192,
+          "end_line": 207
         },
         "native": [
           {
@@ -19996,7 +19996,7 @@
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
           "line": 63,
-          "end_line": 951
+          "end_line": 1043
         },
         "native": [
           {
@@ -20635,7 +20635,7 @@
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
           "line": 69,
-          "end_line": 144
+          "end_line": 150
         },
         "native": [
           {
@@ -20729,8 +20729,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 146,
-          "end_line": 153
+          "line": 152,
+          "end_line": 159
         },
         "native": [
           {
@@ -20796,8 +20796,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 155,
-          "end_line": 157
+          "line": 161,
+          "end_line": 163
         },
         "native": [
           {
@@ -20851,8 +20851,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 160,
-          "end_line": 162
+          "line": 166,
+          "end_line": 168
         },
         "native": [
           {
@@ -20901,8 +20901,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 165,
-          "end_line": 166
+          "line": 171,
+          "end_line": 172
         },
         "native": [
           {
@@ -20951,8 +20951,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 169,
-          "end_line": 171
+          "line": 175,
+          "end_line": 177
         },
         "native": [
           {
@@ -21001,8 +21001,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 174,
-          "end_line": 175
+          "line": 180,
+          "end_line": 181
         },
         "native": [
           {
@@ -21051,8 +21051,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 178,
-          "end_line": 180
+          "line": 184,
+          "end_line": 186
         },
         "native": [
           {
@@ -21101,8 +21101,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 182,
-          "end_line": 191
+          "line": 188,
+          "end_line": 197
         },
         "native": [
           {
@@ -21164,8 +21164,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 193,
-          "end_line": 227
+          "line": 199,
+          "end_line": 233
         },
         "native": [
           {
@@ -21239,8 +21239,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 229,
-          "end_line": 246
+          "line": 235,
+          "end_line": 252
         },
         "native": [
           {
@@ -21302,8 +21302,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 248,
-          "end_line": 396
+          "line": 254,
+          "end_line": 420
         },
         "native": [
           {
@@ -21473,8 +21473,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 398,
-          "end_line": 505
+          "line": 422,
+          "end_line": 533
         },
         "native": [
           {
@@ -21576,8 +21576,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 507,
-          "end_line": 512
+          "line": 535,
+          "end_line": 540
         },
         "native": [
           {
@@ -21635,8 +21635,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 514,
-          "end_line": 563
+          "line": 542,
+          "end_line": 591
         },
         "native": [
           {
@@ -21724,8 +21724,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 565,
-          "end_line": 598
+          "line": 593,
+          "end_line": 629
         },
         "native": [
           {
@@ -21803,8 +21803,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 600,
-          "end_line": 604
+          "line": 631,
+          "end_line": 635
         },
         "native": [
           {
@@ -21853,8 +21853,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 606,
-          "end_line": 616
+          "line": 637,
+          "end_line": 647
         },
         "native": [
           {
@@ -21912,8 +21912,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 618,
-          "end_line": 776
+          "line": 649,
+          "end_line": 807
         },
         "native": [
           {
@@ -22067,8 +22067,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 778,
-          "end_line": 781
+          "line": 809,
+          "end_line": 812
         },
         "native": [
           {
@@ -22126,8 +22126,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 783,
-          "end_line": 786
+          "line": 814,
+          "end_line": 817
         },
         "native": [
           {
@@ -22185,8 +22185,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 788,
-          "end_line": 798
+          "line": 823,
+          "end_line": 833
         },
         "native": [
           {
@@ -22252,8 +22252,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 800,
-          "end_line": 807
+          "line": 835,
+          "end_line": 842
         },
         "native": [
           {
@@ -22306,8 +22306,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 809,
-          "end_line": 815
+          "line": 844,
+          "end_line": 850
         },
         "native": [
           {
@@ -22361,8 +22361,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 817,
-          "end_line": 839
+          "line": 852,
+          "end_line": 877
         },
         "native": [
           {
@@ -22429,8 +22429,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 841,
-          "end_line": 867
+          "line": 917,
+          "end_line": 945
         },
         "native": [
           {
@@ -22480,8 +22480,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 869,
-          "end_line": 883
+          "line": 947,
+          "end_line": 967
         },
         "native": [
           {
@@ -22540,8 +22540,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 885,
-          "end_line": 903
+          "line": 969,
+          "end_line": 987
         },
         "native": [
           {
@@ -22608,8 +22608,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 905,
-          "end_line": 943
+          "line": 989,
+          "end_line": 1035
         },
         "native": [
           {
@@ -22684,8 +22684,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/physical_runtime.py",
-          "line": 945,
-          "end_line": 951
+          "line": 1037,
+          "end_line": 1043
         },
         "native": [
           {
@@ -26268,7 +26268,7 @@
         "python": {
           "path": "src/bike_sim/sim/ride/rider_effort.py",
           "line": 15,
-          "end_line": 81
+          "end_line": 83
         },
         "native": [
           {
@@ -26369,8 +26369,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/rider_effort.py",
-          "line": 84,
-          "end_line": 91
+          "line": 86,
+          "end_line": 93
         },
         "native": [
           {
@@ -26427,8 +26427,8 @@
       "source_locations": {
         "python": {
           "path": "src/bike_sim/sim/ride/rider_effort.py",
-          "line": 94,
-          "end_line": 122
+          "line": 96,
+          "end_line": 125
         },
         "native": [
           {

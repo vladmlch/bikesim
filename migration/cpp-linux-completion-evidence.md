@@ -5695,3 +5695,73 @@ the runtime qualification. Dispositions: 51 golden / 18 port / 0 drop.
 - `migration/python-removal.json`: all four rows →
   `replacement_landed` with `verification_ids` set to the landed
   CTest ids; `sha256`/`line_count` refreshed; snapshot hash retained.
+
+## 2026-10-26 — Task 3.18 review fix round (lane/c)
+
+### Findings and resolutions
+
+- **Critical — stale `cadence_shifter` expectations.** Both
+  `native/tests/reference/test_cadence_shifter.cpp` and
+  `tests/reference/test_cadence_shifter.py` pinned pre-`b21c63ec`
+  one-step landings (33/24/45); the oracle's multi-cog throw makes
+  them 51/21/39. Verified by executing `CadenceShifter.update` on the
+  oracle per scenario (60 rpm from 28T → 51 since 60·51/28 = 109.29
+  ≤ 110; 115 rpm from 28T → 21 since 115·18/28 = 73.93 < 75 but
+  115·21/28 = 86.25; 112 rpm from 51T → 39 since 33T lands 72.47 and
+  39T lands 85.65). Both files updated; structure, scenario coverage
+  and the six unaffected functions unchanged. The Python file had
+  been red vs the live oracle since `b21c63ec` with records never
+  runtime-qualified (`disposition: port`, empty node ids) — now
+  genuinely qualified.
+- **Important — unsorted-cassette divergence.** Oracle
+  `ShiftingConfig.__post_init__` sorts the cassette on every
+  construction; native sorted only in `post_init` and wire decode,
+  leaving directly-built `drivetrain::ShiftingConfig` order divergent
+  under the multi-cog scans. `CadenceShifter`'s ctor now sorts its
+  own copy post-`validate()`. Two order-sensitive probes added to
+  `test_shifter_ctor_domain` (`native/tests/test_contracts.cpp`)
+  on cassette `{28,11,21,18,13,15,24}` — upshift 24T@96 rpm → 18T
+  (unsorted iteration would pick 21T), downshift 13T@60 rpm → 18T
+  (would pick 15T), both outcomes oracle-verified.
+- **Dormant fixture audited.**
+  `test_numpy_float32_shifting_metadata_retains_baseline_bits` stays
+  `drop`/`python-only`: its committed sidecar pair (3.21a capture)
+  had no C++ consumer and is un-reproducible post-`b21c63ec` (live
+  oracle yields `rear_teeth == 14`, recorded bits pin `18` and
+  float32 `required_ema` 90.40253). Removed on both platforms with
+  the reason recorded in the record's evidence — a documented
+  drop-with-reason, not a silent deletion. The Python node remains a
+  live-oracle red in the same stale-expectation family; sibling
+  float32 drop-records keep their dormant-but-reproducible sidecars.
+
+### Verification
+
+- darwin-arm64, `build/native-release`:
+  `ctest -R 'cadence_shifter|native_contract_tests|drivetrain|
+  drive_policies|policy_clone|motor_freewheel'` — 6/6 PASS;
+  `reference.cadence_shifter` PASS 74 checks (was previously red on
+  the same stale asserts). `reference.native_numeric_completion`
+  PASS post-removal. `pytest tests/reference/test_cadence_shifter.py`
+  9 passed.
+- linux-aarch64, `bike-dev-pfc-lane-c` `/build/root-clang`
+  (clang++-18): same six tests 6/6 PASS, `reference.cadence_shifter`
+  PASS 74 checks (platform-identical count);
+  `reference.native_numeric_completion` PASS post-removal;
+  pytest 9 passed.
+- `bash tools/run_tests.sh native` not run — fix-round scope bounded
+  by request; sweeps remain the outer gate's business.
+
+### Ledger
+
+- `migration/test-port-map.json`: 9 cadence records — measured node
+  ids, refreshed line ranges and dated fix-round evidence (the three
+  changed rows name their 33→51/24→21/45→39 refresh and the
+  red-since-`b21c63ec` lineage); numeric_completion row gained the
+  dormant-fixture audit note.
+- `migration/python-removal.json`: `test_cadence_shifter.py` →
+  `replacement_landed`, `verification_ids =
+  [reference.cadence_shifter]`; `sha256`/`line_count` refreshed (88
+  lines post-comment); snapshot hash retained.
+- Commits: `b1aa217a` (expectation refresh), `add2eb90` (ctor
+  cassette sort + contract probes), `1fb3eab7` (ledger + sidecar
+  removal).

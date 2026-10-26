@@ -113,8 +113,10 @@ std::unique_ptr<Material> decode_material(const SetupContext& context,const Stat
     // a flat material channel: required when the rider control is a spindle
     // controller, forbidden otherwise. rider_present() implies
     // next.controller was staged by current_material or the blob above.
-    if(context.physical.rider_present()&&context.physical.rider_control().spindle())
+    if(context.physical.rider_present()&&context.physical.rider_control().spindle()){
+        if(!next.controller)throw std::invalid_argument("coast hold material requires the spindle controller");
         next.controller->coast_hold_nm=doubles(state,"state_control_coast_hold_nm",{1}).front();
+    }
     else if(find(state,"state_control_coast_hold_nm"))throw std::invalid_argument("unexpected control coast hold material");
     if(context.stepper.has_tire()){
         if(find(state,"state_tire_wire_names")){

@@ -327,7 +327,7 @@ bio::Value project_rider_controller(const cfg::SimulationPhysicsConfig& config,
     // weld-press servo and weld-imposed leg feedforward
     // (rider_control.py:758-934). native/setup.py rider_controller_config
     // publishes the same keys.
-    auto* members = std::get_if<Object>(&out.data);
+    const auto* members = std::get_if<Object>(&out.data);
     if (members == nullptr)
         throw std::invalid_argument(
             "rider_controller: articulated field is not an object");

@@ -5918,3 +5918,140 @@ against committed goldens on both qualified platforms.
 linux). Ledger and evidence unions verified record-level; nothing
 lost or duplicated. L3 (`tools/run_tests.sh native`) not run —
 bounded merge-back scope; checkpoint profile owns it.
+
+## 2026-10-27 — 3.19 qualification (lane/c): drive policies and pedalling (`drive`)
+
+### Scope
+
+Six source files, 60 records, 101 collected pytest nodes — all
+`disposition: port`, all `native_test_id`s pointing at six registered
+CTest targets (`Phase3Ports.cmake:115–124`):
+
+- `test_motor_profile.py` — 8 records / 32 nodes →
+  `reference.motor_profile`.
+- `test_assist_controller.py` — 22 records / 27 nodes →
+  `reference.assist_controller`.
+- `test_cadence_shifter.py` — 9 records / 9 nodes →
+  `reference.cadence_shifter` (already qualified by the 3.18 fix
+  round on 2026-10-26; reconciled — records untouched, no redo).
+- `test_pedal_waveform.py` — 10 records / 22 nodes →
+  `reference.pedal_waveform`.
+- `test_pedaling_policy.py` — 9 records / 9 nodes →
+  `reference.pedaling_policy`.
+- `test_system_momentum_drive.py` — 2 records / 2 nodes →
+  `reference.system_momentum_drive` (`slow` label).
+
+### native_test_id resolution — zero dangling
+
+Every one of the 60 `native_test_id`s resolves to a `void test_*()`
+function defined and invoked in the named TU; the per-TU function
+counts match the record counts exactly (22/9/8/10/9/2) — a strict
+1:1 mapping, no missing functions, no extras without records.
+
+### Assertion correspondence — full-depth review
+
+All 60 functions were compared against their Python records at full
+depth (beyond the required sampling: both smallest files entire,
+and 100% of every larger file rather than the ≥30% floor):
+
+- `test_system_momentum_drive.cpp` — both stands mirror the
+  metric/bound asserts (`peak_motor_torque_nm > 10`, shaft/joint
+  work, five bounded metrics; passive stand all-zero).
+- `test_motor_profile.cpp` — profile data (85/250/600, .04 tau,
+  25/3.6 cutoff, 2/3.6 taper, 5 deg/s gate, provenance strings), all
+  9 mode-gain rows, unknown-mode rejection, detached gain mapping,
+  all 12 invalid-profile cases (9 direct `post_init` probes + 3
+  dynamic wire-boundary cases covering the missing-keys and
+  tuple-kind variants the fixed record cannot express), pedelec
+  permission semantics observed through delivered torque
+  (uncapped → full 3.4×10 Nm request, the native API's observable
+  equivalent of `math.inf` permission), 5/6 cap-input rejections
+  with `braking=1` honestly documented as a Python-bool-marshalling
+  drop, and the non-finite-torque rejection.
+- `test_pedal_waveform.cpp` — all 10 functions including the 3600-
+  phase mean/ripple sweep, both parametrized tables
+  (phase {0,π} × mu {0,.9,5}; phase {0,.35,π,π+.35} × tilt
+  {F,T}), the preload exclusion/negative-geometry guards, and the
+  zero-load boundedness probe; `ripple=.35` default verified
+  against `pedaling_force_requests`' signature.
+- `test_pedaling_policy.cpp` — all 9 functions; the removed
+  `reposition_*` knobs are asserted absent at the wire boundary,
+  the field schema (`kPedalingConfigFields`) and the mode domain
+  (`pedal_mode`), matching the source's TypeError-contract
+  assertions; coast/hysteresis scenarios use the same configs as
+  the Python records (the helper's 110/90 override mirrors the
+  `PedalingConfig` dataclass defaults the source relies on);
+  the rider-program rejection asserts the unknown-key refusal,
+  with the Python-only message spelling documented rather than
+  claimed identical.
+- `test_assist_controller.cpp` — all 22 functions; lag/taper/
+  cutoff/ceiling/permission assertions carry the source's analytic
+  values and rel tolerances; `shaft_rpm` positional order verified
+  against `drivetrain/motor.hpp:81`; removed-knob and
+  profile-mode rejections asserted at the wire/config boundary;
+  the deepcopy probe is mirrored as a value copy (owned profile
+  data) with the `is`-identity claim documented as adapted, not
+  asserted weakened; the CLI `--assist` override test drives the
+  real `cli::resolve_ride` path on the same TOML fixture.
+- `test_cadence_shifter.cpp` — the 3.18 fix-round file; all 9
+  functions re-verified 1:1 against the current Python source
+  (post-`b21c63ec` multi-cog expectations stand; `update` positional
+  order verified against `drivetrain/shifting.hpp:100`).
+
+Documented adaptations, no weakening: where the source asserts a
+Python-only mechanism (`FrozenInstanceError`, keyword-argument
+rejection, `math.inf` sentinel, deepcopy identity), the C++ port
+either asserts the boundary equivalent (const registry, wire
+decoder rejection, delivered-torque observation, owned-value
+independence) or records the dropped parameter in the test comment
+— never a silent skip.
+
+### Verification
+
+- darwin-arm64, `build/native-release`:
+  `ctest -R 'motor_profile|cadence_shifter|pedal_waveform|
+  pedaling_policy|assist_controller|system_momentum'` — 6/6 PASS.
+  Binary check counts: `motor_profile` **60**, `cadence_shifter`
+  **74**, `pedal_waveform` **87**, `pedaling_policy` **3177**,
+  `assist_controller` **72**, `system_momentum_drive` **32**.
+- linux-aarch64, `bike-dev-pfc-lane-c` `/build/root-clang`
+  (clang++-18): `container.sh sync` + `build` (100 steps incl.
+  CMake re-check) then the same six nodes — 6/6 PASS with
+  **identical check counts** (60/74/87/3177/72/32).
+- Oracle pytest, `uv run`, all six files together: **101 passed**
+  on darwin-arm64; **101 passed** on linux-aarch64
+  (`/opt/bike-venv/bin/pytest` inside the container). Collected
+  node totals equal the run count; zero skips, zero reds.
+- All 60 `line`/`end_line` ranges re-verified against the live
+  sources via `ast` — drift-free, no refresh needed.
+- `bash tools/run_tests.sh native` not run — qualification scope
+  bounded to the six targets + oracle files per the task; the outer
+  gate owns the sweeps.
+- No golden sidecars: all 60 records are `comparison_class`
+  analytic/contract ports — no fixture capture is required or
+  expected for this batch.
+
+### Ledger
+
+- `migration/test-port-map.json`: the 51 unqualified rows gained
+  measured `collected_node_ids` (101 nodes across the six files),
+  `assertions_capture` replaced with dated measured counts, and a
+  `2026-10-27` evidence line naming the verified C++ function and
+  the platform-identical CTest check counts. The 9 cadence rows
+  were already complete from the 3.18 fix round — left untouched.
+- `migration/python-removal.json`: `test_motor_profile.py`,
+  `test_assist_controller.py`, `test_pedal_waveform.py`,
+  `test_pedaling_policy.py`, `test_system_momentum_drive.py` →
+  `replacement_landed` with `verification_ids` = the single landed
+  CTest id each (per the 3.18 convention); `phase3_source_implementation`
+  blocks dropped; `sha256`/`line_count` confirmed current (files
+  unchanged since snapshot); `test_cadence_shifter.py` was already
+  `replacement_landed` — re-verified, unchanged. Deletion stays
+  gated to T63 per ADR-0003.
+
+### Anomalies
+
+None attributable to this batch. No dangling ids, no missing
+functions, no semantic mismatches, no weakened asserts found in
+review. Unrelated baseline reds (`migration_T*` family, other
+batches' missing fixtures) untouched and not re-enumerated here.

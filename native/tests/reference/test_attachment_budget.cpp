@@ -30,7 +30,11 @@ AttachmentBudget budget() {
     const auto b = ArticulatedConfig{}.attachment_budget();
     return {.foot_min_normal_n = b.foot_min_normal_n, .foot_mu = b.foot_mu,
             .saddle_mu = b.saddle_mu, .grip_pull_n = b.grip_pull_n,
-            .max_gap_m = b.max_gap_m};
+            .max_gap_m = b.max_gap_m,
+            .saddle_min_normal_n = b.saddle_min_normal_n,
+            .foot_max_normal_n = b.foot_max_normal_n,
+            .saddle_max_normal_n = b.saddle_max_normal_n,
+            .foot_shear_n = b.foot_shear_n, .saddle_shear_n = b.saddle_shear_n};
 }
 const AttachmentBudget kBudget = budget();
 
@@ -44,14 +48,24 @@ void test_violations_use_the_supplied_budget() {
                         sample, AttachmentBudget{.foot_min_normal_n = 20.,
                                                  .foot_mu = .9, .saddle_mu = .6,
                                                  .grip_pull_n = 300.,
-                                                 .max_gap_m = .005}),
+                                                 .max_gap_m = .005,
+                                                 .saddle_min_normal_n = 0.,
+                                                 .foot_max_normal_n = std::nullopt,
+                                                 .saddle_max_normal_n = std::nullopt,
+                                                 .foot_shear_n = 0.,
+                                                 .saddle_shear_n = 0.}),
                     "normal"),
                 "supplied 20 N floor flags");
     bt::require(!has(attachment_violations(
                          sample, AttachmentBudget{.foot_min_normal_n = 10.,
                                                   .foot_mu = .9, .saddle_mu = .6,
                                                   .grip_pull_n = 300.,
-                                                  .max_gap_m = .005}),
+                                                  .max_gap_m = .005,
+                                                  .saddle_min_normal_n = 0.,
+                                                  .foot_max_normal_n = std::nullopt,
+                                                  .saddle_max_normal_n = std::nullopt,
+                                                  .foot_shear_n = 0.,
+                                                  .saddle_shear_n = 0.}),
                      "normal"),
                 "supplied 10 N floor passes");
 }

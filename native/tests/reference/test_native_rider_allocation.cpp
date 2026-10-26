@@ -89,7 +89,12 @@ rcfg::AttachmentBudget attachment_budget() {
     return {.foot_min_normal_n = source.foot_min_normal_n,
             .foot_mu = source.foot_mu, .saddle_mu = source.saddle_mu,
             .grip_pull_n = source.grip_pull_n,
-            .max_gap_m = source.max_gap_m};
+            .max_gap_m = source.max_gap_m,
+            .saddle_min_normal_n = source.saddle_min_normal_n,
+            .foot_max_normal_n = source.foot_max_normal_n,
+            .saddle_max_normal_n = source.saddle_max_normal_n,
+            .foot_shear_n = source.foot_shear_n,
+            .saddle_shear_n = source.saddle_shear_n};
 }
 const rcfg::AttachmentBudget BUDGET = attachment_budget();
 

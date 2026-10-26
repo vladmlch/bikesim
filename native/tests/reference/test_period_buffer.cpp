@@ -43,7 +43,9 @@ namespace {
 
 const runtime::AttachmentBudget BUDGET{
     .foot_min_normal_n = 20., .foot_mu = .9, .saddle_mu = .6,
-    .grip_pull_n = 300., .max_gap_m = .005};
+    .grip_pull_n = 300., .max_gap_m = .005, .saddle_min_normal_n = 0.,
+    .foot_max_normal_n = std::nullopt, .saddle_max_normal_n = std::nullopt,
+    .foot_shear_n = 0., .saddle_shear_n = 0.};
 
 // The exception contract pytest.raises(..., match=...) expresses: type plus
 // a message fragment.

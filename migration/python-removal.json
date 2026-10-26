@@ -14964,9 +14964,7 @@
       "native/tests/reference/test_joint_strength.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.joint_strength"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
     "status": "replacement_landed",
@@ -16550,9 +16548,7 @@
       "native/tests/reference/test_planar_arms.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.planar_arms"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
     "status": "replacement_landed",

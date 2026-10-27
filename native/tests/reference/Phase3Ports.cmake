@@ -207,6 +207,11 @@ bike_add_reference_test(native_rider_allocation ENGINE
 bike_add_reference_test(native_coupled_rider_task ENGINE
   SOURCES test_native_coupled_rider_task.cpp LIBRARIES bike_app
   LABELS t52 rider slow)
+# F5: the A2.3 spindle-controller family including the rear-leg-chain
+# effort regression — golden consumer over the shared pinned plant fixture.
+bike_add_reference_test(native_spindle_controller ENGINE
+  SOURCES test_native_spindle_controller.cpp LIBRARIES bike_app
+  LABELS t52 rider golden)
 bike_add_reference_test(native_rider_dynamics ENGINE
   SOURCES test_native_rider_dynamics.cpp LIBRARIES bike_app LABELS t52 rider)
 bike_add_reference_test(native_rider_information_boundary ENGINE

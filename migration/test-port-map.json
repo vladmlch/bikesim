@@ -19914,13 +19914,24 @@
       "line": 26,
       "end_line": 30,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_waveform_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_waveform_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_matches_python[0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_matches_python[1.5707963267948966]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_matches_python[3.141592653589793]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_matches_python[6.283185207179586]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19928,13 +19939,24 @@
       "line": 34,
       "end_line": 36,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_effort_ceiling_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_effort_ceiling_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[-3.0]",
+        "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[8.0]",
+        "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[20.0]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19942,13 +19964,21 @@
       "line": 39,
       "end_line": 46,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_waveform_rejects_bad_inputs",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_waveform_rejects_bad_inputs",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_rejects_bad_inputs"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19956,13 +19986,21 @@
       "line": 49,
       "end_line": 56,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_effort_ceiling_rejects_bad_inputs",
+      "native_test_id": "reference.native_spindle_controller::test_effort_ceiling_rejects_bad_inputs",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_rejects_bad_inputs"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19970,13 +20008,32 @@
       "line": 195,
       "end_line": 205,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_compute_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_compute_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[0.0-0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[0.0-0.7]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[0.0-1.5707963267948966]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[0.0-2.4]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[40.0-0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[40.0-0.7]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[40.0-1.5707963267948966]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[40.0-2.4]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[120.0-0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[120.0-0.7]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[120.0-1.5707963267948966]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[120.0-2.4]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 12 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19984,13 +20041,21 @@
       "line": 208,
       "end_line": 218,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_disabled_command_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_disabled_command_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_disabled_command_matches_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19998,13 +20063,21 @@
       "line": 221,
       "end_line": 231,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_steady_state_bypasses_activation",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_steady_state_bypasses_activation",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_steady_state_bypasses_activation"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20012,13 +20085,21 @@
       "line": 234,
       "end_line": 245,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_activation_rejects_repeated_timestamp",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_activation_rejects_repeated_timestamp",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_activation_rejects_repeated_timestamp"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20026,13 +20107,21 @@
       "line": 248,
       "end_line": 278,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_activation_and_passive_damping_match_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_activation_and_passive_damping_match_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_activation_and_passive_damping_match_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20040,13 +20129,21 @@
       "line": 281,
       "end_line": 294,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_initialize_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_initialize_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_matches_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20054,13 +20151,21 @@
       "line": 297,
       "end_line": 312,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_initialize_velocity_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_initialize_velocity_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_velocity_matches_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20068,13 +20173,21 @@
       "line": 315,
       "end_line": 327,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_envelope_forces_match_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_envelope_forces_match_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_envelope_forces_match_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20082,13 +20195,21 @@
       "line": 330,
       "end_line": 340,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_write_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_write_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_write_matches_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20096,13 +20217,21 @@
       "line": 343,
       "end_line": 385,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_state_round_trip",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_state_round_trip",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_state_round_trip"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20110,13 +20239,21 @@
       "line": 388,
       "end_line": 417,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_solved_effort_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_solved_effort_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_solved_effort_matches_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20124,13 +20261,24 @@
       "line": 425,
       "end_line": 434,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_compute_posture_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_compute_posture_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_posture_matches_python[posture0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_posture_matches_python[posture1]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_posture_matches_python[posture2]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_posture_matches_python[posture3]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20138,13 +20286,21 @@
       "line": 437,
       "end_line": 448,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_coasting_command_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_coasting_command_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_coasting_command_matches_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20152,13 +20308,21 @@
       "line": 451,
       "end_line": 465,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_reset_activation_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_reset_activation_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20166,13 +20330,21 @@
       "line": 468,
       "end_line": 495,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_strength_probes_match_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_strength_probes_match_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20180,13 +20352,21 @@
       "line": 498,
       "end_line": 529,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_strength_rejects_malformed_state",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_strength_rejects_malformed_state",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20194,13 +20374,21 @@
       "line": 532,
       "end_line": 552,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_lookups_reject_unknown_joints",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_lookups_reject_unknown_joints",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_lookups_reject_unknown_joints"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20208,13 +20396,21 @@
       "line": 555,
       "end_line": 598,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_probe_rejects_bad_input",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_probe_rejects_bad_input",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_probe_rejects_bad_input"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -38890,6 +39086,32 @@
       "comparison_class": "unassigned",
       "disposition": "planned",
       "evidence": []
+    },
+    {
+      "source_path": "tests/reference/test_native_spindle_controller.py",
+      "source_symbol": "test_spindle_rear_chain_effort_matches_python",
+      "line": 677,
+      "end_line": 697,
+      "owner_task": "T52",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_rear_chain_effort_matches_python",
+      "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_rear_chain_effort_matches_python[0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_rear_chain_effort_matches_python[1.5707963267948966]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_rear_chain_effort_matches_python[3.141592653589793]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_rear_chain_effort_matches_python[3.67]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_rear_chain_effort_matches_python[4.19]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "close-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130) \u2014 F5 rear-leg-chain regression: nonzero oracle-matching rear hip/knee torque (no collapse reproduces)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     }
   ],
   "checkout_reconciliation": {

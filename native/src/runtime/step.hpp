@@ -105,6 +105,21 @@ struct RawStep {
     bool full = false;
 };
 
+// physical_observations.py constraint row partition — published like
+// period_buffer.hpp's evaluate_attachments so the energy-ledger oracle
+// ports audit the grouping on synthetic plants, not a test-side copy.
+// `weights` is caller scratch sized nefc; `velocity` caller scratch sized
+// nefc for the incoming-velocity product.
+[[nodiscard]] std::vector<std::pair<std::string, std::vector<double>>>
+constraint_components(const mjModel *model, const mjData *data,
+                      std::vector<double> &weights);
+// Per '{kind}:{efc_id}' accumulated force*(J@v) in row order; dict key
+// order is first-appearance order.
+[[nodiscard]] std::vector<std::pair<std::string, double>>
+numerical_constraint_powers(const mjModel *model, const mjData *data,
+                            std::span<const double> incoming,
+                            std::vector<double> &velocity);
+
 // telemetry_v2.py ForceSample — the interval-start force capture the
 // loss ledger reads back (engine_passive_loss_power takes its qpos).
 struct ForceSample {

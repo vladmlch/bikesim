@@ -6847,3 +6847,116 @@ scope per protocol. Unrelated documented reds reported, not fixed —
 including the A/B-verified pre-existing `test_native_runtime_step.py`
 live-parity reds noted in the lane report (pytest-side, past the
 merge-back ctest scope).
+
+## 2026-10-27 — lane/b batch 3.17 seated/welds merge-back (merge `17201f72`)
+
+### Surface
+
+Lane tip `633dd4c0` (13 commits over base `2c24dc43`, which predates
+F1's post-merge fix chain `093633c4..553ba686` and batches 3.20/3.24a/F4;
+reviews: impl Needs-fixes on doc/ledger hygiene → fix round
+Approved-for-merge). Deliverables: 7 reference TUs
+(`test_{seated_topology,seated_pedaling_cycle,seated_posture_program,
+seated_climb_surge,pinned_topology,welded_profile_config,
+articulated_config}.cpp`) plus `integration/test_rider_welds.cpp`
+registered as `reference.rider_welds` in `Phase3Ports.cmake`; additive
+`RuntimeRigAccess` hooks (`schedule_rider_pulse`, `fold_intent_signals`),
+a const `PhysicalStep::rider_control()` overload, three const
+`SpindleController` accessors (`locked_joints`/`crank_spin_qpos`/
+`crank_spin_dof` — members already carried by F1), a
+semantics-identical `std::views::reverse` loop tidy in `shifting.cpp`
+(fourth copy of integration's `31f389b8` — auto-deduped), the
+task-C317 report, and ledger qualification of 55 records
+(50 planned → port; 5 post-F1-provenanced `articulated_config` inserts).
+Zero golden records; no fixture files committed.
+
+Merge conflicts — one, expected: `Phase3Ports.cmake` EOF seam (both
+sides appended after `native_rider_forces`) resolved as the union —
+3.17 block then 3.24a block, batch order. Both JSON ledgers
+auto-merged: record/entry key-spaces verified disjoint (lane 50
+modified + 5 inserted; integration 97 modified + 4 static-brake
+inserts; zero overlapping keys, zero removals) — merged file is the
+exact per-record union, `articulated_config` rows in source-line
+order. `spindle_controller.hpp`/`step.hpp`/`runtime_access.*`
+auto-merged (disjoint regions; lane's accessor additions land beside
+F4's weld-servo members without interaction). Header counts bumped
+2385/2369 → 2390/2374 per the 3.20 backfill convention (`1d4d4b92`),
+preserving `static == records` and `static == top_level + class`.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Incremental `cmake --build` green; all 8 new `reference.*` targets linked.
+- Batch nodes `ctest -R 'seated|pinned|welded|articulated|rider_welds'`:
+  **8/8** — `seated_climb_surge` 2.44 s, `seated_pedaling_cycle` 8.98 s,
+  `seated_posture_program` 7.24 s, `seated_topology` 4.30 s,
+  `pinned_topology` 0.69 s, `rider_welds` 22.75 s,
+  `welded_profile_config` 1.09 s, `articulated_config` 0.98 s.
+- D16 signature-gate intact: `seated_posture_program`'s
+  `test_pulse_redistributes_load_through_inertia_only` port runs
+  diagnostic-mode on both platforms asserting the pinned
+  `('energy.constraint_work',)` first-failure signature — PASS on
+  darwin (signature holds).
+- `ctest -L reference -j8`: **76/80** — exactly the documented 4-red
+  baseline {`golden_episode_tool`, `native_numeric_completion`,
+  `pneumatic_tire_oracle`, `native_pneumatic_tire`}, all signatures
+  verbatim (recorder-rows diff, `leg_track_damping_nms_rad` missing
+  key, `fixture is not a regular file`, `front.normal_load_n` ulp
+  drift); all 8 lane tests green inside the sweep;
+  `native_coupled_rider_task` green (397.3 s).
+- `ctest -R 'migration_T(09|10|56)$'`: **0/3** — documented darwin
+  baseline reds verbatim: `T09` (`post-advance integration vector
+  matches the oracle`), `T10` (`first transition matches the Python
+  oracle`), `T56` (shellcheck-0.11.0 stderr-format env drift, `native
+  scripts tool health: failed`). T09/T10 are frozen-oracle
+  comparisons; 3.17's new coverage does not alter their signatures.
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, Release)
+
+- `container.sh sync` → `build root-clang` (341 edges) + `build
+  native-clang` (209 edges): green.
+- Batch nodes `ctest root-clang -R 'seated|pinned|welded|articulated|
+  rider_welds'`: **8/8** — `seated_climb_surge` 0.95 s,
+  `seated_pedaling_cycle` 10.30 s, `seated_posture_program` 5.15 s
+  (D16 diagnostic gate PASS — pinned `energy.constraint_work`
+  signature holds on linux), `seated_topology` 1.74 s,
+  `pinned_topology` 0.04 s, `rider_welds` 19.80 s,
+  `welded_profile_config` 0.03 s, `articulated_config` 0.02 s.
+- `ctest root-clang -L reference -j8`: **76/80** — the identical
+  4-red documented baseline with verbatim signatures; all 8 lane
+  tests green inside the sweep; `native_coupled_rider_task` green
+  (351.2 s).
+- `ctest native-clang -R 'migration_T' -j8`: **40/51** — exactly the
+  documented 11-red linux set {`T03`,`T04`,`T09`,`T10`,`T14`,`T15`,
+  `T16`,`T18`,`T20`,`T31`,`T32`} (T03 missing-ABI env, T04
+  library-hash, T09/T10 frozen-oracle verbatim, ±1-ulp `golden_f64`
+  family); `T54`/`T56` unregistered in this graph per the standing
+  51-vs-53 split; `migration_T25` green (10.95 s).
+- `ctest root-clang -R 'migration_T(09|10|56)$'` (registered in the
+  root graph on linux): **0/3** — `T09`/`T10` same frozen-oracle
+  signatures; `T56` same env-drift signature family (`native scripts
+  tool health: failed`, `shellcheck: rc=1`, stderr missing
+  `linux/bad.sh`; plus `t56_audit_doc_bad: expected failure, exited
+  0` — tool-environment contract disjoint from the physics path).
+
+### Ledger deltas (pre-merge `fc40dbce` → post-merge `17201f72`)
+
+- `test-port-map.json`: records 2385 → **2390** (+5 post-F1
+  articulated inserts; headers 2385/2369 → 2390/2374). Dispositions:
+  `port` 533 → **588** (+55), `planned` 1473 → **1423** (−50), `drop`
+  75 → 75, `golden` 304 → 304. Union verified key-exact: no lost,
+  duplicate, or double-modified records.
+- `python-removal.json`: `replacement_landed` 53 → **61** (+8 batch
+  files with real `reference.*` verification ids), `planned` 482 →
+  474; 535 entries, disjoint path-level union.
+
+### Assessment
+
+No new reds attributable to the merge on either platform; every red
+reproduces a documented baseline signature verbatim. The T09/T10
+seated-family watch item resolves clean — frozen-oracle comparisons,
+unchanged signatures. D16 linux pulse disposition preserved as the
+ported signature-gate (diagnostic everywhere, pinned
+`energy.constraint_work` verdict). L3 (`tools/run_tests.sh
+native|full`) not re-run — 3.17's lane already ran `native` once
+(recorded in `task-C317-report.md`); bounded merge-back scope per
+protocol. Unrelated documented reds reported, not fixed.

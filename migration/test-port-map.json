@@ -15882,13 +15882,17 @@
       "line": 187,
       "end_line": 231,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_journals_two_episodes_and_publishes_once",
+      "native_test_id": "reference.native_recording_lifecycle::test_viewer_journals_two_episodes_and_publishes_once",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_journals_two_episodes_and_publishes_once"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -15896,13 +15900,17 @@
       "line": 234,
       "end_line": 253,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_requests_are_journaled_before_state_changes",
-      "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_requests_are_journaled_before_state_changes"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: dropped \u2014 Python-frontend requested-vs-applied emission policy; native frontend emits a single 'brakes' event \u2014 mechanical journal contract ported inside test_viewer_journals_two_episodes_and_publishes_once"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -15910,13 +15918,17 @@
       "line": 256,
       "end_line": 269,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_playback_scale_is_requested_only",
-      "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_playback_scale_is_requested_only"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: dropped \u2014 playback_scale journal kind exists only in the Python frontend; no native event counterpart"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -15924,13 +15936,17 @@
       "line": 272,
       "end_line": 291,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_duplicate_terminal_notice_keeps_one_episode",
+      "native_test_id": "reference.native_recording_lifecycle::test_viewer_duplicate_terminal_notice_keeps_one_episode",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_duplicate_terminal_notice_keeps_one_episode"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -15938,13 +15954,17 @@
       "line": 294,
       "end_line": 316,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_ctrl_c_adds_no_control_and_still_finalizes",
+      "native_test_id": "reference.native_recording_lifecycle::test_viewer_ctrl_c_adds_no_control_and_still_finalizes",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_ctrl_c_adds_no_control_and_still_finalizes"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -15952,13 +15972,17 @@
       "line": 319,
       "end_line": 332,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_simulation_error_seals_prefix_and_reraises",
+      "native_test_id": "reference.native_recording_lifecycle::test_viewer_simulation_error_seals_prefix_and_reraises",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_simulation_error_seals_prefix_and_reraises"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -15966,13 +15990,17 @@
       "line": 335,
       "end_line": 362,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_second_ctrl_c_during_cleanup_seal_still_publishes",
+      "native_test_id": "reference.native_recording_lifecycle::test_viewer_second_ctrl_c_during_cleanup_seal_still_publishes",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_second_ctrl_c_during_cleanup_seal_still_publishes"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -15980,13 +16008,17 @@
       "line": 365,
       "end_line": 387,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_second_ctrl_c_during_cleanup_finalize_still_publishes",
+      "native_test_id": "reference.native_recording_lifecycle::test_viewer_second_ctrl_c_during_cleanup_finalize_still_publishes",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_second_ctrl_c_during_cleanup_finalize_still_publishes"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -15994,13 +16026,17 @@
       "line": 390,
       "end_line": 409,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_ctrl_c_during_normal_finalize_publishes_then_stops",
+      "native_test_id": "reference.native_recording_lifecycle::test_viewer_ctrl_c_during_normal_finalize_publishes_then_stops",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_ctrl_c_during_normal_finalize_publishes_then_stops"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16008,13 +16044,17 @@
       "line": 412,
       "end_line": 428,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_ctrl_c_during_normal_finalize_is_noted_on_stop",
+      "native_test_id": "reference.native_recording_lifecycle::test_viewer_ctrl_c_during_normal_finalize_is_noted_on_stop",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_ctrl_c_during_normal_finalize_is_noted_on_stop"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16022,13 +16062,17 @@
       "line": 431,
       "end_line": 445,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_strict_seal_rejection_retries_once",
-      "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_strict_seal_rejection_retries_once"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: dropped \u2014 once-failing ownership step not injectable on NativeRideRuntime; same retry-on-strict-rejection contract lives in cli/ride.cpp seal-retry; evidence preservation ported by test_failed_sealing_leaves_active_evidence_available / test_strict_flush_rejection_preserves_retained_evidence"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16036,13 +16080,17 @@
       "line": 448,
       "end_line": 456,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_python_backend_record_rejected_before_window",
+      "native_test_id": "reference.native_recording_lifecycle::test_viewer_python_backend_record_rejected_before_window",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_python_backend_record_rejected_before_window"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16050,13 +16098,17 @@
       "line": 459,
       "end_line": 480,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_derived_transitions_carry_rule_version_and_interval",
+      "native_test_id": "reference.native_recording_lifecycle::test_derived_transitions_carry_rule_version_and_interval",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_derived_transitions_carry_rule_version_and_interval"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16064,13 +16116,17 @@
       "line": 483,
       "end_line": 538,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_derived_transitions_cover_shift_coast_and_limiter_gates",
+      "native_test_id": "reference.native_recording_lifecycle::test_derived_transitions_cover_shift_coast_and_limiter_gates",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_derived_transitions_cover_shift_coast_and_limiter_gates"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16078,13 +16134,17 @@
       "line": 541,
       "end_line": 561,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_derived_first_model_failure_stays_a_derived_transition",
+      "native_test_id": "reference.native_recording_lifecycle::test_derived_first_model_failure_stays_a_derived_transition",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_derived_first_model_failure_stays_a_derived_transition"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16092,13 +16152,17 @@
       "line": 564,
       "end_line": 587,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_derived_missing_reason_instrumentation_emits_nothing_source",
+      "native_test_id": "reference.native_recording_lifecycle::test_derived_missing_reason_instrumentation_emits_nothing_source",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_derived_missing_reason_instrumentation_emits_nothing_source"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16106,13 +16170,17 @@
       "line": 590,
       "end_line": 595,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_episode_interval_for_time_maps_failure_timestamp",
+      "native_test_id": "reference.native_recording_lifecycle::test_episode_interval_for_time_maps_failure_timestamp",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_episode_interval_for_time_maps_failure_timestamp"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16120,13 +16188,17 @@
       "line": 598,
       "end_line": 619,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_capture_retries_publication_with_evidence_intact",
+      "native_test_id": "reference.native_recording_lifecycle::test_capture_retries_publication_with_evidence_intact",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_capture_retries_publication_with_evidence_intact"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16134,13 +16206,17 @@
       "line": 622,
       "end_line": 629,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_headless_rejects_python_record_before_any_setup",
+      "native_test_id": "reference.native_recording_lifecycle::test_headless_rejects_python_record_before_any_setup",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_rejects_python_record_before_any_setup"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16148,13 +16224,17 @@
       "line": 662,
       "end_line": 679,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_headless_records_seals_and_finalizes_once",
+      "native_test_id": "reference.native_recording_lifecycle::test_headless_records_seals_and_finalizes_once",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_records_seals_and_finalizes_once"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16162,13 +16242,17 @@
       "line": 682,
       "end_line": 704,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_headless_zero_step_failure_keeps_owned_episode",
+      "native_test_id": "reference.native_recording_lifecycle::test_headless_zero_step_failure_keeps_owned_episode",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_zero_step_failure_keeps_owned_episode"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16176,13 +16260,18 @@
       "line": 708,
       "end_line": 729,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_headless_trailer_names_only_existing_artifacts",
-      "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_trailer_names_only_existing_artifacts[False]",
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_trailer_names_only_existing_artifacts[True]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: dropped \u2014 console trailer text is Python frontend plumbing (capsys); the no-artifact contract is ported by test_headless_off_writes_no_artifact_files"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16190,13 +16279,17 @@
       "line": 732,
       "end_line": 757,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_headless_off_writes_no_artifact_files",
+      "native_test_id": "reference.native_recording_lifecycle::test_headless_off_writes_no_artifact_files",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_off_writes_no_artifact_files"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16204,13 +16297,17 @@
       "line": 760,
       "end_line": 782,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_explicit_programmatic_export_still_writes_artifacts",
-      "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_explicit_programmatic_export_still_writes_artifacts"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: dropped \u2014 PhysicalRideDriver.export() file bundle is Python adapter plumbing; native artifact emission is cli/ride.cpp's legacy headless path"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16218,13 +16315,17 @@
       "line": 785,
       "end_line": 799,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_headless_success_with_failed_publication_is_nonzero",
+      "native_test_id": "reference.native_recording_lifecycle::test_headless_success_with_failed_publication_is_nonzero",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_success_with_failed_publication_is_nonzero"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16232,13 +16333,17 @@
       "line": 802,
       "end_line": 824,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_headless_publish_failure_preserves_primary_and_evidence",
+      "native_test_id": "reference.native_recording_lifecycle::test_headless_publish_failure_preserves_primary_and_evidence",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_publish_failure_preserves_primary_and_evidence"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16246,13 +16351,17 @@
       "line": 827,
       "end_line": 852,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_headless_second_ctrl_c_during_seal_journals_and_still_publishes",
+      "native_test_id": "reference.native_recording_lifecycle::test_headless_second_ctrl_c_during_seal_journals_and_still_publishes",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_second_ctrl_c_during_seal_journals_and_still_publishes"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16260,13 +16369,17 @@
       "line": 855,
       "end_line": 874,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_headless_second_ctrl_c_during_finalize_is_noted_and_publishes",
+      "native_test_id": "reference.native_recording_lifecycle::test_headless_second_ctrl_c_during_finalize_is_noted_and_publishes",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_second_ctrl_c_during_finalize_is_noted_and_publishes"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16274,13 +16387,17 @@
       "line": 877,
       "end_line": 884,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_make_run_capture_rejects_non_native_recording",
+      "native_test_id": "reference.native_recording_lifecycle::test_make_run_capture_rejects_non_native_recording",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_make_run_capture_rejects_non_native_recording"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16288,13 +16405,17 @@
       "line": 890,
       "end_line": 932,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_headless_native_run_records_one_episode",
+      "native_test_id": "reference.native_recording_lifecycle::test_headless_native_run_records_one_episode",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_headless_native_run_records_one_episode"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_lifecycle.py",
@@ -16302,13 +16423,17 @@
       "line": 935,
       "end_line": 987,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_lifecycle::test_viewer_native_pump_seals_reset_generations",
+      "native_test_id": "reference.native_recording_lifecycle::test_viewer_native_pump_seals_reset_generations",
       "native_source": "native/tests/reference/test_native_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_lifecycle.py::test_viewer_native_pump_seals_reset_generations"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16316,13 +16441,17 @@
       "line": 80,
       "end_line": 104,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_full_retention_keeps_every_interval_under_measurement_decimation",
+      "native_test_id": "reference.native_recording_retention::test_full_retention_keeps_every_interval_under_measurement_decimation",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_full_retention_keeps_every_interval_under_measurement_decimation"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16330,13 +16459,17 @@
       "line": 107,
       "end_line": 121,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_default_retention_is_the_legacy_projection",
+      "native_test_id": "reference.native_recording_retention::test_default_retention_is_the_legacy_projection",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_default_retention_is_the_legacy_projection"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16344,13 +16477,17 @@
       "line": 124,
       "end_line": 138,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_off_retention_keeps_pending_evidence_without_history",
+      "native_test_id": "reference.native_recording_retention::test_off_retention_keeps_pending_evidence_without_history",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_off_retention_keeps_pending_evidence_without_history"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16358,13 +16495,17 @@
       "line": 141,
       "end_line": 145,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_retention_rejects_unknown_mode",
+      "native_test_id": "reference.native_recording_retention::test_retention_rejects_unknown_mode",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_retention_rejects_unknown_mode"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16372,13 +16513,17 @@
       "line": 148,
       "end_line": 168,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_seal_flushes_partial_period_and_empty_run",
+      "native_test_id": "reference.native_recording_retention::test_seal_flushes_partial_period_and_empty_run",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_seal_flushes_partial_period_and_empty_run"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16386,13 +16531,17 @@
       "line": 171,
       "end_line": 184,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_episode_batch_validates_range_and_types_before_boxing",
+      "native_test_id": "reference.native_recording_retention::test_episode_batch_validates_range_and_types_before_boxing",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_episode_batch_validates_range_and_types_before_boxing"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16400,13 +16549,17 @@
       "line": 187,
       "end_line": 224,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_episode_samples_expose_typed_fields_and_provenance",
+      "native_test_id": "reference.native_recording_retention::test_episode_samples_expose_typed_fields_and_provenance",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_episode_samples_expose_typed_fields_and_provenance"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16414,13 +16567,17 @@
       "line": 227,
       "end_line": 256,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_measurement_provenance_marks_forwarded_rows",
+      "native_test_id": "reference.native_recording_retention::test_measurement_provenance_marks_forwarded_rows",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_measurement_provenance_marks_forwarded_rows"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16428,13 +16585,17 @@
       "line": 259,
       "end_line": 272,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_sealed_episode_survives_reset_and_close",
+      "native_test_id": "reference.native_recording_retention::test_sealed_episode_survives_reset_and_close",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_sealed_episode_survives_reset_and_close"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16442,13 +16603,17 @@
       "line": 275,
       "end_line": 302,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_failed_sealing_leaves_active_evidence_available",
+      "native_test_id": "reference.native_recording_retention::test_failed_sealing_leaves_active_evidence_available",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_failed_sealing_leaves_active_evidence_available"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16456,13 +16621,17 @@
       "line": 306,
       "end_line": 323,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_strict_flush_rejection_preserves_retained_evidence",
+      "native_test_id": "reference.native_recording_retention::test_strict_flush_rejection_preserves_retained_evidence",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_strict_flush_rejection_preserves_retained_evidence"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16470,13 +16639,17 @@
       "line": 326,
       "end_line": 375,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_native_source_emits_catalog_tables_with_provenance",
+      "native_test_id": "reference.native_recording_retention::test_native_source_emits_catalog_tables_with_provenance",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_native_source_emits_catalog_tables_with_provenance"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16484,13 +16657,17 @@
       "line": 378,
       "end_line": 410,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_native_source_tables_validate_batch_rows_and_channel_roots",
+      "native_test_id": "reference.native_recording_retention::test_native_source_tables_validate_batch_rows_and_channel_roots",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_native_source_tables_validate_batch_rows_and_channel_roots"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16498,13 +16675,17 @@
       "line": 413,
       "end_line": 433,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_native_source_encodes_missing_and_nonfinite_values",
+      "native_test_id": "reference.native_recording_retention::test_native_source_encodes_missing_and_nonfinite_values",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_native_source_encodes_missing_and_nonfinite_values"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16512,13 +16693,17 @@
       "line": 436,
       "end_line": 453,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_retained_index_is_independent_of_pending_acknowledgement",
+      "native_test_id": "reference.native_recording_retention::test_retained_index_is_independent_of_pending_acknowledgement",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_retained_index_is_independent_of_pending_acknowledgement"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16526,13 +16711,17 @@
       "line": 457,
       "end_line": 496,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_recording_does_not_change_committed_trajectory",
+      "native_test_id": "reference.native_recording_retention::test_recording_does_not_change_committed_trajectory",
       "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_recording_does_not_change_committed_trajectory"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_recording_retention.py",
@@ -16540,13 +16729,17 @@
       "line": 500,
       "end_line": 515,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_recording_retention::test_legacy_export_survives_record_default",
-      "native_source": "native/tests/reference/test_native_recording_retention.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_recording_retention.py::test_legacy_export_survives_record_default"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: dropped \u2014 PhysicalRideDriver.export() is the Python adapter's file-bundle surface; legacy retention decimated projection ported by test_default_retention_is_the_legacy_projection; artifact emission is cli/ride.cpp's legacy headless path"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_replay_recording_v3.py",
@@ -25010,13 +25203,17 @@
       "line": 26,
       "end_line": 30,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_disabled_capture_has_no_persistent_side_effect",
+      "native_test_id": "reference.recording_capture::test_disabled_capture_has_no_persistent_side_effect",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_disabled_capture_has_no_persistent_side_effect"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25024,13 +25221,17 @@
       "line": 33,
       "end_line": 37,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_metadata_must_be_a_run_metadata",
-      "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_metadata_must_be_a_run_metadata"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: dropped \u2014 rejected inputs are Python runtime type states (dict/str where typed values belong); the C++ signature carries both as types; field/domain validation ports stay"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25038,13 +25239,17 @@
       "line": 40,
       "end_line": 49,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_disabled_capture_still_validates_but_retains_nothing",
+      "native_test_id": "reference.recording_capture::test_disabled_capture_still_validates_but_retains_nothing",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_disabled_capture_still_validates_but_retains_nothing"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25052,13 +25257,17 @@
       "line": 52,
       "end_line": 63,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_conflicting_episode_ids_reject_atomically",
+      "native_test_id": "reference.recording_capture::test_conflicting_episode_ids_reject_atomically",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_conflicting_episode_ids_reject_atomically"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25066,13 +25275,17 @@
       "line": 66,
       "end_line": 71,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_identical_episode_readdition_is_idempotent",
+      "native_test_id": "reference.recording_capture::test_identical_episode_readdition_is_idempotent",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_identical_episode_readdition_is_idempotent"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25080,13 +25293,17 @@
       "line": 74,
       "end_line": 81,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_episode_identifiers_are_never_reused",
+      "native_test_id": "reference.recording_capture::test_episode_identifiers_are_never_reused",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_episode_identifiers_are_never_reused"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25094,13 +25311,17 @@
       "line": 84,
       "end_line": 94,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_episode_prefix_continuity_rejects_gaps_atomically",
+      "native_test_id": "reference.recording_capture::test_episode_prefix_continuity_rejects_gaps_atomically",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_episode_prefix_continuity_rejects_gaps_atomically"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25108,13 +25329,17 @@
       "line": 97,
       "end_line": 103,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_episode_ids_need_not_start_at_one",
+      "native_test_id": "reference.recording_capture::test_episode_ids_need_not_start_at_one",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_episode_ids_need_not_start_at_one"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25122,13 +25347,17 @@
       "line": 106,
       "end_line": 118,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_event_identity_and_order_are_validated",
+      "native_test_id": "reference.recording_capture::test_event_identity_and_order_are_validated",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_event_identity_and_order_are_validated"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25136,13 +25365,17 @@
       "line": 121,
       "end_line": 140,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_episode_journal_owns_contiguous_ids_per_episode",
+      "native_test_id": "reference.recording_capture::test_episode_journal_owns_contiguous_ids_per_episode",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_episode_journal_owns_contiguous_ids_per_episode"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25150,13 +25383,17 @@
       "line": 143,
       "end_line": 156,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_episode_journal_rejects_non_contiguous_bulk_emission",
+      "native_test_id": "reference.recording_capture::test_episode_journal_rejects_non_contiguous_bulk_emission",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_episode_journal_rejects_non_contiguous_bulk_emission"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25164,13 +25401,17 @@
       "line": 159,
       "end_line": 166,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_episode_journal_validates_its_construction",
+      "native_test_id": "reference.recording_capture::test_episode_journal_validates_its_construction",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_episode_journal_validates_its_construction"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25178,13 +25419,17 @@
       "line": 169,
       "end_line": 181,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_event_field_validation",
+      "native_test_id": "reference.recording_capture::test_event_field_validation",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_event_field_validation"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25192,13 +25437,17 @@
       "line": 184,
       "end_line": 189,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_zero_interval_episode_evidence_is_valid",
+      "native_test_id": "reference.recording_capture::test_zero_interval_episode_evidence_is_valid",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_zero_interval_episode_evidence_is_valid"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25206,13 +25455,17 @@
       "line": 192,
       "end_line": 204,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_episode_evidence_contract_is_validated",
+      "native_test_id": "reference.recording_capture::test_episode_evidence_contract_is_validated",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_episode_evidence_contract_is_validated"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25220,13 +25473,17 @@
       "line": 207,
       "end_line": 223,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_nested_mutable_source_input_cannot_modify_captured_metadata",
+      "native_test_id": "reference.recording_capture::test_nested_mutable_source_input_cannot_modify_captured_metadata",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_nested_mutable_source_input_cannot_modify_captured_metadata"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25234,13 +25491,17 @@
       "line": 226,
       "end_line": 232,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_event_and_summary_values_are_frozen",
+      "native_test_id": "reference.recording_capture::test_event_and_summary_values_are_frozen",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_event_and_summary_values_are_frozen"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25248,13 +25509,17 @@
       "line": 243,
       "end_line": 254,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_finalize_publishes_once_and_retries_failed_publication",
+      "native_test_id": "reference.recording_capture::test_finalize_publishes_once_and_retries_failed_publication",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_finalize_publishes_once_and_retries_failed_publication"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25262,13 +25527,17 @@
       "line": 257,
       "end_line": 272,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_failed_publication_keeps_capture_retryable",
+      "native_test_id": "reference.recording_capture::test_failed_publication_keeps_capture_retryable",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_failed_publication_keeps_capture_retryable"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25276,13 +25545,17 @@
       "line": 275,
       "end_line": 281,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_finalize_uses_default_duckdb_publisher",
+      "native_test_id": "reference.recording_capture::test_finalize_uses_default_duckdb_publisher",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_finalize_uses_default_duckdb_publisher"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25290,13 +25563,17 @@
       "line": 284,
       "end_line": 298,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_appends_are_rejected_after_publication",
+      "native_test_id": "reference.recording_capture::test_appends_are_rejected_after_publication",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_appends_are_rejected_after_publication"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25304,13 +25581,17 @@
       "line": 301,
       "end_line": 312,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_interrupt_shield_defers_sigint_and_restores_handler",
+      "native_test_id": "reference.recording_capture::test_interrupt_shield_defers_sigint_and_restores_handler",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_interrupt_shield_defers_sigint_and_restores_handler"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25318,13 +25599,17 @@
       "line": 315,
       "end_line": 321,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_interrupt_shield_restores_on_body_failure",
+      "native_test_id": "reference.recording_capture::test_interrupt_shield_restores_on_body_failure",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_interrupt_shield_restores_on_body_failure"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25332,13 +25617,17 @@
       "line": 324,
       "end_line": 338,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_capture::test_interrupt_shield_is_a_flag_holder_off_main_thread",
+      "native_test_id": "reference.recording_capture::test_interrupt_shield_is_a_flag_holder_off_main_thread",
       "native_source": "native/tests/reference/test_recording_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_capture.py::test_interrupt_shield_is_a_flag_holder_off_main_thread"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25724,13 +26013,20 @@
       "line": 10,
       "end_line": 53,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_publication::test_database_failure_retains_capture_and_retry_uses_new_directory",
+      "native_test_id": "reference.recording_publication::test_database_failure_retains_capture_and_retry_uses_new_directory",
       "native_source": "native/tests/reference/test_recording_publication.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_publication.py::test_database_failure_retains_capture_and_retry_uses_new_directory[CHECKPOINT]",
+        "tests/reference/test_recording_publication.py::test_database_failure_retains_capture_and_retry_uses_new_directory[close]",
+        "tests/reference/test_recording_publication.py::test_database_failure_retains_capture_and_retry_uses_new_directory[COMMIT]",
+        "tests/reference/test_recording_publication.py::test_database_failure_retains_capture_and_retry_uses_new_directory[insert]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_publication.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_publication green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_publication.py",
@@ -25738,13 +26034,17 @@
       "line": 56,
       "end_line": 71,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_publication::test_payload_failure_does_not_seal_or_replace_existing_files",
+      "native_test_id": "reference.recording_publication::test_payload_failure_does_not_seal_or_replace_existing_files",
       "native_source": "native/tests/reference/test_recording_publication.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_publication.py::test_payload_failure_does_not_seal_or_replace_existing_files"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_publication.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_publication green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_report.py",

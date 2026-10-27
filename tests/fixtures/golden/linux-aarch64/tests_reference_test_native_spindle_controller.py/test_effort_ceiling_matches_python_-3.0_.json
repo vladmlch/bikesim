@@ -1,0 +1,28 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.ceiling.0",
+  "nbytes": 512,
+  "node": "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[-3.0]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "close",
+  "label": "output.ceiling.0",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[-3.0]",
+  "offset": 512,
+  "rtol": 1e-12,
+  "shape": []
+ }
+]

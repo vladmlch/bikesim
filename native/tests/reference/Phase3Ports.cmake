@@ -231,6 +231,37 @@ bike_add_reference_test(native_attachment_wrench ENGINE
 bike_add_reference_test(native_rider_forces ENGINE
   SOURCES test_native_rider_forces.cpp LIBRARIES bike_app bike_golden
   LABELS t52 rider golden slow)
+# 3.15 rider-control ports (T52 batch) — crank_split's pure virtual-work /
+# preload / power-budget contracts need no engine.
+bike_add_reference_test(crank_split
+  SOURCES test_crank_split.cpp LIBRARIES bike_rider_math
+  LABELS t52 rider)
+bike_add_reference_test(leg_loop ENGINE
+  SOURCES test_leg_loop.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)
+bike_add_reference_test(coupled_rider_task ENGINE
+  SOURCES test_coupled_rider_task.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)
+bike_add_reference_test(closed_form_rider ENGINE
+  SOURCES test_closed_form_rider.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)
+bike_add_reference_test(joint_strength ENGINE
+  SOURCES test_joint_strength.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)
+bike_add_reference_test(planar_arms ENGINE
+  SOURCES test_planar_arms.cpp LIBRARIES bike_app
+  LABELS t52 rider slow)
+# The remaining 3.15 files replay the NativeTestAdapter `rider_intent` and
+# `spindle_controller` sessions as recorded JSON argument documents.
+bike_add_reference_test(native_rider_intent ENGINE
+  SOURCES test_native_rider_intent.cpp LIBRARIES bike_app
+  LABELS t52 rider golden)
+# native_spindle_controller replays only the 20 oracle-green nodes — the
+# two `_damped_config` TOML-baseline nodes and the 20 enabled-compute
+# parity-defect nodes carry no consumable golden (task-C315 report).
+bike_add_reference_test(native_spindle_controller ENGINE
+  SOURCES test_native_spindle_controller.cpp LIBRARIES bike_app
+  LABELS t52 rider golden)
 # 3.17 seated topology and welds — the pinned-plant equality/joint
 # topology, the welded-profile and articulated-config projection
 # surfaces, the seated-climb/pedaling/posture programs and the held-weld

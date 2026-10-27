@@ -1,0 +1,1976 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 3912,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   489
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.resolve.0",
+  "nbytes": 3216,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 3912,
+  "rtol": null,
+  "shape": [
+   402
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "output.control.0",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 7128,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "output.state.0",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 7347,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "output.state.1",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 7897,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.resolve.1",
+  "nbytes": 3240,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 8447,
+  "rtol": null,
+  "shape": [
+   405
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "output.control.1",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 11687,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "output.state.2",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 11906,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "output.state.3",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 12456,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.resolve.2",
+  "nbytes": 3352,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 13006,
+  "rtol": null,
+  "shape": [
+   419
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "output.control.2",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 16358,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "output.state.4",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 16577,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "output.state.5",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 17127,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.resolve.3",
+  "nbytes": 3352,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 17677,
+  "rtol": null,
+  "shape": [
+   419
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "output.control.3",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 21029,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "output.state.6",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 21248,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "output.state.7",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 21798,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "input.resolve.4",
+  "nbytes": 3352,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 22348,
+  "rtol": null,
+  "shape": [
+   419
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "output.control.4",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 25700,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "output.state.8",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 25919,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "output.state.9",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 26469,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.resolve.5",
+  "nbytes": 3352,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 27019,
+  "rtol": null,
+  "shape": [
+   419
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "output.control.5",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 30371,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "output.state.10",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 30590,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "output.state.11",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 31140,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "input.resolve.6",
+  "nbytes": 3472,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 31690,
+  "rtol": null,
+  "shape": [
+   434
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "output.control.6",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 35162,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "output.state.12",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 35381,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "output.state.13",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 35931,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "input.resolve.7",
+  "nbytes": 3352,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 36481,
+  "rtol": null,
+  "shape": [
+   419
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "output.control.7",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 39833,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "output.state.14",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 40052,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "output.state.15",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 40602,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "input.resolve.8",
+  "nbytes": 3352,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 41152,
+  "rtol": null,
+  "shape": [
+   419
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "output.control.8",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 44504,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "output.state.16",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 44723,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "output.state.17",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 45273,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "input.resolve.9",
+  "nbytes": 3352,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 45823,
+  "rtol": null,
+  "shape": [
+   419
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "output.control.9",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 49175,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "output.state.18",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 49394,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "output.state.19",
+  "nbytes": 550,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 49944,
+  "rtol": null,
+  "shape": [
+   550
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "input.resolve.10",
+  "nbytes": 3344,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 50494,
+  "rtol": null,
+  "shape": [
+   418
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "output.control.10",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 53838,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "output.state.20",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 54056,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "output.state.21",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 54799,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "input.resolve.11",
+  "nbytes": 3360,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 55542,
+  "rtol": null,
+  "shape": [
+   420
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "output.control.11",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 58902,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "output.state.22",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 59120,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "output.state.23",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 59863,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "input.resolve.12",
+  "nbytes": 3360,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 60606,
+  "rtol": null,
+  "shape": [
+   420
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "output.control.12",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 63966,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "output.state.24",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 64184,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "output.state.25",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 64927,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "input.resolve.13",
+  "nbytes": 3360,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 65670,
+  "rtol": null,
+  "shape": [
+   420
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "output.control.13",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 69030,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "output.state.26",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 69248,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "output.state.27",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 69991,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "input.resolve.14",
+  "nbytes": 3360,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 70734,
+  "rtol": null,
+  "shape": [
+   420
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "output.control.14",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 74094,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "output.state.28",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 74312,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "output.state.29",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 75055,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "input.resolve.15",
+  "nbytes": 3360,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 75798,
+  "rtol": null,
+  "shape": [
+   420
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "output.control.15",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 79158,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "output.state.30",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 79376,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "output.state.31",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 80119,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "input.resolve.16",
+  "nbytes": 3480,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 80862,
+  "rtol": null,
+  "shape": [
+   435
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "output.control.16",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 84342,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "output.state.32",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 84560,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "output.state.33",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 85303,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "input.resolve.17",
+  "nbytes": 3480,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 86046,
+  "rtol": null,
+  "shape": [
+   435
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "output.control.17",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 89526,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "output.state.34",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 89744,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "output.state.35",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 90487,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "input.resolve.18",
+  "nbytes": 3480,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 91230,
+  "rtol": null,
+  "shape": [
+   435
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "output.control.18",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 94710,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "output.state.36",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 94928,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "output.state.37",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 95671,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "input.resolve.19",
+  "nbytes": 3360,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 96414,
+  "rtol": null,
+  "shape": [
+   420
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "output.control.19",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 99774,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "output.state.38",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 99992,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "output.state.39",
+  "nbytes": 743,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 100735,
+  "rtol": null,
+  "shape": [
+   743
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "input.resolve.20",
+  "nbytes": 3352,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 101478,
+  "rtol": null,
+  "shape": [
+   419
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "output.control.20",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 104830,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "output.state.40",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 105049,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "output.state.41",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 105991,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "input.resolve.21",
+  "nbytes": 3368,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 106933,
+  "rtol": null,
+  "shape": [
+   421
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "output.control.21",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 110301,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "output.state.42",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 110520,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "output.state.43",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 111462,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "input.resolve.22",
+  "nbytes": 3488,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 112404,
+  "rtol": null,
+  "shape": [
+   436
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "output.control.22",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 115892,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "output.state.44",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 116111,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "output.state.45",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 117053,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "input.resolve.23",
+  "nbytes": 3368,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 117995,
+  "rtol": null,
+  "shape": [
+   421
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "output.control.23",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 121363,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "output.state.46",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 121582,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "output.state.47",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 122524,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "input.resolve.24",
+  "nbytes": 3368,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 123466,
+  "rtol": null,
+  "shape": [
+   421
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "output.control.24",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 126834,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "output.state.48",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 127053,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "output.state.49",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 127995,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "input.resolve.25",
+  "nbytes": 3368,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 128937,
+  "rtol": null,
+  "shape": [
+   421
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "output.control.25",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 132305,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "output.state.50",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 132524,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "output.state.51",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 133466,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "input.resolve.26",
+  "nbytes": 3368,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 134408,
+  "rtol": null,
+  "shape": [
+   421
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "output.control.26",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 137776,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "output.state.52",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 137995,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "output.state.53",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 138937,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "input.resolve.27",
+  "nbytes": 3368,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 139879,
+  "rtol": null,
+  "shape": [
+   421
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "output.control.27",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 143247,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "output.state.54",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 143466,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "output.state.55",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 144408,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "input.resolve.28",
+  "nbytes": 3368,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 145350,
+  "rtol": null,
+  "shape": [
+   421
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "output.control.28",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 148718,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "output.state.56",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 148937,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "output.state.57",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 149879,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "input.resolve.29",
+  "nbytes": 3368,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 150821,
+  "rtol": null,
+  "shape": [
+   421
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "output.control.29",
+  "nbytes": 219,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 154189,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "output.state.58",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 154408,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "output.state.59",
+  "nbytes": 942,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 155350,
+  "rtol": null,
+  "shape": [
+   942
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "input.resolve.30",
+  "nbytes": 3352,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 156292,
+  "rtol": null,
+  "shape": [
+   419
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "output.control.30",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 159644,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "output.state.60",
+  "nbytes": 1135,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 159862,
+  "rtol": null,
+  "shape": [
+   1135
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "output.state.61",
+  "nbytes": 1135,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 160997,
+  "rtol": null,
+  "shape": [
+   1135
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "input.resolve.31",
+  "nbytes": 3488,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 162132,
+  "rtol": null,
+  "shape": [
+   436
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "output.control.31",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 165620,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "output.state.62",
+  "nbytes": 1135,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 165838,
+  "rtol": null,
+  "shape": [
+   1135
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "output.state.63",
+  "nbytes": 1135,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 166973,
+  "rtol": null,
+  "shape": [
+   1135
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "input.resolve.32",
+  "nbytes": 3488,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 168108,
+  "rtol": null,
+  "shape": [
+   436
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "output.control.32",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 171596,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "output.state.64",
+  "nbytes": 1135,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 171814,
+  "rtol": null,
+  "shape": [
+   1135
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "output.state.65",
+  "nbytes": 1135,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 172949,
+  "rtol": null,
+  "shape": [
+   1135
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "input.resolve.33",
+  "nbytes": 3488,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 174084,
+  "rtol": null,
+  "shape": [
+   436
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "output.control.33",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 177572,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "output.state.66",
+  "nbytes": 1135,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 177790,
+  "rtol": null,
+  "shape": [
+   1135
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "output.state.67",
+  "nbytes": 1135,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 178925,
+  "rtol": null,
+  "shape": [
+   1135
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "input.resolve.34",
+  "nbytes": 3488,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 180060,
+  "rtol": null,
+  "shape": [
+   436
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "output.control.34",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 183548,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "output.state.68",
+  "nbytes": 1135,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 183766,
+  "rtol": null,
+  "shape": [
+   1135
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "output.state.69",
+  "nbytes": 1135,
+  "node": "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps",
+  "offset": 184901,
+  "rtol": null,
+  "shape": [
+   1135
+  ]
+ }
+]

@@ -8,9 +8,11 @@ budget, inclination filter, effort slew, trim delay queue, posture-program
 rate limits, scheduled pulses and the state_dict wire are all part of the
 contract.
 """
+import json
 import math
 from dataclasses import asdict
 
+import _golden
 import mujoco
 import numpy as np
 import pytest
@@ -126,6 +128,106 @@ def _compare(actual, expected, path=''):
     assert actual == pytest.approx(expected, rel=1e-12, abs=1e-12), path
 
 
+# ---------------------------------------------------------------------------
+# ADR-0003 golden capture. Each recorded node is one call sequence: `input.*`
+# entries are canonical-JSON argument documents (utf-8 bytes carried as f64 so
+# the C++ port can replay them through bt::oracle::Node::f64_input), `output.*`
+# entries are oracle-side canonical-JSON results compared byte-for-byte, and
+# `error.*` markers freeze "the wire call raised" outcomes. Non-finite floats
+# use the recording codec's tagged-float64 spelling (parse_recording_json
+# decodes them to Tagged{float64} so real() admits them); numpy integers ride
+# an innocuous object spelling the strict step decoder rejects.
+_SEQ: dict = {}
+
+
+@pytest.fixture(autouse=True)
+def _golden_seq():
+    _SEQ.clear()
+    yield
+    _SEQ.clear()
+
+
+def _next(tag):
+    index = _SEQ.get(tag, 0)
+    _SEQ[tag] = index + 1
+    return f'{tag}.{index}'
+
+
+def _canon(value):
+    if isinstance(value, dict):
+        return {key: _canon(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_canon(item) for item in value]
+    if isinstance(value, np.integer):
+        return {'npint': int(value)}
+    if isinstance(value, np.floating):
+        value = float(value)
+    if isinstance(value, float) and not math.isfinite(value):
+        spelling = 'nan' if math.isnan(value) else (
+            '+inf' if value > 0. else '-inf')
+        return {'$bike_recording': 'float64', 'value': spelling}
+    return value
+
+
+def _golden_json(value):
+    return json.dumps(_canon(value), sort_keys=True, separators=(',', ':'),
+                      allow_nan=False).encode('utf-8')
+
+
+def _rec_in(tag, value):
+    _golden.record(
+        np.frombuffer(_golden_json(value), np.uint8).astype('<f8'),
+        _next(f'input.{tag}'))
+
+
+def _rec_out(tag, value):
+    _golden.record(np.frombuffer(_golden_json(value), np.uint8),
+                   _next(f'output.{tag}'))
+
+
+def _rec_scalar(tag, value):
+    _golden.record(np.float64(value), _next(f'output.{tag}'))
+
+
+def _rec_err(tag):
+    _golden.record(np.zeros(0, np.uint8), _next(f'error.{tag}'))
+
+
+def _adapter(config, path):
+    """Recorded NativeTestAdapter construction (rider_intent section)."""
+    _rec_in('adapter', {'config': dict(config), 'dt_s': _DT})
+    try:
+        probe = load_native().NativeTestAdapter(
+            str(path), {'rider_intent': {'config': dict(config),
+                                        'dt_s': _DT}})
+    except Exception:
+        _rec_err('adapter')
+        raise
+    return probe
+
+
+def _state_cmp(probe, resolver):
+    """intent_state() parity against the oracle's state_dict()."""
+    native = probe.intent_state()
+    expected = resolver.state_dict()
+    _rec_out('state', _normalize(expected))
+    _compare(native, expected)
+    return native, expected
+
+
+def _update(probe, policy, signals, dt_s, grade, preview=None, lean=None):
+    """Recorded intent_update/policy.update parity call."""
+    _rec_in('update', {'signals': dict(signals), 'dt_s': dt_s,
+                       'road_grade': grade, 'preview_grade': preview,
+                       'lean_limit_rad': lean})
+    native = probe.intent_update(dict(signals), dt_s, grade, preview, lean)
+    expected = policy.update(_py_signals(signals), dt_s, road_grade=grade,
+                             preview_grade=preview, lean_limit_rad=lean)
+    _rec_out('intent', {'posture': _normalize(asdict(expected.posture)),
+                        'effort_ceiling_nm': expected.effort_ceiling_nm})
+    return native, expected
+
+
 @pytest.fixture
 def plant(tmp_path):
     """Native adapter + Python resolver on identical config/dt."""
@@ -133,9 +235,7 @@ def plant(tmp_path):
     path = tmp_path / 'intent.mjb'
     mujoco.mj_saveModel(model, str(path))
     config = _config()
-    probe = load_native().NativeTestAdapter(
-        str(path),
-        {'rider_intent': {'config': dict(config), 'dt_s': _DT}})
+    probe = _adapter(config, path)
     resolver = RiderIntentResolver(SeatedClimbConfig(**config), _DT)
     return probe, resolver
 
@@ -145,6 +245,11 @@ def _resolve(probe, resolver, step, control=None, signals=None,
              active=True, advance=True):
     control = _control() if control is None else control
     signals = _signals() if signals is None else signals
+    _rec_in('resolve', {'control': dict(control), 'signals': dict(signals),
+                        'step': step, 'road_grade': road_grade,
+                        'preview_grade': preview_grade,
+                        'lean_limit_rad': lean_limit_rad,
+                        'active': active, 'advance': advance})
     native = probe.intent_resolve(
         dict(control), dict(signals), step, road_grade, preview_grade,
         lean_limit_rad, active, advance)
@@ -152,7 +257,10 @@ def _resolve(probe, resolver, step, control=None, signals=None,
         _py_control(control), _py_signals(signals), step=step,
         road_grade=road_grade, preview_grade=preview_grade,
         lean_limit_rad=lean_limit_rad, active=active, advance=advance)
-    return native, asdict(expected)
+    expected_dict = asdict(expected)
+    _rec_out('control', _normalize(expected_dict))
+    _rec_out('state', _normalize(resolver.state_dict()))
+    return native, expected_dict
 
 
 def test_resolve_matches_oracle_over_mixed_steps(plant):
@@ -166,7 +274,7 @@ def test_resolve_matches_oracle_over_mixed_steps(plant):
                                     preview_grade=0.05,
                                     lean_limit_rad=.6)
         _compare(native, expected)
-        _compare(probe.intent_state(), resolver.state_dict())
+        _state_cmp(probe, resolver)
 
 
 def test_resolve_disabled_passthrough(tmp_path):
@@ -174,16 +282,14 @@ def test_resolve_disabled_passthrough(tmp_path):
     path = tmp_path / 'intent.mjb'
     mujoco.mj_saveModel(model, str(path))
     config = _config(enabled=False)
-    probe = load_native().NativeTestAdapter(
-        str(path),
-        {'rider_intent': {'config': dict(config), 'dt_s': _DT}})
+    probe = _adapter(config, path)
     resolver = RiderIntentResolver(SeatedClimbConfig(**config), _DT)
     for step in (0, 3, 7):
         native, expected = _resolve(probe, resolver, step,
                                     signals=_signals(front_load_share=None),
                                     road_grade=float('nan'))
         _compare(native, expected)
-    _compare(probe.intent_state(), resolver.state_dict())
+    _state_cmp(probe, resolver)
 
 
 def test_resolve_merges_only_unset_fields(plant):
@@ -215,7 +321,7 @@ def test_resolve_rider_disabled_keeps_control_but_ticks(plant):
     assert native['posture'] is None
     assert native['human_torque_nm'] is None
     # The acquisition still ran — only the merge is gated.
-    _compare(probe.intent_state(), resolver.state_dict())
+    _state_cmp(probe, resolver)
     assert probe.intent_state()['last_tick_step'] == 0
 
 
@@ -223,7 +329,7 @@ def test_resolve_inactive_returns_control(plant):
     probe, resolver = plant
     native, expected = _resolve(probe, resolver, 0, active=False)
     _compare(native, expected)
-    _compare(probe.intent_state(), resolver.state_dict())
+    _state_cmp(probe, resolver)
     assert probe.intent_state()['last_tick_step'] == -1
 
 
@@ -232,10 +338,12 @@ def test_probe_advance_preserves_state(plant):
     _resolve(probe, resolver, 0)
     before = probe.intent_state()
     expected_before = _normalize(resolver.state_dict())
+    _rec_out('state', expected_before)
     native, expected = _resolve(probe, resolver, 10, advance=False)
     _compare(native, expected)
     assert probe.intent_state() == before
     assert _normalize(resolver.state_dict()) == expected_before
+    _rec_out('state', expected_before)
     # The probing call did not consume the tick: advancing step 10 works.
     _resolve(probe, resolver, 10)
 
@@ -244,15 +352,25 @@ def test_resolve_step_validation(plant):
     probe, resolver = plant
     signals = _signals()
     for bad_step in (True, np.int64(3), 3.0, '2'):
+        _rec_in('resolve', {'control': _control(), 'signals': dict(signals),
+                            'step': bad_step, 'road_grade': 0.02,
+                            'preview_grade': None, 'lean_limit_rad': None,
+                            'active': True, 'advance': True})
         with pytest.raises(Exception):
             probe.intent_resolve(_control(), dict(signals), bad_step, 0.02,
                                  None, None, True, True)
+        _rec_err('resolve')
         with pytest.raises(ValueError):
             resolver.resolve(_py_control(_control()), _py_signals(signals),
                              step=bad_step, road_grade=0.02)
+    _rec_in('resolve', {'control': _control(), 'signals': dict(signals),
+                        'step': -1, 'road_grade': 0.02,
+                        'preview_grade': None, 'lean_limit_rad': None,
+                        'active': True, 'advance': True})
     with pytest.raises(Exception):
         probe.intent_resolve(_control(), dict(signals), -1, 0.02, None, None,
                              True, True)
+    _rec_err('resolve')
     with pytest.raises(ValueError):
         resolver.resolve(_py_control(_control()), _py_signals(signals),
                          step=-1, road_grade=0.02)
@@ -262,9 +380,14 @@ def test_resolve_skipped_acquisition(plant):
     probe, resolver = plant
     _resolve(probe, resolver, 0)
     signals = _signals()
+    _rec_in('resolve', {'control': _control(), 'signals': dict(signals),
+                        'step': 20, 'road_grade': 0.02,
+                        'preview_grade': None, 'lean_limit_rad': None,
+                        'active': True, 'advance': True})
     with pytest.raises(Exception):
         probe.intent_resolve(_control(), dict(signals), 20, 0.02, None, None,
                              True, True)
+    _rec_err('resolve')
     with pytest.raises(ValueError):
         resolver.resolve(_py_control(_control()), _py_signals(signals),
                          step=20, road_grade=0.02)
@@ -275,9 +398,14 @@ def test_resolve_rewind_requires_reset(plant):
     _resolve(probe, resolver, 0)
     _resolve(probe, resolver, 10)
     signals = _signals()
+    _rec_in('resolve', {'control': _control(), 'signals': dict(signals),
+                        'step': 5, 'road_grade': 0.02,
+                        'preview_grade': None, 'lean_limit_rad': None,
+                        'active': True, 'advance': True})
     with pytest.raises(Exception):
         probe.intent_resolve(_control(), dict(signals), 5, 0.02, None, None,
                              True, True)
+    _rec_err('resolve')
     with pytest.raises(ValueError):
         resolver.resolve(_py_control(_control()), _py_signals(signals),
                          step=5, road_grade=0.02)
@@ -292,16 +420,12 @@ def test_period_must_be_integer_multiple(tmp_path):
     mujoco.mj_saveModel(model, str(path))
     config = _config(period_s=0.0155)
     with pytest.raises(Exception):
-        load_native().NativeTestAdapter(
-            str(path),
-            {'rider_intent': {'config': dict(config), 'dt_s': _DT}})
+        _adapter(config, path)
     with pytest.raises(ValueError):
         RiderIntentResolver(SeatedClimbConfig(**config), _DT)
     # A disabled resolver tolerates the misaligned period.
     config = _config(enabled=False, period_s=0.0155)
-    load_native().NativeTestAdapter(
-        str(path),
-        {'rider_intent': {'config': dict(config), 'dt_s': _DT}})
+    _adapter(config, path)
     RiderIntentResolver(SeatedClimbConfig(**config), _DT)
 
 
@@ -309,23 +433,20 @@ def test_config_validation(tmp_path):
     model = mujoco.MjModel.from_xml_string(_XML)
     path = tmp_path / 'intent.mjb'
     mujoco.mj_saveModel(model, str(path))
-    adapter = load_native().NativeTestAdapter
     for override in ({'enabled': 1}, {'period_s': 0.},
                      {'surge_budget_s': -1.}, {'lean_gain': -0.5},
                      {'front_load_share_target': 1.2},
                      {'max_forward_lean_rad': .9}):
         config = _config(**override)
         with pytest.raises(Exception):
-            adapter(str(path),
-                    {'rider_intent': {'config': dict(config), 'dt_s': _DT}})
+            _adapter(config, path)
         with pytest.raises(ValueError):
             SeatedClimbConfig(**config)
     for override in ({'enabled': 'yes'}, {'bogus_key': 1.},
                      {'period_s': float('nan')}):
         config = _config(**override)
         with pytest.raises(Exception):
-            adapter(str(path),
-                    {'rider_intent': {'config': dict(config), 'dt_s': _DT}})
+            _adapter(config, path)
 
 
 def test_signals_validation(plant):
@@ -338,9 +459,14 @@ def test_signals_validation(plant):
            _signals(front_load_share=float('nan')),
            _signals(crank_rate_rad_s=float('inf'))]
     for signals in bad:
+        _rec_in('resolve', {'control': dict(control), 'signals': dict(signals),
+                            'step': 0, 'road_grade': 0.02,
+                            'preview_grade': None, 'lean_limit_rad': None,
+                            'active': True, 'advance': True})
         with pytest.raises(Exception):
             probe.intent_resolve(dict(control), dict(signals), 0, 0.02,
                                  None, None, True, True)
+        _rec_err('resolve')
         with pytest.raises(ValueError):
             resolver.resolve(_py_control(control), _py_signals(signals),
                              step=0, road_grade=0.02)
@@ -356,15 +482,26 @@ def test_control_validation(plant):
                                       'pelvis_pitch_rad': 0.,
                                       'pelvis_offset_m': None,
                                       'use_saddle': True})):
+        _rec_in('resolve', {'control': dict(control), 'signals': dict(signals),
+                            'step': 0, 'road_grade': 0.02,
+                            'preview_grade': None, 'lean_limit_rad': None,
+                            'active': True, 'advance': True})
         with pytest.raises(Exception):
             probe.intent_resolve(dict(control), dict(signals), 0, 0.02,
                                  None, None, True, True)
+        _rec_err('resolve')
         with pytest.raises(ValueError):
             resolver.resolve(_py_control(control), _py_signals(signals),
                              step=0, road_grade=0.02)
+    _rec_in('resolve', {'control': {'not': 'a control'},
+                        'signals': dict(signals), 'step': 0,
+                        'road_grade': 0.02, 'preview_grade': None,
+                        'lean_limit_rad': None, 'active': True,
+                        'advance': True})
     with pytest.raises(Exception):
         probe.intent_resolve({'not': 'a control'}, dict(signals), 0, 0.02,
                              None, None, True, True)
+    _rec_err('resolve')
     with pytest.raises(ValueError):
         resolver.resolve({'not': 'a control'}, _py_signals(signals), step=0,
                          road_grade=0.02)
@@ -381,9 +518,14 @@ def test_road_grade_validation_is_lazy(plant):
     _compare(native, expected)
     # On a tick step the same arguments reach policy.update's scalars.
     signals = _signals()
+    _rec_in('resolve', {'control': _control(), 'signals': dict(signals),
+                        'step': 10, 'road_grade': float('nan'),
+                        'preview_grade': None, 'lean_limit_rad': None,
+                        'active': True, 'advance': True})
     with pytest.raises(Exception):
         probe.intent_resolve(_control(), dict(signals), 10, float('nan'),
                              None, None, True, True)
+    _rec_err('resolve')
     with pytest.raises(ValueError):
         resolver.resolve(_py_control(_control()), _py_signals(signals),
                          step=10, road_grade=float('nan'))
@@ -394,17 +536,23 @@ def test_update_validates_before_enabled_check(tmp_path):
     path = tmp_path / 'intent.mjb'
     mujoco.mj_saveModel(model, str(path))
     config = _config(enabled=False)
-    probe = load_native().NativeTestAdapter(
-        str(path),
-        {'rider_intent': {'config': dict(config), 'dt_s': _DT}})
+    probe = _adapter(config, path)
     resolver = RiderIntentResolver(SeatedClimbConfig(**config), _DT)
+    _rec_in('update', {'signals': _signals(), 'dt_s': float('nan'),
+                       'road_grade': 0.02, 'preview_grade': None,
+                       'lean_limit_rad': None})
     with pytest.raises(Exception):
         probe.intent_update(dict(_signals()), float('nan'), 0.02, None, None)
+    _rec_err('update')
     with pytest.raises(ValueError):
         resolver.policy.update(_py_signals(_signals()), float('nan'),
                                road_grade=0.02)
+    _rec_in('update', {'signals': _signals(), 'dt_s': 0.01,
+                       'road_grade': float('nan'), 'preview_grade': None,
+                       'lean_limit_rad': None})
     with pytest.raises(Exception):
         probe.intent_update(dict(_signals()), 0.01, float('nan'), None, None)
+    _rec_err('update')
     with pytest.raises(ValueError):
         resolver.policy.update(_py_signals(_signals()), 0.01,
                                road_grade=float('nan'))
@@ -423,13 +571,12 @@ def test_policy_update_parity_with_delays(plant):
     for _ in range(18):
         timeline.extend(timeline[:4])
     for signals, dt, grade, preview in timeline:
-        native = probe.intent_update(dict(signals), dt, grade, preview, None)
-        expected = policy.update(_py_signals(signals), dt,
-                                 road_grade=grade, preview_grade=preview)
+        native, expected = _update(probe, policy, signals, dt, grade,
+                                   preview)
         _compare(native['posture'], _normalize(asdict(expected.posture)))
         assert native['effort_ceiling_nm'] == pytest.approx(
             expected.effort_ceiling_nm, rel=1e-12, abs=1e-12)
-    _compare(probe.intent_state(), resolver.state_dict())
+    _state_cmp(probe, resolver)
 
 
 def test_resolve_enabled_delayed_none_front_load(plant):
@@ -452,7 +599,7 @@ def test_resolve_enabled_delayed_none_front_load(plant):
             saw_delayed_none = True
             # A delivered None skips the trim integrator entirely.
             assert program['trim_rad'] == 0.
-        _compare(probe.intent_state(), resolver.state_dict())
+        _state_cmp(probe, resolver)
     assert saw_delayed_none
     # Once real shares deliver, the trim integrator runs again on both.
     assert resolver.state_dict()['program']['trim_rad'] != 0.
@@ -466,11 +613,9 @@ def test_policy_inclination_norm_gate(plant):
     tilted = _signals(pitch_rate_up_rad_s=.2,
                       specific_force_body_mps2=[30., 0., 30.])
     for _ in range(40):
-        native = probe.intent_update(dict(tilted), 0.01, 0.1, 0.1, None)
-        expected = policy.update(_py_signals(tilted), 0.01, road_grade=0.1,
-                                 preview_grade=0.1)
+        native, expected = _update(probe, policy, tilted, 0.01, 0.1, 0.1)
         _compare(native['posture'], _normalize(asdict(expected.posture)))
-    _compare(probe.intent_state(), resolver.state_dict())
+    _state_cmp(probe, resolver)
     assert resolver.policy.inclination_rad != 0.
 
 
@@ -479,24 +624,26 @@ def test_surge_budget_spend_and_recovery(tmp_path):
     path = tmp_path / 'intent.mjb'
     mujoco.mj_saveModel(model, str(path))
     config = _config(surge_budget_s=.05, surge_recovery_rate=.5)
-    probe = load_native().NativeTestAdapter(
-        str(path),
-        {'rider_intent': {'config': dict(config), 'dt_s': _DT}})
+    probe = _adapter(config, path)
     resolver = RiderIntentResolver(SeatedClimbConfig(**config), _DT)
     policy = resolver.policy
     # Spend: .05s budget at .02s acquisitions drains to .01; the third steep
     # preview finds budget+1e-12 < dt and falls back to target without
     # draining further.
     for preview in (.3, .3, .3, .3):
+        _rec_in('power', {'preview_grade': preview, 'dt_s': .02})
         native = probe.intent_power_target(preview, .02)
         expected = policy.power_target_w(preview, .02)
+        _rec_scalar('power', expected)
         assert native == pytest.approx(expected, rel=1e-12, abs=1e-12)
     # Recovery on gentle ground.
     for _ in range(4):
+        _rec_in('power', {'preview_grade': 0.02, 'dt_s': .02})
         native = probe.intent_power_target(0.02, .02)
         expected = policy.power_target_w(0.02, .02)
+        _rec_scalar('power', expected)
         assert native == pytest.approx(expected, rel=1e-12, abs=1e-12)
-    _compare(probe.intent_state(), resolver.state_dict())
+    _state_cmp(probe, resolver)
 
 
 def test_program_update_parity(plant):
@@ -508,12 +655,16 @@ def test_program_update_parity(plant):
              (.21, -.1, .01, .5, .4, None),
              (.5, 0., .02, .31, None, None)]
     for time_s, grade, dt, share, lean, dead in cases:
+        _rec_in('program', {'time_s': time_s, 'road_grade': grade,
+                            'dt_s': dt, 'front_load_share': share,
+                            'lean_limit_rad': lean, 'dead_time_s': dead})
         native = probe.intent_program_update(time_s, grade, dt, share, lean,
                                              dead)
         expected = program.update(time_s, grade, dt, front_load_share=share,
                                   lean_limit_rad=lean, dead_time_s=dead)
+        _rec_scalar('program', expected)
         assert native == pytest.approx(expected, rel=1e-12, abs=1e-12)
-    _compare(probe.intent_state(), resolver.state_dict())
+    _state_cmp(probe, resolver)
 
 
 def test_program_validation(plant):
@@ -521,43 +672,59 @@ def test_program_validation(plant):
     program = resolver.policy.program
     for args in ((float('nan'), .1, .01), (0., float('nan'), .01),
                  (0., .1, 0.), (0., .1, -.01)):
+        time_s, grade, dt = args
+        _rec_in('program', {'time_s': time_s, 'road_grade': grade,
+                            'dt_s': dt, 'front_load_share': None,
+                            'lean_limit_rad': None, 'dead_time_s': None})
         with pytest.raises(Exception):
             probe.intent_program_update(*args, None, None, None)
+        _rec_err('program')
         with pytest.raises(ValueError):
             program.update(*args)
-    with pytest.raises(Exception):
-        probe.intent_program_update(0., .1, .01, 1.5, None, None)
-    with pytest.raises(ValueError):
-        program.update(0., .1, .01, front_load_share=1.5)
-    with pytest.raises(Exception):
-        probe.intent_program_update(0., .1, .01, None, -0.1, None)
-    with pytest.raises(ValueError):
-        program.update(0., .1, .01, lean_limit_rad=-0.1)
-    with pytest.raises(Exception):
-        probe.intent_program_update(0., .1, .01, None, None, -0.2)
-    with pytest.raises(ValueError):
-        program.update(0., .1, .01, dead_time_s=-0.2)
+    for kwargs in ({'front_load_share': 1.5}, {'lean_limit_rad': -0.1},
+                   {'dead_time_s': -0.2}):
+        _rec_in('program', {'time_s': 0., 'road_grade': .1, 'dt_s': .01,
+                            'front_load_share': kwargs.get(
+                                'front_load_share'),
+                            'lean_limit_rad': kwargs.get('lean_limit_rad'),
+                            'dead_time_s': kwargs.get('dead_time_s')})
+        with pytest.raises(Exception):
+            probe.intent_program_update(0., .1, .01,
+                                        kwargs.get('front_load_share'),
+                                        kwargs.get('lean_limit_rad'),
+                                        kwargs.get('dead_time_s'))
+        _rec_err('program')
+        with pytest.raises(ValueError):
+            program.update(0., .1, .01, **kwargs)
 
 
 def test_schedule_pulse_and_reset(plant):
     probe, resolver = plant
     _resolve(probe, resolver, 0)
+    _rec_in('pulse', {'start_s': .015, 'duration_s': .02,
+                      'amplitude_rad': .25})
     probe.intent_schedule_pulse(.015, .02, .25)
     resolver.schedule_pulse(.015, .02, .25)
     for step in range(10, 50, 10):
         native, expected = _resolve(probe, resolver, step)
         _compare(native, expected)
-    _compare(probe.intent_state(), resolver.state_dict())
+    _state_cmp(probe, resolver)
     # The pulse is program state: reset clears it like the oracle.
     probe.intent_reset()
     resolver.reset()
-    _compare(probe.intent_state(), resolver.state_dict())
+    _state_cmp(probe, resolver)
+    _rec_in('pulse', {'start_s': float('nan'), 'duration_s': .5,
+                      'amplitude_rad': .1})
     with pytest.raises(Exception):
         probe.intent_schedule_pulse(float('nan'), .5, .1)
+    _rec_err('pulse')
     with pytest.raises(ValueError):
         resolver.schedule_pulse(float('nan'), .5, .1)
+    _rec_in('pulse', {'start_s': 0., 'duration_s': 0.,
+                      'amplitude_rad': .1})
     with pytest.raises(Exception):
         probe.intent_schedule_pulse(0., 0., .1)
+    _rec_err('pulse')
     with pytest.raises(ValueError):
         resolver.schedule_pulse(0., 0., .1)
 
@@ -571,11 +738,14 @@ def test_state_roundtrip(plant):
                                   front_load_share=.25 + .001 * step))
     # Python state -> native restore -> identical emitted state.
     snapshot = _normalize(resolver.state_dict())
+    _rec_in('restore', {'state': snapshot})
     probe.intent_restore(snapshot)
-    _compare(probe.intent_state(), resolver.state_dict())
+    _state_cmp(probe, resolver)
     # Native state -> restore again is a fixed point.
     again = probe.intent_state()
+    _rec_in('restore', {'state': _normalize(again)})
     probe.intent_restore(again)
+    _state_cmp(probe, resolver)
     assert _normalize(probe.intent_state()) == _normalize(again)
     # Restored resolver keeps its clock: the next tick is step 40.
     native, expected = _resolve(probe, resolver, 40)
@@ -585,33 +755,45 @@ def test_state_roundtrip(plant):
 def test_state_rejects_malformed(plant):
     probe, _ = plant
     state = probe.intent_state()
+    _rec_out('state', _normalize(state))
     for corrupt in ('last_tick_step', 'intent', 'policy', 'program'):
         bad = dict(state)
         del bad[corrupt]
+        _rec_in('restore', {'state': bad})
         with pytest.raises(Exception):
             probe.intent_restore(bad)
+        _rec_err('restore')
     bad = dict(state)
     bad['extra'] = 1
+    _rec_in('restore', {'state': bad})
     with pytest.raises(Exception):
         probe.intent_restore(bad)
+    _rec_err('restore')
     bad = dict(state)
     bad['last_tick_step'] = 1.5
+    _rec_in('restore', {'state': bad})
     with pytest.raises(Exception):
         probe.intent_restore(bad)
+    _rec_err('restore')
     bad = dict(state)
     bad['policy'] = dict(bad['policy'], samples=[[0.]])
+    _rec_in('restore', {'state': bad})
     with pytest.raises(Exception):
         probe.intent_restore(bad)
+    _rec_err('restore')
 
 
 def test_state_unknown_signals_keys_rejected(tmp_path):
     model = mujoco.MjModel.from_xml_string(_XML)
     path = tmp_path / 'intent.mjb'
     mujoco.mj_saveModel(model, str(path))
-    probe = load_native().NativeTestAdapter(
-        str(path),
-        {'rider_intent': {'config': _config(), 'dt_s': _DT}})
+    probe = _adapter(_config(), path)
     signals = dict(_signals(), bogus=1.)
+    _rec_in('resolve', {'control': _control(), 'signals': signals,
+                        'step': 0, 'road_grade': 0.02,
+                        'preview_grade': None, 'lean_limit_rad': None,
+                        'active': True, 'advance': True})
     with pytest.raises(Exception):
         probe.intent_resolve(_control(), signals, 0, 0.02, None, None, True,
                              True)
+    _rec_err('resolve')

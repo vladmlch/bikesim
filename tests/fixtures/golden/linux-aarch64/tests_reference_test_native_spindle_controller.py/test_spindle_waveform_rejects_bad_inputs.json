@@ -1,0 +1,86 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.waveform.0",
+  "nbytes": 360,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_rejects_bad_inputs",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "error.waveform.0",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_rejects_bad_inputs",
+  "offset": 360,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.waveform.1",
+  "nbytes": 360,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_rejects_bad_inputs",
+  "offset": 360,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "error.waveform.1",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_rejects_bad_inputs",
+  "offset": 720,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.waveform.2",
+  "nbytes": 680,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_rejects_bad_inputs",
+  "offset": 720,
+  "rtol": null,
+  "shape": [
+   85
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "error.waveform.2",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_rejects_bad_inputs",
+  "offset": 1400,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ }
+]

@@ -1,0 +1,72 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 93216,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_velocity_matches_python",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   11652
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.state.0",
+  "nbytes": 3432,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_velocity_matches_python",
+  "offset": 93216,
+  "rtol": null,
+  "shape": [
+   429
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.forward.0",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_velocity_matches_python",
+  "offset": 96648,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.initialize_velocity.0",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_velocity_matches_python",
+  "offset": 96664,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": 1e-10,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "close",
+  "label": "output.qvel.0",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_velocity_matches_python",
+  "offset": 96680,
+  "rtol": 1e-10,
+  "shape": [
+   26
+  ]
+ }
+]

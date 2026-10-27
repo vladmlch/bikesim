@@ -1,0 +1,226 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 3912,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   489
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "output.state.0",
+  "nbytes": 383,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 3912,
+  "rtol": null,
+  "shape": [
+   383
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.restore.0",
+  "nbytes": 2984,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 4295,
+  "rtol": null,
+  "shape": [
+   373
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "error.restore.0",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 7279,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.restore.1",
+  "nbytes": 2088,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 7279,
+  "rtol": null,
+  "shape": [
+   261
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "error.restore.1",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 9367,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "input.restore.2",
+  "nbytes": 2088,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 9367,
+  "rtol": null,
+  "shape": [
+   261
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "error.restore.2",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 11455,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "input.restore.3",
+  "nbytes": 2360,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 11455,
+  "rtol": null,
+  "shape": [
+   295
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "error.restore.3",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 13815,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.restore.4",
+  "nbytes": 3224,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 13815,
+  "rtol": null,
+  "shape": [
+   403
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "error.restore.4",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 17039,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.restore.5",
+  "nbytes": 3152,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 17039,
+  "rtol": null,
+  "shape": [
+   394
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "error.restore.5",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 20191,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "input.restore.6",
+  "nbytes": 3184,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 20191,
+  "rtol": null,
+  "shape": [
+   398
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "error.restore.6",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed",
+  "offset": 23375,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ }
+]

@@ -1,0 +1,160 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 3912,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   489
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.program.0",
+  "nbytes": 856,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 3912,
+  "rtol": null,
+  "shape": [
+   107
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "output.program.0",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 4768,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.program.1",
+  "nbytes": 888,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 4776,
+  "rtol": null,
+  "shape": [
+   111
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "output.program.1",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 5664,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.program.2",
+  "nbytes": 864,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 5672,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "output.program.2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 6536,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.program.3",
+  "nbytes": 864,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 6544,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "output.program.3",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 7408,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.program.4",
+  "nbytes": 864,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 7416,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "output.program.4",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 8280,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "output.state.0",
+  "nbytes": 430,
+  "node": "tests/reference/test_native_rider_intent.py::test_program_update_parity",
+  "offset": 8288,
+  "rtol": null,
+  "shape": [
+   430
+  ]
+ }
+]

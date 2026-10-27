@@ -1,0 +1,1150 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 3912,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   489
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.update.0",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 3912,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "output.intent.0",
+  "nbytes": 124,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 5736,
+  "rtol": null,
+  "shape": [
+   124
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.update.1",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 5860,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "output.intent.1",
+  "nbytes": 123,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 7684,
+  "rtol": null,
+  "shape": [
+   123
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.update.2",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 7807,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "output.intent.2",
+  "nbytes": 124,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 9631,
+  "rtol": null,
+  "shape": [
+   124
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.update.3",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 9755,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "output.intent.3",
+  "nbytes": 123,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 11579,
+  "rtol": null,
+  "shape": [
+   123
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.update.4",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 11702,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "output.intent.4",
+  "nbytes": 124,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 13526,
+  "rtol": null,
+  "shape": [
+   124
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "input.update.5",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 13650,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "output.intent.5",
+  "nbytes": 139,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 15474,
+  "rtol": null,
+  "shape": [
+   139
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.update.6",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 15613,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "output.intent.6",
+  "nbytes": 124,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 17437,
+  "rtol": null,
+  "shape": [
+   124
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.update.7",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 17561,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "output.intent.7",
+  "nbytes": 123,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 19385,
+  "rtol": null,
+  "shape": [
+   123
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "input.update.8",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 19508,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "output.intent.8",
+  "nbytes": 124,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 21332,
+  "rtol": null,
+  "shape": [
+   124
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.update.9",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 21456,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "output.intent.9",
+  "nbytes": 139,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 23280,
+  "rtol": null,
+  "shape": [
+   139
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.update.10",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 23419,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "output.intent.10",
+  "nbytes": 138,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 25243,
+  "rtol": null,
+  "shape": [
+   138
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "input.update.11",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 25381,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "output.intent.11",
+  "nbytes": 138,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 27205,
+  "rtol": null,
+  "shape": [
+   138
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "input.update.12",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 27343,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "output.intent.12",
+  "nbytes": 138,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 29167,
+  "rtol": null,
+  "shape": [
+   138
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "input.update.13",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 29305,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "output.intent.13",
+  "nbytes": 138,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 31129,
+  "rtol": null,
+  "shape": [
+   138
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "input.update.14",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 31267,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "output.intent.14",
+  "nbytes": 124,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 33091,
+  "rtol": null,
+  "shape": [
+   124
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "input.update.15",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 33215,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "output.intent.15",
+  "nbytes": 123,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 35039,
+  "rtol": null,
+  "shape": [
+   123
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "input.update.16",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 35162,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "output.intent.16",
+  "nbytes": 124,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 36986,
+  "rtol": null,
+  "shape": [
+   124
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "input.update.17",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 37110,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "output.intent.17",
+  "nbytes": 138,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 38934,
+  "rtol": null,
+  "shape": [
+   138
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "input.update.18",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 39072,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "output.intent.18",
+  "nbytes": 139,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 40896,
+  "rtol": null,
+  "shape": [
+   139
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "input.update.19",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 41035,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "output.intent.19",
+  "nbytes": 139,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 42859,
+  "rtol": null,
+  "shape": [
+   139
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "input.update.20",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 42998,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "output.intent.20",
+  "nbytes": 139,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 44822,
+  "rtol": null,
+  "shape": [
+   139
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "input.update.21",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 44961,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "output.intent.21",
+  "nbytes": 139,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 46785,
+  "rtol": null,
+  "shape": [
+   139
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "input.update.22",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 46924,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "output.intent.22",
+  "nbytes": 139,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 48748,
+  "rtol": null,
+  "shape": [
+   139
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "input.update.23",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 48887,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "output.intent.23",
+  "nbytes": 139,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 50711,
+  "rtol": null,
+  "shape": [
+   139
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "input.update.24",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 50850,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "output.intent.24",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 52674,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "input.update.25",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 52815,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "output.intent.25",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 54639,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "input.update.26",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 54780,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "output.intent.26",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 56604,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "input.update.27",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 56745,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "output.intent.27",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 58569,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "input.update.28",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 58710,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "output.intent.28",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 60534,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "input.update.29",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 60675,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "output.intent.29",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 62499,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "input.update.30",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 62640,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "output.intent.30",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 64464,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "input.update.31",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 64605,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "output.intent.31",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 66429,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "input.update.32",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 66570,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "output.intent.32",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 68394,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "input.update.33",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 68535,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "output.intent.33",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 70359,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "input.update.34",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 70500,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "output.intent.34",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 72324,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "input.update.35",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 72465,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "output.intent.35",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 74289,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "input.update.36",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 74430,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "output.intent.36",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 76254,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "input.update.37",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 76395,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "output.intent.37",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 78219,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "input.update.38",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 78360,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "output.intent.38",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 80184,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "input.update.39",
+  "nbytes": 1824,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 80325,
+  "rtol": null,
+  "shape": [
+   228
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "output.intent.39",
+  "nbytes": 141,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 82149,
+  "rtol": null,
+  "shape": [
+   141
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "output.state.0",
+  "nbytes": 3611,
+  "node": "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate",
+  "offset": 82290,
+  "rtol": null,
+  "shape": [
+   3611
+  ]
+ }
+]

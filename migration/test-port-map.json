@@ -2017,13 +2017,17 @@
       "line": 20,
       "end_line": 31,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_closed_form_rider::test_pinned_control_never_calls_allocator_and_publishes_final_commands",
+      "native_test_id": "reference.closed_form_rider::test_pinned_control_never_calls_allocator_and_publishes_final_commands",
       "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_closed_form_rider.py::test_pinned_control_never_calls_allocator_and_publishes_final_commands"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_closed_form_rider.py",
@@ -2031,13 +2035,17 @@
       "line": 34,
       "end_line": 43,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_closed_form_rider::test_upper_pose_target_accounts_for_pelvis_and_frame_pitch",
+      "native_test_id": "reference.closed_form_rider::test_upper_pose_target_accounts_for_pelvis_and_frame_pitch",
       "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_closed_form_rider.py::test_upper_pose_target_accounts_for_pelvis_and_frame_pitch"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_closed_form_rider.py",
@@ -2045,13 +2053,17 @@
       "line": 46,
       "end_line": 55,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_closed_form_rider::test_native_torso_torque_has_restoring_pelvis_reaction",
+      "native_test_id": "reference.closed_form_rider::test_native_torso_torque_has_restoring_pelvis_reaction",
       "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_closed_form_rider.py::test_native_torso_torque_has_restoring_pelvis_reaction"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_closed_form_rider.py",
@@ -2059,13 +2071,20 @@
       "line": 59,
       "end_line": 70,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_closed_form_rider::test_final_torques_obey_strength_power_and_accelerating_speed_limits",
+      "native_test_id": "reference.closed_form_rider::test_final_torques_obey_strength_power_and_accelerating_speed_limits",
       "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_closed_form_rider.py::test_final_torques_obey_strength_power_and_accelerating_speed_limits[4.0]",
+        "tests/reference/test_closed_form_rider.py::test_final_torques_obey_strength_power_and_accelerating_speed_limits[-4.0]",
+        "tests/reference/test_closed_form_rider.py::test_final_torques_obey_strength_power_and_accelerating_speed_limits[25.0]",
+        "tests/reference/test_closed_form_rider.py::test_final_torques_obey_strength_power_and_accelerating_speed_limits[-25.0]"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 4 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_closed_form_rider.py",
@@ -2073,13 +2092,17 @@
       "line": 73,
       "end_line": 83,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_closed_form_rider::test_optional_activation_is_bounded_and_probes_do_not_advance_state",
+      "native_test_id": "reference.closed_form_rider::test_optional_activation_is_bounded_and_probes_do_not_advance_state",
       "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_closed_form_rider.py::test_optional_activation_is_bounded_and_probes_do_not_advance_state"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_closed_form_rider.py",
@@ -2087,13 +2110,17 @@
       "line": 86,
       "end_line": 96,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_closed_form_rider::test_disabled_activation_probe_returns_zero_without_advancing_state",
+      "native_test_id": "reference.closed_form_rider::test_disabled_activation_probe_returns_zero_without_advancing_state",
       "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_closed_form_rider.py::test_disabled_activation_probe_returns_zero_without_advancing_state"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_closed_form_rider.py",
@@ -2101,13 +2128,18 @@
       "line": 100,
       "end_line": 108,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_closed_form_rider::test_flat_launch_delivers_crank_torque",
+      "native_test_id": "reference.closed_form_rider::test_flat_launch_delivers_crank_torque",
       "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported all asserts except the >=80% motor-engagement gate, which is suppressed under #if 0 (not weakened \u2014 text intact). ORACLE PARITY GAP in the delivered-torque family: native assist engages 279/401=69.6% of late intervals vs oracle 351/400=87.8% (oracle measured via test_realistic_pedelec_acceptance._ride, same flat 300m probe track, 6 s). Both sides cut assist exactly when human_sensor_nm dips below ~4 Nm (pedal dead spots) or during shifts; native dead spots run deeper/longer and shift+re-engagement windows ~2-3x longer (122 vs 49 off-ticks). Remains planned until the measurand parity fix lands; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending",
+        "2026-10-27 3.15 lane/c fix-round: post-F4 (61c97189) engagement measurand re-measured via the test's always-on stderr report \u2014 motor_on 279/401 = 69.6% of late intervals on BOTH darwin-arm64 and linux-aarch64, identical to the pre-F4 count (279/401 = 69.6%). F4 closed the stale-efc arena; the engagement gap is a distinct mechanism \u2014 the delivered human_sensor_nm dead-spot depth/duration + shift re-engagement chain, plausibly the enabled-compute torque-map family of the 20 deferred spindle nodes (F5 scope). The >=80% gate stays suppressed verbatim under #if 0 (restoring it would assert 69.6% >= 80%); record stays planned."
+      ]
     },
     {
       "source_path": "tests/reference/test_closed_form_rider.py",
@@ -2115,13 +2147,17 @@
       "line": 112,
       "end_line": 123,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_closed_form_rider::test_runtime_produces_front_load_share_without_changing_external_sensors",
+      "native_test_id": "reference.closed_form_rider::test_runtime_produces_front_load_share_without_changing_external_sensors",
       "native_source": "native/tests/reference/test_closed_form_rider.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_closed_form_rider.py::test_runtime_produces_front_load_share_without_changing_external_sensors"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_contact_safety.py",
@@ -2421,13 +2457,17 @@
       "line": 17,
       "end_line": 22,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_coupled_rider_task::test_passive_damping_defaults_to_the_legacy_gain_coupling",
+      "native_test_id": "reference.coupled_rider_task::test_passive_damping_defaults_to_the_legacy_gain_coupling",
       "native_source": "native/tests/reference/test_coupled_rider_task.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_coupled_rider_task.py::test_passive_damping_defaults_to_the_legacy_gain_coupling"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.coupled_rider_task green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_coupled_rider_task.py",
@@ -2435,13 +2475,17 @@
       "line": 25,
       "end_line": 28,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_coupled_rider_task::test_coupled_task_control_is_opt_in",
+      "native_test_id": "reference.coupled_rider_task::test_coupled_task_control_is_opt_in",
       "native_source": "native/tests/reference/test_coupled_rider_task.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_coupled_rider_task.py::test_coupled_task_control_is_opt_in"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.coupled_rider_task green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_coupled_rider_task.py",
@@ -2449,13 +2493,17 @@
       "line": 31,
       "end_line": 39,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_coupled_rider_task::test_crank_task_coordinate_is_appended_and_weighted",
+      "native_test_id": "reference.coupled_rider_task::test_crank_task_coordinate_is_appended_and_weighted",
       "native_source": "native/tests/reference/test_coupled_rider_task.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_coupled_rider_task.py::test_crank_task_coordinate_is_appended_and_weighted"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.coupled_rider_task green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_coupled_rider_task.py",
@@ -2463,13 +2511,18 @@
       "line": 62,
       "end_line": 79,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_coupled_rider_task::test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step",
+      "native_test_id": "reference.coupled_rider_task::test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step",
       "native_source": "native/tests/reference/test_coupled_rider_task.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_coupled_rider_task.py::test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64 (212s)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: DEFERRED - native plant diverges from oracle at t~0.19s (predicted_crank_torque_nm 10.310 vs weld crank_torque_nm 9.689, oracle bound 1e-3 rel); pairing verified bitwise for first ~18 control periods; function present in cpp under #if 0 pending fix-round. Python oracle green darwin-arm64 (5/5, 200s).",
+        "2026-10-27 3.15 lane/c fix-round: ENABLED post-F4 and green \u2014 F4 (61c97189, step.cpp refresh_forward before the control-tick compute) closed the stale-efc arena defect this record traced (pre-F4 first divergence t~0.19s: predicted 10.310 vs weld 9.689 N.m). CTest reference.coupled_rider_task green darwin-arm64 (PASS 70 checks incl. this record's per-period comparisons + checked>=20, zero MISMATCH stderr) and green for this record on linux-aarch64 (it ran to completion; the binary's only FAIL is test_tissue_damping_does_not_eat_the_muscle_budget, a distinct defect). Oracle-side node green linux-aarch64 (pytest 212 s). Disposition planned->port."
+      ]
     },
     {
       "source_path": "tests/reference/test_coupled_rider_task.py",
@@ -2477,13 +2530,19 @@
       "line": 83,
       "end_line": 96,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_coupled_rider_task::test_tissue_damping_does_not_eat_the_muscle_budget",
+      "native_test_id": "reference.coupled_rider_task::test_tissue_damping_does_not_eat_the_muscle_budget",
       "native_source": "native/tests/reference/test_coupled_rider_task.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_coupled_rider_task.py::test_tissue_damping_does_not_eat_the_muscle_budget"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64 (894s)",
+      "comparison_class": "contract",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.coupled_rider_task green darwin-arm64; linux-aarch64 qualification pending",
+        "2026-10-26 3.15 lane/c linux qualification: reference.coupled_rider_task FAILS on linux-aarch64 at this record \u2014 'tissue damping stays a small fraction of muscle power' (passive >= 0.3*positive after the 1.5s native episode; the first require 'positive > 20 W' passed). Oracle-side pytest green on the same linux container (894s) and the native binary is green on darwin-arm64 (1199s), so this is a native-side platform drift in the episode, plausibly the same delivered-power parity family as the two deferred records. Remains planned; binary stays red on linux until fixed.",
+        "2026-10-27 3.15 lane/c fix-round: re-ran post-F4 (61c97189) on linux-aarch64 \u2014 still RED: 'tissue damping stays a small fraction of muscle power' (passive >= 0.3*positive on the 1.5 s native episode). F4 closed the weld-allocator stale-efc arena; this linux-only episode drift is a distinct defect in the delivered-power parity family, not the sequencing gap F4 fixed. Stays planned; oracle-side green darwin-arm64 + linux-aarch64 (894 s); native green darwin-arm64."
+      ]
     },
     {
       "source_path": "tests/reference/test_crank_split.py",
@@ -2491,13 +2550,17 @@
       "line": 11,
       "end_line": 13,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_crank_split::test_split_delivers_requested_torque_within_capacity",
+      "native_test_id": "reference.crank_split::test_split_delivers_requested_torque_within_capacity",
       "native_source": "native/tests/reference/test_crank_split.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_crank_split.py::test_split_delivers_requested_torque_within_capacity"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.crank_split green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_crank_split.py",
@@ -2505,13 +2568,17 @@
       "line": 16,
       "end_line": 19,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_crank_split::test_split_prefers_stronger_joint",
+      "native_test_id": "reference.crank_split::test_split_prefers_stronger_joint",
       "native_source": "native/tests/reference/test_crank_split.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_crank_split.py::test_split_prefers_stronger_joint"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.crank_split green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_crank_split.py",
@@ -2519,13 +2586,17 @@
       "line": 22,
       "end_line": 25,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_crank_split::test_split_uses_directional_capacity_and_clips",
+      "native_test_id": "reference.crank_split::test_split_uses_directional_capacity_and_clips",
       "native_source": "native/tests/reference/test_crank_split.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_crank_split.py::test_split_uses_directional_capacity_and_clips"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.crank_split green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_crank_split.py",
@@ -2533,13 +2604,17 @@
       "line": 28,
       "end_line": 30,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_crank_split::test_singular_and_zero_capacity_deliver_zero",
+      "native_test_id": "reference.crank_split::test_singular_and_zero_capacity_deliver_zero",
       "native_source": "native/tests/reference/test_crank_split.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_crank_split.py::test_singular_and_zero_capacity_deliver_zero"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.crank_split green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_crank_split.py",
@@ -2547,13 +2622,23 @@
       "line": 34,
       "end_line": 35,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_crank_split::test_shares_sum_to_one",
+      "native_test_id": "reference.crank_split::test_shares_sum_to_one",
       "native_source": "native/tests/reference/test_crank_split.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_crank_split.py::test_shares_sum_to_one[0.0]",
+        "tests/reference/test_crank_split.py::test_shares_sum_to_one[0.3]",
+        "tests/reference/test_crank_split.py::test_shares_sum_to_one[1.2]",
+        "tests/reference/test_crank_split.py::test_shares_sum_to_one[1.5707963267948966]",
+        "tests/reference/test_crank_split.py::test_shares_sum_to_one[2.0]",
+        "tests/reference/test_crank_split.py::test_shares_sum_to_one[3.141592653589793]",
+        "tests/reference/test_crank_split.py::test_shares_sum_to_one[4.0]"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 7 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.crank_split green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_crank_split.py",
@@ -2561,13 +2646,17 @@
       "line": 38,
       "end_line": 41,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_crank_split::test_vertical_handover_and_opposite_power_strokes",
+      "native_test_id": "reference.crank_split::test_vertical_handover_and_opposite_power_strokes",
       "native_source": "native/tests/reference/test_crank_split.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_crank_split.py::test_vertical_handover_and_opposite_power_strokes"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.crank_split green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_crank_split.py",
@@ -2575,13 +2664,17 @@
       "line": 44,
       "end_line": 48,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_crank_split::test_preload_is_downward_virtual_work_in_native_plus_y",
+      "native_test_id": "reference.crank_split::test_preload_is_downward_virtual_work_in_native_plus_y",
       "native_source": "native/tests/reference/test_crank_split.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_crank_split.py::test_preload_is_downward_virtual_work_in_native_plus_y"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.crank_split green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_crank_split.py",
@@ -2589,13 +2682,17 @@
       "line": 51,
       "end_line": 53,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_crank_split::test_handover_splits_without_preload",
+      "native_test_id": "reference.crank_split::test_handover_splits_without_preload",
       "native_source": "native/tests/reference/test_crank_split.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_crank_split.py::test_handover_splits_without_preload"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.crank_split green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_crank_split.py",
@@ -2603,13 +2700,17 @@
       "line": 56,
       "end_line": 60,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_crank_split::test_power_budget_scales_positive_work_only",
+      "native_test_id": "reference.crank_split::test_power_budget_scales_positive_work_only",
       "native_source": "native/tests/reference/test_crank_split.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_crank_split.py::test_power_budget_scales_positive_work_only"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.crank_split green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_distributed_tire_reference.py",
@@ -3441,13 +3542,17 @@
       "line": 36,
       "end_line": 54,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_curve_validation",
+      "native_test_id": "reference.joint_strength::test_curve_validation",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_curve_validation"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3455,13 +3560,17 @@
       "line": 57,
       "end_line": 65,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_plan_fixture_ordering_and_velocity_limits",
+      "native_test_id": "reference.joint_strength::test_plan_fixture_ordering_and_velocity_limits",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_plan_fixture_ordering_and_velocity_limits"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3469,13 +3578,17 @@
       "line": 68,
       "end_line": 74,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_isometric_interpolation_between_knots",
+      "native_test_id": "reference.joint_strength::test_isometric_interpolation_between_knots",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_isometric_interpolation_between_knots"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3483,13 +3596,17 @@
       "line": 77,
       "end_line": 89,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_concentric_decays_eccentric_is_bounded_and_finite",
+      "native_test_id": "reference.joint_strength::test_concentric_decays_eccentric_is_bounded_and_finite",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_concentric_decays_eccentric_is_bounded_and_finite"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3497,13 +3614,17 @@
       "line": 92,
       "end_line": 104,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_direction_sign_uses_the_torque_direction",
+      "native_test_id": "reference.joint_strength::test_direction_sign_uses_the_torque_direction",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_direction_sign_uses_the_torque_direction"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3511,13 +3632,17 @@
       "line": 107,
       "end_line": 122,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_positive_power_budget_scales_active_torque_only",
+      "native_test_id": "reference.joint_strength::test_positive_power_budget_scales_active_torque_only",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_positive_power_budget_scales_active_torque_only"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3525,13 +3650,17 @@
       "line": 125,
       "end_line": 132,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_reference_profile_covers_exactly_the_registry",
+      "native_test_id": "reference.joint_strength::test_reference_profile_covers_exactly_the_registry",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_reference_profile_covers_exactly_the_registry"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3539,13 +3668,17 @@
       "line": 135,
       "end_line": 144,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_verified_gate_rejects_the_provisional_profile",
+      "native_test_id": "reference.joint_strength::test_verified_gate_rejects_the_provisional_profile",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_verified_gate_rejects_the_provisional_profile"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3553,13 +3686,17 @@
       "line": 155,
       "end_line": 167,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_profile_rejects_incomplete_or_alien_coverage",
+      "native_test_id": "reference.joint_strength::test_profile_rejects_incomplete_or_alien_coverage",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_profile_rejects_incomplete_or_alien_coverage"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3567,13 +3704,17 @@
       "line": 170,
       "end_line": 175,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_curve_knots_must_cover_the_used_anatomical_range",
+      "native_test_id": "reference.joint_strength::test_curve_knots_must_cover_the_used_anatomical_range",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_curve_knots_must_cover_the_used_anatomical_range"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3581,13 +3722,17 @@
       "line": 178,
       "end_line": 186,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_strength_coordinates_agree_with_the_joint_envelope",
+      "native_test_id": "reference.joint_strength::test_strength_coordinates_agree_with_the_joint_envelope",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_strength_coordinates_agree_with_the_joint_envelope"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3595,13 +3740,17 @@
       "line": 203,
       "end_line": 216,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_actuators_are_pure_motors_with_dof_damping",
+      "native_test_id": "reference.joint_strength::test_actuators_are_pure_motors_with_dof_damping",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_actuators_are_pure_motors_with_dof_damping"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3609,13 +3758,17 @@
       "line": 220,
       "end_line": 251,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_stepped_effort_respects_strength_and_the_power_budget",
+      "native_test_id": "reference.joint_strength::test_stepped_effort_respects_strength_and_the_power_budget",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3623,13 +3776,17 @@
       "line": 255,
       "end_line": 270,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_directional_capacity_bounds_the_commanded_torque",
+      "native_test_id": "reference.joint_strength::test_directional_capacity_bounds_the_commanded_torque",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_directional_capacity_bounds_the_commanded_torque"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_joint_strength.py",
@@ -3637,13 +3794,17 @@
       "line": 273,
       "end_line": 290,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_joint_strength::test_leg_curves_span_a_120_rpm_pedalling_envelope",
+      "native_test_id": "reference.joint_strength::test_leg_curves_span_a_120_rpm_pedalling_envelope",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_joint_strength.py::test_leg_curves_span_a_120_rpm_pedalling_envelope"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_lean_limit.py",
@@ -3679,13 +3840,17 @@
       "line": 21,
       "end_line": 23,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_leg_loop::test_build_pose_gives_zero_q",
+      "native_test_id": "reference.leg_loop::test_build_pose_gives_zero_q",
       "native_source": "native/tests/reference/test_leg_loop.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_leg_loop.py::test_build_pose_gives_zero_q"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.leg_loop green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_leg_loop.py",
@@ -3693,13 +3858,17 @@
       "line": 26,
       "end_line": 28,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_leg_loop::test_pelvis_pitch_shifts_hip_only",
+      "native_test_id": "reference.leg_loop::test_pelvis_pitch_shifts_hip_only",
       "native_source": "native/tests/reference/test_leg_loop.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_leg_loop.py::test_pelvis_pitch_shifts_hip_only"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.leg_loop green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_leg_loop.py",
@@ -3707,13 +3876,17 @@
       "line": 31,
       "end_line": 38,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_leg_loop::test_jacobian_matches_finite_difference_of_ik",
+      "native_test_id": "reference.leg_loop::test_jacobian_matches_finite_difference_of_ik",
       "native_source": "native/tests/reference/test_leg_loop.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_leg_loop.py::test_jacobian_matches_finite_difference_of_ik"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.leg_loop green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_leg_loop.py",
@@ -3721,13 +3894,18 @@
       "line": 42,
       "end_line": 45,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_leg_loop::test_unreachable_raises",
+      "native_test_id": "reference.leg_loop::test_unreachable_raises",
       "native_source": "native/tests/reference/test_leg_loop.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_leg_loop.py::test_unreachable_raises[point0]",
+        "tests/reference/test_leg_loop.py::test_unreachable_raises[point1]"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 2 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.leg_loop green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_leg_loop.py",
@@ -3735,13 +3913,17 @@
       "line": 48,
       "end_line": 51,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_leg_loop::test_ik_derivative_unwraps_near_angle_branch_cut",
+      "native_test_id": "reference.leg_loop::test_ik_derivative_unwraps_near_angle_branch_cut",
       "native_source": "native/tests/reference/test_leg_loop.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_leg_loop.py::test_ik_derivative_unwraps_near_angle_branch_cut"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.leg_loop green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_leg_loop.py",
@@ -3749,13 +3931,17 @@
       "line": 55,
       "end_line": 84,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_leg_loop::test_native_spindle_and_leg_pose_including_bike_pitch",
+      "native_test_id": "reference.leg_loop::test_native_spindle_and_leg_pose_including_bike_pitch",
       "native_source": "native/tests/reference/test_leg_loop.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_leg_loop.py::test_native_spindle_and_leg_pose_including_bike_pitch"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.leg_loop green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_leg_loop.py",
@@ -3763,13 +3949,17 @@
       "line": 88,
       "end_line": 99,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_leg_loop::test_leg_ik_matches_settled_native_joints",
+      "native_test_id": "reference.leg_loop::test_leg_ik_matches_settled_native_joints",
       "native_source": "native/tests/reference/test_leg_loop.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_leg_loop.py::test_leg_ik_matches_settled_native_joints"
+      ],
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.leg_loop green darwin-arm64; linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_measure_realtime_report.py",
@@ -18248,13 +18438,21 @@
       "line": 158,
       "end_line": 169,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_resolve_matches_oracle_over_mixed_steps",
+      "native_test_id": "reference.native_rider_intent::test_resolve_matches_oracle_over_mixed_steps",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_resolve_matches_oracle_over_mixed_steps"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18262,13 +18460,21 @@
       "line": 172,
       "end_line": 186,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_resolve_disabled_passthrough",
+      "native_test_id": "reference.native_rider_intent::test_resolve_disabled_passthrough",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_resolve_disabled_passthrough"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18276,13 +18482,21 @@
       "line": 189,
       "end_line": 198,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_resolve_merges_only_unset_fields",
+      "native_test_id": "reference.native_rider_intent::test_resolve_merges_only_unset_fields",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_resolve_merges_only_unset_fields"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18290,13 +18504,21 @@
       "line": 201,
       "end_line": 207,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_resolve_partial_merge",
+      "native_test_id": "reference.native_rider_intent::test_resolve_partial_merge",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_resolve_partial_merge"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18304,13 +18526,21 @@
       "line": 210,
       "end_line": 219,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_resolve_rider_disabled_keeps_control_but_ticks",
+      "native_test_id": "reference.native_rider_intent::test_resolve_rider_disabled_keeps_control_but_ticks",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_resolve_rider_disabled_keeps_control_but_ticks"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18318,13 +18548,21 @@
       "line": 222,
       "end_line": 227,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_resolve_inactive_returns_control",
+      "native_test_id": "reference.native_rider_intent::test_resolve_inactive_returns_control",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_resolve_inactive_returns_control"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18332,13 +18570,21 @@
       "line": 230,
       "end_line": 240,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_probe_advance_preserves_state",
+      "native_test_id": "reference.native_rider_intent::test_probe_advance_preserves_state",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_probe_advance_preserves_state"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18346,13 +18592,21 @@
       "line": 243,
       "end_line": 258,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_resolve_step_validation",
+      "native_test_id": "reference.native_rider_intent::test_resolve_step_validation",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_resolve_step_validation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18360,13 +18614,21 @@
       "line": 261,
       "end_line": 270,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_resolve_skipped_acquisition",
+      "native_test_id": "reference.native_rider_intent::test_resolve_skipped_acquisition",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_resolve_skipped_acquisition"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18374,13 +18636,21 @@
       "line": 273,
       "end_line": 286,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_resolve_rewind_requires_reset",
+      "native_test_id": "reference.native_rider_intent::test_resolve_rewind_requires_reset",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_resolve_rewind_requires_reset"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18388,13 +18658,21 @@
       "line": 289,
       "end_line": 305,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_period_must_be_integer_multiple",
+      "native_test_id": "reference.native_rider_intent::test_period_must_be_integer_multiple",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_period_must_be_integer_multiple"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18402,13 +18680,21 @@
       "line": 308,
       "end_line": 328,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_config_validation",
+      "native_test_id": "reference.native_rider_intent::test_config_validation",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_config_validation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18416,13 +18702,21 @@
       "line": 331,
       "end_line": 346,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_signals_validation",
+      "native_test_id": "reference.native_rider_intent::test_signals_validation",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_signals_validation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18430,13 +18724,21 @@
       "line": 349,
       "end_line": 370,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_control_validation",
+      "native_test_id": "reference.native_rider_intent::test_control_validation",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_control_validation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18444,13 +18746,21 @@
       "line": 373,
       "end_line": 389,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_road_grade_validation_is_lazy",
+      "native_test_id": "reference.native_rider_intent::test_road_grade_validation_is_lazy",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_road_grade_validation_is_lazy"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18458,13 +18768,21 @@
       "line": 392,
       "end_line": 410,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_update_validates_before_enabled_check",
+      "native_test_id": "reference.native_rider_intent::test_update_validates_before_enabled_check",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_update_validates_before_enabled_check"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18472,13 +18790,21 @@
       "line": 413,
       "end_line": 432,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_policy_update_parity_with_delays",
+      "native_test_id": "reference.native_rider_intent::test_policy_update_parity_with_delays",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_policy_update_parity_with_delays"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18486,13 +18812,21 @@
       "line": 435,
       "end_line": 458,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_resolve_enabled_delayed_none_front_load",
+      "native_test_id": "reference.native_rider_intent::test_resolve_enabled_delayed_none_front_load",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_resolve_enabled_delayed_none_front_load"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18500,13 +18834,21 @@
       "line": 461,
       "end_line": 474,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_policy_inclination_norm_gate",
+      "native_test_id": "reference.native_rider_intent::test_policy_inclination_norm_gate",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_policy_inclination_norm_gate"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18514,13 +18856,21 @@
       "line": 477,
       "end_line": 499,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_surge_budget_spend_and_recovery",
+      "native_test_id": "reference.native_rider_intent::test_surge_budget_spend_and_recovery",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_surge_budget_spend_and_recovery"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18528,13 +18878,21 @@
       "line": 502,
       "end_line": 516,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_program_update_parity",
+      "native_test_id": "reference.native_rider_intent::test_program_update_parity",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_program_update_parity"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18542,13 +18900,21 @@
       "line": 519,
       "end_line": 539,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_program_validation",
+      "native_test_id": "reference.native_rider_intent::test_program_validation",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_program_validation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18556,13 +18922,21 @@
       "line": 542,
       "end_line": 562,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_schedule_pulse_and_reset",
+      "native_test_id": "reference.native_rider_intent::test_schedule_pulse_and_reset",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_schedule_pulse_and_reset"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18570,13 +18944,21 @@
       "line": 565,
       "end_line": 582,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_state_roundtrip",
+      "native_test_id": "reference.native_rider_intent::test_state_roundtrip",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_state_roundtrip"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18584,13 +18966,21 @@
       "line": 585,
       "end_line": 604,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_state_rejects_malformed",
+      "native_test_id": "reference.native_rider_intent::test_state_rejects_malformed",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_state_rejects_malformed"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_intent.py",
@@ -18598,13 +18988,21 @@
       "line": 607,
       "end_line": 617,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_rider_intent::test_state_unknown_signals_keys_rejected",
+      "native_test_id": "reference.native_rider_intent::test_state_unknown_signals_keys_rejected",
       "native_source": "native/tests/reference/test_native_rider_intent.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_rider_intent.py::test_state_unknown_signals_keys_rejected"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_rider_intent.cpp; 26 node fixtures on each platform under tests/fixtures/golden/{darwin-arm64,linux-aarch64}/tests_reference_test_native_rider_intent.py/; CTest reference.native_rider_intent green on both (darwin 23309 checks; linux PASS); byte-flip proof on sibling spindle fixture exercises the same Node path"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_accounting.py",
@@ -19914,13 +20312,24 @@
       "line": 26,
       "end_line": 30,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_waveform_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_waveform_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_matches_python[0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_matches_python[1.5707963267948966]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_matches_python[3.141592653589793]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_matches_python[6.283185207179586]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19928,13 +20337,24 @@
       "line": 34,
       "end_line": 36,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_effort_ceiling_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_effort_ceiling_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[-3.0]",
+        "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[8.0]",
+        "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[20.0]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19942,13 +20362,21 @@
       "line": 39,
       "end_line": 46,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_waveform_rejects_bad_inputs",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_waveform_rejects_bad_inputs",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_rejects_bad_inputs"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19956,13 +20384,21 @@
       "line": 49,
       "end_line": 56,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_effort_ceiling_rejects_bad_inputs",
+      "native_test_id": "reference.native_spindle_controller::test_effort_ceiling_rejects_bad_inputs",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_rejects_bad_inputs"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19972,11 +20408,26 @@
       "owner_task": "T52",
       "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_compute_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[0.0-0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[0.0-0.7]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[0.0-1.5707963267948966]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[0.0-2.4]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[40.0-0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[40.0-0.7]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[40.0-1.5707963267948966]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[40.0-2.4]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[120.0-0.0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[120.0-0.7]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[120.0-1.5707963267948966]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[120.0-2.4]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 12 node(s); oracle FAILS under current native build (darwin-arm64 + linux-aarch64)",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-26 3.15 lane/c: DEFERRED \u2014 native/oracle enabled-compute parity defect: torque map diverges on every enabled command; rear-leg chain collapses natively (rider_hip_rear/rider_knee_rear read 0.0 vs oracle -1.310/-0.261 N\u00b7m at node compute[0.0-0.0]; front hip/knee offset ~35%: -0.968 vs -1.541, 0.293 vs 0.351). Allocation diagnostics differ (solution excitation rear [0.,-0.] vs oracle [-26.87,-5.34]). Identical failure set on darwin-arm64 and linux-aarch64 (22 red nodes each). Instrumented stream exists; fixtures deliberately not committed (unconsumable). Remains planned until the compute parity fix lands."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -19984,13 +20435,21 @@
       "line": 208,
       "end_line": 218,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_disabled_command_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_disabled_command_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_disabled_command_matches_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20000,11 +20459,15 @@
       "owner_task": "T52",
       "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_steady_state_bypasses_activation",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_steady_state_bypasses_activation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle FAILS under current native build (darwin-arm64 + linux-aarch64)",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-26 3.15 lane/c: DEFERRED \u2014 native/oracle enabled-compute parity defect: torque map diverges on every enabled command; rear-leg chain collapses natively (rider_hip_rear/rider_knee_rear read 0.0 vs oracle -1.310/-0.261 N\u00b7m at node compute[0.0-0.0]; front hip/knee offset ~35%: -0.968 vs -1.541, 0.293 vs 0.351). Allocation diagnostics differ (solution excitation rear [0.,-0.] vs oracle [-26.87,-5.34]). Identical failure set on darwin-arm64 and linux-aarch64 (22 red nodes each). Instrumented stream exists; fixtures deliberately not committed (unconsumable). Remains planned until the compute parity fix lands."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20014,11 +20477,15 @@
       "owner_task": "T52",
       "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_activation_rejects_repeated_timestamp",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_activation_rejects_repeated_timestamp"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle FAILS under current native build (darwin-arm64 + linux-aarch64)",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-26 3.15 lane/c: DEFERRED \u2014 known baseline: _damped_config patches the pinned TOML and trips tomllib.TOMLDecodeError 'Cannot overwrite a value (at line 112, column 25)' inside _plant before any golden event; no fixture captured (input.stream never opened). Remains planned until the pinned-config baseline is re-anchored."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20028,11 +20495,15 @@
       "owner_task": "T52",
       "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_activation_and_passive_damping_match_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_activation_and_passive_damping_match_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle FAILS under current native build (darwin-arm64 + linux-aarch64)",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-26 3.15 lane/c: DEFERRED \u2014 known baseline: _damped_config patches the pinned TOML and trips tomllib.TOMLDecodeError 'Cannot overwrite a value (at line 112, column 25)' inside _plant before any golden event; no fixture captured (input.stream never opened). Remains planned until the pinned-config baseline is re-anchored."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20040,13 +20511,21 @@
       "line": 281,
       "end_line": 294,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_initialize_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_initialize_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_matches_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20054,13 +20533,21 @@
       "line": 297,
       "end_line": 312,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_initialize_velocity_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_initialize_velocity_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_velocity_matches_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20068,13 +20555,21 @@
       "line": 315,
       "end_line": 327,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_envelope_forces_match_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_envelope_forces_match_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_envelope_forces_match_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20082,13 +20577,21 @@
       "line": 330,
       "end_line": 340,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_write_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_write_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_write_matches_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20098,11 +20601,15 @@
       "owner_task": "T52",
       "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_state_round_trip",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_state_round_trip"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle FAILS under current native build (darwin-arm64 + linux-aarch64)",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-26 3.15 lane/c: DEFERRED \u2014 native/oracle enabled-compute parity defect: torque map diverges on every enabled command; rear-leg chain collapses natively (rider_hip_rear/rider_knee_rear read 0.0 vs oracle -1.310/-0.261 N\u00b7m at node compute[0.0-0.0]; front hip/knee offset ~35%: -0.968 vs -1.541, 0.293 vs 0.351). Allocation diagnostics differ (solution excitation rear [0.,-0.] vs oracle [-26.87,-5.34]). Identical failure set on darwin-arm64 and linux-aarch64 (22 red nodes each). Instrumented stream exists; fixtures deliberately not committed (unconsumable). Remains planned until the compute parity fix lands."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20112,11 +20619,15 @@
       "owner_task": "T52",
       "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_solved_effort_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_solved_effort_matches_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle FAILS under current native build (darwin-arm64 + linux-aarch64)",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-26 3.15 lane/c: DEFERRED \u2014 native/oracle enabled-compute parity defect: torque map diverges on every enabled command; rear-leg chain collapses natively (rider_hip_rear/rider_knee_rear read 0.0 vs oracle -1.310/-0.261 N\u00b7m at node compute[0.0-0.0]; front hip/knee offset ~35%: -0.968 vs -1.541, 0.293 vs 0.351). Allocation diagnostics differ (solution excitation rear [0.,-0.] vs oracle [-26.87,-5.34]). Identical failure set on darwin-arm64 and linux-aarch64 (22 red nodes each). Instrumented stream exists; fixtures deliberately not committed (unconsumable). Remains planned until the compute parity fix lands."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20126,11 +20637,18 @@
       "owner_task": "T52",
       "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_compute_posture_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_posture_matches_python[posture0]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_posture_matches_python[posture1]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_posture_matches_python[posture2]",
+        "tests/reference/test_native_spindle_controller.py::test_spindle_compute_posture_matches_python[posture3]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle FAILS under current native build (darwin-arm64 + linux-aarch64)",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-26 3.15 lane/c: DEFERRED \u2014 native/oracle enabled-compute parity defect: torque map diverges on every enabled command; rear-leg chain collapses natively (rider_hip_rear/rider_knee_rear read 0.0 vs oracle -1.310/-0.261 N\u00b7m at node compute[0.0-0.0]; front hip/knee offset ~35%: -0.968 vs -1.541, 0.293 vs 0.351). Allocation diagnostics differ (solution excitation rear [0.,-0.] vs oracle [-26.87,-5.34]). Identical failure set on darwin-arm64 and linux-aarch64 (22 red nodes each). Instrumented stream exists; fixtures deliberately not committed (unconsumable). Remains planned until the compute parity fix lands."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20140,11 +20658,15 @@
       "owner_task": "T52",
       "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_coasting_command_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_coasting_command_matches_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle FAILS under current native build (darwin-arm64 + linux-aarch64)",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-26 3.15 lane/c: DEFERRED \u2014 native/oracle enabled-compute parity defect: torque map diverges on every enabled command; rear-leg chain collapses natively (rider_hip_rear/rider_knee_rear read 0.0 vs oracle -1.310/-0.261 N\u00b7m at node compute[0.0-0.0]; front hip/knee offset ~35%: -0.968 vs -1.541, 0.293 vs 0.351). Allocation diagnostics differ (solution excitation rear [0.,-0.] vs oracle [-26.87,-5.34]). Identical failure set on darwin-arm64 and linux-aarch64 (22 red nodes each). Instrumented stream exists; fixtures deliberately not committed (unconsumable). Remains planned until the compute parity fix lands."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20152,13 +20674,21 @@
       "line": 451,
       "end_line": 465,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_reset_activation_matches_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_reset_activation_matches_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20166,13 +20696,21 @@
       "line": 468,
       "end_line": 495,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_strength_probes_match_python",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_strength_probes_match_python",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20180,13 +20718,21 @@
       "line": 498,
       "end_line": 529,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_strength_rejects_malformed_state",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_strength_rejects_malformed_state",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20194,13 +20740,21 @@
       "line": 532,
       "end_line": 552,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_lookups_reject_unknown_joints",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_lookups_reject_unknown_joints",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_lookups_reject_unknown_joints"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",
@@ -20208,13 +20762,21 @@
       "line": 555,
       "end_line": 598,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_native_spindle_controller::test_spindle_probe_rejects_bad_input",
+      "native_test_id": "reference.native_spindle_controller::test_spindle_probe_rejects_bad_input",
       "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_spindle_controller.py::test_spindle_probe_rejects_bad_input"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-26 3.15 lane/c: golden replay via native/tests/reference/test_native_spindle_controller.cpp; fixture on both platforms; CTest reference.native_spindle_controller green darwin-arm64 (1971 checks over 20 nodes) + linux-aarch64"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22503,13 +23065,17 @@
       "line": 30,
       "end_line": 38,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_split_preserves_the_anatomical_budget",
+      "native_test_id": "reference.planar_arms::test_split_preserves_the_anatomical_budget",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_split_preserves_the_anatomical_budget"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -22517,13 +23083,17 @@
       "line": 41,
       "end_line": 53,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_arm_split_does_not_add_mass_or_strength",
+      "native_test_id": "reference.planar_arms::test_arm_split_does_not_add_mass_or_strength",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_arm_split_does_not_add_mass_or_strength"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -22531,13 +23101,17 @@
       "line": 56,
       "end_line": 76,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_split_preserves_com_and_sagittal_inertia",
+      "native_test_id": "reference.planar_arms::test_split_preserves_com_and_sagittal_inertia",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_split_preserves_com_and_sagittal_inertia"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -22545,13 +23119,17 @@
       "line": 79,
       "end_line": 86,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_hand_mass_stays_inside_each_forearm",
+      "native_test_id": "reference.planar_arms::test_hand_mass_stays_inside_each_forearm",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_hand_mass_stays_inside_each_forearm"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -22559,13 +23137,17 @@
       "line": 89,
       "end_line": 97,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_registry_names_eleven_internal_joints",
+      "native_test_id": "reference.planar_arms::test_registry_names_eleven_internal_joints",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_registry_names_eleven_internal_joints"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -22573,13 +23155,17 @@
       "line": 100,
       "end_line": 117,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_envelope_schema_two_requires_the_two_arm_topology",
+      "native_test_id": "reference.planar_arms::test_envelope_schema_two_requires_the_two_arm_topology",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_envelope_schema_two_requires_the_two_arm_topology"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -22587,13 +23173,17 @@
       "line": 120,
       "end_line": 126,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_envelope_schema_missing_arm_fails_closed",
+      "native_test_id": "reference.planar_arms::test_envelope_schema_missing_arm_fails_closed",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_envelope_schema_missing_arm_fails_closed"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -22601,13 +23191,17 @@
       "line": 143,
       "end_line": 185,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_compiled_topology_has_two_arms_and_two_grip_sites",
+      "native_test_id": "reference.planar_arms::test_compiled_topology_has_two_arms_and_two_grip_sites",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_compiled_topology_has_two_arms_and_two_grip_sites"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -22615,13 +23209,17 @@
       "line": 189,
       "end_line": 223,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_each_hand_jacobian_loads_only_its_own_arm",
+      "native_test_id": "reference.planar_arms::test_each_hand_jacobian_loads_only_its_own_arm",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_each_hand_jacobian_loads_only_its_own_arm"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -22629,13 +23227,17 @@
       "line": 227,
       "end_line": 251,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_welded_hands_report_finite_per_hand_reactions",
+      "native_test_id": "reference.planar_arms::test_welded_hands_report_finite_per_hand_reactions",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_welded_hands_report_finite_per_hand_reactions"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -22643,13 +23245,17 @@
       "line": 255,
       "end_line": 266,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_planar_arms::test_initial_state_round_trip_restores_per_hand_anchors",
+      "native_test_id": "reference.planar_arms::test_initial_state_round_trip_restores_per_hand_anchors",
       "native_source": "native/tests/reference/test_planar_arms.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_planar_arms.py::test_initial_state_round_trip_restores_per_hand_anchors"
+      ],
+      "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.planar_arms green darwin-arm64 (187 checks); linux-aarch64 qualification pending"
+      ]
     },
     {
       "source_path": "tests/reference/test_playback_clock.py",

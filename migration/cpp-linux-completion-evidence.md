@@ -7695,3 +7695,178 @@ ulp bits). L3 (`tools/run_tests.sh native`) not re-run — bounded
 merge-back scope per protocol; lane/d's own gate evidence is recorded
 in `task-C326-report.md`. Unrelated documented reds reported, not
 fixed.
+
+## 2026-10-27 — lane/e F5 spindle merge-back (merge `c398df09`)
+
+### Surface
+
+Lane tip `e8b6b7aa` — 8 commits over base `d8242c88` (the lane/b 3.17
+merge-back evidence commit; lane/e's base predates the 3.15 merge
+`9776b747`, so both sides independently created
+`test_native_spindle_controller.cpp` and the
+`reference.native_spindle_controller` registration). Deliverables: the
+F5 spindle-controller port — `solved_effort` state-width gate in
+`native/src/rider/spindle_controller.cpp` (+7 lines), the 23-function
+golden consumer `native/tests/reference/test_native_spindle_controller.cpp`
+(22 planned source symbols + the rear-leg-chain effort regression),
+two-platform goldens (41 stems/platform, `tolerance-oracle` class,
+rtol=1e-7/atol=1e-8 — oracle numpy/libm math is not bitwise-stable
+across darwin-arm64/linux-aarch64), pinned-plant fixture
+`tests/fixtures/migration/spindle/pinned/` (`model.mjb` 5.8 MB +
+`config.json`), capture instrumentation in
+`tests/reference/test_native_spindle_controller.py`, capture script
+`tools/migration/_f5_spindle_capture.py`, ledger: 23 spindle records
+qualified (17 `golden`/`tolerance-oracle`/`golden_platforms` +
+6 `contract`/`port` rejects, no captured artifacts). Lane gate report:
+`.superpowers/sdd/2026-10-20-cpp-linux-completion/task-F5-report.md`.
+
+### Conflicts and merge-back resolutions
+
+Highest-conflict merge of the series — 63 paths:
+
+- `native/tests/reference/test_native_spindle_controller.cpp`
+  (add/add): **lane/e's file taken wholesale** — a strict superset
+  (23 functions: integration's 14 drain-replay functions + the 9
+  previously-deferred nodes). `coast_hold_nm` handling is semantically
+  identical (integration's `oracle_state_doc()` erase ≙ lane/e's
+  `std::erase_if` in `state_document()`); every recorded `.state`
+  compare site is covered — `compute*.state` via `expect_state_close`
+  in `compare_compute`, `solved.state`, `reset_state`, and
+  `restored_state` (byte-exact wire round-trip, correctly *not*
+  `json_close` — lossless re-encode is the assertion). No
+  19-vs-18-key regression. The reject nodes are direct `throws_std`
+  contract assertions (stronger than integration's recorded
+  `error.*`-marker replay).
+- `native/tests/reference/Phase3Ports.cmake`: ort auto-merge produced
+  a **duplicate `native_spindle_controller` registration** (both
+  sides added it in different regions). Resolution: single
+  registration kept in the 3.15 batch section; lane/e's mid-file
+  block removed; the stale 3.15 comment "replays only the 20
+  oracle-green nodes" replaced with the F5 reality (all 23 replay;
+  six reject-only nodes are contract checks without artifacts).
+- `tests/reference/test_native_spindle_controller.py` (content
+  conflict): **lane/e's version taken wholesale** — its flat
+  `f64_close`/`bytes` capture instrumentation produces exactly the
+  record shapes lane/e's C++ consumer reads (integration's
+  `input.*`/`output.*`/`error.*` event-stream format is incompatible
+  with it). Lane/e's file also carries the `_damped_config`
+  rewrite-in-place fix for the TOML duplicate `activation_tau_s`
+  key — the same defect 3.15 recorded as "blocked by the pinned TOML
+  baseline"; both sides derive from the same base so no test-logic
+  content is lost. Merge-back micro-fixes applied (line-neutral):
+  `_record_compute` docstring "byte-compares" → json_close deep
+  compare; `test_spindle_rear_chain_effort_matches_python` docstring
+  "bit-for-bit" → rtol=1e-7/atol=1e-8 close bound.
+- Golden fixtures (60 add/add conflicts): overlapping 15
+  stems/platform carry **different record formats** (integration's
+  event-stream vs lane/e's flat tolerance records) — lane/e's
+  captures win since its consumer file survives. **Deviation from
+  the literal "union dirs" pre-analysis**: integration's 5
+  reject-only stems (`*_rejects_*`/`probe_rejects`, 10 files/platform,
+  20 total) were **removed**, not unioned — the surviving consumer
+  never opens them and lane/e's fix-round records explicitly declare
+  these nodes `contract`/`port` with zero captured artifacts;
+  keeping them would re-create exactly the orphans the fix round
+  repaired. Post-merge each platform dir is byte-identical to
+  lane/e's tree (82 files = 41 stems), zero orphans, zero missing
+  pairs (verified programmatically: every golden record's collected
+  node ids map to existing .bin+.json on both platforms; every
+  fixture stem maps to a golden record).
+- `migration/test-port-map.json`: per-record resolution —
+  integration wins everywhere except `test_native_spindle_controller.py`
+  records, where lane/e's 23 win (17 `golden`/`tolerance-oracle` +
+  `golden_platforms`; 6 `contract`/`port` without
+  `golden_platforms`). Splice verified: 2391 unique
+  (`source_path`,`source_symbol`) records, all non-spindle records
+  byte-identical to the pre-merge integration map. Micro-fix: the
+  six reject records' stale base-file `line`/`end_line` corrected to
+  actual positions in the merged file (e.g. probe record 555-598 →
+  629-676). Headers `static_test_functions`=2391,
+  `top_level_test_functions`=2375 (`class_test_methods`=16
+  unchanged).
+- Clean auto-merges kept: `native/src/rider/spindle_controller.cpp`
+  (+7 solved_effort width gate — integration only touched the `.hpp`
+  `upper_targets` visibility, no interaction), pinned fixture pair,
+  `_f5_spindle_capture.py`, `task-F5-report.md`, lane/e-only golden
+  stems (26/platform).
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Incremental `cmake --build --target reference.native_spindle_controller`:
+  green compile + link of the 945-line superset TU.
+- `ctest -R 'spindle'`: **1/1 PASS** —
+  `reference.native_spindle_controller` **PASS 2754 checks** (23
+  functions; identical count to lane/e's own gate).
+- `pytest tests/reference/test_native_spindle_controller.py -x -q`:
+  **47 passed, 0 failed** in 9.33 s — rerun against the freshly
+  rebuilt `native/build/bike_native.cpython-313-darwin.so` (the first
+  pass ran a pre-merge extension and still went 47/47; the reported
+  number is the post-merge artifact).
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `root-clang`/`native-clang`)
+
+- `container.sh sync` → `build root-clang reference.native_spindle_controller`:
+  green (TU + `spindle_controller.cpp` rebuilt).
+- `ctest root-clang -R 'spindle'`: **1/1 PASS** —
+  `reference.native_spindle_controller` **PASS 2754 checks**
+  (tolerance-oracle records hold on the linux capture; this is the
+  platform pair the close bound exists for).
+- `ctest root-clang -L reference -E 'reference\.coupled_rider_task'
+  -j8`: **91/95** — reds exactly the documented 4-baseline verbatim
+  {`golden_episode_tool` (native recorder rows reproduce Python
+  oracle), `native_numeric_completion`
+  (`config.rider_controller.leg_track_damping_nms_rad` missing key),
+  `pneumatic_tire_oracle` (fixture not a regular file),
+  `native_pneumatic_tire` (`front.normal_load_n` ulp drift)};
+  `reference.native_spindle_controller` and
+  `reference.native_coupled_rider_task` (296.93 s) green inside the
+  sweep.
+- `pytest tests/reference/test_native_spindle_controller.py -x -q`
+  (`NATIVE_TEST_BUILD_PATH=/build/native-clang`, post-rebuild
+  `bike_native.cpython-313-aarch64-linux-gnu.so`): **47 passed,
+  0 failed** in 2.05 s.
+
+### Ledger deltas (pre-merge `41d5e081` → post-merge `c398df09`)
+
+- `test-port-map.json`: records 2390 → **2391** (+1:
+  `test_spindle_rear_chain_effort_matches_python` insert; headers
+  `static_test_functions` 2390→2391, `top_level_test_functions`
+  2374→2375, `class_test_methods` 16; `static == records`).
+  Dispositions: `port` 717 → **723** (+6: the six reject records —
+  five flipped `golden`→`port`, one `planned`→`port`), `golden` 344
+  → **347** (+3 net: 14→17 spindle golden records — eight
+  `planned`→`golden` minus the five reject flips), `planned` 1251 →
+  **1243** (−8), `drop` 78 unchanged. Comparison classes on the
+  family: `tolerance-oracle` 4 → **21** (+17), `bitwise-oracle` 330 →
+  316 (−14), `contract` 450 → 456 (+6), `source-specific` 494 → 486
+  (−8). Union key-exact on (`source_path`,`source_symbol`): 2391
+  unique, zero lost/duplicate/contested records; all non-spindle
+  records byte-identical to pre-merge.
+- Golden fixture dirs: 40 → **82 files/platform** (41 stems) —
+  lane/e's captures on overlaps (15 stems), lane/e-only stems added
+  (26), integration-only reject stems removed (5, orphans).
+- Known residual wart (out of this micro-fix's scope): the other 16
+  pre-existing spindle records keep base-file `line`/`end_line`
+  positions (stale since base `d8242c88`; only the 6 reject records
+  were refreshed per instruction). ~68% of sampled ledger records
+  point at exact defs; the lane/e fix round refreshed only
+  `rear_chain` (677-696, still exact post-merge).
+
+### Assessment
+
+Clean union modulo the analyzed conflicts; the superset C++ file
+compiles and passes identically on both platforms (2754 checks,
+both goldens at the shared tolerance bound — the linux capture's
+~2e-9 oracle-math spread is inside rtol=1e-7/atol=1e-8 by three
+decades of headroom). Every assertion the 3.15 file made is
+preserved or strengthened: the 14 shared functions check the same
+oracle nodes (direct value comparison replaces recorded-error
+replay for the rejects), the 19-vs-18-key state surface is handled
+identically (`coast_hold_nm` erased before canonicalization), and
+the nine deferred nodes now replay for real — including the F5
+rear-leg-chain defect regression that 3.15 had recorded as an
+implementation-divergence deferral. The linux sweep reproduces the
+documented 4-red baseline verbatim. L3 (`tools/run_tests.sh
+native`) not re-run — bounded merge-back scope per protocol;
+lane/e's own gate evidence is in `task-F5-report.md`. Unrelated
+documented reds reported, not fixed.

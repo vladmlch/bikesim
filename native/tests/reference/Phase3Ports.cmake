@@ -328,3 +328,27 @@ bike_add_reference_test(native_runtime_commands ENGINE
 bike_add_reference_test(native_runtime_ownership ENGINE
   SOURCES test_native_runtime_ownership.cpp LIBRARIES bike_app
   LABELS t52 runtime)
+
+# 3.26 T53 runtime batch — the resolved-configuration capability matrix,
+# step/work accounting and interval history, rollout schedule/retention,
+# and the C4 performance-acceptance contract. Native-vs-native contract
+# ports: the four live-oracle parity reds of test_native_runtime_rollout.py
+# stay `planned` (same weld-heavy parity family as 3.25; see
+# task-C326-report.md) and the two "backend without resolved section"
+# config cases are `drop`ped as python-only (the members are non-optional
+# natively). The capability boundary is intentionally broader than the
+# oracle's setup.py port-qualification gate; the ported contract asserts
+# the native verdicts.
+bike_add_reference_test(native_runtime_config ENGINE
+  SOURCES test_native_runtime_config.cpp LIBRARIES bike_app
+  LABELS t53 runtime)
+bike_add_reference_test(native_runtime_accounting ENGINE
+  SOURCES test_native_runtime_accounting.cpp LIBRARIES bike_app
+  LABELS t53 runtime)
+bike_add_reference_test(native_runtime_rollout ENGINE
+  SOURCES test_native_runtime_rollout.cpp LIBRARIES bike_app
+  LABELS t53 runtime)
+bike_add_reference_test(native_runtime_performance_contract ENGINE
+  SOURCES test_native_runtime_performance_contract.cpp
+  LIBRARIES bike_app bike_realtime_measurement
+  LABELS t53 runtime)

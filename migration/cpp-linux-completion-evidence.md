@@ -7408,3 +7408,161 @@ standalone reproduces the documented `planned` signature. L3
 per protocol; lane/d's own gate ran it once (baseline-blocked on
 T09/T10, recorded in `task-C325-report.md`). Unrelated documented
 reds reported, not fixed.
+
+## 2026-10-27 — 3.26 qualification (lane/d): runtime config/accounting/rollout/performance contract
+
+### Scope
+
+Four `tests/reference/test_native_runtime_{config,accounting,rollout,
+performance_contract}.py` files — 44 port-map records / 73 collected
+nodes (config 29 via the parametrized capability matrix, accounting 28
+via parametrized work/interval cases, rollout 6, performance 10).
+Dispositions: **38 `port`** (`contract`/`analytic`/`invariant`), **4
+stay `planned`** (`bitwise-oracle` — pre-existing live-oracle parity
+reds), **2 `drop`** (`python-only`). All ports are native-vs-native
+contract checks or deterministic measurement plumbing — **no golden
+nodes, no fixture recapture**; the welded migration capture
+(`tests/fixtures/migration/bootstrap/welded`) is reused where a live
+runtime is needed.
+
+New CTest nodes, all `bike_add_reference_test(... LABELS t53 runtime)`:
+`reference.native_runtime_config` (15 checks),
+`reference.native_runtime_accounting` (11),
+`reference.native_runtime_rollout` (2),
+`reference.native_runtime_performance_contract` (10; also links
+`bike_realtime_measurement`). One registration block appended to
+`Phase3Ports.cmake`; no duplicate registrations.
+
+### What each port covers
+
+- **config (15/17)**: the capability matrix through
+  `cfg::load_physics` + `validate_native_supported()` /
+  `validate_physical_capabilities()` on the welded fixture — field-path
+  (not filename) rejection, structural-leaf verdicts, distributed /
+  pneumatic backend presence, `configured` pneumatic without surface,
+  drive mode, transmission model, legacy physics mode, unknown tire
+  backend, rider variants, tabulated tire material, scalar tuning,
+  disabled features, plus `NativeRideRuntime` type exposure/
+  construction and the `engine::verify_identity` dependency-mismatch
+  check. The native capability matrix is intentionally broader than
+  the oracle gate (pedal welds, `native_reference` tire dispatch,
+  `elastic_chain`/`geometric_ideal_mid_drive` transmissions,
+  coast/crank_effort/ideal_speed_control drive modes, attachment
+  variants, tabulated material are accepted); each record asserts the
+  native verdict, recorded per-record in the ledger. Coupled-schema
+  isolation: `seated_climb` disabled for the drive-mode matrix,
+  automatic shifting disabled for the transmission matrix, so the
+  capability predicate — not a schema-coupled rejection — is observed.
+- **accounting (11/11)**: `runtime::step_work` opposing-work folding;
+  `constraint_work_ok` zero-source fixed absolute roundoff budget;
+  non-finite/non-positive input rejection; `PeriodBuffer::clear`
+  interval-marker survival; `WorkHistory` multi-period intervals,
+  working-road (`source_geom == "terrain"`) airtime, malformed contact
+  evidence, duplicate-interval rejection; `observe_effort`
+  captured-velocity/strength folding and held controller state
+  (document isolation); welded-ride strict rejection publishing the
+  complete period before throwing; single-warning diagnostic
+  retention.
+- **rollout (2/6)**: the two native-vs-native invariants — snapshot
+  drain/time budget never closing a partial period; `recorded_
+  intervals` independence from record decimation.
+- **performance_contract (10/10)**: `runtime::measurement` contract
+  over deterministic fake `Driver`s — failed-run `measured_ok == false`
+  with `null` (not `false`) headless gate, never-comparable failed
+  runs, exact `1.0` native headless RTF boundary, Release-only
+  eligibility, visual-1x gate emitted pending (`0.95` mean minimum),
+  distributed case gating on the same constant, `measure_run` artifact-
+  identity binding, build-type tracking of the threshold gate.
+
+### Not ported
+
+- **The 4 live-oracle parity reds** (all in `test_native_runtime_
+  rollout.py`) stay `planned`: every one compares committed rows/state
+  against the live Python oracle bit-for-bit and is **pre-existing red
+  on both platforms** — `root.sensors.frame_specific_force_body_
+  mps2[0]` weld-family divergence (the same propagating 1-ulp family
+  the 3.25 step/commands ports recorded), with the 800-interval golden
+  episode additionally tripping `rider_strength.rider_torso_hinge`
+  strict reference at `t=0.378750000`. A native↔oracle runtime
+  divergence to fix in its own task — the source nodes remain live
+  oracle gates; porting them past as green would falsify the gate.
+- **2 config drops** (`python-only`):
+  `test_native_capability_rejects_{distributed,pneumatic}_backend_
+  without_section` write `None` into the Python Optional resolved-
+  section field; `TireBackendConfig::{distributed,pneumatic}` are
+  non-optional C++ members always resolved through `post_init` — the
+  absent-section state has no native representation.
+- **Semantic adaptations, documented in-file and in the ledger**: the
+  strict-publish accounting port covers the contract half (publication
+  order, dense interval ids, closure keys, first-failure retention) —
+  the oracle-equality half is the rollout `planned` set; the
+  `observe_effort` port is a native-vs-native channel identity (held
+  controller state = captured `config.rider_controller` document
+  isolation); Python type-freedom probes collapse to typed native
+  signatures; pytest fixture plumbing is replaced by fake `Driver`
+  implementations against the same public measurement APIs.
+
+### Verification
+
+- **Source suite (unchanged Python)**: **4 failed / 69 passed** on both
+  darwin-arm64 (`native/build/release`, rebuilt selected artifact —
+  the pre-imported extension's source fingerprint predated HEAD) and
+  linux-aarch64 (`bike-dev-pfc-lane-d`,
+  `BIKE_NATIVE_BUILD_PATH=/build/native-clang` — `create_native_ride`
+  resolves via `selected_build_dir()`, so `NATIVE_TEST_BUILD_PATH`
+  alone is insufficient). Identical red set and signature both
+  platforms — exactly the four recorded rollout reds.
+- **Focused CTest** `ctest -R 'reference\.native_runtime_(config|
+  accounting|rollout|performance_contract)'`:
+  - darwin-arm64 `build/native-release`: **4/4** — config 0.74 s,
+    accounting 0.81 s, rollout 0.36 s, performance_contract 0.22 s.
+  - linux-aarch64 container `/build/root-clang` (clang, Release):
+    **4/4** — config 0.20 s, accounting 0.26 s, rollout 0.46 s,
+    performance_contract 0.09 s.
+- **Static checks**: all four TUs compile warning-free under
+  AppleClang and clang after the `-Wframe-larger-than` waiver around
+  the `SimulationPhysicsConfig` value-type test (established
+  `NATIVE_DIAG_PUSH` precedent), explicit `mjtSize`→`std::size_t`
+  casts, `[[noreturn]]` on the always-throwing fake driver, and
+  `wire_bitwise()` for `Wire` (no `operator==`) comparisons.
+- **Environment note**: a full container configure fails on unrelated
+  source-sync omissions (`test_crank_split.cpp`, `test_rider_welds.cpp`
+  not yet mirrored to `/src`); the existing `/build/root-clang` graph
+  covered the targeted scope per lane rules.
+
+### Ledger
+
+- `migration/test-port-map.json`: 44 rows touched in place — 38 `port`
+  with `reference.native_runtime_*::<fn>` ids, measured
+  `collected_node_ids`, dated `assertions_capture`, per-record evidence
+  (incl. the intentionally-broader capability verdicts and the
+  schema-coupling isolations); 4 `planned` keep `ported::` placeholders
+  with NOT-PORTED evidence citing the weld-family signature; 2 `drop`
+  null the native ids.
+- `migration/python-removal.json`: `test_native_runtime_config.py`,
+  `test_native_runtime_accounting.py`, `test_native_runtime_
+  performance_contract.py` → `replacement_landed` (verification ids the
+  new CTest names). `test_native_runtime_rollout.py` stays `planned` —
+  its four live-oracle gate nodes remain open.
+- `native/tests/reference/Phase3Ports.cmake`: one appended block, four
+  registrations, `LABELS t53 runtime`; dedup verified.
+
+### Commits
+
+| SHA | Unit |
+|---|---|
+| `fc9b8fb0` | test(reference): port runtime config/accounting/rollout/perf contract suite (C3.26) |
+| `ab931229` | docs(migration): C3.26 runtime batch ledger — 38 port, 4 planned-red, 2 drop |
+| `af9496ac` | docs(migration): C3.26 evidence section + completion report |
+
+(`ab931229`'s immutable subject still reads "37 port"; the committed
+ledger holds 38 `port` records — 15+11+2+10. Fix-round correction.)
+
+### Final gate
+
+Lane instructions restrict broad `bash tools/run_tests.sh native` /
+`full` on this lane; the batch gate is the targeted CTest scope +
+source-suite status run (above) — **4/4 on both platforms, source suite
+red set exactly the four recorded `planned` nodes, zero unexpected
+reds**. The documented T09/T10 frozen-oracle baseline pair and the
+other `planned`-ledger oracle reds are unaffected baseline state.

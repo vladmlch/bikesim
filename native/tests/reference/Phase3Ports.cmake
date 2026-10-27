@@ -242,6 +242,10 @@ bike_add_reference_test(leg_loop ENGINE
 bike_add_reference_test(coupled_rider_task ENGINE
   SOURCES test_coupled_rider_task.cpp LIBRARIES bike_app
   LABELS t52 rider slow)
+# The welded-plant settle plus the enabled planned-crank episode runs
+# ~16–36 min (task-C315 report, merge-back measurement) — outruns the
+# ctest 1500 s default, so the registered node needs an explicit budget.
+set_tests_properties(reference.coupled_rider_task PROPERTIES TIMEOUT 5400)
 bike_add_reference_test(closed_form_rider ENGINE
   SOURCES test_closed_form_rider.cpp LIBRARIES bike_app
   LABELS t52 rider slow)

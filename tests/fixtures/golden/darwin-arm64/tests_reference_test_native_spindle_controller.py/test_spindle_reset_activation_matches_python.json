@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 93216,
+  "nbytes": 93952,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
   "offset": 0,
   "rtol": null,
   "shape": [
-   11652
+   11744
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.state.0",
   "nbytes": 2960,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
-  "offset": 93216,
+  "offset": 93952,
   "rtol": null,
   "shape": [
    370
@@ -35,7 +35,7 @@
   "label": "input.forward.0",
   "nbytes": 16,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
-  "offset": 96176,
+  "offset": 96912,
   "rtol": null,
   "shape": [
    2
@@ -49,7 +49,7 @@
   "label": "input.compute.0",
   "nbytes": 2112,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
-  "offset": 96192,
+  "offset": 96928,
   "rtol": null,
   "shape": [
    264
@@ -63,7 +63,7 @@
   "label": "input.reset_activation.0",
   "nbytes": 16,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
-  "offset": 98304,
+  "offset": 99040,
   "rtol": null,
   "shape": [
    2
@@ -77,7 +77,7 @@
   "label": "output.active_state.0",
   "nbytes": 72,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
-  "offset": 98320,
+  "offset": 99056,
   "rtol": 0.0,
   "shape": [
    9
@@ -91,7 +91,7 @@
   "label": "output.state_meta.0",
   "nbytes": 77,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
-  "offset": 98392,
+  "offset": 99128,
   "rtol": null,
   "shape": [
    77

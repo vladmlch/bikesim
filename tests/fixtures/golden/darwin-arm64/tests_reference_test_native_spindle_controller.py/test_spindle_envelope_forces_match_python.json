@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 93216,
+  "nbytes": 93952,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_envelope_forces_match_python",
   "offset": 0,
   "rtol": null,
   "shape": [
-   11652
+   11744
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.state.0",
   "nbytes": 4000,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_envelope_forces_match_python",
-  "offset": 93216,
+  "offset": 93952,
   "rtol": null,
   "shape": [
    500
@@ -35,7 +35,7 @@
   "label": "input.forward.0",
   "nbytes": 16,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_envelope_forces_match_python",
-  "offset": 97216,
+  "offset": 97952,
   "rtol": null,
   "shape": [
    2
@@ -49,7 +49,7 @@
   "label": "input.envelope.0",
   "nbytes": 16,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_envelope_forces_match_python",
-  "offset": 97232,
+  "offset": 97968,
   "rtol": null,
   "shape": [
    2
@@ -63,7 +63,7 @@
   "label": "output.force.0",
   "nbytes": 208,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_envelope_forces_match_python",
-  "offset": 97248,
+  "offset": 97984,
   "rtol": 1e-12,
   "shape": [
    26
@@ -77,7 +77,7 @@
   "label": "output.stored_j.0",
   "nbytes": 8,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_envelope_forces_match_python",
-  "offset": 97456,
+  "offset": 98192,
   "rtol": 1e-12,
   "shape": []
  }

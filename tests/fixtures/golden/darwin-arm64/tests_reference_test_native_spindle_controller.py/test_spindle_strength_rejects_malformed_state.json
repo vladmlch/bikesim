@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 93216,
+  "nbytes": 93952,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
   "offset": 0,
   "rtol": null,
   "shape": [
-   11652
+   11744
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.state.0",
   "nbytes": 2960,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 93216,
+  "offset": 93952,
   "rtol": null,
   "shape": [
    370
@@ -35,7 +35,7 @@
   "label": "input.forward.0",
   "nbytes": 16,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 96176,
+  "offset": 96912,
   "rtol": null,
   "shape": [
    2
@@ -49,7 +49,7 @@
   "label": "input.compute.0",
   "nbytes": 2112,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 96192,
+  "offset": 96928,
   "rtol": null,
   "shape": [
    264
@@ -63,7 +63,7 @@
   "label": "input.inputs.0",
   "nbytes": 2560,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 98304,
+  "offset": 99040,
   "rtol": null,
   "shape": [
    320
@@ -77,7 +77,7 @@
   "label": "input.forward.1",
   "nbytes": 16,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 100864,
+  "offset": 101600,
   "rtol": null,
   "shape": [
    2
@@ -91,7 +91,7 @@
   "label": "input.strength_limited.0",
   "nbytes": 1432,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 100880,
+  "offset": 101616,
   "rtol": null,
   "shape": [
    179
@@ -105,7 +105,7 @@
   "label": "error.strength_limited.0",
   "nbytes": 0,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 102312,
+  "offset": 103048,
   "rtol": null,
   "shape": [
    0
@@ -119,7 +119,7 @@
   "label": "input.strength_limited.1",
   "nbytes": 1432,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 102312,
+  "offset": 103048,
   "rtol": null,
   "shape": [
    179
@@ -133,7 +133,7 @@
   "label": "error.strength_limited.1",
   "nbytes": 0,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 103744,
+  "offset": 104480,
   "rtol": null,
   "shape": [
    0
@@ -147,7 +147,7 @@
   "label": "input.solved_effort.0",
   "nbytes": 1168,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 103744,
+  "offset": 104480,
   "rtol": null,
   "shape": [
    146
@@ -161,7 +161,7 @@
   "label": "error.solved_effort.0",
   "nbytes": 0,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 104912,
+  "offset": 105648,
   "rtol": null,
   "shape": [
    0
@@ -175,7 +175,7 @@
   "label": "input.solved_effort.1",
   "nbytes": 1168,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 104912,
+  "offset": 105648,
   "rtol": null,
   "shape": [
    146
@@ -189,7 +189,7 @@
   "label": "error.solved_effort.1",
   "nbytes": 0,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_rejects_malformed_state",
-  "offset": 106080,
+  "offset": 106816,
   "rtol": null,
   "shape": [
    0

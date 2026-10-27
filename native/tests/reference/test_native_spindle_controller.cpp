@@ -119,6 +119,23 @@ std::vector<double> real_vector(const bio::Value &value, const char *field) {
 
 // ---- recorded-output plumbing ------------------------------------------------
 
+// The recorded `output.state` docs are the oracle's state_dict() — the
+// canonical 18-key surface. F1 (96fe3d86) added `coast_hold_nm` to the
+// spindle State and encode_spindle_state emits it on spindle-authored
+// documents, so the replayed doc carries a 19th member the oracle wire
+// deliberately omits (it rides the equilibrium material's flat
+// state_control_coast_hold_nm channel instead). The comparison asserts
+// the oracle surface: erase the native-only member before canonical
+// serialization so the remaining keys still compare byte-exact.
+bio::Value oracle_state_doc(const rider::SpindleController::State &state) {
+    bio::Value encoded = rider::encode_spindle_state(state);
+    auto &object = *std::get_if<bio::Value::Object>(&encoded.data);
+    const auto it = std::ranges::find_if(
+        object, [](const auto &member) { return member.first == "coast_hold_nm"; });
+    if (it != object.end()) object.erase(it);
+    return encoded;
+}
+
 void json_out(bt::oracle::Node &golden, Seq &seq, const char *tag,
               const bio::Value &doc) {
     const std::string text = bio::recording_json(doc);
@@ -327,7 +344,7 @@ void op_compute(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
         json_out(golden, seq, "torques", torque_doc(*torques));
     if (out_leaf(golden) == "state")
         json_out(golden, seq, "state",
-                 rider::encode_spindle_state(controller.state()));
+                 oracle_state_doc(controller.state()));
 }
 
 void op_initialize(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
@@ -450,7 +467,7 @@ void op_restore(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
     }
     if (out_leaf(golden) == "state")
         json_out(golden, seq, "state",
-                 rider::encode_spindle_state(controller.state()));
+                 oracle_state_doc(controller.state()));
 }
 
 void op_solved_effort(Plant &plant, bt::oracle::Node &golden, Seq &seq) {

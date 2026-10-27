@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 93216,
+  "nbytes": 93952,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_disabled_command_matches_python",
   "offset": 0,
   "rtol": null,
   "shape": [
-   11652
+   11744
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.state.0",
   "nbytes": 2960,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_disabled_command_matches_python",
-  "offset": 93216,
+  "offset": 93952,
   "rtol": null,
   "shape": [
    370
@@ -35,7 +35,7 @@
   "label": "input.forward.0",
   "nbytes": 16,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_disabled_command_matches_python",
-  "offset": 96176,
+  "offset": 96912,
   "rtol": null,
   "shape": [
    2
@@ -49,7 +49,7 @@
   "label": "input.compute.0",
   "nbytes": 2120,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_disabled_command_matches_python",
-  "offset": 96192,
+  "offset": 96928,
   "rtol": null,
   "shape": [
    265
@@ -63,7 +63,7 @@
   "label": "output.torques.0",
   "nbytes": 213,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_disabled_command_matches_python",
-  "offset": 98312,
+  "offset": 99048,
   "rtol": null,
   "shape": [
    213
@@ -77,7 +77,7 @@
   "label": "output.state.0",
   "nbytes": 3708,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_disabled_command_matches_python",
-  "offset": 98525,
+  "offset": 99261,
   "rtol": null,
   "shape": [
    3708

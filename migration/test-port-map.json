@@ -19164,13 +19164,17 @@
       "line": 35,
       "end_line": 48,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_bootstrap_owns_input_and_restores_complete_start",
+      "native_test_id": "reference.native_runtime_bootstrap::test_bootstrap_owns_input_and_restores_complete_start",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_bootstrap_owns_input_and_restores_complete_start"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19178,13 +19182,17 @@
       "line": 52,
       "end_line": 58,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_snapshot_reports_captured_counters",
+      "native_test_id": "reference.native_runtime_bootstrap::test_snapshot_reports_captured_counters",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_snapshot_reports_captured_counters"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19192,13 +19200,17 @@
       "line": 62,
       "end_line": 71,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_bootstrap_survives_caller_destruction",
+      "native_test_id": "reference.native_runtime_bootstrap::test_bootstrap_survives_caller_destruction",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_bootstrap_survives_caller_destruction"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19206,13 +19218,17 @@
       "line": 75,
       "end_line": 81,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_reset_twice_replays_the_same_bootstrap",
+      "native_test_id": "reference.native_runtime_bootstrap::test_reset_twice_replays_the_same_bootstrap",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_reset_twice_replays_the_same_bootstrap"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19220,13 +19236,17 @@
       "line": 85,
       "end_line": 92,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_close_releases_and_fails_fast",
+      "native_test_id": "reference.native_runtime_bootstrap::test_close_releases_and_fails_fast",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_close_releases_and_fails_fast"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19234,13 +19254,17 @@
       "line": 96,
       "end_line": 105,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_config_mutation_after_construction_is_isolated",
+      "native_test_id": "reference.native_runtime_bootstrap::test_config_mutation_after_construction_is_isolated",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_config_mutation_after_construction_is_isolated"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19248,13 +19272,17 @@
       "line": 110,
       "end_line": 115,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_missing_state_key",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_missing_state_key",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_missing_state_key"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19262,13 +19290,17 @@
       "line": 118,
       "end_line": 123,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_unknown_state_key",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_unknown_state_key",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_unknown_state_key"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19276,13 +19308,17 @@
       "line": 126,
       "end_line": 131,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_digest_mismatch",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_digest_mismatch",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_digest_mismatch"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19290,13 +19326,17 @@
       "line": 134,
       "end_line": 139,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_model_dims_mismatch",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_model_dims_mismatch",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_model_dims_mismatch"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19304,13 +19344,17 @@
       "line": 142,
       "end_line": 147,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_integration_width_mismatch",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_integration_width_mismatch",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_integration_width_mismatch"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19318,13 +19362,17 @@
       "line": 150,
       "end_line": 155,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_nonfinite_integration_lane",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_nonfinite_integration_lane",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_nonfinite_integration_lane"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19332,13 +19380,17 @@
       "line": 158,
       "end_line": 163,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_malformed_drive_state",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_malformed_drive_state",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_malformed_drive_state"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19346,13 +19398,17 @@
       "line": 166,
       "end_line": 171,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_unknown_joint_in_mutable_state",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_unknown_joint_in_mutable_state",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_unknown_joint_in_mutable_state"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19360,13 +19416,17 @@
       "line": 174,
       "end_line": 179,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_unknown_runtime_key",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_unknown_runtime_key",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_unknown_runtime_key"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19374,13 +19434,17 @@
       "line": 182,
       "end_line": 187,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_schema_version",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_schema_version",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_schema_version"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19388,13 +19452,17 @@
       "line": 190,
       "end_line": 195,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_bad_runtime_config_envelope",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_bad_runtime_config_envelope",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_bad_runtime_config_envelope"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19402,13 +19470,17 @@
       "line": 198,
       "end_line": 203,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_control_period_inconsistency",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_control_period_inconsistency",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_control_period_inconsistency"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_bootstrap.py",
@@ -19416,13 +19488,17 @@
       "line": 206,
       "end_line": 211,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_bootstrap::test_rejects_missing_model_file",
+      "native_test_id": "reference.native_runtime_bootstrap::test_rejects_missing_model_file",
       "native_source": "native/tests/reference/test_native_runtime_bootstrap.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_bootstrap.py::test_rejects_missing_model_file"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_bootstrap.cpp; CTest reference.native_runtime_bootstrap green on darwin-arm64 (build/native-release, 1.39s) and linux-aarch64 (container /build/root-clang, 1.39s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_commands.py",
@@ -19432,11 +19508,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::reference::test_native_runtime_commands::test_explicit_zero_effort_differs_from_automatic",
       "native_source": "native/tests/reference/test_native_runtime_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_commands.py::test_explicit_zero_effort_differs_from_automatic"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); live-oracle parity red on darwin-arm64 + linux-aarch64 (pre-existing; identical pre- and post-F4)",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_commands.py",
@@ -19446,11 +19526,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::reference::test_native_runtime_commands::test_motor_ceiling_change_matches_python",
       "native_source": "native/tests/reference/test_native_runtime_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_commands.py::test_motor_ceiling_change_matches_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); live-oracle parity red on darwin-arm64 + linux-aarch64 (pre-existing; identical pre- and post-F4)",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_commands.py",
@@ -19460,11 +19544,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::reference::test_native_runtime_commands::test_brake_apply_release_matches_python",
       "native_source": "native/tests/reference/test_native_runtime_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_commands.py::test_brake_apply_release_matches_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); live-oracle parity red on darwin-arm64 + linux-aarch64 (pre-existing; identical pre- and post-F4)",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_commands.py",
@@ -19474,11 +19562,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::reference::test_native_runtime_commands::test_gear_shift_and_coast_resume_match_python",
       "native_source": "native/tests/reference/test_native_runtime_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_commands.py::test_gear_shift_and_coast_resume_match_python"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); live-oracle parity red on darwin-arm64 + linux-aarch64 (pre-existing; identical pre- and post-F4)",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_commands.py",
@@ -19486,13 +19578,17 @@
       "line": 113,
       "end_line": 121,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_commands::test_budget_yield_stops_between_steps",
+      "native_test_id": "reference.native_runtime_commands::test_budget_yield_stops_between_steps",
       "native_source": "native/tests/reference/test_native_runtime_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_commands.py::test_budget_yield_stops_between_steps"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_commands.cpp; CTest reference.native_runtime_commands green on darwin-arm64 (build/native-release, 6.29s) and linux-aarch64 (container /build/root-clang, 9.64s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_commands.py",
@@ -19500,13 +19596,17 @@
       "line": 124,
       "end_line": 128,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_commands::test_advance_to_current_step_is_a_noop",
+      "native_test_id": "reference.native_runtime_commands::test_advance_to_current_step_is_a_noop",
       "native_source": "native/tests/reference/test_native_runtime_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_commands.py::test_advance_to_current_step_is_a_noop"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_commands.cpp; CTest reference.native_runtime_commands green on darwin-arm64 (build/native-release, 6.29s) and linux-aarch64 (container /build/root-clang, 9.64s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_commands.py",
@@ -19514,13 +19614,17 @@
       "line": 131,
       "end_line": 147,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_commands::test_invalid_target_and_command_rejected",
+      "native_test_id": "reference.native_runtime_commands::test_invalid_target_and_command_rejected",
       "native_source": "native/tests/reference/test_native_runtime_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_commands.py::test_invalid_target_and_command_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_commands.cpp; CTest reference.native_runtime_commands green on darwin-arm64 (build/native-release, 6.29s) and linux-aarch64 (container /build/root-clang, 9.64s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_commands.py",
@@ -19528,13 +19632,17 @@
       "line": 150,
       "end_line": 186,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_commands::test_concurrent_advance_and_reset_rejected",
+      "native_test_id": "reference.native_runtime_commands::test_concurrent_advance_and_reset_rejected",
       "native_source": "native/tests/reference/test_native_runtime_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_commands.py::test_concurrent_advance_and_reset_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_commands.cpp; CTest reference.native_runtime_commands green on darwin-arm64 (build/native-release, 6.29s) and linux-aarch64 (container /build/root-clang, 9.64s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_commands.py",
@@ -19542,13 +19650,17 @@
       "line": 189,
       "end_line": 193,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_commands::test_advance_after_close_fails",
+      "native_test_id": "reference.native_runtime_commands::test_advance_after_close_fails",
       "native_source": "native/tests/reference/test_native_runtime_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_commands.py::test_advance_after_close_fails"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_commands.cpp; CTest reference.native_runtime_commands green on darwin-arm64 (build/native-release, 6.29s) and linux-aarch64 (container /build/root-clang, 9.64s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_commands.py",
@@ -19556,13 +19668,17 @@
       "line": 221,
       "end_line": 253,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_commands::test_engine_failure_keeps_committed_prefix",
+      "native_test_id": "reference.native_runtime_commands::test_engine_failure_keeps_committed_prefix",
       "native_source": "native/tests/reference/test_native_runtime_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_commands.py::test_engine_failure_keeps_committed_prefix"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_commands.cpp; CTest reference.native_runtime_commands green on darwin-arm64 (build/native-release, 6.29s) and linux-aarch64 (container /build/root-clang, 9.64s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_config.py",
@@ -19808,13 +19924,17 @@
       "line": 28,
       "end_line": 42,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_ownership::test_batch_nested_values_are_owned_and_read_only",
+      "native_test_id": "reference.native_runtime_ownership::test_batch_nested_values_are_owned_and_read_only",
       "native_source": "native/tests/reference/test_native_runtime_ownership.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_ownership.py::test_batch_nested_values_are_owned_and_read_only"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_ownership.cpp; CTest reference.native_runtime_ownership green on darwin-arm64 (build/native-release, 0.72s) and linux-aarch64 (container /build/root-clang, 1.00s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_ownership.py",
@@ -19822,13 +19942,17 @@
       "line": 45,
       "end_line": 66,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_ownership::test_row_materialization_is_lazy_and_retryable",
-      "native_source": "native/tests/reference/test_native_runtime_ownership.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_ownership.py::test_row_materialization_is_lazy_and_retryable"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: dropped \u2014 Python-adapter seam: the source injects a MemoryError into SampleBatch row materialization and asserts the lazy retry. The native boundary publishes owned immutable SamplePtrs and rematerializes each as_wire() call \u2014 no lazy-row cache exists to port. The underlying liveness contract is covered by reference.native_runtime_ownership::test_unmaterialized_batch_keeps_native_rows_alive_after_close."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_ownership.py",
@@ -19836,13 +19960,17 @@
       "line": 70,
       "end_line": 87,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_ownership::test_failed_batch_construction_retains_pending_rows",
+      "native_test_id": "reference.native_runtime_ownership::test_failed_batch_construction_retains_pending_rows",
       "native_source": "native/tests/reference/test_native_runtime_ownership.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_ownership.py::test_failed_batch_construction_retains_pending_rows"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_ownership.cpp; CTest reference.native_runtime_ownership green on darwin-arm64 (build/native-release, 0.72s) and linux-aarch64 (container /build/root-clang, 1.00s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_ownership.py",
@@ -19850,13 +19978,17 @@
       "line": 91,
       "end_line": 109,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_ownership::test_acknowledgement_rejects_stale_or_cross_generation_prefix",
+      "native_test_id": "reference.native_runtime_ownership::test_acknowledgement_rejects_stale_or_cross_generation_prefix",
       "native_source": "native/tests/reference/test_native_runtime_ownership.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_ownership.py::test_acknowledgement_rejects_stale_or_cross_generation_prefix"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_ownership.cpp; CTest reference.native_runtime_ownership green on darwin-arm64 (build/native-release, 0.72s) and linux-aarch64 (container /build/root-clang, 1.00s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_ownership.py",
@@ -19864,13 +19996,17 @@
       "line": 113,
       "end_line": 124,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_ownership::test_acknowledgement_cannot_consume_a_different_runtime",
+      "native_test_id": "reference.native_runtime_ownership::test_acknowledgement_cannot_consume_a_different_runtime",
       "native_source": "native/tests/reference/test_native_runtime_ownership.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_ownership.py::test_acknowledgement_cannot_consume_a_different_runtime"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_ownership.cpp; CTest reference.native_runtime_ownership green on darwin-arm64 (build/native-release, 0.72s) and linux-aarch64 (container /build/root-clang, 1.00s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_ownership.py",
@@ -19878,13 +20014,17 @@
       "line": 128,
       "end_line": 165,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_ownership::test_samples_columns_and_snapshots_survive_reset_and_close",
+      "native_test_id": "reference.native_runtime_ownership::test_samples_columns_and_snapshots_survive_reset_and_close",
       "native_source": "native/tests/reference/test_native_runtime_ownership.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_ownership.py::test_samples_columns_and_snapshots_survive_reset_and_close"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_ownership.cpp; CTest reference.native_runtime_ownership green on darwin-arm64 (build/native-release, 0.72s) and linux-aarch64 (container /build/root-clang, 1.00s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_ownership.py",
@@ -19892,13 +20032,17 @@
       "line": 169,
       "end_line": 179,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_ownership::test_unmaterialized_batch_keeps_native_rows_alive_after_close",
+      "native_test_id": "reference.native_runtime_ownership::test_unmaterialized_batch_keeps_native_rows_alive_after_close",
       "native_source": "native/tests/reference/test_native_runtime_ownership.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_ownership.py::test_unmaterialized_batch_keeps_native_rows_alive_after_close"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_ownership.cpp; CTest reference.native_runtime_ownership green on darwin-arm64 (build/native-release, 0.72s) and linux-aarch64 (container /build/root-clang, 1.00s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_ownership.py",
@@ -19906,13 +20050,17 @@
       "line": 183,
       "end_line": 210,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_ownership::test_source_and_bootstrap_mutations_do_not_affect_accounting_or_reset",
+      "native_test_id": "reference.native_runtime_ownership::test_source_and_bootstrap_mutations_do_not_affect_accounting_or_reset",
       "native_source": "native/tests/reference/test_native_runtime_ownership.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_ownership.py::test_source_and_bootstrap_mutations_do_not_affect_accounting_or_reset"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_ownership.cpp; CTest reference.native_runtime_ownership green on darwin-arm64 (build/native-release, 0.72s) and linux-aarch64 (container /build/root-clang, 1.00s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_ownership.py",
@@ -19920,13 +20068,20 @@
       "line": 214,
       "end_line": 223,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_ownership::test_invalid_target_is_rejected_before_native_call",
+      "native_test_id": "reference.native_runtime_ownership::test_invalid_target_is_rejected_before_native_call",
       "native_source": "native/tests/reference/test_native_runtime_ownership.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_ownership.py::test_invalid_target_is_rejected_before_native_call[True]",
+        "tests/reference/test_native_runtime_ownership.py::test_invalid_target_is_rejected_before_native_call[1.5]",
+        "tests/reference/test_native_runtime_ownership.py::test_invalid_target_is_rejected_before_native_call[3]",
+        "tests/reference/test_native_runtime_ownership.py::test_invalid_target_is_rejected_before_native_call[-1]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 4 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_ownership.cpp; CTest reference.native_runtime_ownership green on darwin-arm64 (build/native-release, 0.72s) and linux-aarch64 (container /build/root-clang, 1.00s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_ownership.py",
@@ -19934,13 +20089,17 @@
       "line": 227,
       "end_line": 281,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_ownership::test_fatal_engine_error_preserves_completed_prefix_and_can_reset",
+      "native_test_id": "reference.native_runtime_ownership::test_fatal_engine_error_preserves_completed_prefix_and_can_reset",
       "native_source": "native/tests/reference/test_native_runtime_ownership.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_ownership.py::test_fatal_engine_error_preserves_completed_prefix_and_can_reset"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_ownership.cpp; CTest reference.native_runtime_ownership green on darwin-arm64 (build/native-release, 0.72s) and linux-aarch64 (container /build/root-clang, 1.00s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_performance_contract.py",
@@ -20172,13 +20331,17 @@
       "line": 38,
       "end_line": 47,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_step::test_physics_result_is_independent_of_call_chunks",
+      "native_test_id": "reference.native_runtime_step::test_physics_result_is_independent_of_call_chunks",
       "native_source": "native/tests/reference/test_native_runtime_step.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_step.py::test_physics_result_is_independent_of_call_chunks"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_step.cpp; CTest reference.native_runtime_step green on darwin-arm64 (build/native-release, 0.45s) and linux-aarch64 (container /build/root-clang, 0.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_step.py",
@@ -20188,11 +20351,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::reference::test_native_runtime_step::test_native_first_step_uses_settled_material_state",
       "native_source": "native/tests/reference/test_native_runtime_step.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_step.py::test_native_first_step_uses_settled_material_state"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); live-oracle parity red on darwin-arm64 + linux-aarch64 (pre-existing; identical pre- and post-F4)",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_step.py",
@@ -20202,11 +20369,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::reference::test_native_runtime_step::test_native_step_sequence_matches_python_state",
       "native_source": "native/tests/reference/test_native_runtime_step.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_step.py::test_native_step_sequence_matches_python_state"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); live-oracle parity red on darwin-arm64 + linux-aarch64 (pre-existing; identical pre- and post-F4)",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_step.py",
@@ -20216,11 +20387,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::reference::test_native_runtime_step::test_native_force_fold_matches_python_recorded_inputs",
       "native_source": "native/tests/reference/test_native_runtime_step.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_step.py::test_native_force_fold_matches_python_recorded_inputs"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); live-oracle parity red on darwin-arm64 + linux-aarch64 (pre-existing; identical pre- and post-F4)",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_step.py",
@@ -20230,11 +20405,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::reference::test_native_runtime_step::test_native_advance_tracks_python_under_load",
       "native_source": "native/tests/reference/test_native_runtime_step.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); live-oracle parity red on darwin-arm64 + linux-aarch64 (pre-existing; identical pre- and post-F4)",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_step.py",
@@ -20242,13 +20421,17 @@
       "line": 125,
       "end_line": 136,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_step::test_reset_after_advance_replays_the_bootstrap",
+      "native_test_id": "reference.native_runtime_step::test_reset_after_advance_replays_the_bootstrap",
       "native_source": "native/tests/reference/test_native_runtime_step.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_step.py::test_reset_after_advance_replays_the_bootstrap"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_step.cpp; CTest reference.native_runtime_step green on darwin-arm64 (build/native-release, 0.45s) and linux-aarch64 (container /build/root-clang, 0.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_step.py",
@@ -20256,13 +20439,17 @@
       "line": 139,
       "end_line": 161,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_step::test_snapshot_is_an_owned_copy",
+      "native_test_id": "reference.native_runtime_step::test_snapshot_is_an_owned_copy",
       "native_source": "native/tests/reference/test_native_runtime_step.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_step.py::test_snapshot_is_an_owned_copy"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_step.cpp; CTest reference.native_runtime_step green on darwin-arm64 (build/native-release, 0.45s) and linux-aarch64 (container /build/root-clang, 0.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_step.py",
@@ -20270,13 +20457,17 @@
       "line": 164,
       "end_line": 170,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_runtime_step::test_probe_step_inputs_returns_staged_diagnostics",
+      "native_test_id": "reference.native_runtime_step::test_probe_step_inputs_returns_staged_diagnostics",
       "native_source": "native/tests/reference/test_native_runtime_step.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_step.py::test_probe_step_inputs_returns_staged_diagnostics"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_step.cpp; CTest reference.native_runtime_step green on darwin-arm64 (build/native-release, 0.45s) and linux-aarch64 (container /build/root-clang, 0.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_step.py",
@@ -20286,11 +20477,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::reference::test_native_runtime_step::test_sensor_channels_read_sensordata_rows",
       "native_source": "native/tests/reference/test_native_runtime_step.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_step.py::test_sensor_channels_read_sensordata_rows"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); live-oracle parity red on darwin-arm64 + linux-aarch64 (pre-existing; identical pre- and post-F4)",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_runtime_step.py",
@@ -20300,11 +20495,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::reference::test_native_runtime_step::test_native_intent_lanes_match_python_past_reaction_delay",
       "native_source": "native/tests/reference/test_native_runtime_step.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_runtime_step.py::test_native_intent_lanes_match_python_past_reaction_delay"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); live-oracle parity red on darwin-arm64 + linux-aarch64 (pre-existing; identical pre- and post-F4)",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_spindle_controller.py",

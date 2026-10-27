@@ -59,7 +59,7 @@ under `#if 0` with always-on measurands (the
   synchronized with the physical runtime.
 - **`test_sensor_noise.cpp`** (8 records / 10 golden nodes): RNG draw
   order for the legacy call sequence, the nine-value tape contract
-  across three seeds (0, 19, 2**63-117) and three configs, the
+  across three seeds (0, 19, 2**63+11) and three configs, the
   `{60,12}` pipeline trace and sample counters against the frozen
   pre-refactor reference.
 - **`test_energy_ledger.cpp`** (14): `step_work` five-argument
@@ -192,7 +192,8 @@ gate:
   `port` (`native contract port`/`analytic`), 2 `golden`
   (`bitwise-oracle`, `golden_platforms: [darwin-arm64,
   linux-aarch64]`), 4 `planned` with dated two-platform evidence;
-  `native_test_id`/`native_source`/`collected_node_ids`/`line` refreshed.
+  `native_test_id`/`native_source`/`collected_node_ids`/`line`/`end_line`
+  refreshed.
 - `migration/python-removal.json`: 7 rows → `replacement_landed`
   (replacement = the new `test_*.cpp`, verification = the CTest name;
   `snapshot_sha256`/`snapshot_line_count` refreshed to the live
@@ -227,3 +228,47 @@ gate:
 4. `tools/run_tests.sh` ctest selection note: the batch's slow pedelec
    node is excluded from default `-L` sweeps by its `slow` label per
    the established convention.
+
+## Fix round — ledger/report repairs (field-only, no code changes)
+
+Per-finding resolution:
+
+1. **`native_source` malformed ×53 — fixed.** All 53 batch rows now
+   point at the real `native/tests/reference/test_<name>.cpp` files
+   (verified on disk). The same malformed path inside `evidence`
+   strings was corrected in the 47 batch rows that carried it. Review
+   flagged the 4 pedelec rows' `evidence` strings specifically; on
+   inspection those four rows' `evidence` holds measurements only (no
+   file path) — the malformed-path evidence strings live in the other
+   47 batch rows, and all 100 occurrences are corrected. The two
+   remaining `test_test_` substrings in the ledger are the legitimate
+   Python symbol `test_test_profile_sets_absolute_selectors` and its
+   `native_test_id` (a real function in
+   `tests/portability/test_dev_commands.py:195`), intentionally kept.
+2. **Stale `line`/`end_line` ×32 — fixed.** Recomputed from the
+   current repaired sources via `ast` (def line → last line of
+   function body): `test_energy_ledger.py` ×14,
+   `test_monitor_strictness.py` ×10, `test_sensor_noise.py` ×8. Spot
+   checks match review: `test_exact_legacy_call_order` 28→34,
+   `test_pipeline_matches_frozen_pre_refactor_sensor_trace` 99→132.
+3. **Missing `golden_platforms` ×2 — fixed.** The two
+   `test_sensor_noise.py` `golden` rows now carry
+   `"golden_platforms": ["darwin-arm64","linux-aarch64"]`; all 346
+   `golden` rows in the ledger now have the field.
+4. **Seed typo — fixed.** `2**63-117` → `2**63+11` above; verified
+   against `native/tests/reference/test_sensor_noise.cpp:60`
+   (`9223372036854775819ull // 2**63+11`) and the oracle parametrize
+   at `tests/reference/test_sensor_noise.py:25`.
+5. **Evidence-file seed typo — not present.** The C323 section of
+   `migration/cpp-linux-completion-evidence.md` records no seed
+   constant; nothing to change.
+6. **"Refreshed" claims — now true, wording verified.** The
+   `line`/`end_line` refresh and `golden_platforms` population were
+   performed for real in this round, so the ledger-summary claims
+   (here and `cpp-linux-completion-evidence.md` C323 "Ledger deltas")
+   hold; the summary line above was extended to name `end_line`
+   explicitly.
+
+The diff is confined to the 53 batch records' corrected fields plus
+this report; ledger re-serialized canonically (indent=2,
+`ensure_ascii`, trailing LF).

@@ -26,6 +26,7 @@
 #include "diag.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -37,13 +38,11 @@
 namespace {
 
 namespace sw = runtime::sample_wire;
-using runtime_reference::bitwise_equal;
-using runtime_reference::expect_error;
+using runtime_reference::compose_runtime;
 using runtime_reference::member;
 using runtime_reference::num;
+using runtime_reference::require_tree_close;
 using runtime_reference::resolved_docs;
-using runtime_reference::ride;
-using runtime_reference::compose_runtime;
 using runtime_reference::set_member;
 using runtime_reference::welded_dir;
 using runtime_reference::wire_bitwise;
@@ -64,56 +63,6 @@ runtime::RuntimeSampleBatch drain(runtime::NativeRideRuntime &rt) {
 }
 [[nodiscard]] bool wire_is_null(const runtime::WireObject &o, std::string_view key) {
     return std::holds_alternative<std::monostate>(wire_member(o, key).value);
-}
-
-// _native_runtime_support.assert_tree_close for Wire trees: unordered
-// objects, positional arrays, exact strings/bools, 1e-9 numbers.
-[[nodiscard]] bool tree_close(const runtime::Wire &a, const runtime::Wire &e) {
-    if (const auto *ad = std::get_if<double>(&a.value)) {
-        if (const auto *ed = std::get_if<double>(&e.value))
-            return std::isfinite(*ad) && std::isfinite(*ed) &&
-                   std::abs(*ad - *ed) <=
-                       std::max(kClose, kClose * std::abs(*ed));
-        if (const auto *ei = std::get_if<std::int64_t>(&e.value))
-            return std::isfinite(*ad) &&
-                   std::abs(*ad - static_cast<double>(*ei)) <= kClose;
-        return false;
-    }
-    if (const auto *ai = std::get_if<std::int64_t>(&a.value)) {
-        if (const auto *ei = std::get_if<std::int64_t>(&e.value)) return *ai == *ei;
-        if (const auto *ed = std::get_if<double>(&e.value))
-            return std::isfinite(*ed) &&
-                   std::abs(static_cast<double>(*ai) - *ed) <= kClose;
-        return false;
-    }
-    if (a.value.index() != e.value.index()) return false;
-    switch (a.value.index()) {
-    case 0: return true;
-    case 1: return std::get<bool>(a.value) == std::get<bool>(e.value);
-    case 4: return std::get<std::string>(a.value) == std::get<std::string>(e.value);
-    case 5: {
-        const auto &aa = std::get<runtime::WireArray>(a.value);
-        const auto &ea = std::get<runtime::WireArray>(e.value);
-        if (aa.size() != ea.size()) return false;
-        for (std::size_t i = 0; i < aa.size(); ++i)
-            if (!tree_close(aa[i], ea[i])) return false;
-        return true;
-    }
-    default: {
-        const auto &ao = std::get<runtime::WireObject>(a.value);
-        const auto &eo = std::get<runtime::WireObject>(e.value);
-        if (ao.size() != eo.size()) return false;
-        for (const auto &[name, value] : ao) {
-            const runtime::Wire *other = sw::find(eo, name);
-            if (other == nullptr || !tree_close(value, *other)) return false;
-        }
-        return true;
-    }
-    }
-}
-void require_tree_close(const runtime::Wire &a, const runtime::Wire &e,
-                        std::string_view what) {
-    bt::require(tree_close(a, e), what);
 }
 
 // A runtime created from the welded capture with a patched record decimation.

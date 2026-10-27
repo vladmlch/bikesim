@@ -47,76 +47,14 @@ namespace bio = bike::io;
 namespace rcr = rider_control_reference;
 namespace sw = runtime::sample_wire;
 using runtime_reference::compose_runtime;
-using runtime_reference::expect_error;
 using runtime_reference::expect_invalid;
 using runtime_reference::member;
 using runtime_reference::num;
+using runtime_reference::require_tree_close;
 using runtime_reference::resolved_docs;
 using runtime_reference::set_member;
 using runtime_reference::welded_dir;
 using runtime_reference::wire_member;
-
-constexpr double kClose = 1e-9;
-
-// _native_runtime_support.assert_tree_close: unordered object members,
-// positional arrays, strings/bools exact, numbers within atol/rtol 1e-9.
-[[nodiscard]] bool tree_close(const runtime::Wire &actual,
-                              const runtime::Wire &expected) {
-    if (const auto *a = std::get_if<double>(&actual.value)) {
-        const auto *e = std::get_if<double>(&expected.value);
-        if (e != nullptr)
-            return std::isfinite(*a) && std::isfinite(*e) &&
-                   std::abs(*a - *e) <= std::max(kClose, kClose * std::abs(*e));
-        if (const auto *i = std::get_if<std::int64_t>(&expected.value))
-            return std::isfinite(*a) &&
-                   std::abs(*a - static_cast<double>(*i)) <= kClose;
-        return false;
-    }
-    if (const auto *a = std::get_if<std::int64_t>(&actual.value)) {
-        if (const auto *e = std::get_if<std::int64_t>(&expected.value))
-            return *a == *e;
-        if (const auto *e = std::get_if<double>(&expected.value))
-            return std::isfinite(*e) &&
-                   std::abs(static_cast<double>(*a) - *e) <= kClose;
-        return false;
-    }
-    if (actual.value.index() != expected.value.index()) return false;
-    switch (actual.value.index()) {
-    case 0: return true;
-    case 1: return std::get<bool>(actual.value) == std::get<bool>(expected.value);
-    case 4:
-        return std::get<std::string>(actual.value) ==
-               std::get<std::string>(expected.value);
-    case 5: {
-        const auto &a = std::get<runtime::WireArray>(actual.value);
-        const auto &e = std::get<runtime::WireArray>(expected.value);
-        if (a.size() != e.size()) return false;
-        for (std::size_t i = 0; i < a.size(); ++i)
-            if (!tree_close(a[i], e[i])) return false;
-        return true;
-    }
-    default: {
-        const auto &a = std::get<runtime::WireObject>(actual.value);
-        const auto &e = std::get<runtime::WireObject>(expected.value);
-        if (a.size() != e.size()) return false;
-        for (const auto &[name, value] : a) {
-            const runtime::Wire *other = sw::find(e, name);
-            if (other == nullptr || !tree_close(value, *other)) return false;
-        }
-        return true;
-    }
-    }
-}
-
-void require_tree_close(const runtime::Wire &actual, const runtime::Wire &expected,
-                        std::string_view what) {
-    bt::require(tree_close(actual, expected), what);
-}
-void require_tree_close(const runtime::WireObject &actual,
-                        const runtime::WireObject &expected, std::string_view what) {
-    require_tree_close(runtime::Wire{runtime::WireObject{actual}},
-                       runtime::Wire{runtime::WireObject{expected}}, what);
-}
 
 [[nodiscard]] double wire_number(const runtime::WireObject &o, std::string_view key) {
     const runtime::Wire &value = wire_member(o, key);

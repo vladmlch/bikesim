@@ -6960,3 +6960,146 @@ ported signature-gate (diagnostic everywhere, pinned
 native|full`) not re-run — 3.17's lane already ran `native` once
 (recorded in `task-C317-report.md`); bounded merge-back scope per
 protocol. Unrelated documented reds reported, not fixed.
+
+## 2026-10-27 — lane/c 3.15 rider-control batch merge-back (merge `9776b747`, fix `98872d6e`)
+
+### Surface
+
+Lane tip `1c4be140` — 20 commits over base `2c24dc43`. Eight 3.15
+reference registrations: six physics ports (`crank_split`, `leg_loop`,
+`coupled_rider_task`, `closed_form_rider`, `joint_strength`,
+`planar_arms`) plus two ADR-0003 golden consumers
+(`native_rider_intent` 26 nodes, `native_spindle_controller` 20
+committed oracle-green nodes) with both-platform fixture pairs. Ledger
+work: 103 `test-port-map` record edits (40 `planned`→`golden`, 53
+`planned`→`port`), six `python-removal` row updates (five
+`replacement_landed` flips — `test_native_spindle_controller.py` stays
+`planned`, 22/42 nodes unqualified), verification-id normalizations.
+Lane carries `61c97189`, a line-identical cherry-pick of F4's
+`df16bd4f` — auto-deduped to a single call, verified below.
+
+### Conflicts and merge-back resolutions
+
+- `native/src/drivetrain/shifting.cpp` — only real conflict: equivalent
+  `std::views::reverse` spellings (`std::views::reverse(config_.cassette)`
+  vs `config_.cassette | std::views::reverse`); kept the integration
+  form. Both are the same range adaptor — no semantic delta.
+- `native/tests/reference/Phase3Ports.cmake` — EOF append-vs-append:
+  union, the six-file 3.15 block placed before the existing 3.17/3.24a
+  blocks; 77 unique `SOURCES`, zero duplicates, all integration
+  registrations preserved.
+- `native/src/runtime/step.cpp` — no conflict (auto-merge): exactly one
+  rider-path `refresh_forward(m, d)` at the control tick, after
+  `qfrc_applied` staging and before `compute()`; integration's `sensed`
+  (weld_crank_torque_nm) argument retained. The other two call sites
+  (init-path and post-tick forward) are pre-existing unrelated flow.
+- `native/src/rider/spindle_controller.hpp` — no conflict: both sides'
+  additions coexist (weld-servo config fields, `coast_hold_nm`,
+  `locked_joints`/`crank_spin_*` accessors, lane/c's public
+  `upper_targets`).
+- `migration/test-port-map.json`, `migration/python-removal.json` — no
+  contested keys; byte-exact unions verified record-level.
+- Merge-back fix `98872d6e` (post-merge, two semantic issues found
+  during verification, not lane defects):
+  - `test_native_spindle_controller.cpp` gained `oracle_state_doc()`:
+    F1 (`96fe3d86`) added `coast_hold_nm` to the spindle `State` and
+    `encode_spindle_state` emits it on spindle-authored documents
+    (19 keys), while the oracle's recorded `state_dict()` remains the
+    canonical 18-key surface by contract. The helper erases the
+    native-only member at the two full-document `output.state` compare
+    sites; memberwise `state_meta`/`solved_effort` sites (which look up
+    named members) needed no change.
+  - Spindle goldens refreshed on both platforms: the recorded
+    `input.adapter.0` document grew 11652 → 11744 u1 lanes on darwin
+    (F1 weld-servo config fields now serialize into the adapter doc),
+    so the pre-merge fixtures could not replay. Only the committed
+    20-node set was recaptured (21 darwin + 20 linux files changed);
+    fixture-set membership unchanged, zero orphans.
+  - `reference.coupled_rider_task` pinned `TIMEOUT 5400`: the binary
+    runs ~25–36 min (welded-plant settle + enabled planned-crank
+    episode) and outruns the ctest 1500 s default — observed as a
+    spurious `***Timeout` red on linux before the pin.
+- Batch-file audit: all 14 lane-owned sources (6 pytest oracles + 8
+  C++ consumers) byte-identical to `1c4be140` post-merge; all
+  integration-only files identical to `d8242c88`.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Incremental `cmake --build` green; all eight 3.15 targets linked;
+  reconfigure regenerated `CTestTestfile` with the new `TIMEOUT`.
+- `ctest -R 'rider_intent|spindle_controller|coupled_rider|closed_form|
+  joint_strength|planar_arms' -E 'reference\.coupled_rider_task'`:
+  **6/6** — `native_coupled_rider_task` 352.43 s (280 checks),
+  `closed_form_rider` 2.31 s, `joint_strength` 2.31 s, `planar_arms`
+  3.17 s, `native_rider_intent` 0.14 s, `native_spindle_controller`
+  2.94 s (**1971 checks**).
+- `reference.coupled_rider_task` binary-standalone: **PASS 70 checks**
+  (~36 min; `test_planned_crank_torque_...` ~50 per-period comparisons
+  green post-F4, zero `MISMATCH` stderr — matches the lane's darwin
+  signature).
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, Release)
+
+- `container.sh sync` → incremental `build root-clang` +
+  `build native-clang` (bike_native): green; root graph reconfigured
+  for the `TIMEOUT` pin.
+- `ctest root-clang -R '<scope>'`: **6/7** — `native_coupled_rider_task`
+  401.78 s, `closed_form_rider` 2.71 s, `joint_strength` 2.03 s,
+  `planar_arms` 2.53 s, `native_rider_intent` 0.17 s,
+  `native_spindle_controller` 1.17 s (**1971 checks**);
+  `coupled_rider_task` `***Timeout 1500.11 s` — the ctest default
+  budget, not a check failure (fixed by the `TIMEOUT 5400` pin).
+- `reference.coupled_rider_task` binary-standalone: **32m48s, FAIL at
+  `test_tissue_damping_does_not_eat_the_muscle_budget`** verbatim —
+  the documented `planned` record (linux-only delivered-power drift,
+  task-C315 report); `test_planned_crank_torque_...` ran to completion
+  green ahead of it, matching the lane's linux signature exactly.
+- `ctest root-clang -L reference -j4` (sweep minus the coupled binary):
+  **83/87** — exactly the documented 4-red baseline
+  {`golden_episode_tool` (`FAIL native recorder rows reproduce Python
+  oracle`), `native_numeric_completion`, `pneumatic_tire_oracle`,
+  `native_pneumatic_tire`}; all 3.15 registrations green inside the
+  sweep.
+- `ctest native-clang -R 'migration_T' -j4`: **40/51** — exactly the
+  documented 11-red linux set {`T03`,`T04`,`T09`,`T10`,`T14`,`T15`,
+  `T16`,`T18`,`T20`,`T31`,`T32`} verbatim (T03 missing-ABI env —
+  `mjVERSION_HEADER 3012000` lock rejection, T04 library-hash,
+  T09/T10 frozen-oracle, ±1-ulp `golden_f64` family, T16 XML ref);
+  `T54`/`T56` unregistered in this graph per the standing 51-vs-53
+  split.
+- Live oracle sanity inside the linux capture run: 40/42 spindle nodes
+  pass; the two `test_spindle_activation_*` failures are the documented
+  `_damped_config` malformed-TOML defect (deferred).
+
+### Ledger deltas (pre-merge `d8242c88` → post-merge `9776b747`)
+
+- `test-port-map.json`: records 2390 → **2390** (in-place 3.15 edits;
+  headers `static_test_functions` 2390 → 2390, `top_level_test_functions`
+  2374 → 2374, `class_test_methods` 16). Dispositions: `port` 588 →
+  **641** (+53), `planned` 1423 → **1330** (−93), `drop` 75 → 75,
+  `golden` 304 → **344** (+40). Union verified key-exact on
+  (`source_path`,`source_symbol`): 2390 unique, no lost/duplicate/
+  double-modified records. Stay-`planned` verified: 8 spindle blocked
+  records (22 nodes), both `_damped_config` TOML records,
+  `test_flat_launch_delivers_crank_torque`,
+  `test_tissue_damping_does_not_eat_the_muscle_budget`.
+- `python-removal.json`: rows 535 → 535; `replacement_landed` 61 →
+  **66** (+5: crank_split, joint_strength, leg_loop, native_rider_intent,
+  planar_arms), `planned` 474 → **469**; `test_closed_form_rider.py`,
+  `test_coupled_rider_task.py`, `test_native_spindle_controller.py`
+  stay `planned` (each still holds deferred records).
+- Golden fixture trees: 37 dirs/platform, zero orphans;
+  `native_rider_intent` 26 nodes/platform, `native_spindle_controller`
+  20 nodes/platform, filename sets identical across platforms.
+
+### Assessment
+
+No new reds attributable to the merge on either platform. Every linux
+red reproduces a documented baseline signature verbatim
+(4-red reference set, 11-red migration set, tissue-damping planned
+record). The two merge-back fixes are surface adaptations of the F1
+contract — the oracle wire keeps 18 state keys and the consumer now
+asserts exactly that surface — not physics changes. L3
+(`tools/run_tests.sh native`) not re-run — bounded merge-back scope per
+protocol; the checkpoint profile owns it. Unrelated documented reds
+reported, not fixed.

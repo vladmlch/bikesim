@@ -11,9 +11,9 @@ performance_contract}`; labels `t53 runtime`; port-map rows carry
 **Lane**: `.worktrees/pfc-lane-d`, branch `lane/d`, base `cf17978f`
 (post-3.25 merge-back). No merge, no push.
 
-## Status: landed — 37 `port`, 4 `planned` (pre-existing oracle reds), 2 `drop`
+## Status: landed — 38 `port`, 4 `planned` (pre-existing oracle reds), 2 `drop`
 
-37 of 44 records ported to four new CTest executables; every ported
+38 of 44 records ported to four new CTest executables; every ported
 check compares native state against native state, native contract text,
 or deterministic fake-driver measurement plumbing — no golden fixtures
 were needed or created. The four live-oracle parity nodes that remain
@@ -30,7 +30,7 @@ per-node evidence. Two records are `drop` (`python-only` — the
 | `test_native_runtime_accounting.py` | 11 | 28 | 11 | 0 | 0 |
 | `test_native_runtime_rollout.py` | 6 | 6 | 2 | 4 | 0 |
 | `test_native_runtime_performance_contract.py` | 10 | 10 | 10 | 0 | 0 |
-| **total** | **44** | **73** | **37** | **4** | **2** |
+| **total** | **44** | **73** | **38** | **4** | **2** |
 
 ## What the ports reproduce
 
@@ -119,8 +119,8 @@ freeze. The welded bootstrap fixture is the pre-existing
 | SHA | Unit |
 |---|---|
 | `fc9b8fb0` | test(reference): port runtime config/accounting/rollout/perf contract suite (C3.26) — 4 CTest sources + `Phase3Ports.cmake` registration (single block, `LABELS t53 runtime`; perf target links `bike_app bike_realtime_measurement`) |
-| `ab931229` | docs(migration): C3.26 runtime batch ledger — `test-port-map.json` (37 port / 4 planned-red / 2 drop, measured `collected_node_ids`, dated `assertions_capture`, per-record evidence) + `python-removal.json` (config, accounting, performance_contract → `replacement_landed`) |
-| (this commit) | docs(migration): C3.26 evidence section + this report |
+| `ab931229` | docs(migration): C3.26 runtime batch ledger — `test-port-map.json` (38 port / 4 planned-red / 2 drop, measured `collected_node_ids`, dated `assertions_capture`, per-record evidence) + `python-removal.json` (config, accounting, performance_contract → `replacement_landed`) |
+| `af9496ac` | docs(migration): C3.26 evidence section + completion report (this report) |
 
 ## Deviations
 
@@ -210,3 +210,43 @@ scope plus the source-suite status run:
    container need `BIKE_NATIVE_BUILD_PATH=/build/native-clang` (the
    build tree holding the rebuilt `bike_native` extension), not only
    `NATIVE_TEST_BUILD_PATH`.
+
+## Fix round (2026-10-27, lane/d)
+
+Review-verified corrections on top of `af9496ac`; no behavior change
+to any ported assertion's verdict.
+
+| Fix | Resolution |
+|---|---|
+| Port count 37→38 | The committed ledger always held 38 `port` records (15+11+2+10 — the triage rows were correct; only the totals/summary said 37). Corrected this report (status line, summary line, triage total) and the evidence 3.26 section (Scope dispositions, Ledger paragraph, commits-table row). Commit `ab931229`'s *subject* still reads "37 port" — immutable git text, noted in the evidence section; the Commits table here states the corrected count. |
+| `expect_invalid("")` markers | `test_native_runtime_config.cpp`: `:247` `""`→`"transmission"` (schema `fail("unknown transmission model")` fires first in `post_init(PhysicalDriveConfig)`; source pins `drive\.transmission_model`), `:276` `""`→`"backend"` (schema `fail("unknown physical tire backend")`; source pins `tires\.backend`), `:189` `"surface"`→`"pneumatic"` (schema `fail("pneumatic tires require surface_mode track or a named surface")` at `TireBackendConfig::post_init` fires before the capability verdict; source pins `tires\.pneumatic\.surface` — "pneumatic" survives both the schema and capability-layer strings). All three verified by the green rerun below. The `expect_invalid("")` sites in `test_native_runtime_accounting.cpp` are faithful: the source uses bare `pytest.raises(ValueError)` with no `match=` there (its only pin, `'repeated'`, is ported). |
+| Drop-record `collected_node_ids` | `test-port-map.json`: populated the measured node ids for `test_native_capability_rejects_{distributed,pneumatic}_backend_without_section` (1 collected node each, `source_path::source_symbol` — the 3.25 drop-record convention). Canonical formatting preserved (indent=2, ensure_ascii, trailing LF). |
+| Commits-table reconciliation | The Commits table now lists the real `git log cf17978f..HEAD` SHAs `fc9b8fb0`/`ab931229`/`af9496ac`; the stale `(this commit)` placeholder and the evidence section's never-landed `c6b0f9bb` are corrected to `af9496ac`. |
+| `tree_close` dedup (hygiene) | `accounting.cpp` and `rollout.cpp` carried byte-equivalent `tree_close`/`require_tree_close` copies; hoisted into `runtime_reference_support.hpp` beside `wire_bitwise`. rollout keeps file-local `kClose` (still used by its residual check) and drops unused `bitwise_equal`/`expect_error`/`ride` usings; accounting drops unused `expect_error` and the dead `kClose`. Header gains `<algorithm>`/`<cmath>`; rollout gains `<cmath>` for its remaining `std::abs`. |
+
+### Fix-round verification
+
+```
+$ ctest --test-dir build/native-release -R 'reference\.native_runtime_' --output-on-failure
+1/8 reference.native_runtime_bootstrap ............. Passed
+2/8 reference.native_runtime_step .................. Passed
+3/8 reference.native_runtime_commands .............. Passed
+4/8 reference.native_runtime_ownership ............. Passed
+5/8 reference.native_runtime_config ................ Passed   0.76 sec
+6/8 reference.native_runtime_accounting ............ Passed   0.76 sec
+7/8 reference.native_runtime_rollout ............... Passed   0.90 sec
+8/8 reference.native_runtime_performance_contract .. Passed   0.51 sec
+100% tests passed out of 8  (darwin-arm64, build/native-release)
+```
+
+### Fix-round commits
+
+| SHA | Unit |
+|---|---|
+| `89d20efb` | fix(reference): pin field-path markers in `native_runtime_config` rejections |
+| `916754f6` | refactor(reference): hoist shared `tree_close` into `runtime_reference_support` |
+| (this fix-round commit) | docs(migration): C3.26 fix round — 38-port count, drop-record collected ids, commit-table reconciliation |
+
+The four `planned` live-oracle reds, the two `drop` records, and the
+two-platform qualification matrix are unchanged by this round; the
+linux-aarch64 numbers above remain the recorded container results.

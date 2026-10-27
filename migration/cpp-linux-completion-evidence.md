@@ -7417,7 +7417,7 @@ Four `tests/reference/test_native_runtime_{config,accounting,rollout,
 performance_contract}.py` files — 44 port-map records / 73 collected
 nodes (config 29 via the parametrized capability matrix, accounting 28
 via parametrized work/interval cases, rollout 6, performance 10).
-Dispositions: **37 `port`** (`contract`/`analytic`/`invariant`), **4
+Dispositions: **38 `port`** (`contract`/`analytic`/`invariant`), **4
 stay `planned`** (`bitwise-oracle` — pre-existing live-oracle parity
 reds), **2 `drop`** (`python-only`). All ports are native-vs-native
 contract checks or deterministic measurement plumbing — **no golden
@@ -7532,7 +7532,7 @@ New CTest nodes, all `bike_add_reference_test(... LABELS t53 runtime)`:
 
 ### Ledger
 
-- `migration/test-port-map.json`: 44 rows touched in place — 37 `port`
+- `migration/test-port-map.json`: 44 rows touched in place — 38 `port`
   with `reference.native_runtime_*::<fn>` ids, measured
   `collected_node_ids`, dated `assertions_capture`, per-record evidence
   (incl. the intentionally-broader capability verdicts and the
@@ -7552,8 +7552,11 @@ New CTest nodes, all `bike_add_reference_test(... LABELS t53 runtime)`:
 | SHA | Unit |
 |---|---|
 | `fc9b8fb0` | test(reference): port runtime config/accounting/rollout/perf contract suite (C3.26) |
-| `ab931229` | docs(migration): C3.26 runtime batch ledger — 37 port, 4 planned-red, 2 drop |
-| `c6b0f9bb` | docs(migration): C3.26 evidence section + completion report |
+| `ab931229` | docs(migration): C3.26 runtime batch ledger — 38 port, 4 planned-red, 2 drop |
+| `af9496ac` | docs(migration): C3.26 evidence section + completion report |
+
+(`ab931229`'s immutable subject still reads "37 port"; the committed
+ledger holds 38 `port` records — 15+11+2+10. Fix-round correction.)
 
 ### Final gate
 

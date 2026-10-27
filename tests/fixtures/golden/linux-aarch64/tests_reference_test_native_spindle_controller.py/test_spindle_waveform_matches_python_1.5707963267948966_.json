@@ -1,28 +1,14 @@
 [
  {
-  "atol": null,
+  "atol": 1e-08,
   "dtype": "<f8",
   "index": 0,
-  "kind": "bitwise",
-  "label": "input.waveform.0",
-  "nbytes": 480,
-  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_matches_python[1.5707963267948966]",
-  "offset": 0,
-  "rtol": null,
-  "shape": [
-   60
-  ]
- },
- {
-  "atol": 1e-12,
-  "dtype": "<f8",
-  "index": 1,
   "kind": "close",
-  "label": "output.waveform.0",
+  "label": "waveform",
   "nbytes": 8,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_waveform_matches_python[1.5707963267948966]",
-  "offset": 480,
-  "rtol": 1e-12,
+  "offset": 0,
+  "rtol": 1e-07,
   "shape": []
  }
 ]

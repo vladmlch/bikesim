@@ -1417,6 +1417,13 @@ void SpindleController::write(
 EffortDiagnostics SpindleController::solved_effort(
     const mjData *data, std::span<const double> incoming_qpos,
     std::span<const double> incoming_velocity, double dt_s) {
+    // incoming_qpos/velocity width gate — the oracle indexes
+    // incoming_state[dof] directly, so a wrong width is its IndexError,
+    // never an out-of-bounds span read. Runs before the joint loop (which
+    // dereferences both spans) — strength_violations repeats the check.
+    if (incoming_qpos.size() != static_cast<std::size_t>(model_->nq) ||
+        incoming_velocity.size() != static_cast<std::size_t>(model_->nv))
+        throw std::invalid_argument("solved_effort state width mismatch");
     NamedEntries<double> active;
     double passive_power = 0., positive = 0.;
     const auto actuator_force = model_access::readonly_buffer(

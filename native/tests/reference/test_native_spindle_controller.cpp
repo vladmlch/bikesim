@@ -1,750 +1,940 @@
-// Completion 3.15 (T52). Source: tests/reference/test_native_spindle_controller.py.
-// The SpindleController port — pure spindle kernels plus the stateful
-// controller driven through the NativeTestAdapter `spindle_controller`
-// session contract — replayed against the platform goldens recorded from
-// the oracle file. `input.<op>.k` entries carry the canonical-JSON
-// argument document (one UTF-8 byte per f64 lane), `output.<leaf>.k`
-// entries are the oracle's canonical-JSON or source-tolerance f64
-// results, and `error.<op>.k` empty |u1 markers freeze "the wire call
-// raised" outcomes. peek_label() selects the recorded branch exactly like
-// the source's pytest.raises blocks.
+// Ports tests/reference/test_native_spindle_controller.py — the A2.3
+// SpindleController parity family plus the F5 rear-leg-chain effort
+// regression. The plant is the shared fixture the oracle's _plant() builds
+// (tools/migration/_f5_spindle_capture.py): the pinned nine-actuator model
+// (spindle pedals, pin saddle, connect grips) with the identical
+// rider_controller wire config and pose. Every comparison is the golden
+// node's recorded oracle output — f64 arrays close at the node's recorded
+// rtol=1e-7/atol=1e-8, canonical-JSON state documents through the
+// json_close deep comparison over bike::io::canonical_json(
+// rider::encode_spindle_state()).
 //
-// 22 of 42 source nodes are intentionally NOT replayed here — see the
-// task-C315 report: two `_damped_config` nodes are blocked by the pinned
-// TOML baseline, and twenty nodes route through the enabled-compute path
-// where the native rear-leg chain diverges from the oracle (a delivered
-// implementation defect, not a harness gap). Replayed below: every node
-// whose recorded stream the current implementation satisfies verbatim.
+// F5 (test_spindle_rear_chain_effort_matches_python): the enabled-compute
+// spindle path must emit nonzero rear hip/knee torques through the
+// rear-driving crank half (crank_split.leg_shares assigns the stroke to
+// the rear leg when cos(phase) < 0). The earlier adapter-only sweep left
+// the runtime consumer untested; this freezes the oracle's own values.
+#include "support/migration_test.hpp"
+#include "support/golden.hpp"
+#include "diag.hpp"
+#include "io/json.hpp"
+#include "io/value.hpp"
+#include "rider/spindle_controller.hpp"
+#include "rider/spindle_math.hpp"
+#include "rider/state_codec.hpp"
 
 #include <mujoco/mujoco.h>
 
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <exception>
-#include <initializer_list>
-#include <map>
+#include <cstddef>
+#include <format>
 #include <memory>
-#include <optional>
+#include <numbers>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
-
-#include "io/float_format.hpp"
-#include "io/json.hpp"
-#include "io/value.hpp"
-#include "engine_call.hpp"
-#include "model_access.hpp"
-#include "rider/spindle_controller.hpp"
-#include "rider/spindle_math.hpp"
-#include "rider/state_codec.hpp"
-#include "support/golden.hpp"
-#include "support/migration_test.hpp"
-#include "rider_control_reference_support.hpp"
 
 namespace {
 namespace bio = bike::io;
-namespace rcr = rider_control_reference;
+
+// Engine-buffer span adapters — the views::counted style step.cpp uses;
+// raw ptr+size indexing is a hard error under -Wunsafe-buffer-usage.
+std::span<const double> buf(const double *p, std::size_t n) {
+    return std::views::counted(p, static_cast<std::ptrdiff_t>(n));
+}
+std::span<double> wbuf(double *p, std::size_t n) {
+    return std::views::counted(p, static_cast<std::ptrdiff_t>(n));
+}
+std::span<const int> ibuf(const int *p, std::size_t n) {
+    return std::views::counted(p, static_cast<std::ptrdiff_t>(n));
+}
 
 constexpr std::string_view kFile =
-    "tests/reference/test_native_spindle_controller.py::";
+    "tests/reference/test_native_spindle_controller.py";
 
-// Per-tag counters mirror the source file's _SEQ — a label mismatch is
-// itself a contract failure.
-struct Seq {
-    std::map<std::string, std::size_t> counters;
+std::string node_id(std::string_view symbol) {
+    return std::string(kFile) + "::" + std::string(symbol);
+}
 
-    std::string next(std::string_view tag) {
-        const std::size_t index = counters[std::string(tag)]++;
-        return std::string(tag) + "." + std::to_string(index);
+struct Plant {
+    mjModel *model = nullptr;
+    mjData *data = nullptr;
+    std::unique_ptr<rider::SpindleController> controller;
+    Plant() = default;
+    Plant(const Plant &) = delete;
+    Plant &operator=(const Plant &) = delete;
+    Plant(Plant &&other) noexcept
+        : model(other.model), data(other.data),
+          controller(std::move(other.controller)) {
+        other.model = nullptr;
+        other.data = nullptr;
+    }
+    Plant &operator=(Plant &&) = delete;
+    ~Plant() {
+        if (data != nullptr) mj_deleteData(data);
+        if (model != nullptr) mj_deleteModel(model);
     }
 };
 
-// ---- captured-input plumbing --------------------------------------------------
-
-// input.* entries are canonical-JSON text carried one byte per f64 lane.
-std::string decode_f64_text(const std::vector<double> &encoded) {
-    std::string out;
-    out.reserve(encoded.size());
-    for (const double code : encoded)
-        out.push_back(static_cast<char>(static_cast<unsigned char>(code)));
-    return out;
-}
-
-bio::Value input_doc(bt::oracle::Node &golden, Seq &seq, const char *op) {
-    const std::vector<double> encoded =
-        golden.f64_input(seq.next(std::string("input.") + op));
-    return bio::parse_recording_json(decode_f64_text(encoded));
-}
-
-const bio::Value &member(const bio::Value &doc, const char *key) {
-    const auto &object = bio::as_object(doc, "input doc");
-    const bio::Value *found = bio::find_member(object, key);
+const bio::Value &member(const bio::Value &value, const char *key) {
+    const bio::Value *found =
+        bio::find_member(bio::as_object(value, key), key);
     bt::require(found != nullptr,
-                std::string("input doc carries '") + key + "'");
+                std::string("config.json is missing member ") + key);
     return *found;
 }
 
-// The recorded call documents freeze their argument set; a foreign key is a
-// fixture defect, not a contract branch.
-void require_keys(const bio::Value &doc,
-                  std::initializer_list<const char *> keys) {
-    const auto &object = bio::as_object(doc, "input doc");
-    bt::require(object.size() == keys.size(),
-                "input doc carries exactly the recorded argument set");
-    for (const char *key : keys)
-        bt::require(bio::find_member(object, key) != nullptr,
-                    std::string("input doc carries '") + key + "'");
+// The _damped_config() fixture twin: rewrite activation_tau_s /
+// joint_passive_damping_nms_rad lexemes inside the decoded
+// rider_controller document (the TOML's 0.025/0.0 -> 0.05/2.5).
+void set_lexeme(bio::Value &value, std::string_view key,
+                std::string_view lexeme) {
+    auto &object = std::get<bio::Value::Object>(value.data);
+    for (auto &[name, entry] : object)
+        if (name == key) {
+            entry.data = bio::Number{std::string(lexeme)};
+            return;
+        }
+    throw std::runtime_error(std::string("config key not found: ") +
+                             std::string(key));
 }
 
-double real_arg(const bio::Value &doc, const char *key) {
-    return bio::tagged_double(member(doc, key), key);
+void set_string(bio::Value &value, std::string_view key,
+                std::string_view text) {
+    auto &object = std::get<bio::Value::Object>(value.data);
+    for (auto &[name, entry] : object)
+        if (name == key) {
+            entry.data = std::string(text);
+            return;
+        }
+    throw std::runtime_error(std::string("config key not found: ") +
+                             std::string(key));
 }
 
-bool bool_arg(const bio::Value &doc, const char *key) {
-    return bio::as_bool(member(doc, key), key);
+Plant make_plant(bool damped = false) {
+    Plant plant;
+    const auto mjb = bt::fixture("spindle/pinned/model.mjb");
+    plant.model = mj_loadModel(mjb.c_str(), nullptr);
+    bt::require(plant.model != nullptr, "spindle/pinned/model.mjb loads");
+    plant.data = mj_makeData(plant.model);
+    bt::require(plant.data != nullptr, "mj_makeData");
+    bio::Value doc = bio::parse_json(
+        bt::text(bt::fixture("spindle/pinned/config.json")));
+    bio::Value rider_doc = member(doc, "rider_controller");
+    if (damped) {
+        set_lexeme(rider_doc, "activation_tau_s", "0.05");
+        set_lexeme(rider_doc, "joint_passive_damping_nms_rad", "2.5");
+    }
+    plant.controller = std::make_unique<rider::SpindleController>(
+        plant.model,
+        rider::decode_spindle_pose(member(doc, "pose"), "config.pose"),
+        rider::decode_spindle_config(rider_doc),
+        bio::number_double(
+            bio::as_number(member(doc, "crank_length_m"),
+                           "config.crank_length_m"),
+            "config.crank_length_m"));
+    return plant;
 }
 
-std::vector<double> real_vector(const bio::Value &value, const char *field) {
-    const auto &array = bio::as_array(value, field);
+std::size_t joint_qposadr(const mjModel *m, const char *name) {
+    const int id = mj_name2id(m, mjOBJ_JOINT, name);
+    bt::require(id >= 0, std::string("joint missing: ") + name);
+    return static_cast<std::size_t>(
+        ibuf(m->jnt_qposadr,
+             static_cast<std::size_t>(m->njnt))[static_cast<std::size_t>(id)]);
+}
+
+std::size_t joint_dofadr(const mjModel *m, const char *name) {
+    const int id = mj_name2id(m, mjOBJ_JOINT, name);
+    bt::require(id >= 0, std::string("joint missing: ") + name);
+    return static_cast<std::size_t>(
+        ibuf(m->jnt_dofadr,
+             static_cast<std::size_t>(m->njnt))[static_cast<std::size_t>(id)]);
+}
+
+std::size_t nq(const mjModel *m) {
+    return static_cast<std::size_t>(m->nq);
+}
+std::size_t nv(const mjModel *m) {
+    return static_cast<std::size_t>(m->nv);
+}
+std::size_t nu(const mjModel *m) {
+    return static_cast<std::size_t>(m->nu);
+}
+
+// _staged(): qpos/qvel writes then a full forward — the identical mjData
+// the oracle controller reads.
+void stage(Plant &plant, double crank_q, double crank_rate,
+           double root_pitch = 0.,
+           std::span<const std::pair<const char *, double>> rates = {}) {
+    mj_resetData(plant.model, plant.data);
+    wbuf(plant.data->qpos, nq(plant.model))[joint_qposadr(plant.model,
+                                                         "crank_spin")] =
+        crank_q;
+    wbuf(plant.data->qpos, nq(plant.model))[joint_qposadr(plant.model,
+                                                         "root_pitch")] =
+        root_pitch;
+    wbuf(plant.data->qvel, nv(plant.model))[joint_dofadr(plant.model,
+                                                        "crank_spin")] =
+        crank_rate;
+    for (const auto &[name, rate] : rates)
+        wbuf(plant.data->qvel,
+             nv(plant.model))[joint_dofadr(plant.model, name)] = rate;
+    mj_forward(plant.model, plant.data);
+}
+
+std::vector<double> torque_vector(const rider::NamedEntries<double> &torques,
+                                  const rider::SpindleController &ctrl) {
     std::vector<double> out;
-    out.reserve(array.size());
-    for (const auto &item : array)
-        out.push_back(bio::tagged_double(item, field));
+    out.reserve(ctrl.joints().size());
+    for (const auto &joint : ctrl.joints()) {
+        const auto found =
+            std::ranges::find_if(torques, [&](const auto &entry) {
+                return entry.first == joint.name;
+            });
+        bt::require(found != torques.end(),
+                    "compute returned every configured joint");
+        out.push_back(found->second);
+    }
     return out;
 }
 
-// ---- recorded-output plumbing ------------------------------------------------
-
-// The recorded `output.state` docs are the oracle's state_dict() — the
-// canonical 18-key surface. F1 (96fe3d86) added `coast_hold_nm` to the
-// spindle State and encode_spindle_state emits it on spindle-authored
-// documents, so the replayed doc carries a 19th member the oracle wire
-// deliberately omits (it rides the equilibrium material's flat
-// state_control_coast_hold_nm channel instead). The comparison asserts
-// the oracle surface: erase the native-only member before canonical
-// serialization so the remaining keys still compare byte-exact.
-bio::Value oracle_state_doc(const rider::SpindleController::State &state) {
-    bio::Value encoded = rider::encode_spindle_state(state);
-    auto &object = *std::get_if<bio::Value::Object>(&encoded.data);
-    const auto it = std::ranges::find_if(
-        object, [](const auto &member) { return member.first == "coast_hold_nm"; });
-    if (it != object.end()) object.erase(it);
-    return encoded;
+std::span<const std::byte> byte_span(const std::string &text) {
+    return std::views::counted(
+        reinterpret_cast<const std::byte *>(text.data()),
+        static_cast<std::ptrdiff_t>(text.size()));
 }
 
-void json_out(bt::oracle::Node &golden, Seq &seq, const char *tag,
-              const bio::Value &doc) {
-    const std::string text = bio::recording_json(doc);
-    const std::array<std::size_t, 1> shape{text.size()};
-    golden.bytes(std::as_bytes(std::span(text)), "|u1", shape,
-                 seq.next(std::string("output.") + tag));
+// ArticulatedRiderController.state_dict() is the canonical 18-key document
+// — _coast_hold_nm travels on the equilibrium material's flat
+// state_control_coast_hold_nm channel, never this dict, so the
+// spindle-authored member is dropped before the byte comparison.
+std::string state_document(const rider::SpindleController &ctrl) {
+    bio::Value encoded = rider::encode_spindle_state(ctrl.state());
+    auto &object = std::get<bio::Value::Object>(encoded.data);
+    std::erase_if(object, [](const auto &entry) {
+        return entry.first == "coast_hold_nm";
+    });
+    return bio::canonical_json(encoded);
 }
 
-void close_out(bt::oracle::Node &golden, Seq &seq, const char *tag,
-               std::span<const double> actual) {
-    golden.f64_close(actual, seq.next(std::string("output.") + tag));
-}
+// Oracle-side numpy/libm math is not bitwise-stable between
+// darwin-arm64 and linux-aarch64 (the F5 linux capture diverges ~2e-9
+// through the leg-kinematics trig while darwin matches bit-for-bit), so
+// f64 records carry kind='close' at rtol=1e-7/atol=1e-8 — three decades
+// below any physically meaningful deviation. State documents embed the
+// excitation solve's diagnostics on top of the held torques — the widest
+// observed platform spread (solution_excitation_nm/5, 1.06e-8 relative)
+// stays inside the same bound under the json_close deep comparison:
+// structure (keys, order, array lengths, literal leaves) is exact;
+// numeric leaves obey rtol=1e-7/atol=1e-8.
+constexpr double kPlatformRtol = 1e-7, kPlatformAtol = 1e-8;
 
-void scalar_close(bt::oracle::Node &golden, Seq &seq, const char *tag,
-                  double value) {
-    const std::array<double, 1> actual{value};
-    golden.f64_close(actual, seq.next(std::string("output.") + tag));
-}
-
-void consumed_error(bt::oracle::Node &golden, Seq &seq, const char *op) {
-    const std::array<std::size_t, 1> shape{0};
-    golden.bytes({}, "|u1", shape,
-                 seq.next(std::string("error.") + op));
-}
-
-bio::Value real_leaf(double value) {
-    if (std::isnan(value))
-        return bio::Value{bio::Tagged{.kind = "float64",
-                                      .fields = {{"value", "nan"}}}};
-    if (std::isinf(value))
-        return bio::Value{bio::Tagged{
-            .kind = "float64",
-            .fields = {{"value", value < 0. ? "-inf" : "+inf"}}}};
-    return bio::Value{bio::Number{bio::repr_binary64(value)}};
-}
-
-// The next recorded leaf's bare output tag ('' when the next entry is an
-// input/error or the node ended).
-std::string_view out_leaf(const bt::oracle::Node &golden) {
-    const std::string_view label = golden.peek_label();
-    if (!label.starts_with("output.")) return {};
-    return label.substr(7, label.rfind('.') - 7);
-}
-
-// ---- the recorded session ----------------------------------------------------
-
-// PinnedPlant mirrors NativeTestAdapter's owned triple: the compiled
-// pinned model, one mjData the `state`/`inputs`/`forward` calls stage,
-// and the spindle controller the `adapter` document decodes into.
-using Plant = rcr::PinnedPlant;
-
-rider::SpindleController &require_controller(Plant &plant) {
-    bt::require(plant.controller != nullptr,
-                "the recorded adapter construction succeeded");
-    return *plant.controller;
-}
-
-mjModel *model_of(const Plant &plant) {
-    bt::require(plant.model.get() != nullptr, "the pinned model compiled");
-    return plant.model.get();
-}
-
-mjData *data_of(const Plant &plant) {
-    bt::require(plant.data != nullptr, "the pinned mjData exists");
-    return plant.data.get();
-}
-
-// Stepper::set_state's domain contract, local to the recorded doc: widths
-// against the live model, every lane finite, time nonnegative — all before
-// the reset so a bad argument cannot clobber staged state.
-void require_width(std::size_t got, mjtSize want, const char *field) {
-    if (want < 0 || got != static_cast<std::size_t>(want))
-        throw std::invalid_argument(
-            std::string("set_state width mismatch: ") + field);
-}
-
-void require_finite(std::span<const double> values, const char *field) {
-    for (const double value : values)
-        if (!std::isfinite(value))
-            throw std::invalid_argument(
-                std::string("set_state nonfinite lane: ") + field);
-}
-
-void copy_into(std::span<const double> source, mjtNum *target, mjtSize count,
-               const char *field) {
-    const auto buffer =
-        model_access::mutable_buffer(target, count, field);
-    std::ranges::copy(source, buffer.begin());
-}
-
-void op_adapter(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "adapter");
-    try {
-        // test_adapter.cpp emplace order: pose, config, crank_length_m.
-        const auto pose = rider::decode_spindle_pose(
-            member(doc, "pose"), "adapter.spindle_controller.pose");
-        auto config = rider::decode_spindle_config(member(doc, "config"));
-        const double crank =
-            bio::tagged_double(member(doc, "crank_length_m"),
-                               "adapter.spindle_controller.crank_length_m");
-        plant.pose = pose;
-        plant.controller = std::make_unique<rider::SpindleController>(
-            model_of(plant), plant.pose, std::move(config), crank);
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "adapter");
-    }
-}
-
-void op_state(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "state");
-    require_keys(doc,
-                 {"qpos", "qvel", "act", "qacc_warmstart", "time"});
-    mjModel *m = model_of(plant);
-    mjData *d = data_of(plant);
-    const auto qpos = real_vector(member(doc, "qpos"), "state.qpos");
-    const auto qvel = real_vector(member(doc, "qvel"), "state.qvel");
-    const auto act = real_vector(member(doc, "act"), "state.act");
-    const auto warmstart =
-        real_vector(member(doc, "qacc_warmstart"), "state.qacc_warmstart");
-    const double time = real_arg(doc, "time");
-    try {
-        require_width(qpos.size(), m->nq, "qpos");
-        require_width(qvel.size(), m->nv, "qvel");
-        require_width(act.size(), m->na, "act");
-        require_width(warmstart.size(), m->nv, "qacc_warmstart");
-        require_finite(qpos, "qpos");
-        require_finite(qvel, "qvel");
-        require_finite(act, "act");
-        require_finite(warmstart, "qacc_warmstart");
-        if (!std::isfinite(time) || time < 0.)
-            throw std::invalid_argument("set_state.time");
-        engine::reset_data(m, d);
-        copy_into(qpos, d->qpos, m->nq, "qpos");
-        copy_into(qvel, d->qvel, m->nv, "qvel");
-        copy_into(act, d->act, m->na, "act");
-        copy_into(warmstart, d->qacc_warmstart, m->nv, "qacc_warmstart");
-        d->time = time;
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "state");
-    }
-}
-
-void op_inputs(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "inputs");
-    require_keys(doc, {"ctrl", "qfrc_applied"});
-    mjModel *m = model_of(plant);
-    mjData *d = data_of(plant);
-    const auto ctrl = real_vector(member(doc, "ctrl"), "inputs.ctrl");
-    const auto force =
-        real_vector(member(doc, "qfrc_applied"), "inputs.qfrc_applied");
-    try {
-        require_width(ctrl.size(), m->nu, "ctrl");
-        require_width(force.size(), m->nv, "qfrc_applied");
-        require_finite(ctrl, "ctrl");
-        require_finite(force, "qfrc_applied");
-        copy_into(ctrl, d->ctrl, m->nu, "ctrl");
-        copy_into(force, d->qfrc_applied, m->nv, "qfrc_applied");
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "inputs");
-    }
-}
-
-void op_forward(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "forward");
-    require_keys(doc, {});
-    try {
-        engine::forward(model_of(plant), data_of(plant));
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "forward");
-    }
-}
-
-bio::Value torque_doc(const rider::NamedEntries<double> &torques) {
-    bio::Value::Object out;
-    for (const auto &[name, value] : torques)
-        out.emplace_back(name, real_leaf(value));
-    return bio::Value{std::move(out)};
-}
-
-void op_compute(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "compute");
-    require_keys(doc, {"command", "advance", "dt_s", "steady_state"});
-    auto &controller = require_controller(plant);
-    std::optional<rider::NamedEntries<double>> torques;
-    try {
-        // Adapter order (test_adapter.cpp::spindle_compute): command
-        // decode, the lazily-validated dt_s real, then the call itself.
-        const auto command = rider::decode_rider_command(
-            member(doc, "command"), "compute.command");
-        const bool advance = bool_arg(doc, "advance");
-        std::optional<double> dt_s;
-        const bio::Value &dt = member(doc, "dt_s");
-        if (!bio::is_null(dt)) {
-            dt_s = bio::tagged_double(dt, "compute.dt_s");
-            if (!std::isfinite(*dt_s))
-                throw std::invalid_argument("compute.dt_s");
+bool json_close(const bio::Value &actual, const bio::Value &expected,
+                std::string &path) {
+    const auto *a_num = std::get_if<bio::Number>(&actual.data);
+    const auto *e_num = std::get_if<bio::Number>(&expected.data);
+    if (a_num != nullptr || e_num != nullptr) {
+        if (a_num == nullptr || e_num == nullptr) {
+            path += " (kind mismatch)";
+            return false;
         }
-        const bool steady_state = bool_arg(doc, "steady_state");
-        torques = controller.compute(data_of(plant), command, advance,
-                                     dt_s, steady_state);
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "compute");
-        return;
+        const double a = bio::number_double(*a_num, "state");
+        const double e = bio::number_double(*e_num, "state");
+        if (a == e ||
+            (std::isfinite(a) && std::isfinite(e) &&
+             std::abs(a - e) <= kPlatformAtol + kPlatformRtol * std::abs(e)))
+            return true;
+        path += std::format(" actual={} expected={}", a, e);
+        return false;
     }
-    if (out_leaf(golden) == "torques")
-        json_out(golden, seq, "torques", torque_doc(*torques));
-    if (out_leaf(golden) == "state")
-        json_out(golden, seq, "state",
-                 oracle_state_doc(controller.state()));
-}
-
-void op_initialize(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "initialize");
-    require_keys(doc, {});
-    auto &controller = require_controller(plant);
-    mjData *d = data_of(plant);
-    try {
-        controller.initialize(d);
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "initialize");
-        return;
+    if (const auto *a_obj = std::get_if<bio::Value::Object>(&actual.data)) {
+        const auto *e_obj = std::get_if<bio::Value::Object>(&expected.data);
+        if (e_obj == nullptr || a_obj->size() != e_obj->size()) {
+            path += " (object shape)";
+            return false;
+        }
+        for (std::size_t i = 0; i < a_obj->size(); ++i) {
+            const auto &[a_key, a_val] = (*a_obj)[i];
+            const auto &[e_key, e_val] = (*e_obj)[i];
+            if (a_key != e_key) {
+                path += std::format(" (key '{}' != '{}')", a_key, e_key);
+                return false;
+            }
+            const auto parent = path.size();
+            path += '/' + a_key;
+            if (!json_close(a_val, e_val, path)) return false;
+            path.resize(parent);
+        }
+        return true;
     }
-    if (out_leaf(golden) == "qpos")
-        close_out(golden, seq, "qpos",
-                  model_access::readonly_buffer(
-                      d->qpos, model_of(plant)->nq, "qpos"));
-}
-
-void op_initialize_velocity(Plant &plant, bt::oracle::Node &golden,
-                            Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "initialize_velocity");
-    require_keys(doc, {});
-    auto &controller = require_controller(plant);
-    mjData *d = data_of(plant);
-    try {
-        controller.initialize_velocity(d);
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "initialize_velocity");
-        return;
+    if (const auto *a_arr = std::get_if<bio::Value::Array>(&actual.data)) {
+        const auto *e_arr = std::get_if<bio::Value::Array>(&expected.data);
+        if (e_arr == nullptr || a_arr->size() != e_arr->size()) {
+            path += " (array shape)";
+            return false;
+        }
+        for (std::size_t i = 0; i < a_arr->size(); ++i) {
+            const auto parent = path.size();
+            path += std::format("/{}", i);
+            if (!json_close((*a_arr)[i], (*e_arr)[i], path)) return false;
+            path.resize(parent);
+        }
+        return true;
     }
-    if (out_leaf(golden) == "qvel")
-        close_out(golden, seq, "qvel",
-                  model_access::readonly_buffer(
-                      d->qvel, model_of(plant)->nv, "qvel"));
-}
-
-void op_envelope(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "envelope");
-    require_keys(doc, {});
-    auto &controller = require_controller(plant);
-    std::optional<std::pair<std::vector<double>, double>> result;
-    try {
-        result = controller.envelope_forces(data_of(plant));
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "envelope");
-        return;
+    if (bio::canonical_json(actual) != bio::canonical_json(expected)) {
+        path += " (literal mismatch)";
+        return false;
     }
-    if (out_leaf(golden) == "force")
-        close_out(golden, seq, "force", result->first);
-    if (out_leaf(golden) == "stored_j")
-        scalar_close(golden, seq, "stored_j", result->second);
+    return true;
 }
 
-void op_write(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "write");
-    require_keys(doc, {"torques"});
-    auto &controller = require_controller(plant);
-    mjData *d = data_of(plant);
-    try {
-        controller.write(d, rider::decode_named_reals(
-                                member(doc, "torques"), "write.torques"));
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "write");
-        return;
-    }
-    if (out_leaf(golden) == "ctrl")
-        close_out(golden, seq, "ctrl",
-                  model_access::readonly_buffer(
-                      d->ctrl, model_of(plant)->nu, "ctrl"));
+void expect_state_close(bt::oracle::Node &node, const std::string &document,
+                        std::string_view label) {
+    const auto expected_bytes = node.bytes_input(std::string(label));
+    const std::string_view source(
+        reinterpret_cast<const char *>(expected_bytes.data()),
+        expected_bytes.size());
+    std::string path;
+    bt::require(
+        json_close(bio::parse_json(document), bio::parse_json(source),
+                   path),
+        std::string(label) +
+            ": state diverges beyond platform tolerance at" + path);
 }
 
-void op_reset_activation(Plant &plant, bt::oracle::Node &golden,
-                         Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "reset_activation");
-    require_keys(doc, {});
-    auto &controller = require_controller(plant);
-    try {
-        controller.reset_activation();
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "reset_activation");
-        return;
-    }
-    if (out_leaf(golden) == "active_state")
-        close_out(golden, seq, "active_state",
-                  controller.state().active_state);
-    if (out_leaf(golden) == "state_meta") {
-        // The recorded subset: the three state_dict members the source
-        // re-reads after the reset.
-        const bio::Value encoded =
-            rider::encode_spindle_state(controller.state());
-        const auto &object = bio::as_object(encoded, "state");
-        const bio::Value *activation =
-            bio::find_member(object, "activation_time_s");
-        const bio::Value *effort =
-            bio::find_member(object, "effort_diagnostics");
-        const bio::Value *sole =
-            bio::find_member(object, "sole_goal_diagnostics");
-        bt::require(activation != nullptr && effort != nullptr &&
-                        sole != nullptr,
-                    "encode_spindle_state emits the state_meta members");
-        bio::Value::Object meta;
-        meta.emplace_back("activation_time_s", *activation);
-        meta.emplace_back("effort_diagnostics", *effort);
-        meta.emplace_back("sole_goal_diagnostics", *sole);
-        json_out(golden, seq, "state_meta", bio::Value{std::move(meta)});
-    }
+// The recorded pair every compute-family node captures: the joint-ordered
+// torque vector plus the full 18-key state_dict() canonical document.
+void compare_compute(bt::oracle::Node &node,
+                     const rider::NamedEntries<double> &torques,
+                     const rider::SpindleController &ctrl,
+                     std::string_view prefix = "compute") {
+    const auto values = torque_vector(torques, ctrl);
+    node.f64_close(values, std::string(prefix) + ".torques");
+    expect_state_close(node, state_document(ctrl),
+                       std::string(prefix) + ".state");
 }
 
-void op_restore(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "restore");
-    require_keys(doc, {"state"});
-    auto &controller = require_controller(plant);
-    try {
-        controller.restore(rider::decode_spindle_state(
-            member(doc, "state"), "state"));
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "restore");
-        return;
-    }
-    if (out_leaf(golden) == "state")
-        json_out(golden, seq, "state",
-                 oracle_state_doc(controller.state()));
-}
-
-void op_solved_effort(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "solved_effort");
-    require_keys(doc, {"qpos", "qvel", "dt_s"});
-    auto &controller = require_controller(plant);
-    mjModel *m = model_of(plant);
-    const auto qpos =
-        real_vector(member(doc, "qpos"), "solved_effort.qpos");
-    const auto qvel =
-        real_vector(member(doc, "qvel"), "solved_effort.qvel");
-    try {
-        // The adapter's explicit width gate runs before the controller.
-        require_width(qpos.size(), m->nq, "qpos");
-        require_width(qvel.size(), m->nv, "qvel");
-        (void)controller.solved_effort(data_of(plant), qpos, qvel,
-                                       real_arg(doc, "dt_s"));
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "solved_effort");
-        return;
-    }
-    if (out_leaf(golden) == "effort") {
-        // solved_effort publishes its document on the controller: the
-        // recorded dict equals state().effort_diagnostics encoded.
-        const bio::Value encoded =
-            rider::encode_spindle_state(controller.state());
-        const auto &object = bio::as_object(encoded, "state");
-        const bio::Value *effort =
-            bio::find_member(object, "effort_diagnostics");
-        bt::require(effort != nullptr,
-                    "encode_spindle_state emits effort_diagnostics");
-        json_out(golden, seq, "effort", *effort);
-    }
-}
-
-void op_strength_limited(Plant &plant, bt::oracle::Node &golden,
-                         Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "strength_limited");
-    require_keys(doc, {"torques", "qpos", "qvel"});
-    auto &controller = require_controller(plant);
-    mjModel *m = model_of(plant);
-    const auto torques =
-        real_vector(member(doc, "torques"), "strength_limited.torques");
-    const auto qpos =
-        real_vector(member(doc, "qpos"), "strength_limited.qpos");
-    const auto qvel =
-        real_vector(member(doc, "qvel"), "strength_limited.qvel");
-    std::optional<
-        std::pair<std::vector<double>, std::vector<std::string>>>
-        result;
-    try {
-        // test_adapter.cpp::spindle_strength_limited: the state arrays
-        // carry the explicit nq/nv gate; the torque row width is the
-        // controller's own contract.
-        require_width(qpos.size(), m->nq, "qpos");
-        require_width(qvel.size(), m->nv, "qvel");
-        result = controller.strength_limited(torques, qpos, qvel);
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "strength_limited");
-        return;
-    }
-    if (out_leaf(golden) == "clipped")
-        close_out(golden, seq, "clipped", result->first);
-    if (out_leaf(golden) == "limited") {
-        bio::Value::Array names;
-        names.reserve(result->second.size());
-        for (const auto &name : result->second)
-            names.emplace_back(bio::Value{name});
-        json_out(golden, seq, "limited", bio::Value{std::move(names)});
-    }
-}
-
-void op_anatomical(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "anatomical");
-    require_keys(doc, {"joint", "qpos_value"});
-    auto &controller = require_controller(plant);
-    std::optional<double> result;
-    try {
-        result = controller.anatomical_joint_angle(
-            bio::as_string(member(doc, "joint"), "anatomical.joint"),
-            real_arg(doc, "qpos_value"));
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "anatomical");
-        return;
-    }
-    if (out_leaf(golden) == "anatomical")
-        scalar_close(golden, seq, "anatomical", *result);
-}
-
-void op_capacity(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "capacity");
-    require_keys(doc, {"joint", "angle_rad", "velocity_rad_s", "torque_nm"});
-    auto &controller = require_controller(plant);
-    std::optional<double> result;
-    try {
-        result = controller.strength_capacity(
-            bio::as_string(member(doc, "joint"), "capacity.joint"),
-            real_arg(doc, "angle_rad"), real_arg(doc, "velocity_rad_s"),
-            real_arg(doc, "torque_nm"));
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "capacity");
-        return;
-    }
-    if (out_leaf(golden) == "capacity")
-        scalar_close(golden, seq, "capacity", *result);
-}
-
-// ---- the pure kernels (no plant) ----------------------------------------------
-
-void op_waveform(bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "waveform");
-    require_keys(doc, {"mean_nm", "phase_rad", "ripple"});
-    std::optional<double> result;
-    try {
-        result = spindle::spindle_torque_waveform(
-            real_arg(doc, "mean_nm"), real_arg(doc, "phase_rad"),
-            real_arg(doc, "ripple"));
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "waveform");
-        return;
-    }
-    if (out_leaf(golden) == "waveform")
-        scalar_close(golden, seq, "waveform", *result);
-}
-
-void op_ceiling(bt::oracle::Node &golden, Seq &seq) {
-    const bio::Value doc = input_doc(golden, seq, "ceiling");
-    require_keys(doc,
-                 {"power_w", "torque_limit_nm", "crank_rate_rad_s"});
-    std::optional<double> result;
-    try {
-        result = spindle::crank_effort_ceiling(
-            real_arg(doc, "power_w"), real_arg(doc, "torque_limit_nm"),
-            real_arg(doc, "crank_rate_rad_s"));
-    } catch (const std::exception &) {
-        consumed_error(golden, seq, "ceiling");
-        return;
-    }
-    if (out_leaf(golden) == "ceiling")
-        scalar_close(golden, seq, "ceiling", *result);
-}
-
-// Consume exactly one recorded event: one input.<op>.k call plus its
-// recorded outputs or error marker.
-void event(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    const std::string_view label = golden.peek_label();
-    bt::require(!label.empty(), "event() called past the node end");
-    bt::require(label.starts_with("input."),
-                "a recorded event starts with input.*");
-    const std::size_t split = label.rfind('.');
-    const std::string_view op = label.substr(6, split - 6);
-    if (op == "adapter") return op_adapter(plant, golden, seq);
-    if (op == "state") return op_state(plant, golden, seq);
-    if (op == "inputs") return op_inputs(plant, golden, seq);
-    if (op == "forward") return op_forward(plant, golden, seq);
-    if (op == "compute") return op_compute(plant, golden, seq);
-    if (op == "initialize") return op_initialize(plant, golden, seq);
-    if (op == "initialize_velocity")
-        return op_initialize_velocity(plant, golden, seq);
-    if (op == "envelope") return op_envelope(plant, golden, seq);
-    if (op == "write") return op_write(plant, golden, seq);
-    if (op == "reset_activation")
-        return op_reset_activation(plant, golden, seq);
-    if (op == "restore") return op_restore(plant, golden, seq);
-    if (op == "solved_effort") return op_solved_effort(plant, golden, seq);
-    if (op == "strength_limited")
-        return op_strength_limited(plant, golden, seq);
-    if (op == "anatomical") return op_anatomical(plant, golden, seq);
-    if (op == "capacity") return op_capacity(plant, golden, seq);
-    if (op == "waveform") return op_waveform(golden, seq);
-    if (op == "ceiling") return op_ceiling(golden, seq);
-    bt::require(false, "recorded op is part of the spindle_controller contract");
-}
-
-void drain(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
-    while (golden.has_next()) event(plant, golden, seq);
-}
-
-[[nodiscard]] bt::oracle::Node node(std::string_view function,
-                                    std::string_view id = {}) {
-    auto name = std::string(kFile) + std::string(function);
-    if (!id.empty()) name += "[" + std::string(id) + "]";
-    return bt::oracle::Node(name);
-}
-
-void drain_node(std::string_view function, std::string_view id = {}) {
-    auto golden = node(function, id);
-    Plant plant;
-    Seq seq;
-    drain(plant, golden, seq);
-    golden.done();
-}
-
-// The adapter-backed nodes all share _plant's pinned model — built once
-// per replay exactly like _plant()'s fresh compile.
-void drain_plant_node(std::string_view function, std::string_view id = {}) {
-    auto golden = node(function, id);
-    Plant plant = rcr::pinned_model();
-    Seq seq;
-    drain(plant, golden, seq);
-    golden.done();
-}
-
-// ---- the 20 qualified source nodes -------------------------------------------
+// ---- A2.3 pure kernels ----------------------------------------------------
 
 void test_spindle_waveform_matches_python() {
-    for (const char *id : {"0.0", "1.5707963267948966",
-                           "3.141592653589793", "6.283185207179586"})
-        drain_node("test_spindle_waveform_matches_python", id);
+    const std::pair<double, const char *> cases[] = {
+        {0., "0.0"},
+        {std::numbers::pi / 2., "1.5707963267948966"},
+        {std::numbers::pi, "3.141592653589793"},
+        {2. * std::numbers::pi - 1e-7, "6.283185207179586"},
+    };
+    for (const auto &[phase, id] : cases) {
+        bt::oracle::Node node(node_id(
+            std::format("test_spindle_waveform_matches_python[{}]", id)));
+        const double actual =
+            spindle::spindle_torque_waveform(60., phase, .5);
+        const std::array<double, 1> scalar{actual};
+        node.f64_close(scalar, "waveform");
+        node.done();
+    }
 }
 
 void test_effort_ceiling_matches_python() {
-    for (const char *id : {"-3.0", "0.0", "8.0", "20.0"})
-        drain_node("test_effort_ceiling_matches_python", id);
+    const std::pair<double, const char *> cases[] = {
+        {-3., "-3.0"}, {0., "0.0"}, {8., "8.0"}, {20., "20.0"},
+    };
+    for (const auto &[rate, id] : cases) {
+        bt::oracle::Node node(node_id(
+            std::format("test_effort_ceiling_matches_python[{}]", id)));
+        const double actual = spindle::crank_effort_ceiling(250., 60., rate);
+        const std::array<double, 1> scalar{actual};
+        node.f64_close(scalar, "ceiling");
+        node.done();
+    }
+}
+
+bool throws_std(auto &&fn) {
+    try {
+        fn();
+        return false;
+    } catch (const std::exception &) {
+        return true;
+    }
 }
 
 void test_spindle_waveform_rejects_bad_inputs() {
-    drain_node(__func__);
+    for (const auto [mean, phase, ripple] :
+         {std::array{-1., 0., .5}, std::array{60., 0., 1.},
+          std::array{60., std::nan(""), .5}})
+        bt::require(throws_std([&] {
+                        (void)spindle::spindle_torque_waveform(
+                            mean, phase, ripple);
+                    }),
+                    "spindle_torque_waveform rejects bad input");
 }
 
 void test_effort_ceiling_rejects_bad_inputs() {
-    drain_node(__func__);
+    for (const auto [power, limit, rate] :
+         {std::array{-1., 60., 8.}, std::array{250., -60., 8.},
+          std::array{250., 60., std::nan("")}})
+        bt::require(throws_std([&] {
+                        (void)spindle::crank_effort_ceiling(power, limit,
+                                                            rate);
+                    }),
+                    "crank_effort_ceiling rejects bad input");
+}
+
+// ---- compute family --------------------------------------------------------
+
+struct ComputeCase {
+    double crank_q, crank_rate, effort;
+    std::string node;
+};
+
+void compute_case(const ComputeCase &c) {
+    Plant plant = make_plant();
+    stage(plant, c.crank_q, c.crank_rate);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = c.effort;
+    const auto torques =
+        plant.controller->compute(plant.data, command, true, .00125, false);
+    bt::oracle::Node node(c.node);
+    compare_compute(node, torques, *plant.controller);
+    node.done();
+}
+
+void test_spindle_compute_matches_python() {
+    const std::pair<double, const char *> phases[] = {
+        {0., "0.0"}, {.7, "0.7"},
+        {std::numbers::pi / 2., "1.5707963267948966"}, {2.4, "2.4"},
+    };
+    const std::pair<double, const char *> efforts[] = {
+        {0., "0.0"}, {40., "40.0"}, {120., "120.0"},
+    };
+    for (const auto &[effort, eid] : efforts)
+        for (const auto &[crank_q, qid] : phases)
+            compute_case({crank_q, 6., effort,
+                          node_id(std::format(
+                              "test_spindle_compute_matches_python[{}-{}]",
+                              eid, qid))});
+}
+
+// F5: rear-leg-chain effort through the rear-driving crank half. The rear
+// chain owns the stroke when cos(phase) < 0 (crank_split.leg_shares), and
+// the hip/knee torques must be nonzero there — never collapse to ~0.
+void test_spindle_rear_chain_effort_matches_python() {
+    const std::pair<double, const char *> cases[] = {
+        {0., "0.0"},
+        {std::numbers::pi / 2., "1.5707963267948966"},
+        {std::numbers::pi, "3.141592653589793"},
+        {3.67, "3.67"},
+        {4.19, "4.19"},
+    };
+    for (const auto &[crank_q, id] : cases) {
+        Plant plant = make_plant();
+        stage(plant, crank_q, 6.);
+        rider::RiderCommand command;
+        command.mean_crank_torque_nm = 120.;
+        const auto torques = plant.controller->compute(
+            plant.data, command, true, .00125, false);
+        const auto values = torque_vector(torques, *plant.controller);
+        if (std::cos(crank_q) < 0.) {
+            double hip = 0., knee = 0.;
+            for (std::size_t i = 0; i < plant.controller->joints().size();
+                 ++i) {
+                const auto &name = plant.controller->joints()[i].name;
+                if (name == "rider_hip_rear") hip = values[i];
+                if (name == "rider_knee_rear") knee = values[i];
+            }
+            bt::require(std::abs(hip) > 1e-9 || std::abs(knee) > 1e-9,
+                        std::format("crank_q={}: rear chain drives "
+                                    "(hip {:.6f}, knee {:.6f})",
+                                    crank_q, hip, knee));
+        }
+        bt::oracle::Node node(node_id(std::format(
+            "test_spindle_rear_chain_effort_matches_python[{}]", id)));
+        compare_compute(node, torques, *plant.controller);
+        node.done();
+    }
 }
 
 void test_spindle_disabled_command_matches_python() {
-    drain_plant_node(__func__);
+    Plant plant = make_plant();
+    stage(plant, .3, 2.);
+    rider::RiderCommand command;
+    command.enabled = false;
+    command.mean_crank_torque_nm = 80.;
+    const auto torques =
+        plant.controller->compute(plant.data, command, true, .00125, false);
+    const auto values = torque_vector(torques, *plant.controller);
+    bt::require(std::ranges::all_of(values,
+                                    [](double v) { return v == 0.; }),
+                "disabled command requests zero torque");
+    bt::require(!plant.controller->state().support_diagnostics.stance_front &&
+                    !plant.controller->state()
+                         .support_diagnostics.stance_rear,
+                "disabled stance flags are both false");
+    bt::oracle::Node node(
+        node_id("test_spindle_disabled_command_matches_python"));
+    compare_compute(node, torques, *plant.controller);
+    node.done();
 }
 
+void test_spindle_steady_state_bypasses_activation() {
+    Plant plant = make_plant();
+    stage(plant, 1.1, 7.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 90.;
+    const auto torques =
+        plant.controller->compute(plant.data, command, true, .00125, true);
+    bt::oracle::Node node(
+        node_id("test_spindle_steady_state_bypasses_activation"));
+    compare_compute(node, torques, *plant.controller);
+    node.done();
+}
+
+void test_spindle_coasting_command_matches_python() {
+    Plant plant = make_plant();
+    stage(plant, .35, 4.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 0.;
+    command.crank_target_phase_rad = 1.2;
+    command.crank_target_rate_rad_s = 6.;
+    const auto torques =
+        plant.controller->compute(plant.data, command, true, .00125, false);
+    bt::oracle::Node node(
+        node_id("test_spindle_coasting_command_matches_python"));
+    compare_compute(node, torques, *plant.controller);
+    node.done();
+}
+
+void test_spindle_compute_posture_matches_python() {
+    rider::RiderPosture offset;
+    offset.torso_lean_rad = -.2;
+    offset.pelvis_offset_m = spindle::Vec2{-.05, .1};
+    rider::RiderPosture lean;
+    lean.torso_lean_rad = .3;
+    lean.pelvis_pitch_rad = .2;
+    rider::RiderPosture stand;
+    stand.pelvis_pitch_rad = -.4;
+    stand.use_saddle = false;
+    const std::pair<rider::RiderPosture, const char *> cases[] = {
+        {rider::RiderPosture{}, "posture0"},
+        {lean, "posture1"},
+        {offset, "posture2"},
+        {stand, "posture3"},
+    };
+    for (const auto &[posture, id] : cases) {
+        Plant plant = make_plant();
+        stage(plant, 1.9, 7.);
+        rider::RiderCommand command;
+        command.posture = posture;
+        command.mean_crank_torque_nm = 70.;
+        const auto torques = plant.controller->compute(
+            plant.data, command, true, .00125, false);
+        bt::oracle::Node node(node_id(std::format(
+            "test_spindle_compute_posture_matches_python[{}]", id)));
+        compare_compute(node, torques, *plant.controller);
+        node.done();
+    }
+}
+
+// ---- activation / damped fixture -------------------------------------------
+
+void test_spindle_activation_rejects_repeated_timestamp() {
+    Plant plant = make_plant(true);
+    bt::require(plant.controller->config().activation_tau_s > 0.,
+                "damped fixture carries activation_tau_s > 0");
+    stage(plant, .4, 5.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 60.;
+    (void)plant.controller->compute(plant.data, command, true, .00125,
+                                    false);
+    bool threw = false;
+    try {
+        (void)plant.controller->compute(plant.data, command, true, .00125,
+                                        false);
+    } catch (const std::exception &) {
+        threw = true;
+    }
+    bt::require(threw, "repeated timestamp must reject");
+}
+
+void test_spindle_activation_and_passive_damping_match_python() {
+    Plant plant = make_plant(true);
+    bt::require(plant.controller->config().passive_damping_nms_rad() > 0.,
+                "damped fixture carries passive_damping_nms_rad > 0");
+    const std::array<std::pair<const char *, double>, 2> rates{
+        {{"rider_hip_front", 1.5}, {"rider_knee_rear", -2.}}};
+    stage(plant, .4, 5., 0., rates);
+    const std::array<double, 3> times{.00125, .00250, .00375};
+    const std::array<double, 3> efforts{60., 80., 40.};
+    bt::oracle::Node node(
+        node_id("test_spindle_activation_and_passive_damping_match_python"));
+    bool saw_damping = false;
+    for (std::size_t i = 0; i < 3; ++i) {
+        plant.data->time = times[i];
+        mj_forward(plant.model, plant.data);
+        rider::RiderCommand command;
+        command.mean_crank_torque_nm = efforts[i];
+        const auto torques = plant.controller->compute(
+            plant.data, command, true, .00125, false);
+        compare_compute(node, torques, *plant.controller,
+                        std::format("compute{}", i));
+        for (const auto &[name, terms] :
+             plant.controller->state().last_terms)
+            if (terms.passive_damping_nm && *terms.passive_damping_nm != 0.)
+                saw_damping = true;
+    }
+    bt::require(saw_damping, "passive-damping terms evolve nonzero");
+    node.done();
+}
+
+// ---- initialize / envelope / write ----------------------------------------
+
 void test_spindle_initialize_matches_python() {
-    drain_plant_node(__func__);
+    Plant plant = make_plant();
+    wbuf(plant.data->qpos, nq(plant.model))[joint_qposadr(
+        plant.model, "crank_spin")] = 1.3;
+    mj_forward(plant.model, plant.data);
+    plant.controller->initialize(plant.data);
+    bt::oracle::Node node(node_id("test_spindle_initialize_matches_python"));
+    node.f64_close(buf(plant.data->qpos, nq(plant.model)), "qpos");
+    node.done();
 }
 
 void test_spindle_initialize_velocity_matches_python() {
-    drain_plant_node(__func__);
+    Plant plant = make_plant();
+    wbuf(plant.data->qpos, nq(plant.model))[joint_qposadr(
+        plant.model, "crank_spin")] = .8;
+    wbuf(plant.data->qvel, nv(plant.model))[joint_dofadr(
+        plant.model, "crank_spin")] = 9.0;
+    mj_forward(plant.model, plant.data);
+    plant.controller->initialize_velocity(plant.data);
+    bt::oracle::Node node(
+        node_id("test_spindle_initialize_velocity_matches_python"));
+    node.f64_close(buf(plant.data->qvel, nv(plant.model)),
+                   "qvel");
+    node.done();
 }
 
 void test_spindle_envelope_forces_match_python() {
-    drain_plant_node(__func__);
+    Plant plant = make_plant();
+    plant.controller->initialize(plant.data);
+    const auto [force, stored] =
+        plant.controller->envelope_forces(plant.data);
+    bt::oracle::Node node(
+        node_id("test_spindle_envelope_forces_match_python"));
+    node.f64_close(force, "force");
+    const std::array<double, 1> scalar{stored};
+    node.f64_close(scalar, "stored_j");
+    node.done();
 }
 
 void test_spindle_write_matches_python() {
-    drain_plant_node(__func__);
+    Plant plant = make_plant();
+    stage(plant, .5, 0.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 70.;
+    const auto torques =
+        plant.controller->compute(plant.data, command, true, .00125, false);
+    plant.controller->write(plant.data, torques);
+    bt::oracle::Node node(node_id("test_spindle_write_matches_python"));
+    node.f64_close(buf(plant.data->ctrl, nu(plant.model)), "ctrl");
+    node.done();
+}
+
+// ---- state round trip / solved effort --------------------------------------
+
+void test_spindle_state_round_trip() {
+    Plant plant = make_plant();
+    stage(plant, .9, 4.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 55.;
+    (void)plant.controller->compute(plant.data, command, true, .00125,
+                                    false);
+    bt::oracle::Node node(node_id("test_spindle_state_round_trip"));
+    // The recorded document is both the decode input and the re-encode
+    // oracle: restore() then encode_spindle_state() must reproduce it
+    // byte-for-byte (the wire is a lossless round-trip).
+    const auto document = node.bytes_input("restored_state");
+    const std::string_view source(
+        reinterpret_cast<const char *>(document.data()), document.size());
+    plant.controller->restore(rider::decode_spindle_state(
+        bio::parse_json(source), "restored_state"));
+    const std::string reencoded = state_document(*plant.controller);
+    bt::require(
+        std::ranges::equal(
+            byte_span(reencoded),
+            std::views::counted(
+                document.data(),
+                static_cast<std::ptrdiff_t>(document.size()))),
+        "restore+encode reproduces the wire byte-for-byte");
+    mj_resetData(plant.model, plant.data);
+    plant.data->time = .00125;
+    wbuf(plant.data->qpos, nq(plant.model))[joint_qposadr(
+        plant.model, "crank_spin")] = 1.05;
+    wbuf(plant.data->qvel, nv(plant.model))[joint_dofadr(
+        plant.model, "crank_spin")] = 5.;
+    mj_forward(plant.model, plant.data);
+    const auto torques =
+        plant.controller->compute(plant.data, command, true, .00125, false);
+    compare_compute(node, torques, *plant.controller);
+    node.done();
+}
+
+void test_spindle_solved_effort_matches_python() {
+    Plant plant = make_plant();
+    stage(plant, .6, 8.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 75.;
+    const auto torques =
+        plant.controller->compute(plant.data, command, true, .00125, false);
+    plant.controller->write(plant.data, torques);
+    const std::span<const double> qpos_view =
+        buf(plant.data->qpos, nq(plant.model));
+    const std::vector<double> incoming_qpos(qpos_view.begin(),
+                                            qpos_view.end());
+    const std::span<const double> qvel_view =
+        buf(plant.data->qvel, nv(plant.model));
+    const std::vector<double> incoming_qvel(qvel_view.begin(),
+                                            qvel_view.end());
+    mj_forward(plant.model, plant.data);
+    const auto diagnostics = plant.controller->solved_effort(
+        plant.data, incoming_qpos, incoming_qvel, .00125);
+    bt::oracle::Node node(
+        node_id("test_spindle_solved_effort_matches_python"));
+    const auto delivered =
+        torque_vector(diagnostics.active_delivered_nm, *plant.controller);
+    node.f64_close(delivered, "solved.delivered");
+    const double powers[] = {
+        diagnostics.positive_power_w,
+        diagnostics.passive_power_w,
+        diagnostics.positive_work_step_j.value_or(0.),
+        diagnostics.passive_work_step_j.value_or(0.),
+    };
+    node.f64_close(powers, "solved.powers");
+    bio::Value::Array names;
+    if (diagnostics.strength_violations)
+        for (const auto &name : *diagnostics.strength_violations)
+            names.push_back(bio::Value{std::string(name)});
+    bio::Value::Object object;
+    object.emplace_back("violations", bio::Value{std::move(names)});
+    const std::string doc =
+        bio::canonical_json(bio::Value{std::move(object)});
+    const std::array<std::size_t, 1> shape{doc.size()};
+    node.bytes(byte_span(doc), "|u1", shape, "solved.violations");
+    expect_state_close(node, state_document(*plant.controller),
+                       "solved.state");
+    node.done();
 }
 
 void test_spindle_reset_activation_matches_python() {
-    drain_plant_node(__func__);
+    Plant plant = make_plant();
+    stage(plant, .2, 3.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 50.;
+    (void)plant.controller->compute(plant.data, command, true, .00125,
+                                    false);
+    plant.controller->reset_activation();
+    const auto state = plant.controller->state();
+    bt::require(std::ranges::all_of(state.active_state,
+                                    [](double v) { return v == 0.; }),
+                "reset zeroes the activation filter state");
+    bt::require(!state.activation_time_s.has_value(),
+                "reset clears activation_time_s");
+    bt::oracle::Node node(
+        node_id("test_spindle_reset_activation_matches_python"));
+    expect_state_close(node, state_document(*plant.controller),
+                       "reset_state");
+    node.done();
 }
 
+// ---- strength probes / rejection contracts ---------------------------------
+
 void test_spindle_strength_probes_match_python() {
-    drain_plant_node(__func__);
+    Plant plant = make_plant();
+    stage(plant, .4, 0.);
+    std::vector<double> anatomical;
+    std::vector<double> capacities;
+    const std::array<std::array<double, 2>, 3> probes{
+        {{0., 30.}, {2.5, -20.}, {-1.5, 45.}}};
+    for (const auto &joint : plant.controller->joints()) {
+        const double angle = plant.controller->anatomical_joint_angle(
+            joint.name,
+            buf(plant.data->qpos, nq(plant.model))
+                [static_cast<std::size_t>(joint.qpos_adr)]);
+        anatomical.push_back(angle);
+        for (const auto &[velocity, torque] : probes)
+            capacities.push_back(plant.controller->strength_capacity(
+                joint.name, angle, velocity, torque));
+    }
+    std::vector<double> requested;
+    for (const auto &joint : plant.controller->joints())
+        requested.push_back(joint.name.find("knee") != std::string::npos
+                                ? 120. : -90.);
+    const std::span<const double> qpos_view =
+        buf(plant.data->qpos, nq(plant.model));
+    const std::vector<double> qpos(qpos_view.begin(), qpos_view.end());
+    const std::span<const double> qvel_view =
+        buf(plant.data->qvel, nv(plant.model));
+    const std::vector<double> qvel(qvel_view.begin(), qvel_view.end());
+    const auto [clipped, limited] = plant.controller->strength_limited(
+        requested, qpos, qvel);
+    bt::oracle::Node node(
+        node_id("test_spindle_strength_probes_match_python"));
+    node.f64_close(anatomical, "anatomical");
+    node.f64_close(capacities, "capacity");
+    node.f64_close(clipped, "clipped");
+    bio::Value::Array names;
+    for (const auto &name : limited)
+        names.push_back(bio::Value{std::string(name)});
+    bio::Value::Object object;
+    object.emplace_back("limited", bio::Value{std::move(names)});
+    const std::string doc =
+        bio::canonical_json(bio::Value{std::move(object)});
+    const std::array<std::size_t, 1> shape{doc.size()};
+    node.bytes(byte_span(doc), "|u1", shape, "limited");
+    node.done();
 }
 
 void test_spindle_strength_rejects_malformed_state() {
-    drain_plant_node(__func__);
+    Plant plant = make_plant();
+    stage(plant, .4, 0.);
+    const std::span<const double> qpos_view =
+        buf(plant.data->qpos, nq(plant.model));
+    const std::vector<double> qpos(qpos_view.begin(), qpos_view.end());
+    const std::span<const double> qvel_view =
+        buf(plant.data->qvel, nv(plant.model));
+    const std::vector<double> qvel(qvel_view.begin(), qvel_view.end());
+    const std::vector<double> flat(plant.controller->joints().size(), 0.);
+    bt::require(throws_std([&] {
+                    (void)plant.controller->strength_limited(
+                        flat, std::span<const double>(qpos).subspan(0, 2),
+                        qvel);
+                }),
+                "narrow qpos rejects");
+    bt::require(throws_std([&] {
+                    (void)plant.controller->strength_limited(
+                        flat, qpos,
+                        std::span<const double>(qvel).subspan(0, 2));
+                }),
+                "narrow qvel rejects");
+    bt::require(throws_std([&] {
+                    (void)plant.controller->solved_effort(
+                        plant.data,
+                        std::span<const double>(qpos).subspan(0, 2), qvel,
+                        .00125);
+                }),
+                "solved_effort narrow qpos rejects");
+    bt::require(throws_std([&] {
+                    (void)plant.controller->solved_effort(
+                        plant.data, qpos,
+                        std::span<const double>(qvel).subspan(0, 2), .00125);
+                }),
+                "solved_effort narrow qvel rejects");
 }
 
 void test_spindle_lookups_reject_unknown_joints() {
-    drain_plant_node(__func__);
+    Plant plant = make_plant();
+    stage(plant, .4, 0.);
+    for (const char *name : {"rider_ankle_front", "rider_wrist"})
+        bt::require(throws_std([&] {
+                        plant.controller->write(
+                            plant.data, rider::NamedEntries<double>{
+                                            {name, 0.}});
+                    }),
+                    std::string("write rejects unknown joint ") + name);
+    bt::require(throws_std([&] {
+                    (void)plant.controller->anatomical_joint_angle(
+                        "rider_wrist", 0.);
+                }),
+                "anatomical_joint_angle rejects unknown joint");
+    bt::require(throws_std([&] {
+                    (void)plant.controller->strength_capacity(
+                        "rider_wrist", 0., 0., 5.);
+                }),
+                "strength_capacity rejects unknown joint");
 }
 
 void test_spindle_probe_rejects_bad_input() {
-    drain_plant_node(__func__);
+    Plant plant = make_plant();
+    bt::require(throws_std([&] {
+                    (void)rider::decode_rider_command(
+                        bio::Value{bio::Value::Object{}}, "command");
+                }),
+                "empty command document rejects");
+    bt::require(throws_std([&] {
+                    bio::Value::Object command;
+                    command.emplace_back(
+                        "mean_crank_torque_nm",
+                        bio::Value{bio::Number{"-1."}});
+                    (void)rider::decode_rider_command(
+                        bio::Value{std::move(command)}, "command");
+                }),
+                "negative mean crank torque rejects");
+    bt::require(throws_std([&] {
+                    bio::Value::Object state;
+                    state.emplace_back("enabled", bio::Value{true});
+                    (void)rider::decode_spindle_state(
+                        bio::Value{std::move(state)}, "state");
+                }),
+                "partial state document rejects");
+    // A schema-valid non-spindle attachment routes to the ported legacy
+    // controller rather than rejecting at decode — the wire decode marks
+    // config.legacy for the runtime's controller dispatch (the python
+    // node's adapter-level construction is exercised through the runtime
+    // ports, not this wire contract).
+    bio::Value doc = bio::parse_json(
+        bt::text(bt::fixture("spindle/pinned/config.json")));
+    bio::Value rider_doc = member(doc, "rider_controller");
+    set_string(rider_doc, "pedal_attachment", "flat");
+    const auto flat_config = rider::decode_spindle_config(rider_doc);
+    bt::require(flat_config.legacy.has_value() &&
+                    flat_config.legacy->pedal_attachment == "flat",
+                "flat attachment decodes into the legacy route");
+    // A mode outside the schema set is still rejected at decode.
+    set_string(rider_doc, "pedal_attachment", "pin");
+    bt::require(throws_std([&] {
+                    (void)rider::decode_spindle_config(rider_doc);
+                }),
+                "pedal_attachment=pin rejects");
+    bt::require(throws_std([&] {
+                    (void)rider::decode_spindle_config(
+                        bio::Value{bio::Value::Object{}});
+                }),
+                "missing config members reject");
 }
-
 } // namespace
 
+// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// The dispatcher's inlined callees keep every plant's exception-cleanup slot
+// live, so the frame legitimately exceeds the 8KB guard whose target is the
+// per-step realtime path — same rationale as test_contracts' large cases.
+// cppcheck-suppress throwInEntryPoint
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 int main() {
     return bt::run([] {
         test_spindle_waveform_matches_python();
         test_effort_ceiling_matches_python();
         test_spindle_waveform_rejects_bad_inputs();
         test_effort_ceiling_rejects_bad_inputs();
+        test_spindle_compute_matches_python();
+        test_spindle_rear_chain_effort_matches_python();
         test_spindle_disabled_command_matches_python();
+        test_spindle_steady_state_bypasses_activation();
+        test_spindle_coasting_command_matches_python();
+        test_spindle_compute_posture_matches_python();
+        test_spindle_activation_rejects_repeated_timestamp();
+        test_spindle_activation_and_passive_damping_match_python();
         test_spindle_initialize_matches_python();
         test_spindle_initialize_velocity_matches_python();
         test_spindle_envelope_forces_match_python();
         test_spindle_write_matches_python();
+        test_spindle_state_round_trip();
+        test_spindle_solved_effort_matches_python();
         test_spindle_reset_activation_matches_python();
         test_spindle_strength_probes_match_python();
         test_spindle_strength_rejects_malformed_state();
@@ -752,3 +942,4 @@ int main() {
         test_spindle_probe_rejects_bad_input();
     });
 }
+NATIVE_DIAG_POP

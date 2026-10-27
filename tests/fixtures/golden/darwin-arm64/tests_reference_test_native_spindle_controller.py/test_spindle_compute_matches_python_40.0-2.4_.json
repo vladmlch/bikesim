@@ -1,0 +1,30 @@
+[
+ {
+  "atol": 1e-08,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "compute.torques",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[40.0-2.4]",
+  "offset": 0,
+  "rtol": 1e-07,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "compute.state",
+  "nbytes": 5120,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_compute_matches_python[40.0-2.4]",
+  "offset": 72,
+  "rtol": null,
+  "shape": [
+   5120
+  ]
+ }
+]

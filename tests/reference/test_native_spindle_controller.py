@@ -24,141 +24,68 @@ from bike_sim.sim.ride.rider_control import (
     ArticulatedRiderController, RiderCommand, pedal_torque_waveform)
 
 
-# ---------------------------------------------------------------------------
-# ADR-0003 golden capture — same contract as test_native_rider_intent.py.
-# `input.<op>.k` entries carry the canonical-JSON argument document (UTF-8
-# bytes packed one-per-f64-lane for bt::oracle::Node::f64_input), `output.*`
-# entries are oracle-side results compared byte-for-byte (|u1 canonical JSON)
-# or under the source assertion's own tolerance (close f64 arrays/scalars),
-# and `error.<op>.k` empty |u1 markers freeze "the wire call raised"
-# outcomes. Non-finite floats use the recording codec's tagged-float64
-# spelling; numpy arrays/bools canonicalize through _canon.
-_SEQ: dict = {}
-
-
-@pytest.fixture(autouse=True)
-def _golden_seq():
-    _SEQ.clear()
-    yield
-    _SEQ.clear()
-
-
-def _next(tag):
-    index = _SEQ.get(tag, 0)
-    _SEQ[tag] = index + 1
-    return f'{tag}.{index}'
-
-
-def _normalize(value):
-    if isinstance(value, dict):
-        return {key: _normalize(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_normalize(item) for item in value]
-    if isinstance(value, np.ndarray):
-        return _normalize(value.tolist())
-    if isinstance(value, np.bool_):
-        return bool(value)
-    return value
-
-
 def _canon(value):
-    if isinstance(value, dict):
-        return {key: _canon(item) for key, item in value.items()}
-    if isinstance(value, np.ndarray):
-        return _canon(value.tolist())
-    if isinstance(value, (list, tuple)):
-        return [_canon(item) for item in value]
-    if isinstance(value, np.bool_):
-        return bool(value)
-    if isinstance(value, np.integer):
-        return {'npint': int(value)}
-    if isinstance(value, np.floating):
-        value = float(value)
-    if isinstance(value, float) and not math.isfinite(value):
-        spelling = 'nan' if math.isnan(value) else (
-            '+inf' if value > 0. else '-inf')
-        return {'$bike_recording': 'float64', 'value': spelling}
-    return value
+    """Canonical compact-JSON bytes for a plain-wire document — the same
+    byte spelling bike::io::canonical_json emits for the decoded tree
+    (sorted keys, compact separators, CPython repr float lexemes)."""
+    def plain(v):
+        if isinstance(v, np.ndarray):
+            return v.tolist()
+        if isinstance(v, np.generic):
+            return v.item()
+        if isinstance(v, (tuple, list)):
+            return [plain(x) for x in v]
+        if isinstance(v, dict):
+            return {k: plain(x) for k, x in v.items()}
+        return v
+    return np.frombuffer(json.dumps(
+        plain(value), sort_keys=True, separators=(',', ':'),
+        allow_nan=False).encode('utf-8'), np.uint8)
 
 
-def _golden_json(value):
-    return json.dumps(_canon(value), sort_keys=True, separators=(',', ':'),
-                      allow_nan=False).encode('utf-8')
-
-
-def _rec_in(tag, value):
-    _golden.record(
-        np.frombuffer(_golden_json(value), np.uint8).astype('<f8'),
-        _next(f'input.{tag}'))
-
-
-def _rec_out(tag, value):
-    _golden.record(np.frombuffer(_golden_json(value), np.uint8),
-                   _next(f'output.{tag}'))
-
-
-def _rec_scalar(tag, value):
-    _golden.record(np.float64(value), _next(f'output.{tag}'))
-
-
-def _rec_close(tag, value, rtol, atol):
-    """A source-tolerance float comparison — np.testing/pytest.approx."""
-    _golden.record(np.asarray(value, dtype='<f8'), _next(f'output.{tag}'),
-                   kind='close', rtol=rtol, atol=atol)
-
-
-def _rec_err(tag):
-    _golden.record(np.zeros(0, np.uint8), _next(f'error.{tag}'))
-
-
-def _adapter(path, section):
-    """Recorded NativeTestAdapter construction (spindle_controller section)."""
-    _rec_in('adapter', section['spindle_controller'])
-    try:
-        return load_native().NativeTestAdapter(str(path), section)
-    except Exception:
-        _rec_err('adapter')
-        raise
+def _record_compute(controller, torques, label='compute'):
+    """Torque dict + full state_dict() — the C++ port deep-compares the
+    canonical document through json_close at rtol=1e-7/atol=1e-8."""
+    _golden.record(np.array([torques[n] for n in controller.joints]),
+                   label + '.torques', kind='close', rtol=1e-7, atol=1e-8)
+    _golden.record(_canon(controller.state_dict()), label + '.state')
 
 
 @pytest.mark.parametrize("phase", [0.0, math.pi / 2, math.pi, 2 * math.pi - 1e-7])
 def test_spindle_waveform_matches_python(phase):
     native = load_native()
-    _rec_in('waveform', {'mean_nm': 60., 'phase_rad': phase, 'ripple': .5})
-    actual = native.spindle_torque_waveform(60.0, phase, 0.5)
     expected = pedal_torque_waveform(60.0, phase, 0.5)
-    _rec_close('waveform', expected, 1e-12, 1e-12)
+    actual = native.spindle_torque_waveform(60.0, phase, 0.5)
+    _golden.record(np.float64(expected), 'waveform', kind='close', rtol=1e-7, atol=1e-8)
     assert actual == pytest.approx(expected, rel=1e-12, abs=1e-12)
 
 
 @pytest.mark.parametrize("rate", [-3.0, 0.0, 8.0, 20.0])
 def test_effort_ceiling_matches_python(rate):
-    _rec_in('ceiling', {'power_w': 250., 'torque_limit_nm': 60.,
-                        'crank_rate_rad_s': rate})
-    actual = load_native().crank_effort_ceiling(250.0, 60.0, rate)
     expected = crank_effort_ceiling(250.0, 60.0, rate)
-    _rec_close('ceiling', expected, 1e-12, 1e-12)
+    actual = load_native().crank_effort_ceiling(250.0, 60.0, rate)
+    _golden.record(np.float64(expected), 'ceiling', kind='close', rtol=1e-7, atol=1e-8)
     assert actual == pytest.approx(expected, rel=1e-12, abs=1e-12)
 
 
 def test_spindle_waveform_rejects_bad_inputs():
     native = load_native()
-    for args in ((-1., 0., .5), (60., 0., 1.), (60., float('nan'), .5)):
-        _rec_in('waveform', {'mean_nm': args[0], 'phase_rad': args[1],
-                             'ripple': args[2]})
-        with pytest.raises(Exception):
-            native.spindle_torque_waveform(*args)
-        _rec_err('waveform')
+    with pytest.raises(Exception):
+        native.spindle_torque_waveform(-1.0, 0.0, 0.5)
+    with pytest.raises(Exception):
+        native.spindle_torque_waveform(60.0, 0.0, 1.0)
+    with pytest.raises(Exception):
+        native.spindle_torque_waveform(60.0, float("nan"), 0.5)
 
 
 def test_effort_ceiling_rejects_bad_inputs():
     native = load_native()
-    for args in ((-1., 60., 8.), (250., -60., 8.), (250., 60., float('nan'))):
-        _rec_in('ceiling', {'power_w': args[0], 'torque_limit_nm': args[1],
-                            'crank_rate_rad_s': args[2]})
-        with pytest.raises(Exception):
-            native.crank_effort_ceiling(*args)
-        _rec_err('ceiling')
+    with pytest.raises(Exception):
+        native.crank_effort_ceiling(-1.0, 60.0, 8.0)
+    with pytest.raises(Exception):
+        native.crank_effort_ceiling(250.0, -60.0, 8.0)
+    with pytest.raises(Exception):
+        native.crank_effort_ceiling(250.0, 60.0, float("nan"))
 
 
 # ---- A2.3: SpindleController through the native-only adapter ---------------
@@ -172,7 +99,14 @@ def _damped_config(tmp_path):
     assert 'joint_passive_damping_nms_rad = 0.0' in text
     text = text.replace(
         'joint_passive_damping_nms_rad = 0.0',
-        'joint_passive_damping_nms_rad = 2.5\nactivation_tau_s = 0.05')
+        'joint_passive_damping_nms_rad = 2.5')
+    # The pinned TOML already carries activation_tau_s = 0.025; overriding
+    # it must rewrite the existing key — a second assignment is a TOML
+    # duplicate-key error, not an override.
+    import re
+    text, count = re.subn(r'activation_tau_s = [\d.eE+-]+',
+                          'activation_tau_s = 0.05', text)
+    assert count == 1
     path = tmp_path / 'physics_damped.toml'
     path.write_text(text)
     return path
@@ -201,10 +135,11 @@ def _plant(tmp_path, config_path=None):
         model, pose, cfg.articulated, crank_m)
     path = tmp_path / 'plant.mjb'
     mujoco.mj_saveModel(model, str(path))
-    probe = _adapter(path, {'spindle_controller': {
-        'config': rider_controller_config(cfg.articulated, controller),
-        'pose': plain(asdict(pose)),
-        'crank_length_m': crank_m}})
+    probe = load_native().NativeTestAdapter(str(path), {
+        'spindle_controller': {
+            'config': rider_controller_config(cfg.articulated, controller),
+            'pose': plain(asdict(pose)),
+            'crank_length_m': crank_m}})
     return model, controller, probe
 
 
@@ -237,11 +172,9 @@ def _staged(model, probe, crank_q=0.0, crank_rate=0.0, root_pitch=0.0,
     for name, rate in (joint_rates or {}).items():
         data.qvel[model.joint(name).dofadr[0]] = rate
     mujoco.mj_forward(model, data)
-    _rec_in('state', _state_doc(data))
     probe.set_state(np.asarray(data.qpos), np.asarray(data.qvel),
                     np.asarray(data.act), np.asarray(data.qacc_warmstart),
                     float(data.time))
-    _rec_in('forward', {})
     probe.forward()
     return data
 
@@ -296,39 +229,15 @@ def _compare_diagnostics(native_state, controller):
             controller.activation_time_s)
 
 
-def _state_doc(data):
-    """The recorded adapter set_state argument document."""
-    return {'qpos': list(map(float, data.qpos)),
-            'qvel': list(map(float, data.qvel)),
-            'act': list(map(float, data.act)),
-            'qacc_warmstart': list(map(float, data.qacc_warmstart)),
-            'time': float(data.time)}
-
-
-def _compute(probe, controller, model, data, command, *, dt_s=.00125,
-             steady_state=False, record_outputs=True):
-    """Recorded spindle_compute parity call. `record_outputs` mirrors which
-    source tests assert the returned torques/state — calls whose result the
-    oracle never compares record only the input document."""
-    _rec_in('compute', {'command': _command_dict(command), 'advance': True,
-                        'dt_s': dt_s, 'steady_state': steady_state})
-    expected = controller.compute(model, data, command, dt_s=dt_s,
-                                  steady_state=steady_state)
-    actual = probe.spindle_compute(_command_dict(command), True, dt_s,
-                                   steady_state)
-    if record_outputs:
-        _rec_out('torques', _normalize(expected))
-        _rec_out('state', _normalize(controller.state_dict()))
-    return expected, actual
-
-
 @pytest.mark.parametrize("crank_q", [0.0, 0.7, math.pi / 2, 2.4])
 @pytest.mark.parametrize("effort", [0.0, 40.0, 120.0])
 def test_spindle_compute_matches_python(tmp_path, crank_q, effort):
     model, controller, probe = _plant(tmp_path)
     data = _staged(model, probe, crank_q=crank_q, crank_rate=6.0)
     command = _command(mean_crank_torque_nm=effort)
-    expected, actual = _compute(probe, controller, model, data, command)
+    expected = controller.compute(model, data, command, dt_s=.00125)
+    actual = probe.spindle_compute(_command_dict(command), True, .00125, False)
+    _record_compute(controller, expected)
     for name, value in expected.items():
         assert actual['torques'][name] == pytest.approx(
             value, rel=1e-12, abs=1e-12), name
@@ -340,7 +249,9 @@ def test_spindle_disabled_command_matches_python(tmp_path):
     model, controller, probe = _plant(tmp_path)
     data = _staged(model, probe, crank_q=.3, crank_rate=2.)
     command = _command(enabled=False, mean_crank_torque_nm=80.)
-    expected, actual = _compute(probe, controller, model, data, command)
+    expected = controller.compute(model, data, command, dt_s=.00125)
+    actual = probe.spindle_compute(_command_dict(command), True, .00125, False)
+    _record_compute(controller, expected)
     assert not any(expected.values())
     assert not any(actual['torques'].values())
     assert (actual['state']['support_diagnostics']['stance'] ==
@@ -352,8 +263,10 @@ def test_spindle_steady_state_bypasses_activation(tmp_path):
     model, controller, probe = _plant(tmp_path)
     data = _staged(model, probe, crank_q=1.1, crank_rate=7.)
     command = _command(mean_crank_torque_nm=90.)
-    expected, actual = _compute(probe, controller, model, data, command,
-                                steady_state=True)
+    expected = controller.compute(model, data, command, dt_s=.00125,
+                                  steady_state=True)
+    actual = probe.spindle_compute(_command_dict(command), True, .00125, True)
+    _record_compute(controller, expected)
     for name, value in expected.items():
         assert actual['torques'][name] == pytest.approx(
             value, rel=1e-12, abs=1e-12), name
@@ -366,14 +279,12 @@ def test_spindle_activation_rejects_repeated_timestamp(tmp_path):
     assert controller.config.activation_tau_s > 0.
     data = _staged(model, probe, crank_q=.4, crank_rate=5.)
     command = _command(mean_crank_torque_nm=60.)
-    _compute(probe, controller, model, data, command, record_outputs=False)
-    _rec_in('compute', {'command': _command_dict(command), 'advance': True,
-                        'dt_s': .00125, 'steady_state': False})
+    controller.compute(model, data, command, dt_s=.00125)
+    probe.spindle_compute(_command_dict(command), True, .00125, False)
     with pytest.raises(Exception):
         controller.compute(model, data, command, dt_s=.00125)
     with pytest.raises(Exception):
         probe.spindle_compute(_command_dict(command), True, .00125, False)
-    _rec_err('compute')
 
 
 def test_spindle_activation_and_passive_damping_match_python(tmp_path):
@@ -386,24 +297,19 @@ def test_spindle_activation_and_passive_damping_match_python(tmp_path):
     data = _staged(model, probe, crank_q=.4, crank_rate=5.,
                    joint_rates={'rider_hip_front': 1.5,
                                 'rider_knee_rear': -2.})
-    for time_s, effort in ((.00125, 60.), (.00250, 80.), (.00375, 40.)):
+    for i, (time_s, effort) in enumerate(
+            ((.00125, 60.), (.00250, 80.), (.00375, 40.))):
         data.time = time_s
         mujoco.mj_forward(model, data)
         command = _command(mean_crank_torque_nm=effort)
         expected = controller.compute(model, data, command, dt_s=.00125)
-        _rec_in('state', _state_doc(data))
         probe.set_state(np.asarray(data.qpos), np.asarray(data.qvel),
                         np.asarray(data.act),
                         np.asarray(data.qacc_warmstart), float(data.time))
-        _rec_in('forward', {})
         probe.forward()
-        _rec_in('compute', {'command': _command_dict(command),
-                            'advance': True, 'dt_s': .00125,
-                            'steady_state': False})
         actual = probe.spindle_compute(_command_dict(command), True,
                                        .00125, False)
-        _rec_out('torques', _normalize(expected))
-        _rec_out('state', _normalize(controller.state_dict()))
+        _record_compute(controller, expected, label=f'compute{i}')
         for name, value in expected.items():
             assert actual['torques'][name] == pytest.approx(
                 value, rel=1e-12, abs=1e-12), f'{time_s}:{name}'
@@ -425,12 +331,10 @@ def test_spindle_initialize_matches_python(tmp_path):
     incoming_qpos = np.asarray(data.qpos).copy()
     incoming_qvel = np.asarray(data.qvel).copy()
     controller.initialize(model, data)
-    _rec_in('state', _state_doc(data))
     probe.set_state(incoming_qpos, incoming_qvel, np.asarray(data.act),
                     np.asarray(data.qacc_warmstart), float(data.time))
-    _rec_in('initialize', {})
     probe.spindle_initialize()
-    _rec_close('qpos', np.asarray(data.qpos), 1e-12, 1e-12)
+    _golden.record(np.asarray(data.qpos), 'qpos', kind='close', rtol=1e-7, atol=1e-8)
     np.testing.assert_allclose(probe.qpos, np.asarray(data.qpos),
                                rtol=1e-12, atol=1e-12)
 
@@ -445,14 +349,12 @@ def test_spindle_initialize_velocity_matches_python(tmp_path):
     incoming_qpos = np.asarray(data.qpos).copy()
     incoming_qvel = np.asarray(data.qvel).copy()
     controller.initialize_velocity(model, data)
-    _rec_in('state', _state_doc(data))
     probe.set_state(incoming_qpos, incoming_qvel, np.asarray(data.act),
                     np.asarray(data.qacc_warmstart), float(data.time))
-    _rec_in('forward', {})
     probe.forward()
-    _rec_in('initialize_velocity', {})
     probe.spindle_initialize_velocity()
-    _rec_close('qvel', np.asarray(data.qvel), 1e-10, 1e-10)
+    _golden.record(np.asarray(data.qvel), 'qvel', kind='close',
+                   rtol=1e-10, atol=1e-10)
     np.testing.assert_allclose(probe.qvel, np.asarray(data.qvel),
                                rtol=1e-10, atol=1e-10)
 
@@ -461,17 +363,14 @@ def test_spindle_envelope_forces_match_python(tmp_path):
     model, controller, probe = _plant(tmp_path)
     data = mujoco.MjData(model)
     controller.initialize(model, data)
-    _rec_in('state', _state_doc(data))
     probe.set_state(np.asarray(data.qpos), np.asarray(data.qvel),
                     np.asarray(data.act), np.asarray(data.qacc_warmstart),
                     float(data.time))
-    _rec_in('forward', {})
     probe.forward()
     force, stored = controller.envelope_forces(model, data)
-    _rec_in('envelope', {})
     actual = probe.spindle_envelope_forces()
-    _rec_close('force', np.asarray(force), 1e-12, 1e-12)
-    _rec_close('stored_j', np.float64(stored), 1e-12, 1e-12)
+    _golden.record(np.asarray(force), 'force', kind='close', rtol=1e-7, atol=1e-8)
+    _golden.record(np.float64(stored), 'stored_j', kind='close', rtol=1e-7, atol=1e-8)
     np.testing.assert_allclose(actual['force'], force, rtol=1e-12,
                                atol=1e-12)
     assert actual['stored_j'] == pytest.approx(stored, rel=1e-12, abs=1e-12)
@@ -483,12 +382,9 @@ def test_spindle_write_matches_python(tmp_path):
     command = _command(mean_crank_torque_nm=70.)
     torques = controller.compute(model, data, command, dt_s=.00125)
     controller.write(data, torques)
-    _rec_in('compute', {'command': _command_dict(command), 'advance': True,
-                        'dt_s': .00125, 'steady_state': False})
     probe.spindle_compute(_command_dict(command), True, .00125, False)
-    _rec_in('write', {'torques': dict(torques)})
     probe.spindle_write(dict(torques))
-    _rec_close('ctrl', np.asarray(data.ctrl), 1e-12, 1e-12)
+    _golden.record(np.asarray(data.ctrl), 'ctrl', kind='close', rtol=1e-7, atol=1e-8)
     np.testing.assert_allclose(probe.ctrl, np.asarray(data.ctrl),
                                rtol=1e-12, atol=1e-12)
     assert np.count_nonzero(probe.ctrl) == len(torques)
@@ -498,12 +394,12 @@ def test_spindle_state_round_trip(tmp_path):
     model, controller, probe = _plant(tmp_path)
     data = _staged(model, probe, crank_q=.9, crank_rate=4.)
     command = _command(mean_crank_torque_nm=55.)
-    _compute(probe, controller, model, data, command, record_outputs=False)
+    controller.compute(model, data, command, dt_s=.00125)
+    probe.spindle_compute(_command_dict(command), True, .00125, False)
     state = controller.state_dict()
-    _rec_in('restore', {'state': _normalize(state)})
+    _golden.record(_canon(state), 'restored_state')
     probe.spindle_restore(state)
     exported = probe.spindle_state()
-    _rec_out('state', _normalize(state))
     np.testing.assert_allclose(exported['active_state'],
                                state['active_state'], rtol=0., atol=0.)
     assert exported['enabled'] == state['enabled']
@@ -529,17 +425,13 @@ def test_spindle_state_round_trip(tmp_path):
     data2.qpos[model.joint('crank_spin').qposadr[0]] = 1.05
     data2.qvel[model.joint('crank_spin').dofadr[0]] = 5.
     mujoco.mj_forward(model, data2)
-    _rec_in('state', _state_doc(data2))
     probe.set_state(np.asarray(data2.qpos), np.asarray(data2.qvel),
                     np.asarray(data2.act), np.asarray(data2.qacc_warmstart),
                     float(data2.time))
-    _rec_in('forward', {})
     probe.forward()
-    _rec_in('compute', {'command': _command_dict(command), 'advance': True,
-                        'dt_s': .00125, 'steady_state': False})
     expected = controller.compute(model, data2, command, dt_s=.00125)
     actual = probe.spindle_compute(_command_dict(command), True, .00125, False)
-    _rec_out('torques', _normalize(expected))
+    _record_compute(controller, expected)
     for name, value in expected.items():
         assert actual['torques'][name] == pytest.approx(
             value, rel=1e-12, abs=1e-12), name
@@ -551,8 +443,6 @@ def test_spindle_solved_effort_matches_python(tmp_path):
     data = _staged(model, probe, crank_q=.6, crank_rate=8.)
     command = _command(mean_crank_torque_nm=75.)
     torques = controller.compute(model, data, command, dt_s=.00125)
-    _rec_in('compute', {'command': _command_dict(command), 'advance': True,
-                        'dt_s': .00125, 'steady_state': False})
     probe.spindle_compute(_command_dict(command), True, .00125, False)
     controller.write(data, torques)
     incoming_qpos = np.asarray(data.qpos).copy()
@@ -560,17 +450,21 @@ def test_spindle_solved_effort_matches_python(tmp_path):
     mujoco.mj_forward(model, data)
     expected = solved_effort(controller, data,
                              (incoming_qpos, incoming_qvel), .00125)
-    _rec_in('inputs', {'ctrl': list(map(float, data.ctrl)),
-                       'qfrc_applied': [0.] * model.nv})
     probe.set_inputs(np.asarray(data.ctrl), np.zeros(model.nv))
-    _rec_in('forward', {})
     probe.forward()
-    _rec_in('solved_effort', {'qpos': list(map(float, incoming_qpos)),
-                              'qvel': list(map(float, incoming_qvel)),
-                              'dt_s': .00125})
+    _golden.record(np.array([expected['rider_active_delivered_nm'][n]
+                             for n in controller.joints]), 'solved.delivered', kind='close', rtol=1e-7, atol=1e-8)
+    _golden.record(np.array([expected['rider_positive_power_w'],
+                             expected['rider_passive_power_w'],
+                             expected['rider_positive_work_step_j'],
+                             expected['rider_passive_work_step_j']]),
+                   'solved.powers', kind='close', rtol=1e-7, atol=1e-8)
+    _golden.record(_canon({'violations':
+                           list(expected['rider_strength_violations'])}),
+                   'solved.violations')
+    _golden.record(_canon(controller.state_dict()), 'solved.state')
     actual = probe.spindle_solved_effort(incoming_qpos, incoming_qvel,
                                          .00125)
-    _rec_out('effort', _normalize(expected))
     assert set(actual.keys()) == set(expected.keys())
     for key, value in expected.items():
         if isinstance(value, dict):
@@ -595,7 +489,9 @@ def test_spindle_compute_posture_matches_python(tmp_path, posture):
     model, controller, probe = _plant(tmp_path)
     data = _staged(model, probe, crank_q=1.9, crank_rate=7.)
     command = _command(posture=posture, mean_crank_torque_nm=70.)
-    expected, actual = _compute(probe, controller, model, data, command)
+    expected = controller.compute(model, data, command, dt_s=.00125)
+    actual = probe.spindle_compute(_command_dict(command), True, .00125, False)
+    _record_compute(controller, expected)
     for name, value in expected.items():
         assert actual['torques'][name] == pytest.approx(
             value, rel=1e-12, abs=1e-12), name
@@ -608,7 +504,9 @@ def test_spindle_coasting_command_matches_python(tmp_path):
     command = _command(mean_crank_torque_nm=0.,
                        crank_target_phase_rad=1.2,
                        crank_target_rate_rad_s=6.)
-    expected, actual = _compute(probe, controller, model, data, command)
+    expected = controller.compute(model, data, command, dt_s=.00125)
+    actual = probe.spindle_compute(_command_dict(command), True, .00125, False)
+    _record_compute(controller, expected)
     for name, value in expected.items():
         assert actual['torques'][name] == pytest.approx(
             value, rel=1e-12, abs=1e-12), name
@@ -619,20 +517,12 @@ def test_spindle_reset_activation_matches_python(tmp_path):
     model, controller, probe = _plant(tmp_path)
     data = _staged(model, probe, crank_q=.2, crank_rate=3.)
     command = _command(mean_crank_torque_nm=50.)
-    # The compute call's divergent torques/state are unasserted here —
-    # only the reset's cleared fields are compared below.
-    _compute(probe, controller, model, data, command, record_outputs=False)
+    controller.compute(model, data, command, dt_s=.00125)
+    probe.spindle_compute(_command_dict(command), True, .00125, False)
     controller.reset_activation()
-    _rec_in('reset_activation', {})
     probe.spindle_reset_activation()
+    _golden.record(_canon(controller.state_dict()), 'reset_state')
     actual = probe.spindle_state()
-    _rec_close('active_state', np.zeros(len(controller.joints)), 0., 0.)
-    _rec_out('state_meta', _normalize(
-        {'activation_time_s': controller.activation_time_s,
-         'effort_diagnostics': dict(controller.effort_diagnostics),
-         'sole_goal_diagnostics': dict(
-             (side, goal) for side, goal
-             in (controller.sole_goal_diagnostics or {}).items())}))
     np.testing.assert_allclose(actual['active_state'],
                                np.zeros(len(controller.joints)),
                                rtol=0., atol=0.)
@@ -646,38 +536,34 @@ def test_spindle_strength_probes_match_python(tmp_path):
     data = _staged(model, probe, crank_q=.4)
     qpos = np.asarray(data.qpos)
     qvel = np.asarray(data.qvel)
+    anatomical = []
+    capacities = []
     for name, (qa, dof, _) in controller.joints.items():
         if controller.strength is None:
             continue
         angle = controller.anatomical_joint_angle(name, qpos[qa])
-        _rec_in('anatomical', {'joint': name, 'qpos_value': float(qpos[qa])})
-        actual = probe.spindle_anatomical(name, float(qpos[qa]))
-        _rec_close('anatomical', angle, 1e-12, 1e-12)
-        assert actual == \
+        assert probe.spindle_anatomical(name, float(qpos[qa])) == \
             pytest.approx(angle, rel=1e-12, abs=1e-12), name
+        anatomical.append(angle)
         for velocity, torque in ((0., 30.), (2.5, -20.), (-1.5, 45.)):
             expected = controller.strength_capacity(
                 name, angle, velocity, torque)
-            _rec_in('capacity', {'joint': name, 'angle_rad': angle,
-                                 'velocity_rad_s': velocity,
-                                 'torque_nm': torque})
             actual = probe.spindle_capacity(
                 name, angle, velocity, torque)
-            _rec_close('capacity', expected, 1e-12, 1e-12)
+            capacities.append(expected)
             if math.isinf(expected):
                 assert math.isinf(actual)
             else:
                 assert actual == pytest.approx(
                     expected, rel=1e-12, abs=1e-12), name
+    _golden.record(np.asarray(anatomical), 'anatomical', kind='close', rtol=1e-7, atol=1e-8)
+    _golden.record(np.asarray(capacities), 'capacity', kind='close', rtol=1e-7, atol=1e-8)
     torques = np.array(
         [120. if 'knee' in n else -90. for n in controller.joints])
     clipped, limited = controller.strength_limited(torques, qpos, qvel)
-    _rec_in('strength_limited', {'torques': list(map(float, torques)),
-                                 'qpos': list(map(float, qpos)),
-                                 'qvel': list(map(float, qvel))})
     actual = probe.spindle_strength_limited(torques, qpos, qvel)
-    _rec_close('clipped', np.asarray(clipped), 1e-12, 1e-12)
-    _rec_out('limited', _normalize(list(limited)))
+    _golden.record(np.asarray(clipped), 'clipped', kind='close', rtol=1e-7, atol=1e-8)
+    _golden.record(_canon({'limited': list(limited)}), 'limited')
     np.testing.assert_allclose(actual['torques'], clipped,
                                rtol=1e-12, atol=1e-12)
     assert tuple(actual['limited']) == limited
@@ -693,49 +579,28 @@ def test_spindle_strength_rejects_malformed_state(tmp_path):
     torques = controller.compute(model, data, command, dt_s=.00125)
     controller.write(data, torques)
     mujoco.mj_forward(model, data)
-    _rec_in('compute', {'command': _command_dict(command), 'advance': True,
-                        'dt_s': .00125, 'steady_state': False})
     probe.spindle_compute(_command_dict(command), True, .00125, False)
-    _rec_in('inputs', {'ctrl': list(map(float, data.ctrl)),
-                       'qfrc_applied': [0.] * model.nv})
     probe.set_inputs(np.asarray(data.ctrl), np.zeros(model.nv))
-    _rec_in('forward', {})
     probe.forward()
     qpos = np.asarray(data.qpos)
     qvel = np.asarray(data.qvel)
     flat = np.zeros(len(controller.joints))
-    _rec_in('strength_limited', {'torques': list(map(float, flat)),
-                                 'qpos': list(map(float, qpos[:2])),
-                                 'qvel': list(map(float, qvel))})
     with pytest.raises(Exception):
         controller.strength_limited(flat, qpos[:2], qvel)
     with pytest.raises(Exception):
         probe.spindle_strength_limited(flat, qpos[:2], qvel)
-    _rec_err('strength_limited')
-    _rec_in('strength_limited', {'torques': list(map(float, flat)),
-                                 'qpos': list(map(float, qpos)),
-                                 'qvel': list(map(float, qvel[:2]))})
     with pytest.raises(Exception):
         controller.strength_limited(flat, qpos, qvel[:2])
     with pytest.raises(Exception):
         probe.spindle_strength_limited(flat, qpos, qvel[:2])
-    _rec_err('strength_limited')
-    _rec_in('solved_effort', {'qpos': list(map(float, qpos[:2])),
-                              'qvel': list(map(float, qvel)),
-                              'dt_s': .00125})
     with pytest.raises(Exception):
         solved_effort(controller, data, (qpos[:2], qvel), .00125)
     with pytest.raises(Exception):
         probe.spindle_solved_effort(qpos[:2], qvel, .00125)
-    _rec_err('solved_effort')
-    _rec_in('solved_effort', {'qpos': list(map(float, qpos)),
-                              'qvel': list(map(float, qvel[:2])),
-                              'dt_s': .00125})
     with pytest.raises(Exception):
         solved_effort(controller, data, (qpos, qvel[:2]), .00125)
     with pytest.raises(Exception):
         probe.spindle_solved_effort(qpos, qvel[:2], .00125)
-    _rec_err('solved_effort')
 
 
 def test_spindle_lookups_reject_unknown_joints(tmp_path):
@@ -747,25 +612,18 @@ def test_spindle_lookups_reject_unknown_joints(tmp_path):
     model, controller, probe = _plant(tmp_path)
     data = _staged(model, probe, crank_q=.4)
     for name in ('rider_ankle_front', 'rider_wrist'):
-        _rec_in('write', {'torques': {name: 0.}})
         with pytest.raises(Exception):
             controller.write(data, {name: 0.})
         with pytest.raises(Exception):
             probe.spindle_write({name: 0.})
-        _rec_err('write')
-    _rec_in('anatomical', {'joint': 'rider_wrist', 'qpos_value': 0.})
     with pytest.raises(Exception):
         controller.anatomical_joint_angle('rider_wrist', 0.)
     with pytest.raises(Exception):
         probe.spindle_anatomical('rider_wrist', 0.)
-    _rec_err('anatomical')
-    _rec_in('capacity', {'joint': 'rider_wrist', 'angle_rad': 0.,
-                         'velocity_rad_s': 0., 'torque_nm': 5.})
     with pytest.raises(Exception):
         controller.strength_capacity('rider_wrist', 0., 0., 5.)
     with pytest.raises(Exception):
         probe.spindle_capacity('rider_wrist', 0., 0., 5.)
-    _rec_err('capacity')
 
 
 def test_spindle_probe_rejects_bad_input(tmp_path):
@@ -776,41 +634,25 @@ def test_spindle_probe_rejects_bad_input(tmp_path):
     model, controller, probe = _plant(tmp_path)
     pose = plain(asdict(geometry_pose(
         RiderSpecs(variant='articulated_planar'), BikeSpecs())))
-    _rec_in('compute', {'command': {}, 'advance': True, 'dt_s': None,
-                        'steady_state': False})
     with pytest.raises(Exception):
         probe.spindle_compute({}, True, None, False)
-    _rec_err('compute')
-    # The negative-effort document is spelled directly: routing it through
-    # _command() would raise in RiderCommand.__post_init__ before the wire
-    # call ever ran, leaving the adapter's own rejection unexercised.
-    bad_command = {'mean_crank_torque_nm': -1., 'enabled': True,
-                   'posture': {'torso_lean_rad': 0., 'pelvis_pitch_rad': 0.,
-                               'pelvis_offset_m': None, 'use_saddle': True},
-                   'crank_target_phase_rad': None,
-                   'crank_target_rate_rad_s': 0.}
-    _rec_in('compute', {'command': bad_command, 'advance': True,
-                        'dt_s': None, 'steady_state': False})
     with pytest.raises(Exception):
-        probe.spindle_compute(bad_command, True, None, False)
-    _rec_err('compute')
-    _rec_in('restore', {'state': {'enabled': True}})
+        probe.spindle_compute(
+            _command_dict(_command(mean_crank_torque_nm=-1.)),
+            True, None, False)
     with pytest.raises(Exception):
         probe.spindle_restore({'enabled': True})
-    _rec_err('restore')
     # A schema-valid non-spindle attachment routes to the ported legacy
     # controller rather than rejecting at decode.
     config = rider_controller_config(controller.config, controller)
     config['pedal_attachment'] = 'flat'
     path = tmp_path / 'flat.mjb'
     mujoco.mj_saveModel(model, str(path))
-    flat_adapter = _adapter(path, {'spindle_controller': {
-        'config': config,
-        'pose': pose,
-        'crank_length_m': 0.17}})
-    _rec_in('compute', {'command': _command_dict(
-        _command(mean_crank_torque_nm=5.0)), 'advance': True, 'dt_s': None,
-                        'steady_state': False})
+    flat_adapter = load_native().NativeTestAdapter(str(path), {
+        'spindle_controller': {
+            'config': config,
+            'pose': pose,
+            'crank_length_m': 0.17}})
     flat_adapter.spindle_compute(
         _command_dict(_command(mean_crank_torque_nm=5.0)),
         True, None, False)
@@ -819,11 +661,36 @@ def test_spindle_probe_rejects_bad_input(tmp_path):
     path = tmp_path / 'pin.mjb'
     mujoco.mj_saveModel(model, str(path))
     with pytest.raises(Exception):
-        _adapter(path, {'spindle_controller': {
-            'config': config,
-            'pose': pose,
-            'crank_length_m': 0.17}})
+        load_native().NativeTestAdapter(str(path), {
+            'spindle_controller': {
+                'config': config,
+                'pose': pose,
+                'crank_length_m': 0.17}})
     # A missing pose/config is rejected at adapter construction.
     with pytest.raises(Exception):
-        _adapter(path, {'spindle_controller': {'config': config}})
+        load_native().NativeTestAdapter(str(path), {
+            'spindle_controller': {'config': config}})
 
+
+
+@pytest.mark.parametrize("crank_q", [0.0, math.pi / 2, math.pi, 3.67, 4.19])
+def test_spindle_rear_chain_effort_matches_python(tmp_path, crank_q):
+    """F5 regression: the enabled-compute spindle path must drive nonzero
+    rear-leg-chain efforts through the rear-driving crank half — the rear
+    hip/knee entries of the torque dict are the leg_crank_targets ->
+    leg_loop_jacobian -> split_joint_torques -> directional_limit ->
+    finalize_effort products, matching the oracle at rtol=1e-7/atol=1e-8."""
+    model, controller, probe = _plant(tmp_path)
+    data = _staged(model, probe, crank_q=crank_q, crank_rate=6.0)
+    command = _command(mean_crank_torque_nm=120.)
+    expected = controller.compute(model, data, command, dt_s=.00125)
+    actual = probe.spindle_compute(_command_dict(command), True, .00125,
+                                   False)
+    _record_compute(controller, expected)
+    for name, value in expected.items():
+        assert actual['torques'][name] == pytest.approx(
+            value, rel=1e-12, abs=1e-12), name
+    rear = [expected[n] for n in ('rider_hip_rear', 'rider_knee_rear')]
+    if math.cos(crank_q) < 0.:  # rear owns the stroke (crank_split.leg_shares)
+        assert any(abs(t) > 1e-9 for t in rear), (crank_q, rear)
+    _compare_diagnostics(actual['state'], controller)

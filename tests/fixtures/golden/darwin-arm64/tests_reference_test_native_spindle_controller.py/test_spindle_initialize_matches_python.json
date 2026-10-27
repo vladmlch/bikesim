@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "qpos",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_matches_python",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ }
+]

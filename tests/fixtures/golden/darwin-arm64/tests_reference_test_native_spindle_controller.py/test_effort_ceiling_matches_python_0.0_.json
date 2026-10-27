@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "ceiling",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_spindle_controller.py::test_effort_ceiling_matches_python[0.0]",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

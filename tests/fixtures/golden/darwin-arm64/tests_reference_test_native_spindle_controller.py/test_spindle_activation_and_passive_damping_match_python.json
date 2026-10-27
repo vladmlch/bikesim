@@ -1,0 +1,86 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "compute0.torques",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_activation_and_passive_damping_match_python",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "compute0.state",
+  "nbytes": 5175,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_activation_and_passive_damping_match_python",
+  "offset": 72,
+  "rtol": null,
+  "shape": [
+   5175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "compute1.torques",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_activation_and_passive_damping_match_python",
+  "offset": 5247,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "compute1.state",
+  "nbytes": 5177,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_activation_and_passive_damping_match_python",
+  "offset": 5319,
+  "rtol": null,
+  "shape": [
+   5177
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "compute2.torques",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_activation_and_passive_damping_match_python",
+  "offset": 10496,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "compute2.state",
+  "nbytes": 5156,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_activation_and_passive_damping_match_python",
+  "offset": 10568,
+  "rtol": null,
+  "shape": [
+   5156
+  ]
+ }
+]

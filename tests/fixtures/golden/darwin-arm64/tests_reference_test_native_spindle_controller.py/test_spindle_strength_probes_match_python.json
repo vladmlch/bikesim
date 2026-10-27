@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "anatomical",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "capacity",
+  "nbytes": 216,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 72,
+  "rtol": null,
+  "shape": [
+   27
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "clipped",
+  "nbytes": 72,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 288,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "limited",
+  "nbytes": 134,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_strength_probes_match_python",
+  "offset": 360,
+  "rtol": null,
+  "shape": [
+   134
+  ]
+ }
+]

@@ -14457,12 +14457,10 @@
       "native/tests/reference/test_articulated_config.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.articulated_config"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "71f9a2f76fa6c3c51c3dc4c1ca6b6c95d5df67e89c013087cfd54a6578d3a4e4",
     "snapshot_line_count": 51,
     "tracked": true,
@@ -16540,12 +16538,10 @@
       "native/tests/reference/test_pinned_topology.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.pinned_topology"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ce0c5b112fa8f8c73a193d47f4c7548e6d549806f0a06340661d1f6dc92a89bb",
     "snapshot_line_count": 84,
     "tracked": true,
@@ -17315,12 +17311,10 @@
       "native/tests/reference/test_seated_climb_surge.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.seated_climb_surge"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b37b2ecf928f48e5a17d061cb1769ec55bf52e1a1e416414b649b02978ee68bd",
     "snapshot_line_count": 44,
     "tracked": true,
@@ -17328,20 +17322,18 @@
   },
   {
     "path": "tests/reference/test_seated_pedaling_cycle.py",
-    "sha256": "27bbdc0eebd78a907df2fd4c579f45822a66c0ee9f2d7034f3b707d31699c34b",
-    "line_count": 229,
+    "sha256": "bc5360ea76b47565581cb6a75ce3457aae9fd1df2fc031fd110393ae63134d94",
+    "line_count": 254,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_seated_pedaling_cycle.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.seated_pedaling_cycle"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "3a61d7ec0722c26380558954ad19044d63408e98b5d53bf507e4b712d5b63a09",
     "snapshot_line_count": 229,
     "tracked": true,
@@ -17357,12 +17349,10 @@
       "native/tests/reference/test_seated_posture_program.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.seated_posture_program"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "d5379dd21e0fbbca7995fbef167cad6755d68d09d3bd8de460c372ed9556440a",
     "snapshot_line_count": 276,
     "tracked": true,
@@ -17378,12 +17368,10 @@
       "native/tests/reference/test_seated_topology.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.seated_topology"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "bf27292e32e8d9cb633cf85d74194808dadaeaf7c4a9d74a9b8e22aa039da1ae",
     "snapshot_line_count": 175,
     "tracked": true,
@@ -17477,12 +17465,10 @@
       "native/tests/reference/test_welded_profile_config.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.welded_profile_config"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b0ddfdd02e3f4e88ccf603b36d35a81d2b859e0bd901e9f7a776a8f8db60f62d",
     "snapshot_line_count": 48,
     "tracked": true,
@@ -17553,20 +17539,18 @@
   },
   {
     "path": "tests/test_rider_welds.py",
-    "sha256": "bb32cb538c39115f16433d2d516c928aea48887dd246518f41661fff853a3663",
-    "line_count": 88,
+    "sha256": "209facb9b24c622ac85f0e6b068fbc50f39d7d899c26d7476766d1c811578f82",
+    "line_count": 107,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/integration/test_rider_welds.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.rider_welds"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "51d68607a5e024349a686574a1df7e4181ebe4dcc02796a7918da3fe9266baa3",
     "snapshot_line_count": 88,
     "tracked": true,

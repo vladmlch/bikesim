@@ -1,7 +1,7 @@
 {
   "status": "Complete static function/method inventory; source dispositions are not qualification; no project execution or pytest collection in this session",
-  "static_test_functions": 2385,
-  "top_level_test_functions": 2369,
+  "static_test_functions": 2390,
+  "top_level_test_functions": 2374,
   "runtime_node_acquisition_task": "T01",
   "records": [
     {
@@ -639,13 +639,17 @@
       "line": 7,
       "end_line": 10,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_articulated_config::test_spindle_and_connect_are_valid_attachments",
+      "native_test_id": "reference.articulated_config::test_spindle_and_connect_are_valid_attachments",
       "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_spindle_and_connect_are_valid_attachments"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_articulated_config.py",
@@ -653,13 +657,17 @@
       "line": 13,
       "end_line": 14,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_articulated_config::test_grip_weld_alias_normalises_to_connect",
+      "native_test_id": "reference.articulated_config::test_grip_weld_alias_normalises_to_connect",
       "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_grip_weld_alias_normalises_to_connect"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_articulated_config.py",
@@ -667,13 +675,133 @@
       "line": 17,
       "end_line": 21,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_articulated_config::test_budget_comes_from_config_fields",
+      "native_test_id": "reference.articulated_config::test_budget_comes_from_config_fields",
       "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_budget_comes_from_config_fields"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_articulated_config.py",
+      "source_symbol": "test_delivered_power_budgets_fall_back_to_capability_caps",
+      "line": 24,
+      "end_line": 38,
+      "owner_task": "T52",
+      "native_test_id": "reference.articulated_config::test_delivered_power_budgets_fall_back_to_capability_caps",
+      "native_source": "native/tests/reference/test_articulated_config.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_delivered_power_budgets_fall_back_to_capability_caps"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: post-F1 record absent from the ledger snapshot; ported with the file in native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle green darwin-arm64"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_articulated_config.py",
+      "source_symbol": "test_delivered_power_budgets_validate_like_other_budgets",
+      "line": 44,
+      "end_line": 46,
+      "owner_task": "T52",
+      "native_test_id": "reference.articulated_config::test_delivered_power_budgets_validate_like_other_budgets",
+      "native_source": "native/tests/reference/test_articulated_config.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_delivered_power_budgets_validate_like_other_budgets[-1.0-delivered_positive_power_budget_w]",
+        "tests/reference/test_articulated_config.py::test_delivered_power_budgets_validate_like_other_budgets[-1.0-delivered_joint_power_budget_w]",
+        "tests/reference/test_articulated_config.py::test_delivered_power_budgets_validate_like_other_budgets[nan-delivered_positive_power_budget_w]",
+        "tests/reference/test_articulated_config.py::test_delivered_power_budgets_validate_like_other_budgets[nan-delivered_joint_power_budget_w]",
+        "tests/reference/test_articulated_config.py::test_delivered_power_budgets_validate_like_other_budgets[inf-delivered_positive_power_budget_w]",
+        "tests/reference/test_articulated_config.py::test_delivered_power_budgets_validate_like_other_budgets[inf-delivered_joint_power_budget_w]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 6 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: post-F1 record absent from the ledger snapshot; ported with the file in native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle green darwin-arm64"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_articulated_config.py",
+      "source_symbol": "test_weld_normal_bounds_must_be_finite_when_set",
+      "line": 55,
+      "end_line": 59,
+      "owner_task": "T52",
+      "native_test_id": "reference.articulated_config::test_weld_normal_bounds_must_be_finite_when_set",
+      "native_source": "native/tests/reference/test_articulated_config.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[nan-weld_foot_min_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[nan-weld_foot_max_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[nan-weld_saddle_min_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[nan-weld_saddle_max_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[inf-weld_foot_min_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[inf-weld_foot_max_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[inf-weld_saddle_min_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[inf-weld_saddle_max_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[-inf-weld_foot_min_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[-inf-weld_foot_max_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[-inf-weld_saddle_min_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[-inf-weld_saddle_max_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[bolts-weld_foot_min_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[bolts-weld_foot_max_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[bolts-weld_saddle_min_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_must_be_finite_when_set[bolts-weld_saddle_max_normal_n]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 16 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: post-F1 record absent from the ledger snapshot; ported with the file in native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle green darwin-arm64"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_articulated_config.py",
+      "source_symbol": "test_weld_normal_bounds_accept_tension_retention",
+      "line": 66,
+      "end_line": 68,
+      "owner_task": "T52",
+      "native_test_id": "reference.articulated_config::test_weld_normal_bounds_accept_tension_retention",
+      "native_source": "native/tests/reference/test_articulated_config.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_accept_tension_retention[weld_foot_min_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_accept_tension_retention[weld_foot_max_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_accept_tension_retention[weld_saddle_min_normal_n]",
+        "tests/reference/test_articulated_config.py::test_weld_normal_bounds_accept_tension_retention[weld_saddle_max_normal_n]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: post-F1 record absent from the ledger snapshot; ported with the file in native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle green darwin-arm64"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_articulated_config.py",
+      "source_symbol": "test_weld_shear_capacity_is_nonnegative",
+      "line": 73,
+      "end_line": 75,
+      "owner_task": "T52",
+      "native_test_id": "reference.articulated_config::test_weld_shear_capacity_is_nonnegative",
+      "native_source": "native/tests/reference/test_articulated_config.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_weld_shear_capacity_is_nonnegative[-1.0-weld_foot_shear_n]",
+        "tests/reference/test_articulated_config.py::test_weld_shear_capacity_is_nonnegative[-1.0-weld_saddle_shear_n]",
+        "tests/reference/test_articulated_config.py::test_weld_shear_capacity_is_nonnegative[nan-weld_foot_shear_n]",
+        "tests/reference/test_articulated_config.py::test_weld_shear_capacity_is_nonnegative[nan-weld_saddle_shear_n]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: post-F1 record absent from the ledger snapshot; ported with the file in native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle green darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_articulated_config.py",
@@ -681,13 +809,17 @@
       "line": 78,
       "end_line": 80,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_articulated_config::test_balance_defaults",
+      "native_test_id": "reference.articulated_config::test_balance_defaults",
       "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_balance_defaults"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_articulated_config.py",
@@ -695,13 +827,22 @@
       "line": 85,
       "end_line": 87,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_articulated_config::test_invalid_balance_thresholds_are_rejected",
+      "native_test_id": "reference.articulated_config::test_invalid_balance_thresholds_are_rejected",
       "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[-1.0-balance_floor_kmh]",
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[-1.0-balance_dwell_s]",
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[0.0-balance_floor_kmh]",
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[0.0-balance_dwell_s]",
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[nan-balance_floor_kmh]",
+        "tests/reference/test_articulated_config.py::test_invalid_balance_thresholds_are_rejected[nan-balance_dwell_s]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_articulated_config.py",
@@ -709,13 +850,17 @@
       "line": 90,
       "end_line": 99,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_articulated_config::test_surge_and_trim_are_validated_in_climb_config",
+      "native_test_id": "reference.articulated_config::test_surge_and_trim_are_validated_in_climb_config",
       "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_surge_and_trim_are_validated_in_climb_config"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_articulated_config.py",
@@ -723,13 +868,19 @@
       "line": 103,
       "end_line": 105,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_articulated_config::test_balance_grace_must_be_finite_and_nonnegative",
+      "native_test_id": "reference.articulated_config::test_balance_grace_must_be_finite_and_nonnegative",
       "native_source": "native/tests/reference/test_articulated_config.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_articulated_config.py::test_balance_grace_must_be_finite_and_nonnegative[-1.0]",
+        "tests/reference/test_articulated_config.py::test_balance_grace_must_be_finite_and_nonnegative[nan]",
+        "tests/reference/test_articulated_config.py::test_balance_grace_must_be_finite_and_nonnegative[inf]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_articulated_config.cpp; CTest reference.articulated_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_assist_controller.py",
@@ -22316,13 +22467,17 @@
       "line": 50,
       "end_line": 65,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_pinned_topology::test_pinned_plant_topology",
+      "native_test_id": "reference.pinned_topology::test_pinned_plant_topology",
       "native_source": "native/tests/reference/test_pinned_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_pinned_topology.py::test_pinned_plant_topology"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_pinned_topology.cpp; CTest reference.pinned_topology green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_pinned_topology.py",
@@ -22330,13 +22485,17 @@
       "line": 68,
       "end_line": 84,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_pinned_topology::test_joint_profiles_select_present_joints_and_require_them",
+      "native_test_id": "reference.pinned_topology::test_joint_profiles_select_present_joints_and_require_them",
       "native_source": "native/tests/reference/test_pinned_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_pinned_topology.py::test_joint_profiles_select_present_joints_and_require_them"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_pinned_topology.cpp; CTest reference.pinned_topology green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_planar_arms.py",
@@ -26602,13 +26761,17 @@
       "line": 7,
       "end_line": 16,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_climb_surge::test_surge_budget_depletes_and_recovers",
+      "native_test_id": "reference.seated_climb_surge::test_surge_budget_depletes_and_recovers",
       "native_source": "native/tests/reference/test_seated_climb_surge.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_climb_surge.py::test_surge_budget_depletes_and_recovers"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_climb_surge.cpp; CTest reference.seated_climb_surge green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_climb_surge.py",
@@ -26616,13 +26779,17 @@
       "line": 19,
       "end_line": 21,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_climb_surge::test_below_threshold_uses_sustained_power",
+      "native_test_id": "reference.seated_climb_surge::test_below_threshold_uses_sustained_power",
       "native_source": "native/tests/reference/test_seated_climb_surge.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_climb_surge.py::test_below_threshold_uses_sustained_power"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_climb_surge.cpp; CTest reference.seated_climb_surge green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_climb_surge.py",
@@ -26630,13 +26797,17 @@
       "line": 24,
       "end_line": 33,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_climb_surge::test_front_share_is_posture_only_and_unavailable_when_unloaded",
+      "native_test_id": "reference.seated_climb_surge::test_front_share_is_posture_only_and_unavailable_when_unloaded",
       "native_source": "native/tests/reference/test_seated_climb_surge.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_climb_surge.py::test_front_share_is_posture_only_and_unavailable_when_unloaded"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_climb_surge.cpp; CTest reference.seated_climb_surge green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_climb_surge.py",
@@ -26644,13 +26815,17 @@
       "line": 36,
       "end_line": 44,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_climb_surge::test_surge_reset_restores_budget_and_rejects_nonfinite_inputs",
+      "native_test_id": "reference.seated_climb_surge::test_surge_reset_restores_budget_and_rejects_nonfinite_inputs",
       "native_source": "native/tests/reference/test_seated_climb_surge.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_climb_surge.py::test_surge_reset_restores_budget_and_rejects_nonfinite_inputs"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_climb_surge.cpp; CTest reference.seated_climb_surge green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_pedaling_cycle.py",
@@ -26658,13 +26833,17 @@
       "line": 20,
       "end_line": 27,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_pedaling_cycle::test_ankle_program_is_periodic_and_scrape_is_only_an_intent",
+      "native_test_id": "reference.seated_pedaling_cycle::test_ankle_program_is_periodic_and_scrape_is_only_an_intent",
       "native_source": "native/tests/reference/test_seated_pedaling_cycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_pedaling_cycle.py::test_ankle_program_is_periodic_and_scrape_is_only_an_intent"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_pedaling_cycle.cpp; CTest reference.seated_pedaling_cycle green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_pedaling_cycle.py",
@@ -26672,13 +26851,17 @@
       "line": 30,
       "end_line": 44,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_pedaling_cycle::test_pedal_intent_validates_its_inputs",
+      "native_test_id": "reference.seated_pedaling_cycle::test_pedal_intent_validates_its_inputs",
       "native_source": "native/tests/reference/test_seated_pedaling_cycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_pedaling_cycle.py::test_pedal_intent_validates_its_inputs"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_pedaling_cycle.cpp; CTest reference.seated_pedaling_cycle green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_pedaling_cycle.py",
@@ -26686,13 +26869,17 @@
       "line": 47,
       "end_line": 51,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_pedaling_cycle::test_pedal_intent_carries_no_torque_or_force_field",
+      "native_test_id": "reference.seated_pedaling_cycle::test_pedal_intent_carries_no_torque_or_force_field",
       "native_source": "native/tests/reference/test_seated_pedaling_cycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_pedaling_cycle.py::test_pedal_intent_carries_no_torque_or_force_field"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_pedaling_cycle.cpp; CTest reference.seated_pedaling_cycle green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_pedaling_cycle.py",
@@ -26700,13 +26887,17 @@
       "line": 119,
       "end_line": 124,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_pedaling_cycle::test_cadence_control_validates_a_finite_nonnegative_wish",
+      "native_test_id": "reference.seated_pedaling_cycle::test_cadence_control_validates_a_finite_nonnegative_wish",
       "native_source": "native/tests/reference/test_seated_pedaling_cycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_pedaling_cycle.py::test_cadence_control_validates_a_finite_nonnegative_wish"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_pedaling_cycle.cpp; CTest reference.seated_pedaling_cycle green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_pedaling_cycle.py",
@@ -26714,13 +26905,17 @@
       "line": 127,
       "end_line": 138,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_pedaling_cycle::test_first_pedal_command_and_restart_respect_configured_effort_slew",
+      "native_test_id": "reference.seated_pedaling_cycle::test_first_pedal_command_and_restart_respect_configured_effort_slew",
       "native_source": "native/tests/reference/test_seated_pedaling_cycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_pedaling_cycle.py::test_first_pedal_command_and_restart_respect_configured_effort_slew"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_pedaling_cycle.cpp; CTest reference.seated_pedaling_cycle green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_pedaling_cycle.py",
@@ -26728,13 +26923,17 @@
       "line": 141,
       "end_line": 163,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_pedaling_cycle::test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue",
+      "native_test_id": "reference.seated_pedaling_cycle::test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue",
       "native_source": "native/tests/reference/test_seated_pedaling_cycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_pedaling_cycle.py::test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_pedaling_cycle.cpp; CTest reference.seated_pedaling_cycle green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_pedaling_cycle.py",
@@ -26742,13 +26941,19 @@
       "line": 194,
       "end_line": 209,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_pedaling_cycle::test_strict_flat_cycle_delivers_and_stays_within_budgets",
+      "native_test_id": "reference.seated_pedaling_cycle::test_strict_flat_cycle_delivers_and_stays_within_budgets",
       "native_source": "native/tests/reference/test_seated_pedaling_cycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[20.0]",
+        "tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[40.0]",
+        "tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_pedaling_cycle.cpp; CTest reference.seated_pedaling_cycle green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_pedaling_cycle.py",
@@ -26756,13 +26961,17 @@
       "line": 213,
       "end_line": 254,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_pedaling_cycle::test_free_coast_is_an_intent_not_a_crank_lock",
+      "native_test_id": "reference.seated_pedaling_cycle::test_free_coast_is_an_intent_not_a_crank_lock",
       "native_source": "native/tests/reference/test_seated_pedaling_cycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_pedaling_cycle.cpp; CTest reference.seated_pedaling_cycle green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26770,13 +26979,17 @@
       "line": 24,
       "end_line": 32,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_posture_program_reads_no_inertial_signal",
+      "native_test_id": "reference.seated_posture_program::test_posture_program_reads_no_inertial_signal",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_posture_program_reads_no_inertial_signal"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26784,13 +26997,17 @@
       "line": 35,
       "end_line": 39,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_lean_follows_road_grade_not_body_pitch",
+      "native_test_id": "reference.seated_posture_program::test_lean_follows_road_grade_not_body_pitch",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_lean_follows_road_grade_not_body_pitch"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26798,13 +27015,17 @@
       "line": 42,
       "end_line": 47,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_road_grade_uses_underwheel_and_preview_samples_uniformly",
+      "native_test_id": "reference.seated_posture_program::test_road_grade_uses_underwheel_and_preview_samples_uniformly",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_road_grade_uses_underwheel_and_preview_samples_uniformly"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26812,13 +27033,17 @@
       "line": 50,
       "end_line": 66,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_resolver_road_grade_survives_probe_and_ignores_imu",
+      "native_test_id": "reference.seated_posture_program::test_resolver_road_grade_survives_probe_and_ignores_imu",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_resolver_road_grade_survives_probe_and_ignores_imu"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26826,13 +27051,17 @@
       "line": 69,
       "end_line": 93,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_runtime_passes_current_road_snapshot_before_intent_and_force_evaluation",
+      "native_test_id": "reference.seated_posture_program::test_runtime_passes_current_road_snapshot_before_intent_and_force_evaluation",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_runtime_passes_current_road_snapshot_before_intent_and_force_evaluation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26840,13 +27069,17 @@
       "line": 96,
       "end_line": 100,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_body_pulse_is_finite_and_has_no_impulsive_endpoint",
+      "native_test_id": "reference.seated_posture_program::test_body_pulse_is_finite_and_has_no_impulsive_endpoint",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_body_pulse_is_finite_and_has_no_impulsive_endpoint"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26854,13 +27087,17 @@
       "line": 103,
       "end_line": 112,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_body_pulse_validates_its_inputs",
+      "native_test_id": "reference.seated_posture_program::test_body_pulse_validates_its_inputs",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_body_pulse_validates_its_inputs"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26868,13 +27105,17 @@
       "line": 115,
       "end_line": 118,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_body_pulse_is_continuous_around_its_edges",
+      "native_test_id": "reference.seated_posture_program::test_body_pulse_is_continuous_around_its_edges",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_body_pulse_is_continuous_around_its_edges"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26882,13 +27123,17 @@
       "line": 121,
       "end_line": 148,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_posture_program_rate_limits_and_bounds_the_pulse",
+      "native_test_id": "reference.seated_posture_program::test_posture_program_rate_limits_and_bounds_the_pulse",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_posture_program_rate_limits_and_bounds_the_pulse"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26896,13 +27141,17 @@
       "line": 151,
       "end_line": 158,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_posture_program_rejects_nonfinite_or_reversed_schedules",
+      "native_test_id": "reference.seated_posture_program::test_posture_program_rejects_nonfinite_or_reversed_schedules",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_posture_program_rejects_nonfinite_or_reversed_schedules"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26910,13 +27159,17 @@
       "line": 221,
       "end_line": 264,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_pulse_redistributes_load_through_inertia_only",
+      "native_test_id": "reference.seated_posture_program::test_pulse_redistributes_load_through_inertia_only",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26924,13 +27177,17 @@
       "line": 267,
       "end_line": 276,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_trim_is_delayed_and_increases_forward_lean_for_light_front",
+      "native_test_id": "reference.seated_posture_program::test_trim_is_delayed_and_increases_forward_lean_for_light_front",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_trim_is_delayed_and_increases_forward_lean_for_light_front"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26938,13 +27195,17 @@
       "line": 278,
       "end_line": 282,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_geometric_limit_caps_lean",
+      "native_test_id": "reference.seated_posture_program::test_geometric_limit_caps_lean",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_geometric_limit_caps_lean"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26952,13 +27213,17 @@
       "line": 284,
       "end_line": 291,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_preview_is_last_sample_and_preserves_exact_endpoint",
+      "native_test_id": "reference.seated_posture_program::test_preview_is_last_sample_and_preserves_exact_endpoint",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_preview_is_last_sample_and_preserves_exact_endpoint"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_posture_program.py",
@@ -26966,13 +27231,17 @@
       "line": 294,
       "end_line": 299,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_posture_program::test_geometric_limit_replaces_the_legacy_config_ceiling_when_available",
+      "native_test_id": "reference.seated_posture_program::test_geometric_limit_replaces_the_legacy_config_ceiling_when_available",
       "native_source": "native/tests/reference/test_seated_posture_program.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_posture_program.py::test_geometric_limit_replaces_the_legacy_config_ceiling_when_available"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_posture_program.cpp; CTest reference.seated_posture_program green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_topology.py",
@@ -26980,13 +27249,17 @@
       "line": 22,
       "end_line": 32,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_topology::test_saddle_connection_does_not_constrain_orientation",
+      "native_test_id": "reference.seated_topology::test_saddle_connection_does_not_constrain_orientation",
       "native_source": "native/tests/reference/test_seated_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_topology.py::test_saddle_connection_does_not_constrain_orientation"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_topology.cpp; CTest reference.seated_topology green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_topology.py",
@@ -26994,13 +27267,17 @@
       "line": 35,
       "end_line": 47,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_topology::test_saddle_pin_replaces_a_legacy_weld_and_validates",
+      "native_test_id": "reference.seated_topology::test_saddle_pin_replaces_a_legacy_weld_and_validates",
       "native_source": "native/tests/reference/test_seated_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_topology.py::test_saddle_pin_replaces_a_legacy_weld_and_validates"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_topology.cpp; CTest reference.seated_topology green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_topology.py",
@@ -27008,13 +27285,17 @@
       "line": 50,
       "end_line": 67,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_topology::test_anatomical_angle_inverts_the_declared_range",
+      "native_test_id": "reference.seated_topology::test_anatomical_angle_inverts_the_declared_range",
       "native_source": "native/tests/reference/test_seated_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_topology.py::test_anatomical_angle_inverts_the_declared_range"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_topology.cpp; CTest reference.seated_topology green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_topology.py",
@@ -27022,13 +27303,17 @@
       "line": 70,
       "end_line": 77,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_topology::test_rom_check_names_out_of_range_joints",
+      "native_test_id": "reference.seated_topology::test_rom_check_names_out_of_range_joints",
       "native_source": "native/tests/reference/test_seated_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_topology.py::test_rom_check_names_out_of_range_joints"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_topology.cpp; CTest reference.seated_topology green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_topology.py",
@@ -27036,13 +27321,17 @@
       "line": 107,
       "end_line": 134,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_topology::test_pin_rows_free_pelvis_pitch_and_carry_no_moment",
+      "native_test_id": "reference.seated_topology::test_pin_rows_free_pelvis_pitch_and_carry_no_moment",
       "native_source": "native/tests/reference/test_seated_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_topology.py::test_pin_rows_free_pelvis_pitch_and_carry_no_moment"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_topology.cpp; CTest reference.seated_topology green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_topology.py",
@@ -27050,13 +27339,17 @@
       "line": 138,
       "end_line": 155,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_topology::test_pedal_platform_keeps_its_spin_joint",
+      "native_test_id": "reference.seated_topology::test_pedal_platform_keeps_its_spin_joint",
       "native_source": "native/tests/reference/test_seated_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_topology.py::test_pedal_platform_keeps_its_spin_joint"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_topology.cpp; CTest reference.seated_topology green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_seated_topology.py",
@@ -27064,13 +27357,17 @@
       "line": 159,
       "end_line": 175,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_seated_topology::test_built_pose_anatomical_angles_inside_envelope",
+      "native_test_id": "reference.seated_topology::test_built_pose_anatomical_angles_inside_envelope",
       "native_source": "native/tests/reference/test_seated_topology.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_seated_topology.py::test_built_pose_anatomical_angles_inside_envelope"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_seated_topology.cpp; CTest reference.seated_topology green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_sensor_noise.py",
@@ -27320,13 +27617,17 @@
       "line": 17,
       "end_line": 21,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_welded_profile_config::test_rigid_crank_topology_is_the_default",
+      "native_test_id": "reference.welded_profile_config::test_rigid_crank_topology_is_the_default",
       "native_source": "native/tests/reference/test_welded_profile_config.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_welded_profile_config.py::test_rigid_crank_topology_is_the_default"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_welded_profile_config.cpp; CTest reference.welded_profile_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_welded_profile_config.py",
@@ -27334,13 +27635,17 @@
       "line": 24,
       "end_line": 28,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_welded_profile_config::test_assist_is_bosch_turbo_with_the_declared_envelope",
+      "native_test_id": "reference.welded_profile_config::test_assist_is_bosch_turbo_with_the_declared_envelope",
       "native_source": "native/tests/reference/test_welded_profile_config.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_welded_profile_config.py::test_assist_is_bosch_turbo_with_the_declared_envelope"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_welded_profile_config.cpp; CTest reference.welded_profile_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/reference/test_welded_profile_config.py",
@@ -27348,13 +27653,17 @@
       "line": 31,
       "end_line": 48,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_welded_profile_config::test_rider_numbers",
+      "native_test_id": "reference.welded_profile_config::test_rider_numbers",
       "native_source": "native/tests/reference/test_welded_profile_config.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_welded_profile_config.py::test_rider_numbers"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/reference/test_welded_profile_config.cpp; CTest reference.welded_profile_config green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/test_async_close.py",
@@ -27597,58 +27906,74 @@
     {
       "source_path": "tests/test_rider_welds.py",
       "source_symbol": "test_held_rider_weight_is_carried_by_the_connects",
-      "line": 44,
-      "end_line": 50,
+      "line": 56,
+      "end_line": 62,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::test_rider_welds::test_held_rider_weight_is_carried_by_the_connects",
+      "native_test_id": "reference.rider_welds::test_held_rider_weight_is_carried_by_the_connects",
       "native_source": "native/tests/integration/test_rider_welds.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_rider_welds.py::test_held_rider_weight_is_carried_by_the_connects"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/integration/test_rider_welds.cpp; CTest reference.rider_welds green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/test_rider_welds.py",
       "source_symbol": "test_contact_diagnostics_carry_the_solved_weight",
-      "line": 54,
-      "end_line": 63,
+      "line": 66,
+      "end_line": 75,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::test_rider_welds::test_contact_diagnostics_carry_the_solved_weight",
+      "native_test_id": "reference.rider_welds::test_contact_diagnostics_carry_the_solved_weight",
       "native_source": "native/tests/integration/test_rider_welds.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_rider_welds.py::test_contact_diagnostics_carry_the_solved_weight"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/integration/test_rider_welds.cpp; CTest reference.rider_welds green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/test_rider_welds.py",
       "source_symbol": "test_torque_sensor_reads_the_previous_solved_crank_torque",
-      "line": 67,
-      "end_line": 81,
+      "line": 79,
+      "end_line": 93,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::test_rider_welds::test_torque_sensor_reads_the_previous_solved_crank_torque",
+      "native_test_id": "reference.rider_welds::test_torque_sensor_reads_the_previous_solved_crank_torque",
       "native_source": "native/tests/integration/test_rider_welds.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_rider_welds.py::test_torque_sensor_reads_the_previous_solved_crank_torque"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/integration/test_rider_welds.cpp; CTest reference.rider_welds green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 green"
+      ]
     },
     {
       "source_path": "tests/test_rider_welds.py",
       "source_symbol": "test_steep_grade_saddle_shear_exceeds_friction",
-      "line": 85,
-      "end_line": 88,
+      "line": 97,
+      "end_line": 107,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::test_rider_welds::test_steep_grade_saddle_shear_exceeds_friction",
+      "native_test_id": "reference.rider_welds::test_steep_grade_saddle_shear_exceeds_friction",
       "native_source": "native/tests/integration/test_rider_welds.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_rider_welds.py::test_steep_grade_saddle_shear_exceeds_friction"
+      ],
+      "assertions_capture": "2026-10-26: measured \u2014 C++ port asserts the same contract; oracle status darwin-arm64 recorded in evidence",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-26 3.17 lane/b: ported to native/tests/integration/test_rider_welds.cpp; CTest reference.rider_welds green darwin-arm64 + linux-aarch64 (root-clang); oracle darwin-arm64 baseline-red (would_slip unsustained + grip pull warnings); native pin: settle non-convergence on wheel spins, oracle contract applied wherever the episode settles"
+      ]
     },
     {
       "source_path": "tests/portability/test_baseline.py",

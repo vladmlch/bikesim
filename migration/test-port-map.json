@@ -1986,7 +1986,8 @@
       "comparison_class": "contract",
       "disposition": "planned",
       "evidence": [
-        "2026-10-27 3.15 lane/c: ported all asserts except the >=80% motor-engagement gate, which is suppressed under #if 0 (not weakened \u2014 text intact). ORACLE PARITY GAP in the delivered-torque family: native assist engages 279/401=69.6% of late intervals vs oracle 351/400=87.8% (oracle measured via test_realistic_pedelec_acceptance._ride, same flat 300m probe track, 6 s). Both sides cut assist exactly when human_sensor_nm dips below ~4 Nm (pedal dead spots) or during shifts; native dead spots run deeper/longer and shift+re-engagement windows ~2-3x longer (122 vs 49 off-ticks). Remains planned until the measurand parity fix lands; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending"
+        "2026-10-27 3.15 lane/c: ported all asserts except the >=80% motor-engagement gate, which is suppressed under #if 0 (not weakened \u2014 text intact). ORACLE PARITY GAP in the delivered-torque family: native assist engages 279/401=69.6% of late intervals vs oracle 351/400=87.8% (oracle measured via test_realistic_pedelec_acceptance._ride, same flat 300m probe track, 6 s). Both sides cut assist exactly when human_sensor_nm dips below ~4 Nm (pedal dead spots) or during shifts; native dead spots run deeper/longer and shift+re-engagement windows ~2-3x longer (122 vs 49 off-ticks). Remains planned until the measurand parity fix lands; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending",
+        "2026-10-27 3.15 lane/c fix-round: post-F4 (61c97189) engagement measurand re-measured via the test's always-on stderr report \u2014 motor_on 279/401 = 69.6% of late intervals on BOTH darwin-arm64 and linux-aarch64, identical to the pre-F4 count (279/401 = 69.6%). F4 closed the stale-efc arena; the engagement gap is a distinct mechanism \u2014 the delivered human_sensor_nm dead-spot depth/duration + shift re-engagement chain, plausibly the enabled-compute torque-map family of the 20 deferred spindle nodes (F5 scope). The >=80% gate stays suppressed verbatim under #if 0 (restoring it would assert 69.6% >= 80%); record stays planned."
       ]
     },
     {
@@ -2356,11 +2357,12 @@
       "collected_node_ids": [
         "tests/reference/test_coupled_rider_task.py::test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step"
       ],
-      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
+      "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64 (212s)",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-26 3.15 lane/c: DEFERRED - native plant diverges from oracle at t~0.19s (predicted_crank_torque_nm 10.310 vs weld crank_torque_nm 9.689, oracle bound 1e-3 rel); pairing verified bitwise for first ~18 control periods; function present in cpp under #if 0 pending fix-round. Python oracle green darwin-arm64 (5/5, 200s)."
+        "2026-10-26 3.15 lane/c: DEFERRED - native plant diverges from oracle at t~0.19s (predicted_crank_torque_nm 10.310 vs weld crank_torque_nm 9.689, oracle bound 1e-3 rel); pairing verified bitwise for first ~18 control periods; function present in cpp under #if 0 pending fix-round. Python oracle green darwin-arm64 (5/5, 200s).",
+        "2026-10-27 3.15 lane/c fix-round: ENABLED post-F4 and green \u2014 F4 (61c97189, step.cpp refresh_forward before the control-tick compute) closed the stale-efc arena defect this record traced (pre-F4 first divergence t~0.19s: predicted 10.310 vs weld 9.689 N.m). CTest reference.coupled_rider_task green darwin-arm64 (PASS 70 checks incl. this record's per-period comparisons + checked>=20, zero MISMATCH stderr) and green for this record on linux-aarch64 (it ran to completion; the binary's only FAIL is test_tissue_damping_does_not_eat_the_muscle_budget, a distinct defect). Oracle-side node green linux-aarch64 (pytest 212 s). Disposition planned->port."
       ]
     },
     {
@@ -2379,7 +2381,8 @@
       "disposition": "planned",
       "evidence": [
         "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.coupled_rider_task green darwin-arm64; linux-aarch64 qualification pending",
-        "2026-10-26 3.15 lane/c linux qualification: reference.coupled_rider_task FAILS on linux-aarch64 at this record \u2014 'tissue damping stays a small fraction of muscle power' (passive >= 0.3*positive after the 1.5s native episode; the first require 'positive > 20 W' passed). Oracle-side pytest green on the same linux container (894s) and the native binary is green on darwin-arm64 (1199s), so this is a native-side platform drift in the episode, plausibly the same delivered-power parity family as the two deferred records. Remains planned; binary stays red on linux until fixed."
+        "2026-10-26 3.15 lane/c linux qualification: reference.coupled_rider_task FAILS on linux-aarch64 at this record \u2014 'tissue damping stays a small fraction of muscle power' (passive >= 0.3*positive after the 1.5s native episode; the first require 'positive > 20 W' passed). Oracle-side pytest green on the same linux container (894s) and the native binary is green on darwin-arm64 (1199s), so this is a native-side platform drift in the episode, plausibly the same delivered-power parity family as the two deferred records. Remains planned; binary stays red on linux until fixed.",
+        "2026-10-27 3.15 lane/c fix-round: re-ran post-F4 (61c97189) on linux-aarch64 \u2014 still RED: 'tissue damping stays a small fraction of muscle power' (passive >= 0.3*positive on the 1.5 s native episode). F4 closed the weld-allocator stale-efc arena; this linux-only episode drift is a distinct defect in the delivered-power parity family, not the sequencing gap F4 fixed. Stays planned; oracle-side green darwin-arm64 + linux-aarch64 (894 s); native green darwin-arm64."
       ]
     },
     {

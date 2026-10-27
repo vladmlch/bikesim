@@ -98,15 +98,16 @@ test_crank_task_coordinate_is_appended_and_weighted() {
                 "the optional equality block joins the prefilter");
 }
 
-// test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step is
-// NOT ported yet: the native plant diverges from the oracle once the crank
-// task ramps (t≈0.19 s: predicted 10.310 N·m vs welded-settle 9.689 N·m,
-// oracle asserts <1e-3 relative and stays green). The pairing used here —
-// allocation diagnostics captured right after the period's first interval
-// against that interval's diagnostics.rider_welds.crank_torque_nm — matches
-// bitwise for the first ~18 control periods, so the remaining gap is in the
-// delivered/weld torque path, not the harness. Deferred to the fix-round.
-#if 0
+// test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step was
+// deferred pre-F4: the native plant diverged from the oracle once the crank
+// task ramped (t≈0.19 s: predicted 10.310 N·m vs welded-settle 9.689 N·m,
+// oracle asserts <1e-3 relative and stays green). F4 (step.cpp:
+// refresh_forward before the control-tick compute) closed the stale-efc
+// sequencing gap the divergence traced to; the assert is enabled on the
+// fixed physics. The pairing used here — allocation diagnostics captured
+// right after the period's first interval against that interval's
+// diagnostics.rider_welds.crank_torque_nm — matches bitwise for the first
+// ~18 control periods.
 [[gnu::noinline]] void
 test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step() {
     // tests/reference/test_coupled_rider_task.py::test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step
@@ -159,7 +160,6 @@ test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step() {
     bt::require(checked >= 20,
                 "at least twenty completed periods were compared");
 }
-#endif
 
 [[gnu::noinline]] void
 test_tissue_damping_does_not_eat_the_muscle_budget() {
@@ -192,6 +192,7 @@ int main() {
         test_passive_damping_defaults_to_the_legacy_gain_coupling();
         test_coupled_task_control_is_opt_in();
         test_crank_task_coordinate_is_appended_and_weighted();
+        test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step();
         test_tissue_damping_does_not_eat_the_muscle_budget();
     });
 }

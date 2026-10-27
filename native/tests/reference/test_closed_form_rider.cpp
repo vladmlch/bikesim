@@ -15,6 +15,7 @@
 #include "terrain/trackfile.hpp"
 
 #include <cmath>
+#include <cstdio>
 #include <optional>
 #include <set>
 #include <string>
@@ -296,22 +297,26 @@ test_disabled_activation_probe_returns_zero_without_advancing_state() {
     bt::require(late > 0, "the launch ride produced late rows");
     bt::require(human_sum / static_cast<double>(late) >= 10.,
                 "the rider sustains >=10 Nm human crank torque");
-    // ORACLE PARITY GAP (delivered-torque family — see task-C315-report.md):
-    // native assist engages on 279/401 = 69.6% of late intervals vs the
-    // oracle's 351/400 = 87.8% (measured via _ride on the same flat track,
-    // duration 6 s). Both sides cut the motor exactly when the measured
-    // human_sensor_nm dips below ~4 Nm (pedal-cycle dead spots) or during
-    // shifts; the divergence is the measurand — native dead spots are
-    // deeper/longer and native shift + post-shift re-engagement runs last
-    // ~2-3x longer, producing 122 off-ticks vs the oracle's 49. Same
-    // family as the deferred test_planned_crank_torque record. Assert
-    // suppressed, not weakened — the record stays 'planned' in the ledger
-    // until the plant parity fix lands; every other assert lives.
+    // Engagement measurand, always reported (stderr is captured only on
+    // failure under ctest --output-on-failure): the >=80% gate stays
+    // suppressed below while the delivered human_sensor_nm dead-spot
+    // measurand diverges from the oracle — pre-F4 the native assist
+    // engaged 279/401 = 69.6% of late intervals vs the oracle's 351/400 =
+    // 87.8%; post-F4 re-measurement is recorded in task-C315-report.md and
+    // the ledger. F4 closed the weld-allocator stale-efc arena defect;
+    // this gap is a different mechanism — the delivered human-sensor
+    // torque chain (pedal dead-spot depth/duration + shift re-engagement),
+    // plausibly the same enabled-compute torque-map family as the 20
+    // deferred spindle nodes (F5 owns that defect).
+    std::fprintf(stderr,
+                 "engagement measurand: motor_on %.0f/%zu = %.1f%% of late "
+                 "intervals (gate >=80%%)\n",
+                 motor_on, late,
+                 100. * motor_on / static_cast<double>(late));
 #if 0
     bt::require(motor_on / static_cast<double>(late) >= .8,
                 "the pedelec assist is engaged >=80% of the ride");
 #endif
-    (void)motor_on;
     bt::require(max_v >= 15. / 3.6,
                 "the launch reaches at least 15 km/h");
 }

@@ -370,7 +370,7 @@ bike_add_reference_test(native_recording_lifecycle ENGINE
 bike_add_reference_test(native_recording_retention ENGINE
   SOURCES test_native_recording_retention.cpp
   LIBRARIES bike_recording bike_cli
-  LABELS t53 recording)
+  LABELS t53 recording slow)
 bike_add_reference_test(recording_capture ENGINE
   SOURCES test_recording_capture.cpp
   LIBRARIES bike_recording

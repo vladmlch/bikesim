@@ -3,7 +3,7 @@
 **Batch**: 3.30 — `tests/reference/test_native_recording_lifecycle.py`,
 `test_native_recording_retention.py`, `test_recording_capture.py`,
 `test_recording_publication.py` (74 records / 78 collected nodes;
-four parametrized records expand the count).
+two parametrized records expand the count).
 CTest ids `reference.{native_recording_lifecycle,native_recording_retention,
 recording_capture,recording_publication}`; labels `t53 recording`;
 port-map rows carry `owner_task: T53`.
@@ -28,10 +28,10 @@ this batch.
 
 | Source file | records | collected nodes | port | planned | drop |
 |---|---|---|---|---|---|
-| `test_native_recording_lifecycle.py` | 31 | 31 | 26 | 0 | 5 |
-| `test_native_recording_retention.py` | 17 | 21 | 16 | 0 | 1 |
+| `test_native_recording_lifecycle.py` | 31 | 32 | 26 | 0 | 5 |
+| `test_native_recording_retention.py` | 17 | 17 | 16 | 0 | 1 |
 | `test_recording_capture.py` | 24 | 24 | 23 | 0 | 1 |
-| `test_recording_publication.py` | 2 | 2 | 2 | 0 | 0 |
+| `test_recording_publication.py` | 2 | 5 | 2 | 0 | 0 |
 | **total** | **74** | **78** | **67** | **0** | **7** |
 
 ## What the ports reproduce

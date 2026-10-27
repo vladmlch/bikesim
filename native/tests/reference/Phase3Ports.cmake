@@ -352,3 +352,27 @@ bike_add_reference_test(native_runtime_performance_contract ENGINE
   SOURCES test_native_runtime_performance_contract.cpp
   LIBRARIES bike_app bike_realtime_measurement
   LABELS t53 runtime)
+
+# 3.27 T53 state batch — BIKEST02 bundle reader/resolver contracts, the
+# Stepper set_state/set_inputs aliasing and drive-state restore atomicity
+# surfaces, deterministic seeded property fuzzing of the restore parsers,
+# and the explicit equilibrium-state-file precedence/fingerprint/residual
+# contracts including the post-fix canonical-cache poisoning guarantee.
+bike_add_reference_test(native_state_bundle ENGINE
+  SOURCES test_native_state_bundle.cpp LIBRARIES bike_app
+  LABELS t53 state)
+# resolve_artifacts lives inside the native_bench executable — the pointer
+# resolution records keep the argv boundary through the generated macro.
+add_dependencies(reference.native_state_bundle native_bench)
+target_include_directories(reference.native_state_bundle PRIVATE
+  "${CMAKE_CURRENT_BINARY_DIR}/support")
+bike_add_reference_test(native_state_restore ENGINE
+  SOURCES test_native_state_restore.cpp
+  LIBRARIES bike_app bike_random bike_golden
+  LABELS t53 state)
+bike_add_reference_test(native_state_fuzz ENGINE
+  SOURCES test_native_state_fuzz.cpp LIBRARIES bike_app bike_random
+  LABELS t53 state)
+bike_add_reference_test(equilibrium_state_file ENGINE
+  SOURCES test_equilibrium_state_file.cpp LIBRARIES bike_app
+  LABELS t53 state)

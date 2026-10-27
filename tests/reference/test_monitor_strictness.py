@@ -28,6 +28,7 @@ def runtime_for_raws(*, strict=True, decimation=1):
     runtime.energy_scale_j = 1.
     for name in ('loss_j', 'muscle_signed_j', 'muscle_positive_j', 'motor_signed_j',
                  'motor_positive_j', 'constraint_absolute_j', 'solver_work_j',
+                 'closure_signed_j', 'closure_absolute_j',
                  'active_work_j', 'external_work_j', 'electrical_work_j'):
         setattr(runtime, name, 0.)
     runtime.set_measurement_decimation(decimation)

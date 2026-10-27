@@ -7982,3 +7982,97 @@ checks; both numbers recorded above. L3 (`tools/run_tests.sh
 native`) not re-run — bounded merge-back scope per protocol;
 lane/e's own gate evidence is in `task-C330-report.md`. Unrelated
 documented reds reported, not fixed.
+
+## 2026-10-27 — lane/c batch 3.23 monitors/energy/acceptance (commits `6fe7ab22`, `117bdb89`)
+
+### Surface
+
+- `native/src/runtime/step.{hpp,cpp}`: `constraint_components` and
+  `numerical_constraint_powers` exported beside `evaluate_attachments`
+  for oracle-parity audit (physical_observations.py row partition +
+  force*(J@v) accumulation); no `step()` behavior change.
+- Eight `native/tests/reference/test_*.cpp` ports (53 records), shared
+  `acceptance_reference_support.hpp`/`strictness_reference_support.hpp`,
+  Phase3Ports registrations `LABELS t52 physics` (+`golden` on
+  sensor_noise, +`slow` on realistic_pedelec_acceptance).
+- Oracle harness repairs: `test_energy_ledger.py` /
+  `test_monitor_strictness.py` refreshed to post-F1 surfaces
+  (five-arg `step_work`, closure fields on `runtime_for_raws`);
+  `test_sensor_noise.py` gains `_golden` capture sites.
+- Golden fixtures: 10 node pairs per platform under
+  `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/
+  tests_reference_test_sensor_noise.py/`; linux re-captured in
+  `bike-dev-pfc-lane-c` (30 pytest nodes green) and pulled — every
+  `.bin` payload byte-identical to darwin-arm64.
+
+### Focused CTest
+
+- darwin-arm64 `build/native-release` (AppleClang, Release):
+  `reference_monitor` 19, `balance_monitor` 120, `monitor_strictness`
+  174, `sensor_noise` 12905, `energy_ledger` 340,
+  `acceptance_interval_capture` 2, `lean_limit` 3,
+  `realistic_pedelec_acceptance` 7859 checks — 8/8 pass.
+- linux-aarch64 `/build/root-clang` (clang++-18, Release): 7 fast
+  targets pass; `realistic_pedelec_acceptance` passes 13850 checks.
+- Byte-flip proof (darwin-arm64): one byte of the pipeline `.bin`
+  flipped → FAIL naming node/index/`reads` label; restored → PASS.
+
+### Pedelec physics stop rule — Task 3.09 (undecided), measured both platforms
+
+- flat: fast_t=8.28 s (<10 bar passes); cadence in-band 0.6063 darwin /
+  0.6132 linux vs bar 0.8 and oracle 0.760–0.776 (baseline-red); 538 /
+  557 late `rider_strength.*` violations from interval ~406 where the
+  oracle's flat ride emits none — NEW native parity gap (same
+  per-tick-held-command family the oracle shows only on the climb).
+- shift: 7 shifts; 6 darwin / 7 linux windows checked, all failing;
+  worst ratio 0.2303 / 0.3295 vs bar 2.5 and oracle ~0.094
+  (baseline-red); 538 / 557 late violations; no balance loss.
+- climb: steady min 12.038 darwin / 12.931 linux km/h (>= 12 bar
+  passes natively); 763 / 869 late violations, oracle chronic same
+  family; no balance loss.
+- savage: darwin aborts `attachment normal has no planar component`
+  inside decompose_wrench before the first committed interval — NEW
+  native parity gap (oracle completes to 'duration'); linux completes:
+  x=58.318 m of 120, plateau mean 5.601 km/h, balance_lost=1,
+  22095 violations, `crash:loop_out` — same stall family as oracle.
+- Disposition: all four records `planned`; bars preserved verbatim
+  under `#if 0` with always-on measurands; savage pins the exact
+  failure mode so a different abort is red.
+
+### Ledger deltas
+
+- `test-port-map.json`: 53 batch rows — 47 `port`, 2 `golden`
+  (`golden_platforms` both), 4 `planned` with dated two-platform
+  evidence; `line`/`end_line` refreshed post-repair.
+- `python-removal.json`: 7 rows `planned` → `replacement_landed`;
+  `test_realistic_pedelec_acceptance.py` stays `planned` (its records
+  await the 3.09 decision); `snapshot_sha256`/line counts refreshed for
+  all eight rows.
+
+### Assessment
+
+49/53 records green on both platforms. The four pedelec records are not
+a regression of this batch: the oracle is baseline-red on the same bars
+(Task-3.09 evidence), and the two NEW parity gaps (flat-ride
+`rider_strength.*` violations, darwin planar-normal abort) are
+recorded as decision evidence, not hidden — suppressed bars keep their
+assertion text and emit measurands.
+
+### Gate — `bash tools/run_tests.sh native` (darwin-arm64, `native/build`)
+
+Build + all nine sweeps + produced kinds (`headers` 9,198 TUs,
+`diagnostic-controls`, `context`) green; analyzer alpha findings
+report-only. CTest 60/62 — reds are the documented frozen-oracle
+baselines `migration_T09` (`post-advance integration vector matches the
+oracle`) + `migration_T10` (`first transition matches the Python
+oracle`); gate exits 8 at the ctest step as on every recorded lane gate
+since F2. Manual tail (profile flags, allocator scribble): contracts
+12/12; native/golden pytest **43 failed / 3,197 passed / 1 skipped**
+(6,160 s, host shared with lane-e `full`) — all 43 the documented F2
+baseline tail (research_environment 17, runtime_* 14, spindle 2
+`_damped_config`, distributed_tire 2, numeric_completion 2,
+viewer_snapshot 2, capture/recording/ride_frontend/pneumatic
+singletons; ±ulp C++↔oracle drift on unported records; set shrank
+64→43 as sibling ports landed). Zero failures in the batch's surface.
+The tail embeds the designed ~80-min 9,198-TU headers re-sweep inside
+`test_native_check_tools.py::test_standalone_header_sweep_compiles_first_party_headers`.

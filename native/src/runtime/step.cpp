@@ -522,47 +522,6 @@ ForceMap actuator_components(const mjModel *model, const mjData *data) {
     return out;
 }
 
-// constraint_components — one mulJacTVec per row group; group insertion
-// order is fixed: native_contact, joint_limits, closure.
-ForceMap constraint_components(const mjModel *model, const mjData *data,
-                               std::vector<double> &weights) {
-    const int nefc = data->nefc;
-    const auto efc_type = ibuf(data->efc_type, nefc);
-    const auto efc_force = buf(data->efc_force, nefc);
-    std::array<std::vector<int>, 3> groups;
-    for (int i = 0; i < nefc; ++i)
-        switch (efc_type[static_cast<std::size_t>(i)]) {
-            case mjCNSTR_CONTACT_FRICTIONLESS:
-            case mjCNSTR_CONTACT_PYRAMIDAL:
-            case mjCNSTR_CONTACT_ELLIPTIC:
-                groups[0].push_back(i);
-                break;
-            case mjCNSTR_LIMIT_JOINT:
-            case mjCNSTR_LIMIT_TENDON:
-                groups[1].push_back(i);
-                break;
-            case mjCNSTR_EQUALITY:
-                groups[2].push_back(i);
-                break;
-            default: break;
-        }
-    static constexpr std::array<std::string_view, 3> names = {
-        "native_contact", "joint_limits", "closure"};
-    ForceMap out;
-    for (std::size_t g = 0; g < 3; ++g) {
-        auto force = zeros(model);
-        if (!groups[g].empty()) {
-            std::ranges::fill(weights, 0.);
-            for (const int row: groups[g])
-                weights[static_cast<std::size_t>(row)] =
-                    efc_force[static_cast<std::size_t>(row)];
-            engine::mul_jac_t_vec(model, data, force.data(), weights.data());
-        }
-        out.emplace_back(std::string(names[g]), std::move(force));
-    }
-    return out;
-}
-
 // shock_joint_limit_qfrc — shock_stroke LIMIT_JOINT rows only.
 std::vector<double> shock_joint_limit_qfrc(const mjModel *model,
                                            const mjData *data,
@@ -586,49 +545,6 @@ std::vector<double> shock_joint_limit_qfrc(const mjModel *model,
     if (any)
         engine::mul_jac_t_vec(model, data, qfrc.data(), weights.data());
     return qfrc;
-}
-
-// numerical_constraint_powers — per '{kind}:{efc_id}' accumulated
-// force*(J@v) in row order; dict key order is first-appearance order.
-std::vector<std::pair<std::string, double>>
-numerical_constraint_powers(const mjModel *model, const mjData *data,
-                            std::span<const double> incoming,
-                            std::vector<double> &velocity) {
-    const int nefc = data->nefc;
-    velocity.assign(static_cast<std::size_t>(nefc), 0.);
-    if (nefc > 0)
-        engine::mul_jac_vec(model, data, velocity.data(), incoming.data());
-    const auto efc_type = ibuf(data->efc_type, nefc);
-    const auto efc_id = ibuf(data->efc_id, nefc);
-    const auto efc_force = buf(data->efc_force, nefc);
-    std::vector<std::pair<std::string, double>> powers;
-    for (int i = 0; i < nefc; ++i) {
-        const char *kind = nullptr;
-        switch (efc_type[static_cast<std::size_t>(i)]) {
-            case mjCNSTR_EQUALITY: kind = "equality"; break;
-            case mjCNSTR_LIMIT_JOINT: kind = "joint_limit"; break;
-            case mjCNSTR_LIMIT_TENDON: kind = "tendon_limit"; break;
-            default: break;
-        }
-        if (kind == nullptr)
-            continue;
-        const std::string key =
-            std::string(kind) + ":" +
-            std::to_string(efc_id[static_cast<std::size_t>(i)]);
-        const double power =
-            efc_force[static_cast<std::size_t>(i)] *
-            velocity[static_cast<std::size_t>(i)];
-        bool found = false;
-        for (auto &[k, v]: powers)
-            if (k == key) {
-                v += power;
-                found = true;
-                break;
-            }
-        if (!found)
-            powers.emplace_back(key, power);
-    }
-    return powers;
 }
 
 // _connect_equality_rows — equality rows owned by connect equalities that
@@ -979,6 +895,94 @@ WireObject com_observations(const mjModel *m, const mjData *d) {
 }
 
 } // namespace
+
+// ---- the step.hpp-published constraint observers -------------------------
+// The anonymous-namespace helpers above stay internal; these two are the
+// physical_observations.py seam the energy-ledger ports audit directly.
+
+// constraint_components — one mulJacTVec per row group; group insertion
+// order is fixed: native_contact, joint_limits, closure.
+ForceMap constraint_components(const mjModel *model, const mjData *data,
+                               std::vector<double> &weights) {
+    const int nefc = data->nefc;
+    const auto efc_type = ibuf(data->efc_type, nefc);
+    const auto efc_force = buf(data->efc_force, nefc);
+    std::array<std::vector<int>, 3> groups;
+    for (int i = 0; i < nefc; ++i)
+        switch (efc_type[static_cast<std::size_t>(i)]) {
+            case mjCNSTR_CONTACT_FRICTIONLESS:
+            case mjCNSTR_CONTACT_PYRAMIDAL:
+            case mjCNSTR_CONTACT_ELLIPTIC:
+                groups[0].push_back(i);
+                break;
+            case mjCNSTR_LIMIT_JOINT:
+            case mjCNSTR_LIMIT_TENDON:
+                groups[1].push_back(i);
+                break;
+            case mjCNSTR_EQUALITY:
+                groups[2].push_back(i);
+                break;
+            default: break;
+        }
+    static constexpr std::array<std::string_view, 3> names = {
+        "native_contact", "joint_limits", "closure"};
+    ForceMap out;
+    for (std::size_t g = 0; g < 3; ++g) {
+        auto force = zeros(model);
+        if (!groups[g].empty()) {
+            std::ranges::fill(weights, 0.);
+            for (const int row: groups[g])
+                weights[static_cast<std::size_t>(row)] =
+                    efc_force[static_cast<std::size_t>(row)];
+            engine::mul_jac_t_vec(model, data, force.data(), weights.data());
+        }
+        out.emplace_back(std::string(names[g]), std::move(force));
+    }
+    return out;
+}
+
+// numerical_constraint_powers — per '{kind}:{efc_id}' accumulated
+// force*(J@v) in row order; dict key order is first-appearance order.
+std::vector<std::pair<std::string, double>>
+numerical_constraint_powers(const mjModel *model, const mjData *data,
+                            std::span<const double> incoming,
+                            std::vector<double> &velocity) {
+    const int nefc = data->nefc;
+    velocity.assign(static_cast<std::size_t>(nefc), 0.);
+    if (nefc > 0)
+        engine::mul_jac_vec(model, data, velocity.data(), incoming.data());
+    const auto efc_type = ibuf(data->efc_type, nefc);
+    const auto efc_id = ibuf(data->efc_id, nefc);
+    const auto efc_force = buf(data->efc_force, nefc);
+    std::vector<std::pair<std::string, double>> powers;
+    for (int i = 0; i < nefc; ++i) {
+        const char *kind = nullptr;
+        switch (efc_type[static_cast<std::size_t>(i)]) {
+            case mjCNSTR_EQUALITY: kind = "equality"; break;
+            case mjCNSTR_LIMIT_JOINT: kind = "joint_limit"; break;
+            case mjCNSTR_LIMIT_TENDON: kind = "tendon_limit"; break;
+            default: break;
+        }
+        if (kind == nullptr)
+            continue;
+        const std::string key =
+            std::string(kind) + ":" +
+            std::to_string(efc_id[static_cast<std::size_t>(i)]);
+        const double power =
+            efc_force[static_cast<std::size_t>(i)] *
+            velocity[static_cast<std::size_t>(i)];
+        bool found = false;
+        for (auto &[k, v]: powers)
+            if (k == key) {
+                v += power;
+                found = true;
+                break;
+            }
+        if (!found)
+            powers.emplace_back(key, power);
+    }
+    return powers;
+}
 
 // ---- construction ------------------------------------------------------
 

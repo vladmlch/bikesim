@@ -312,6 +312,34 @@ file(GENERATE OUTPUT
 target_include_directories(reference.native_benchmark PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/support")
 
+# 3.23 T52 physics batch — monitors, energy and acceptance: the
+# ReferenceMonitor strict/non-strict boundaries, BalanceMonitor
+# grace/dwell/recovery, the sensor-noise draw order and pipeline replay
+# against the frozen pre-refactor trace, the energy ledger's
+# step-work/period-close contracts, monitor strictness over neutral raws
+# plus the delayed research fixture, per-interval violation capture, the
+# rider lean limit and the welded pedelec acceptance episodes.
+bike_add_reference_test(reference_monitor ENGINE
+  SOURCES test_reference_monitor.cpp LIBRARIES bike_app LABELS t52 physics)
+bike_add_reference_test(balance_monitor ENGINE
+  SOURCES test_balance_monitor.cpp LIBRARIES bike_app bike_cli
+  LABELS t52 physics)
+bike_add_reference_test(monitor_strictness ENGINE
+  SOURCES test_monitor_strictness.cpp LIBRARIES bike_app LABELS t52 physics)
+bike_add_reference_test(sensor_noise ENGINE
+  SOURCES test_sensor_noise.cpp LIBRARIES bike_app bike_random
+  LABELS t52 physics golden)
+bike_add_reference_test(acceptance_interval_capture ENGINE
+  SOURCES test_acceptance_interval_capture.cpp LIBRARIES bike_app
+  LABELS t52 physics)
+bike_add_reference_test(lean_limit ENGINE
+  SOURCES test_lean_limit.cpp LIBRARIES bike_app LABELS t52 physics)
+bike_add_reference_test(energy_ledger ENGINE
+  SOURCES test_energy_ledger.cpp LIBRARIES bike_app LABELS t52 physics)
+bike_add_reference_test(realistic_pedelec_acceptance ENGINE
+  SOURCES test_realistic_pedelec_acceptance.cpp LIBRARIES bike_app
+  bike_validation LABELS t52 physics slow)
+
 # 3.25 T53 runtime batch — NativeRideRuntime construction/bootstrap,
 # the bounded-advance command contract, sample acknowledgement and
 # ownership, and the owned physical step. Ports exercise the welded

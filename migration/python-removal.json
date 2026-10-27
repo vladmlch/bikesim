@@ -14417,13 +14417,11 @@
       "native/tests/reference/test_acceptance_interval_capture.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.acceptance_interval_capture"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
-    "snapshot_sha256": "fa65b65bde73df0420620ad1b1da19be3eaf63a76ae4dae6634f432b9c186293",
+    "status": "replacement_landed",
+    "snapshot_sha256": "d44ad38348e56a9f8577fa4a0a5d0855fdeda62d2ee426a83ed0527705f7979e",
     "snapshot_line_count": 19,
     "tracked": true,
     "presence": "tracked"
@@ -14537,13 +14535,11 @@
       "native/tests/reference/test_balance_monitor.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.balance_monitor"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
-    "snapshot_sha256": "1be91064e64d96a5c99d5b10bbd90345a87e368a4f301083e9fb27cb41650b1c",
+    "status": "replacement_landed",
+    "snapshot_sha256": "f8b35897f78c39baa93a0b0afb367dc82a780e7afa18c514dd369111f650f45e",
     "snapshot_line_count": 118,
     "tracked": true,
     "presence": "tracked"
@@ -14763,14 +14759,12 @@
       "native/tests/reference/test_energy_ledger.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.energy_ledger"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
-    "snapshot_sha256": "f10c75a4fee86482b60a240ebf72ff47ec9e460836a6751655ae5c8aa42e9816",
-    "snapshot_line_count": 315,
+    "status": "replacement_landed",
+    "snapshot_sha256": "83122cdc6988ba8824c98fee6c33f9fec739a114b9357cee1b0be49833a4743d",
+    "snapshot_line_count": 323,
     "tracked": true,
     "presence": "tracked"
   },
@@ -14982,13 +14976,11 @@
       "native/tests/reference/test_lean_limit.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.lean_limit"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
-    "snapshot_sha256": "205d1c749757b251de254d265ebcedb983fea04a37804c38fcd37840383dce5c",
+    "status": "replacement_landed",
+    "snapshot_sha256": "13ea4b643fe333f2e70a21ca5f6adc84e7a0c97dddb799142c7322472aed590b",
     "snapshot_line_count": 38,
     "tracked": true,
     "presence": "tracked"
@@ -15055,14 +15047,12 @@
       "native/tests/reference/test_monitor_strictness.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.monitor_strictness"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
-    "snapshot_sha256": "70ffc73a600c2166685a383798d17cbf72b63d051b1ad8f5eaf32d060b4ba25f",
-    "snapshot_line_count": 278,
+    "status": "replacement_landed",
+    "snapshot_sha256": "9f11b4bca545764867f944222f9e91dda034e41e2abc14f3398f7f730108d5fa",
+    "snapshot_line_count": 281,
     "tracked": true,
     "presence": "tracked"
   },
@@ -16683,7 +16673,7 @@
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
     "status": "planned",
-    "snapshot_sha256": "0af688430396a2e2fd74a43921f9400c84d65d56641d964854b6b6633aa2bc8a",
+    "snapshot_sha256": "078a1b47309c5349f53d21fb4d274ffafd9ebf18d3ae1f603ee8d56feb0bcf57",
     "snapshot_line_count": 196,
     "tracked": true,
     "presence": "tracked"
@@ -16977,13 +16967,11 @@
       "native/tests/reference/test_reference_monitor.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.reference_monitor"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
-    "snapshot_sha256": "f69cb4be46928745dd3aab8c9cbdd81afe2b4e80c4810bca3729652553a075af",
+    "status": "replacement_landed",
+    "snapshot_sha256": "ddcc0e97d805b522a579f5ccb6c6a65fb931e85ec1fff735b2938497b2c3e16a",
     "snapshot_line_count": 36,
     "tracked": true,
     "presence": "tracked"
@@ -17359,14 +17347,12 @@
       "native/tests/reference/test_sensor_noise.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.sensor_noise"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
-    "snapshot_sha256": "4db223d07cee904fb0daae5c189dce2f9ca765a5c64060d76d6f795d319d547a",
-    "snapshot_line_count": 117,
+    "status": "replacement_landed",
+    "snapshot_sha256": "8ac0c78f1fcdcae97e8987009a2afcbf79afedca706dd0cab4768e6f82dc6482",
+    "snapshot_line_count": 132,
     "tracked": true,
     "presence": "tracked"
   },

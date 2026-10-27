@@ -6847,3 +6847,180 @@ scope per protocol. Unrelated documented reds reported, not fixed —
 including the A/B-verified pre-existing `test_native_runtime_step.py`
 live-parity reds noted in the lane report (pytest-side, past the
 merge-back ctest scope).
+
+## 2026-10-27 — 3.25 qualification (lane/d): runtime step/commands/ownership/bootstrap
+
+### Scope
+
+Four `tests/reference/test_native_runtime_{step,commands,ownership,
+bootstrap}.py` files — 49 port-map records / 52 collected nodes
+(`test_invalid_target_is_rejected_before_native_call` is parametrized
+×4 over `[True, 1.5, '3', -1]`). Dispositions: **38 `port`**
+(`contract`), **10 stay `planned`** (`bitwise-oracle` — the
+pre-existing live-oracle parity reds), **1 `drop`** (`python-only`).
+All ports are native-vs-native contract checks against the welded
+migration bootstrap capture (`tests/fixtures/migration/bootstrap/
+welded`) — **no golden nodes, no fixture recapture**.
+
+New CTest nodes, all `bike_add_reference_test(... LABELS t52 runtime)`:
+`reference.native_runtime_bootstrap` (19 checks),
+`reference.native_runtime_step` (4), `reference.native_runtime_commands`
+(6), `reference.native_runtime_ownership` (9). Shared helper header
+`native/tests/reference/runtime_reference_support.hpp` resolves the
+capture documents once per runtime (`ResolvedDocs` →
+`compose_runtime`/`ride()`), exposes ordered `Wire`/`bio::Value`
+navigation, `expect_error`/`expect_invalid`/`expect_io` diagnostic
+matching, and bitwise vector/wire comparators. One registration block
+in `Phase3Ports.cmake`; no duplicate registrations.
+
+### What each port covers
+
+- **bootstrap (19/19)**: construction owns its inputs and restores the
+  captured t=0 boundary; `snapshot()` counters; runtime survives caller
+  document destruction; `reset()` twice replays identically; `close()`
+  releases + fails fast on every public surface; caller-held
+  `config.json`/`state.json` mutation is isolated; and the 13 document
+  rejections — missing/unknown state key, model digest, `model_dims`
+  (nq/nv/na), integration width, non-finite lane, malformed drive
+  state, unknown joint in mutable state, unknown runtime key, schema
+  version, bad runtime-config envelope, control-period inconsistency,
+  missing `model.mjb` (staged copy). The `malformed_drive` case keeps
+  the T09-documented unexpected-acceptance edge pinned: the capture is
+  rejected for the *same* reason the oracle records.
+- **step (4/10)**: call-chunk independence (one `advance(40)` vs the
+  `(1,3,9,17,40)` ladder → bitwise identical integration vector);
+  `reset()` replays the bootstrap bitwise against a fresh runtime; the
+  snapshot is an owned copy (mutation cannot reach the runtime; later
+  snapshots don't alias); `probe_step_inputs` exposes staged drive +
+  contact diagnostics without advancing (`step == 0` invariant).
+- **commands (6/10)**: zero wall budget yields between steps with
+  `reason == 'budget'`; advance to the current step is a no-op;
+  invalid targets/commands reject before native work
+  (`std::invalid_argument` naming `target_step`/demand/effort fields);
+  concurrent advance/reset/probe/snapshot under the `AdvancementGuard`
+  reject `already advancing`; every surface fails `closed` after
+  `close()`; the fatal engine boundary preserves the committed prefix
+  (`step`, bitwise integration state, `first_failure`) and the
+  runtime stays poisoned until `reset()`.
+- **ownership (9/10)**: batch rows/columns are owned and read-only —
+  exported rows are fresh `as_wire()` materializations; a dropped
+  unacknowledged batch keeps the pending prefix retryable; prefix
+  acknowledgement appends correctly while stale/cross-generation/
+  foreign-owner acks reject (`prefix`/`generation` markers — the
+  native message family "belongs to a different generation or
+  prefix"/"stale or not the pending prefix", matching the source's
+  `'prefix|stale'` alternation); samples/columns/snapshots survive
+  `reset()` + `close()`; an unmaterialized batch keeps native rows
+  alive after close (the lazy-materialization liveness contract);
+  caller-side capture mutation cannot forge accounting or the reset
+  replay (forged `history.work_j` member verified absent); invalid
+  target rejected before native call; the fatal engine boundary
+  preserves the committed prefix and `reset()` recovers the capture
+  bitwise.
+
+### Not ported
+
+- **The 10 live-oracle parity reds** (6 step + 4 commands) stay
+  `planned`: every one compares `NativeRideRuntime` against the live
+  Python oracle's integration vector bit-for-bit and is **pre-existing
+  red on both platforms** — darwin-arm64 signature first-difference
+  `5.66934496e-03` vs `5.66934495e-03` (lane 3 of the integration
+  vector; the same 1-ulp family F4's report recorded as
+  `5.66934492e-03`/`5.66934491e-03` — the F4 weld fix shifted the
+  pre-divergence bytes but not the divergence itself). A/B-verified
+  identical before and after the F4 merge-back (task-F4-report.md).
+  This is a native↔oracle runtime divergence to fix in its own task —
+  the source nodes remain live oracle gates in the Python suite;
+  porting them past as green would falsify the gate.
+- **`test_row_materialization_is_lazy_and_retryable`** → `drop`
+  (`python-only`): the source injects a `MemoryError` into the
+  `SampleBatch` adapter's lazy row cache and asserts retry. The native
+  boundary publishes owned immutable `SamplePtr`s and rematerializes
+  per `as_wire()` call — no lazy-row cache exists to port; the
+  liveness contract is covered by
+  `reference.native_runtime_ownership::
+  test_unmaterialized_batch_keeps_native_rows_alive_after_close`.
+- **Semantic adaptations, both documented in-file**: the native
+  `RuntimeSampleBatch`/`RuntimeSnapshot` are caller-owned *mutable*
+  copies — the isolation probes mutate the held copy (legal C++,
+  unreachable to the runtime) where Python asserted read-only
+  `ValueError`/`TypeError`; the post-close bitwise check restores the
+  probe byte first. `frame.view` is the nested
+  `{drive_mode,endpoint,preview_row,model_fields}` shape, so the
+  mutation probe targets `drive_mode`.
+- The source's type-freedom parameter cases `[True, 1.5, '3']` for the
+  invalid-target test have no typed native input (the C++ signature
+  takes `std::int64_t`); only `-1` ports — noted in the port comment.
+
+### Verification
+
+- **Source suite (unchanged Python)**:
+  - darwin-arm64 (`native/build/release`): step+commands **10 failed
+    / 10 passed** — exactly the 10 recorded reds, verbatim signatures;
+    ownership+bootstrap green.
+  - linux-aarch64 (`bike-dev-pfc-lane-d`, `/build/native-clang`
+    rebuilt to current sources — the pre-existing artifact was stale,
+    `compiled=2a4c82cb…` vs `current=66d174bf…`, missing
+    `weld_servo_gain`): all four files **10 failed / 42 passed** —
+    the identical red set, same first-difference lane.
+- **Focused CTest**: `ctest -R 'reference\.native_runtime_'`:
+  - darwin-arm64 `build/native-release`: **4/4** — bootstrap 1.38 s,
+    step 0.45 s, commands 6.29 s, ownership 0.72 s.
+  - linux-aarch64 container `/build/root-clang` (clang++-18, Release):
+    **4/4** — bootstrap 1.39 s, step 0.51 s, commands 9.64 s,
+    ownership 1.00 s. No compiler-policy waiver needed on linux; the
+    `-Wframe-larger-than` suppression on by-value bootstrap helpers
+    matches the T09 precedent.
+- **Static checks**: all four TUs compile warning-free under
+  AppleClang and clang++-18 (`nodiscard` surfaces consumed via
+  `static_cast<void>`; `Wire` variant access via `.value`).
+
+### Ledger
+
+- `migration/test-port-map.json`: 49 rows touched in place — 38 `port`
+  with `reference.native_runtime_*::<fn>` ids, measured
+  `collected_node_ids` (52), dated `assertions_capture`, per-record
+  evidence strings; 10 `planned` keep their `ported::` placeholders
+  with NOT-PORTED evidence; 1 `drop` nulls the native ids.
+- `migration/python-removal.json`: `test_native_runtime_bootstrap.py`
+  and `test_native_runtime_ownership.py` → `replacement_landed`
+  (verification ids the new CTest names). `test_native_runtime_step.py`
+  and `test_native_runtime_commands.py` stay `planned` — their
+  live-oracle gate nodes remain open; the file is not yet replaceable.
+- `native/tests/reference/Phase3Ports.cmake`: one appended block,
+  four registrations, `LABELS t52 runtime`; dedup verified.
+
+### Commits
+
+| SHA | Unit |
+|---|---|
+| `14078ed4` | test(reference): port runtime step/commands/ownership/bootstrap contract suite (C3.25) |
+| `f68d1317` | docs(migration): C3.25 runtime batch ledger — 38 port, 10 planned-red, 1 drop |
+| (this section + task-C325-report.md) | this commit |
+
+### Final gate
+
+`bash tools/run_tests.sh native` (`native/build`, AppleClang,
+darwin-arm64) — baseline-blocked, fully mapped, **zero unexpected
+reds**; detail in task-C325-report.md §Final gate.
+
+- run 1: build + frontends/tidy/analyzer/cppcheck/odr/scripts green;
+  `check_headers` failed environmentally — generated
+  `header_probe.cpp` files vanished mid-sweep (first failure index
+  957; all 123 failures missing-probe-file; zero compiler
+  diagnostics; shared work tree emptied underneath the run).
+- `check_headers` standalone rerun (run `20261027T060639486867Z`):
+  **passed, 9074/9074 TUs rc=0** — flake not reproducible.
+- Resumed remaining phases with the gate's own commands:
+  `diagnostic-controls` 6/0 health ok; `context` 5 SDK controls
+  passed; `ctest --test-dir native/build` **60/62** — only the
+  documented baseline pair `migration_T09` + `migration_T10` (same
+  60/62 as the previous lane gate); `contracts` all assertions
+  passed; pytest tail **3197 passed / 43 failed / 1 skipped** —
+  every failure maps to a ledger record (39 `planned` incl. this
+  batch's 10, 3 `drop`, 1 `golden` whose native gate is green).
+  Inside the tail the in-suite legacy headers sweep also passed
+  (run `20261027T074403229844Z`).
+- Verdict: single-run exit-0 unreachable while the documented
+  T09/T10 baseline pair is red (same exit-8-at-ctest as the prior
+  lane gate); nothing C3.25 introduced failed.

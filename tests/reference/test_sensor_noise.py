@@ -2,6 +2,7 @@
 from dataclasses import replace
 import numpy as np
 import pytest
+from _golden import record as record_golden
 from bike_sim.sim.research.sensor_noise import NoiseTape, SensorNoiseSource, build_noise_tape
 from bike_sim.sim.research.sensors import SensorConfig, SensorPipeline
 
@@ -27,6 +28,8 @@ def legacy_draws(config, seed, count):
 def test_exact_legacy_call_order(config, seed):
     tape = build_noise_tape(config, seed=seed, count=128)
     noise, uniform = legacy_draws(config, seed, 128)
+    record_golden(noise, 'noise')
+    record_golden(uniform, 'uniform')
     np.testing.assert_array_equal(tape.noise, noise)
     np.testing.assert_array_equal(tape.dropout_uniform, uniform)
 
@@ -106,12 +109,24 @@ def test_pipeline_matches_frozen_pre_refactor_sensor_trace(raw_sensor, assert_tr
     actual = SensorPipeline(config, seed=210)
     reference.reset(legacy.SensorObservation(**asdict(raw_sensor())))
     actual.reset(raw_sensor())
+    reads = []
     for index in range(20):
         time_s = index*.005
         if index:
             reference.push(legacy.SensorObservation(**asdict(raw_sensor(time_s))))
             actual.push(raw_sensor(time_s))
         for now in (time_s, time_s+.001, time_s+.001):
-            assert_tree(asdict(actual.read(now)), asdict(reference.read(now)), atol=0., rtol=0.)
+            observed = asdict(actual.read(now))
+            reads.append([observed['time_s'], observed['source_time_s'],
+                          1. if observed['valid'] else 0.,
+                          *observed['specific_force_body_mps2'],
+                          observed['pitch_rate_up_rad_s'],
+                          observed['front_wheel_rad_s'], observed['rear_wheel_rad_s'],
+                          observed['crank_rad_s'], observed['motor_torque_nm'],
+                          observed['human_torque_nm']])
+            assert_tree(observed, asdict(reference.read(now)), atol=0., rtol=0.)
+    record_golden(np.asarray(reads), 'reads')
+    record_golden(np.asarray([actual.samples_attempted, actual.samples_dropped],
+                            dtype=float), 'counters')
     assert actual.samples_attempted == reference.samples_attempted
     assert actual.samples_dropped == reference.samples_dropped

@@ -6,7 +6,8 @@ from bike_sim.sim.research.quality import energy_quality
 
 
 def test_positive_body_work_is_not_net_joint_work():
-    work = step_work(np.array([400., -350.]), 100., np.array([20., -20.]), .1)
+    work = step_work(np.array([400., -350.]), 100., np.array([20., -20.]),
+                     np.zeros(0), .1)
     assert work.muscle_positive_j == 40.
     assert work.muscle_signed_j == 5.
     assert work.constraint_absolute_j == 4.
@@ -24,10 +25,10 @@ def test_large_constraint_work_cannot_improve_residual_quality():
 
 
 def test_motor_work_reports_signed_and_positive_separately():
-    work = step_work(np.array([50.]), -80., np.zeros(0), .01)
+    work = step_work(np.array([50.]), -80., np.zeros(0), np.zeros(0), .01)
     assert work.motor_signed_j == -.8
     assert work.motor_positive_j == 0.
-    work = step_work(np.array([-10.]), 250., np.zeros(0), .01)
+    work = step_work(np.array([-10.]), 250., np.zeros(0), np.zeros(0), .01)
     assert work.motor_signed_j == 2.5
     assert work.motor_positive_j == 2.5
     assert work.muscle_signed_j == -.1
@@ -40,7 +41,7 @@ def test_invalid_work_inputs_are_rejected():
             (np.zeros(1), 0., np.zeros(0), 0.),
             (np.zeros(1), 0., np.zeros(0), -.1)):
         with pytest.raises(ValueError):
-            step_work(muscle, motor, constraint, dt)
+            step_work(muscle, motor, constraint, np.zeros(0), dt)
 
 
 def test_constraint_budget_uses_roundoff_floor_when_no_source():
@@ -173,11 +174,18 @@ def test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(kind):
     raw=neutral_raw(0)
     runtime._buffer.push(replace(raw,qpos=data.qpos.copy(),qvel=data.qvel.copy(),components=parts,
         metadata=dict(raw.metadata,numerical_constraint_power_w=powers)))
-    with pytest.raises(InvalidReferenceRun,match='energy.constraint_work'):
+    # F1 re-scope: equality rows are elastic exchange charged to the
+    # closure channel — tracked signed/absolute but never policed by the
+    # numerical-work bound. Limit rows stay numerical constraint work.
+    channel = 'closure' if kind == 'equality' else 'constraint'
+    if kind == 'equality':
         runtime.flush()
-    assert runtime.energy['constraint_signed_j'] == pytest.approx(0.,abs=1e-12)
-    assert runtime.energy['constraint_absolute_j'] == pytest.approx(sum(map(abs,powers.values()))*.0005)
-    assert runtime.energy['constraint_absolute_j'] > 1e-8
+    else:
+        with pytest.raises(InvalidReferenceRun,match='energy.constraint_work'):
+            runtime.flush()
+    assert runtime.energy[channel+'_signed_j'] == pytest.approx(0.,abs=1e-12)
+    assert runtime.energy[channel+'_absolute_j'] == pytest.approx(sum(map(abs,powers.values()))*.0005)
+    assert runtime.energy[channel+'_absolute_j'] > 1e-8
 
 
 def _free_body(extra=''):

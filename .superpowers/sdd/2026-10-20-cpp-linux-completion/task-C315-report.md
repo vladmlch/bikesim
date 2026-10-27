@@ -22,6 +22,10 @@ fails linux-aarch64 on the tissue-damping episode record.
 - `a60ce0ea` — `test_native_rider_intent.py` `_golden` instrumentation + darwin-arm64 capture (26 records). Oracle file still 26/26 green with records inert.
 - `c77380a8` — `test_native_rider_intent.cpp` golden consumer + Phase3Ports registration (`reference.native_rider_intent`, `t52 rider golden`): replays `input.<op>.k` JSON docs through `decode_intent_*` and the native intent stack, `peek_label()` selects output-vs-error branches, `output.*` compared byte-exact (canonical JSON) or as f64 scalars. PASS 23,309 checks on darwin-arm64.
 - this session (uncommitted at report time) — `test_native_spindle_controller.py` `_golden` instrumentation (same contract: `input.<op>.k` f64-packed canonical-JSON docs, `output.*` bitwise-JSON or close-f64 leaves, `error.<op>.k` empty |u1 markers, `_SEQ` per-node counters) + darwin-arm64 capture of the 20 oracle-green nodes; `test_native_spindle_controller.cpp` consumer + `reference.native_spindle_controller` registration; linux-aarch64 captures for both files.
+- `46f7200c` — fix-round: reclassify 40 fixture-backed records as `golden` dispositions (26 intent + 14 landed spindle), `comparison_class=bitwise-oracle`, `golden_platforms` both lanes, real CTest `verification_ids`.
+- `61c97189` — F4 cherry-pick `df16bd4f`: `step.cpp` calls `refresh_forward(m,d)` before the rider control-tick `compute()` — the oracle (`physical_runtime.py:381-384`) runs `mj_forward` inside the tick so `ConstraintDynamics` builds on this interval's assembled forces, not the previous post-step zero-input solve. Closes the stale-efc arena defect.
+- `62b8c480` — fix-round: `verification_ids` on `test_joint_strength.py`/`test_planar_arms.py` python-removal rows → `reference.joint_strength`/`reference.planar_arms`.
+- `5584b351` — fix-round: F4 deferred-record requalification — `test_planned_crank_torque_...` enabled + green both platforms → `port`; `test_flat_launch_delivers_crank_torque` and `test_tissue_damping_does_not_eat_the_muscle_budget` stay `planned` with post-F4 evidence (see Fix-round section).
 
 ## Dispositions
 
@@ -29,22 +33,22 @@ fails linux-aarch64 on the tissue-damping episode record.
 |---|---|---|
 | tests/reference/test_crank_split.py | 9 | port — `reference.crank_split`, PASS 23 checks darwin-arm64 |
 | tests/reference/test_leg_loop.py | 7 | port — `reference.leg_loop`, PASS 65 checks darwin-arm64 |
-| tests/reference/test_coupled_rider_task.py | 5 | **4 port / 1 deferred** — `reference.coupled_rider_task`, PASS 19 checks darwin-arm64 |
-| tests/reference/test_closed_form_rider.py | 8 | **7 port / 1 deferred** — `reference.closed_form_rider`, PASS 751 checks darwin-arm64 |
+| tests/reference/test_coupled_rider_task.py | 5 | **4 port / 1 defect-planned** (`test_tissue_damping_...`, linux-only) — `reference.coupled_rider_task`, PASS 70 checks darwin-arm64 post-F4 |
+| tests/reference/test_closed_form_rider.py | 8 | **7 port / 1 defect-planned** (`test_flat_launch_...`) — `reference.closed_form_rider`, PASS 751 checks both platforms |
 | tests/reference/test_joint_strength.py | 15 | port — `reference.joint_strength`, PASS 408 checks darwin-arm64 |
 | tests/reference/test_planar_arms.py | 11 | port — `reference.planar_arms`, PASS 187 checks darwin-arm64 |
-| tests/reference/test_native_rider_intent.py | 26 | port — `reference.native_rider_intent`, PASS 23,309 checks darwin-arm64 + PASS linux-aarch64 (26/26 node goldens both platforms) |
-| tests/reference/test_native_spindle_controller.py | 22 records / 42 nodes | **14 records port (20 nodes) / 8 records deferred (22 nodes)** — `reference.native_spindle_controller`, PASS 1,971 checks darwin-arm64 + PASS linux-aarch64 |
+| tests/reference/test_native_rider_intent.py | 26 | golden (reclassified by `46f7200c`) — `reference.native_rider_intent`, PASS 23,309 checks darwin-arm64 + PASS linux-aarch64 (26/26 node goldens both platforms) |
+| tests/reference/test_native_spindle_controller.py | 22 records / 42 nodes | **14 records golden (20 nodes, reclassified by `46f7200c`) / 8 records deferred (22 nodes)** — `reference.native_spindle_controller`, PASS 1,971 checks darwin-arm64 + PASS linux-aarch64 |
 
-Deferred record 1: `test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step` — **native/oracle parity gap, not a harness bug**: `predicted_crank_torque_nm` (wire `solution_crank_torque_nm`) matches `diagnostics.rider_welds.crank_torque_nm` bitwise for ~18 control periods, then diverges at t≈0.19 s (10.310 vs 9.689 N·m; oracle bound 1e-3 rel). Python oracle itself passes 5/5 in 200 s. Function kept in the .cpp under `#if 0` with an explanatory comment; ledger record stays `planned` with evidence.
+Deferred record 1 — **RESOLVED post-F4, disposition `port` (`5584b351`)**: `test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step` traced exactly the stale-efc arena defect F4 fixed (`61c97189`). `#if 0` removed; `reference.coupled_rider_task` green darwin-arm64 (PASS 70 checks — this record's ~50 per-period comparisons + `checked>=20`, zero `MISMATCH` stderr) and green for this record on linux-aarch64 (it ran to completion before the binary's only FAIL, the tissue-damping record). Oracle-side node green linux-aarch64 (pytest, 212 s). Original deferral note: `predicted_crank_torque_nm` matched `diagnostics.rider_welds.crank_torque_nm` bitwise for ~18 control periods then diverged at t≈0.19 s (10.310 vs 9.689 N·m; oracle bound 1e-3 rel).
 
-Deferred record 2: `test_flat_launch_delivers_crank_torque` — **same delivered-torque parity family**: native pedelec assist engages on 279/401 = 69.6% of late intervals vs the oracle's 351/400 = 87.8%. Both sides cut the motor exactly when `human_sensor_nm` dips below ~4 N·m or during shifts — the divergence is the measurand: native dead spots run deeper/longer and native shift + post-shift re-engagement windows last ~2–3× longer (122 vs 49 off-ticks). The `>=80%` gate stays verbatim under `#if 0`; the other three asserts live and pass. Ledger record stays `planned`.
+Deferred record 2: `test_flat_launch_delivers_crank_torque` — **still deferred post-F4 (`5584b351`)**: the always-on stderr measurand now reports `motor_on 279/401 = 69.6%` of late intervals on **both** darwin-arm64 and linux-aarch64 — identical to the pre-F4 count, so F4 is confirmed not the mechanism. The gap is the delivered `human_sensor_nm` dead-spot depth/duration + shift re-engagement chain (native 122 off-ticks vs oracle 49; both sides cut assist at ~4 N·m dips), plausibly the enabled-compute torque-map family of the 20 deferred spindle nodes (F5 scope). The `>=80%` gate stays verbatim under `#if 0` — restoring it would assert 69.6% ≥ 80%; the other three asserts live and pass. Ledger record stays `planned` with post-F4 evidence.
 
 Deferred records 3–8 (spindle file, 20 nodes over 6 records): `test_spindle_compute_matches_python` (12 parametrized nodes), `test_spindle_steady_state_bypasses_activation`, `test_spindle_state_round_trip`, `test_spindle_solved_effort_matches_python`, `test_spindle_compute_posture_matches_python` (4 nodes), `test_spindle_coasting_command_matches_python` — **native/oracle enabled-compute parity defect**: every enabled `compute` diverges in the torque map; the rear-leg chain collapses natively (`rider_hip_rear`/`rider_knee_rear` read 0.0 vs oracle −1.310/−0.261 N·m on `compute[0.0-0.0]`; front hip/knee off ~35%: −0.968 vs −1.541, 0.293 vs 0.351; torso/shoulder/elbow match). Allocation diagnostics diverge in the rear chain (solution excitation `[0.,−0.]` vs oracle `[−26.87,−5.34]`). Identical 22-failure set reproduces on darwin-arm64 and linux-aarch64, so it is a delivered implementation defect, not a platform or harness issue. Instrumented input streams exist; fixtures for these nodes were deliberately not committed (unconsumable — replaying them would fail closed). Records stay `planned` with evidence.
 
 Deferred records 9–10 (spindle file, 2 nodes): `test_spindle_activation_rejects_repeated_timestamp`, `test_spindle_activation_and_passive_damping_match_python` — **`_damped_config` TOML baseline**: the helper rewrites the pinned TOML in place and trips `tomllib.TOMLDecodeError: Cannot overwrite a value (at line 112, column 25)` inside `_plant` before any golden event. No fixture exists for these nodes. Records stay `planned` until the pinned-config baseline is re-anchored.
 
-Deferred record 11 (coupled file): `test_tissue_damping_does_not_eat_the_muscle_budget` — **linux-aarch64 only**: the oracle-side pytest passes on the linux container (894 s) and the native binary passes darwin-arm64 (1,199 s), but the native 1.5 s episode on linux lands `passive >= 0.3*positive` — a native-side platform drift plausibly in the delivered-power parity family (records 1–2). Record flipped back to `planned` with evidence; the binary is red on linux until fixed.
+Deferred record 11 (coupled file): `test_tissue_damping_does_not_eat_the_muscle_budget` — **still deferred post-F4 (`5584b351`)**: the linux-aarch64 rerun on F4 physics again lands `passive >= 0.3*positive` after the 1.5 s episode (`FAIL tissue damping stays a small fraction of muscle power`; the `positive > 20 W` require passed first). F4 closed the sequencing gap; this linux-only drift is a distinct defect in the delivered-power parity family. Oracle-side green both platforms (894 s linux); native green darwin-arm64. Stays `planned`; the binary is red on linux until fixed.
 
 ## Stale-extension diagnosis (this session)
 
@@ -73,15 +77,15 @@ The first `run_tests.sh native` attempt died at `check_tidy`: `native/src/drivet
 |---|---|---|
 | reference.crank_split | PASS 23 | PASS |
 | reference.leg_loop | PASS 65 | PASS |
-| reference.coupled_rider_task | PASS 19 (~16 min — faithful settle dominates) | **FAIL** — `test_tissue_damping_does_not_eat_the_muscle_budget` (960 s) |
-| reference.closed_form_rider | PASS 751 | PASS |
+| reference.coupled_rider_task | PASS 70 post-F4 (~28 min — settle + the enabled planned-crank episode) | **FAIL** — `test_tissue_damping_does_not_eat_the_muscle_budget` only (post-F4 rerun); `test_planned_crank_torque_...` green |
+| reference.closed_form_rider | PASS 751 (post-F4; engagement measurand 69.6%) | PASS 751 (post-F4; engagement measurand 69.6%) |
 | reference.joint_strength | PASS 408 | PASS |
 | reference.planar_arms | PASS 187 | PASS |
 | reference.native_rider_intent | PASS 23,309 | PASS (26/26 goldens) |
 | reference.native_spindle_controller | PASS 1,971 | PASS (20/20 committed goldens) |
 | Oracle pytest | green | test_native_rider_intent 26/26; test_native_spindle_controller 20/22 blocked as documented; coupled oracle-side tissue-damping green (894 s) |
 
-Ledger flips (`migration/test-port-map.json`): all 26 intent records and the 14 qualified spindle records → `collected_node_ids` measured, `assertions_capture` dated "oracle green darwin-arm64 + linux-aarch64", `comparison_class=bitwise-oracle`, `disposition=port` with evidence. The 8 spindle blocked records + `test_tissue_damping_does_not_eat_the_muscle_budget` stay `planned` with defect evidence. `migration/python-removal.json`: `test_native_rider_intent.py` → `replacement_landed` (verification id `reference.native_rider_intent`, sha refreshed to the instrumented file); `test_native_spindle_controller.py` stays `planned` (22/42 nodes unqualified); `test_coupled_rider_task.py`/`test_closed_form_rider.py` stay `planned` (deferred records outstanding).
+Ledger flips (`migration/test-port-map.json`): all 26 intent records and the 14 qualified spindle records → `collected_node_ids` measured, `assertions_capture` dated "oracle green darwin-arm64 + linux-aarch64", `comparison_class=bitwise-oracle`, `disposition=golden` (reclassified `46f7200c`) with evidence. Fix-round (`5584b351`): `test_planned_crank_torque_...` → `disposition=port` (F4 fix, green both platforms). The 8 spindle blocked records + `test_tissue_damping_does_not_eat_the_muscle_budget` + `test_flat_launch_delivers_crank_torque` stay `planned` with defect evidence. `migration/python-removal.json`: `test_native_rider_intent.py` → `replacement_landed` (verification id `reference.native_rider_intent`, sha refreshed to the instrumented file); `test_native_spindle_controller.py` stays `planned` (22/42 nodes unqualified); `test_coupled_rider_task.py`/`test_closed_form_rider.py` stay `planned` (one defect record each outstanding).
 
 ## Golden-capture convention
 
@@ -110,11 +114,11 @@ Consumer contract (verified against captured fixtures): entry order per node is 
 
 ## Status for the next agent
 
-**Fully qualified (darwin-arm64 + linux-aarch64):** `test_crank_split.py` (9), `test_leg_loop.py` (7), `test_joint_strength.py` (15), `test_planar_arms.py` (11), `test_native_rider_intent.py` (26 — consumer + goldens on both platforms, `python-removal` row now `replacement_landed`), plus the 14 oracle-green records of `test_native_spindle_controller.py` (20 nodes, replayed by `reference.native_spindle_controller` on both platforms).
+**Fully qualified (darwin-arm64 + linux-aarch64):** `test_crank_split.py` (9), `test_leg_loop.py` (7), `test_joint_strength.py` (15), `test_planar_arms.py` (11), `test_native_rider_intent.py` (26 — consumer + goldens on both platforms, `python-removal` row now `replacement_landed`), plus the 14 oracle-green records of `test_native_spindle_controller.py` (20 nodes, replayed by `reference.native_spindle_controller` on both platforms), plus `test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step` post-F4 (`5584b351`).
 
 **Still blocked (records stay `planned` with evidence):**
-- `test_coupled_rider_task.py`: `test_planned_crank_torque_...` (delivered-torque parity) + `test_tissue_damping_does_not_eat_the_muscle_budget` (linux-aarch64 episode drift — oracle green on linux, native red).
-- `test_closed_form_rider.py`: `test_flat_launch_delivers_crank_torque` (same parity family).
+- `test_coupled_rider_task.py`: `test_tissue_damping_does_not_eat_the_muscle_budget` (linux-aarch64 episode drift — oracle green on linux, native red post-F4 too; distinct defect from F4's sequencing fix).
+- `test_closed_form_rider.py`: `test_flat_launch_delivers_crank_torque` (delivered human_sensor_nm parity — 69.6% engagement post-F4 on both platforms; same enabled-compute torque-map family as the spindle defect).
 - `test_native_spindle_controller.py`: 6 enabled-compute records / 20 nodes (native rear-leg chain torque defect — described above) + 2 `_damped_config` records (TOMLDecodeError baseline).
 
 ## Final gate — `bash tools/run_tests.sh native`
@@ -157,6 +161,26 @@ exit 0 because the gate's red surface is entirely pre-existing documented
 defects (T09/T25 worktree-portability, spindle compute parity,
 damped-TOML baseline, baseline-tail oracle drift) plus one linux-only
 coupled record. Owed next: the delivered-torque/compute parity fix
-(unblocks 2 coupled/closed-form + 20 spindle nodes), the damped-TOML
+(unblocks 1 closed-form record + 20 spindle nodes), the damped-TOML
 baseline re-anchor (2 nodes), and the linux tissue-damping drift (1
 record) — then the remaining `python-removal` flips.
+
+## Fix-round — F4 (`61c97189`) deferred-record requalification
+
+F4 (`refresh_forward` before the rider control-tick `compute()`, ported
+from `physical_runtime.py:381-384` `mj_forward`-inside-the-tick) closed
+the stale-efc arena defect: the allocator had snapshotted the previous
+interval's post-step zero-input solve. Requalified the three deferred
+records that traced to it:
+
+| Record | Post-F4 darwin-arm64 | Post-F4 linux-aarch64 | Verdict |
+|---|---|---|---|
+| `test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step` | PASS 70 checks (record's ~50 period comparisons + `checked>=20`; zero `MISMATCH`) | green — ran to completion; binary's only FAIL is the tissue-damping record | **`planned`→`port`** (`5584b351`); oracle node also green linux (212 s) |
+| `test_tissue_damping_does_not_eat_the_muscle_budget` | PASS (inside the same 70-check binary) | **still RED** — `passive >= 0.3*positive` on the 1.5 s episode | stays `planned`; linux-only drift, distinct delivered-power defect |
+| `test_flat_launch_delivers_crank_torque` | PASS 751; measurand 279/401 = 69.6% | PASS 751; measurand 279/401 = 69.6% | stays `planned`; identical pre/post-F4 count proves F4 is not the mechanism — same enabled-compute torque-map family as the 20 spindle nodes (F5) |
+
+Records unblocked by F4: **1** (`planned_crank` — now enabled in the
+binary and `port` in the ledger). The 20 enabled-compute spindle nodes +
+2 `_damped_config` TOML nodes were not in F4's family and stay `planned`
+untouched. `reference.coupled_rider_task` is green darwin / red linux
+(tissue-damping only) — same linux baseline as pre-F4.

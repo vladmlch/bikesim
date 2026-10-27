@@ -16016,8 +16016,8 @@
   },
   {
     "path": "tests/reference/test_native_runtime_commands.py",
-    "sha256": "86d323262db4e6426b8d2a5e535a326c1e5e0f77d0f590ead922c4eb20d3ea7e",
-    "line_count": 248,
+    "sha256": "a026f9041929fe34789f6c93f7345f1254fa08d1cb1ce7b0508d8b2faf56d66f",
+    "line_count": 253,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [

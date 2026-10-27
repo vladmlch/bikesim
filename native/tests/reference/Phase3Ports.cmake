@@ -354,3 +354,28 @@ bike_add_reference_test(native_runtime_performance_contract ENGINE
   SOURCES test_native_runtime_performance_contract.cpp
   LIBRARIES bike_app bike_realtime_measurement
   LABELS t53 runtime)
+
+# 3.30 T53 recording batch — the run-recording lifecycle (R03/R11/R14/R16),
+# full/legacy/off retention ownership, RunCapture/journal contracts and the
+# staged-publication fault-injection records of
+# tests/reference/test_native_recording_lifecycle.py,
+# test_native_recording_retention.py, test_recording_capture.py and
+# test_recording_publication.py. Publication fault injection goes through
+# FinalizeOptions::before_stage (the oracle's publisher monkeypatch); the
+# known live-oracle red families stay `planned` in the ledger.
+bike_add_reference_test(native_recording_lifecycle ENGINE
+  SOURCES test_native_recording_lifecycle.cpp
+  LIBRARIES bike_recording bike_cli
+  LABELS t53 recording)
+bike_add_reference_test(native_recording_retention ENGINE
+  SOURCES test_native_recording_retention.cpp
+  LIBRARIES bike_recording bike_cli
+  LABELS t53 recording)
+bike_add_reference_test(recording_capture ENGINE
+  SOURCES test_recording_capture.cpp
+  LIBRARIES bike_recording
+  LABELS t53 recording)
+bike_add_reference_test(recording_publication ENGINE
+  SOURCES test_recording_publication.cpp
+  LIBRARIES bike_recording
+  LABELS t53 recording)

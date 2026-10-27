@@ -186,7 +186,7 @@ void test_native_capability_rejects_pneumatic_configured_without_surface() {
     config.tires.backend = "pneumatic";
     config.tires.surface_mode = "configured";
     config.tires.pneumatic.surface = std::nullopt;
-    require_rejected(config, articulated_rider(), "surface");
+    require_rejected(config, articulated_rider(), "pneumatic");
 }
 
 // ---------------------------------------------------------------------------
@@ -244,7 +244,7 @@ void test_native_capability_rejects_other_transmissions() {
     {
         cfg::SimulationPhysicsConfig config = welded();
         config.drive.transmission_model = "unimplemented_transmission";
-        expect_invalid("", [&] {
+        expect_invalid("transmission", [&] {
             runtime::validate_physical_capabilities(config, rider);
         });
     }
@@ -273,7 +273,7 @@ void test_native_capability_rejects_unported_tire_backend() {
     require_supported(config, rider,
                       "native_reference is a recognized native dispatch");
     config.tires.backend = "unimplemented_backend";
-    expect_invalid("", [&] {
+    expect_invalid("backend", [&] {
         runtime::validate_physical_capabilities(config, rider);
     });
 }

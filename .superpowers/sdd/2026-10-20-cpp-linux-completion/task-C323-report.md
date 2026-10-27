@@ -21,7 +21,7 @@ Commits on `lane/c`:
 - `117bdb89` — `test(cpp): T52 port monitors, energy, acceptance
   (3.23)`: all eight ports, two shared headers, registration, both
   platforms' sensor-noise fixtures, ledger rows, oracle-harness repairs.
-- `<report commit>` — this report.
+- `cb2d6a55` — this report (+ `624fd3d0`/`e905e0ab` fix round).
 
 ## Triage
 

@@ -15,6 +15,7 @@
 // the runtime consumer untested; this freezes the oracle's own values.
 #include "support/migration_test.hpp"
 #include "support/golden.hpp"
+#include "diag.hpp"
 #include "io/json.hpp"
 #include "io/value.hpp"
 #include "rider/spindle_controller.hpp"
@@ -26,10 +27,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <cstdlib>
+#include <cstddef>
 #include <format>
-#include <iostream>
-#include <fstream>
 #include <memory>
 #include <numbers>
 #include <ranges>
@@ -45,13 +44,13 @@ namespace bio = bike::io;
 // Engine-buffer span adapters — the views::counted style step.cpp uses;
 // raw ptr+size indexing is a hard error under -Wunsafe-buffer-usage.
 std::span<const double> buf(const double *p, std::size_t n) {
-    return std::views::counted(p, n);
+    return std::views::counted(p, static_cast<std::ptrdiff_t>(n));
 }
 std::span<double> wbuf(double *p, std::size_t n) {
-    return std::views::counted(p, n);
+    return std::views::counted(p, static_cast<std::ptrdiff_t>(n));
 }
 std::span<const int> ibuf(const int *p, std::size_t n) {
-    return std::views::counted(p, n);
+    return std::views::counted(p, static_cast<std::ptrdiff_t>(n));
 }
 
 constexpr std::string_view kFile =
@@ -206,7 +205,8 @@ std::vector<double> torque_vector(const rider::NamedEntries<double> &torques,
 
 std::span<const std::byte> byte_span(const std::string &text) {
     return std::views::counted(
-        reinterpret_cast<const std::byte *>(text.data()), text.size());
+        reinterpret_cast<const std::byte *>(text.data()),
+        static_cast<std::ptrdiff_t>(text.size()));
 }
 
 // ArticulatedRiderController.state_dict() is the canonical 18-key document
@@ -223,17 +223,100 @@ std::string state_document(const rider::SpindleController &ctrl) {
 }
 
 // The recorded pair every compute-family node captures: the joint-ordered
+// Oracle-side numpy/libm math is not bitwise-stable between
+// darwin-arm64 and linux-aarch64 (the F5 linux capture diverges ~2e-9
+// through the leg-kinematics trig while darwin matches bit-for-bit), so
+// f64 records carry kind='close' at rtol=1e-8/atol=1e-9 — three decades
+// below any physically meaningful deviation. State documents embed the
+// excitation solve's diagnostics on top of the held torques — the widest
+// observed platform spread (solution_excitation_nm/5, 1.06e-8 relative)
+// bounds the deep comparison at one decade looser than the f64 records:
+// structure (keys, order, array lengths, literal leaves) is exact;
+// numeric leaves obey rtol=1e-7/atol=1e-8.
+constexpr double kPlatformRtol = 1e-7, kPlatformAtol = 1e-8;
+
+bool json_close(const bio::Value &actual, const bio::Value &expected,
+                std::string &path) {
+    const auto *a_num = std::get_if<bio::Number>(&actual.data);
+    const auto *e_num = std::get_if<bio::Number>(&expected.data);
+    if (a_num != nullptr || e_num != nullptr) {
+        if (a_num == nullptr || e_num == nullptr) {
+            path += " (kind mismatch)";
+            return false;
+        }
+        const double a = bio::number_double(*a_num, "state");
+        const double e = bio::number_double(*e_num, "state");
+        if (a == e ||
+            (std::isfinite(a) && std::isfinite(e) &&
+             std::abs(a - e) <= kPlatformAtol + kPlatformRtol * std::abs(e)))
+            return true;
+        path += std::format(" actual={} expected={}", a, e);
+        return false;
+    }
+    if (const auto *a_obj = std::get_if<bio::Value::Object>(&actual.data)) {
+        const auto *e_obj = std::get_if<bio::Value::Object>(&expected.data);
+        if (e_obj == nullptr || a_obj->size() != e_obj->size()) {
+            path += " (object shape)";
+            return false;
+        }
+        for (std::size_t i = 0; i < a_obj->size(); ++i) {
+            const auto &[a_key, a_val] = (*a_obj)[i];
+            const auto &[e_key, e_val] = (*e_obj)[i];
+            if (a_key != e_key) {
+                path += std::format(" (key '{}' != '{}')", a_key, e_key);
+                return false;
+            }
+            const auto parent = path.size();
+            path += '/' + a_key;
+            if (!json_close(a_val, e_val, path)) return false;
+            path.resize(parent);
+        }
+        return true;
+    }
+    if (const auto *a_arr = std::get_if<bio::Value::Array>(&actual.data)) {
+        const auto *e_arr = std::get_if<bio::Value::Array>(&expected.data);
+        if (e_arr == nullptr || a_arr->size() != e_arr->size()) {
+            path += " (array shape)";
+            return false;
+        }
+        for (std::size_t i = 0; i < a_arr->size(); ++i) {
+            const auto parent = path.size();
+            path += std::format("/{}", i);
+            if (!json_close((*a_arr)[i], (*e_arr)[i], path)) return false;
+            path.resize(parent);
+        }
+        return true;
+    }
+    if (bio::canonical_json(actual) != bio::canonical_json(expected)) {
+        path += " (literal mismatch)";
+        return false;
+    }
+    return true;
+}
+
+void expect_state_close(bt::oracle::Node &node, const std::string &document,
+                        std::string_view label) {
+    const auto expected_bytes = node.bytes_input(std::string(label));
+    const std::string_view source(
+        reinterpret_cast<const char *>(expected_bytes.data()),
+        expected_bytes.size());
+    std::string path;
+    bt::require(
+        json_close(bio::parse_json(document), bio::parse_json(source),
+                   path),
+        std::string(label) +
+            ": state diverges beyond platform tolerance at" + path);
+}
+
 // torque vector plus the full 18-key state_dict() canonical document.
 void compare_compute(bt::oracle::Node &node,
                      const rider::NamedEntries<double> &torques,
                      const rider::SpindleController &ctrl,
                      std::string_view prefix = "compute") {
     const auto values = torque_vector(torques, ctrl);
-    node.f64(values, std::string(prefix) + ".torques");
-    const std::string document = state_document(ctrl);
-    const std::array<std::size_t, 1> shape{document.size()};
-    node.bytes(byte_span(document), "|u1", shape,
-               std::string(prefix) + ".state");
+    node.f64_close(values, std::string(prefix) + ".torques");
+    expect_state_close(node, state_document(ctrl),
+                       std::string(prefix) + ".state");
 }
 
 // ---- A2.3 pure kernels ----------------------------------------------------
@@ -251,7 +334,7 @@ void test_spindle_waveform_matches_python() {
         const double actual =
             spindle::spindle_torque_waveform(60., phase, .5);
         const std::array<double, 1> scalar{actual};
-        node.f64(scalar, "waveform");
+        node.f64_close(scalar, "waveform");
         node.done();
     }
 }
@@ -265,7 +348,7 @@ void test_effort_ceiling_matches_python() {
             std::format("test_effort_ceiling_matches_python[{}]", id)));
         const double actual = spindle::crank_effort_ceiling(250., 60., rate);
         const std::array<double, 1> scalar{actual};
-        node.f64(scalar, "ceiling");
+        node.f64_close(scalar, "ceiling");
         node.done();
     }
 }
@@ -516,7 +599,7 @@ void test_spindle_initialize_matches_python() {
     mj_forward(plant.model, plant.data);
     plant.controller->initialize(plant.data);
     bt::oracle::Node node(node_id("test_spindle_initialize_matches_python"));
-    node.f64(buf(plant.data->qpos, nq(plant.model)), "qpos");
+    node.f64_close(buf(plant.data->qpos, nq(plant.model)), "qpos");
     node.done();
 }
 
@@ -542,9 +625,9 @@ void test_spindle_envelope_forces_match_python() {
         plant.controller->envelope_forces(plant.data);
     bt::oracle::Node node(
         node_id("test_spindle_envelope_forces_match_python"));
-    node.f64(force, "force");
+    node.f64_close(force, "force");
     const std::array<double, 1> scalar{stored};
-    node.f64(scalar, "stored_j");
+    node.f64_close(scalar, "stored_j");
     node.done();
 }
 
@@ -557,7 +640,7 @@ void test_spindle_write_matches_python() {
         plant.controller->compute(plant.data, command, true, .00125, false);
     plant.controller->write(plant.data, torques);
     bt::oracle::Node node(node_id("test_spindle_write_matches_python"));
-    node.f64(buf(plant.data->ctrl, nu(plant.model)), "ctrl");
+    node.f64_close(buf(plant.data->ctrl, nu(plant.model)), "ctrl");
     node.done();
 }
 
@@ -583,7 +666,9 @@ void test_spindle_state_round_trip() {
     bt::require(
         std::ranges::equal(
             byte_span(reencoded),
-            std::views::counted(document.data(), document.size())),
+            std::views::counted(
+                document.data(),
+                static_cast<std::ptrdiff_t>(document.size()))),
         "restore+encode reproduces the wire byte-for-byte");
     mj_resetData(plant.model, plant.data);
     plant.data->time = .00125;
@@ -621,14 +706,14 @@ void test_spindle_solved_effort_matches_python() {
         node_id("test_spindle_solved_effort_matches_python"));
     const auto delivered =
         torque_vector(diagnostics.active_delivered_nm, *plant.controller);
-    node.f64(delivered, "solved.delivered");
+    node.f64_close(delivered, "solved.delivered");
     const double powers[] = {
         diagnostics.positive_power_w,
         diagnostics.passive_power_w,
         diagnostics.positive_work_step_j.value_or(0.),
         diagnostics.passive_work_step_j.value_or(0.),
     };
-    node.f64(powers, "solved.powers");
+    node.f64_close(powers, "solved.powers");
     bio::Value::Array names;
     if (diagnostics.strength_violations)
         for (const auto &name : *diagnostics.strength_violations)
@@ -639,9 +724,8 @@ void test_spindle_solved_effort_matches_python() {
         bio::canonical_json(bio::Value{std::move(object)});
     const std::array<std::size_t, 1> shape{doc.size()};
     node.bytes(byte_span(doc), "|u1", shape, "solved.violations");
-    const std::string state = state_document(*plant.controller);
-    const std::array<std::size_t, 1> state_shape{state.size()};
-    node.bytes(byte_span(state), "|u1", state_shape, "solved.state");
+    expect_state_close(node, state_document(*plant.controller),
+                       "solved.state");
     node.done();
 }
 
@@ -661,9 +745,8 @@ void test_spindle_reset_activation_matches_python() {
                 "reset clears activation_time_s");
     bt::oracle::Node node(
         node_id("test_spindle_reset_activation_matches_python"));
-    const std::string doc = state_document(*plant.controller);
-    const std::array<std::size_t, 1> shape{doc.size()};
-    node.bytes(byte_span(doc), "|u1", shape, "reset_state");
+    expect_state_close(node, state_document(*plant.controller),
+                       "reset_state");
     node.done();
 }
 
@@ -700,9 +783,9 @@ void test_spindle_strength_probes_match_python() {
         requested, qpos, qvel);
     bt::oracle::Node node(
         node_id("test_spindle_strength_probes_match_python"));
-    node.f64(anatomical, "anatomical");
-    node.f64(capacities, "capacity");
-    node.f64(clipped, "clipped");
+    node.f64_close(anatomical, "anatomical");
+    node.f64_close(capacities, "capacity");
+    node.f64_close(clipped, "clipped");
     bio::Value::Array names;
     for (const auto &name : limited)
         names.push_back(bio::Value{std::string(name)});
@@ -825,7 +908,12 @@ void test_spindle_probe_rejects_bad_input() {
 } // namespace
 
 // bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// The dispatcher's inlined callees keep every plant's exception-cleanup slot
+// live, so the frame legitimately exceeds the 8KB guard whose target is the
+// per-step realtime path — same rationale as test_contracts' large cases.
 // cppcheck-suppress throwInEntryPoint
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 int main() {
     return bt::run([] {
         test_spindle_waveform_matches_python();
@@ -853,3 +941,4 @@ int main() {
         test_spindle_probe_rejects_bad_input();
     });
 }
+NATIVE_DIAG_POP

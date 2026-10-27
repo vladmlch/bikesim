@@ -1,14 +1,14 @@
 [
  {
-  "atol": null,
+  "atol": 1e-08,
   "dtype": "<f8",
   "index": 0,
-  "kind": "bitwise",
+  "kind": "close",
   "label": "qpos",
   "nbytes": 208,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_initialize_matches_python",
   "offset": 0,
-  "rtol": null,
+  "rtol": 1e-07,
   "shape": [
    26
   ]

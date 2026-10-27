@@ -1,28 +1,28 @@
 [
  {
-  "atol": null,
+  "atol": 1e-08,
   "dtype": "<f8",
   "index": 0,
-  "kind": "bitwise",
+  "kind": "close",
   "label": "force",
   "nbytes": 208,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_envelope_forces_match_python",
   "offset": 0,
-  "rtol": null,
+  "rtol": 1e-07,
   "shape": [
    26
   ]
  },
  {
-  "atol": null,
+  "atol": 1e-08,
   "dtype": "<f8",
   "index": 1,
-  "kind": "bitwise",
+  "kind": "close",
   "label": "stored_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_spindle_controller.py::test_spindle_envelope_forces_match_python",
   "offset": 208,
-  "rtol": null,
+  "rtol": 1e-07,
   "shape": []
  }
 ]

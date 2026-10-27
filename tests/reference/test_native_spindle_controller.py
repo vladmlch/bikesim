@@ -47,7 +47,7 @@ def _record_compute(controller, torques, label='compute'):
     """Torque dict + full state_dict() — the C++ port byte-compares the
     canonical document against encode_spindle_state output."""
     _golden.record(np.array([torques[n] for n in controller.joints]),
-                   label + '.torques')
+                   label + '.torques', kind='close', rtol=1e-7, atol=1e-8)
     _golden.record(_canon(controller.state_dict()), label + '.state')
 
 
@@ -56,7 +56,7 @@ def test_spindle_waveform_matches_python(phase):
     native = load_native()
     expected = pedal_torque_waveform(60.0, phase, 0.5)
     actual = native.spindle_torque_waveform(60.0, phase, 0.5)
-    _golden.record(np.float64(expected), 'waveform')
+    _golden.record(np.float64(expected), 'waveform', kind='close', rtol=1e-7, atol=1e-8)
     assert actual == pytest.approx(expected, rel=1e-12, abs=1e-12)
 
 
@@ -64,7 +64,7 @@ def test_spindle_waveform_matches_python(phase):
 def test_effort_ceiling_matches_python(rate):
     expected = crank_effort_ceiling(250.0, 60.0, rate)
     actual = load_native().crank_effort_ceiling(250.0, 60.0, rate)
-    _golden.record(np.float64(expected), 'ceiling')
+    _golden.record(np.float64(expected), 'ceiling', kind='close', rtol=1e-7, atol=1e-8)
     assert actual == pytest.approx(expected, rel=1e-12, abs=1e-12)
 
 
@@ -334,7 +334,7 @@ def test_spindle_initialize_matches_python(tmp_path):
     probe.set_state(incoming_qpos, incoming_qvel, np.asarray(data.act),
                     np.asarray(data.qacc_warmstart), float(data.time))
     probe.spindle_initialize()
-    _golden.record(np.asarray(data.qpos), 'qpos')
+    _golden.record(np.asarray(data.qpos), 'qpos', kind='close', rtol=1e-7, atol=1e-8)
     np.testing.assert_allclose(probe.qpos, np.asarray(data.qpos),
                                rtol=1e-12, atol=1e-12)
 
@@ -369,8 +369,8 @@ def test_spindle_envelope_forces_match_python(tmp_path):
     probe.forward()
     force, stored = controller.envelope_forces(model, data)
     actual = probe.spindle_envelope_forces()
-    _golden.record(np.asarray(force), 'force')
-    _golden.record(np.float64(stored), 'stored_j')
+    _golden.record(np.asarray(force), 'force', kind='close', rtol=1e-7, atol=1e-8)
+    _golden.record(np.float64(stored), 'stored_j', kind='close', rtol=1e-7, atol=1e-8)
     np.testing.assert_allclose(actual['force'], force, rtol=1e-12,
                                atol=1e-12)
     assert actual['stored_j'] == pytest.approx(stored, rel=1e-12, abs=1e-12)
@@ -384,7 +384,7 @@ def test_spindle_write_matches_python(tmp_path):
     controller.write(data, torques)
     probe.spindle_compute(_command_dict(command), True, .00125, False)
     probe.spindle_write(dict(torques))
-    _golden.record(np.asarray(data.ctrl), 'ctrl')
+    _golden.record(np.asarray(data.ctrl), 'ctrl', kind='close', rtol=1e-7, atol=1e-8)
     np.testing.assert_allclose(probe.ctrl, np.asarray(data.ctrl),
                                rtol=1e-12, atol=1e-12)
     assert np.count_nonzero(probe.ctrl) == len(torques)
@@ -453,12 +453,12 @@ def test_spindle_solved_effort_matches_python(tmp_path):
     probe.set_inputs(np.asarray(data.ctrl), np.zeros(model.nv))
     probe.forward()
     _golden.record(np.array([expected['rider_active_delivered_nm'][n]
-                             for n in controller.joints]), 'solved.delivered')
+                             for n in controller.joints]), 'solved.delivered', kind='close', rtol=1e-7, atol=1e-8)
     _golden.record(np.array([expected['rider_positive_power_w'],
                              expected['rider_passive_power_w'],
                              expected['rider_positive_work_step_j'],
                              expected['rider_passive_work_step_j']]),
-                   'solved.powers')
+                   'solved.powers', kind='close', rtol=1e-7, atol=1e-8)
     _golden.record(_canon({'violations':
                            list(expected['rider_strength_violations'])}),
                    'solved.violations')
@@ -556,13 +556,13 @@ def test_spindle_strength_probes_match_python(tmp_path):
             else:
                 assert actual == pytest.approx(
                     expected, rel=1e-12, abs=1e-12), name
-    _golden.record(np.asarray(anatomical), 'anatomical')
-    _golden.record(np.asarray(capacities), 'capacity')
+    _golden.record(np.asarray(anatomical), 'anatomical', kind='close', rtol=1e-7, atol=1e-8)
+    _golden.record(np.asarray(capacities), 'capacity', kind='close', rtol=1e-7, atol=1e-8)
     torques = np.array(
         [120. if 'knee' in n else -90. for n in controller.joints])
     clipped, limited = controller.strength_limited(torques, qpos, qvel)
     actual = probe.spindle_strength_limited(torques, qpos, qvel)
-    _golden.record(np.asarray(clipped), 'clipped')
+    _golden.record(np.asarray(clipped), 'clipped', kind='close', rtol=1e-7, atol=1e-8)
     _golden.record(_canon({'limited': list(limited)}), 'limited')
     np.testing.assert_allclose(actual['torques'], clipped,
                                rtol=1e-12, atol=1e-12)

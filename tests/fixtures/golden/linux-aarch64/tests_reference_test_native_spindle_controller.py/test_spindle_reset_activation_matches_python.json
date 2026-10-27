@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "reset_state",
+  "nbytes": 3994,
+  "node": "tests/reference/test_native_spindle_controller.py::test_spindle_reset_activation_matches_python",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   3994
+  ]
+ }
+]

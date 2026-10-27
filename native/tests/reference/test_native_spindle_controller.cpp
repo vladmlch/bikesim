@@ -4,8 +4,9 @@
 // (tools/migration/_f5_spindle_capture.py): the pinned nine-actuator model
 // (spindle pedals, pin saddle, connect grips) with the identical
 // rider_controller wire config and pose. Every comparison is the golden
-// node's recorded oracle output — f64 arrays bitwise, canonical-JSON state
-// documents byte-exact through bike::io::canonical_json(
+// node's recorded oracle output — f64 arrays close at the node's recorded
+// rtol=1e-7/atol=1e-8, canonical-JSON state documents through the
+// json_close deep comparison over bike::io::canonical_json(
 // rider::encode_spindle_state()).
 //
 // F5 (test_spindle_rear_chain_effort_matches_python): the enabled-compute
@@ -222,15 +223,14 @@ std::string state_document(const rider::SpindleController &ctrl) {
     return bio::canonical_json(encoded);
 }
 
-// The recorded pair every compute-family node captures: the joint-ordered
 // Oracle-side numpy/libm math is not bitwise-stable between
 // darwin-arm64 and linux-aarch64 (the F5 linux capture diverges ~2e-9
 // through the leg-kinematics trig while darwin matches bit-for-bit), so
-// f64 records carry kind='close' at rtol=1e-8/atol=1e-9 — three decades
+// f64 records carry kind='close' at rtol=1e-7/atol=1e-8 — three decades
 // below any physically meaningful deviation. State documents embed the
 // excitation solve's diagnostics on top of the held torques — the widest
 // observed platform spread (solution_excitation_nm/5, 1.06e-8 relative)
-// bounds the deep comparison at one decade looser than the f64 records:
+// stays inside the same bound under the json_close deep comparison:
 // structure (keys, order, array lengths, literal leaves) is exact;
 // numeric leaves obey rtol=1e-7/atol=1e-8.
 constexpr double kPlatformRtol = 1e-7, kPlatformAtol = 1e-8;
@@ -308,6 +308,7 @@ void expect_state_close(bt::oracle::Node &node, const std::string &document,
             ": state diverges beyond platform tolerance at" + path);
 }
 
+// The recorded pair every compute-family node captures: the joint-ordered
 // torque vector plus the full 18-key state_dict() canonical document.
 void compare_compute(bt::oracle::Node &node,
                      const rider::NamedEntries<double> &torques,

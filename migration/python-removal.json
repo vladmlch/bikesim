@@ -15984,12 +15984,10 @@
       "native/tests/reference/test_native_runtime_accounting.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_runtime_accounting"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "7a7bd97418ea27f858cef339b64fe2b1c3a2fd2bbb75c67176492d31f041e868",
     "snapshot_line_count": 207,
     "tracked": true,
@@ -16045,12 +16043,10 @@
       "native/tests/reference/test_native_runtime_config.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_runtime_config"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "6e11fc21cd53952769d0f846e1b716d3255a5c141bbec1b1e13027476e7bdbd0",
     "snapshot_line_count": 217,
     "tracked": true,
@@ -16085,12 +16081,10 @@
       "native/tests/reference/test_native_runtime_performance_contract.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_runtime_performance_contract"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "36cfcb9b80b29fbf7c9b9dcb1e925b87775128dbe004bc8a20d10cd81f607e87",
     "snapshot_line_count": 317,
     "tracked": true,

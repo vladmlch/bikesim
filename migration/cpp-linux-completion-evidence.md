@@ -7566,3 +7566,132 @@ source-suite status run (above) — **4/4 on both platforms, source suite
 red set exactly the four recorded `planned` nodes, zero unexpected
 reds**. The documented T09/T10 frozen-oracle baseline pair and the
 other `planned`-ledger oracle reds are unaffected baseline state.
+
+## 2026-10-27 — lane/d 3.26 runtime batch merge-back (merge `3d228c72`)
+
+### Surface
+
+Lane tip `68393e0a` — 6 commits over base `cf17978f`, which is the
+pre-merge integration tip itself (the lane branched directly off it):
+fast-forwardable, merged `--no-ff` per convention. Deliverables: four
+TUs `test_native_runtime_{config,accounting,rollout,performance_
+contract}.cpp` registered in `Phase3Ports.cmake` as
+`reference.native_runtime_*` (`bike_add_reference_test ... LABELS t53
+runtime`; performance_contract also links `bike_realtime_measurement`),
+plus `tree_close`/`require_tree_close` hoisted into the shared
+`runtime_reference_support.hpp` (byte-equivalent local copies removed
+from both new consumers, accounting + rollout). Ledger work: 44
+`test-port-map` record edits (38
+`planned`→`port`, 4 rollout stay `planned` with NOT-PORTED evidence, 2
+`planned`→`drop`) and three `python-removal.json` rows →
+`replacement_landed` (config + accounting + performance_contract);
+rollout stays `planned` — its four live-oracle parity records are
+gates, not qualified. Lane gate report: `task-C326-report.md`.
+
+### Conflicts and merge-back resolutions
+
+None — clean `ort` merge; the post-merge tree is byte-identical to the
+lane tip (`git diff 68393e0a HEAD` empty). Union checks confirmed
+programmatically anyway:
+
+- `migration/test-port-map.json` — key-exact union on
+  (`source_path`,`source_symbol`): 2390 unique records both sides, key
+  sets identical, zero duplicates; exactly the lane's 44 record edits
+  differ (38 `planned`→`port`, 2 `planned`→`drop`, 4 rollout records
+  staying `planned` with refreshed `assertions_capture` /
+  `collected_node_ids` / `comparison_class` / `evidence`), all inside
+  the four batch source files; 2346 untouched records.
+- `migration/python-removal.json` — 535 rows; exactly three rows
+  changed, all `planned`→`replacement_landed` with
+  `reference.native_runtime_*` verification ids.
+- `native/tests/reference/Phase3Ports.cmake` — single appended 3.26
+  block (24 lines: comment + 4 registrations) after the 3.25 block;
+  all integration 3.15/3.17/3.24a/3.25 blocks intact; no duplicate
+  `bike_add_reference_test` names.
+- `native/tests/reference/runtime_reference_support.hpp` — gained
+  `<algorithm>` + `<cmath>` includes and the shared
+  `tree_close`/`require_tree_close` overloads (lines 285–347);
+  consumers reference `runtime_reference::require_tree_close`, zero
+  stale local copies.
+- `migration/cpp-linux-completion-evidence.md` — EOF append only
+  (3.26 qualification section), then this merge-back section.
+- Batch-file audit: all six lane-owned files (4 new native TUs +
+  `task-C326-report.md` + support-header diff) byte-identical to
+  `68393e0a` post-merge — whole-tree `git diff` is empty.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Incremental `cmake --build` green; all four `reference.native_runtime_*`
+  3.26 targets compiled and linked; the four 3.25 TUs rebuilt against
+  the hoisted header.
+- `ctest -R 'reference\.native_runtime_'`: **8/8** —
+  `native_runtime_bootstrap` 1.24 s, `native_runtime_step` 0.48 s,
+  `native_runtime_commands` 5.92 s, `native_runtime_ownership` 0.72 s,
+  `native_runtime_config` 0.22 s, `native_runtime_accounting` 0.20 s,
+  `native_runtime_rollout` 0.37 s,
+  `native_runtime_performance_contract` 0.24 s (warm rerun; first run
+  post-build also 8/8).
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, Release)
+
+- `container.sh sync` → `build root-clang` (16 edges; all four new TUs
+  compiled and linked, 3.25 TUs rebuilt for the header change): green.
+- `ctest root-clang -R 'reference\.native_runtime_'`: **8/8** —
+  `native_runtime_bootstrap` 1.33 s, `native_runtime_step` 0.44 s,
+  `native_runtime_commands` 4.05 s, `native_runtime_ownership` 0.83 s,
+  `native_runtime_config` 0.18 s, `native_runtime_accounting` 0.28 s,
+  `native_runtime_rollout` 0.46 s,
+  `native_runtime_performance_contract` 0.10 s.
+- `ctest root-clang -L reference -E 'reference\.coupled_rider_task'
+  -j8` (sweep minus the coupled python-oracle binary — the 3.15
+  carve-out): **91/95** — exactly the documented 4-red baseline
+  {`golden_episode_tool` (`FAIL native recorder rows reproduce Python
+  oracle`), `native_numeric_completion`
+  (`config.rider_controller.leg_track_damping_nms_rad: missing
+  required key`), `pneumatic_tire_oracle` (`FAIL fixture is not a
+  regular file`), `native_pneumatic_tire` (`front.normal_load_n`
+  ulp drift, actual `0x407aec7c836e2edc` vs expected
+  `0x407aec7c97021dff` — identical bits to the 3.25 merge-back run)} —
+  all signatures verbatim in output; all eight 3.25+3.26
+  `native_runtime_*` registrations green inside the sweep;
+  `native_coupled_rider_task` green (269.67 s).
+
+### Ledger deltas (pre-merge `cf17978f` → post-merge `3d228c72`)
+
+- `test-port-map.json`: records 2390 → **2390** (in-place 3.26 edits;
+  headers `static_test_functions` 2390, `top_level_test_functions`
+  2374, `class_test_methods` 16; `static == records`,
+  `static == top_level + class`). Dispositions: `port` 679 →
+  **717** (+38), `planned` 1291 → **1251** (−40: 38 → `port`,
+  2 → `drop`), `golden` 344, `drop` 76 → **78**. The +2 `drop` are
+  `test_native_runtime_config.py::test_native_capability_rejects_
+  {distributed,pneumatic}_backend_without_section` (python-only
+  `None` writes into Optional resolved-section fields; the C++
+  members are non-optional — no native representation). Union
+  verified key-exact on (`source_path`,`source_symbol`): 2390
+  unique, no lost/duplicate/contested records.
+- `python-removal.json`: rows 535 → 535; `replacement_landed` 68 →
+  **71** (+3: `test_native_runtime_config.py`,
+  `test_native_runtime_accounting.py`, `test_native_runtime_
+  performance_contract.py`), `planned` 467 → **464**;
+  `test_native_runtime_rollout.py` stays `planned` — its four
+  live-oracle gate nodes remain open (the partial-port C++ TU landed
+  for the 2 native-vs-native invariant records only).
+- The four stay-`planned` records are all rollout
+  (`test_native_full_rows_match_python_for_non_aligned_tail`,
+  `test_identical_non_aligned_explicit_flush_schedule_matches_python`,
+  `test_native_recorded_columns_match_scalar_recorder_without_row_
+  roundtrip`,
+  `test_one_second_800_interval_golden_episode_all_channels`) — the
+  same weld-family parity family the 3.25 batch recorded.
+
+### Assessment
+
+No conflicts, no merge-back fix needed — the lane's direct-descendant
+topology made this a clean `--no-ff` union. No new reds attributable
+to the merge on either platform; the linux sweep reproduces the
+documented 4-red baseline verbatim (identical `native_pneumatic_tire`
+ulp bits). L3 (`tools/run_tests.sh native`) not re-run — bounded
+merge-back scope per protocol; lane/d's own gate evidence is recorded
+in `task-C326-report.md`. Unrelated documented reds reported, not
+fixed.
